@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/summary.schema.json",
+  "title": "RallyMate Stage 1 Run Summary",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "job_id",
+    "status",
+    "input",
+    "models",
+    "processing",
+    "quality",
+    "counts",
+    "coverage",
+    "next_stage",
+    "runtime",
+    "artifacts",
+    "validation"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "job_id": {"type": "string", "minLength": 1},
+    "status": {"const": "completed"},
+    "processing": {
+      "type": "object",
+      "required": [
+        "processed_frames",
+        "elapsed_seconds",
+        "effective_processed_fps",
+        "stage_seconds"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "player_frame_fraction",
+        "pose_frame_fraction",
+        "ball_frame_fraction",
+        "racket_frame_fraction",
+        "court_detected_fraction",
+        "court_calibrated_fraction"
+      ],
+      "properties": {
+        "player_frame_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "pose_frame_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ball_frame_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "racket_frame_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "court_detected_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "court_calibrated_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "next_stage": {
+      "type": "object",
+      "required": [
+        "ready",
+        "ready_for_hit_event_detection",
+        "ready_for_court_region_events",
+        "ready_for_metric_court_metrics",
+        "all_stage1_capabilities_ready",
+        "capability_checks",
+        "requirements_gap"
+      ],
+      "properties": {
+        "ready_for_final_scoring": {"type": "boolean"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "status",
+        "validated_frames",
+        "validated_detections",
+        "validated_poses"
+      ],
+      "properties": {
+        "status": {"const": "passed"}
+      }
+    },
+    "input": {"type": "object"},
+    "models": {"type": "object"},
+    "quality": {"type": "object"},
+    "counts": {"type": "object"},
+    "runtime": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "minimum_scoring_loop": {"type": "object"},
+    "calculation_readiness": {"type": "object"},
+    "measurement_portfolio": {"type": "object"},
+    "scoring_cycle_measurement": {"type": "object"},
+    "scoring_reference_context": {"type": "object"},
+    "scoring_state": {
+      "type": "object",
+      "required": ["measurement_status", "measured_indicator_count", "target_indicator_count", "scoring_status", "grade", "ui_message_zh"],
+      "properties": {
+        "measurement_status": {"enum": ["measured", "unavailable"]},
+        "measured_indicator_count": {"type": "integer", "minimum": 0},
+        "target_indicator_count": {"type": "integer", "minimum": 1},
+        "scoring_status": {"enum": ["scored", "calibration_required", "unavailable"]},
+        "grade": {"type": ["string", "null"], "enum": ["A", "B", "C", "D", "E", null]},
+        "ui_message_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "scoring_readiness": {"type": "object"},
+    "pose_assessment": {"type": "object"}
+  }
+}

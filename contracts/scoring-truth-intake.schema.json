@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-intake.schema.json",
+  "title": "RallyMate private scoring-truth intake session",
+  "description": "An immutable, candidate-containing, private structural intake. Validation requires the original source pack and all five original export paths to remain available and byte-exact; the session is not portable self-contained evidence. Validation does not authorize annotation operations, calibration, promotion, grades, thresholds, or production use.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "intake_version",
+    "intake_id",
+    "generated_at",
+    "status",
+    "classification",
+    "source_pack",
+    "exports",
+    "compilation",
+    "directories",
+    "artifacts",
+    "content_root_sha256",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "intake_version": {"const": "scoring-truth-intake-v1.0.0"},
+    "intake_id": {
+      "type": "string",
+      "pattern": "^scoring-truth-intake-[0-9A-F]{24}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    },
+    "status": {
+      "const": "private_candidate_containing_intake_not_operator_authorized"
+    },
+    "classification": {"const": "PRIVATE"},
+    "source_pack": {"$ref": "#/$defs/source_pack"},
+    "exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event-annotations.csv",
+        "keypoint-annotations.csv",
+        "semantic-annotations.csv",
+        "coach-labels.csv",
+        "full-video-review-completion.csv"
+      ],
+      "properties": {
+        "event-annotations.csv": {"$ref": "#/$defs/export"},
+        "keypoint-annotations.csv": {"$ref": "#/$defs/export"},
+        "semantic-annotations.csv": {"$ref": "#/$defs/export"},
+        "coach-labels.csv": {"$ref": "#/$defs/export"},
+        "full-video-review-completion.csv": {"$ref": "#/$defs/export"}
+      }
+    },
+    "compilation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_path",
+        "report_sha256",
+        "status",
+        "readiness_interpretation",
+        "errors_count",
+        "readiness_sha256",
+        "readiness"
+      ],
+      "properties": {
+        "report_path": {"const": "compiled/validation-report.json"},
+        "report_sha256": {"$ref": "#/$defs/sha256"},
+        "status": {
+          "enum": [
+            "annotation_required",
+            "ready_for_evaluation_and_calibration_review"
+          ]
+        },
+        "readiness_interpretation": {
+          "const": "diagnostic_only_not_authorization_or_calibration_eligibility"
+        },
+        "errors_count": {"const": 0},
+        "readiness_sha256": {"$ref": "#/$defs/sha256"},
+        "readiness": {"type": "object"}
+      }
+    },
+    "directories": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relative_path"},
+      "uniqueItems": true
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 12,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "content_root_sha256": {"$ref": "#/$defs/sha256"},
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "private_session",
+        "candidate_information_present",
+        "operator_authorized",
+        "external_protocol_receipt_verified",
+        "technical_handoff_accepted_as_authorization",
+        "source_authorization_accepted",
+        "human_truth_ready_claimed",
+        "calibration_eligible",
+        "promotion_eligible",
+        "production_use_authorized",
+        "source_pack_modified",
+        "raw_exports_preserved_byte_exact",
+        "candidate_values_promoted_to_truth",
+        "grades_generated_by_intake",
+        "thresholds_generated",
+        "automatic_F3_or_F4_promotion"
+      ],
+      "properties": {
+        "private_session": {"const": true},
+        "candidate_information_present": {"const": true},
+        "operator_authorized": {"const": false},
+        "external_protocol_receipt_verified": {"const": false},
+        "technical_handoff_accepted_as_authorization": {"const": false},
+        "source_authorization_accepted": {"const": false},
+        "human_truth_ready_claimed": {"const": false},
+        "calibration_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "production_use_authorized": {"const": false},
+        "source_pack_modified": {"const": false},
+        "raw_exports_preserved_byte_exact": {"const": true},
+        "candidate_values_promoted_to_truth": {"const": false},
+        "grades_generated_by_intake": {"const": false},
+        "thresholds_generated": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-F]{64}$"
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\).+$"
+    },
+    "source_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "session_path", "bytes", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "session_path": {"$ref": "#/$defs/relative_path"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source_pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "pack_version",
+        "source_status",
+        "retention_requirement",
+        "manifest",
+        "static_directories",
+        "static_files"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "pack_version": {"type": "string", "minLength": 1},
+        "source_status": {"type": ["string", "null"]},
+        "retention_requirement": {
+          "const": "original_source_pack_and_all_five_export_paths_must_remain_available_and_byte_exact_for_private_authority_replay"
+        },
+        "manifest": {"$ref": "#/$defs/source_file"},
+        "static_directories": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/relative_path"},
+          "uniqueItems": true
+        },
+        "static_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/source_file"}
+        }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "submitted_name",
+        "pack_path",
+        "raw_path",
+        "bytes",
+        "sha256",
+        "rows"
+      ],
+      "properties": {
+        "source_path": {"type": "string", "minLength": 1},
+        "submitted_name": {"type": "string", "minLength": 1},
+        "pack_path": {"$ref": "#/$defs/relative_path"},
+        "raw_path": {"$ref": "#/$defs/relative_path"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "rows": {"type": "integer", "minimum": 0}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "bytes", "sha256", "role"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relative_path"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "role": {
+          "enum": ["source_static", "active_export", "raw_export", "compiled"]
+        }
+      }
+    }
+  }
+}

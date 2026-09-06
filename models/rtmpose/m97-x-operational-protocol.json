@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_version": "rtmpose-x-operational-extension-2026-09-04.1",
+  "purpose": "run_X384_on_the_exact_M71_258_frame_scope_and_compare_operational_recovery_without_truth_or_promotion",
+  "production_default_binding": {
+    "preset_id": "rtmpose-m-halpe26-online",
+    "registry_relative_path": "models/rtmpose/deployment-presets.json",
+    "registry_sha256": "A95B7B5F225C025371157C22A9A60397874DE03C85B4EAC512B3B9C443F14C69"
+  },
+  "candidate": {
+    "candidate_id": "rtmpose-x-halpe26-384x288-m95-shadow",
+    "source_registry_relative_path": "models/rtmpose/m95-shadow-candidates.json",
+    "source_registry_sha256": "11B656E536964E8D84415719D82CE5BB5451C4071CDEA295211962323AB2E81B",
+    "model_relative_path": "models/rtmpose/rtmpose-x_halpe26_384x288.pth",
+    "checkpoint_sha256": "7FB6E239601082A06CA8442FEB7A9774B8D77A1C37911B2AD0F27C1E84BE4D21",
+    "checkpoint_bytes": 200397852,
+    "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-x_8xb256-700e_body8-halpe26-384x288.py",
+    "config_sha256": "961E5704E4983F27173BC008C17F08E8C2C5907FDB104EA8669AD06C4C68B678",
+    "input_size_hw": [384, 288],
+    "native_keypoint_format": "halpe26",
+    "runtime": "pytorch",
+    "profile": "analysis",
+    "flip_test": true
+  },
+  "historical_summary_bindings": {
+    "M68": {
+      "relative_path": "reports/measurement-recovery-m68/summary/report.json",
+      "sha256": "BBE5991F09381B35A2AD3097EE5BF9BDCDFDC89B16966F064C1F7CBBB850229D"
+    },
+    "M70": {
+      "relative_path": "reports/measurement-recovery-m70/summary/report.json",
+      "sha256": "A1A35DC8709E14E6CE03F20CAA100F733C31908B8B0FB26CECD83C4A5B55D554"
+    },
+    "M71": {
+      "relative_path": "reports/measurement-recovery-m71/summary/report.json",
+      "sha256": "2F0D19D6CEFB627B1FA821CCBEEE64C5E7C66A0BACE090DF76F5B1C530DA9A8F"
+    }
+  },
+  "development_scope": {
+    "video_count": 3,
+    "target_frame_count": 258,
+    "target_source": "M70_ablation_frame_results_replayed_and_cross_checked_against_M71_L_frame_results",
+    "context_source": "per_frame_M70_roi_margin_and_min_roi_size_px",
+    "router_baseline": "M70_m69_anchored_extension_frames",
+    "comparison_baseline": "M68_required_joint_superset_frames",
+    "selection_policy": "candidate_required_joint_valid_set_strictly_contains_M70_baseline",
+    "videos": [
+      {
+        "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+        "target_frame_count": 94,
+        "video_relative_path": "FULL-TEST/3ae77ee3271d67de171585a5c39ddd69.mp4",
+        "video_sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9",
+        "m70_ablation_report_relative_path": "reports/measurement-recovery-m70/pose-profile-context-ablation-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+        "m70_ablation_report_sha256": "FEE2F8996590CF4489E2ADF7858B68AB6C7CD937E573812D27FE973AA911C48E",
+        "m70_anchored_report_relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+        "m70_anchored_report_sha256": "A6EA7FD4B9809FF69212A81FB5804FAA2C0B020C87CF7980342FBD1540872E78",
+        "m71_l_report_relative_path": "reports/measurement-recovery-m71/rtmpose-l-384-context-extension-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+        "m71_l_report_sha256": "1C05B77EB924D15342472DDF4B06D965BFD4C1E7133A3D5E27E5EDE6D0EE4E5F"
+      },
+      {
+        "video_id": "850cb0006b406c7176eeda8d711cd065",
+        "target_frame_count": 103,
+        "video_relative_path": "FULL-TEST/850cb0006b406c7176eeda8d711cd065.mp4",
+        "video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+        "m70_ablation_report_relative_path": "reports/measurement-recovery-m70/pose-profile-context-ablation-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+        "m70_ablation_report_sha256": "5AAA0080FD087CFD4A03E8718F0AC438FBD75F01D7C28E9E5909DDD3D672D4C0",
+        "m70_anchored_report_relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+        "m70_anchored_report_sha256": "DDBD9D2BD946046C6F1AFF62A6D245C73917A7F4B694FB31B8AD4578BF98D643",
+        "m71_l_report_relative_path": "reports/measurement-recovery-m71/rtmpose-l-384-context-extension-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+        "m71_l_report_sha256": "7C08B336BC7CE164CEBFA18944A86660B6F1976D860F4833424E98B24022B55D"
+      },
+      {
+        "video_id": "8d7754d0de6d315674013d5b69a0b6ba",
+        "target_frame_count": 61,
+        "video_relative_path": "FULL-TEST/8d7754d0de6d315674013d5b69a0b6ba.mp4",
+        "video_sha256": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0",
+        "m70_ablation_report_relative_path": "reports/measurement-recovery-m70/pose-profile-context-ablation-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+        "m70_ablation_report_sha256": "07608FDE8A531DAF593C4F620B0F274C04EDC77126465204E0E3031983BBE188",
+        "m70_anchored_report_relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+        "m70_anchored_report_sha256": "EBD68BBE4A6CA4845A7D11160A745C3220601F06479D55BE1197D4A81A97BF08",
+        "m71_l_report_relative_path": "reports/measurement-recovery-m71/rtmpose-l-384-context-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+        "m71_l_report_sha256": "50F063DC02AA4C3ACB4450A4D95771E7C20ED85582C9E7C8EB173ABA43CBC42E"
+      }
+    ],
+    "sealed_holdout": {
+      "video_id": "c235227fffcd3290b60572d0c3f9cc85",
+      "video_relative_path": "FULL-TEST/c235227fffcd3290b60572d0c3f9cc85.mp4",
+      "video_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "use_during_development": false
+    }
+  },
+  "safety": {
+    "changes_deployment_registry": false,
+    "changes_production_default": false,
+    "opens_or_hashes_sealed_holdout": false,
+    "uses_ground_truth": false,
+    "claims_accuracy": false,
+    "promotes_candidate": false,
+    "promotes_F3_or_F4": false,
+    "changes_feature_gate": false,
+    "changes_measurement_gate": false,
+    "changes_event_boundaries": false,
+    "uses_feature_values_for_routing": false,
+    "uses_event_outcomes_for_routing": false,
+    "uses_grades_or_thresholds_for_routing": false,
+    "generates_grades_or_thresholds": false
+  }
+}

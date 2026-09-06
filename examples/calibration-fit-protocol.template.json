@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.1.0",
+  "artifact_scope": "calibration_fit_protocol",
+  "indicator_id": "REPLACE_WITH_ONE_INDICATOR_ID",
+  "protocol_id": "REPLACE_WITH_PREREGISTERED_PROTOCOL_ID",
+  "protocol_version": "REPLACE_WITH_VERSION",
+  "candidate_version_prefix": "rallymate-calibration-candidate",
+  "source": {
+    "kind": "preregistered_calibration_protocol",
+    "source_sha256": "REPLACE_WITH_64_HEX_SHA256_OF_SIGNED_PROTOCOL_SOURCE",
+    "registered_at": "REPLACE_WITH_ISO_8601_REGISTRATION_TIME"
+  },
+  "label_scale": ["E", "D", "C", "B", "A"],
+  "label_resolution_policy": "unanimous_multi_coach_only_v1",
+  "requirements": {
+    "min_records_by_split": {
+      "train": "REPLACE_WITH_PREREGISTERED_INTEGER",
+      "validation": "REPLACE_WITH_PREREGISTERED_INTEGER",
+      "independent_test": "REPLACE_WITH_PREREGISTERED_INTEGER"
+    },
+    "min_records_per_grade_by_split": {
+      "train": {
+        "E": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "D": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "C": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "B": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "A": "REPLACE_WITH_PREREGISTERED_INTEGER"
+      },
+      "validation": {
+        "E": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "D": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "C": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "B": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "A": "REPLACE_WITH_PREREGISTERED_INTEGER"
+      }
+    },
+    "min_annotators": "REPLACE_WITH_PREREGISTERED_INTEGER_AT_LEAST_2",
+    "min_shared_items": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "agreement_metric": "quadratic_weighted_kappa",
+    "min_agreement_value": "REPLACE_WITH_PREREGISTERED_NUMBER"
+  },
+  "backends": {
+    "threshold_rule": {
+      "enabled": true,
+      "primary_feature": "REPLACE_WITH_INDICATOR_PRIMARY_FEATURE",
+      "direction": "REPLACE_WITH_higher_is_better_OR_lower_is_better",
+      "objective": "mean_absolute_grade_error"
+    },
+    "ordinal_regression": {
+      "enabled": true,
+      "optimizer": {
+        "algorithm": "projected_gradient_descent_v1",
+        "max_iterations": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "learning_rate": "REPLACE_WITH_PREREGISTERED_POSITIVE_NUMBER",
+        "l2": "REPLACE_WITH_PREREGISTERED_NON_NEGATIVE_NUMBER",
+        "tolerance": "REPLACE_WITH_PREREGISTERED_NON_NEGATIVE_NUMBER",
+        "min_cutpoint_gap": "REPLACE_WITH_PREREGISTERED_POSITIVE_NUMBER"
+      }
+    }
+  }
+}

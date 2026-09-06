@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-calibration-authorization-binding.schema.json",
+  "title": "RallyMate content-bound scoring-truth calibration authorization lineage",
+  "type": "object",
+  "required": [
+    "binding_version",
+    "status",
+    "canonicalization",
+    "authorization_id",
+    "event_protocol_authorization",
+    "intake",
+    "revision_lineage",
+    "input_files",
+    "binding_sha256"
+  ],
+  "properties": {
+    "binding_version": {
+      "const": "scoring-truth-calibration-authorization-binding-v1.0.0"
+    },
+    "status": {
+      "enum": [
+        "verified_authorized_intake_for_calibration",
+        "unverified_private_truth_diagnostic",
+        "synthetic_test_only_no_production_authority"
+      ]
+    },
+    "canonicalization": {"const": "rallymate-canonical-json-v1"},
+    "authorization_id": {"type": "string", "minLength": 1},
+    "event_protocol_authorization": {"type": "object"},
+    "intake": {
+      "type": "object",
+      "required": ["intake_id", "intake_version", "content_root_sha256"],
+      "properties": {
+        "intake_id": {"type": "string", "minLength": 1},
+        "intake_version": {"type": "string", "minLength": 1},
+        "content_root_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "revision_lineage": {
+      "type": "object",
+      "required": [
+        "revision_id",
+        "annotator_a_id",
+        "annotator_b_id",
+        "reviewer_c_id",
+        "annotator_a_export_root_sha256",
+        "annotator_b_export_root_sha256",
+        "reviewer_c_adjudication_root_sha256",
+        "roles_distinct",
+        "revision_finalized"
+      ],
+      "properties": {
+        "revision_id": {"type": "string", "minLength": 1},
+        "annotator_a_id": {"type": "string", "minLength": 1},
+        "annotator_b_id": {"type": "string", "minLength": 1},
+        "reviewer_c_id": {"type": "string", "minLength": 1},
+        "annotator_a_export_root_sha256": {"$ref": "#/$defs/sha256"},
+        "annotator_b_export_root_sha256": {"$ref": "#/$defs/sha256"},
+        "reviewer_c_adjudication_root_sha256": {"$ref": "#/$defs/sha256"},
+        "roles_distinct": {"type": "boolean"},
+        "revision_finalized": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "input_files": {
+      "type": "object",
+      "required": [
+        "intake_manifest",
+        "truth_manifest",
+        "truth_validation_report",
+        "manual_events",
+        "manual_semantics",
+        "coach_labels"
+      ],
+      "properties": {
+        "intake_manifest": {"$ref": "#/$defs/sha256"},
+        "truth_manifest": {"$ref": "#/$defs/sha256"},
+        "truth_validation_report": {"$ref": "#/$defs/sha256"},
+        "manual_events": {"$ref": "#/$defs/sha256"},
+        "manual_semantics": {"$ref": "#/$defs/sha256"},
+        "coach_labels": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "binding_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "verified_authorized_intake_for_calibration"}}, "required": ["status"]},
+      "then": {"properties": {"revision_lineage": {"properties": {"roles_distinct": {"const": true}, "revision_finalized": {"const": true}}}}}
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["unverified_private_truth_diagnostic", "synthetic_test_only_no_production_authority"]}}, "required": ["status"]},
+      "then": {"properties": {"revision_lineage": {"properties": {"roles_distinct": {"const": false}, "revision_finalized": {"const": false}}}}}
+    }
+  ],
+  "additionalProperties": false
+}

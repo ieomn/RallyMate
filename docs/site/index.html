@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RallyMate 当前项目文档中心</title>
+  <link rel="stylesheet" href="assets/docs.css">
+  <style>
+    main { width:min(1120px,calc(100% - 40px)); margin:28px auto 50px; }
+    .hero { padding:42px; color:white; background:linear-gradient(135deg,#102a56,#245bc2); border-radius:24px; }
+    .hero h1 { margin:0 0 12px; font-size:clamp(30px,5vw,54px); }
+    .hero p { max-width:780px; color:#dce9ff; }
+    .hero a { display:inline-block; margin-top:12px; padding:12px 18px; color:#102a56; background:#c9f45b; border-radius:10px; text-decoration:none; font-weight:800; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; margin-top:24px; }
+    .card { padding:28px; background:white; border:1px solid var(--line); border-radius:18px; box-shadow:0 12px 28px rgba(20,51,95,.08); }
+    .card h2 { margin-top:0; border:0; padding:0; }
+    .card a { display:inline-block; margin-top:10px; padding:10px 15px; color:white; background:var(--blue); border-radius:10px; text-decoration:none; font-weight:700; }
+    .facts { margin-top:24px; padding:24px 28px; background:white; border:1px solid var(--line); border-radius:18px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>RallyMate 当前项目文档中心</h1>
+      <p>从产品能力、用户 Demo、接口合同到完整技术架构的统一阅读入口。Demo v1.2 优先展示训练复盘用“动作表现参考分（Beta）”和严格13项自然语言观察/建议；它不是准确率或正式教练标定分。正式分与A～E仍为null。</p>
+      <a href="http://127.0.0.1:8000/">打开本地视频分析 Demo</a>
+    </section>
+    <section class="cards">
+      <article class="card">
+        <h2>用户视频分析 Demo</h2>
+        <p>可一次选择多个视频，按顺序查看进度、Beta训练表现分、严格13项观察/证据/建议及GPU/CPU运行信息；空分显示“暂无法评价”。骨架视频默认关闭，也可用?job_id直接恢复已有任务。</p>
+        <a href="http://127.0.0.1:8000/">打开 Demo</a>
+      </article>
+      <article class="card">
+        <h2>产品说明书</h2>
+        <p>面向产品、教练和项目负责人：从评分对象与核心术语开始说明首批六项标准，并系统界定产品范围、当前完成度、正式评分前提、验收方法和路线图。</p>
+        <a href="product.html">打开产品文档</a>
+      </article>
+      <article class="card">
+        <h2>技术架构说明书</h2>
+        <p>面向研发、算法、测试和运维：通过总体架构流程图说明运行链、Beta反馈与正式评分证据链，并覆盖模型、数据、质量门禁、标定、发布、契约和维护。</p>
+        <a href="technical.html">打开技术文档</a>
+      </article>
+      <article class="card">
+        <h2>API 与端到端链路</h2>
+        <p>FastAPI v1.2.0 的 9 个显式 HTTP 路由、18 项产物白名单、上传轮询示例、用户结果 v1.2，以及 M96 人工评测试点的本地文件型接口。</p>
+        <a href="api.html">打开 API 文档</a>
+      </article>
+      <article class="card">
+        <h2>可编辑五页架构图</h2>
+        <p>Draw.io XML 覆盖系统全景、在线上传时序、数据与信任链、人工流程，以及 M96/M97 的 M/L/X 比较、真值、微调和晋级门禁。</p>
+        <a href="RallyMate完整系统架构_当前态_v1.0.drawio" download>下载 Draw.io</a>
+      </article>
+      <article class="card">
+        <h2>M96 同帧模型诊断</h2>
+        <p>在 45 个完全相同的解码帧和冻结 ROI 上比较 RTMPose-M/L/X 的返回率、置信覆盖与单 ROI 延迟；没有把这些量解释为准确率。</p>
+        <a href="m96-model-diagnostic.html">打开 M96 诊断</a>
+      </article>
+      <article class="card">
+        <h2>M97 X 下游残差比较</h2>
+        <p>在 258 个冻结残差帧和既定门禁下，X 的恢复集合相对 M70 新增 4 项且无丢失，但未保持 M71/L384 的恢复集合，因此不晋级，默认 M256 不变。</p>
+        <a href="m97-model-comparison.html">打开 M97 比较</a>
+      </article>
+      <article class="card">
+        <h2>M96 人工评测试点</h2>
+        <p>3 段开发视频 × 8 帧 × 26 点，共 624 个空白任务。A/B 独立、C 只处理分歧；目前人工行仍为 0，只用于未来模型评测。</p>
+        <a href="technical.html">查看技术边界</a>
+      </article>
+      <article class="card">
+        <h2>动态评分观察器</h2>
+        <p>在三段完整视频上同步观察骨架、候选事件、指标特征、证据帧和评分阻断。</p>
+        <a href="technical.html">查看独立启动说明</a>
+      </article>
+    </section>
+    <section class="facts">
+      <h2>当前事实</h2>
+      <ul>
+        <li>默认 Pose：RTMPose-M/Halpe26；YOLO Pose 为显式回滚基线。</li>
+        <li>M96 同帧诊断共 45 个相同帧/ROI：置信度≥0.5覆盖 M/L/X 为 0.734188/0.747863/0.769231；realtime/no-flip 单 ROI 延迟 P50 为 9.1244/10.6427/11.7265 ms。这些数字都不是准确率。</li>
+        <li>M97 在相同 258 个残差帧上得到 operational measured：M70 2327、M71/L384 2333、X384 2331。X 相对 M70 新增 4 且丢失 0，但相对 M71 新增 1、丢失 3，故不晋级。</li>
+        <li>范围：固定机位、单主球员、FS01/FS02/FS09、13 项 Pose-only 指标。</li>
+        <li>三视频：15,868 帧、546 个候选事件、2,366 条指标实例。</li>
+        <li>当前：2,291 条特征 measured；A～E 与正式 threshold 均为 0。</li>
+        <li>M96 Halpe26 pilot 已建立 24 帧/624 点空白任务；人工行 0、准确率 null、训练/导出/晋级均关闭。历史 1,976 个任务有重叠且只覆盖 14/26 点，不是可直接训练的清单。</li>
+        <li>Demo v1.2 的 <code>training_evaluation</code> 是训练复盘用 Beta 参考；只展示严格 13 项，null 不显示为 0。v1.1 成型/完成度字段仅兼容历史。</li>
+        <li>默认在 GPU 上运行 RTMPose-M/Halpe26；CPU 回退计算池默认限制为 4 线程。普通用户页默认不生成标注视频。</li>
+        <li>当前真实任务已验证 Beta 78/100、13/13，FS01/FS02/FS09 为 78/77/78，运行于 RTX 5070 Ti；正式教练分仍为 null，这不是准确率结论。</li>
+        <li>字段追溯：<a href="evidence/user-demo-v1.2/demo-contract.json">Demo v1.2 精确合同</a> · <a href="evidence/user-demo-v1.2/field-change-record.json">v1.2 字段留存记录</a>；M96 v1.1 历史证据未覆写。</li>
+        <li>当前文档服务由 <code>scripts/serve_current_docs.ps1</code> 只读托管本目录；其他报告和人工材料需使用各自的本地入口。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

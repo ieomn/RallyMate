@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_version": "pose-diagnostic-gate-acceptance-protocol-v1.0.0",
+  "protocol_id": "REPLACE_WITH_PREREGISTERED_PROTOCOL_ID",
+  "artifact_scope": "template_not_executable",
+  "created_at": "REPLACE_WITH_ISO_TIMESTAMP",
+  "registered_at": "REPLACE_WITH_EXTERNAL_REGISTRATION_TIMESTAMP",
+  "registered_by": {
+    "reviewer_id": "REPLACE_WITH_REVIEWER_ID",
+    "role": "REPLACE_WITH_ROLE"
+  },
+  "registration": {
+    "registry_id": "REPLACE_WITH_EXTERNAL_REGISTRY_ID",
+    "source_kind": "external_protocol_registry",
+    "source_sha256": "REPLACE_WITH_64_HEX_SHA256"
+  },
+  "quality_policy_version_under_review": "indicator-event-quality-v1.6.0",
+  "evaluation_version": "pose-diagnostic-evaluation-v1.0.0",
+  "matching_protocol_version": "exact-source-frame-and-diagnostic-scope-v1",
+  "diagnostic_types": [
+    "keypoint_jump",
+    "left_right_swap",
+    "primary_identity_ambiguity",
+    "source_track_switch"
+  ],
+  "expected_scopes": [
+    {
+      "scope_id": "REPLACE_WITH_SCOPE_ID",
+      "video_id": "REPLACE_WITH_VIDEO_ID",
+      "truth_pack_manifest_content_sha256": "REPLACE_WITH_64_HEX_SHA256",
+      "truth_pack_source_queue_sha256": "REPLACE_WITH_64_HEX_SHA256",
+      "queue_artifact_binding_sha256": "REPLACE_WITH_64_HEX_SHA256"
+    }
+  ],
+  "requirements": {
+    "require_all_expected_scopes": true,
+    "per_diagnostic_type": [
+      {
+        "diagnostic_type": "keypoint_jump",
+        "require_full_timeline_per_scope": true,
+        "minimum_evaluated_scopes": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_total_truth_positives": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_precision": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_recall": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_f1": "REPLACE_WITH_PREREGISTERED_RATE"
+      },
+      {
+        "diagnostic_type": "left_right_swap",
+        "require_full_timeline_per_scope": true,
+        "minimum_evaluated_scopes": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_total_truth_positives": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_precision": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_recall": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_f1": "REPLACE_WITH_PREREGISTERED_RATE"
+      },
+      {
+        "diagnostic_type": "primary_identity_ambiguity",
+        "require_full_timeline_per_scope": true,
+        "minimum_evaluated_scopes": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_total_truth_positives": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_precision": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_recall": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_f1": "REPLACE_WITH_PREREGISTERED_RATE"
+      },
+      {
+        "diagnostic_type": "source_track_switch",
+        "require_full_timeline_per_scope": true,
+        "minimum_evaluated_scopes": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_total_truth_positives": "REPLACE_WITH_PREREGISTERED_INTEGER",
+        "minimum_precision": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_recall": "REPLACE_WITH_PREREGISTERED_RATE",
+        "minimum_f1": "REPLACE_WITH_PREREGISTERED_RATE"
+      }
+    ]
+  },
+  "safety": {
+    "thresholds_are_A_to_E_scoring_thresholds": false,
+    "automatic_quality_policy_change_allowed": false,
+    "result_revealed_before_registration": false
+  }
+}

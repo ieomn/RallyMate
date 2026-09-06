@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/residual-pose-profile-context-ablation.schema.json",
+  "title": "RallyMate residual Pose profile context-matched ablation",
+  "type": "object",
+  "required": ["schema_version", "experiment_version", "generated_at", "status", "video_id", "sources", "artifacts", "settings", "crop_context_replay", "inference", "router_audits", "impacts", "counts", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "experiment_version": {"const": "residual-pose-profile-context-ablation-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["experimental_multicandidate_regression_free_not_production", "experimental_multicandidate_rejected_due_to_regression"]},
+    "video_id": {"type": "string", "minLength": 1},
+    "sources": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "settings": {"type": "object", "required": ["candidate_profile", "candidate_input_size_hw", "crop_contexts", "required_joints"]},
+    "crop_context_replay": {
+      "type": "object",
+      "required": ["replay_version", "target_frame_count", "source_frame_count_by_policy", "classification_uses_feature_values", "classification_uses_event_outcomes", "classification_uses_grades_or_thresholds", "changed_pose_requires_unique_exact_source_match"],
+      "properties": {
+        "classification_uses_feature_values": {"const": false},
+        "classification_uses_event_outcomes": {"const": false},
+        "classification_uses_grades_or_thresholds": {"const": false},
+        "changed_pose_requires_unique_exact_source_match": {"const": true}
+      }
+    },
+    "inference": {"type": "object", "required": ["target_frame_count", "pose_output_produced", "pose_output_missing", "frame_results"]},
+    "router_audits": {
+      "type": "object",
+      "required": ["profile_only", "multicandidate"],
+      "properties": {
+        "profile_only": {"$ref": "#/$defs/router"},
+        "multicandidate": {"allOf": [{"$ref": "#/$defs/router"}, {"type": "object", "required": ["equal_validity_different_pose_keeps_baseline"], "properties": {"equal_validity_different_pose_keeps_baseline": {"const": true}}}]}
+      },
+      "additionalProperties": false
+    },
+    "impacts": {
+      "type": "object",
+      "required": ["profile_only", "uniform_context_combined", "multicandidate"],
+      "additionalProperties": {"$ref": "#/$defs/impactPair"}
+    },
+    "counts": {"type": "object"},
+    "decision": {
+      "type": "object",
+      "required": ["production_default_changed", "candidate_promoted", "single_factor_pose_profile_ablation_completed", "multicandidate_current_video_regression_free", "next_required_evidence"],
+      "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}, "single_factor_pose_profile_ablation_completed": {"const": true}}
+    },
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_profile_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "crop_context_or_pose_profile_accuracy_claimed"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "automatic_profile_fallback_enabled": {"const": false},
+        "feature_gate_modified": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "crop_context_or_pose_profile_accuracy_claimed": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "router": {
+      "type": "object",
+      "required": ["target_frame_count", "selected_frame_count", "rejected_frame_count", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds", "required_joint_validity_regression_allowed"],
+      "properties": {
+        "selection_uses_feature_values": {"const": false},
+        "selection_uses_event_outcomes": {"const": false},
+        "selection_uses_grades_or_thresholds": {"const": false},
+        "required_joint_validity_regression_allowed": {"const": false}
+      }
+    },
+    "impact": {
+      "type": "object",
+      "required": ["status_transitions", "recovered_indicator_instance_count", "regressed_indicator_instance_count", "recovered_indicator_instances", "regressed_indicator_instances"]
+    },
+    "impactPair": {
+      "type": "object",
+      "required": ["feature_vector", "operational_measurement"],
+      "properties": {"feature_vector": {"$ref": "#/$defs/impact"}, "operational_measurement": {"$ref": "#/$defs/impact"}},
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

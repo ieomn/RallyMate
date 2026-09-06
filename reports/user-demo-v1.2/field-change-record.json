@@ -1,0 +1,424 @@
+{
+  "schema_version": "1.2.0",
+  "record_version": "rallymate-user-demo-field-change-record-v1.2.0",
+  "generated_at": "2026-09-04T18:56:21.2674377Z",
+  "status": "implemented_and_verified",
+  "purpose": "audit_user_demo_v1_2_training_evaluation_runtime_and_browser_field_changes",
+  "previous_evidence": {
+    "contract": {
+      "relative_path": "reports/m96-user-demo-v1.1/demo-contract.json",
+      "bytes": 6095,
+      "sha256": "99038a13a015ae67861f3d988297660222dec66318cf0a80919faa266e3e80bd"
+    },
+    "field_change_record": {
+      "relative_path": "reports/m96-user-demo-v1.1/field-change-record.json",
+      "bytes": 6483,
+      "sha256": "6d2f8763deeb595eeb3da9ec7d455df093878b026a3bb27be18883a0c689b731"
+    },
+    "summary": {
+      "relative_path": "reports/m96-user-demo-v1.1/summary.md",
+      "bytes": 3620,
+      "sha256": "f7e1df79ae26e4cda1fc21ea33e5e8f70c15623b934f833a63e736b625cfd3bb"
+    },
+    "preserved_without_overwrite": true
+  },
+  "result_contract": {
+    "http_api_version": "1.2.0",
+    "schema_version": "1.2.0",
+    "result_version": "rallymate-user-demo-result-v1.2.0",
+    "result_kind": "real_video_training_feedback_preview",
+    "primary_user_field": "training_evaluation",
+    "training_evaluation_version": "rallymate-training-evaluation-beta-v1.0.0",
+    "training_evaluation_fields": [
+      "evaluation_version",
+      "available",
+      "label_zh",
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "meaning_zh",
+      "evaluated_indicator_count",
+      "total_indicator_count",
+      "strengths_zh",
+      "priorities_zh",
+      "action_evaluations",
+      "indicator_evaluations",
+      "component_weights",
+      "formal_grade",
+      "is_formal_coach_score"
+    ],
+    "action_performance_field": "actions[].performance_assessment",
+    "action_performance_fields": [
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "evaluated_indicator_count",
+      "total_indicator_count"
+    ],
+    "action_indicator_field": "actions[].indicator_evaluations",
+    "indicator_evaluation_fields": [
+      "evaluation_version",
+      "indicator_id",
+      "event_code",
+      "name_zh",
+      "definition_zh",
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "observation_zh",
+      "suggestion_zh",
+      "measured_instance_count",
+      "total_instance_count",
+      "components",
+      "component_weights",
+      "representative_measurements",
+      "limitations_zh",
+      "formal_grade",
+      "is_formal_coach_score"
+    ],
+    "registered_indicator_order": [
+      "FS01-M02",
+      "FS01-M03",
+      "FS01-M04",
+      "FS01-M05",
+      "FS02-M02",
+      "FS02-M03",
+      "FS02-M04",
+      "FS02-M05",
+      "FS09-M01",
+      "FS09-M02",
+      "FS09-M03",
+      "FS09-M04",
+      "FS09-M05"
+    ],
+    "registered_indicator_counts": {
+      "FS01": 4,
+      "FS02": 4,
+      "FS09": 5,
+      "total": 13
+    },
+    "component_weights": {
+      "measured_instance_ratio": 0.3,
+      "required_feature_coverage": 0.2,
+      "median_feature_confidence": 0.15,
+      "repeatability": 0.25,
+      "scoring_evidence_ratio": 0.1
+    },
+    "component_weight_sum": 1.0,
+    "overall_aggregation": "rounded_arithmetic_mean_of_non_null_allowlisted_indicator_scores",
+    "action_aggregation": "rounded_arithmetic_mean_of_non_null_action_indicator_scores",
+    "null_and_zero_semantics": {
+      "unavailable_score": null,
+      "unavailable_label_zh": "暂无法评价",
+      "coerce_unavailable_to_zero": false,
+      "numeric_zero_allowed_only_when_actually_computed": true
+    },
+    "suggestion_claim_boundary": {
+      "high_score_wording": "training_goal_reference_not_proven_coach_fact",
+      "low_score_wording": "training_check_priority_not_proven_diagnosis",
+      "formal_coach_validation_claimed": false
+    },
+    "compatibility_fields": {
+      "retained": [
+        "final_demo_score",
+        "analysis_quality",
+        "display_score",
+        "actions[].formation_assessment",
+        "actions[].summary_zh",
+        "actions[].amplitudes"
+      ],
+      "primary_user_display": false,
+      "display_score_compatibility_alias_for": "analysis_quality",
+      "formation_assessment_is_performance_score": false
+    }
+  },
+  "runtime_contract": {
+    "fields": [
+      "accelerator",
+      "device_name",
+      "device_used",
+      "pose_backend",
+      "pose_profile",
+      "cpu_thread_limit",
+      "annotated_video_generated"
+    ],
+    "default_pose_preset": "rtmpose-m-halpe26-online",
+    "gpu_pose_backend": "rtmpose",
+    "cpu_thread_limit_default": 4,
+    "cpu_thread_override_precedence": [
+      "-CpuThreads",
+      "RALLYMATE_CPU_THREADS",
+      "default_4"
+    ],
+    "configured_pools": [
+      "torch_intra_op",
+      "torch_inter_op",
+      "opencv",
+      "openmp",
+      "mkl",
+      "openblas",
+      "numexpr"
+    ],
+    "cpu_limit_is_absolute_process_thread_count": false,
+    "ffmpeg_thread_count_guaranteed": false,
+    "cpu_thread_limit_nullable_for_legacy_jobs": true,
+    "browser_annotated_video_default": false,
+    "api_write_annotated_video_default_for_compatibility": true
+  },
+  "browser_contract": {
+    "primary_score_source": "result.training_evaluation",
+    "fallback_to_final_demo_score": false,
+    "strict_indicator_allowlist": true,
+    "strict_indicator_count": 13,
+    "null_rendering_zh": "暂无法评价",
+    "raw_json_visible": false,
+    "scoring_loop_report_link_visible": false,
+    "analysis_report_link_visible": false,
+    "only_optional_result_link": "annotated.mp4",
+    "raw_job_error_visible": false,
+    "public_error_code_and_status_mapping": true,
+    "query_job_id_recovery": {
+      "query_parameter": "job_id",
+      "accepted_format": "UUID",
+      "persisted_value": "opaque_job_id_only",
+      "token_in_url_or_local_storage": false
+    },
+    "static_asset_cache_versions": {
+      "user-demo.css": "1.2.0",
+      "user-demo.js": "1.2.0"
+    },
+    "local_storage_allowlist": [
+      "version",
+      "submitted_job_ids",
+      "completed_job_ids",
+      "failed_job_ids",
+      "active_job_id",
+      "current_index",
+      "total"
+    ],
+    "local_storage_forbidden": [
+      "token",
+      "authorization_header",
+      "video_bytes",
+      "file_object",
+      "file_name",
+      "result_payload"
+    ]
+  },
+  "legacy_job_behavior": {
+    "missing_indicator_features": {
+      "condition": "succeeded_job_missing_indicator-features.jsonl",
+      "http_status": 409,
+      "code": "legacy_job_requires_reanalysis",
+      "action": "reupload_and_reanalyze",
+      "returns_http_500": false
+    },
+    "missing_cpu_thread_limit": {
+      "condition": "successful_summary_created_before_cpu_thread_limit_was_persisted",
+      "returned_value": null,
+      "client_may_infer_default_4": false
+    }
+  },
+  "formal_scoring": {
+    "available": false,
+    "score_0_to_100": null,
+    "grade": null,
+    "status": "calibration_required",
+    "A_to_E_generated": false,
+    "upstream_grade_exposed": false,
+    "beta_score_may_fill_formal_score": false
+  },
+  "verified_real_result": {
+    "job_id": "d7c617d6-89d2-44f2-83e5-de25cb24b689",
+    "training_score_0_to_100": 78,
+    "evaluated_indicator_count": 13,
+    "total_indicator_count": 13,
+    "action_scores": {
+      "FS01": 78,
+      "FS02": 77,
+      "FS09": 78
+    },
+    "accelerator": "GPU",
+    "device_name": "NVIDIA GeForce RTX 5070 Ti",
+    "pose_backend": "rtmpose",
+    "pose_profile": "realtime",
+    "cpu_thread_limit": null,
+    "cpu_thread_limit_note": "legacy successful run created before thread-limit persistence",
+    "annotated_video_generated": true,
+    "annotated_video_note": "explicitly enabled for this run; browser default is false",
+    "formal_score_0_to_100": null,
+    "formal_grade": null,
+    "claim_boundary": "real-output_contract_replay_not_accuracy_formal_coach_score_or_model_promotion"
+  },
+  "claim_boundaries": {
+    "coach_score_generated": false,
+    "formal_A_to_E_generated": false,
+    "new_model_accuracy_claimed": false,
+    "recognition_accuracy_measured": false,
+    "technical_level_formally_measured": false,
+    "model_promotion_claimed": false,
+    "M96_or_M97_evidence_rewritten": false
+  },
+  "implementation_file_count": 15,
+  "implementation_files": [
+    {
+      "relative_path": "src/rallymate_service/training_evaluation.py",
+      "role": "Beta training evaluation builder and natural-language boundaries",
+      "bytes": 25502,
+      "sha256": "95649979e24955287efa6587a19aa42c00a059cbf2d4ac04c79fc14fe7ab082d"
+    },
+    {
+      "relative_path": "src/rallymate_service/user_demo.py",
+      "role": "Demo v1.2 result adapter and compatibility fields",
+      "bytes": 23363,
+      "sha256": "115f6f99f9fb81d5ef6bd4fe831459ddf7b0e2ec732122b72734108140ae5d5a"
+    },
+    {
+      "relative_path": "src/rallymate_service/api.py",
+      "role": "FastAPI v1.2.0 result endpoint and static Demo",
+      "bytes": 21204,
+      "sha256": "d427a1a5f33a499fbab3871c869b1db38f868094f309ac49e624b3783d761319"
+    },
+    {
+      "relative_path": "src/rallymate_service/config.py",
+      "role": "CPU thread-limit configuration and validation",
+      "bytes": 13563,
+      "sha256": "666f2ae96507a5aaa7db781bc66970faf4edcf8f9dd80ae832422584785e99c1"
+    },
+    {
+      "relative_path": "src/rallymate_service/worker.py",
+      "role": "Worker runtime pool configuration before model load",
+      "bytes": 10667,
+      "sha256": "4294ce655da8262237923ec5879ccb0e3cdeeb35d083a0019f32d6fbc1a8e271"
+    },
+    {
+      "relative_path": "src/rallymate_vision/pipeline.py",
+      "role": "Runtime thread and accelerator summary persistence",
+      "bytes": 44752,
+      "sha256": "91cc2e1bdc609bf9ea0e24bd12ee5dc39b54336bb1f6527cb03eaeac099e5ee9"
+    },
+    {
+      "relative_path": "scripts/run_worker.ps1",
+      "role": "Primary Worker CPU pool launcher contract",
+      "bytes": 2293,
+      "sha256": "bb351d232eaff8619db0586cb566c68b859801a4a31876aa57f69d44df84264b"
+    },
+    {
+      "relative_path": "scripts/run_rtmpose_worker.ps1",
+      "role": "RTMPose Worker CPU pool launcher contract",
+      "bytes": 2062,
+      "sha256": "4824192a2f977cdb7bfd7188b89f6b1e132b975cc90cc4bb9f811836e163e190"
+    },
+    {
+      "relative_path": "src/rallymate_service/assets/user-demo.html",
+      "role": "Demo v1.2 page, cache versions and annotated-video default",
+      "bytes": 7004,
+      "sha256": "691492757aabe683a6e9ea0dc185fa0c78eb82bfa57fe06ed3359db9bb6b85ab"
+    },
+    {
+      "relative_path": "src/rallymate_service/assets/user-demo.js",
+      "role": "Strict 13-item UI, friendly errors and job-id recovery",
+      "bytes": 36816,
+      "sha256": "ec8861d48f4290ed77ffdb45580907e3fc3279ea61d1b6e912bc8f07f2668483"
+    },
+    {
+      "relative_path": "src/rallymate_service/assets/user-demo.css",
+      "role": "Demo v1.2 presentation styles",
+      "bytes": 14087,
+      "sha256": "a1dcb6f89b1ec91219d629671aca3e4dcecf03f2cea51b5beef662b3f8a04389"
+    },
+    {
+      "relative_path": "tests/test_training_evaluation.py",
+      "role": "Beta scoring, wording and null-semantics tests",
+      "bytes": 4829,
+      "sha256": "b83e9766624e0eed6720d3d90db6490003f68720d6f524b9ed2e80f4f9f59209"
+    },
+    {
+      "relative_path": "tests/test_user_demo.py",
+      "role": "Demo result and browser contract tests",
+      "bytes": 16946,
+      "sha256": "eb7023fe1d3c42826491588781b6ccbe8f8a5e0e0d266edf1499b932def34817"
+    },
+    {
+      "relative_path": "tests/test_service.py",
+      "role": "Service integration, API version and legacy-job tests",
+      "bytes": 21997,
+      "sha256": "ee5ba0da27a56c260ca351dcabe6ec052fa5c9f60c57f77acf7e1d4eca6a16fa"
+    },
+    {
+      "relative_path": "tests/test_worker_cpu_threads.py",
+      "role": "CPU thread configuration, ordering and failure tests",
+      "bytes": 9506,
+      "sha256": "0ca115a60701870ebae8757ca6dbe15b150b1c40083d64e99cb5632c60e924e1"
+    }
+  ],
+  "report_inputs": {
+    "demo_contract": {
+      "relative_path": "reports/user-demo-v1.2/demo-contract.json",
+      "role": "Demo v1.2 exact field and behavior contract",
+      "bytes": 9064,
+      "sha256": "c8d1f87b940d2ef880d1e6b426b3565cd98b19b43ef3c08a7d920fd92e4fd88d"
+    },
+    "summary": {
+      "relative_path": "reports/user-demo-v1.2/summary.md",
+      "role": "Human-readable v1.2 field retention summary",
+      "bytes": 3881,
+      "sha256": "5bb8a61b6ca9eb11492b6ac16a93ca3da4b3bb452a1c2152befd8295349ded70"
+    },
+    "builder": null
+  },
+  "verification": {
+    "focused_tests": {
+      "command": "$env:PYTHONPATH=(Resolve-Path -LiteralPath 'src').Path; .venv\\Scripts\\python.exe -m unittest -v tests.test_training_evaluation tests.test_user_demo tests.test_service tests.test_worker_cpu_threads",
+      "passed": true,
+      "test_count": 31,
+      "duration_seconds": 0.382
+    },
+    "python_compile": {
+      "command": ".venv\\Scripts\\python.exe -m py_compile src/rallymate_service/training_evaluation.py src/rallymate_service/user_demo.py src/rallymate_service/api.py src/rallymate_service/config.py src/rallymate_service/worker.py src/rallymate_vision/pipeline.py tests/test_training_evaluation.py tests/test_user_demo.py tests/test_service.py tests/test_worker_cpu_threads.py",
+      "passed": true
+    },
+    "javascript_syntax": {
+      "command": "node --check src/rallymate_service/assets/user-demo.js",
+      "passed": true
+    },
+    "worker_powershell_syntax": {
+      "scripts": [
+        "scripts/run_worker.ps1",
+        "scripts/run_rtmpose_worker.ps1"
+      ],
+      "passed": true
+    },
+    "demo_contract_json_parse": {
+      "passed": true
+    },
+    "real_result_replay": {
+      "job_id": "d7c617d6-89d2-44f2-83e5-de25cb24b689",
+      "passed": true,
+      "training_score_0_to_100": 78,
+      "indicator_count": 13,
+      "formal_grade": null
+    },
+    "source_contract_checks": {
+      "schema_version_1_2_0_present": true,
+      "result_version_1_2_0_present": true,
+      "training_evaluation_present": true,
+      "exact_13_indicator_allowlist_present": true,
+      "component_weights_sum_to_one": true,
+      "performance_assessment_present": true,
+      "indicator_evaluations_present": true,
+      "unavailable_never_coerced_to_zero": true,
+      "formal_scoring_forced_unavailable": true,
+      "legacy_fields_retained": true,
+      "final_demo_score_frontend_fallback_absent": true,
+      "runtime_fields_present": true,
+      "cpu_default_4_present": true,
+      "annotated_checkbox_default_unchecked": true,
+      "raw_json_and_internal_report_links_absent": true,
+      "raw_job_error_not_rendered": true,
+      "query_job_id_recovery_present": true,
+      "static_asset_version_1_2_0_present": true
+    }
+  },
+  "self_hash_note": "The field-change-record SHA-256 is reported externally because a file cannot contain its own raw-file hash."
+}

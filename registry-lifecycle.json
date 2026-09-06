@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "registry_lifecycle_authority",
+  "authority_version": "registry-lifecycle-2026-08-30.1",
+  "roles": {
+    "runtime_feasibility": {
+      "kind": "metric_feasibility_registry",
+      "lifecycle": "current",
+      "relative_path": "metric-feasibility-pose-wave-v2.json",
+      "file_sha256": "e6b7c3a05da08a7bc96821de3662113111653e10ec46d20a037578ad3f6e3305",
+      "embedded_version": "pose-wave-2026-08-22.17",
+      "source_registry_version": "minimum-scoring-loop-2026-08-13.1"
+    },
+    "current_scoring_requirements": {
+      "kind": "indicator_scoring_requirements",
+      "lifecycle": "derived_current",
+      "relative_path": "indicator-scoring-requirements-pose-wave-v1.json",
+      "file_sha256": "552c4aeeff4bc68fb3fdf82e6a6e5a31ea978edbb5c87e0b8bf967d4b4f2fb95",
+      "embedded_version": "pose-wave-indicator-requirements-2026-08-22.17",
+      "source_registry_version": "pose-wave-2026-08-22.17"
+    }
+  },
+  "non_runtime_artifacts": {
+    "historical_feasibility": {
+      "kind": "metric_feasibility_registry",
+      "lifecycle": "historical",
+      "relative_path": "metric-feasibility.json",
+      "file_sha256": "5f7952c6d9514856ad979e27a556cfa2d80b188eaeffd8333a25f32aacf5dfcc",
+      "embedded_version": "minimum-scoring-loop-2026-08-13.1"
+    },
+    "measurement_plans": {
+      "kind": "metric_measurement_plans",
+      "lifecycle": "planning_only",
+      "relative_path": "metric-measurement-plans.json",
+      "file_sha256": "f22eb67ca23e927a8c7712221e8fee5cda16488a9133a65cb0c4eeb290132a08",
+      "embedded_version": "metric-measurement-plans-v0.2.0",
+      "source_registry_version": "pose-wave-2026-08-21.8"
+    }
+  }
+}

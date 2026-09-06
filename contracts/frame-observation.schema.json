@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/frame-observation.schema.json",
+  "title": "RallyMate Stage 1 Frame Observation",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "job_id",
+    "frame",
+    "quality",
+    "detections",
+    "poses",
+    "court",
+    "handoff"
+  ],
+  "properties": {
+    "schema_version": {"enum": ["1.0.0", "1.1.0"]},
+    "job_id": {"type": "string"},
+    "frame": {
+      "type": "object",
+      "required": [
+        "index",
+        "processed_index",
+        "timestamp_ms",
+        "width",
+        "height",
+        "coordinate_origin"
+      ],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "processed_index": {"type": "integer", "minimum": 0},
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "coordinate_origin": {"const": "top_left"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": [
+        "brightness",
+        "contrast",
+        "blur_score",
+        "status",
+        "warnings"
+      ],
+      "properties": {
+        "status": {"enum": ["ok", "warning"]},
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "detections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "class_name",
+          "confidence",
+          "bbox_px",
+          "bbox_normalized",
+          "center_px",
+          "center_normalized",
+          "downstream_systems",
+          "track_id"
+        ],
+        "properties": {
+          "class_name": {"enum": ["player", "ball", "racket"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "bbox_px": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {"type": "number", "minimum": 0}
+          },
+          "bbox_normalized": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {"type": "number", "minimum": 0, "maximum": 1}
+          },
+          "center_px": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {"type": "number", "minimum": 0}
+          },
+          "center_normalized": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {"type": "number", "minimum": 0, "maximum": 1}
+          },
+          "downstream_systems": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string"}
+          },
+          "track_id": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "poses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "person_track_id",
+          "confidence",
+          "coordinate_space",
+          "keypoint_format",
+          "keypoints"
+        ],
+        "properties": {
+          "person_track_id": {"type": "integer", "minimum": 1},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "coordinate_space": {"const": "original_frame"},
+          "keypoint_format": {"enum": ["coco17", "halpe26", "coco_wholebody133"]},
+          "keypoints": {
+            "type": "array",
+            "minItems": 17,
+            "maxItems": 133,
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "name",
+                "downstream_joint_id",
+                "x_px",
+                "y_px",
+                "x_normalized",
+                "y_normalized",
+                "confidence"
+              ],
+              "properties": {
+                "index": {"type": "integer", "minimum": 0, "maximum": 132},
+                "name": {"type": "string"},
+                "downstream_joint_id": {
+                  "oneOf": [
+                    {"type": "string", "pattern": "^J[0-9]{3}$"},
+                    {"type": "null"}
+                  ]
+                },
+                "x_px": {"type": "number", "minimum": 0},
+                "y_px": {"type": "number", "minimum": 0},
+                "x_normalized": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y_normalized": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "raw_x_px": {"type": "number"},
+                "raw_y_px": {"type": "number"},
+                "in_frame": {"type": "boolean"},
+                "raw_confidence": {"type": "number"},
+                "confidence_in_range": {"type": "boolean"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "court": {
+      "type": "object",
+      "required": [
+        "status",
+        "method",
+        "downstream_system",
+        "confidence",
+        "region_usable",
+        "calibration_usable",
+        "polygon_px",
+        "polygon_normalized"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "disabled",
+            "absent",
+            "uncertain",
+            "detected",
+            "calibrated"
+          ]
+        },
+        "method": {"type": "string"},
+        "downstream_system": {"const": "S05"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "region_usable": {"type": "boolean"},
+        "calibration_usable": {"type": "boolean"},
+        "polygon_px": {"type": "array"},
+        "polygon_normalized": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "required": [
+        "pose_player_link",
+        "coordinate_space",
+        "timebase",
+        "downstream_taxonomy"
+      ]
+    }
+  }
+}

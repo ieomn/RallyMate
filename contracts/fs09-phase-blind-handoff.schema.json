@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/fs09-phase-blind-handoff.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "bundle_version",
+    "bundle_id",
+    "generated_at",
+    "status",
+    "source_authority",
+    "scope",
+    "entrypoint",
+    "server_launcher",
+    "artifacts",
+    "content_root_sha256",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "bundle_version": {"const": "fs09-phase-blind-handoff-v1.1.0"},
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^m88-fs09-blind-[A-F0-9]{64}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?Z$"
+    },
+    "status": {"const": "technical_handoff_verified_external_protocol_required"},
+    "source_authority": {
+      "type": "object",
+      "required": [
+        "kind",
+        "manifest_sha256",
+        "manifest_generated_at",
+        "analysis_plan_sha256",
+        "plan_version",
+        "pack_version",
+        "task_contract_sha256",
+        "candidate_contract_sha256"
+      ],
+      "properties": {
+        "kind": {"const": "private_canonical_pack_content_hash"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "manifest_generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?Z$"
+        },
+        "analysis_plan_sha256": {"$ref": "#/$defs/sha256"},
+        "plan_version": {"type": "string", "minLength": 1},
+        "pack_version": {"type": "string", "minLength": 1},
+        "task_contract_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_contract_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["task_ids", "media_paths"],
+      "properties": {
+        "task_ids": {
+          "const": [
+            "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001",
+            "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002"
+          ]
+        },
+        "media_paths": {
+          "const": [
+            "media/task-001-browser.mp4",
+            "media/task-002-browser.mp4"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "entrypoint": {"const": "review.html"},
+    "server_launcher": {"const": "serve_fs09_phase_blind_handoff.py"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "OPERATOR_README.md"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "analysis-plan.json"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "fs09-phase-truth-workbench.css"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "fs09-phase-truth-workbench.js"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "media/task-001-browser.mp4"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "media/task-002-browser.mp4"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "review.html"}}}]},
+        {"allOf": [{"$ref": "#/$defs/artifact"}, {"properties": {"path": {"const": "serve_fs09_phase_blind_handoff.py"}}}]}
+      ],
+      "items": false
+    },
+    "content_root_sha256": {"$ref": "#/$defs/sha256"},
+    "safety": {
+      "type": "object",
+      "required": [
+        "relative_artifact_paths_only",
+        "canonical_manifest_included",
+        "tasks_file_included",
+        "sealed_candidates_included",
+        "compiled_truth_included",
+        "absolute_paths_included",
+        "candidate_boundaries_embedded_in_annotation_ui",
+        "candidate_phases_embedded_in_annotation_ui",
+        "coarse_target_selection_anchor_included",
+        "target_selection_anchor_is_candidate_boundary_or_phase",
+        "exact_candidate_boundaries_derivable_from_public_window",
+        "exact_candidate_boundaries_or_phases_embedded_in_bundle",
+        "isolated_public_bundle_only_required",
+        "coarse_anchor_is_confidential",
+        "candidate_contract_hash_is_confidential",
+        "sealed_candidates_artifact_hash_is_confidential",
+        "candidate_derived_hashes_are_confidential",
+        "candidate_derived_hashes_are_content_commitments_only",
+        "pose_overlay_embedded_in_annotation_ui",
+        "directory_listing_enabled",
+        "exact_server_allowlist",
+        "source_pack_required_for_authority_replay",
+        "hash_is_identity_or_signature",
+        "annotation_execution_authorized",
+        "external_protocol_receipt_verified",
+        "production_enabled",
+        "grade_generated",
+        "threshold_generated",
+        "maturity_promoted"
+      ],
+      "properties": {
+        "relative_artifact_paths_only": {"const": true},
+        "canonical_manifest_included": {"const": false},
+        "tasks_file_included": {"const": false},
+        "sealed_candidates_included": {"const": false},
+        "compiled_truth_included": {"const": false},
+        "absolute_paths_included": {"const": false},
+        "candidate_boundaries_embedded_in_annotation_ui": {"const": false},
+        "candidate_phases_embedded_in_annotation_ui": {"const": false},
+        "coarse_target_selection_anchor_included": {"const": true},
+        "target_selection_anchor_is_candidate_boundary_or_phase": {"const": false},
+        "exact_candidate_boundaries_derivable_from_public_window": {"const": false},
+        "exact_candidate_boundaries_or_phases_embedded_in_bundle": {"const": false},
+        "isolated_public_bundle_only_required": {"const": true},
+        "coarse_anchor_is_confidential": {"const": false},
+        "candidate_contract_hash_is_confidential": {"const": false},
+        "sealed_candidates_artifact_hash_is_confidential": {"const": false},
+        "candidate_derived_hashes_are_confidential": {"const": false},
+        "candidate_derived_hashes_are_content_commitments_only": {"const": true},
+        "pose_overlay_embedded_in_annotation_ui": {"const": false},
+        "directory_listing_enabled": {"const": false},
+        "exact_server_allowlist": {"const": true},
+        "source_pack_required_for_authority_replay": {"const": true},
+        "hash_is_identity_or_signature": {"const": false},
+        "annotation_execution_authorized": {"const": false},
+        "external_protocol_receipt_verified": {"const": false},
+        "production_enabled": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": {
+          "enum": [
+            "OPERATOR_README.md",
+            "analysis-plan.json",
+            "fs09-phase-truth-workbench.css",
+            "fs09-phase-truth-workbench.js",
+            "media/task-001-browser.mp4",
+            "media/task-002-browser.mp4",
+            "review.html",
+            "serve_fs09_phase_blind_handoff.py"
+          ]
+        },
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

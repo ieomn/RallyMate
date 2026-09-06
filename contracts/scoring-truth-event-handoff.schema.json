@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-event-handoff.schema.json",
+  "title": "RallyMate three-video event/phase technical handoff manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bundle_version",
+    "bundle_id",
+    "generated_at",
+    "status",
+    "source_authority",
+    "scope",
+    "entrypoint",
+    "server_launcher",
+    "artifacts",
+    "content_root_sha256",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "bundle_version": {"const": "scoring-truth-event-handoff-v1.0.0"},
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^m89-scoring-truth-event-[0-9A-F]{64}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?Z$"
+    },
+    "status": {"const": "technical_handoff_verified_external_protocol_required"},
+    "source_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source_contract_sha256",
+        "manifest_created_at",
+        "pack_version",
+        "source_status"
+      ],
+      "properties": {
+        "kind": {"const": "canonical_scoring_truth_event_source_projection_hash"},
+        "source_contract_sha256": {
+          "const": "19422D7256E54A4E0BF56A84590A2F6CFDB29C12DC1E2650EDE7013B054D082E"
+        },
+        "manifest_created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?Z$"
+        },
+        "pack_version": {"const": "scoring-truth-pack-v0.3.0"},
+        "source_status": {"const": "annotation_required_no_truth_or_thresholds_generated"}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_codes", "phase_keys_by_event", "tasks"],
+      "properties": {
+        "event_codes": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "FS01"},
+            {"const": "FS02"},
+            {"const": "FS09"}
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "phase_keys_by_event": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["FS01", "FS02", "FS09"],
+          "properties": {
+            "FS01": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "preload_ms"},
+                {"const": "takeoff_proxy_ms"},
+                {"const": "landing_proxy_ms"},
+                {"const": "redistribution_ms"},
+                {"const": "initiation_ms"}
+              ],
+              "items": false,
+              "minItems": 5,
+              "maxItems": 5
+            },
+            "FS02": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "direction_conversion_ms"},
+                {"const": "support_extension_proxy_ms"},
+                {"const": "lead_foot_motion_onset_proxy_ms"},
+                {"const": "first_step_slowdown_proxy_ms"}
+              ],
+              "items": false,
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "FS09": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "peak_speed_ms"},
+                {"const": "deceleration_peak_ms"},
+                {"const": "restabilization_onset_ms"},
+                {"const": "stable_control_onset_ms"}
+              ],
+              "items": false,
+              "minItems": 4,
+              "maxItems": 4
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "prefixItems": [
+            {"$ref": "#/$defs/task_1"},
+            {"$ref": "#/$defs/task_2"},
+            {"$ref": "#/$defs/task_3"}
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        }
+      }
+    },
+    "entrypoint": {"const": "review.html"},
+    "server_launcher": {"const": "serve_scoring_truth_event_handoff.py"},
+    "artifacts": {
+      "type": "array",
+      "prefixItems": [
+        {"$ref": "#/$defs/artifact_readme"},
+        {"$ref": "#/$defs/artifact_media_1"},
+        {"$ref": "#/$defs/artifact_media_2"},
+        {"$ref": "#/$defs/artifact_media_3"},
+        {"$ref": "#/$defs/artifact_review"},
+        {"$ref": "#/$defs/artifact_css"},
+        {"$ref": "#/$defs/artifact_js"},
+        {"$ref": "#/$defs/artifact_server"}
+      ],
+      "items": false,
+      "minItems": 8,
+      "maxItems": 8
+    },
+    "content_root_sha256": {"$ref": "#/$defs/sha256"},
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "annotation_execution_authorized",
+        "external_protocol_receipt_verified",
+        "mutation_enabled",
+        "import_enabled",
+        "export_enabled",
+        "full_video_only",
+        "machine_event_boundaries_embedded",
+        "phase_values_embedded",
+        "machine_keypoints_embedded",
+        "grades_or_thresholds_supported",
+        "source_paths_embedded",
+        "nonselected_videos_embedded",
+        "directory_listing_enabled",
+        "exact_server_allowlist",
+        "source_replay_optional_for_portable_validation",
+        "hash_is_identity_signature_or_trusted_timestamp",
+        "production_enabled",
+        "maturity_promoted"
+      ],
+      "properties": {
+        "annotation_execution_authorized": {"const": false},
+        "external_protocol_receipt_verified": {"const": false},
+        "mutation_enabled": {"const": false},
+        "import_enabled": {"const": false},
+        "export_enabled": {"const": false},
+        "full_video_only": {"const": true},
+        "machine_event_boundaries_embedded": {"const": false},
+        "phase_values_embedded": {"const": false},
+        "machine_keypoints_embedded": {"const": false},
+        "grades_or_thresholds_supported": {"const": false},
+        "source_paths_embedded": {"const": false},
+        "nonselected_videos_embedded": {"const": false},
+        "directory_listing_enabled": {"const": false},
+        "exact_server_allowlist": {"const": true},
+        "source_replay_optional_for_portable_validation": {"const": true},
+        "hash_is_identity_signature_or_trusted_timestamp": {"const": false},
+        "production_enabled": {"const": false},
+        "maturity_promoted": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "frame_rate_30000_1001": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {"const": 30000},
+        "denominator": {"const": 1001}
+      }
+    },
+    "frame_rate_30": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {"const": 30},
+        "denominator": {"const": 1}
+      }
+    },
+    "frame_rate_24": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {"const": 24},
+        "denominator": {"const": 1}
+      }
+    },
+    "task_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "video_id",
+        "media_path",
+        "sha256",
+        "frame_rate",
+        "full_video_review_required"
+      ],
+      "properties": {
+        "task_id": {"type": "string"},
+        "video_id": {"type": "string"},
+        "media_path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "frame_rate": {"type": "object"},
+        "full_video_review_required": {"type": "boolean"}
+      }
+    },
+    "task_1": {
+      "allOf": [
+        {"$ref": "#/$defs/task_base"},
+        {
+          "properties": {
+            "task_id": {"const": "m89:3ae77ee3271d67de171585a5c39ddd69:full-video-event-phase"},
+            "video_id": {"const": "3ae77ee3271d67de171585a5c39ddd69"},
+            "media_path": {"const": "media/3ae77ee3271d67de171585a5c39ddd69.mp4"},
+            "sha256": {"const": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9"},
+            "frame_rate": {"$ref": "#/$defs/frame_rate_30000_1001"},
+            "full_video_review_required": {"const": true}
+          }
+        }
+      ]
+    },
+    "task_2": {
+      "allOf": [
+        {"$ref": "#/$defs/task_base"},
+        {
+          "properties": {
+            "task_id": {"const": "m89:850cb0006b406c7176eeda8d711cd065:full-video-event-phase"},
+            "video_id": {"const": "850cb0006b406c7176eeda8d711cd065"},
+            "media_path": {"const": "media/850cb0006b406c7176eeda8d711cd065.mp4"},
+            "sha256": {"const": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9"},
+            "frame_rate": {"$ref": "#/$defs/frame_rate_30"},
+            "full_video_review_required": {"const": true}
+          }
+        }
+      ]
+    },
+    "task_3": {
+      "allOf": [
+        {"$ref": "#/$defs/task_base"},
+        {
+          "properties": {
+            "task_id": {"const": "m89:8d7754d0de6d315674013d5b69a0b6ba:full-video-event-phase"},
+            "video_id": {"const": "8d7754d0de6d315674013d5b69a0b6ba"},
+            "media_path": {"const": "media/8d7754d0de6d315674013d5b69a0b6ba.mp4"},
+            "sha256": {"const": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0"},
+            "frame_rate": {"$ref": "#/$defs/frame_rate_24"},
+            "full_video_review_required": {"const": true}
+          }
+        }
+      ]
+    },
+    "artifact_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": {"type": "string"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "artifact_readme": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "OPERATOR_README.md"}}}]
+    },
+    "artifact_media_1": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "media/3ae77ee3271d67de171585a5c39ddd69.mp4"}}}]
+    },
+    "artifact_media_2": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "media/850cb0006b406c7176eeda8d711cd065.mp4"}}}]
+    },
+    "artifact_media_3": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "media/8d7754d0de6d315674013d5b69a0b6ba.mp4"}}}]
+    },
+    "artifact_review": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "review.html"}}}]
+    },
+    "artifact_css": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "scoring-truth-event-workbench.css"}}}]
+    },
+    "artifact_js": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "scoring-truth-event-workbench.js"}}}]
+    },
+    "artifact_server": {
+      "allOf": [{"$ref": "#/$defs/artifact_base"}, {"properties": {"path": {"const": "serve_scoring_truth_event_handoff.py"}}}]
+    }
+  }
+}

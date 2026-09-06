@@ -1,0 +1,380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-promotion-report.schema.json",
+  "title": "RallyMate calibration promotion audit report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_scope",
+    "promotion_id",
+    "promotion_version",
+    "status",
+    "indicator_id",
+    "promoted_at",
+    "candidate",
+    "truth_authorization",
+    "independent_test_report",
+    "decision",
+    "feasibility_registry",
+    "output_asset",
+    "production_asset_created",
+    "test_only_asset_created",
+    "semantics"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.3.0"},
+    "artifact_scope": {
+      "enum": [
+        "calibration_promotion_report",
+        "synthetic_test_only_calibration_promotion_report"
+      ]
+    },
+    "promotion_id": {"type": "string", "minLength": 1},
+    "promotion_version": {"type": "string", "minLength": 1},
+    "status": {"const": "promoted"},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "promoted_at": {"type": "string", "format": "date-time"},
+    "candidate": {
+      "type": "object",
+      "required": ["candidate_id", "candidate_version", "backend", "content_sha256"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "candidate_version": {"type": "string", "minLength": 1},
+        "backend": {"enum": ["threshold_rule", "ordinal_regression"]},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "truth_authorization": {"$ref": "#/$defs/truthAuthorization"},
+    "independent_test_report": {
+      "type": "object",
+      "required": [
+        "report_version",
+        "content_sha256",
+        "status",
+        "approved_before_promotion",
+        "acceptance_protocol_id",
+        "acceptance_protocol_version",
+        "acceptance_protocol_sha256",
+        "evaluated_at"
+      ],
+      "properties": {
+        "report_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "status": {"const": "passed"},
+        "approved_before_promotion": {"const": false},
+        "acceptance_protocol_id": {"type": "string", "minLength": 1},
+        "acceptance_protocol_version": {"type": "string", "minLength": 1},
+        "acceptance_protocol_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluated_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "independent_test_source_replay": {"$ref": "#/$defs/sourceReplay"},
+    "promotion_input_snapshots": {"$ref": "#/$defs/promotionInputSnapshots"},
+    "decision": {
+      "type": "object",
+      "required": [
+        "decision_id",
+        "decision_version",
+        "content_sha256",
+        "reviewer_id",
+        "decided_at",
+        "source_kind",
+        "source_sha256",
+        "registered_at"
+      ],
+      "properties": {
+        "decision_id": {"type": "string", "minLength": 1},
+        "decision_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "reviewer_id": {"type": "string", "minLength": 1},
+        "decided_at": {"type": "string", "format": "date-time"},
+        "source_kind": {"enum": ["human_promotion_record", "synthetic_test_fixture"]},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "feasibility_registry": {
+      "type": "object",
+      "required": ["registry_version", "content_sha256", "indicator_level", "registry_mutated"],
+      "properties": {
+        "registry_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "indicator_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]},
+        "registry_mutated": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "maturity_evidence": {"$ref": "#/$defs/maturityEvidenceBinding"},
+    "output_asset": {
+      "type": "object",
+      "required": ["artifact_scope", "backend", "calibration_version", "content_sha256"],
+      "properties": {
+        "artifact_scope": {"enum": ["production", "test_only"]},
+        "backend": {"enum": ["threshold_rule", "ordinal_regression"]},
+        "calibration_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "production_asset_created": {"type": "boolean"},
+    "test_only_asset_created": {"type": "boolean"},
+    "semantics": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "truthAuthorization": {
+      "type": "object",
+      "required": ["binding_version", "status", "canonicalization", "authorization_id", "event_protocol_authorization", "intake", "revision_lineage", "input_files", "binding_sha256"],
+      "properties": {
+        "binding_version": {"const": "scoring-truth-calibration-authorization-binding-v1.0.0"},
+        "status": {"enum": ["verified_authorized_intake_for_calibration", "synthetic_test_only_no_production_authority"]},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "authorization_id": {"type": "string", "minLength": 1},
+        "event_protocol_authorization": {"type": "object"},
+        "intake": {"type": "object"},
+        "revision_lineage": {"type": "object"},
+        "input_files": {"type": "object"},
+        "binding_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "maturityEvidenceBinding": {
+      "type": "object",
+      "required": [
+        "bundle_id",
+        "bundle_version",
+        "artifact_scope",
+        "indicator_id",
+        "content_sha256",
+        "final_transition_sha256",
+        "final_registry",
+        "canonicalization"
+      ],
+      "properties": {
+        "bundle_id": {"type": "string", "minLength": 1},
+        "bundle_version": {"const": "maturity-evidence-bundle-v1"},
+        "artifact_scope": {
+          "enum": [
+            "maturity_evidence",
+            "synthetic_test_only_maturity_evidence"
+          ]
+        },
+        "indicator_id": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "final_transition_sha256": {"$ref": "#/$defs/sha256"},
+        "final_registry": {
+          "type": "object",
+          "required": [
+            "registry_version",
+            "content_sha256",
+            "indicator_id",
+            "indicator_level"
+          ],
+          "properties": {
+            "registry_version": {"type": "string", "minLength": 1},
+            "content_sha256": {"$ref": "#/$defs/sha256"},
+            "indicator_id": {"type": "string", "minLength": 1},
+            "indicator_level": {"const": "F4"}
+          },
+          "additionalProperties": false
+        },
+        "canonicalization": {"const": "rallymate-canonical-json-v1"}
+      },
+      "additionalProperties": false
+    },
+    "sourceReplay": {
+      "type": "object",
+      "required": ["samples", "indicator_requirements"],
+      "properties": {
+        "samples": {"$ref": "#/$defs/sampleReplaySource"},
+        "indicator_requirements": {"$ref": "#/$defs/requirementsReplaySource"}
+      },
+      "additionalProperties": false
+    },
+    "sampleReplaySource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["source_kind", "canonical_sha256", "source_record_count", "sealed_record_count"],
+          "properties": {
+            "source_kind": {"const": "in_memory_canonical_json"},
+            "canonical_sha256": {"$ref": "#/$defs/sha256"},
+            "source_record_count": {"type": "integer", "minimum": 1},
+            "sealed_record_count": {"type": "integer", "minimum": 1}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["source_kind", "source_path", "raw_sha256", "canonical_sha256", "source_record_count", "sealed_record_count"],
+          "properties": {
+            "source_kind": {"const": "file_bytes"},
+            "source_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"$ref": "#/$defs/sha256"},
+            "canonical_sha256": {"$ref": "#/$defs/sha256"},
+            "source_record_count": {"type": "integer", "minimum": 1},
+            "sealed_record_count": {"type": "integer", "minimum": 1}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "requirementsReplaySource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["source_kind", "canonical_sha256"],
+          "properties": {
+            "source_kind": {"const": "in_memory_canonical_json"},
+            "canonical_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["source_kind", "source_path", "raw_sha256", "canonical_sha256"],
+          "properties": {
+            "source_kind": {"const": "file_bytes"},
+            "source_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"$ref": "#/$defs/sha256"},
+            "canonical_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "promotionInputSnapshots": {
+      "type": "object",
+      "required": [
+        "candidate",
+        "independent_test_report",
+        "independent_test_protocol",
+        "decision",
+        "maturity_evidence",
+        "registry_lifecycle_authority"
+      ],
+      "properties": {
+        "candidate": {"$ref": "#/$defs/objectInputSnapshot"},
+        "independent_test_report": {"$ref": "#/$defs/objectInputSnapshot"},
+        "independent_test_protocol": {"$ref": "#/$defs/objectInputSnapshot"},
+        "decision": {"$ref": "#/$defs/objectInputSnapshot"},
+        "maturity_evidence": {"$ref": "#/$defs/objectInputSnapshot"},
+        "registry_lifecycle_authority": {"$ref": "#/$defs/registryLifecycleInputSnapshot"}
+      },
+      "additionalProperties": false
+    },
+    "objectInputSnapshot": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["source_kind", "canonical_sha256"],
+          "properties": {
+            "source_kind": {"const": "in_memory_canonical_json"},
+            "canonical_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["source_kind", "source_path", "raw_sha256", "canonical_sha256"],
+          "properties": {
+            "source_kind": {"const": "file_bytes"},
+            "source_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"$ref": "#/$defs/sha256"},
+            "canonical_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "registryLifecycleInputSnapshot": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["source_kind", "artifact_canonical_sha256"],
+          "properties": {
+            "source_kind": {"const": "in_memory_canonical_json"},
+            "artifact_canonical_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "source_kind",
+            "manifest_path",
+            "manifest_raw_sha256",
+            "authority_version",
+            "authority_slot",
+            "artifact_path",
+            "artifact_raw_sha256",
+            "artifact_canonical_sha256",
+            "embedded_version"
+          ],
+          "properties": {
+            "source_kind": {"const": "registry_lifecycle_verified_file_bytes"},
+            "manifest_path": {"type": "string", "minLength": 1},
+            "manifest_raw_sha256": {"$ref": "#/$defs/sha256"},
+            "authority_version": {"type": "string", "minLength": 1},
+            "authority_slot": {"const": "roles.runtime_feasibility"},
+            "artifact_path": {"type": "string", "minLength": 1},
+            "artifact_raw_sha256": {"$ref": "#/$defs/sha256"},
+            "artifact_canonical_sha256": {"$ref": "#/$defs/sha256"},
+            "embedded_version": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"artifact_scope": {"const": "calibration_promotion_report"}},
+        "required": ["artifact_scope"]
+      },
+      "then": {
+        "required": ["maturity_evidence", "independent_test_source_replay", "promotion_input_snapshots"],
+        "properties": {
+          "production_asset_created": {"const": true},
+          "test_only_asset_created": {"const": false},
+          "feasibility_registry": {"properties": {"indicator_level": {"const": "F4"}}},
+          "output_asset": {"properties": {"artifact_scope": {"const": "production"}}},
+          "truth_authorization": {"properties": {"status": {"const": "verified_authorized_intake_for_calibration"}}},
+          "maturity_evidence": {
+            "properties": {"artifact_scope": {"const": "maturity_evidence"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_scope": {"const": "synthetic_test_only_calibration_promotion_report"}
+        },
+        "required": ["artifact_scope"]
+      },
+      "then": {
+        "properties": {
+          "production_asset_created": {"const": false},
+          "test_only_asset_created": {"const": true},
+          "independent_test_source_replay": false,
+          "promotion_input_snapshots": false,
+          "output_asset": {"properties": {"artifact_scope": {"const": "test_only"}}},
+          "truth_authorization": {"properties": {"status": {"const": "synthetic_test_only_no_production_authority"}}},
+          "maturity_evidence": {
+            "properties": {
+              "artifact_scope": {
+                "const": "synthetic_test_only_maturity_evidence"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

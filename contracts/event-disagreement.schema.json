@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/event-disagreement.schema.json",
+  "title": "RallyMate cross-model candidate event disagreement report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_version",
+    "status",
+    "semantics",
+    "inputs",
+    "matching",
+    "threshold_results"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "cross-model-event-disagreement/1.0.0"},
+    "status": {"const": "compared_candidate_events_no_ground_truth"},
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy_claim", "ground_truth_provided", "interpretation"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "interpretation": {"type": "string", "minLength": 1}
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "right"],
+      "properties": {
+        "left": {"$ref": "#/$defs/input"},
+        "right": {"$ref": "#/$defs/input"}
+      }
+    },
+    "matching": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "one_to_one",
+        "order_preserving_within_group",
+        "grouping_keys",
+        "minimum_segment_iou_thresholds",
+        "delta_convention",
+        "threshold_semantics"
+      ],
+      "properties": {
+        "strategy": {"const": "ordered_dynamic_programming_max_match_count_then_total_iou"},
+        "one_to_one": {"const": true},
+        "order_preserving_within_group": {"const": true},
+        "grouping_keys": {
+          "const": ["event_code", "person_track_id"]
+        },
+        "minimum_segment_iou_thresholds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+        },
+        "delta_convention": {"const": "right_minus_left"},
+        "threshold_semantics": {"const": "candidate_matching_sensitivity_only_not_scoring_threshold"}
+      }
+    },
+    "threshold_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/thresholdResult"}
+    }
+  },
+  "$defs": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "event_count", "sha256", "hash_scope", "source"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "event_count": {"type": "integer", "minimum": 0},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "hash_scope": {"enum": ["raw_jsonl_bytes", "canonical_event_records"]},
+        "source": {"type": ["string", "null"]}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "left_event_count",
+        "right_event_count",
+        "matched_count",
+        "left_unmatched_count",
+        "right_unmatched_count",
+        "left_to_right_match_rate",
+        "right_to_left_match_rate"
+      ],
+      "properties": {
+        "left_event_count": {"type": "integer", "minimum": 0},
+        "right_event_count": {"type": "integer", "minimum": 0},
+        "matched_count": {"type": "integer", "minimum": 0},
+        "left_unmatched_count": {"type": "integer", "minimum": 0},
+        "right_unmatched_count": {"type": "integer", "minimum": 0},
+        "left_to_right_match_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "right_to_left_match_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "aggregate": {
+      "allOf": [{"$ref": "#/$defs/counts"}],
+      "type": "object",
+      "required": ["mean_segment_iou"],
+      "properties": {
+        "mean_segment_iou": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "differenceMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_difference_ms",
+        "end_difference_ms",
+        "center_difference_ms",
+        "duration_difference_ms"
+      ],
+      "properties": {
+        "start_difference_ms": {"type": ["number", "null"]},
+        "end_difference_ms": {"type": ["number", "null"]},
+        "center_difference_ms": {"type": ["number", "null"]},
+        "duration_difference_ms": {"type": ["number", "null"]}
+      }
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "left_event_id",
+        "right_event_id",
+        "event_code",
+        "person_track_id",
+        "segment_iou",
+        "start_difference_ms",
+        "end_difference_ms",
+        "center_difference_ms",
+        "duration_difference_ms"
+      ],
+      "properties": {
+        "left_event_id": {"type": "string", "minLength": 1},
+        "right_event_id": {"type": "string", "minLength": 1},
+        "event_code": {"type": "string", "minLength": 1},
+        "person_track_id": {"type": "integer"},
+        "segment_iou": {"type": "number", "minimum": 0, "maximum": 1},
+        "start_difference_ms": {"type": "integer"},
+        "end_difference_ms": {"type": "integer"},
+        "center_difference_ms": {"type": "number"},
+        "duration_difference_ms": {"type": "integer"}
+      }
+    },
+    "eventStub": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_code", "person_track_id", "start_ms", "end_ms"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_code": {"type": "string", "minLength": 1},
+        "person_track_id": {"type": "integer"},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 1}
+      }
+    },
+    "thresholdResult": {
+      "allOf": [{"$ref": "#/$defs/counts"}],
+      "type": "object",
+      "required": [
+        "minimum_segment_iou",
+        "mean_segment_iou",
+        "signed_mean_differences_ms",
+        "mean_absolute_differences_ms",
+        "by_event_code",
+        "by_group",
+        "matches",
+        "unmatched"
+      ],
+      "properties": {
+        "minimum_segment_iou": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "mean_segment_iou": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "signed_mean_differences_ms": {"$ref": "#/$defs/differenceMap"},
+        "mean_absolute_differences_ms": {"$ref": "#/$defs/differenceMap"},
+        "by_event_code": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/aggregate"}
+        },
+        "by_group": {
+          "type": "object",
+          "additionalProperties": {
+            "allOf": [{"$ref": "#/$defs/aggregate"}],
+            "type": "object",
+            "required": ["event_code", "person_track_id"],
+            "properties": {
+              "event_code": {"type": "string", "minLength": 1},
+              "person_track_id": {"type": "integer"}
+            }
+          }
+        },
+        "matches": {"type": "array", "items": {"$ref": "#/$defs/match"}},
+        "unmatched": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["left_event_ids", "right_event_ids", "left_events", "right_events"],
+          "properties": {
+            "left_event_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+            "right_event_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+            "left_events": {"type": "array", "items": {"$ref": "#/$defs/eventStub"}},
+            "right_events": {"type": "array", "items": {"$ref": "#/$defs/eventStub"}}
+          }
+        }
+      }
+    }
+  }
+}

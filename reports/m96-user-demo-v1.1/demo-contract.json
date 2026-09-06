@@ -1,0 +1,175 @@
+{
+  "artifact_version": "m96-user-demo-contract-v1.1.0",
+  "schema_version": "1.1.0",
+  "result_version": "rallymate-user-demo-result-v1.1.0",
+  "status": "implemented_and_verified",
+  "endpoint": {
+    "method": "GET",
+    "path": "/v1/jobs/{job_id}/demo-result",
+    "ready_job_status": "succeeded",
+    "response_status": 200
+  },
+  "registered_actions": {
+    "FS01": {
+      "label_zh": "准备与分腿垫步",
+      "indicator_ids": ["FS01-M02", "FS01-M03", "FS01-M04", "FS01-M05"]
+    },
+    "FS02": {
+      "label_zh": "第一步启动",
+      "indicator_ids": ["FS02-M02", "FS02-M03", "FS02-M04", "FS02-M05"]
+    },
+    "FS09": {
+      "label_zh": "制动与重新稳定",
+      "indicator_ids": ["FS09-M01", "FS09-M02", "FS09-M03", "FS09-M04", "FS09-M05"]
+    }
+  },
+  "score_contracts": {
+    "final_demo_score": {
+      "label_zh": "动作信息成型参考分",
+      "value_field": "value_0_to_100",
+      "minimum": 0,
+      "maximum": 100,
+      "semantics": "recognizable_motion_outline_and_amplitude_information_formation_only",
+      "meaning_zh": "只表示当前视频中可识别的动作轮廓与幅度信息成型程度，不是技术水平、教练评分、识别准确率或正式 A～E。",
+      "is_formal_technique_score": false,
+      "is_coach_score": false,
+      "is_recognition_accuracy": false,
+      "score_version": "recognizable-motion-information-v1.0.0",
+      "aggregation": "unweighted_mean_of_three_action_reference_scores",
+      "aggregation_inputs": ["FS01", "FS02", "FS09"],
+      "component_weights": {
+        "recognizable_outline": 0.3,
+        "measured_indicator_ratio": 0.3,
+        "measurement_coverage": 0.2,
+        "amplitude_type_coverage": 0.2
+      },
+      "rounding": "round_each_action_reference_then_round_unweighted_mean_and_clamp_to_0_100"
+    },
+    "analysis_quality": {
+      "label_zh": "分析完成度",
+      "value_field": "value_0_to_100",
+      "minimum": 0,
+      "maximum": 100,
+      "meaning_zh": "只表示本次视频中动作片段与可测特征的完整程度，不是球员技术水平、教练评分或正式 A～E。",
+      "is_formal_technique_score": false,
+      "components": [
+        "observed_action_family_ratio_percent",
+        "measured_unique_indicator_ratio_percent",
+        "mean_action_measurement_coverage_percent"
+      ],
+      "component_weights": {
+        "observed_action_family_ratio": 0.3,
+        "measured_unique_indicator_ratio": 0.45,
+        "mean_action_measurement_coverage": 0.25
+      }
+    },
+    "display_score": {
+      "status": "retained_for_backward_compatibility",
+      "compatibility_alias_for": "analysis_quality",
+      "value_must_equal": "analysis_quality.value_0_to_100",
+      "is_formal_technique_score": false
+    }
+  },
+  "action_contract": {
+    "required_fields": [
+      "event_code",
+      "name_zh",
+      "status",
+      "detected_segments",
+      "registered_indicator_count",
+      "measured_indicator_count",
+      "measurement_coverage_percent",
+      "amplitudes",
+      "formation_assessment",
+      "summary_zh",
+      "feedback_zh"
+    ],
+    "formation_assessment": {
+      "required_fields": [
+        "status",
+        "label_zh",
+        "reference_score_0_to_100",
+        "meaning_zh",
+        "explanation_zh",
+        "components",
+        "component_weights",
+        "score_version"
+      ],
+      "status_enum": [
+        "not_observed",
+        "well_formed_information",
+        "partially_formed_information",
+        "limited_information"
+      ],
+      "reference_score_minimum": 0,
+      "reference_score_maximum": 100,
+      "meaning_zh": "只描述当前视频中可识别的动作轮廓与幅度信息成型程度，不评价动作好坏。",
+      "components": [
+        "recognizable_outline_percent",
+        "measured_indicator_ratio_percent",
+        "measurement_coverage_percent",
+        "amplitude_type_coverage_percent"
+      ],
+      "status_thresholds": {
+        "not_observed": "detected_segments == 0",
+        "well_formed_information": "detected_segments > 0 and reference_score >= 85",
+        "partially_formed_information": "detected_segments > 0 and 60 <= reference_score < 85",
+        "limited_information": "detected_segments > 0 and reference_score < 60"
+      }
+    },
+    "amplitude_semantics": "descriptive_motion_measurement_not_coaching_threshold",
+    "unknown_indicator_ids_count_toward_scores": false
+  },
+  "formal_scoring_invariants": {
+    "available": false,
+    "score_0_to_100": null,
+    "grade": null,
+    "status": "calibration_required",
+    "A_to_E_generated": false,
+    "upstream_grade_exposed": false
+  },
+  "browser_batch_contract": {
+    "file_input_multiple": true,
+    "backend_job_api_changed": false,
+    "submission_order": "selected_file_order",
+    "submission_mode": "one_file_per_POST_v1_jobs_then_poll_then_demo_result",
+    "progress_label": "one_based_current_index_over_total",
+    "completed_results_retained": true,
+    "completed_results_switchable": true,
+    "local_storage_key": "rallymate-demo-batch-v1",
+    "local_storage_schema_version": "1.0.0",
+    "local_storage_allowlist": [
+      "version",
+      "submitted_job_ids",
+      "completed_job_ids",
+      "failed_job_ids",
+      "active_job_id",
+      "current_index",
+      "total"
+    ],
+    "local_storage_forbidden": [
+      "token",
+      "authorization_header",
+      "video_bytes",
+      "file_object",
+      "file_name",
+      "result_payload"
+    ],
+    "refresh_recovery": {
+      "submitted_jobs": "reload_status_poll_if_active_and_fetch_demo_result",
+      "access_token": "must_be_reentered_when_required",
+      "unsubmitted_files": "cannot_be_recovered_and_must_be_reselected"
+    }
+  },
+  "legacy_job_contract": {
+    "condition": "job_status_succeeded_and_indicator-features.jsonl_missing",
+    "http_status": 409,
+    "detail": {
+      "code": "legacy_job_requires_reanalysis",
+      "required_artifact": "indicator-features.jsonl",
+      "action": "reupload_and_reanalyze",
+      "message_zh_required": true
+    },
+    "http_500_allowed_for_missing_artifact": false
+  }
+}

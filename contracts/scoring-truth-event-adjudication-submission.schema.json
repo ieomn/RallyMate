@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-event-adjudication-submission.schema.json",
+  "title": "RallyMate M93 canonical reviewer-C event/phase adjudication submission",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "adjudication_version", "status", "artifact_scope", "execution_id",
+    "adjudication_bundle", "authorization_binding_sha256", "reviewer_slot", "reviewer_id",
+    "source_submissions", "video_adjudications", "decisions", "adjudicated_at",
+    "adjudication_submission_revision_sha256", "exported_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "adjudication_version": {"const": "scoring-truth-event-adjudication-submission-v1.0.0"},
+    "status": {"const": "event_phase_adjudication_finalized"},
+    "artifact_scope": {"const": "independent_full_video_event_phase_adjudication"},
+    "execution_id": {"type": "string", "pattern": "^m93-event-execution-[0-9A-F]{64}$"},
+    "adjudication_bundle": {"$ref": "#/$defs/adjudication_bundle_ref"},
+    "authorization_binding_sha256": {"$ref": "#/$defs/sha256"},
+    "reviewer_slot": {"const": "C"},
+    "reviewer_id": {"$ref": "#/$defs/identifier"},
+    "source_submissions": {
+      "type": "object", "additionalProperties": false, "required": ["A", "B"],
+      "properties": {"A": {"$ref": "#/$defs/source_summary_a"}, "B": {"$ref": "#/$defs/source_summary_b"}}
+    },
+    "video_adjudications": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "prefixItems": [{"$ref": "#/$defs/video_review1"}, {"$ref": "#/$defs/video_review2"}, {"$ref": "#/$defs/video_review3"}],
+      "items": false
+    },
+    "decisions": {"type": "array", "items": {"$ref": "#/$defs/decision"}},
+    "adjudicated_at": {"$ref": "#/$defs/submission_timestamp"},
+    "adjudication_submission_revision_sha256": {"$ref": "#/$defs/sha256"},
+    "exported_at": {"$ref": "#/$defs/submission_timestamp"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+    "submission_timestamp": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$"},
+    "adjudication_bundle_ref": {
+      "type": "object", "additionalProperties": false, "required": ["bundle_id", "manifest_binding_sha256"],
+      "properties": {"bundle_id": {"type": "string", "pattern": "^m93-event-adjudication-C-[0-9A-F]{64}$"}, "manifest_binding_sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "execution_bundle_ref": {
+      "type": "object", "additionalProperties": false, "required": ["bundle_id", "manifest_binding_sha256"],
+      "properties": {"bundle_id": {"type": "string", "pattern": "^m93-event-execution-[AB]-[0-9A-F]{64}$"}, "manifest_binding_sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "video_revision_map": {
+      "type": "object", "additionalProperties": false,
+      "required": ["3ae77ee3271d67de171585a5c39ddd69", "850cb0006b406c7176eeda8d711cd065", "8d7754d0de6d315674013d5b69a0b6ba"],
+      "properties": {
+        "3ae77ee3271d67de171585a5c39ddd69": {"$ref": "#/$defs/sha256"},
+        "850cb0006b406c7176eeda8d711cd065": {"$ref": "#/$defs/sha256"},
+        "8d7754d0de6d315674013d5b69a0b6ba": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source_summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["submission_id", "raw_sha256", "annotator_id", "execution_bundle", "submission_revision_sha256", "video_revision_sha256_by_video"],
+      "properties": {
+        "submission_id": {"type": "string", "pattern": "^submission-[0-9A-F]{64}$"}, "raw_sha256": {"$ref": "#/$defs/sha256"},
+        "annotator_id": {"$ref": "#/$defs/identifier"}, "execution_bundle": {"$ref": "#/$defs/execution_bundle_ref"},
+        "submission_revision_sha256": {"$ref": "#/$defs/sha256"}, "video_revision_sha256_by_video": {"$ref": "#/$defs/video_revision_map"}
+      }
+    },
+    "source_summary_a": {"$ref": "#/$defs/source_summary", "properties": {"execution_bundle": {"properties": {"bundle_id": {"type": "string", "pattern": "^m93-event-execution-A-[0-9A-F]{64}$"}}}}},
+    "source_summary_b": {"$ref": "#/$defs/source_summary", "properties": {"execution_bundle": {"properties": {"bundle_id": {"type": "string", "pattern": "^m93-event-execution-B-[0-9A-F]{64}$"}}}}},
+    "video_review": {
+      "type": "object", "additionalProperties": false,
+      "required": ["task_id", "video_id", "completed", "notes", "adjudicated_at", "review_revision_sha256"],
+      "properties": {"task_id": {"type": "string"}, "video_id": {"type": "string"}, "completed": {"const": true}, "notes": {"type": "string"}, "adjudicated_at": {"$ref": "#/$defs/submission_timestamp"}, "review_revision_sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "video_review1": {"$ref": "#/$defs/video_review", "properties": {"task_id": {"const": "m89:3ae77ee3271d67de171585a5c39ddd69:full-video-event-phase"}, "video_id": {"const": "3ae77ee3271d67de171585a5c39ddd69"}}},
+    "video_review2": {"$ref": "#/$defs/video_review", "properties": {"task_id": {"const": "m89:850cb0006b406c7176eeda8d711cd065:full-video-event-phase"}, "video_id": {"const": "850cb0006b406c7176eeda8d711cd065"}}},
+    "video_review3": {"$ref": "#/$defs/video_review", "properties": {"task_id": {"const": "m89:8d7754d0de6d315674013d5b69a0b6ba:full-video-event-phase"}, "video_id": {"const": "8d7754d0de6d315674013d5b69a0b6ba"}}},
+    "source_video_revisions": {"type": "object", "additionalProperties": false, "required": ["A", "B"], "properties": {"A": {"$ref": "#/$defs/sha256"}, "B": {"$ref": "#/$defs/sha256"}}},
+    "source_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role_slot", "annotation_id", "annotation_revision_sha256", "relation"],
+      "properties": {"role_slot": {"enum": ["A", "B"]}, "annotation_id": {"type": "string", "pattern": "^m93:[AB]:[A-Za-z0-9._:/-]+$"}, "annotation_revision_sha256": {"$ref": "#/$defs/sha256"}, "relation": {"enum": ["supports", "merge_source", "split_source", "rejected_source"]}}
+    },
+    "phase_observed": {"type": "object", "additionalProperties": false, "required": ["status", "timestamp_ms", "reason"], "properties": {"status": {"const": "observed"}, "timestamp_ms": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "reason": {"const": ""}}},
+    "phase_unobservable": {"type": "object", "additionalProperties": false, "required": ["status", "timestamp_ms", "reason"], "properties": {"status": {"const": "unobservable"}, "timestamp_ms": {"const": null}, "reason": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"}}},
+    "phase": {"oneOf": [{"$ref": "#/$defs/phase_observed"}, {"$ref": "#/$defs/phase_unobservable"}]},
+    "phases_fs01": {"type": "object", "additionalProperties": false, "required": ["preload_ms", "takeoff_proxy_ms", "landing_proxy_ms", "redistribution_ms", "initiation_ms"], "properties": {"preload_ms": {"$ref": "#/$defs/phase"}, "takeoff_proxy_ms": {"$ref": "#/$defs/phase"}, "landing_proxy_ms": {"$ref": "#/$defs/phase"}, "redistribution_ms": {"$ref": "#/$defs/phase"}, "initiation_ms": {"$ref": "#/$defs/phase"}}},
+    "phases_fs02": {"type": "object", "additionalProperties": false, "required": ["direction_conversion_ms", "support_extension_proxy_ms", "lead_foot_motion_onset_proxy_ms", "first_step_slowdown_proxy_ms"], "properties": {"direction_conversion_ms": {"$ref": "#/$defs/phase"}, "support_extension_proxy_ms": {"$ref": "#/$defs/phase"}, "lead_foot_motion_onset_proxy_ms": {"$ref": "#/$defs/phase"}, "first_step_slowdown_proxy_ms": {"$ref": "#/$defs/phase"}}},
+    "phases_fs09": {"type": "object", "additionalProperties": false, "required": ["peak_speed_ms", "deceleration_peak_ms", "restabilization_onset_ms", "stable_control_onset_ms"], "properties": {"peak_speed_ms": {"$ref": "#/$defs/phase"}, "deceleration_peak_ms": {"$ref": "#/$defs/phase"}, "restabilization_onset_ms": {"$ref": "#/$defs/phase"}, "stable_control_onset_ms": {"$ref": "#/$defs/phase"}}},
+    "final_event_base": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_id", "event_code", "start_ms", "end_ms", "phase_observations", "confidence_milli", "boundary_uncertainty_ms", "notes"],
+      "properties": {"event_id": {"type": "string", "pattern": "^m93:C:[A-Za-z0-9._:/-]+$"}, "event_code": {"enum": ["FS01", "FS02", "FS09"]}, "start_ms": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "end_ms": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}, "phase_observations": {"type": "object"}, "confidence_milli": {"type": "integer", "minimum": 0, "maximum": 1000}, "boundary_uncertainty_ms": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}, "notes": {"type": "string"}}
+    },
+    "final_fs01": {"$ref": "#/$defs/final_event_base", "properties": {"event_code": {"const": "FS01"}, "phase_observations": {"$ref": "#/$defs/phases_fs01"}}},
+    "final_fs02": {"$ref": "#/$defs/final_event_base", "properties": {"event_code": {"const": "FS02"}, "phase_observations": {"$ref": "#/$defs/phases_fs02"}}},
+    "final_fs09": {"$ref": "#/$defs/final_event_base", "properties": {"event_code": {"const": "FS09"}, "phase_observations": {"$ref": "#/$defs/phases_fs09"}}},
+    "final_event": {"oneOf": [{"$ref": "#/$defs/final_fs01"}, {"$ref": "#/$defs/final_fs02"}, {"$ref": "#/$defs/final_fs09"}]},
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["adjudication_id", "video_id", "decision_status", "source_video_revisions", "source_annotation_revisions", "event", "decision_reason", "adjudicated_at", "adjudication_revision_sha256"],
+      "properties": {
+        "adjudication_id": {"type": "string", "pattern": "^m93:C:[A-Za-z0-9._:/-]+$"},
+        "video_id": {"enum": ["3ae77ee3271d67de171585a5c39ddd69", "850cb0006b406c7176eeda8d711cd065", "8d7754d0de6d315674013d5b69a0b6ba"]},
+        "decision_status": {"enum": ["accepted_event", "rejected_sources", "c_added_event"]},
+        "source_video_revisions": {"$ref": "#/$defs/source_video_revisions"},
+        "source_annotation_revisions": {"type": "array", "items": {"$ref": "#/$defs/source_ref"}},
+        "event": {"oneOf": [{"const": null}, {"$ref": "#/$defs/final_event"}]},
+        "decision_reason": {"type": "string"}, "adjudicated_at": {"$ref": "#/$defs/submission_timestamp"},
+        "adjudication_revision_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {"if": {"properties": {"decision_status": {"const": "rejected_sources"}}, "required": ["decision_status"]}, "then": {"properties": {"event": {"const": null}, "source_annotation_revisions": {"minItems": 1}, "decision_reason": {"minLength": 1, "pattern": ".*\\S.*"}}}},
+        {"if": {"properties": {"decision_status": {"const": "accepted_event"}}, "required": ["decision_status"]}, "then": {"properties": {"event": {"$ref": "#/$defs/final_event"}, "source_annotation_revisions": {"minItems": 1}}}},
+        {"if": {"properties": {"decision_status": {"const": "c_added_event"}}, "required": ["decision_status"]}, "then": {"properties": {"event": {"$ref": "#/$defs/final_event"}, "source_annotation_revisions": {"maxItems": 0}, "decision_reason": {"minLength": 1, "pattern": ".*\\S.*"}}}}
+      ]
+    }
+  }
+}

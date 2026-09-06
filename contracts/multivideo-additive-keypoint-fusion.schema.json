@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-additive-keypoint-fusion.schema.json",
+  "title": "RallyMate multivideo additive keypoint fusion summary",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "fusion_contract", "baseline_m68", "baseline_m71", "m72_projection", "remaining_residual", "by_video", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "multivideo-additive-keypoint-fusion-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "experimental_additive_keypoint_fusion_regression_free_requires_truth"},
+    "scope": {"type": "object", "required": ["video_count", "video_ids", "indicator_count", "indicator_instances", "target_frame_count"], "properties": {"video_count": {"const": 3}, "video_ids": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true}}},
+    "sources": {"type": "object"},
+    "fusion_contract": {"type": "object", "required": ["fusion_version", "allowed_joint_names", "baseline_valid_coordinates_overwritten", "same_topology_required", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds"], "properties": {"baseline_valid_coordinates_overwritten": {"const": 0}, "same_topology_required": {"const": true}, "selection_uses_feature_values": {"const": false}, "selection_uses_event_outcomes": {"const": false}, "selection_uses_grades_or_thresholds": {"const": false}}},
+    "baseline_m68": {"type": "object"},
+    "baseline_m71": {"type": "object"},
+    "m72_projection": {"type": "object", "required": ["changed_frame_count", "added_valid_joint_observation_count", "feature_recovered_from_m68", "feature_regressed_from_m68", "feature_vector_complete", "feature_vector_incomplete", "operational_recovered_from_m68", "operational_regressed_from_m68", "operational_measured", "operational_unavailable", "measurement_hard_fail", "non_hard_fail_operational_residual", "additional_feature_recovery_over_m71", "additional_operational_recovery_over_m71", "lost_m71_feature_recovery_count", "lost_m71_operational_recovery_count"], "properties": {"feature_regressed_from_m68": {"const": 0}, "operational_regressed_from_m68": {"const": 0}, "lost_m71_feature_recovery_count": {"const": 0}, "lost_m71_operational_recovery_count": {"const": 0}}},
+    "remaining_residual": {"type": "object", "required": ["indicator_instance_count", "classification_counts", "invalid_feature_reason_counts", "invalid_feature_counts", "items"]},
+    "by_video": {"type": "array", "minItems": 3, "maxItems": 3},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted", "m71_recovered_sets_preserved", "fusion_is_experimental_truth_required", "next_required_evidence"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}, "m71_recovered_sets_preserved": {"const": true}, "fusion_is_experimental_truth_required": {"const": true}}},
+    "safety": {"type": "object", "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "current_three_video_regression_free_is_not_independent_validation"], "properties": {"accuracy_claim": {"const": false}, "ground_truth_provided": {"const": false}, "production_enabled": {"const": false}, "automatic_fallback_enabled": {"const": false}, "feature_gate_modified": {"const": false}, "measurement_gate_modified": {"const": false}, "event_boundaries_modified": {"const": false}, "grades_generated": {"const": false}, "thresholds_generated": {"const": false}, "maturity_promoted": {"const": false}, "current_three_video_regression_free_is_not_independent_validation": {"const": true}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

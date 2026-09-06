@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-calibration-portfolio.schema.json",
+  "title": "RallyMate multi-video scoring-truth calibration portfolio",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "portfolio_version",
+    "portfolio_id",
+    "generated_at",
+    "status",
+    "source_fingerprint_sha256",
+    "source",
+    "registry",
+    "states",
+    "counts",
+    "video_measurements",
+    "indicator_readiness",
+    "artifacts",
+    "safety"
+  ],
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "artifactMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/artifact"}
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "portfolio_version": {"const": "scoring-truth-calibration-portfolio-v1.0.0"},
+    "portfolio_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": [
+        "annotation_required",
+        "partially_prepared_requires_more_truth",
+        "all_indicators_prepared_requires_external_protocol"
+      ]
+    },
+    "source_fingerprint_sha256": {"$ref": "#/$defs/sha"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth_refresh", "measurement_sources"],
+      "properties": {
+        "truth_refresh": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["refresh_id", "manifest"],
+          "properties": {
+            "refresh_id": {"type": "string", "minLength": 1},
+            "manifest": {"$ref": "#/$defs/artifact"}
+          }
+        },
+        "measurement_sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_set_id", "manifest", "shared_pose_contract"],
+          "properties": {
+            "source_set_id": {"type": "string", "minLength": 1},
+            "manifest": {"$ref": "#/$defs/artifact"},
+            "shared_pose_contract": {"type": "object", "minProperties": 6}
+          }
+        }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "indicator_ids", "indicator_count"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "indicator_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "indicator_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manual_event_features", "calibration_dataset", "fit_readiness"],
+      "properties": {
+        "manual_event_features": {"type": "string", "minLength": 1},
+        "calibration_dataset": {"type": "string", "minLength": 1},
+        "fit_readiness": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "indicators",
+        "truth_manifest_videos",
+        "measurement_source_videos",
+        "measurement_source_frames",
+        "accepted_manual_events",
+        "manual_feature_records",
+        "manual_indicator_records",
+        "calibration_samples",
+        "prepared_indicators",
+        "fit_ready_indicators"
+      ],
+      "properties": {
+        "indicators": {"type": "integer", "minimum": 1},
+        "truth_manifest_videos": {"type": "integer", "minimum": 1},
+        "measurement_source_videos": {"type": "integer", "minimum": 1},
+        "measurement_source_frames": {"type": "integer", "minimum": 1},
+        "accepted_manual_events": {"type": "integer", "minimum": 0},
+        "manual_feature_records": {"type": "integer", "minimum": 0},
+        "manual_indicator_records": {"type": "integer", "minimum": 0},
+        "calibration_samples": {"type": "integer", "minimum": 0},
+        "prepared_indicators": {"type": "integer", "minimum": 1},
+        "fit_ready_indicators": {"type": "integer", "minimum": 0}
+      }
+    },
+    "video_measurements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "video_id",
+          "frame_count",
+          "frames_sha256",
+          "primary_timeline_sha256",
+          "manual_event_count",
+          "manual_feature_count",
+          "manual_indicator_count",
+          "manual_feature_status"
+        ],
+        "properties": {
+          "video_id": {"type": "string", "minLength": 1},
+          "frame_count": {"type": "integer", "minimum": 1},
+          "frames_sha256": {"$ref": "#/$defs/sha"},
+          "primary_timeline_sha256": {"$ref": "#/$defs/sha"},
+          "manual_event_count": {"type": "integer", "minimum": 0},
+          "manual_feature_count": {"type": "integer", "minimum": 0},
+          "manual_indicator_count": {"type": "integer", "minimum": 0},
+          "manual_feature_status": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "indicator_readiness": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "indicator_id",
+          "prepared_path",
+          "prepared_sha256",
+          "contract_valid",
+          "fit_ready",
+          "fit_blocker",
+          "record_counts"
+        ],
+        "properties": {
+          "indicator_id": {"type": "string", "minLength": 1},
+          "prepared_path": {"type": "string", "minLength": 1},
+          "prepared_sha256": {"$ref": "#/$defs/sha"},
+          "contract_valid": {"const": true},
+          "fit_ready": {"type": "boolean"},
+          "fit_blocker": {"type": ["string", "null"]},
+          "record_counts": {"type": "object"}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "truth_refresh_manifest",
+        "measurement_source_manifest",
+        "source_snapshots",
+        "manual_event_features_by_video",
+        "calibration_dataset",
+        "prepared_by_indicator",
+        "fit_readiness",
+        "index_html"
+      ],
+      "properties": {
+        "truth_refresh_manifest": {"$ref": "#/$defs/artifact"},
+        "measurement_source_manifest": {"$ref": "#/$defs/artifact"},
+        "source_snapshots": {"$ref": "#/$defs/artifactMap"},
+        "manual_event_features_by_video": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/artifactMap"}
+        },
+        "calibration_dataset": {"$ref": "#/$defs/artifactMap"},
+        "prepared_by_indicator": {"$ref": "#/$defs/artifactMap"},
+        "fit_readiness": {"$ref": "#/$defs/artifact"},
+        "index_html": {"$ref": "#/$defs/artifact"}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gpu_inference_executed",
+        "candidate_event_detector_used",
+        "candidate_boundaries_promoted_to_truth",
+        "fit_executed",
+        "candidate_written",
+        "thresholds_generated",
+        "model_trained",
+        "grades_generated",
+        "automatic_F3_or_F4_promotion",
+        "empty_truth_interpreted_as_grade_E_or_zero",
+        "all_truth_videos_have_measurement_sources",
+        "maximum_status_without_external_calibration"
+      ],
+      "properties": {
+        "gpu_inference_executed": {"const": false},
+        "candidate_event_detector_used": {"const": false},
+        "candidate_boundaries_promoted_to_truth": {"const": false},
+        "fit_executed": {"const": false},
+        "candidate_written": {"const": false},
+        "thresholds_generated": {"const": false},
+        "model_trained": {"const": false},
+        "grades_generated": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false},
+        "empty_truth_interpreted_as_grade_E_or_zero": {"const": false},
+        "all_truth_videos_have_measurement_sources": {"const": true},
+        "maximum_status_without_external_calibration": {"const": "calibration_required"}
+      }
+    }
+  }
+}

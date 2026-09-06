@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/fs09-phase-truth-pack.schema.json",
+  "type": "object",
+  "required": ["schema_version", "pack_version", "generated_at", "status", "sources", "scope", "workbench", "task_contract_sha256", "candidate_contract_sha256", "artifacts", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pack_version": {"const": "fs09-phase-truth-pack-v1.3.0"},
+    "generated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+    "status": {"const": "annotation_required"},
+    "sources": {
+      "type": "object",
+      "required": ["analysis_plan", "m74_report", "per_video"],
+      "properties": {
+        "analysis_plan": {"$ref": "#/$defs/source"},
+        "m74_report": {"$ref": "#/$defs/source"},
+        "per_video": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "object", "required": ["video_id", "view_group", "video", "m73_report", "frames", "primary_timeline", "events", "review_clip_manifest", "review_clips"], "properties": {"video_id": {"const": "8d7754d0de6d315674013d5b69a0b6ba"}, "view_group": {"const": "fixed-camera-8d7754d0"}, "video": {"$ref": "#/$defs/source"}, "m73_report": {"$ref": "#/$defs/source"}, "frames": {"$ref": "#/$defs/source"}, "primary_timeline": {"$ref": "#/$defs/source"}, "events": {"$ref": "#/$defs/source"}, "review_clip_manifest": {"$ref": "#/$defs/source"}, "review_clips": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/review_clip"}}}, "additionalProperties": false}}
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["video_count", "video_ids", "view_groups", "task_count", "indicator_ids", "event_codes", "phase_keys", "required_independent_annotators", "required_independent_reviewer"],
+      "properties": {
+        "video_count": {"const": 1},
+        "video_ids": {"const": ["8d7754d0de6d315674013d5b69a0b6ba"]},
+        "view_groups": {"const": ["fixed-camera-8d7754d0"]},
+        "task_count": {"const": 2},
+        "indicator_ids": {"const": ["FS09-M05"]},
+        "event_codes": {"const": ["FS09"]},
+        "phase_keys": {"const": ["peak_speed_ms", "deceleration_peak_ms", "restabilization_onset_ms", "stable_control_onset_ms"]},
+        "required_independent_annotators": {"const": 2},
+        "required_independent_reviewer": {"const": 1}
+      },
+      "additionalProperties": false
+    },
+    "workbench": {"type": "object", "required": ["entry", "annotation_csv", "adjudication_csv", "compiled_events", "validation_report", "sealed_candidates_not_loaded_by_ui", "annotation_execution_allowed", "public_blind_handoff_required"], "properties": {"entry": {"const": "review.html"}, "annotation_csv": {"const": "annotations.csv"}, "adjudication_csv": {"const": "adjudications.csv"}, "compiled_events": {"const": "compiled/manual-fs09-events.jsonl"}, "validation_report": {"const": "compiled/validation-report.json"}, "sealed_candidates_not_loaded_by_ui": {"const": true}, "annotation_execution_allowed": {"const": false}, "public_blind_handoff_required": {"const": true}}, "additionalProperties": false},
+    "task_contract_sha256": {"$ref": "#/$defs/sha256"},
+    "candidate_contract_sha256": {"$ref": "#/$defs/sha256"},
+    "artifacts": {
+      "type": "object",
+      "required": ["tasks.jsonl", "sealed-event-candidates.jsonl", "analysis-plan.json", "fs09-phase-truth-workbench.js", "fs09-phase-truth-workbench.css", "review.html", "OPERATOR_README.md", "media/task-001-browser.mp4", "media/task-002-browser.mp4"],
+      "properties": {
+        "tasks.jsonl": {"$ref": "#/$defs/source"},
+        "sealed-event-candidates.jsonl": {"$ref": "#/$defs/source"},
+        "analysis-plan.json": {"$ref": "#/$defs/source"},
+        "fs09-phase-truth-workbench.js": {"$ref": "#/$defs/source"},
+        "fs09-phase-truth-workbench.css": {"$ref": "#/$defs/source"},
+        "review.html": {"$ref": "#/$defs/source"},
+        "OPERATOR_README.md": {"$ref": "#/$defs/source"},
+        "media/task-001-browser.mp4": {"$ref": "#/$defs/source"},
+        "media/task-002-browser.mp4": {"$ref": "#/$defs/source"}
+      },
+      "additionalProperties": false
+    },
+    "safety": {"type": "object", "required": ["candidate_boundaries_embedded_in_annotation_ui", "candidate_phases_embedded_in_annotation_ui", "pose_overlay_embedded_in_annotation_ui", "truth_prefilled_from_candidate", "ground_contact_or_force_claim", "independent_adjudication_required", "partial_annotations_change_runtime", "production_enabled", "grade_generated", "threshold_generated", "maturity_promoted", "review_clips_are_browser_h264", "review_clips_preserve_source_timestamp_mapping", "authority_pack_may_be_served_or_distributed", "public_blind_handoff_required"], "properties": {"candidate_boundaries_embedded_in_annotation_ui": {"const": false}, "candidate_phases_embedded_in_annotation_ui": {"const": false}, "pose_overlay_embedded_in_annotation_ui": {"const": false}, "truth_prefilled_from_candidate": {"const": false}, "ground_contact_or_force_claim": {"const": false}, "independent_adjudication_required": {"const": true}, "partial_annotations_change_runtime": {"const": false}, "production_enabled": {"const": false}, "grade_generated": {"const": false}, "threshold_generated": {"const": false}, "maturity_promoted": {"const": false}, "review_clips_are_browser_h264": {"const": true}, "review_clips_preserve_source_timestamp_mapping": {"const": true}, "authority_pack_may_be_served_or_distributed": {"const": false}, "public_blind_handoff_required": {"const": true}}, "additionalProperties": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}, "additionalProperties": false},
+    "decode_sample": {"type": "object", "required": ["frame_index", "decoded"], "properties": {"frame_index": {"type": "integer", "minimum": 0}, "decoded": {"const": true}}, "additionalProperties": false},
+    "probe": {"type": "object", "required": ["codec_fourcc", "frame_count", "fps", "duration_ms", "width", "height", "decode_samples"], "properties": {"codec_fourcc": {"const": "h264"}, "frame_count": {"type": "integer", "minimum": 1}, "fps": {"type": "number", "exclusiveMinimum": 0}, "duration_ms": {"type": "integer", "minimum": 1}, "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1}, "decode_samples": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/decode_sample"}}}, "additionalProperties": false},
+    "review_clip": {"type": "object", "required": ["task_id", "source_start_ms", "source_end_ms", "source_time_offset_ms", "target_selection_anchor_ms", "clip", "probe"], "properties": {"task_id": {"type": "string", "minLength": 1}, "source_start_ms": {"type": "integer", "minimum": 0}, "source_end_ms": {"type": "integer", "minimum": 1}, "source_time_offset_ms": {"type": "integer", "minimum": 0}, "target_selection_anchor_ms": {"type": "integer", "minimum": 0}, "clip": {"$ref": "#/$defs/source"}, "probe": {"$ref": "#/$defs/probe"}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

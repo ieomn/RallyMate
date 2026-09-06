@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-ranking-independent-test-report.schema.json",
+  "title": "RallyMate sealed relative-order independent-test report",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "report_id", "report_version", "indicator_id", "status", "evaluated_at", "target_semantics", "candidate", "protocol", "independent_test_seal", "metrics", "acceptance", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["ranking_independent_test_report", "synthetic_test_only_ranking_test_report"]},
+    "report_id": {"type": "string", "minLength": 1},
+    "report_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["passed_relative_order_test", "failed_relative_order_test"]},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "target_semantics": {
+      "const": {
+        "evaluated_target": "relative_order_only",
+        "absolute_grade_anchor_present": false,
+        "A_E_grade_approved": false,
+        "production_scoring_approved": false
+      }
+    },
+    "candidate": {"type": "object"},
+    "protocol": {"type": "object"},
+    "independent_test_seal": {"type": "object"},
+    "metrics": {"type": "object"},
+    "acceptance": {"type": "object"},
+    "safety": {
+      "const": {
+        "grade": null,
+        "threshold_version": null,
+        "A_E_output_allowed": false,
+        "promotion_to_A_E_asset_allowed": false,
+        "reason": "relative_order_validation_does_not_identify_absolute_grade_boundaries"
+      }
+    }
+  },
+  "additionalProperties": false
+}

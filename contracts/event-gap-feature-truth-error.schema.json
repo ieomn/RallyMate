@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/event-gap-feature-truth-error.schema.json",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "m75_keypoint_evaluation", "counts", "metrics", "per_feature", "per_indicator", "details", "acceptance", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "event-gap-truth-conditioned-feature-error-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "evaluated_external_acceptance_protocol_required"]},
+    "scope": {
+      "type": "object",
+      "required": ["interpolation_candidate_joint_tasks", "indicator_instances_with_interpolation_points", "required_feature_records", "unique_required_features", "candidate_complete_indicator_instances", "phase_only_residual_indicator_instances_excluded", "feature_names", "comparison_semantics"],
+      "properties": {
+        "interpolation_candidate_joint_tasks": {"const": 142},
+        "indicator_instances_with_interpolation_points": {"const": 11},
+        "required_feature_records": {"const": 47},
+        "unique_required_features": {"const": 25},
+        "candidate_complete_indicator_instances": {"const": 7},
+        "phase_only_residual_indicator_instances_excluded": {"const": 2},
+        "feature_names": {"type": "array", "minItems": 25, "maxItems": 25, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "comparison_semantics": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "object",
+      "required": ["m75_manifest", "m75_validation", "m74_report", "registry", "per_video"],
+      "properties": {
+        "m75_manifest": {"$ref": "#/$defs/source"},
+        "m75_validation": {"$ref": "#/$defs/source"},
+        "m74_report": {"$ref": "#/$defs/source"},
+        "registry": {"$ref": "#/$defs/source"},
+        "per_video": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "object"}}
+      },
+      "additionalProperties": false
+    },
+    "m75_keypoint_evaluation": {"type": "object"},
+    "counts": {
+      "type": "object",
+      "required": ["feature_records", "candidate_complete_indicator_instances", "truth_conditioned_complete_indicator_instances", "visible_gap_truth_references", "invisible_gap_truth_references"],
+      "properties": {
+        "feature_records": {"type": "integer", "minimum": 0, "maximum": 47},
+        "candidate_complete_indicator_instances": {"type": "integer", "minimum": 0, "maximum": 11},
+        "truth_conditioned_complete_indicator_instances": {"type": "integer", "minimum": 0, "maximum": 11},
+        "visible_gap_truth_references": {"type": "integer", "minimum": 0},
+        "invisible_gap_truth_references": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "metrics": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/aggregate"}]},
+    "per_feature": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/aggregate"}}]},
+    "per_indicator": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/aggregate"}}]},
+    "details": {"type": "array", "maxItems": 47, "items": {"type": "object"}},
+    "indicator_instances": {"type": "array", "minItems": 11, "maxItems": 11, "items": {"type": "object"}},
+    "acceptance": {
+      "type": "object",
+      "required": ["status", "thresholds", "production_interpolation_allowed", "f2_to_f3_allowed"],
+      "properties": {
+        "status": {"const": "external_preregistered_protocol_required"},
+        "thresholds": {"const": null},
+        "production_interpolation_allowed": {"const": false},
+        "f2_to_f3_allowed": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "required": ["full_adjudicated_gap_truth_provided", "metrics_are_total_pose_feature_error", "metrics_are_event_detector_accuracy", "non_gap_model_pose_replaced_by_truth", "event_boundaries_replaced_by_truth", "candidate_confidence_relabelled_as_truth_confidence", "production_pose_artifact_generated", "production_enabled", "grade_generated", "threshold_generated", "maturity_promoted"],
+      "properties": {
+        "full_adjudicated_gap_truth_provided": {"type": "boolean"},
+        "metrics_are_total_pose_feature_error": {"const": false},
+        "metrics_are_event_detector_accuracy": {"const": false},
+        "non_gap_model_pose_replaced_by_truth": {"const": false},
+        "event_boundaries_replaced_by_truth": {"const": false},
+        "candidate_confidence_relabelled_as_truth_confidence": {"const": false},
+        "production_pose_artifact_generated": {"const": false},
+        "production_enabled": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}},
+      "additionalProperties": true
+    },
+    "nullableNumber": {"type": ["number", "null"]},
+    "aggregate": {
+      "type": "object",
+      "required": ["feature_record_count", "truth_valid_count", "candidate_valid_count", "comparable_count", "comparison_valid_rate", "numeric", "categorical_code"],
+      "properties": {
+        "feature_record_count": {"type": "integer", "minimum": 0},
+        "truth_valid_count": {"type": "integer", "minimum": 0},
+        "candidate_valid_count": {"type": "integer", "minimum": 0},
+        "comparable_count": {"type": "integer", "minimum": 0},
+        "comparison_valid_rate": {"$ref": "#/$defs/nullableNumber"},
+        "numeric": {
+          "type": "object",
+          "required": ["count", "mae", "p95_absolute_error", "bias_candidate_minus_truth"],
+          "properties": {"count": {"type": "integer", "minimum": 0}, "mae": {"$ref": "#/$defs/nullableNumber"}, "p95_absolute_error": {"$ref": "#/$defs/nullableNumber"}, "bias_candidate_minus_truth": {"$ref": "#/$defs/nullableNumber"}},
+          "additionalProperties": false
+        },
+        "categorical_code": {
+          "type": "object",
+          "required": ["count", "agreement_count", "agreement_rate"],
+          "properties": {"count": {"type": "integer", "minimum": 0}, "agreement_count": {"type": "integer", "minimum": 0}, "agreement_rate": {"$ref": "#/$defs/nullableNumber"}},
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "annotation_required"}}},
+      "then": {
+        "properties": {
+          "metrics": {"const": null},
+          "per_feature": {"const": null},
+          "per_indicator": {"const": null},
+          "details": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "evaluated_external_acceptance_protocol_required"}}},
+      "then": {
+        "required": ["indicator_instances"],
+        "properties": {"details": {"minItems": 47, "maxItems": 47}}
+      }
+    }
+  ],
+  "additionalProperties": false
+}

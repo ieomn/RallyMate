@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "ranking_calibration_fit_protocol",
+  "protocol_id": "REPLACE_WITH_REGISTERED_PROTOCOL_ID",
+  "protocol_version": "REPLACE_WITH_REGISTERED_PROTOCOL_VERSION",
+  "indicator_id": "REPLACE_WITH_INDICATOR_ID",
+  "source": {
+    "kind": "preregistered_ranking_protocol",
+    "source_sha256": "REPLACE_WITH_EXTERNAL_PROTOCOL_SHA256",
+    "registered_at": "REPLACE_WITH_ISO_8601_TIME_BEFORE_FIT"
+  },
+  "dataset_binding": {
+    "dataset_id": "COPY_FROM_DATASET",
+    "dataset_version": "COPY_FROM_DATASET",
+    "content_sha256": "COPY_CANONICAL_SHA256_OF_COMPLETE_DATASET",
+    "independent_test_seal_id": "COPY_FROM_DATASET",
+    "independent_test_content_sha256": "COPY_FROM_DATASET"
+  },
+  "target_semantics": {
+    "target": "relative_order_only",
+    "absolute_grade_anchor_present": false,
+    "A_E_output_allowed": false
+  },
+  "requirements": {
+    "min_train_pairs": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "min_validation_pairs": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "min_independent_test_samples": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "min_annotators": "REPLACE_WITH_PREREGISTERED_INTEGER_AT_LEAST_2",
+    "min_shared_pairs": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "agreement_metric": "kendall_tau",
+    "min_agreement_value": "REPLACE_WITH_PREREGISTERED_VALUE"
+  },
+  "backend": {
+    "name": "pairwise_logistic_ranker",
+    "include_equal_rank_ties": "REPLACE_WITH_PREREGISTERED_BOOLEAN",
+    "optimizer": {
+      "algorithm": "batch_gradient_descent_v1",
+      "max_iterations": "REPLACE_WITH_PREREGISTERED_INTEGER",
+      "learning_rate": "REPLACE_WITH_PREREGISTERED_POSITIVE_VALUE",
+      "l2": "REPLACE_WITH_PREREGISTERED_NON_NEGATIVE_VALUE",
+      "tolerance": "REPLACE_WITH_PREREGISTERED_POSITIVE_VALUE"
+    }
+  }
+}

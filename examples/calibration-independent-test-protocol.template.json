@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "independent_test_protocol",
+  "protocol_id": "REPLACE_WITH_PREREGISTERED_PROTOCOL_ID",
+  "protocol_version": "REPLACE_WITH_VERSION",
+  "indicator_id": "REPLACE_WITH_INDICATOR_ID",
+  "source": {
+    "kind": "preregistered_independent_test_protocol",
+    "source_sha256": "REPLACE_WITH_64_HEX_SHA256_OF_SIGNED_PROTOCOL_SOURCE",
+    "registered_at": "REPLACE_WITH_ISO_8601_REGISTRATION_TIME"
+  },
+  "label_scale": ["E", "D", "C", "B", "A"],
+  "label_resolution_policy": "unanimous_multi_coach_only_v1",
+  "acceptance_metrics": {
+    "minimum_record_count": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "minimum_leakage_group_count": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "minimum_valid_rate": "REPLACE_WITH_PREREGISTERED_NUMBER",
+    "maximum_mean_absolute_grade_error": "REPLACE_WITH_PREREGISTERED_NUMBER",
+    "maximum_absolute_bias_grade_steps": "REPLACE_WITH_PREREGISTERED_NUMBER",
+    "minimum_quadratic_weighted_kappa": "REPLACE_WITH_PREREGISTERED_NUMBER",
+    "required_grade_coverage": [
+      "REPLACE_WITH_PREREGISTERED_A_TO_E_SUBSET"
+    ],
+    "required_view_groups": [
+      "REPLACE_WITH_PREREGISTERED_VIEW_GROUP"
+    ]
+  }
+}

@@ -1,0 +1,996 @@
+{
+  "artifacts": [
+    {
+      "bytes": 2494677,
+      "relative_path": "FULL-TEST/3ae77ee3271d67de171585a5c39ddd69.mp4",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source video",
+        "development video 3ae77ee3271d67de171585a5c39ddd69"
+      ],
+      "sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9"
+    },
+    {
+      "bytes": 7351558,
+      "relative_path": "FULL-TEST/850cb0006b406c7176eeda8d711cd065.mp4",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source video",
+        "development video 850cb0006b406c7176eeda8d711cd065"
+      ],
+      "sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9"
+    },
+    {
+      "bytes": 24195384,
+      "relative_path": "FULL-TEST/8d7754d0de6d315674013d5b69a0b6ba.mp4",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source video",
+        "development video 8d7754d0de6d315674013d5b69a0b6ba"
+      ],
+      "sha256": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0"
+    },
+    {
+      "bytes": 25519,
+      "relative_path": "metric-feasibility-pose-wave-v2.json",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source feasibility_registry",
+        "M97 850cb0006b406c7176eeda8d711cd065 source feasibility_registry",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source feasibility_registry"
+      ],
+      "sha256": "E6B7C3A05DA08A7BC96821DE3662113111653E10EC46D20A037578AD3F6E3305"
+    },
+    {
+      "bytes": 3687,
+      "relative_path": "models/rtmpose/deployment-presets.json",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source production_registry",
+        "M97 850cb0006b406c7176eeda8d711cd065 source production_registry",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source production_registry",
+        "unchanged production registry"
+      ],
+      "sha256": "A95B7B5F225C025371157C22A9A60397874DE03C85B4EAC512B3B9C443F14C69"
+    },
+    {
+      "bytes": 4474,
+      "relative_path": "models/rtmpose/m95-shadow-candidates.json",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source candidate_registry",
+        "M97 850cb0006b406c7176eeda8d711cd065 source candidate_registry",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source candidate_registry",
+        "X candidate provenance registry"
+      ],
+      "sha256": "11B656E536964E8D84415719D82CE5BB5451C4071CDEA295211962323AB2E81B"
+    },
+    {
+      "bytes": 6462,
+      "relative_path": "models/rtmpose/m97-x-operational-protocol.json",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source protocol",
+        "M97 850cb0006b406c7176eeda8d711cd065 source protocol",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source protocol",
+        "immutable M97 protocol"
+      ],
+      "sha256": "FEA766D88E0D2072B2A2859E4FF144FD8CE9DDE4CD9FA154493BC1DB938C42F1"
+    },
+    {
+      "bytes": 200397852,
+      "relative_path": "models/rtmpose/rtmpose-x_halpe26_384x288.pth",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source candidate_model",
+        "M97 850cb0006b406c7176eeda8d711cd065 source candidate_model",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source candidate_model",
+        "X checkpoint"
+      ],
+      "sha256": "7FB6E239601082A06CA8442FEB7A9774B8D77A1C37911B2AD0F27C1E84BE4D21"
+    },
+    {
+      "bytes": 1630810,
+      "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/diagnostic-report.json",
+      "roles": [
+        "frozen related M96 same-frame diagnostic"
+      ],
+      "sha256": "B6361C909CF483C06B19B7EDA62DB1221D29BE1004E8F4FFF046FE7C5A0CCF71"
+    },
+    {
+      "bytes": 20778,
+      "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/field-change-record.json",
+      "roles": [
+        "frozen related M96 same-frame diagnostic"
+      ],
+      "sha256": "EBAA52D305B963719093BE2663240C11F32146D1AEDA347E3D2977A0225ED1DD"
+    },
+    {
+      "bytes": 1299,
+      "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/summary.md",
+      "roles": [
+        "frozen related M96 same-frame diagnostic"
+      ],
+      "sha256": "D39F696E05F5265B405B6063C0831205760B6CD0A491AFEDF7161C94B59419D3"
+    },
+    {
+      "bytes": 11065687,
+      "relative_path": "reports/measurement-recovery-m68/required-joint-superset/3ae77ee3271d67de171585a5c39ddd69/frames.routed-experimental.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source m68_current_frames"
+      ],
+      "sha256": "9DB3CFDB25420A9EB481AA5AC314C79DE5AC8024060EF8501645A8BE747B84C0"
+    },
+    {
+      "bytes": 29839581,
+      "relative_path": "reports/measurement-recovery-m68/required-joint-superset/850cb0006b406c7176eeda8d711cd065/frames.routed-experimental.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source m68_current_frames"
+      ],
+      "sha256": "BD58BE14E510B1DB463D793D04EF5A470A595222D1CBB11C291DE3DA18A05885"
+    },
+    {
+      "bytes": 125791311,
+      "relative_path": "reports/measurement-recovery-m68/required-joint-superset/8d7754d0de6d315674013d5b69a0b6ba/frames.routed-experimental.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source m68_current_frames"
+      ],
+      "sha256": "66EE28BDCE41C3A3BD73894A24F85DC4E22A6BFFBBFD07F3D8EF5C75EFBA9841"
+    },
+    {
+      "bytes": 4318,
+      "relative_path": "reports/measurement-recovery-m68/summary/report.json",
+      "roles": [
+        "frozen M68 summary"
+      ],
+      "sha256": "BBE5991F09381B35A2AD3097EE5BF9BDCDFDC89B16966F064C1F7CBBB850229D"
+    },
+    {
+      "bytes": 11062522,
+      "relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/3ae77ee3271d67de171585a5c39ddd69/frames.m69-anchored-extension.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source m70_anchored_frames"
+      ],
+      "sha256": "C1AB9E5F087E03E2247DCF993157C693C6D361B8533E6C13AFAF335B6492F16B"
+    },
+    {
+      "bytes": 7875,
+      "relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+      "roles": [
+        "M70 router baseline 3ae77ee3271d67de171585a5c39ddd69",
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source m70_anchored_report"
+      ],
+      "sha256": "A6EA7FD4B9809FF69212A81FB5804FAA2C0B020C87CF7980342FBD1540872E78"
+    },
+    {
+      "bytes": 29837016,
+      "relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/850cb0006b406c7176eeda8d711cd065/frames.m69-anchored-extension.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source m70_anchored_frames"
+      ],
+      "sha256": "82E64668B82BBBD1CE0F474227C43319CA3477B2B3FA550C1CD6A2F067B1D961"
+    },
+    {
+      "bytes": 7617,
+      "relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+      "roles": [
+        "M70 router baseline 850cb0006b406c7176eeda8d711cd065",
+        "M97 850cb0006b406c7176eeda8d711cd065 source m70_anchored_report"
+      ],
+      "sha256": "DDBD9D2BD946046C6F1AFF62A6D245C73917A7F4B694FB31B8AD4578BF98D643"
+    },
+    {
+      "bytes": 125791308,
+      "relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/frames.m69-anchored-extension.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source m70_anchored_frames"
+      ],
+      "sha256": "DD3A880D58391F177CAF3C7F99BA07C09E8DB2FB5C19BF23B73B06063A0F0C34"
+    },
+    {
+      "bytes": 6941,
+      "relative_path": "reports/measurement-recovery-m70/m69-anchored-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+      "roles": [
+        "M70 router baseline 8d7754d0de6d315674013d5b69a0b6ba",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source m70_anchored_report"
+      ],
+      "sha256": "EBD68BBE4A6CA4845A7D11160A745C3220601F06479D55BE1197D4A81A97BF08"
+    },
+    {
+      "bytes": 49620,
+      "relative_path": "reports/measurement-recovery-m70/pose-profile-context-ablation-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+      "roles": [
+        "M70 frame/context scope 3ae77ee3271d67de171585a5c39ddd69",
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source m70_ablation_report"
+      ],
+      "sha256": "FEE2F8996590CF4489E2ADF7858B68AB6C7CD937E573812D27FE973AA911C48E"
+    },
+    {
+      "bytes": 53195,
+      "relative_path": "reports/measurement-recovery-m70/pose-profile-context-ablation-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+      "roles": [
+        "M70 frame/context scope 850cb0006b406c7176eeda8d711cd065",
+        "M97 850cb0006b406c7176eeda8d711cd065 source m70_ablation_report"
+      ],
+      "sha256": "5AAA0080FD087CFD4A03E8718F0AC438FBD75F01D7C28E9E5909DDD3D672D4C0"
+    },
+    {
+      "bytes": 37303,
+      "relative_path": "reports/measurement-recovery-m70/pose-profile-context-ablation-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+      "roles": [
+        "M70 frame/context scope 8d7754d0de6d315674013d5b69a0b6ba",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source m70_ablation_report"
+      ],
+      "sha256": "07608FDE8A531DAF593C4F620B0F274C04EDC77126465204E0E3031983BBE188"
+    },
+    {
+      "bytes": 6939,
+      "relative_path": "reports/measurement-recovery-m70/summary/report.json",
+      "roles": [
+        "frozen M70 summary"
+      ],
+      "sha256": "A1A35DC8709E14E6CE03F20CAA100F733C31908B8B0FB26CECD83C4A5B55D554"
+    },
+    {
+      "bytes": 37924,
+      "relative_path": "reports/measurement-recovery-m71/rtmpose-l-384-context-extension-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+      "roles": [
+        "M71 L comparator 3ae77ee3271d67de171585a5c39ddd69",
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source m71_l_report"
+      ],
+      "sha256": "1C05B77EB924D15342472DDF4B06D965BFD4C1E7133A3D5E27E5EDE6D0EE4E5F"
+    },
+    {
+      "bytes": 40363,
+      "relative_path": "reports/measurement-recovery-m71/rtmpose-l-384-context-extension-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+      "roles": [
+        "M71 L comparator 850cb0006b406c7176eeda8d711cd065",
+        "M97 850cb0006b406c7176eeda8d711cd065 source m71_l_report"
+      ],
+      "sha256": "7C08B336BC7CE164CEBFA18944A86660B6F1976D860F4833424E98B24022B55D"
+    },
+    {
+      "bytes": 26645,
+      "relative_path": "reports/measurement-recovery-m71/rtmpose-l-384-context-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+      "roles": [
+        "M71 L comparator 8d7754d0de6d315674013d5b69a0b6ba",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source m71_l_report"
+      ],
+      "sha256": "50F063DC02AA4C3ACB4450A4D95771E7C20ED85582C9E7C8EB173ABA43CBC42E"
+    },
+    {
+      "bytes": 5792,
+      "relative_path": "reports/measurement-recovery-m71/summary/report.json",
+      "roles": [
+        "frozen M71 summary"
+      ],
+      "sha256": "2F0D19D6CEFB627B1FA821CCBEEE64C5E7C66A0BACE090DF76F5B1C530DA9A8F"
+    },
+    {
+      "bytes": 10893620,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/3ae77ee3271d67de171585a5c39ddd69/fixed-boundary-comparison.json",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 output fixed_boundary_comparison"
+      ],
+      "sha256": "8691553BFA94F69E19B9F8A47302EF1DAB58DFD213FA7AE4495272B841BE24A5"
+    },
+    {
+      "bytes": 11056627,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/3ae77ee3271d67de171585a5c39ddd69/frames.m70-plus-rtmpose-x.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 output m70_plus_x_frames"
+      ],
+      "sha256": "2879420D3E3044FB7AA1A7D7F78AC6C585C6068F37EC817E58EEA3CE697645E3"
+    },
+    {
+      "bytes": 16786,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/3ae77ee3271d67de171585a5c39ddd69/report.json",
+      "roles": [
+        "M97 per-video report 3ae77ee3271d67de171585a5c39ddd69"
+      ],
+      "sha256": "EAEFF102DD2A70579AA02F3BAB217C09F4034BFD16FDA30F69661DC107F7DD09"
+    },
+    {
+      "bytes": 477056,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/3ae77ee3271d67de171585a5c39ddd69/x-pose-observations.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 output x_pose_observations"
+      ],
+      "sha256": "C5FBD8875C1F59CC42B8F74454CC510C2766D6324BC75B5123B8F33E81AC5BDA"
+    },
+    {
+      "bytes": 13927347,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/850cb0006b406c7176eeda8d711cd065/fixed-boundary-comparison.json",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 output fixed_boundary_comparison"
+      ],
+      "sha256": "6319660B56EEBA77F0221AF5BCF355651BBD04A95B0460549F11A6EABCF5C9C8"
+    },
+    {
+      "bytes": 29836331,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/850cb0006b406c7176eeda8d711cd065/frames.m70-plus-rtmpose-x.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 output m70_plus_x_frames"
+      ],
+      "sha256": "C4F5764795B18B47F71EFA9EB138F21AC137F9BC8C196B8B9C6AF728E27FC9D0"
+    },
+    {
+      "bytes": 16753,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/850cb0006b406c7176eeda8d711cd065/report.json",
+      "roles": [
+        "M97 per-video report 850cb0006b406c7176eeda8d711cd065"
+      ],
+      "sha256": "7C06A3A7AED922C615CEDF4635161FD9190EAC3A387607B4C5039FD24B7BFFA8"
+    },
+    {
+      "bytes": 510110,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/850cb0006b406c7176eeda8d711cd065/x-pose-observations.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 output x_pose_observations"
+      ],
+      "sha256": "D44650D8CC3EFF820AB9653312C6B53E0D4F03D1F7558D2C52B78AA6734956E4"
+    },
+    {
+      "bytes": 49072101,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/fixed-boundary-comparison.json",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba output fixed_boundary_comparison"
+      ],
+      "sha256": "A03E6F29D1A6A1F28707F397FCF75DDDDA68807A36E070F93C4F8AF803ADE0D2"
+    },
+    {
+      "bytes": 125791308,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/frames.m70-plus-rtmpose-x.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba output m70_plus_x_frames"
+      ],
+      "sha256": "DD3A880D58391F177CAF3C7F99BA07C09E8DB2FB5C19BF23B73B06063A0F0C34"
+    },
+    {
+      "bytes": 14518,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/report.json",
+      "roles": [
+        "M97 per-video report 8d7754d0de6d315674013d5b69a0b6ba"
+      ],
+      "sha256": "6AABCDFB10446CDB2ADB2EF9A4C64C58A5F08D2902AB21A9A594D053BDD55B6D"
+    },
+    {
+      "bytes": 298021,
+      "relative_path": "reports/measurement-recovery-m97/rtmpose-x-384-context-extension-v1/8d7754d0de6d315674013d5b69a0b6ba/x-pose-observations.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba output x_pose_observations"
+      ],
+      "sha256": "C11CEA129169777C9E65218C359BCC23DC0B598CC58A96E09920EE0F32EF37CE"
+    },
+    {
+      "bytes": 14974,
+      "relative_path": "reports/measurement-recovery-m97/summary/report.json",
+      "roles": [
+        "immutable M97 machine-readable summary"
+      ],
+      "sha256": "46A3D690C73C827BE1B143A75F9192A513ED37B66268FBF808FD896C2DA2160E"
+    },
+    {
+      "bytes": 1892,
+      "relative_path": "reports/measurement-recovery-m97/summary/summary.md",
+      "roles": [
+        "M97 human-readable result summary"
+      ],
+      "sha256": "7C019C7DCD4BCDD6749B89C9D108F81FD5698AC97FA3711541795A141C0F71F2"
+    },
+    {
+      "bytes": 449329,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/3ae77ee3271d67de171585a5c39ddd69/events.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source events"
+      ],
+      "sha256": "DCF63B83134A6AEBA4096E295967A34D515E7497F43E33DB08950A73C102235D"
+    },
+    {
+      "bytes": 11066005,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/3ae77ee3271d67de171585a5c39ddd69/frames.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source original_frames"
+      ],
+      "sha256": "66F4B84134544E146D9649EF33E95AA547AD014102021B86F15B47159232DD43"
+    },
+    {
+      "bytes": 2353710,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/3ae77ee3271d67de171585a5c39ddd69/indicator-features.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source indicator_features"
+      ],
+      "sha256": "759FEC0C673283AFDEDCE636F13360488FFC5AA4EEEA82074519C9B7A4BF9328"
+    },
+    {
+      "bytes": 917690,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/3ae77ee3271d67de171585a5c39ddd69/primary-player.jsonl",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source primary_timeline"
+      ],
+      "sha256": "062AE0CB574954FB2D1235BC03CA730DC74518CEBE5AD6633DD73A851823B6F8"
+    },
+    {
+      "bytes": 568248,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/850cb0006b406c7176eeda8d711cd065/events.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source events"
+      ],
+      "sha256": "99BB6420B2518859BD45B21A19A3D393BA54C5FC909E891F10E98A3CF3B1B933"
+    },
+    {
+      "bytes": 29222445,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/850cb0006b406c7176eeda8d711cd065/frames.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source original_frames"
+      ],
+      "sha256": "B8236BAF77B23E8AC2F4D03886E7C3040DB4AD8076B5187332EF2400D8A5D098"
+    },
+    {
+      "bytes": 2980305,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/850cb0006b406c7176eeda8d711cd065/indicator-features.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source indicator_features"
+      ],
+      "sha256": "CC9331379C7A7BE964D8486EAE29F90784D8CED53C83593050765B9E6299C245"
+    },
+    {
+      "bytes": 1895091,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/850cb0006b406c7176eeda8d711cd065/primary-player.jsonl",
+      "roles": [
+        "M97 850cb0006b406c7176eeda8d711cd065 source primary_timeline"
+      ],
+      "sha256": "8384EDB37A325867602E753C192DAAF427B9FCCB2EC06B29FAD3C23D9B4CB0AE"
+    },
+    {
+      "bytes": 2048247,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/8d7754d0de6d315674013d5b69a0b6ba/events.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source events"
+      ],
+      "sha256": "8C15819284F88CB00D05E56EF930E373983EDF63165C2806987FE6A9E531B6E8"
+    },
+    {
+      "bytes": 125706442,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/8d7754d0de6d315674013d5b69a0b6ba/frames.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source original_frames"
+      ],
+      "sha256": "44D61B13E95108B00309D88CC2E0439AE20BB8A3FEC062CA769E180C6B73D200"
+    },
+    {
+      "bytes": 10601756,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/8d7754d0de6d315674013d5b69a0b6ba/indicator-features.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source indicator_features"
+      ],
+      "sha256": "4BA6AC1BE889CD3854D499DD260C104C404AFD6BE85B4702E6B4E4F7A7086891"
+    },
+    {
+      "bytes": 7538104,
+      "relative_path": "reports/scoring-candidate-multivideo-m63/runs/8d7754d0de6d315674013d5b69a0b6ba/primary-player.jsonl",
+      "roles": [
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source primary_timeline"
+      ],
+      "sha256": "1A4BC57E752997FEA2541ECA06228EB6EC11CED98188DF6763F39FCB25F5DF54"
+    },
+    {
+      "bytes": 13676,
+      "relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-x_8xb256-700e_body8-halpe26-384x288.py",
+      "roles": [
+        "M97 3ae77ee3271d67de171585a5c39ddd69 source candidate_config",
+        "M97 850cb0006b406c7176eeda8d711cd065 source candidate_config",
+        "M97 8d7754d0de6d315674013d5b69a0b6ba source candidate_config",
+        "X runtime config"
+      ],
+      "sha256": "961E5704E4983F27173BC008C17F08E8C2C5907FDB104EA8669AD06C4C68B678"
+    },
+    {
+      "bytes": 18618,
+      "relative_path": "scripts/build_m97_x_operational_field_record.py",
+      "roles": [
+        "M97 field record builder"
+      ],
+      "sha256": "990812CAE84DC9C3A6088A5918CF2F612F83C9DFBC6781DB13DEF101283C796F"
+    },
+    {
+      "bytes": 2023,
+      "relative_path": "scripts/build_m97_x_pose_operational_summary.py",
+      "roles": [
+        "M97 summary builder"
+      ],
+      "sha256": "19D7BBAC40255099A6C997D2B41806E26B16C2918AA2A4A19B877236E28C80DE"
+    },
+    {
+      "bytes": 24765,
+      "relative_path": "scripts/run_m97_x_pose_operational_extension.py",
+      "roles": [
+        "M97 X GPU runner"
+      ],
+      "sha256": "3020B91D4F298B6CA71F17745E692A7527B1858D2DEA0DBA59A55FE85A6E2DBD"
+    },
+    {
+      "bytes": 51583,
+      "relative_path": "src/rallymate_evaluation/pose_x_operational.py",
+      "roles": [
+        "M97 validation and summary implementation"
+      ],
+      "sha256": "08B23A15F9FD4BC0885D3EA505C1709BA12D6491DD2D4E6A1C55648CAE136499"
+    },
+    {
+      "bytes": 8766,
+      "relative_path": "tests/test_m97_x_pose_operational.py",
+      "roles": [
+        "M97 protocol and per-video contract tests"
+      ],
+      "sha256": "F3ADA316B742C0160C4D8B243F2CFDEBB15FFFA22591633D2400D22EAF928211"
+    },
+    {
+      "bytes": 4611,
+      "relative_path": "tests/test_m97_x_pose_operational_summary.py",
+      "roles": [
+        "M97 real-output summary tests"
+      ],
+      "sha256": "7B3D930A93C9CE867BE44003233AF1F24A0475E290372FA661863F3871B4F3C0"
+    }
+  ],
+  "claims": {
+    "F3_or_F4_promoted": false,
+    "RallyMate_accuracy_improved": false,
+    "RallyMate_accuracy_measured": false,
+    "candidate_promoted": false,
+    "confidence_is_accuracy": false,
+    "grade_or_threshold_generated": false,
+    "operational_recovery_is_accuracy": false,
+    "production_default_changed": false
+  },
+  "comparability": {
+    "same_258_frames_as_M71_L": true,
+    "same_M68_fixed_boundary_baseline_as_M71_L": true,
+    "same_M70_router_baseline_as_M71_L": true,
+    "same_analysis_profile_and_flip_test_as_M71_L": true,
+    "same_per_frame_ROI_context_as_M71_L": true
+  },
+  "completed": [
+    "X384_replayed_on_exact_M71_258_frame_scope",
+    "per_frame_M71_ROI_and_context_identity_verified",
+    "strict_required_joint_superset_no_regression_routing_recomputed",
+    "fixed_boundary_feature_complete_recomputed",
+    "preserved_source_gate_operational_measured_recomputed",
+    "M70_and_M71_recovery_set_additions_and_losses_recorded",
+    "X_analysis_flip_latency_recorded_on_local_GPU"
+  ],
+  "execution_environment": {
+    "cuda_available": true,
+    "cudnn": 91900,
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "gpu_total_memory_bytes": 17094475776,
+    "nvidia_driver": "576.88",
+    "opencv": "4.13.0",
+    "packages": {
+      "mmcv": null,
+      "mmengine": "0.10.7",
+      "mmpose": "1.3.2",
+      "numpy": "1.26.4"
+    },
+    "python": "3.10.18",
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8"
+  },
+  "field_semantics": {
+    "comparison_to_M70_or_M71": "set_difference_between_recoveries_measured_against_the_same_M68_baseline",
+    "feature_complete": "fixed_candidate_event_boundaries_and_unchanged_feature_functions",
+    "operational_measured": "feature_complete_and_original_source_quality_gate_preserved",
+    "recovery": "M68_unavailable_or_incomplete_instance_becomes_available_or_complete",
+    "regression": "M68_available_or_complete_instance_becomes_unavailable_or_incomplete"
+  },
+  "generated_at": "2026-09-04T16:23:52.057302+00:00",
+  "human_summary_binding": {
+    "bytes": 1892,
+    "relative_path": "reports/measurement-recovery-m97/summary/summary.md",
+    "roles": [
+      "M97 human-readable result summary"
+    ],
+    "sha256": "7C019C7DCD4BCDD6749B89C9D108F81FD5698AC97FA3711541795A141C0F71F2"
+  },
+  "not_completed": [
+    "human_Halpe26_ground_truth",
+    "ground_truth_keypoint_accuracy_comparison",
+    "per_view_feature_error",
+    "preregistered_independent_video_release_validation",
+    "direct_M_and_L_latency_rerun_on_exact_M97_258_frame_scope",
+    "candidate_promotion",
+    "production_default_change"
+  ],
+  "preserved_state": {
+    "candidate_promoted": false,
+    "ground_truth_used": false,
+    "production_default_changed": false,
+    "production_default_preset": "rtmpose-m-halpe26-online",
+    "production_registry_sha256": "A95B7B5F225C025371157C22A9A60397874DE03C85B4EAC512B3B9C443F14C69",
+    "sealed_holdout": {
+      "declared_hash_reverified_in_M97": false,
+      "declared_relative_path": "FULL-TEST/c235227fffcd3290b60572d0c3f9cc85.mp4",
+      "declared_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "file_opened_or_hashed": false,
+      "video_id": "c235227fffcd3290b60572d0c3f9cc85"
+    }
+  },
+  "protocol_binding": {
+    "bytes": 6462,
+    "path": "models\\rtmpose\\m97-x-operational-protocol.json",
+    "relative_path": "models/rtmpose/m97-x-operational-protocol.json",
+    "sha256": "FEA766D88E0D2072B2A2859E4FF144FD8CE9DDE4CD9FA154493BC1DB938C42F1",
+    "version": "rtmpose-x-operational-extension-2026-09-04.1"
+  },
+  "purpose": "retain the exact M97 258-frame X384 operational result, source hashes, reference-set additions/losses, speed scope, and claim boundaries",
+  "record_version": "m97-x-operational-field-change-record-v1.0.0",
+  "result": {
+    "X_projection": {
+      "feature_recovered_from_m68": 13,
+      "feature_regressed_from_m68": 0,
+      "feature_vector_complete": 2342,
+      "feature_vector_incomplete": 24,
+      "measurement_hard_fail": 18,
+      "non_hard_fail_operational_residual": 17,
+      "operational_measured": 2331,
+      "operational_recovered_from_m68": 11,
+      "operational_regressed_from_m68": 0,
+      "operational_unavailable": 35,
+      "selected_frame_count": 56
+    },
+    "baseline_M68": {
+      "feature_vector_complete": 2329,
+      "feature_vector_incomplete": 37,
+      "measurement_hard_fail": 18,
+      "non_hard_fail_feature_incomplete": 28,
+      "operational_measured": 2320,
+      "operational_unavailable": 46
+    },
+    "baseline_M70": {
+      "additional_feature_recovery_over_m69": 3,
+      "additional_operational_recovery_over_m69": 1,
+      "extension_selected_frame_count": 15,
+      "feature_recovered": 9,
+      "feature_regressed": 0,
+      "feature_vector_complete": 2338,
+      "feature_vector_incomplete": 28,
+      "lost_m69_feature_recovery_count": 0,
+      "lost_m69_operational_recovery_count": 0,
+      "measurement_hard_fail": 18,
+      "non_hard_fail_feature_incomplete": 21,
+      "operational_measured": 2327,
+      "operational_recovered": 7,
+      "operational_regressed": 0,
+      "operational_unavailable": 39
+    },
+    "baseline_M71": {
+      "additional_feature_recovery_over_m70": 6,
+      "additional_operational_recovery_over_m70": 6,
+      "feature_recovered_from_m68": 15,
+      "feature_regressed_from_m68": 0,
+      "feature_vector_complete": 2344,
+      "feature_vector_incomplete": 22,
+      "lost_m70_feature_recovery_count": 0,
+      "lost_m70_operational_recovery_count": 0,
+      "measurement_hard_fail": 18,
+      "non_hard_fail_operational_residual": 15,
+      "operational_measured": 2333,
+      "operational_recovered_from_m68": 13,
+      "operational_regressed_from_m68": 0,
+      "operational_unavailable": 33,
+      "selected_frame_count": 46
+    },
+    "by_video": [
+      {
+        "additional_operational_recovery_over_M70": 3,
+        "additional_operational_recovery_over_M71": 0,
+        "feature_recovered_from_M68": 8,
+        "feature_regressed_from_M68": 0,
+        "lost_M70_operational_recovery_count": 0,
+        "lost_M71_operational_recovery_count": 0,
+        "operational_recovered_from_M68": 6,
+        "operational_regressed_from_M68": 0,
+        "pose_output_produced": 93,
+        "selected_frames": 26,
+        "target_frames": 94,
+        "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+      },
+      {
+        "additional_operational_recovery_over_M70": 1,
+        "additional_operational_recovery_over_M71": 1,
+        "feature_recovered_from_M68": 4,
+        "feature_regressed_from_M68": 0,
+        "lost_M70_operational_recovery_count": 0,
+        "lost_M71_operational_recovery_count": 3,
+        "operational_recovered_from_M68": 4,
+        "operational_regressed_from_M68": 0,
+        "pose_output_produced": 101,
+        "selected_frames": 30,
+        "target_frames": 103,
+        "video_id": "850cb0006b406c7176eeda8d711cd065"
+      },
+      {
+        "additional_operational_recovery_over_M70": 0,
+        "additional_operational_recovery_over_M71": 0,
+        "feature_recovered_from_M68": 1,
+        "feature_regressed_from_M68": 0,
+        "lost_M70_operational_recovery_count": 0,
+        "lost_M71_operational_recovery_count": 0,
+        "operational_recovered_from_M68": 1,
+        "operational_regressed_from_M68": 0,
+        "pose_output_produced": 60,
+        "selected_frames": 0,
+        "target_frames": 61,
+        "video_id": "8d7754d0de6d315674013d5b69a0b6ba"
+      }
+    ],
+    "comparison_to_M70": {
+      "feature_vector": {
+        "additional_candidate_regression_count": 0,
+        "additional_candidate_regressions": [],
+        "additional_recoveries": [
+          {
+            "event_id": "fs01-026-9eb9dc227294",
+            "indicator_id": "FS01-M03",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+          },
+          {
+            "event_id": "fs01-026-9eb9dc227294",
+            "indicator_id": "FS01-M04",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+          },
+          {
+            "event_id": "fs02-025-d71099ebf537",
+            "indicator_id": "FS02-M03",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+          },
+          {
+            "event_id": "fs01-005-d9d36428b672",
+            "indicator_id": "FS01-M04",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          }
+        ],
+        "additional_recovery_count": 4,
+        "candidate_recovery_count": 13,
+        "candidate_regression_count": 0,
+        "lost_reference_recoveries": [],
+        "lost_reference_recovery_count": 0,
+        "reference_recovery_count": 9,
+        "reference_regression_count": 0,
+        "shared_recovery_count": 9
+      },
+      "operational_measurement": {
+        "additional_candidate_regression_count": 0,
+        "additional_candidate_regressions": [],
+        "additional_recoveries": [
+          {
+            "event_id": "fs01-026-9eb9dc227294",
+            "indicator_id": "FS01-M03",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+          },
+          {
+            "event_id": "fs01-026-9eb9dc227294",
+            "indicator_id": "FS01-M04",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+          },
+          {
+            "event_id": "fs02-025-d71099ebf537",
+            "indicator_id": "FS02-M03",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+          },
+          {
+            "event_id": "fs01-005-d9d36428b672",
+            "indicator_id": "FS01-M04",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          }
+        ],
+        "additional_recovery_count": 4,
+        "candidate_recovery_count": 11,
+        "candidate_regression_count": 0,
+        "lost_reference_recoveries": [],
+        "lost_reference_recovery_count": 0,
+        "reference_recovery_count": 7,
+        "reference_regression_count": 0,
+        "shared_recovery_count": 7
+      }
+    },
+    "comparison_to_M71": {
+      "feature_vector": {
+        "additional_candidate_regression_count": 0,
+        "additional_candidate_regressions": [],
+        "additional_recoveries": [
+          {
+            "event_id": "fs01-005-d9d36428b672",
+            "indicator_id": "FS01-M04",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          }
+        ],
+        "additional_recovery_count": 1,
+        "candidate_recovery_count": 13,
+        "candidate_regression_count": 0,
+        "lost_reference_recoveries": [
+          {
+            "event_id": "fs01-024-3bcd2a8b290f",
+            "indicator_id": "FS01-M03",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          },
+          {
+            "event_id": "fs01-030-ef3407c9db93",
+            "indicator_id": "FS01-M03",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          },
+          {
+            "event_id": "fs01-030-ef3407c9db93",
+            "indicator_id": "FS01-M04",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          }
+        ],
+        "lost_reference_recovery_count": 3,
+        "reference_recovery_count": 15,
+        "reference_regression_count": 0,
+        "shared_recovery_count": 12
+      },
+      "operational_measurement": {
+        "additional_candidate_regression_count": 0,
+        "additional_candidate_regressions": [],
+        "additional_recoveries": [
+          {
+            "event_id": "fs01-005-d9d36428b672",
+            "indicator_id": "FS01-M04",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          }
+        ],
+        "additional_recovery_count": 1,
+        "candidate_recovery_count": 11,
+        "candidate_regression_count": 0,
+        "lost_reference_recoveries": [
+          {
+            "event_id": "fs01-024-3bcd2a8b290f",
+            "indicator_id": "FS01-M03",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          },
+          {
+            "event_id": "fs01-030-ef3407c9db93",
+            "indicator_id": "FS01-M03",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          },
+          {
+            "event_id": "fs01-030-ef3407c9db93",
+            "indicator_id": "FS01-M04",
+            "video_id": "850cb0006b406c7176eeda8d711cd065"
+          }
+        ],
+        "lost_reference_recovery_count": 3,
+        "reference_recovery_count": 13,
+        "reference_regression_count": 0,
+        "shared_recovery_count": 10
+      }
+    },
+    "status": "experimental_x_extension_regression_free_to_m70_but_does_not_preserve_m71_recovery"
+  },
+  "schema_version": "1.0.0",
+  "scope": {
+    "indicator_count": 13,
+    "indicator_instances": 2366,
+    "target_frame_count": 258,
+    "video_count": 3,
+    "video_ids": [
+      "3ae77ee3271d67de171585a5c39ddd69",
+      "850cb0006b406c7176eeda8d711cd065",
+      "8d7754d0de6d315674013d5b69a0b6ba"
+    ]
+  },
+  "self_hash_note": "record SHA-256 is reported externally because a file cannot contain its own hash",
+  "speed_diagnostics": {
+    "M96_direct_same_frame_context": {
+      "interpretation": "M96 is the direct same-frame M/L/X realtime-no-flip comparison; M97 X analysis-flip latency is a different execution scope and must not be ratioed against it",
+      "latency_ms_per_single_roi_call": {
+        "L": {
+          "count": 45,
+          "max": 12.6274,
+          "mean": 10.620278,
+          "min": 8.9171,
+          "p10": 9.30434,
+          "p50": 10.6427,
+          "p90": 12.03504,
+          "p95": 12.26084
+        },
+        "M": {
+          "count": 45,
+          "max": 10.6816,
+          "mean": 9.192816,
+          "min": 8.0499,
+          "p10": 8.52082,
+          "p50": 9.1244,
+          "p90": 9.92328,
+          "p95": 10.11972
+        },
+        "X": {
+          "count": 45,
+          "max": 14.4681,
+          "mean": 11.842471,
+          "min": 10.3593,
+          "p10": 10.75702,
+          "p50": 11.7265,
+          "p90": 13.052,
+          "p95": 13.55384
+        }
+      },
+      "scope": {
+        "execution_profile": "realtime",
+        "flip_test": false,
+        "same_decoded_frames_and_frozen_ROIs_across_models": true,
+        "sample_count": 45
+      }
+    },
+    "M97_X_analysis_flip_after_first_timed_call_per_process": {
+      "count": 252,
+      "max": 30.5057,
+      "mean": 21.574919,
+      "min": 0.024,
+      "p50": 20.98575,
+      "p95": 25.423515
+    },
+    "M97_X_analysis_flip_all_timed_estimator_calls": {
+      "count": 255,
+      "max": 300.1518,
+      "mean": 24.835216,
+      "min": 0.024,
+      "p50": 21.1203,
+      "p95": 25.57492
+    },
+    "M97_X_analysis_flip_pose_output_calls": {
+      "count": 254,
+      "max": 300.1518,
+      "mean": 24.932898,
+      "min": 17.9294,
+      "p50": 21.1294,
+      "p95": 25.57494
+    },
+    "cold_first_calls": [
+      {
+        "latency_ms": 300.151800038293,
+        "processed_index": 0,
+        "video_id": "3ae77ee3271d67de171585a5c39ddd69"
+      },
+      {
+        "latency_ms": 298.9487999584526,
+        "processed_index": 0,
+        "video_id": "850cb0006b406c7176eeda8d711cd065"
+      },
+      {
+        "latency_ms": 297.0000999048352,
+        "processed_index": 7991,
+        "video_id": "8d7754d0de6d315674013d5b69a0b6ba"
+      }
+    ],
+    "cross_scope_speed_ratio_allowed": false,
+    "source_detection_unavailable_count": 3,
+    "timed_empty_returns": [
+      {
+        "latency_ms": 0.023999949917197227,
+        "processed_index": 2590,
+        "reason": "candidate_pose_unavailable",
+        "video_id": "850cb0006b406c7176eeda8d711cd065"
+      }
+    ]
+  },
+  "status": "m97_x_operational_result_sealed_without_promotion",
+  "summary_binding": {
+    "bytes": 14974,
+    "relative_path": "reports/measurement-recovery-m97/summary/report.json",
+    "roles": [
+      "immutable M97 machine-readable summary"
+    ],
+    "sha256": "46A3D690C73C827BE1B143A75F9192A513ED37B66268FBF808FD896C2DA2160E"
+  },
+  "verification": {
+    "current_input_hashes_reverified": true,
+    "focused_tests": {
+      "command": "$env:PYTHONPATH='src'; runtime/rtmpose/.venv/Scripts/python.exe -m unittest tests.test_m97_x_pose_operational tests.test_m97_x_pose_operational_summary tests.test_m71_larger_pose_model_summary tests.test_m71_larger_pose_model_extension tests.test_m70_pose_profile_ablation_summary tests.test_pose_observability_router -v",
+      "passed": true,
+      "test_count": 20,
+      "unittest_seconds": 8.214
+    },
+    "latency_recomputed_from_raw_observations": true,
+    "per_video_GPU_run_count": 3,
+    "python_compile_passed": true,
+    "real_local_GPU_runs_passed": true,
+    "recovery_set_arithmetic_revalidated": true,
+    "sealed_holdout_hash_recomputed": false,
+    "summary_rebuilt_from_bound_per_video_reports": true
+  }
+}

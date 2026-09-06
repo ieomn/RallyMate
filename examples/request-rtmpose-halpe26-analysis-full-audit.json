@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "rtmpose-m-halpe26-analysis-full-audit-850cb",
+  "source": {
+    "video_path": "../FULL-TEST/850cb0006b406c7176eeda8d711cd065.mp4"
+  },
+  "output": {
+    "directory": "../runs/rtmpose-m-halpe26-analysis-full-audit"
+  },
+  "models": {
+    "detect": "../models/yolo26n.pt",
+    "pose": "../models/rtmpose/rtmpose-m_halpe26_384x288.pth",
+    "device": "0",
+    "detect_imgsz": 960,
+    "pose_imgsz": 640,
+    "detect_confidence": 0.15,
+    "pose_confidence": 0.25,
+    "pose_backend": "rtmpose",
+    "pose_runtime": "pytorch",
+    "pose_profile": "analysis",
+    "pose_config": "../runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-384x288.py",
+    "pose_preset": "rtmpose-m-halpe26-analysis",
+    "pose_native_keypoint_format": "halpe26"
+  },
+  "processing": {
+    "start_ms": 0,
+    "end_ms": null,
+    "frame_stride": 1,
+    "max_frames": null,
+    "max_players": 2,
+    "court_every_n_frames": 25,
+    "write_annotated_video": false
+  },
+  "court": {
+    "mode": "disabled",
+    "refresh_policy": "until_usable"
+  },
+  "scoring": {
+    "feasibility_registry": "../metric-feasibility-pose-wave-v2.json"
+  },
+  "upstream_metadata": {
+    "purpose": "halpe26_384x288_full_video_pose_and_scoring_coverage_audit",
+    "scoring_policy": "no_grade_without_calibration",
+    "accuracy_claim": false,
+    "promotion_status": "analysis_candidate_not_F4_promoted"
+  }
+}

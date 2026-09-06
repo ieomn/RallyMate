@@ -1,0 +1,22 @@
+schema_version: 1
+name: rallymate-detect-v1
+task: detect
+base_model: ../../models/yolo26n.pt
+data: ../generated/detect/dataset.yaml
+output_dir: ../../runs/training
+registry_dir: ../../model_registry
+model_name: rallymate-detect
+license: internal-evaluation-only
+epochs: 120
+image_size: 1280
+batch: 8
+device: "0"
+workers: 4
+patience: 25
+seed: 42
+freeze: 0
+optimizer: auto
+quality_gates:
+  map50_95: 0.42
+  precision: 0.80
+  recall: 0.75

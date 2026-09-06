@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "registry_version": "pose-deployment-presets-2026-09-04.1",
+  "default_preset": "rtmpose-m-halpe26-online",
+  "presets": [
+    {
+      "preset_id": "yolo-baseline",
+      "role": "rollback_and_coarse_pose_baseline",
+      "pose_backend": "yolo",
+      "pose_runtime": "pytorch",
+      "pose_profile": "realtime",
+      "model_relative_path": "models/yolo26n-pose.pt",
+      "config_runtime_relative_path": null,
+      "native_keypoint_format": "coco17",
+      "input_size_hw": [640, 640],
+      "promotion_status": "explicit_rollback_baseline"
+    },
+    {
+      "preset_id": "rtmpose-m-halpe26-online",
+      "role": "online_primary_pose_for_F2_measurement",
+      "pose_backend": "rtmpose",
+      "pose_runtime": "pytorch",
+      "pose_profile": "realtime",
+      "model_relative_path": "models/rtmpose/rtmpose-m_halpe26_256x192.pth",
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+      "config_package_relative_path": ".mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+      "native_keypoint_format": "halpe26",
+      "input_size_hw": [256, 192],
+      "promotion_status": "production_F2_measurement_default_not_F4_scoring"
+    },
+    {
+      "preset_id": "rtmpose-m-halpe26-analysis",
+      "role": "offline_deep_analysis_candidate",
+      "pose_backend": "rtmpose",
+      "pose_runtime": "pytorch",
+      "pose_profile": "analysis",
+      "model_relative_path": "models/rtmpose/rtmpose-m_halpe26_384x288.pth",
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-384x288.py",
+      "config_package_relative_path": ".mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-384x288.py",
+      "native_keypoint_format": "halpe26",
+      "input_size_hw": [384, 288],
+      "promotion_status": "analysis_candidate_not_F4_promoted"
+    },
+    {
+      "preset_id": "rtmpose-l-halpe26-analysis-shadow",
+      "role": "offline_shadow_analysis_candidate_not_accuracy_validated_not_F4",
+      "pose_backend": "rtmpose",
+      "pose_runtime": "pytorch",
+      "pose_profile": "analysis",
+      "model_relative_path": "models/rtmpose/rtmpose-l_halpe26_384x288.pth",
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-l_8xb512-700e_body8-halpe26-384x288.py",
+      "config_package_relative_path": ".mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-l_8xb512-700e_body8-halpe26-384x288.py",
+      "native_keypoint_format": "halpe26",
+      "input_size_hw": [384, 288],
+      "promotion_status": "offline_shadow_only_not_accuracy_validated_not_F4_promoted"
+    },
+    {
+      "preset_id": "rtmpose-m-wholebody133-analysis",
+      "role": "offline_full_body_detail_candidate",
+      "pose_backend": "rtmpose",
+      "pose_runtime": "pytorch",
+      "pose_profile": "analysis",
+      "model_relative_path": "models/rtmpose/rtmpose-m_coco-wholebody133_256x192.pth",
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/wholebody_2d_keypoint/rtmpose/coco-wholebody/rtmpose-m_8xb64-270e_coco-wholebody-256x192.py",
+      "config_package_relative_path": ".mim/configs/wholebody_2d_keypoint/rtmpose/coco-wholebody/rtmpose-m_8xb64-270e_coco-wholebody-256x192.py",
+      "native_keypoint_format": "coco_wholebody133",
+      "input_size_hw": [256, 192],
+      "promotion_status": "analysis_candidate_not_F4_promoted"
+    }
+  ]
+}

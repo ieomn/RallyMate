@@ -1,0 +1,183 @@
+{
+  "browser_batch_and_recovery": {
+    "files_or_filenames_persisted": false,
+    "local_storage_allowlist": [
+      "version",
+      "submitted_job_ids",
+      "completed_job_ids",
+      "failed_job_ids",
+      "active_job_id",
+      "current_index",
+      "total"
+    ],
+    "progress": "current_one_based_index_and_batch_total_are_displayed",
+    "recovery": "submitted_job_ids_are_reloaded_and_polled_after_refresh",
+    "result_payloads_persisted": false,
+    "results": "completed_video_summaries_are_retained_and_switchable",
+    "submission": "multiple_files_submitted_sequentially_as_single_job_API_calls",
+    "token_persisted": false,
+    "unsubmitted_files": "must_be_reselected_after_refresh"
+  },
+  "claim_boundaries": {
+    "coach_score_generated": false,
+    "formal_A_to_E_generated": false,
+    "new_model_accuracy_claimed": false,
+    "recognition_accuracy_measured": false,
+    "technical_level_measured": false
+  },
+  "formal_scoring": {
+    "A_to_E_generated": false,
+    "available": false,
+    "grade": null,
+    "score_0_to_100": null,
+    "status": "calibration_required"
+  },
+  "generated_at": "2026-09-04T16:14:25.331033+00:00",
+  "implementation_file_count": 7,
+  "implementation_files": [
+    {
+      "bytes": 20212,
+      "relative_path": "src/rallymate_service/user_demo.py",
+      "role": "Demo result builder",
+      "sha256": "1342751378a3cc7daf3b48d851cb9790d4b986d018f27deb624f6cf1f705bf85"
+    },
+    {
+      "bytes": 21142,
+      "relative_path": "src/rallymate_service/api.py",
+      "role": "Demo result HTTP endpoint",
+      "sha256": "5f2781bb719b219750984f5d6082fe7f94bb05cca004192f82625d44da6821e0"
+    },
+    {
+      "bytes": 6451,
+      "relative_path": "src/rallymate_service/assets/user-demo.html",
+      "role": "Demo page structure",
+      "sha256": "d0359817834ca378e219b33e0250b32a969cbb028f5533c3285a65e5399870e0"
+    },
+    {
+      "bytes": 22863,
+      "relative_path": "src/rallymate_service/assets/user-demo.js",
+      "role": "Demo browser workflow",
+      "sha256": "f2fe29e7c3dcfb1b16898dd3028ade5e473f0cbc75f656784a2e23d70a71a14c"
+    },
+    {
+      "bytes": 12360,
+      "relative_path": "src/rallymate_service/assets/user-demo.css",
+      "role": "Demo presentation styles",
+      "sha256": "9194b6616e4c79df0645e51c02ec39199656fa210b93d41bc4f8d80e2bf2669b"
+    },
+    {
+      "bytes": 15919,
+      "relative_path": "tests/test_user_demo.py",
+      "role": "Demo result and browser contract tests",
+      "sha256": "6994b6cd4ef3e1498cc1ee2a5e97d287b504aea55c97111f9a57176e4e8b4278"
+    },
+    {
+      "bytes": 21150,
+      "relative_path": "tests/test_service.py",
+      "role": "Service integration and legacy-job tests",
+      "sha256": "36a5ca7e468e8d88d3184f0e61f486cd740995ede3be0aa809b93d99e781f895"
+    }
+  ],
+  "legacy_job_behavior": {
+    "action": "reupload_and_reanalyze",
+    "code": "legacy_job_requires_reanalysis",
+    "condition": "succeeded_job_missing_indicator-features.jsonl",
+    "http_status": 409,
+    "returns_http_500": false
+  },
+  "purpose": "audit_M96_user_demo_v1_1_field_and_behavior_changes",
+  "record_version": "m96-user-demo-field-change-record-v1.0.0",
+  "report_inputs": {
+    "builder": {
+      "bytes": 15174,
+      "relative_path": "scripts/build_m96_user_demo_field_record.py",
+      "role": "refuse-overwrite field record builder",
+      "sha256": "6bc42710c456ca015d12d3cc932f98fd945692fe7fe0102eec8711e60524f0fb"
+    },
+    "demo_contract": {
+      "bytes": 6095,
+      "relative_path": "reports/m96-user-demo-v1.1/demo-contract.json",
+      "role": "Demo contract",
+      "sha256": "99038a13a015ae67861f3d988297660222dec66318cf0a80919faa266e3e80bd"
+    },
+    "summary": {
+      "bytes": 3620,
+      "relative_path": "reports/m96-user-demo-v1.1/summary.md",
+      "role": "implementation summary",
+      "sha256": "f7e1df79ae26e4cda1fc21ea33e5e8f70c15623b934f833a63e736b625cfd3bb"
+    }
+  },
+  "result_contract": {
+    "analysis_quality": {
+      "range": {
+        "maximum": 100,
+        "minimum": 0
+      },
+      "relationship": "separate_analysis_completeness_measure"
+    },
+    "display_score": {
+      "compatibility_alias_for": "analysis_quality",
+      "relationship": "backward_compatible_alias"
+    },
+    "final_demo_score": {
+      "aggregation": "unweighted_mean_of_three_action_reference_scores",
+      "is_coach_score": false,
+      "is_formal_technique_score": false,
+      "is_recognition_accuracy": false,
+      "range": {
+        "maximum": 100,
+        "minimum": 0
+      },
+      "relationship": "primary_information_formation_reference",
+      "semantics": "recognizable_motion_outline_and_amplitude_information_formation_only"
+    },
+    "per_action_formation_assessment_fields": [
+      "status",
+      "label_zh",
+      "reference_score_0_to_100",
+      "meaning_zh",
+      "explanation_zh",
+      "components",
+      "component_weights",
+      "score_version"
+    ],
+    "result_version": "rallymate-user-demo-result-v1.1.0"
+  },
+  "schema_version": "1.1.0",
+  "self_hash_note": "The field-change-record SHA-256 is reported externally because a file cannot contain its own raw-file hash.",
+  "status": "implemented_and_verified",
+  "verification": {
+    "focused_tests": {
+      "command": "$env:PYTHONPATH='src'; .venv\\Scripts\\python.exe -m unittest -v tests.test_user_demo tests.test_service",
+      "passed": true,
+      "test_count": 20
+    },
+    "javascript_syntax": {
+      "command": "node --check src/rallymate_service/assets/user-demo.js",
+      "passed": true
+    },
+    "live_static_probe": {
+      "endpoint": "http://127.0.0.1:8000/",
+      "observed_http_status": 200,
+      "passed": true
+    },
+    "python_compile": {
+      "command": ".venv\\Scripts\\python.exe -m py_compile src/rallymate_service/user_demo.py src/rallymate_service/api.py tests/test_user_demo.py tests/test_service.py",
+      "passed": true
+    },
+    "source_contract_checks": {
+      "analysis_quality_present": true,
+      "display_score_alias_present": true,
+      "final_demo_score_present": true,
+      "formal_scoring_forced_unavailable": true,
+      "formation_assessment_present": true,
+      "legacy_job_409_present": true,
+      "local_storage_allowlist_excludes_sensitive_values": true,
+      "multiple_input_present": true,
+      "refresh_recovery_present": true,
+      "schema_version_1_1_0_present": true,
+      "sequential_submission_present": true,
+      "summary_zh_rendered": true
+    }
+  }
+}

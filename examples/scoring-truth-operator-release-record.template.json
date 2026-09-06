@@ -1,0 +1,41 @@
+{
+  "template_non_executable": true,
+  "schema_version": "1.0.0",
+  "release_version": "scoring-truth-operator-reviewed-local-release-v1.0.0",
+  "artifact_scope": "TEMPLATE_NOT_AN_OPERATOR_RELEASE_RECORD",
+  "release_id": "REPLACE_WITH_LOCAL_RELEASE_ID",
+  "released_at": "REPLACE_WITH_REVIEW_TIME_IN_CANONICAL_UTC",
+  "reviewed_by": {
+    "reviewer_id": "REPLACE_WITH_OPERATOR_ID",
+    "role": "annotation_release_operator"
+  },
+  "decision": "operator_released_for_independent_event_phase_annotation",
+  "plan": {
+    "plan_id": "REPLACE_WITH_PLAN_ID",
+    "plan_version": "scoring-truth-event-annotation-plan-v2.0.0",
+    "raw_sha256": "REPLACE_WITH_EXACT_PLAN_FILE_SHA256"
+  },
+  "technical_handoff": {
+    "manifest_raw_sha256": "REPLACE_WITH_EXACT_M89_MANIFEST_SHA256",
+    "bundle_version": "scoring-truth-event-handoff-v1.0.0",
+    "bundle_id": "REPLACE_WITH_EXACT_M89_BUNDLE_ID",
+    "content_root_sha256": "REPLACE_WITH_EXACT_M89_CONTENT_ROOT_SHA256",
+    "source_projection_sha256": "REPLACE_WITH_EXACT_M89_SOURCE_PROJECTION_SHA256"
+  },
+  "scope_digest_sha256": "REPLACE_WITH_EXACT_PLAN_SCOPE_DIGEST_SHA256",
+  "role_protocol_digest_sha256": "REPLACE_WITH_EXACT_ROLE_PROTOCOL_DIGEST_SHA256",
+  "attestations": {
+    "exact_plan_reviewed": true,
+    "exact_handoff_reviewed": true,
+    "blind_role_protocol_reviewed": true,
+    "annotation_only_scope_reviewed": true
+  },
+  "safety": {
+    "annotation_workflow_release_only": true,
+    "digital_signature_authority": false,
+    "trusted_timestamp_authority": false,
+    "calibration_authorized": false,
+    "promotion_authorized": false,
+    "production_scoring_authorized": false
+  }
+}

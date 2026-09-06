@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/trusted-runtime-profile-bindings.schema.json",
+  "title": "RallyMate operator-controlled calibration runtime-profile allow-list",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "registry_id", "registry_version", "source", "registered_at", "canonicalization", "entries"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"const": "trusted_calibration_runtime_profile_bindings"},
+    "registry_id": {"type": "string", "minLength": 1},
+    "registry_version": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["authority_id", "source_sha256", "registered_at"],
+      "properties": {
+        "authority_id": {"type": "string", "minLength": 1},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "registered_at": {"type": "string", "format": "date-time"},
+    "canonicalization": {"const": "rallymate-canonical-json-v1"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["binding_id", "status", "indicator_id", "backend", "calibration_version", "calibration_asset_sha256", "trusted_promotion", "feasibility_registry", "runtime_profile", "runtime_profile_sha256", "compatibility_review", "registered_at"],
+        "properties": {
+          "binding_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["active", "revoked"]},
+          "indicator_id": {"type": "string", "minLength": 1},
+          "backend": {"enum": ["threshold_rule", "ordinal_regression"]},
+          "calibration_version": {"type": "string", "minLength": 1},
+          "calibration_asset_sha256": {"$ref": "#/$defs/sha256"},
+          "trusted_promotion": {
+            "type": "object",
+            "required": ["ledger_id", "ledger_version", "entry_id"],
+            "properties": {
+              "ledger_id": {"type": "string", "minLength": 1},
+              "ledger_version": {"type": "string", "minLength": 1},
+              "entry_id": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          },
+          "feasibility_registry": {
+            "type": "object",
+            "required": ["registry_version", "content_sha256"],
+            "properties": {
+              "registry_version": {"type": "string", "minLength": 1},
+              "content_sha256": {"$ref": "#/$defs/sha256"}
+            },
+            "additionalProperties": false
+          },
+          "runtime_profile": {"$ref": "runtime-scoring-profile.schema.json"},
+          "runtime_profile_sha256": {"$ref": "#/$defs/sha256"},
+          "compatibility_review": {
+            "type": "object",
+            "required": ["review_id", "reviewer_id", "source_sha256", "reviewed_at"],
+            "properties": {
+              "review_id": {"type": "string", "minLength": 1},
+              "reviewer_id": {"type": "string", "minLength": 1},
+              "source_sha256": {"$ref": "#/$defs/sha256"},
+              "reviewed_at": {"type": "string", "format": "date-time"}
+            },
+            "additionalProperties": false
+          },
+          "registered_at": {"type": "string", "format": "date-time"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}},
+  "additionalProperties": false
+}

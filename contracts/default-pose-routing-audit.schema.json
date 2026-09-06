@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/default-pose-routing-audit.schema.json",
+  "type": "object",
+  "required": ["schema_version", "audit_version", "generated_at", "status", "sources", "scope", "deployment_default", "real_worker_default_smoke", "full_video_production_measurement", "experimental_small_roi_measurement", "assertions", "interpretation", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "audit_version": {"const": "default-pose-routing-audit-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "default_rtmpose_F2_measurement_route_verified_no_formal_grade"},
+    "sources": {"type": "object", "minProperties": 6, "additionalProperties": {"$ref": "#/$defs/source"}},
+    "scope": {
+      "type": "object",
+      "required": ["feasibility_registry_version", "indicator_ids", "indicator_count", "event_codes", "maturity_levels"],
+      "properties": {
+        "feasibility_registry_version": {"type": "string", "minLength": 1},
+        "indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "indicator_count": {"type": "integer", "minimum": 1},
+        "event_codes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "maturity_levels": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["F0", "F1", "F2", "F3", "F4"]}}
+      },
+      "additionalProperties": false
+    },
+    "deployment_default": {
+      "type": "object",
+      "required": ["registry_version", "preset_id", "role", "pose_backend", "pose_profile", "native_keypoint_format", "input_size_hw", "promotion_status", "yolo_rollback_preset_id"],
+      "properties": {
+        "registry_version": {"type": "string", "minLength": 1},
+        "preset_id": {"const": "rtmpose-m-halpe26-online"},
+        "role": {"type": "string", "minLength": 1},
+        "pose_backend": {"const": "rtmpose"},
+        "pose_profile": {"type": "string", "minLength": 1},
+        "native_keypoint_format": {"const": "halpe26"},
+        "input_size_hw": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}], "items": false},
+        "promotion_status": {"type": "string", "minLength": 1},
+        "yolo_rollback_preset_id": {"const": "yolo-baseline"}
+      },
+      "additionalProperties": false
+    },
+    "real_worker_default_smoke": {
+      "type": "object",
+      "required": ["job_id", "execution_path", "preset_id", "preset_source", "pose_backend", "pose_profile", "model_name", "model_sha256", "native_keypoint_format", "native_keypoint_count", "processed_frames", "elapsed_seconds", "effective_processed_fps", "event_counts", "indicator_record_count", "score_status_counts", "non_null_grade_count", "non_null_threshold_version_count", "bundle_validation_status"],
+      "properties": {
+        "job_id": {"type": "string", "minLength": 1},
+        "execution_path": {"type": "string", "minLength": 1},
+        "preset_id": {"const": "rtmpose-m-halpe26-online"},
+        "preset_source": {"const": "deployment_registry_default"},
+        "pose_backend": {"const": "rtmpose"},
+        "pose_profile": {"type": "string", "minLength": 1},
+        "model_name": {"type": "string", "minLength": 1},
+        "model_sha256": {"$ref": "#/$defs/sha256"},
+        "native_keypoint_format": {"const": "halpe26"},
+        "native_keypoint_count": {"const": 26},
+        "processed_frames": {"type": "integer", "minimum": 1},
+        "elapsed_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "effective_processed_fps": {"type": "number", "exclusiveMinimum": 0},
+        "event_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "indicator_record_count": {"type": "integer", "minimum": 1},
+        "score_status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "non_null_grade_count": {"const": 0},
+        "non_null_threshold_version_count": {"const": 0},
+        "bundle_validation_status": {"const": "passed"}
+      },
+      "additionalProperties": false
+    },
+    "full_video_production_measurement": {
+      "type": "object",
+      "required": ["model_key", "model_sha256", "native_keypoint_format", "candidate_event_count", "indicator_event_instance_count", "measured_indicator_event_instance_count", "unavailable_indicator_event_instance_count", "indicator_with_measured_instance_count", "indicators_without_measured_instances", "per_indicator", "score_status_counts", "grade_counts", "fixed_boundaries_are_ground_truth"],
+      "properties": {
+        "model_key": {"type": "string", "minLength": 1},
+        "model_sha256": {"$ref": "#/$defs/sha256"},
+        "native_keypoint_format": {"const": "halpe26"},
+        "candidate_event_count": {"type": "integer", "minimum": 1},
+        "indicator_event_instance_count": {"type": "integer", "minimum": 1},
+        "measured_indicator_event_instance_count": {"type": "integer", "minimum": 1},
+        "unavailable_indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "indicator_with_measured_instance_count": {"type": "integer", "minimum": 1},
+        "indicators_without_measured_instances": {"type": "array", "maxItems": 0},
+        "per_indicator": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/indicator"}},
+        "score_status_counts": {"type": "object", "propertyNames": {"enum": ["calibration_required", "unavailable"]}, "additionalProperties": {"type": "integer", "minimum": 0}},
+        "grade_counts": {"type": "object", "maxProperties": 0},
+        "fixed_boundaries_are_ground_truth": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "experimental_small_roi_measurement": {
+      "type": "object",
+      "required": ["model_key", "production_default", "indicator_event_instance_count", "measured_indicator_event_instance_count", "unavailable_indicator_event_instance_count", "indicator_with_measured_instance_count"],
+      "properties": {
+        "model_key": {"type": "string", "minLength": 1},
+        "production_default": {"const": false},
+        "indicator_event_instance_count": {"type": "integer", "minimum": 1},
+        "measured_indicator_event_instance_count": {"type": "integer", "minimum": 1},
+        "unavailable_indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "indicator_with_measured_instance_count": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "assertions": {"type": "object", "minProperties": 8, "additionalProperties": {"const": true}},
+    "interpretation": {"type": "object", "required": ["verified", "not_verified"], "additionalProperties": {"type": "string", "minLength": 1}},
+    "safety": {
+      "type": "object",
+      "required": ["pose_default_changed_from_yolo_to_rtmpose", "scoring_maturity_changed", "production_min_roi_changed", "experimental_profile_promoted", "accuracy_claim", "grade_generated", "threshold_generated", "maturity_promoted"],
+      "properties": {
+        "pose_default_changed_from_yolo_to_rtmpose": {"const": true},
+        "scoring_maturity_changed": {"const": false},
+        "production_min_roi_changed": {"const": false},
+        "experimental_profile_promoted": {"const": false},
+        "accuracy_claim": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}, "additionalProperties": false},
+    "indicator": {
+      "type": "object",
+      "required": ["indicator_id", "instance_count", "measured_instance_count", "unavailable_instance_count", "has_real_measured_instance"],
+      "properties": {
+        "indicator_id": {"type": "string", "minLength": 1},
+        "instance_count": {"type": "integer", "minimum": 1},
+        "measured_instance_count": {"type": "integer", "minimum": 1},
+        "unavailable_instance_count": {"type": "integer", "minimum": 0},
+        "has_real_measured_instance": {"const": true}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-calibration-handoff.schema.json",
+  "title": "RallyMate immutable scoring-truth to calibration handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "handoff_version", "handoff_id", "generated_at", "status", "source_fingerprint_sha256", "source", "registry", "states", "counts", "indicator_readiness", "artifacts", "safety"],
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "handoff_version": {"const": "scoring-truth-calibration-handoff-v1.0.0"},
+    "handoff_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "partially_prepared_requires_more_truth", "all_indicators_prepared_requires_external_protocol"]},
+    "source_fingerprint_sha256": {"$ref": "#/$defs/sha"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth_refresh", "measurement_source"],
+      "properties": {
+        "truth_refresh": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["refresh_id", "manifest"],
+          "properties": {
+            "refresh_id": {"type": "string", "minLength": 1},
+            "manifest": {"$ref": "#/$defs/artifact"}
+          }
+        },
+        "measurement_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["video_id", "frames", "primary_timeline", "pose_profile", "native_keypoint_format", "native_keypoint_count", "accepted_manual_event_count"],
+          "properties": {
+            "video_id": {"type": "string", "minLength": 1},
+            "frames": {"$ref": "#/$defs/artifact"},
+            "primary_timeline": {"$ref": "#/$defs/artifact"},
+            "pose_profile": {"type": "string", "minLength": 1},
+            "native_keypoint_format": {"type": ["string", "null"]},
+            "native_keypoint_count": {"type": ["integer", "null"], "minimum": 1},
+            "accepted_manual_event_count": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "indicator_ids", "indicator_count"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "indicator_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manual_event_features", "calibration_dataset", "fit_readiness"],
+      "properties": {
+        "manual_event_features": {"type": "string", "minLength": 1},
+        "calibration_dataset": {"type": "string", "minLength": 1},
+        "fit_readiness": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["indicators", "accepted_manual_events", "measurement_source_manual_events", "manual_events_without_measurement_source", "manual_feature_records", "manual_indicator_records", "calibration_samples", "prepared_indicators", "fit_ready_indicators"],
+      "properties": {
+        "indicators": {"type": "integer", "minimum": 1},
+        "accepted_manual_events": {"type": "integer", "minimum": 0},
+        "measurement_source_manual_events": {"type": "integer", "minimum": 0},
+        "manual_events_without_measurement_source": {"type": "integer", "minimum": 0},
+        "manual_feature_records": {"type": "integer", "minimum": 0},
+        "manual_indicator_records": {"type": "integer", "minimum": 0},
+        "calibration_samples": {"type": "integer", "minimum": 0},
+        "prepared_indicators": {"type": "integer", "minimum": 1},
+        "fit_ready_indicators": {"type": "integer", "minimum": 0}
+      }
+    },
+    "indicator_readiness": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["indicator_id", "prepared_path", "prepared_sha256", "contract_valid", "fit_ready", "fit_blocker", "record_counts"],
+        "properties": {
+          "indicator_id": {"type": "string", "minLength": 1},
+          "prepared_path": {"type": "string", "minLength": 1},
+          "prepared_sha256": {"$ref": "#/$defs/sha"},
+          "contract_valid": {"const": true},
+          "fit_ready": {"type": "boolean"},
+          "fit_blocker": {"type": ["string", "null"]},
+          "record_counts": {"type": "object"}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refresh_manifest", "source_snapshots", "manual_event_features", "calibration_dataset", "prepared_by_indicator", "fit_readiness", "index_html"],
+      "properties": {
+        "refresh_manifest": {"$ref": "#/$defs/artifact"},
+        "source_snapshots": {"type": "object", "minProperties": 7, "additionalProperties": {"$ref": "#/$defs/artifact"}},
+        "manual_event_features": {"type": "object", "minProperties": 5, "additionalProperties": {"$ref": "#/$defs/artifact"}},
+        "calibration_dataset": {"type": "object", "minProperties": 4, "additionalProperties": {"$ref": "#/$defs/artifact"}},
+        "prepared_by_indicator": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/artifact"}},
+        "fit_readiness": {"$ref": "#/$defs/artifact"},
+        "index_html": {"$ref": "#/$defs/artifact"}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_event_detector_used", "candidate_boundaries_promoted_to_truth", "fit_executed", "candidate_written", "thresholds_generated", "model_trained", "grades_generated", "automatic_F3_or_F4_promotion", "empty_truth_interpreted_as_grade_E_or_zero", "maximum_status_without_external_calibration"],
+      "properties": {
+        "candidate_event_detector_used": {"const": false},
+        "candidate_boundaries_promoted_to_truth": {"const": false},
+        "fit_executed": {"const": false},
+        "candidate_written": {"const": false},
+        "thresholds_generated": {"const": false},
+        "model_trained": {"const": false},
+        "grades_generated": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false},
+        "empty_truth_interpreted_as_grade_E_or_zero": {"const": false},
+        "maximum_status_without_external_calibration": {"const": "calibration_required"}
+      }
+    }
+  }
+}

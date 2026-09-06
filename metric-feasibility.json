@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "registry_version": "minimum-scoring-loop-2026-08-13.1",
+  "updated_at": "2026-08-13T00:00:00+08:00",
+  "scope": {
+    "capture": "fixed_camera",
+    "subjects": "single_primary_player",
+    "pose_topology_for_scoring": "coco17",
+    "events": ["FS01", "FS02", "FS09"],
+    "indicator_count": 6,
+    "exclusions": ["ball", "racket", "court_scoring", "total_score", "keypoint_refinement"]
+  },
+  "level_definitions": {
+    "F0": "structure_supported",
+    "F1": "event_localizable",
+    "F2": "feature_measurable",
+    "F3": "feature_discriminative_and_calibratable",
+    "F4": "independently_tested_and_scoreable"
+  },
+  "indicators": [
+    {
+      "indicator_id": "FS01-M02",
+      "name_zh": "重心预加载",
+      "feasibility_level": "F2",
+      "required_events": ["FS01.preload"],
+      "required_features": ["hip_center_y_body", "left_knee_flexion_deg", "right_knee_flexion_deg", "stance_width_body", "hip_center_relative_to_ankle_support"],
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "hip_knee_ankle_not_severely_occluded", "body_scale_observable"],
+      "ground_truth_requirements": ["manual_FS01_boundaries", "manual_phase_keyframes", "manual_corrected_hip_knee_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS01_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs01-m02.1", "event_contract": "events.1.0.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS01-M05",
+      "name_zh": "重心重新分配并准备启动",
+      "feasibility_level": "F2",
+      "required_events": ["FS01.redistribution", "FS01.initiation"],
+      "required_features": ["body_center_speed_body_s", "hip_center_relative_to_ankle_support", "torso_lean_deg", "shoulder_hip_angular_velocity"],
+      "view_constraints": ["fixed_camera", "torso_and_ankle_support_visible", "camera_motion_below_quality_gate", "event_direction_observable_in_image_plane"],
+      "ground_truth_requirements": ["manual_FS01_boundaries", "manual_redistribution_and_initiation_keyframes", "manual_corrected_shoulder_hip_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS01_phase_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs01-m05.1", "event_contract": "events.1.0.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS02-M02",
+      "name_zh": "重心向目标方向转换",
+      "feasibility_level": "F2",
+      "required_events": ["FS02.direction_conversion"],
+      "required_features": ["body_center_speed_body_s", "hip_center_relative_to_ankle_support", "torso_lean_deg"],
+      "view_constraints": ["fixed_camera", "hip_and_support_ankles_visible", "event_trajectory_long_enough_to_define_image_plane_direction", "tactical_target_direction_not_claimed_without_external_truth"],
+      "ground_truth_requirements": ["manual_FS02_boundaries", "manual_direction_conversion_keyframe", "manual_event_target_direction_or_rank_label", "manual_corrected_hip_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS02_ground_truth_missing", "tactical_target_direction_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "direction_error_deg": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs02-m02.1", "event_contract": "events.1.0.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS09-M03",
+      "name_zh": "下肢吸收身体惯性",
+      "feasibility_level": "F2",
+      "required_events": ["FS09.deceleration", "FS09.absorption"],
+      "required_features": ["body_center_deceleration_body_s2", "left_knee_flexion_deg", "right_knee_flexion_deg", "hip_center_y_body"],
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "timestamp_ms_monotonic", "deceleration_interval_has_sufficient_valid_samples"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_deceleration_and_absorption_keyframes", "manual_corrected_hip_knee_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS09_ground_truth_missing", "acceleration_noise_budget_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m03.1", "event_contract": "events.1.0.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS09-M04",
+      "name_zh": "重心重新稳定",
+      "feasibility_level": "F2",
+      "required_events": ["FS09.restabilization"],
+      "required_features": ["body_center_speed_body_s", "hip_center_y_body", "stance_width_body", "stability_duration_ms"],
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "post_deceleration_tail_available", "validated_stability_envelope_required"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_restabilization_onset", "manual_stable_interval", "manual_corrected_hip_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS09_ground_truth_missing", "validated_stability_envelope_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "stability_onset_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m04.1", "event_contract": "events.1.0.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS09-M05",
+      "name_zh": "身体进入稳定控制状态",
+      "feasibility_level": "F2",
+      "required_events": ["FS09.stable_control"],
+      "required_features": ["stability_duration_ms", "body_center_speed_body_s", "torso_lean_deg", "shoulder_hip_angular_velocity"],
+      "view_constraints": ["fixed_camera", "shoulder_hip_visible", "post_event_tail_available", "validated_stability_envelope_required"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_stable_control_interval", "manual_corrected_shoulder_hip_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS09_ground_truth_missing", "validated_stability_envelope_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m05.1", "event_contract": "events.1.0.0", "feature_contract": "rallymate-features-v0.1.0"}
+    }
+  ]
+}

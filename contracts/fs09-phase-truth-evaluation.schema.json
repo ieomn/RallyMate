@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/fs09-phase-truth-evaluation.schema.json",
+  "type": "object",
+  "required": ["schema_version", "evaluator_version", "generated_at", "status", "scope", "sources", "counts", "event_metrics", "phase_metrics", "feature_boundary_conditioning", "details", "acceptance", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "evaluator_version": {"const": "fs09-phase-truth-evaluation-v1.3.0"},
+    "generated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+    "status": {"enum": ["annotation_required", "evaluated_external_acceptance_protocol_required"]},
+    "scope": {"type": "object", "required": ["video_count", "task_count", "indicator_ids", "phase_keys", "required_features", "target_unavailable_feature"], "properties": {"video_count": {"const": 1}, "task_count": {"const": 2}, "indicator_ids": {"const": ["FS09-M05"]}, "phase_keys": {"const": ["peak_speed_ms", "deceleration_peak_ms", "restabilization_onset_ms", "stable_control_onset_ms"]}, "required_features": {"const": ["stability_duration_ms", "hip_center_speed_drop_body_s", "double_support_proxy_duration_ms", "torso_lean_variability_deg", "shoulder_hip_angular_velocity_change_deg_s", "hip_deceleration_to_double_support_proxy_ms"]}, "target_unavailable_feature": {"const": "hip_deceleration_to_double_support_proxy_ms"}}, "additionalProperties": false},
+    "sources": {"type": "object", "required": ["manifest", "validation", "analysis_plan", "m74_report", "per_video"], "properties": {"manifest": {"$ref": "#/$defs/source"}, "validation": {"$ref": "#/$defs/source"}, "analysis_plan": {"$ref": "#/$defs/source"}, "m74_report": {"$ref": "#/$defs/source"}, "per_video": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/perVideo"}}}, "additionalProperties": false},
+    "counts": {"type": "object", "required": ["accepted_manual_events", "manual_event_present", "manual_event_absent", "candidate_feature_records", "manual_boundary_conditioned_feature_records"], "properties": {"accepted_manual_events": {"type": "integer", "minimum": 0, "maximum": 2}, "manual_event_present": {"type": "integer", "minimum": 0, "maximum": 2}, "manual_event_absent": {"type": "integer", "minimum": 0, "maximum": 2}, "candidate_feature_records": {"type": "integer", "minimum": 0, "maximum": 12}, "manual_boundary_conditioned_feature_records": {"type": "integer", "minimum": 0, "maximum": 12}}, "additionalProperties": false},
+    "event_metrics": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/eventMetrics"}]},
+    "phase_metrics": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/phaseMetrics"}]},
+    "feature_boundary_conditioning": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/featureMetrics"}]},
+    "details": {"type": "array", "maxItems": 2, "items": {"$ref": "#/$defs/evaluationDetail"}},
+    "acceptance": {"type": "object", "required": ["status", "analysis_plan_verified", "thresholds", "runtime_event_change_allowed", "runtime_feature_change_allowed", "f2_to_f3_allowed"], "properties": {"status": {"const": "external_preregistered_protocol_required"}, "analysis_plan_verified": {"const": true}, "thresholds": {"const": null}, "runtime_event_change_allowed": {"const": false}, "runtime_feature_change_allowed": {"const": false}, "f2_to_f3_allowed": {"const": false}}, "additionalProperties": false},
+    "safety": {"type": "object", "required": ["full_manual_truth_provided", "candidate_boundaries_are_ground_truth", "manual_stable_control_is_ground_contact_or_force_truth", "feature_boundary_difference_is_total_feature_error", "production_enabled", "grade_generated", "threshold_generated", "maturity_promoted"], "properties": {"full_manual_truth_provided": {"type": "boolean"}, "candidate_boundaries_are_ground_truth": {"const": false}, "manual_stable_control_is_ground_contact_or_force_truth": {"const": false}, "feature_boundary_difference_is_total_feature_error": {"const": false}, "production_enabled": {"const": false}, "grade_generated": {"const": false}, "threshold_generated": {"const": false}, "maturity_promoted": {"const": false}}, "additionalProperties": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}, "additionalProperties": false},
+    "numberOrNull": {"type": ["number", "null"]},
+    "decodeSample": {
+      "type": "object",
+      "required": ["frame_index", "decoded"],
+      "properties": {
+        "frame_index": {"type": "integer", "minimum": 0},
+        "decoded": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "probe": {
+      "type": "object",
+      "required": ["codec_fourcc", "frame_count", "fps", "duration_ms", "width", "height", "decode_samples"],
+      "properties": {
+        "codec_fourcc": {"const": "h264"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "duration_ms": {"type": "integer", "minimum": 1},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "decode_samples": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {"$ref": "#/$defs/decodeSample"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "reviewClip": {
+      "type": "object",
+      "required": ["task_id", "source_start_ms", "source_end_ms", "source_time_offset_ms", "target_selection_anchor_ms", "clip", "probe"],
+      "properties": {
+        "task_id": {"enum": ["m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001", "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002"]},
+        "source_start_ms": {"type": "integer", "minimum": 0},
+        "source_end_ms": {"type": "integer", "minimum": 1},
+        "source_time_offset_ms": {"type": "integer", "minimum": 0},
+        "target_selection_anchor_ms": {"type": "integer", "minimum": 0},
+        "clip": {"$ref": "#/$defs/source"},
+        "probe": {"$ref": "#/$defs/probe"}
+      },
+      "additionalProperties": false
+    },
+    "perVideo": {
+      "type": "object",
+      "required": ["video_id", "view_group", "video", "m73_report", "frames", "primary_timeline", "events", "review_clip_manifest", "review_clips"],
+      "properties": {
+        "video_id": {"const": "8d7754d0de6d315674013d5b69a0b6ba"},
+        "view_group": {"const": "fixed-camera-8d7754d0"},
+        "video": {"$ref": "#/$defs/source"},
+        "m73_report": {"$ref": "#/$defs/source"},
+        "frames": {"$ref": "#/$defs/source"},
+        "primary_timeline": {"$ref": "#/$defs/source"},
+        "events": {"$ref": "#/$defs/source"},
+        "review_clip_manifest": {"$ref": "#/$defs/source"},
+        "review_clips": {
+          "type": "array",
+          "prefixItems": [
+            {"allOf": [{"$ref": "#/$defs/reviewClip"}, {"properties": {"task_id": {"const": "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001"}}}]},
+            {"allOf": [{"$ref": "#/$defs/reviewClip"}, {"properties": {"task_id": {"const": "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002"}}}]}
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "aggregate": {
+      "type": "object",
+      "required": ["count", "mae", "p95_absolute_error", "bias_candidate_minus_truth"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0, "maximum": 2},
+        "mae": {"$ref": "#/$defs/numberOrNull"},
+        "p95_absolute_error": {"$ref": "#/$defs/numberOrNull"},
+        "bias_candidate_minus_truth": {"$ref": "#/$defs/numberOrNull"}
+      },
+      "allOf": [
+        {"if": {"properties": {"count": {"const": 0}}, "required": ["count"]}, "then": {"properties": {"mae": {"const": null}, "p95_absolute_error": {"const": null}, "bias_candidate_minus_truth": {"const": null}}}},
+        {"if": {"properties": {"count": {"minimum": 1}}, "required": ["count"]}, "then": {"properties": {"mae": {"type": "number"}, "p95_absolute_error": {"type": "number"}, "bias_candidate_minus_truth": {"type": "number"}}}}
+      ],
+      "additionalProperties": false
+    },
+    "eventMetrics": {
+      "type": "object",
+      "required": ["candidate_count", "truth_present_count", "truth_absent_count", "segment_iou_mean", "boundary_start_mae_ms", "boundary_end_mae_ms", "boundary_start_bias_candidate_minus_truth_ms", "boundary_end_bias_candidate_minus_truth_ms"],
+      "properties": {
+        "candidate_count": {"const": 2},
+        "truth_present_count": {"type": "integer", "minimum": 0, "maximum": 2},
+        "truth_absent_count": {"type": "integer", "minimum": 0, "maximum": 2},
+        "segment_iou_mean": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "boundary_start_mae_ms": {"type": ["number", "null"], "minimum": 0},
+        "boundary_end_mae_ms": {"type": ["number", "null"], "minimum": 0},
+        "boundary_start_bias_candidate_minus_truth_ms": {"$ref": "#/$defs/numberOrNull"},
+        "boundary_end_bias_candidate_minus_truth_ms": {"$ref": "#/$defs/numberOrNull"}
+      },
+      "allOf": [
+        {"if": {"properties": {"truth_present_count": {"const": 0}}, "required": ["truth_present_count"]}, "then": {"properties": {"segment_iou_mean": {"const": null}, "boundary_start_mae_ms": {"const": null}, "boundary_end_mae_ms": {"const": null}, "boundary_start_bias_candidate_minus_truth_ms": {"const": null}, "boundary_end_bias_candidate_minus_truth_ms": {"const": null}}}},
+        {"if": {"properties": {"truth_present_count": {"minimum": 1}}, "required": ["truth_present_count"]}, "then": {"properties": {"segment_iou_mean": {"type": "number"}, "boundary_start_mae_ms": {"type": "number"}, "boundary_end_mae_ms": {"type": "number"}, "boundary_start_bias_candidate_minus_truth_ms": {"type": "number"}, "boundary_end_bias_candidate_minus_truth_ms": {"type": "number"}}}}
+      ],
+      "additionalProperties": false
+    },
+    "phaseDetail": {
+      "type": "object",
+      "required": ["task_id", "phase_key", "truth_status", "candidate_available", "truth_ms", "candidate_ms", "signed_error_candidate_minus_truth_ms"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "phase_key": {"enum": ["peak_speed_ms", "deceleration_peak_ms", "restabilization_onset_ms", "stable_control_onset_ms"]},
+        "truth_status": {"enum": ["observed", "not_observed", "unobservable"]},
+        "candidate_available": {"type": "boolean"},
+        "truth_ms": {"type": ["integer", "null"]},
+        "candidate_ms": {"type": ["integer", "null"]},
+        "signed_error_candidate_minus_truth_ms": {"type": ["integer", "null"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"truth_status": {"const": "observed"}}, "required": ["truth_status"]}, "then": {"properties": {"truth_ms": {"type": "integer"}}}, "else": {"properties": {"truth_ms": {"const": null}, "signed_error_candidate_minus_truth_ms": {"const": null}}}},
+        {"if": {"properties": {"candidate_available": {"const": true}}, "required": ["candidate_available"]}, "then": {"properties": {"candidate_ms": {"type": "integer"}}}, "else": {"properties": {"candidate_ms": {"const": null}, "signed_error_candidate_minus_truth_ms": {"const": null}}}},
+        {"if": {"properties": {"truth_status": {"const": "observed"}, "candidate_available": {"const": true}}, "required": ["truth_status", "candidate_available"]}, "then": {"properties": {"signed_error_candidate_minus_truth_ms": {"type": "integer"}}}}
+      ],
+      "additionalProperties": false
+    },
+    "phaseMetrics": {
+      "type": "object",
+      "required": ["by_phase", "details"],
+      "properties": {
+        "by_phase": {
+          "type": "object",
+          "required": ["peak_speed_ms", "deceleration_peak_ms", "restabilization_onset_ms", "stable_control_onset_ms"],
+          "properties": {"peak_speed_ms": {"$ref": "#/$defs/aggregate"}, "deceleration_peak_ms": {"$ref": "#/$defs/aggregate"}, "restabilization_onset_ms": {"$ref": "#/$defs/aggregate"}, "stable_control_onset_ms": {"$ref": "#/$defs/aggregate"}},
+          "additionalProperties": false
+        },
+        "details": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/phaseDetail"}}
+      },
+      "additionalProperties": false
+    },
+    "featureSnapshot": {
+      "type": "object",
+      "required": ["feature_name", "feature_version", "value", "unit", "confidence", "valid", "reason", "source_frames"],
+      "properties": {
+        "feature_name": {"enum": ["stability_duration_ms", "hip_center_speed_drop_body_s", "double_support_proxy_duration_ms", "torso_lean_variability_deg", "shoulder_hip_angular_velocity_change_deg_s", "hip_deceleration_to_double_support_proxy_ms"]},
+        "feature_version": {"type": "string", "minLength": 1},
+        "value": {"$ref": "#/$defs/numberOrNull"},
+        "unit": {"type": "string", "minLength": 1},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "valid": {"type": "boolean"},
+        "reason": {"type": ["string", "null"]},
+        "source_frames": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+      },
+      "additionalProperties": false
+    },
+    "featureDetail": {
+      "type": "object",
+      "required": ["task_id", "feature_name", "candidate", "manual_boundary_conditioned", "comparison_status", "signed_difference_candidate_minus_manual_boundary", "absolute_difference", "semantics"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "feature_name": {"enum": ["stability_duration_ms", "hip_center_speed_drop_body_s", "double_support_proxy_duration_ms", "torso_lean_variability_deg", "shoulder_hip_angular_velocity_change_deg_s", "hip_deceleration_to_double_support_proxy_ms"]},
+        "candidate": {"$ref": "#/$defs/featureSnapshot"},
+        "manual_boundary_conditioned": {"$ref": "#/$defs/featureSnapshot"},
+        "comparison_status": {"enum": ["comparable", "unavailable"]},
+        "signed_difference_candidate_minus_manual_boundary": {"$ref": "#/$defs/numberOrNull"},
+        "absolute_difference": {"type": ["number", "null"], "minimum": 0},
+        "semantics": {"const": "event_boundary_conditioning_not_pose_truth_or_feature_accuracy"}
+      },
+      "allOf": [
+        {"if": {"properties": {"comparison_status": {"const": "comparable"}}, "required": ["comparison_status"]}, "then": {"properties": {"candidate": {"properties": {"valid": {"const": true}, "value": {"type": "number"}}}, "manual_boundary_conditioned": {"properties": {"valid": {"const": true}, "value": {"type": "number"}}}, "signed_difference_candidate_minus_manual_boundary": {"type": "number"}, "absolute_difference": {"type": "number"}}}, "else": {"properties": {"signed_difference_candidate_minus_manual_boundary": {"const": null}, "absolute_difference": {"const": null}}}}
+      ],
+      "additionalProperties": false
+    },
+    "featureMetrics": {
+      "type": "object",
+      "required": ["semantics", "by_feature", "details", "candidate_target_feature_valid_count", "manual_boundary_conditioned_target_feature_valid_count"],
+      "properties": {
+        "semantics": {"const": "candidate-boundary_vs_manual-boundary_with_same_model_pose_not_total_feature_error"},
+        "by_feature": {
+          "type": "object",
+          "required": ["stability_duration_ms", "hip_center_speed_drop_body_s", "double_support_proxy_duration_ms", "torso_lean_variability_deg", "shoulder_hip_angular_velocity_change_deg_s", "hip_deceleration_to_double_support_proxy_ms"],
+          "properties": {"stability_duration_ms": {"$ref": "#/$defs/aggregate"}, "hip_center_speed_drop_body_s": {"$ref": "#/$defs/aggregate"}, "double_support_proxy_duration_ms": {"$ref": "#/$defs/aggregate"}, "torso_lean_variability_deg": {"$ref": "#/$defs/aggregate"}, "shoulder_hip_angular_velocity_change_deg_s": {"$ref": "#/$defs/aggregate"}, "hip_deceleration_to_double_support_proxy_ms": {"$ref": "#/$defs/aggregate"}},
+          "additionalProperties": false
+        },
+        "details": {"type": "array", "maxItems": 12, "items": {"$ref": "#/$defs/featureDetail"}},
+        "candidate_target_feature_valid_count": {"type": "integer", "minimum": 0, "maximum": 2},
+        "manual_boundary_conditioned_target_feature_valid_count": {"type": "integer", "minimum": 0, "maximum": 2}
+      },
+      "additionalProperties": false
+    },
+    "evaluationDetail": {
+      "type": "object",
+      "required": ["task_id", "video_id", "candidate_event_id", "manual_event_present", "candidate_event", "manual_event", "manual_deceleration_to_stable_control_ms", "candidate_event_phase_deceleration_to_stable_control_ms", "candidate_low_ankle_motion_proxy_ms", "manual_boundary_conditioned_low_ankle_motion_proxy_ms", "proxy_to_manual_stable_control_difference_ms", "proxy_comparison_semantics", "source_annotation_ids", "reviewer_id"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "video_id": {"const": "8d7754d0de6d315674013d5b69a0b6ba"},
+        "candidate_event_id": {"type": "string", "minLength": 1},
+        "manual_event_present": {"type": "boolean"},
+        "candidate_event": {"type": "object", "required": ["start_ms", "end_ms"], "properties": {"start_ms": {"type": "integer"}, "end_ms": {"type": "integer"}}, "additionalProperties": false},
+        "manual_event": {"type": "object", "required": ["start_ms", "end_ms", "reason"], "properties": {"start_ms": {"type": ["integer", "null"]}, "end_ms": {"type": ["integer", "null"]}, "reason": {"type": "string"}}, "additionalProperties": false},
+        "manual_deceleration_to_stable_control_ms": {"$ref": "#/$defs/numberOrNull"},
+        "candidate_event_phase_deceleration_to_stable_control_ms": {"type": "number"},
+        "candidate_low_ankle_motion_proxy_ms": {"$ref": "#/$defs/numberOrNull"},
+        "manual_boundary_conditioned_low_ankle_motion_proxy_ms": {"$ref": "#/$defs/numberOrNull"},
+        "proxy_to_manual_stable_control_difference_ms": {"$ref": "#/$defs/numberOrNull"},
+        "proxy_comparison_semantics": {"const": "low_ankle_motion_pose_proxy_vs_visual_stable_control_reference;diagnostic_disagreement_not_same-observable_feature_MAE_or_ground_contact"},
+        "source_annotation_ids": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "reviewer_id": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"manual_event_present": {"const": true}}, "required": ["manual_event_present"]}, "then": {"properties": {"manual_event": {"properties": {"start_ms": {"type": "integer"}, "end_ms": {"type": "integer"}}}}}, "else": {"properties": {"manual_event": {"properties": {"start_ms": {"const": null}, "end_ms": {"const": null}}}, "manual_deceleration_to_stable_control_ms": {"const": null}, "manual_boundary_conditioned_low_ankle_motion_proxy_ms": {"const": null}, "proxy_to_manual_stable_control_difference_ms": {"const": null}}}}
+      ],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "annotation_required"}}, "required": ["status"]}, "then": {"properties": {"counts": {"const": {"accepted_manual_events": 0, "manual_event_present": 0, "manual_event_absent": 0, "candidate_feature_records": 0, "manual_boundary_conditioned_feature_records": 0}}, "event_metrics": {"const": null}, "phase_metrics": {"const": null}, "feature_boundary_conditioning": {"const": null}, "details": {"maxItems": 0}, "safety": {"properties": {"full_manual_truth_provided": {"const": false}}}}}},
+    {"if": {"properties": {"status": {"const": "evaluated_external_acceptance_protocol_required"}}, "required": ["status"]}, "then": {"properties": {"counts": {"properties": {"accepted_manual_events": {"const": 2}}}, "event_metrics": {"type": "object"}, "phase_metrics": {"type": "object"}, "feature_boundary_conditioning": {"type": "object"}, "details": {"minItems": 2, "maxItems": 2}, "safety": {"properties": {"full_manual_truth_provided": {"const": true}}}}}}
+  ],
+  "additionalProperties": false
+}

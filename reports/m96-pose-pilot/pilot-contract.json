@@ -1,0 +1,238 @@
+{
+  "audit_version": "m96-pose-pilot-audit-v1.0.0",
+  "generated_at": "2026-09-04T16:21:28Z",
+  "governance_boundary": {
+    "not_inferred": [
+      "consent",
+      "subject",
+      "session",
+      "split",
+      "usage_scope",
+      "retention_policy"
+    ],
+    "operator_must_supply_real_authorized_values_separately": true,
+    "real_values_present": false,
+    "template_contains_only_known_video_ids_and_REPLACE_WITH_placeholders": true,
+    "template_path": "data/annotations/m96-halpe26-development-pilot-v1/governance.template.csv"
+  },
+  "outcomes": {
+    "accuracy": null,
+    "accuracy_claim": false,
+    "adjudication_rows": 0,
+    "human_annotation_rows": 0,
+    "real_human_annotation_complete": false
+  },
+  "pilot_binding": {
+    "manifest_raw_sha256": "5995F83285607E64EBA0CC9BBDA137CE46A891938198B9FB8CE270A83DDCAE4C",
+    "path": "data/annotations/m96-halpe26-development-pilot-v1",
+    "pilot_status": "awaiting_independent_A_and_B_annotations",
+    "task_contract_sha256": "1248575A51D469539D2F5CAFD5A6D204BD5FC493C04886D4CDB7FD4432342175"
+  },
+  "role_boundaries": {
+    "A": {
+      "bundle_id": "m96-annotation-A-6AF7E1F49CD16C3A457EED7D4E813D317FA52ECDF111C64B416D32FC9FD11F43",
+      "cannot_view": [
+        "annotator_B_results",
+        "reviewer_C_results",
+        "model_values"
+      ],
+      "kind": "independent_annotator"
+    },
+    "B": {
+      "bundle_id": "m96-annotation-B-DBE8D3FD6C17128469EF9A89F2CED10B35F9BED68C2046BF4C3953506BF1E8FA",
+      "cannot_view": [
+        "annotator_A_results",
+        "reviewer_C_results",
+        "model_values"
+      ],
+      "kind": "independent_annotator"
+    },
+    "C": {
+      "cannot_view": [
+        "model_values",
+        "sealed_holdout",
+        "repository_other_files"
+      ],
+      "entry_generation_gate": "complete_valid_A_and_B_raw_CSV_intake",
+      "kind": "disagreement_only_adjudicator",
+      "role_id_must_differ_from_A_and_B": true,
+      "visible_input": "only_A_B_human_disagreement_values_and_required_video_frames"
+    },
+    "role_ids_case_insensitive_non_reuse": true
+  },
+  "safety": {
+    "accuracy_claim_generated": false,
+    "dataset_export_allowed": false,
+    "development_subset_only": true,
+    "evaluation_only": true,
+    "grade_or_threshold_generated": false,
+    "model_coordinates_in_tasks": false,
+    "model_values_visible_to_annotators": false,
+    "production_default_changed": false,
+    "promotion_allowed": false,
+    "sealed_holdout_accessed": false,
+    "training_allowed": false
+  },
+  "sampling": {
+    "algorithm": "eight_evenly_spaced_ordinals_among_frozen_frames_with_at_least_one_player_detection",
+    "coverage": "first_through_last_eligible_timeline_positions",
+    "deterministic": true,
+    "rounding": "python_round_nearest_ties_to_even"
+  },
+  "schema_version": "1.0.0",
+  "scope": {
+    "development_videos": 3,
+    "frames": 24,
+    "frames_per_video": 8,
+    "independent_frame_units": 24,
+    "joint_tasks": 624,
+    "keypoint_format": "halpe26",
+    "keypoints_per_frame": 26,
+    "mode": "evaluation_only"
+  },
+  "source_snapshot": {
+    "file_count": 23,
+    "files": [
+      {
+        "bytes": 2206,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-A/m96-pose-pilot-workbench.css",
+        "raw_sha256": "3844D89DB1E7122AA9B68B6A734E43CDDBF028E83DB49AD0225860354E1EF4AE"
+      },
+      {
+        "bytes": 13615,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-A/m96-pose-pilot-workbench.js",
+        "raw_sha256": "46696CDF0ADE16395680DA4A03DBD2D66E0EF0E111610DCA0E63E569000F7CFB"
+      },
+      {
+        "bytes": 320306,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-A/review.html",
+        "raw_sha256": "20F908060315024EF672AEBB160EEEC5F27C275B0DE70E40F74061972F160B06"
+      },
+      {
+        "bytes": 2962,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-A/role-manifest.json",
+        "raw_sha256": "7CD90C5CAC9E0E826B458DB3FD46D51A1414FA1740586187080FB2F64FDD2143"
+      },
+      {
+        "bytes": 2206,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-B/m96-pose-pilot-workbench.css",
+        "raw_sha256": "3844D89DB1E7122AA9B68B6A734E43CDDBF028E83DB49AD0225860354E1EF4AE"
+      },
+      {
+        "bytes": 13615,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-B/m96-pose-pilot-workbench.js",
+        "raw_sha256": "46696CDF0ADE16395680DA4A03DBD2D66E0EF0E111610DCA0E63E569000F7CFB"
+      },
+      {
+        "bytes": 320306,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-B/review.html",
+        "raw_sha256": "4FAA9019ADEDE3FFCB1CB79E701FCC56BA09EC0870BE7F0019282B65F4916721"
+      },
+      {
+        "bytes": 2962,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/annotator-B/role-manifest.json",
+        "raw_sha256": "AED1263CB3BF5F3F2448EE605BB4DB583098306834A3AD79A8DA3145B016972F"
+      },
+      {
+        "bytes": 2194,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/field-contract.json",
+        "raw_sha256": "A7B9B42A2C0E2D38C05E531CBFC90BBA5ADB8280DFC76D1AF339A09D6B1D4A3F"
+      },
+      {
+        "bytes": 817,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/governance.template.csv",
+        "raw_sha256": "4E4BDCEB956C7D5A43B73A4D1EE40ED1EE06BB0A80391C73FE8ACAA3E5D0CF00"
+      },
+      {
+        "bytes": 3967,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/pilot-manifest.json",
+        "raw_sha256": "5995F83285607E64EBA0CC9BBDA137CE46A891938198B9FB8CE270A83DDCAE4C"
+      },
+      {
+        "bytes": 17384,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/protocol.json",
+        "raw_sha256": "ED39DD3FAD83BABE755D650F72D40CBEFDDC347AD9AA9978A1A5D3D6830A799B"
+      },
+      {
+        "bytes": 316578,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/tasks.jsonl",
+        "raw_sha256": "E061DCC378011452BB3085C2AA51F47FED82BD6752344344D436C223F89C3A7C"
+      },
+      {
+        "bytes": 1425,
+        "category": "blank_pilot",
+        "path": "data/annotations/m96-halpe26-development-pilot-v1/validation-report.json",
+        "raw_sha256": "1A6DCCC0BA376BFF78AB12ADB50676640F83F50814C68ED719E0DAF4AB1EBCBB"
+      },
+      {
+        "bytes": 82003,
+        "category": "implementation",
+        "path": "src/rallymate_evaluation/m96_pose_pilot.py",
+        "raw_sha256": "84FAD5F13FB044533E81F38A504C22C119593A5E3E91586357170E1E761F3DCB"
+      },
+      {
+        "bytes": 1679,
+        "category": "script",
+        "path": "scripts/build_m96_pose_pilot.py",
+        "raw_sha256": "3A1F2D63CAF7C7486D17F0FDB13B1B5D21BD5C99C5E894DA5366D31092F6C45B"
+      },
+      {
+        "bytes": 1588,
+        "category": "script",
+        "path": "scripts/build_m96_pose_pilot_adjudication.py",
+        "raw_sha256": "345099DC1CD6B2A2BB8E40BA5ED37EADC74DF8031FF3C09BEF74B57E6E032CD9"
+      },
+      {
+        "bytes": 19444,
+        "category": "script",
+        "path": "scripts/build_m96_pose_pilot_audit.py",
+        "raw_sha256": "579D5397F3594667DF6381B85DFAA6D5887B52715AB383784AFFE9421260ED4C"
+      },
+      {
+        "bytes": 3021,
+        "category": "script",
+        "path": "scripts/serve_m96_pose_pilot.py",
+        "raw_sha256": "5DCF9AD42507494DA6CB21ECB272DB8DE56B639511215767EAF30D5336763794"
+      },
+      {
+        "bytes": 1685,
+        "category": "script",
+        "path": "scripts/validate_m96_pose_pilot_submission.py",
+        "raw_sha256": "B3CE15E9BEF9B2EAF8E373A71A80A3BED607D5983FE1FBDA79C9BA177544C040"
+      },
+      {
+        "bytes": 13595,
+        "category": "test",
+        "path": "tests/test_m96_pose_pilot.py",
+        "raw_sha256": "D9059BDB99DD0C367D39A63B1B87877C9BE6AF5AAB946E6E79F4F4D07CF462A5"
+      },
+      {
+        "bytes": 2206,
+        "category": "ui",
+        "path": "src/rallymate_annotation/assets/m96-pose-pilot-workbench.css",
+        "raw_sha256": "3844D89DB1E7122AA9B68B6A734E43CDDBF028E83DB49AD0225860354E1EF4AE"
+      },
+      {
+        "bytes": 13615,
+        "category": "ui",
+        "path": "src/rallymate_annotation/assets/m96-pose-pilot-workbench.js",
+        "raw_sha256": "46696CDF0ADE16395680DA4A03DBD2D66E0EF0E111610DCA0E63E569000F7CFB"
+      }
+    ],
+    "inventory_contract_sha256": "156E3B6648381D916B7C68768747E4199267A897E25600580DF562E31FB4761F"
+  },
+  "status": "blank_pilot_verified_human_annotation_required"
+}

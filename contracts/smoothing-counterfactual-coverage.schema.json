@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/smoothing-counterfactual-coverage.schema.json",
+  "title": "RallyMate smoothing counterfactual coverage audit",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"schema_version": {"const": "1.0.0"}}, "required": ["schema_version"]},
+      "then": {"properties": {"report_version": {"const": "smoothing-counterfactual-coverage-v1.0.0"}}}
+    },
+    {
+      "if": {"properties": {"schema_version": {"const": "1.1.0"}}, "required": ["schema_version"]},
+      "then": {
+        "properties": {
+          "report_version": {"const": "smoothing-counterfactual-coverage-v1.1.0"},
+          "feature_metrics": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {"$ref": "#/$defs/featureMetric"},
+                {"required": ["units", "counterfactual_impact"]}
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"schema_version": {"const": "1.2.0"}}, "required": ["schema_version"]},
+      "then": {
+        "properties": {
+          "report_version": {"const": "smoothing-counterfactual-coverage-v1.2.0"},
+          "feature_metrics": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {"$ref": "#/$defs/featureMetric"},
+                {"required": ["units", "counterfactual_impact"]}
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "required": ["schema_version", "report_version", "generated_at", "status", "registry", "sources", "counts", "feature_metrics", "semantics"],
+  "properties": {
+    "schema_version": {"enum": ["1.0.0", "1.1.0", "1.2.0"]},
+    "report_version": {"enum": ["smoothing-counterfactual-coverage-v1.0.0", "smoothing-counterfactual-coverage-v1.1.0", "smoothing-counterfactual-coverage-v1.2.0"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "audited_counterfactual_coverage_no_ground_truth"},
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "registry_version", "indicator_count", "required_pose_feature_count", "excluded_non_pose_context_features"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "registry_version": {"type": "string", "minLength": 1},
+        "indicator_count": {"type": "integer", "minimum": 1},
+        "required_pose_feature_count": {"type": "integer", "minimum": 1},
+        "excluded_non_pose_context_features": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_feature_record_count", "audited_required_pose_feature_record_count", "valid_numeric_record_count", "computed_counterfactual_count", "unavailable_counterfactual_count", "invalid_or_nonnumeric_excluded_count", "features_fully_reconstructable_count", "features_partially_reconstructable_count", "features_not_reconstructable_count", "features_not_observed_count", "counterfactual_coverage"],
+      "properties": {
+        "source_feature_record_count": {"type": "integer", "minimum": 1},
+        "audited_required_pose_feature_record_count": {"type": "integer", "minimum": 0},
+        "valid_numeric_record_count": {"type": "integer", "minimum": 0},
+        "computed_counterfactual_count": {"type": "integer", "minimum": 0},
+        "unavailable_counterfactual_count": {"type": "integer", "minimum": 0},
+        "invalid_or_nonnumeric_excluded_count": {"type": "integer", "minimum": 0},
+        "features_fully_reconstructable_count": {"type": "integer", "minimum": 0},
+        "features_partially_reconstructable_count": {"type": "integer", "minimum": 0},
+        "features_not_reconstructable_count": {"type": "integer", "minimum": 0},
+        "features_not_observed_count": {"type": "integer", "minimum": 0},
+        "counterfactual_coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "feature_metrics": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/featureMetric"}},
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "interpretation", "ground_truth_provided", "accuracy_claim", "counterfactual_coverage_is_feature_accuracy", "quality_gate_modified", "grade_generated", "threshold_generated", "maturity_promoted"],
+      "properties": {
+        "method": {"const": "one_factor_counterfactual_differences_not_additive_shapley_decomposition"},
+        "interpretation": {"type": "string", "minLength": 1},
+        "ground_truth_provided": {"const": false},
+        "accuracy_claim": {"const": false},
+        "counterfactual_coverage_is_feature_accuracy": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "video_id", "source_feature_record_count", "audited_required_pose_feature_record_count", "audited_event_count"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "video_id": {"type": "string", "minLength": 1},
+        "source_feature_record_count": {"type": "integer", "minimum": 1},
+        "audited_required_pose_feature_record_count": {"type": "integer", "minimum": 0},
+        "audited_event_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "counter": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+    "featureMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feature_name", "required_event_codes", "feature_versions", "aggregations", "record_count", "valid_numeric_record_count", "computed_counterfactual_count", "unavailable_counterfactual_count", "invalid_or_nonnumeric_excluded_count", "counterfactual_unavailable_reason_counts", "production_exclusion_reason_counts", "counterfactual_coverage", "status"],
+      "properties": {
+        "feature_name": {"type": "string", "minLength": 1},
+        "required_event_codes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "feature_versions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "units": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "aggregations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "record_count": {"type": "integer", "minimum": 0},
+        "valid_numeric_record_count": {"type": "integer", "minimum": 0},
+        "computed_counterfactual_count": {"type": "integer", "minimum": 0},
+        "unavailable_counterfactual_count": {"type": "integer", "minimum": 0},
+        "invalid_or_nonnumeric_excluded_count": {"type": "integer", "minimum": 0},
+        "counterfactual_unavailable_reason_counts": {"$ref": "#/$defs/counter"},
+        "production_exclusion_reason_counts": {"$ref": "#/$defs/counter"},
+        "counterfactual_coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "status": {"enum": ["fully_reconstructable", "partially_reconstructable", "not_reconstructable", "not_observed"]},
+        "counterfactual_impact": {"$ref": "#/$defs/counterfactualImpact"}
+      }
+    },
+    "counterfactualImpact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparison_kind", "computed_count", "exact_match_count", "changed_count", "agreement_rate", "mean_absolute_difference", "p95_absolute_difference", "signed_mean_difference", "maximum_absolute_difference", "maximum_absolute_difference_example"],
+      "properties": {
+        "comparison_kind": {"enum": ["numeric_difference", "circular_difference_deg", "categorical_code_agreement"]},
+        "computed_count": {"type": "integer", "minimum": 0},
+        "exact_match_count": {"type": ["integer", "null"], "minimum": 0},
+        "changed_count": {"type": ["integer", "null"], "minimum": 0},
+        "agreement_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "mean_absolute_difference": {"type": ["number", "null"], "minimum": 0},
+        "p95_absolute_difference": {"type": ["number", "null"], "minimum": 0},
+        "signed_mean_difference": {"type": ["number", "null"]},
+        "maximum_absolute_difference": {"type": ["number", "null"], "minimum": 0},
+        "maximum_absolute_difference_example": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["video_id", "event_id", "production_value", "raw_counterfactual_value", "difference", "unit"],
+              "properties": {
+                "video_id": {"type": "string", "minLength": 1},
+                "event_id": {"type": "string", "minLength": 1},
+                "production_value": {"type": "number"},
+                "raw_counterfactual_value": {"type": "number"},
+                "difference": {"type": "number"},
+                "unit": {"type": "string", "minLength": 1}
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

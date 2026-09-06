@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-profile-routing-audit.schema.json",
+  "title": "RallyMate fixed-boundary pose-profile routing audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_version",
+    "generated_at",
+    "status",
+    "scope",
+    "profiles",
+    "comparisons",
+    "routing_decision",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "pose-profile-routing-audit-v1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "coverage_audit_complete_ground_truth_required"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video_sha256", "registry_version", "registry_sha256", "indicator_count", "current_primary"],
+      "properties": {
+        "video_sha256": {"$ref": "#/$defs/sha256"},
+        "registry_version": {"type": "string", "minLength": 1},
+        "registry_sha256": {"$ref": "#/$defs/sha256"},
+        "indicator_count": {"type": "integer", "minimum": 1},
+        "current_primary": {"type": "string", "minLength": 1}
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 2,
+      "additionalProperties": {"$ref": "#/$defs/profile"}
+    },
+    "comparisons": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/comparison"}
+    },
+    "routing_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_scoring_primary",
+        "decision_status",
+        "automatic_model_promotion",
+        "per_feature_or_per_event_model_cherry_picking_allowed",
+        "runtime_fallback_to_another_pose_model_allowed",
+        "reasons",
+        "next_evidence_required"
+      ],
+      "properties": {
+        "selected_scoring_primary": {"type": "string", "minLength": 1},
+        "decision_status": {"const": "retain_current_primary_pending_manual_truth"},
+        "automatic_model_promotion": {"const": false},
+        "per_feature_or_per_event_model_cherry_picking_allowed": {"const": false},
+        "runtime_fallback_to_another_pose_model_allowed": {"const": false},
+        "reasons": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "next_evidence_required": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accuracy_claim",
+        "ground_truth_provided",
+        "grades_generated",
+        "thresholds_generated",
+        "maturity_promoted",
+        "fixed_boundary_coverage_is_accuracy",
+        "self_segmented_counts_used_for_routing"
+      ],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "fixed_boundary_coverage_is_accuracy": {"const": false},
+        "self_segmented_counts_used_for_routing": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "scoreCounts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "summary_source",
+        "event_count",
+        "indicator_event_count",
+        "measured_indicator_event_count",
+        "unavailable_indicator_event_count",
+        "score_status_counts",
+        "grade_count",
+        "pose_model_sha256",
+        "native_keypoint_format",
+        "native_keypoint_count",
+        "registry_version",
+        "registry_sha256",
+        "video_sha256"
+      ],
+      "properties": {
+        "role": {"enum": ["current_scoring_primary", "coverage_candidate_requires_ground_truth", "supplemental_or_analysis_not_promoted"]},
+        "summary_source": {"$ref": "#/$defs/source"},
+        "event_count": {"type": "integer", "minimum": 0},
+        "indicator_event_count": {"type": "integer", "minimum": 1},
+        "measured_indicator_event_count": {"type": "integer", "minimum": 0},
+        "unavailable_indicator_event_count": {"type": "integer", "minimum": 0},
+        "score_status_counts": {"$ref": "#/$defs/scoreCounts"},
+        "grade_count": {"const": 0},
+        "pose_model_sha256": {"$ref": "#/$defs/sha256"},
+        "native_keypoint_format": {"type": "string", "minLength": 1},
+        "native_keypoint_count": {"type": "integer", "minimum": 1},
+        "registry_version": {"type": "string", "minLength": 1},
+        "registry_sha256": {"$ref": "#/$defs/sha256"},
+        "video_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "validityStates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["both_valid", "model_a_only", "model_b_only", "neither_valid"],
+      "properties": {
+        "both_valid": {"type": "integer", "minimum": 0},
+        "model_a_only": {"type": "integer", "minimum": 0},
+        "model_b_only": {"type": "integer", "minimum": 0},
+        "neither_valid": {"type": "integer", "minimum": 0}
+      }
+    },
+    "fixedSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "event_count", "indicator_count", "registry_version", "registry_sha256", "boundary_sha256", "truth_status", "indicator_validity_states", "feature_validity_states", "feature_pair_count"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "event_count": {"type": "integer", "minimum": 1},
+        "indicator_count": {"type": "integer", "minimum": 1},
+        "registry_version": {"type": "string", "minLength": 1},
+        "registry_sha256": {"$ref": "#/$defs/sha256"},
+        "boundary_sha256": {"$ref": "#/$defs/sha256"},
+        "truth_status": {"const": "candidate_source_not_truth"},
+        "indicator_validity_states": {"$ref": "#/$defs/validityStates"},
+        "feature_validity_states": {"$ref": "#/$defs/validityStates"},
+        "feature_pair_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "fixedMeasurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current_primary_measured", "candidate_measured", "indicator_event_count", "candidate_minus_current"],
+      "properties": {
+        "current_primary_measured": {"type": "integer", "minimum": 0},
+        "candidate_measured": {"type": "integer", "minimum": 0},
+        "indicator_event_count": {"type": "integer", "minimum": 1},
+        "candidate_minus_current": {"type": "integer"}
+      }
+    },
+    "selfSegmented": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current_primary_measured", "current_primary_total", "candidate_measured", "candidate_total", "candidate_self_segmented_minus_fixed", "boundary_confounding_warning"],
+      "properties": {
+        "current_primary_measured": {"type": "integer", "minimum": 0},
+        "current_primary_total": {"type": "integer", "minimum": 1},
+        "candidate_measured": {"type": "integer", "minimum": 0},
+        "candidate_total": {"type": "integer", "minimum": 1},
+        "candidate_self_segmented_minus_fixed": {"type": "integer"},
+        "boundary_confounding_warning": {"const": true}
+      }
+    },
+    "eventAgreement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "minimum_segment_iou", "current_event_count", "candidate_event_count", "matched_count", "current_match_rate", "candidate_match_rate", "mean_segment_iou", "boundary_mean_absolute_difference_ms"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "minimum_segment_iou": {"const": 0.3},
+        "current_event_count": {"type": "integer", "minimum": 0},
+        "candidate_event_count": {"type": "integer", "minimum": 0},
+        "matched_count": {"type": "integer", "minimum": 0},
+        "current_match_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "candidate_match_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "mean_segment_iou": {"type": "number", "minimum": 0, "maximum": 1},
+        "boundary_mean_absolute_difference_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start_difference_ms", "end_difference_ms", "center_difference_ms", "duration_difference_ms"],
+          "properties": {
+            "start_difference_ms": {"type": "number", "minimum": 0},
+            "end_difference_ms": {"type": "number", "minimum": 0},
+            "center_difference_ms": {"type": "number", "minimum": 0},
+            "duration_difference_ms": {"type": "number", "minimum": 0}
+          }
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixed_boundary_source", "fixed_boundary_measurement", "self_segmented_measurement", "event_candidate_agreement"],
+      "properties": {
+        "fixed_boundary_source": {"$ref": "#/$defs/fixedSource"},
+        "fixed_boundary_measurement": {"$ref": "#/$defs/fixedMeasurement"},
+        "self_segmented_measurement": {"$ref": "#/$defs/selfSegmented"},
+        "event_candidate_agreement": {"$ref": "#/$defs/eventAgreement"}
+      }
+    }
+  }
+}

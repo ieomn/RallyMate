@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "runtime_view_evidence_template_not_loadable",
+  "evidence_id": "REPLACE_WITH_EVIDENCE_ID",
+  "video_id": "REPLACE_WITH_STABLE_VIDEO_ID",
+  "video_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "view_profile_id": "REPLACE_WITH_REVIEWED_PROFILE_ID",
+  "view_group": "REPLACE_WITH_FIXED_VIEW_GROUP",
+  "verification_protocol_version": "REPLACE_WITH_PREREGISTERED_PROTOCOL",
+  "satisfied_constraints": [],
+  "status": "pending",
+  "verifier_id": "REPLACE_WITH_REVIEWER_ID",
+  "verified_at": null,
+  "source_sha256": "REPLACE_WITH_REVIEW_RECORD_SHA256",
+  "canonicalization": "rallymate-canonical-json-v1",
+  "safety": "Template only. A production file must use artifact_scope=runtime_view_evidence, status=accepted, exact input-video SHA-256, every registry view constraint, and a traceable human review source."
+}

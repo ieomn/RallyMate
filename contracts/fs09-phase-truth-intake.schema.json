@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/fs09-phase-truth-intake.schema.json",
+  "title": "Non-executable FS09 intake shape retained for test/review only",
+  "description": "No production instance is valid in M88. A future external-receipt-bound authorized bundle must define a new versioned intake schema before ready_for_phase_evaluation can be emitted.",
+  "$comment": "Deliberately unsatisfiable: the current handoff is technical-only and cannot authorize human exports or intake.",
+  "allOf": [{"not": {}}],
+  "type": "object",
+  "required": ["schema_version", "intake_version", "generated_at", "status", "source_pack", "blind_handoff", "exports", "merged", "counts", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "intake_version": {"const": "fs09-phase-truth-intake-template-v1.3.0"},
+    "generated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+    "status": {"const": "not_executable_external_protocol_authorization_required"},
+    "source_pack": {
+      "type": "object",
+      "required": ["manifest", "analysis_plan", "pack_version", "task_contract_sha256", "candidate_contract_sha256"],
+      "properties": {
+        "manifest": {"$ref": "#/$defs/source"},
+        "analysis_plan": {"$ref": "#/$defs/source"},
+        "pack_version": {"const": "fs09-phase-truth-pack-v1.3.0"},
+        "task_contract_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_contract_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "blind_handoff": {
+      "type": "object",
+      "required": ["manifest", "bundle_version", "bundle_id", "generated_at", "content_root_sha256", "analysis_plan_sha256", "source_pack_manifest_sha256"],
+      "properties": {
+        "manifest": {"$ref": "#/$defs/source"},
+        "bundle_version": {"const": "fs09-phase-blind-handoff-v1.1.0"},
+        "bundle_id": {"type": "string", "pattern": "^m88-fs09-blind-[A-F0-9]{64}$"},
+        "generated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+        "content_root_sha256": {"$ref": "#/$defs/sha256"},
+        "analysis_plan_sha256": {"$ref": "#/$defs/sha256"},
+        "source_pack_manifest_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "exports": {
+      "type": "object",
+      "required": ["annotations", "adjudication"],
+      "properties": {
+        "annotations": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"$ref": "#/$defs/annotationExport"}
+        },
+        "adjudication": {"$ref": "#/$defs/adjudicationExport"}
+      },
+      "additionalProperties": false
+    },
+    "merged": {
+      "type": "object",
+      "required": ["annotations", "adjudications"],
+      "properties": {
+        "annotations": {"$ref": "#/$defs/source"},
+        "adjudications": {"$ref": "#/$defs/source"}
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "const": {
+        "tasks": 2,
+        "annotation_exports": 2,
+        "adjudication_exports": 1,
+        "raw_annotations": 4,
+        "raw_adjudications": 2
+      }
+    },
+    "safety": {
+      "const": {
+        "source_exports_preserved_byte_exact": true,
+        "source_pack_modified": false,
+        "blind_handoff_verified": true,
+        "blind_handoff_snapshot_preserved_byte_exact": true,
+        "stable_decision_times_preserved": true,
+        "candidate_values_used_as_truth": false,
+        "production_enabled": false,
+        "grade_generated": false,
+        "threshold_generated": false,
+        "maturity_promoted": false
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "annotationExport": {
+      "type": "object",
+      "required": ["path", "sha256", "submitted_name", "rows", "annotator_id", "exported_at"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "submitted_name": {"type": "string", "minLength": 1},
+        "rows": {"const": 2},
+        "annotator_id": {"type": "string", "minLength": 1, "pattern": "^[^;\\r\\n]+$"},
+        "exported_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"}
+      },
+      "additionalProperties": false
+    },
+    "adjudicationExport": {
+      "type": "object",
+      "required": ["path", "sha256", "submitted_name", "rows", "reviewer_id", "exported_at"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "submitted_name": {"type": "string", "minLength": 1},
+        "rows": {"const": 2},
+        "reviewer_id": {"type": "string", "minLength": 1, "pattern": "^[^;\\r\\n]+$"},
+        "exported_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

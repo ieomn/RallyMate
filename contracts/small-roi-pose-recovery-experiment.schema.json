@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/small-roi-pose-recovery-experiment.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "experiment_version", "generated_at", "status", "source", "settings", "inference", "artifacts", "measurement_impact", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "experiment_version": {"const": "small-roi-pose-recovery-v1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "experimental_observability_only_not_production"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["video", "frames", "primary_timeline", "events", "summary", "registry", "gap_audit", "pose_model", "pose_config", "current_profile"],
+      "properties": {
+        "video": {"$ref": "#/$defs/source"}, "frames": {"$ref": "#/$defs/source"}, "primary_timeline": {"$ref": "#/$defs/source"}, "events": {"$ref": "#/$defs/source"}, "summary": {"$ref": "#/$defs/source"}, "registry": {"$ref": "#/$defs/source"}, "gap_audit": {"$ref": "#/$defs/source"}, "pose_model": {"$ref": "#/$defs/source"}, "pose_config": {"$ref": "#/$defs/source"},
+        "current_profile": {"type": "string", "minLength": 1}
+      }
+    },
+    "settings": {
+      "type": "object", "additionalProperties": false,
+      "required": ["baseline_min_roi_size_px", "experimental_min_roi_size_px", "roi_margin", "baseline_max_players", "keypoint_observation_confidence_min", "event_boundary_source"],
+      "properties": {
+        "baseline_min_roi_size_px": {"type": "integer", "minimum": 1}, "experimental_min_roi_size_px": {"type": "integer", "minimum": 1}, "roi_margin": {"type": "number", "minimum": 0}, "baseline_max_players": {"type": "integer", "minimum": 1}, "keypoint_observation_confidence_min": {"type": "number", "minimum": 0, "maximum": 1}, "event_boundary_source": {"const": "candidate_not_truth"}
+      }
+    },
+    "inference": {
+      "type": "object", "additionalProperties": false, "required": ["counts", "recovered_keypoint_valid_count_distribution", "target_processed_indices", "recovered_processed_indices"],
+      "properties": {
+        "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "recovered_keypoint_valid_count_distribution": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "target_processed_indices": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+        "recovered_processed_indices": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "artifacts": {
+      "type": "object", "additionalProperties": false, "required": ["experimental_frames", "fixed_boundary_comparison"],
+      "properties": {"experimental_frames": {"$ref": "#/$defs/source"}, "fixed_boundary_comparison": {"$ref": "#/$defs/source"}}
+    },
+    "measurement_impact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status_transitions", "recovered_indicator_instance_count", "regressed_indicator_instance_count", "recovered_indicator_instances", "regressed_indicator_instances"],
+      "properties": {
+        "status_transitions": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "recovered_indicator_instance_count": {"type": "integer", "minimum": 0}, "regressed_indicator_instance_count": {"const": 0},
+        "recovered_indicator_instances": {"type": "array", "items": {"$ref": "#/$defs/instance"}}, "regressed_indicator_instances": {"type": "array", "maxItems": 0, "items": {"$ref": "#/$defs/instance"}}
+      }
+    },
+    "safety": {
+      "type": "object", "additionalProperties": false,
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "current_production_default_unchanged", "automatic_profile_fallback_enabled", "measurement_gate_modified", "scoring_gate_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "recovered_means_observable_under_experimental_small_roi_not_accurate"],
+      "properties": {
+        "accuracy_claim": {"const": false}, "ground_truth_provided": {"const": false}, "production_enabled": {"const": false}, "current_production_default_unchanged": {"const": true}, "automatic_profile_fallback_enabled": {"const": false}, "measurement_gate_modified": {"const": false}, "scoring_gate_modified": {"const": false}, "grades_generated": {"const": false}, "thresholds_generated": {"const": false}, "maturity_promoted": {"const": false}, "recovered_means_observable_under_experimental_small_roi_not_accurate": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "source": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha"}}},
+    "instance": {"type": "object", "additionalProperties": false, "required": ["event_id", "indicator_id"], "properties": {"event_id": {"type": "string", "minLength": 1}, "indicator_id": {"type": "string", "minLength": 1}}}
+  }
+}

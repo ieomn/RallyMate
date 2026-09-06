@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/small-roi-keypoint-error-report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "evaluator_version", "generated_at", "status", "pack", "counts", "metrics", "per_joint", "per_bbox_size_stratum", "details", "pck", "routing_decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "evaluator_version": {"const": "small-roi-keypoint-error-v1.0.0"}, "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "evaluated_pending_external_acceptance_protocol"]},
+    "pack": {"type": "object", "required": ["pack_version", "manifest_sha256", "validation_report_sha256", "task_contract_sha256"], "properties": {"pack_version": {"const": "small-roi-keypoint-truth-pack-v1.0.0"}, "manifest_sha256": {"$ref": "#/$defs/sha256"}, "validation_report_sha256": {"$ref": "#/$defs/sha256"}, "task_contract_sha256": {"$ref": "#/$defs/sha256"}}, "additionalProperties": false},
+    "counts": {"type": "object", "required": ["required_frames", "required_joint_tasks", "accepted_joint_truth", "visible_joint_truth", "invisible_joint_truth"], "additionalProperties": {"type": "integer", "minimum": 0}},
+    "metrics": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/metrics"}]},
+    "per_joint": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/metrics"}}]},
+    "per_bbox_size_stratum": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/metrics"}}]},
+    "details": {"type": "array", "items": {"type": "object"}},
+    "pck": {"type": "object", "required": ["value", "threshold", "status"], "properties": {"value": {"const": null}, "threshold": {"const": null}, "status": {"const": "external_preregistered_threshold_required"}}, "additionalProperties": false},
+    "routing_decision": {"type": "object", "required": ["status", "production_min_roi_size_px", "experimental_min_roi_size_px", "switch_allowed"], "properties": {"status": {"const": "external_preregistered_acceptance_protocol_required"}, "production_min_roi_size_px": {"const": 32}, "experimental_min_roi_size_px": {"const": 8}, "switch_allowed": {"const": false}}, "additionalProperties": false},
+    "safety": {"type": "object", "required": ["ground_truth_provided", "full_ground_truth_coverage", "metrics_are_pose_localization_accuracy", "model_values_used_as_truth", "acceptance_threshold_generated", "production_enabled", "automatic_profile_fallback_enabled", "grade_generated", "threshold_generated", "maturity_promoted"], "properties": {"ground_truth_provided": {"type": "boolean"}, "full_ground_truth_coverage": {"type": "boolean"}, "metrics_are_pose_localization_accuracy": {"type": "boolean"}, "model_values_used_as_truth": {"const": false}, "acceptance_threshold_generated": {"const": false}, "production_enabled": {"const": false}, "automatic_profile_fallback_enabled": {"const": false}, "grade_generated": {"const": false}, "threshold_generated": {"const": false}, "maturity_promoted": {"const": false}}, "additionalProperties": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "nullableNumber": {"type": ["number", "null"]},
+    "metrics": {"type": "object", "required": ["visible_truth_count", "predicted_available_count", "valid_rate", "mean_euclidean_error_px", "p95_euclidean_error_px", "mean_euclidean_error_bbox_long_side", "p95_euclidean_error_bbox_long_side", "bias_x_px", "bias_y_px"], "properties": {"visible_truth_count": {"type": "integer", "minimum": 0}, "predicted_available_count": {"type": "integer", "minimum": 0}, "valid_rate": {"$ref": "#/$defs/nullableNumber"}, "mean_euclidean_error_px": {"$ref": "#/$defs/nullableNumber"}, "p95_euclidean_error_px": {"$ref": "#/$defs/nullableNumber"}, "mean_euclidean_error_bbox_long_side": {"$ref": "#/$defs/nullableNumber"}, "p95_euclidean_error_bbox_long_side": {"$ref": "#/$defs/nullableNumber"}, "bias_x_px": {"$ref": "#/$defs/nullableNumber"}, "bias_y_px": {"$ref": "#/$defs/nullableNumber"}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

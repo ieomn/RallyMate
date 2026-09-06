@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/residual-high-resolution-pose-experiment.schema.json",
+  "title": "RallyMate residual high-resolution Pose experiment",
+  "type": "object",
+  "required": ["schema_version", "experiment_version", "generated_at", "status", "video_id", "sources", "artifacts", "settings", "inference", "router_audit", "feature_vector_impact", "operational_measurement_impact", "residual_impact", "counts", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "experiment_version": {"const": "residual-high-resolution-pose-experiment-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["experimental_regression_free_high_resolution_candidate_not_production", "experimental_high_resolution_candidate_rejected_due_to_regression"]},
+    "video_id": {"type": "string", "minLength": 1},
+    "sources": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "settings": {"type": "object", "required": ["baseline_profile", "candidate_profile", "candidate_input_size_hw", "candidate_roi_margin", "candidate_min_roi_size_px", "required_joints"]},
+    "inference": {"type": "object", "required": ["target_frame_count", "pose_output_produced", "pose_output_missing", "frame_results"]},
+    "router_audit": {
+      "type": "object",
+      "required": ["selected_frame_count", "rejected_frame_count", "target_frame_count", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds", "required_joint_validity_regression_allowed"],
+      "properties": {
+        "selection_uses_feature_values": {"const": false},
+        "selection_uses_event_outcomes": {"const": false},
+        "selection_uses_grades_or_thresholds": {"const": false},
+        "required_joint_validity_regression_allowed": {"const": false}
+      }
+    },
+    "feature_vector_impact": {"type": "object"},
+    "operational_measurement_impact": {"type": "object"},
+    "residual_impact": {"type": "object"},
+    "counts": {"type": "object"},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted", "current_video_regression_free", "next_required_evidence"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_profile_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "automatic_profile_fallback_enabled": {"const": false},
+        "feature_gate_modified": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

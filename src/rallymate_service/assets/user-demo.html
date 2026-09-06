@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="上传一个或多个网球视频，查看网球动作表现参考分和训练建议。">
+  <title>RallyMate 网球动作分析</title>
+  <link rel="stylesheet" href="/assets/user-demo.css?v=1.2.0">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="RallyMate 首页">
+      <span class="brand-mark" aria-hidden="true">RM</span>
+      <span>RallyMate</span>
+    </a>
+    <div class="model-state" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span>本地视频分析</span>
+      <span id="runtime-badge" class="runtime-badge runtime-pending">设备待确认</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">网球动作分析 Demo · v1.2</p>
+        <h1 id="page-title">上传视频，获得动作表现参考与训练建议</h1>
+        <p class="intro-copy">系统会识别准备、启动和制动动作，结合视频证据给出 Beta 动作表现参考分、单项判断和下一步训练重点。</p>
+      </div>
+      <div class="truth-badge">
+        <strong>真实视频</strong>
+        <span>不生成虚构 A～E</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <form id="upload-form" class="upload-panel">
+        <div class="section-heading">
+          <span class="step">01</span>
+          <div>
+            <h2>选择视频</h2>
+            <p>支持 MP4、MOV、M4V、AVI、MKV</p>
+          </div>
+        </div>
+
+        <label class="drop-zone" id="drop-zone">
+          <input id="video-input" name="video" type="file" accept="video/*" multiple required>
+          <span class="upload-icon" aria-hidden="true">↑</span>
+          <strong id="file-title">点击选择，或把视频拖到这里</strong>
+          <span id="file-meta">建议使用固定机位、能看到完整身体的视频</span>
+        </label>
+
+        <details class="advanced">
+          <summary>分析设置</summary>
+          <div class="field-grid">
+            <label>
+              <span>场地识别</span>
+              <select name="court_mode">
+                <option value="auto">自动识别</option>
+                <option value="disabled">关闭</option>
+              </select>
+            </label>
+            <label>
+              <span>调试帧数</span>
+              <input name="max_frames" type="number" min="1" placeholder="留空分析全片">
+            </label>
+            <label>
+              <span>本地访问口令</span>
+              <input id="token" type="password" autocomplete="off" placeholder="未配置可留空">
+            </label>
+            <label class="checkbox-field">
+              <input name="write_annotated_video" type="checkbox">
+              <span>
+                生成带骨架的视频
+                <small class="field-help">默认关闭，可减少视频编码带来的 CPU 占用；需要骨架复盘时再开启。</small>
+              </span>
+            </label>
+          </div>
+        </details>
+
+        <button id="submit-button" type="submit">开始分析</button>
+        <button id="resume-button" class="secondary resume-button" type="button" hidden>恢复上次任务</button>
+        <p id="recovery-note" class="recovery-note" hidden></p>
+        <p class="privacy-note">视频仅发送到当前这台电脑上的 RallyMate 服务。</p>
+      </form>
+
+      <section class="result-panel" aria-live="polite">
+        <div class="section-heading">
+          <span class="step">02</span>
+          <div>
+            <h2>分析结果</h2>
+            <p id="state-text">选择视频后开始</p>
+          </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="court-lines" aria-hidden="true"><span></span></div>
+          <p>完成后，这里会优先显示动作表现参考分、单项视频证据和训练建议。</p>
+        </div>
+
+        <div id="progress-state" class="progress-state" hidden>
+          <div class="progress-head">
+            <span id="progress-label">正在准备…</span>
+            <strong id="progress-percent">0%</strong>
+          </div>
+          <progress id="progress" max="100" value="0"></progress>
+          <ol class="phase-list">
+            <li data-phase="queued">上传完成</li>
+            <li data-phase="inference">识别球员与骨架</li>
+            <li data-phase="scoring_readiness">形成表现参考与建议</li>
+            <li data-phase="done">生成结果</li>
+          </ol>
+        </div>
+
+        <div id="result-state" class="result-state" hidden>
+          <div class="score-row">
+            <div class="score-ring" id="score-ring">
+              <span id="score-value">—</span>
+              <small id="score-unit">/ 100</small>
+            </div>
+            <div>
+              <p class="eyebrow" id="score-label">动作表现参考分（Beta）</p>
+              <h3 id="result-headline">分析完成</h3>
+              <p id="score-meaning"></p>
+            </div>
+          </div>
+          <div id="training-insights" class="training-insights" hidden>
+            <section id="strengths-panel" hidden>
+              <h4>本次做得较好</h4>
+              <ul id="strengths-list"></ul>
+            </section>
+            <section id="priorities-panel" hidden>
+              <h4>优先训练建议</h4>
+              <ul id="priorities-list"></ul>
+            </section>
+          </div>
+          <div class="analysis-quality" id="analysis-quality">
+            <div>
+              <span>分析完成度</span>
+              <strong><span id="analysis-quality-value">—</span> / 100</strong>
+            </div>
+            <p id="analysis-quality-meaning"></p>
+          </div>
+          <div id="training-note" class="training-note"></div>
+          <div id="action-cards" class="action-cards"></div>
+          <div id="result-links" class="result-links"></div>
+        </div>
+
+        <div id="error-state" class="error-state" hidden>
+          <strong>这次没有完成分析</strong>
+          <p id="error-message"></p>
+          <button id="retry-button" class="secondary" type="button">重新选择</button>
+        </div>
+
+        <section id="batch-results-section" class="batch-results-section" hidden>
+          <div class="batch-results-heading">
+            <h3>本批视频结果</h3>
+            <span id="batch-results-count"></span>
+          </div>
+          <div id="batch-results" class="batch-results"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <span>RallyMate · 当前覆盖 FS01 / FS02 / FS09</span>
+    <span>动作表现参考分为 Beta 反馈，不替代现场教练判断</span>
+  </footer>
+  <script src="/assets/user-demo.js?v=1.2.0" defer></script>
+</body>
+</html>

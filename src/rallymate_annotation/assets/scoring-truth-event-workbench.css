@@ -1,0 +1,156 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  background: #07111f;
+  color: #eaf2ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(38, 132, 255, 0.22), transparent 34rem),
+    #07111f;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 48px;
+}
+
+.hero,
+.panel {
+  border: 1px solid #29415f;
+  border-radius: 16px;
+  background: rgba(12, 27, 47, 0.94);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+}
+
+.hero {
+  padding: 24px;
+  margin-bottom: 18px;
+}
+
+.hero h1,
+.panel h2 {
+  margin-top: 0;
+}
+
+.gate {
+  border-left: 5px solid #ffbd4a;
+  padding: 12px 16px;
+  background: #2b2418;
+  color: #ffe5ad;
+}
+
+.gate strong {
+  color: #ffd579;
+}
+
+.identity {
+  overflow-wrap: anywhere;
+  color: #a9c8ef;
+}
+
+.panel {
+  padding: 20px;
+  margin-top: 18px;
+}
+
+.toolbar,
+.actions,
+.meta-grid,
+.phase-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.toolbar {
+  grid-template-columns: minmax(260px, 1fr) repeat(3, auto);
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.meta-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.phase-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #bad0eb;
+}
+
+button,
+input,
+select {
+  min-height: 42px;
+  border: 1px solid #3b5879;
+  border-radius: 9px;
+  padding: 8px 11px;
+  background: #0b1a2d;
+  color: #f4f8ff;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+video {
+  display: block;
+  width: 100%;
+  max-height: 68vh;
+  border-radius: 12px;
+  background: #000;
+}
+
+#seek-slider {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.status[data-state="valid"] {
+  color: #83e7b2;
+}
+
+.status[data-state="invalid"] {
+  color: #ff9c9c;
+}
+
+.small {
+  color: #9eb5d1;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 800px) {
+  .toolbar,
+  .actions,
+  .meta-grid,
+  .phase-grid {
+    grid-template-columns: 1fr;
+  }
+}

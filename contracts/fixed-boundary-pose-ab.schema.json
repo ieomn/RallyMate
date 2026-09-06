@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/fixed-boundary-pose-ab.schema.json",
+  "title": "RallyMate fixed-boundary paired pose-feature disagreement report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_version",
+    "generated_at",
+    "status",
+    "source_id",
+    "comparison_semantics",
+    "boundary_source",
+    "registry_source",
+    "model_order",
+    "models",
+    "input_alignment",
+    "feature_versions",
+    "indicator_metrics",
+    "feature_metrics",
+    "events",
+    "feature_pairs",
+    "assertions"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "fixed-boundary-pose-ab-v1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "evaluated_fixed_boundary_cross_model_disagreement"},
+    "source_id": {"type": "string", "minLength": 1},
+    "comparison_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accuracy_claim",
+        "ground_truth_model",
+        "event_boundary_truth_status",
+        "numeric_metric_semantics",
+        "categorical_metric_semantics",
+        "grade_generated",
+        "scoring_threshold_generated"
+      ],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_model": {"type": "null"},
+        "event_boundary_truth_status": {
+          "enum": [
+            "candidate_source_not_truth",
+            "manual_annotation_supplied_but_not_pose_model_truth",
+            "external_boundary_source_not_assumed_truth"
+          ]
+        },
+        "numeric_metric_semantics": {
+          "const": "cross_model_disagreement_not_truth_error_or_accuracy"
+        },
+        "categorical_metric_semantics": {"const": "paired_agreement_rate_only"},
+        "grade_generated": {"const": false},
+        "scoring_threshold_generated": {"const": false}
+      }
+    },
+    "boundary_source": {"$ref": "#/$defs/boundarySource"},
+    "registry_source": {"$ref": "#/$defs/registrySource"},
+    "model_order": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "models": {
+      "type": "object",
+      "minProperties": 2,
+      "maxProperties": 2,
+      "additionalProperties": {"$ref": "#/$defs/model"}
+    },
+    "input_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "same_timestamp_grid",
+        "same_source_frame_grid",
+        "same_common_event_records",
+        "event_person_track_id_is_shared_semantic_primary_id"
+      ],
+      "properties": {
+        "same_timestamp_grid": {"const": true},
+        "same_source_frame_grid": {"const": true},
+        "same_common_event_records": {"const": true},
+        "event_person_track_id_is_shared_semantic_primary_id": {"const": true}
+      }
+    },
+    "feature_versions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "indicator_metrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/indicatorMetric"}
+    },
+    "feature_metrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/featureMetric"}
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/eventDetail"}
+    },
+    "feature_pairs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/featurePair"}
+    },
+    "assertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accuracy_claim",
+        "neither_model_used_as_truth",
+        "same_boundaries_for_both_models",
+        "only_both_valid_same_unit_same_semantics_pairs_enter_numeric_disagreement",
+        "event_quality_gate_status",
+        "boundary_source_quality_flags_reused",
+        "grade_generated",
+        "scoring_threshold_generated"
+      ],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "neither_model_used_as_truth": {"const": true},
+        "same_boundaries_for_both_models": {"const": true},
+        "only_both_valid_same_unit_same_semantics_pairs_enter_numeric_disagreement": {"const": true},
+        "event_quality_gate_status": {"const": "not_evaluated"},
+        "boundary_source_quality_flags_reused": {"const": false},
+        "grade_generated": {"const": false},
+        "scoring_threshold_generated": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "fileSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "boundarySource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "label",
+        "path",
+        "sha256",
+        "truth_status",
+        "event_count",
+        "event_ids",
+        "immutable_fields"
+      ],
+      "properties": {
+        "kind": {"enum": ["candidate", "manual", "external"]},
+        "label": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "truth_status": {"type": "string", "minLength": 1},
+        "event_count": {"type": "integer", "minimum": 1},
+        "event_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "registrySource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "registry_version",
+        "indicator_count",
+        "indicator_ids"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "registry_version": {"type": "string", "minLength": 1},
+        "indicator_count": {"type": "integer", "minimum": 1},
+        "indicator_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "model_sha256",
+        "pose_backend",
+        "pose_profile",
+        "native_keypoint_formats_observed",
+        "frames",
+        "primary_timeline",
+        "feature_library_version",
+        "indicator_event_pair_count",
+        "measured_indicator_event_count",
+        "unavailable_indicator_event_count",
+        "event_quality_gate_status"
+      ],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "model_sha256": {"$ref": "#/$defs/sha256"},
+        "pose_backend": {"type": "string", "minLength": 1},
+        "pose_profile": {"type": "string", "minLength": 1},
+        "native_keypoint_formats_observed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "frames": {"$ref": "#/$defs/fileSource"},
+        "primary_timeline": {"$ref": "#/$defs/fileSource"},
+        "feature_library_version": {"type": "string", "minLength": 1},
+        "indicator_event_pair_count": {"type": "integer", "minimum": 0},
+        "measured_indicator_event_count": {"type": "integer", "minimum": 0},
+        "unavailable_indicator_event_count": {"type": "integer", "minimum": 0},
+        "event_quality_gate_status": {"const": "not_evaluated"}
+      }
+    },
+    "pairedValidity": {
+      "type": "object",
+      "required": [
+        "pair_count",
+        "both_valid_count",
+        "model_a_only_count",
+        "model_b_only_count",
+        "neither_valid_count",
+        "both_valid_rate",
+        "missing_inconsistency_count",
+        "missing_inconsistency_rate"
+      ],
+      "properties": {
+        "pair_count": {"type": "integer", "minimum": 0},
+        "both_valid_count": {"type": "integer", "minimum": 0},
+        "model_a_only_count": {"type": "integer", "minimum": 0},
+        "model_b_only_count": {"type": "integer", "minimum": 0},
+        "neither_valid_count": {"type": "integer", "minimum": 0},
+        "both_valid_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "missing_inconsistency_count": {"type": "integer", "minimum": 0},
+        "missing_inconsistency_rate": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "featureMetric": {
+      "type": "object",
+      "required": [
+        "feature_name",
+        "unit",
+        "comparison_kind",
+        "paired_validity",
+        "comparison_eligibility",
+        "cross_model_disagreement"
+      ],
+      "properties": {
+        "feature_name": {"type": "string", "minLength": 1},
+        "unit": {"type": ["string", "null"]},
+        "comparison_kind": {"enum": ["continuous", "circular_angle", "categorical", "incompatible"]},
+        "paired_validity": {"$ref": "#/$defs/pairedValidity"},
+        "comparison_eligibility": {"type": "object"},
+        "cross_model_disagreement": {
+          "type": "object",
+          "required": ["status", "accuracy_claim", "semantics"],
+          "properties": {
+            "status": {"enum": ["evaluated", "unavailable"]},
+            "accuracy_claim": {"const": false},
+            "semantics": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "indicatorMetric": {
+      "type": "object",
+      "required": [
+        "event_pair_count",
+        "required_features",
+        "paired_validity",
+        "event_quality_gate",
+        "feature_metrics"
+      ],
+      "properties": {
+        "event_pair_count": {"type": "integer", "minimum": 0},
+        "required_features": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "paired_validity": {"type": "object"},
+        "event_quality_gate": {
+          "type": "object",
+          "required": ["status", "event_pair_count", "reason"],
+          "properties": {"status": {"const": "not_evaluated"}}
+        },
+        "feature_metrics": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/featureMetric"}
+        }
+      }
+    },
+    "featureModelPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "valid",
+        "value",
+        "computed_value",
+        "unit",
+        "confidence",
+        "reason",
+        "feature_version",
+        "semantic_signature_sha256",
+        "source_frames",
+        "provenance"
+      ],
+      "properties": {
+        "valid": {"type": "boolean"},
+        "value": {"type": ["number", "null"]},
+        "computed_value": {},
+        "unit": {"type": "string", "minLength": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "feature_version": {"type": "string", "minLength": 1},
+        "semantic_signature_sha256": {"$ref": "#/$defs/sha256"},
+        "source_frames": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "provenance": {"type": "object"}
+      }
+    },
+    "featureComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison_kind",
+        "eligible",
+        "reason",
+        "validity_state",
+        "missing_inconsistency",
+        "unit_match",
+        "feature_version_match",
+        "semantic_match",
+        "signed_direction",
+        "signed_cross_model_disagreement",
+        "absolute_cross_model_disagreement",
+        "category_agreement"
+      ],
+      "properties": {
+        "comparison_kind": {"enum": ["continuous", "circular_angle", "categorical"]},
+        "eligible": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1},
+        "validity_state": {"enum": ["both_valid", "model_a_only", "model_b_only", "neither_valid"]},
+        "missing_inconsistency": {"type": "boolean"},
+        "unit_match": {"type": "boolean"},
+        "feature_version_match": {"type": "boolean"},
+        "semantic_match": {"type": "boolean"},
+        "signed_direction": {"type": "string", "minLength": 1},
+        "signed_cross_model_disagreement": {"type": ["number", "null"]},
+        "absolute_cross_model_disagreement": {"type": ["number", "null"], "minimum": 0},
+        "category_agreement": {"type": ["boolean", "null"]}
+      }
+    },
+    "featurePair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_code",
+        "person_track_id",
+        "start_ms",
+        "end_ms",
+        "feature_name",
+        "indicator_ids",
+        "models",
+        "comparison"
+      ],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_code": {"enum": ["FS01", "FS02", "FS09"]},
+        "person_track_id": {"type": "integer", "minimum": 1},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 1},
+        "feature_name": {"type": "string", "minLength": 1},
+        "indicator_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "models": {
+          "type": "object",
+          "minProperties": 2,
+          "maxProperties": 2,
+          "additionalProperties": {"$ref": "#/$defs/featureModelPayload"}
+        },
+        "comparison": {"$ref": "#/$defs/featureComparison"}
+      }
+    },
+    "eventDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boundary", "boundary_source_annotations", "indicators"],
+      "properties": {
+        "boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["event_id", "event_code", "person_track_id", "start_ms", "end_ms", "key_phases_ms"],
+          "properties": {
+            "event_id": {"type": "string", "minLength": 1},
+            "event_code": {"enum": ["FS01", "FS02", "FS09"]},
+            "person_track_id": {"type": "integer", "minimum": 1},
+            "start_ms": {"type": "integer", "minimum": 0},
+            "end_ms": {"type": "integer", "minimum": 1},
+            "key_phases_ms": {"type": ["object", "null"]}
+          }
+        },
+        "boundary_source_annotations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_record_sha256", "confidence", "boundary_uncertainty_ms", "quality_flags", "provenance", "used_as_model_quality_flags"],
+          "properties": {
+            "source_record_sha256": {"$ref": "#/$defs/sha256"},
+            "confidence": {"type": ["number", "null"]},
+            "boundary_uncertainty_ms": {"type": ["integer", "null"], "minimum": 0},
+            "quality_flags": {"type": "array", "items": {"type": "string"}},
+            "provenance": {"type": "object"},
+            "used_as_model_quality_flags": {"const": false}
+          }
+        },
+        "indicators": {"type": "array", "items": {"type": "object"}}
+      }
+    }
+  }
+}

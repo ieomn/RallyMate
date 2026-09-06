@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-observability-residual-audit.schema.json",
+  "title": "RallyMate post-router Pose observability residual audit",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "counts", "by_video", "by_indicator", "by_invalid_feature", "by_reason", "candidate_frame_scope", "residual_items", "next_candidate", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "pose-observability-residual-audit-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "residual_observability_gaps_require_candidate_or_truth"},
+    "scope": {
+      "type": "object",
+      "required": ["video_count", "video_ids", "indicator_count", "indicator_ids", "indicator_instances"],
+      "properties": {
+        "video_count": {"const": 3},
+        "video_ids": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "indicator_count": {"const": 13},
+        "indicator_ids": {"type": "array", "minItems": 13, "maxItems": 13, "uniqueItems": true, "items": {"type": "string", "pattern": "^(GS|FS)[0-9]{2}-M[0-9]{2}(-[0-9]{2})?$"}},
+        "indicator_instances": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "object",
+      "required": ["registry", "router_reports"],
+      "properties": {
+        "registry": {"$ref": "#/$defs/source"},
+        "router_reports": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/source"}}
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "required": ["feature_vector_complete", "feature_vector_incomplete", "operational_measured", "operational_unavailable", "measurement_hard_fail", "non_hard_fail_feature_incomplete", "residual_event_count", "invalid_feature_occurrence_count", "candidate_frame_count"],
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "by_video": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "object"}},
+    "by_indicator": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+    "by_invalid_feature": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+    "by_reason": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+    "candidate_frame_scope": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "object"}},
+    "residual_items": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["video_id", "event_id", "event_code", "person_track_id", "start_ms", "end_ms", "indicator_id", "quality_gate_status", "measurement_allowed", "invalid_features"]}},
+    "next_candidate": {"type": "object", "required": ["profile", "selection_policy", "reason", "production_enabled"], "properties": {"production_enabled": {"const": false}}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "feature_gate_relaxed", "measurement_gate_relaxed", "event_boundaries_modified", "grades_generated", "thresholds_generated", "production_enabled", "maturity_promoted"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "feature_gate_relaxed": {"const": false},
+        "measurement_gate_relaxed": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "production_enabled": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

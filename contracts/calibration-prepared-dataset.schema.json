@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-prepared-dataset.schema.json",
+  "title": "RallyMate single-indicator prepared calibration dataset",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "dataset_id", "dataset_version", "source", "truth_authorization", "indicator_id", "feature_order", "unit_by_feature", "feature_version_by_feature", "label_scale", "label_resolution_policy", "split_policy", "agreement", "records", "independent_test_seal", "readiness", "integrity"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["calibration_input", "synthetic_test_only_calibration_input", "unverified_truth_diagnostic_input"]},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "manifest_id", "source_sha256", "prepared_at"],
+      "properties": {
+        "kind": {"enum": ["human_coach_ground_truth", "synthetic_test_fixture", "unverified_private_truth"]},
+        "manifest_id": {"type": "string", "minLength": 1},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "prepared_at": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "truth_authorization": {"$ref": "#/$defs/truthAuthorization"},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "feature_order": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "unit_by_feature": {"type": "object", "additionalProperties": {"type": ["string", "null"], "minLength": 1}},
+    "feature_version_by_feature": {"type": "object", "additionalProperties": {"type": ["string", "null"], "minLength": 1}},
+    "label_scale": {"const": ["E", "D", "C", "B", "A"]},
+    "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]},
+    "split_policy": {
+      "type": "object",
+      "required": ["strategy", "group_key", "train_groups", "validation_groups", "independent_test_groups"],
+      "properties": {
+        "strategy": {"const": "group_holdout"},
+        "group_key": {"type": "string", "minLength": 1},
+        "train_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "validation_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "independent_test_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": true
+    },
+    "agreement": {
+      "type": "object",
+      "required": ["status", "metric", "value", "annotator_count", "shared_item_count"],
+      "properties": {
+        "status": {"enum": ["evaluated", "not_evaluated"]},
+        "metric": {"const": "quadratic_weighted_kappa"},
+        "value": {"type": ["number", "null"], "minimum": -1, "maximum": 1},
+        "annotator_count": {"type": "integer", "minimum": 0},
+        "shared_item_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "video_id", "event_id", "group_id", "split", "features", "grade", "annotator_ids", "label_source_ids"],
+        "properties": {
+          "record_id": {"type": "string", "minLength": 1},
+          "video_id": {"type": "string", "minLength": 1},
+          "event_id": {"type": "string", "minLength": 1},
+          "group_id": {"type": "string", "minLength": 1},
+          "split": {"enum": ["train", "validation"]},
+          "features": {"type": "object", "additionalProperties": {"type": "number"}},
+          "grade": {"enum": ["E", "D", "C", "B", "A"]},
+          "annotator_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "label_source_ids": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "consensus_status": {"enum": ["unanimous"]},
+          "leakage_component_id": {"type": "string", "minLength": 1},
+          "adjudication": {
+            "type": "object",
+            "required": ["adjudicator_id", "decision_id", "decided_at", "source_label_ids"],
+            "properties": {
+              "adjudicator_id": {"type": "string", "minLength": 1},
+              "decision_id": {"type": "string", "minLength": 1},
+              "decided_at": {"type": "string", "minLength": 1},
+              "source_label_ids": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "independent_test_seal": {
+      "type": "object",
+      "required": ["seal_id", "indicator_id", "record_count", "groups", "content_sha256", "canonicalization", "labels_withheld"],
+      "properties": {
+        "seal_id": {"type": "string", "minLength": 1},
+        "indicator_id": {"type": "string", "minLength": 1},
+        "record_count": {"type": "integer", "minimum": 0},
+        "groups": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "sample_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "canonicalization": {
+          "const": "rallymate-canonical-json-v1",
+          "description": "SHA-256 payload is the array of complete independent-test sample objects sorted by unique sample_id, serialized as UTF-8 JSON with sort_keys=true, separators=(',', ':'), ensure_ascii=false, and NaN/Infinity forbidden."
+        },
+        "labels_withheld": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["record_count", "split_counts", "grade_counts_by_split", "source_dataset_sha256", "canonicalization"],
+      "properties": {
+        "record_count": {"type": "integer", "minimum": 0},
+        "split_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "grade_counts_by_split": {"type": "object"},
+        "source_dataset_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"}
+      },
+      "additionalProperties": true
+    },
+    "readiness": {
+      "type": "object",
+      "required": ["status", "blockers", "F3_claimed"],
+      "properties": {
+        "status": {"enum": ["insufficient", "prepared_for_external_protocol_review"]},
+        "blockers": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "F3_claimed": {"const": false}
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "truthAuthorization": {
+      "type": "object",
+      "required": ["binding_version", "status", "canonicalization", "authorization_id", "event_protocol_authorization", "intake", "revision_lineage", "input_files", "binding_sha256"],
+      "properties": {
+        "binding_version": {"const": "scoring-truth-calibration-authorization-binding-v1.0.0"},
+        "status": {"enum": ["verified_authorized_intake_for_calibration", "unverified_private_truth_diagnostic", "synthetic_test_only_no_production_authority"]},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "authorization_id": {"type": "string", "minLength": 1},
+        "event_protocol_authorization": {"type": "object"},
+        "intake": {"type": "object"},
+        "revision_lineage": {"type": "object"},
+        "input_files": {"type": "object"},
+        "binding_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"artifact_scope": {"const": "calibration_input"}}, "required": ["artifact_scope"]},
+      "then": {
+        "properties": {
+          "source": {"properties": {"kind": {"const": "human_coach_ground_truth"}}},
+          "truth_authorization": {"properties": {"status": {"const": "verified_authorized_intake_for_calibration"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"artifact_scope": {"const": "synthetic_test_only_calibration_input"}}, "required": ["artifact_scope"]},
+      "then": {
+        "properties": {
+          "source": {"properties": {"kind": {"const": "synthetic_test_fixture"}}},
+          "truth_authorization": {"properties": {"status": {"const": "synthetic_test_only_no_production_authority"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"artifact_scope": {"const": "unverified_truth_diagnostic_input"}}, "required": ["artifact_scope"]},
+      "then": {
+        "properties": {
+          "source": {"properties": {"kind": {"const": "unverified_private_truth"}}},
+          "truth_authorization": {"properties": {"status": {"const": "unverified_private_truth_diagnostic"}}}
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

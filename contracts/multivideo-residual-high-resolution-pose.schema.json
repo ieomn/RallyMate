@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-residual-high-resolution-pose.schema.json",
+  "title": "RallyMate multivideo residual high-resolution Pose summary",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "candidate", "inference", "baseline", "experimental_projection", "by_video", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "multivideo-residual-high-resolution-pose-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["regression_free_high_resolution_observability_candidate_requires_truth", "high_resolution_candidate_rejected_due_to_regression"]},
+    "scope": {"type": "object"},
+    "sources": {"type": "object"},
+    "candidate": {"type": "object", "required": ["experiment_version", "pose_profile", "pose_model_sha256", "input_size_hw", "roi_margin", "min_roi_size_px", "required_joints", "changes_pose_model_and_crop_context_together", "causal_attribution_to_one_setting_claimed"], "properties": {"changes_pose_model_and_crop_context_together": {"const": true}, "causal_attribution_to_one_setting_claimed": {"const": false}}},
+    "inference": {"type": "object"},
+    "baseline": {"type": "object"},
+    "experimental_projection": {"type": "object", "required": ["feature_vector_recovered", "feature_vector_regressed", "feature_vector_complete", "feature_vector_incomplete", "operational_recovered", "operational_regressed", "operational_measured", "operational_unavailable", "measurement_hard_fail", "non_hard_fail_feature_incomplete", "recovered_residual_indicator_instances", "remaining_residual_indicator_instances"]},
+    "by_video": {"type": "array", "minItems": 3, "maxItems": 3},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted", "reason_codes", "next_required_evidence"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_profile_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "current_three_video_regression_free_is_not_independent_validation"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "automatic_profile_fallback_enabled": {"const": false},
+        "feature_gate_modified": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "current_three_video_regression_free_is_not_independent_validation": {"const": true}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/keypoint-ground-truth.schema.json",
+  "type": "object",
+  "required": ["schema_version", "video_id", "source_frame_index", "timestamp_ms", "primary_player_id", "annotator_id", "view_group", "joints"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "video_id": {"type": "string", "minLength": 1},
+    "source_frame_index": {"type": "integer", "minimum": 0},
+    "timestamp_ms": {"type": "integer", "minimum": 0},
+    "primary_player_id": {"const": 1},
+    "annotator_id": {"type": "string", "minLength": 1},
+    "reviewer_id": {"type": "string", "minLength": 1},
+    "adjudication_status": {"enum": ["accepted"]},
+    "view_group": {"type": "string", "minLength": 1},
+    "joints": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["visible", "x_normalized", "y_normalized"],
+        "properties": {
+          "visible": {"type": "boolean"},
+          "x_normalized": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "y_normalized": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "visibility_reason": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

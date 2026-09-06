@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "ranking_calibration_independent_test_protocol",
+  "protocol_id": "REPLACE_WITH_REGISTERED_TEST_PROTOCOL_ID",
+  "protocol_version": "REPLACE_WITH_REGISTERED_TEST_PROTOCOL_VERSION",
+  "indicator_id": "COPY_FROM_CANDIDATE",
+  "source": {
+    "kind": "preregistered_independent_ranking_test",
+    "source_sha256": "REPLACE_WITH_EXTERNAL_PROTOCOL_SHA256",
+    "registered_at": "REPLACE_WITH_ISO_8601_TIME_BEFORE_TEST"
+  },
+  "candidate_binding": {
+    "candidate_id": "COPY_FROM_CANDIDATE",
+    "candidate_version": "COPY_FROM_CANDIDATE",
+    "candidate_sha256": "COPY_CANONICAL_SHA256_OF_COMPLETE_CANDIDATE",
+    "seal_id": "COPY_FROM_CANDIDATE",
+    "seal_content_sha256": "COPY_FROM_CANDIDATE"
+  },
+  "acceptance": {
+    "min_evaluated_pairs": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "min_annotators": "REPLACE_WITH_PREREGISTERED_INTEGER",
+    "min_pairwise_accuracy": "REPLACE_WITH_PREREGISTERED_VALUE",
+    "max_pairwise_log_loss": "REPLACE_WITH_PREREGISTERED_VALUE",
+    "min_mean_kendall_tau": "REPLACE_WITH_PREREGISTERED_VALUE"
+  },
+  "safety": {
+    "acceptance_applies_to": "relative_order_only",
+    "A_E_grade_approval_possible": false,
+    "production_scoring_approval_possible": false
+  }
+}

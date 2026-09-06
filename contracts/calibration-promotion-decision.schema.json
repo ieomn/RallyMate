@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-promotion-decision.schema.json",
+  "title": "RallyMate explicit calibration promotion decision",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_scope",
+    "decision_id",
+    "decision_version",
+    "calibration_version",
+    "indicator_id",
+    "decision",
+    "requested_artifact_scope",
+    "reviewer",
+    "source",
+    "decided_at",
+    "candidate",
+    "prepared_dataset",
+    "fit_protocol",
+    "independent_test",
+    "independent_test_report",
+    "independent_test_protocol",
+    "feasibility_registry",
+    "attestations"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "artifact_scope": {
+      "enum": [
+        "calibration_promotion_decision",
+        "synthetic_test_only_calibration_promotion_decision"
+      ]
+    },
+    "decision_id": {"type": "string", "minLength": 1},
+    "decision_version": {"type": "string", "minLength": 1},
+    "calibration_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "decision": {"const": "approved"},
+    "requested_artifact_scope": {"enum": ["production", "test_only"]},
+    "reviewer": {
+      "type": "object",
+      "required": ["reviewer_id", "role"],
+      "properties": {
+        "reviewer_id": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind", "source_sha256", "registered_at"],
+      "properties": {
+        "kind": {"enum": ["human_promotion_record", "synthetic_test_fixture"]},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "decided_at": {"type": "string", "format": "date-time"},
+    "candidate": {
+      "type": "object",
+      "required": ["candidate_id", "candidate_version", "backend", "content_sha256"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "candidate_version": {"type": "string", "minLength": 1},
+        "backend": {"enum": ["threshold_rule", "ordinal_regression"]},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "prepared_dataset": {"$ref": "#/$defs/preparedDataset"},
+    "fit_protocol": {"$ref": "#/$defs/protocol"},
+    "independent_test": {
+      "type": "object",
+      "required": ["seal_id", "content_sha256", "record_count", "canonicalization"],
+      "properties": {
+        "seal_id": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "record_count": {"type": "integer", "minimum": 1},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"}
+      },
+      "additionalProperties": false
+    },
+    "independent_test_report": {
+      "type": "object",
+      "required": ["report_version", "content_sha256"],
+      "properties": {
+        "report_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "independent_test_protocol": {
+      "type": "object",
+      "required": [
+        "protocol_id",
+        "protocol_version",
+        "content_sha256",
+        "source_sha256",
+        "registered_at"
+      ],
+      "properties": {
+        "protocol_id": {"type": "string", "minLength": 1},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "feasibility_registry": {
+      "type": "object",
+      "required": ["registry_version", "content_sha256", "indicator_level"],
+      "properties": {
+        "registry_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "indicator_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]}
+      },
+      "additionalProperties": false
+    },
+    "maturity_evidence": {"$ref": "#/$defs/maturityEvidenceBinding"},
+    "attestations": {
+      "type": "object",
+      "required": [
+        "candidate_lineage_reviewed",
+        "independent_test_reviewed",
+        "registry_maturity_reviewed",
+        "no_manual_threshold_or_coefficient_edits"
+      ],
+      "properties": {
+        "candidate_lineage_reviewed": {"const": true},
+        "independent_test_reviewed": {"const": true},
+        "registry_maturity_reviewed": {"const": true},
+        "no_manual_threshold_or_coefficient_edits": {"const": true},
+        "maturity_evidence_reviewed": {"const": true}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "preparedDataset": {
+      "type": "object",
+      "required": ["dataset_id", "dataset_version", "artifact_scope", "label_resolution_policy", "content_sha256", "source_sha256", "truth_authorization_binding_sha256"],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "dataset_version": {"type": "string", "minLength": 1},
+        "artifact_scope": {"enum": ["calibration_input", "synthetic_test_only_calibration_input"]},
+        "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "truth_authorization_binding_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "protocol": {
+      "type": "object",
+      "required": ["protocol_id", "protocol_version", "artifact_scope", "label_resolution_policy", "content_sha256", "source_sha256"],
+      "properties": {
+        "protocol_id": {"type": "string", "minLength": 1},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "artifact_scope": {"enum": ["calibration_fit_protocol", "synthetic_test_only_fit_protocol"]},
+        "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "maturityEvidenceBinding": {
+      "type": "object",
+      "required": [
+        "bundle_id",
+        "bundle_version",
+        "artifact_scope",
+        "indicator_id",
+        "content_sha256",
+        "final_transition_sha256",
+        "final_registry",
+        "canonicalization"
+      ],
+      "properties": {
+        "bundle_id": {"type": "string", "minLength": 1},
+        "bundle_version": {"const": "maturity-evidence-bundle-v1"},
+        "artifact_scope": {
+          "enum": [
+            "maturity_evidence",
+            "synthetic_test_only_maturity_evidence"
+          ]
+        },
+        "indicator_id": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "final_transition_sha256": {"$ref": "#/$defs/sha256"},
+        "final_registry": {
+          "type": "object",
+          "required": [
+            "registry_version",
+            "content_sha256",
+            "indicator_id",
+            "indicator_level"
+          ],
+          "properties": {
+            "registry_version": {"type": "string", "minLength": 1},
+            "content_sha256": {"$ref": "#/$defs/sha256"},
+            "indicator_id": {"type": "string", "minLength": 1},
+            "indicator_level": {"const": "F4"}
+          },
+          "additionalProperties": false
+        },
+        "canonicalization": {"const": "rallymate-canonical-json-v1"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"artifact_scope": {"const": "calibration_promotion_decision"}},
+        "required": ["artifact_scope"]
+      },
+      "then": {
+        "required": ["maturity_evidence"],
+        "properties": {
+          "requested_artifact_scope": {"const": "production"},
+          "source": {"properties": {"kind": {"const": "human_promotion_record"}}},
+          "maturity_evidence": {
+            "properties": {"artifact_scope": {"const": "maturity_evidence"}}
+          },
+          "attestations": {
+            "required": ["maturity_evidence_reviewed"],
+            "properties": {"maturity_evidence_reviewed": {"const": true}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_scope": {"const": "synthetic_test_only_calibration_promotion_decision"}
+        },
+        "required": ["artifact_scope"]
+      },
+      "then": {
+        "properties": {
+          "requested_artifact_scope": {"const": "test_only"},
+          "source": {"properties": {"kind": {"const": "synthetic_test_fixture"}}},
+          "maturity_evidence": {
+            "properties": {
+              "artifact_scope": {
+                "const": "synthetic_test_only_maturity_evidence"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

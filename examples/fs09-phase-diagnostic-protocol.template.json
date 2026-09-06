@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_version": "fs09-phase-diagnostic-acceptance-protocol-v1.0.0",
+  "protocol_id": "REPLACE_WITH_EXTERNALLY_REGISTERED_PROTOCOL_ID",
+  "artifact_scope": "template_not_executable",
+  "execution_status": "not_executable_placeholders_present",
+  "registered_at": "REPLACE_WITH_EXTERNAL_REGISTRATION_TIMESTAMP",
+  "registered_by": {
+    "reviewer_id": "REPLACE_WITH_INDEPENDENT_REVIEWER_ID",
+    "role": "REPLACE_WITH_REVIEWER_ROLE"
+  },
+  "registration": {
+    "registry_id": "REPLACE_WITH_EXTERNAL_REGISTRY_ID",
+    "source_kind": "external_protocol_registry",
+    "source_sha256": "REPLACE_WITH_64_HEX_SHA256"
+  },
+  "analysis_plan_binding": {
+    "plan_id": "m88-m77-fs09-two-task-descriptive-v3",
+    "plan_version": "fs09-phase-analysis-plan-v1.3.0",
+    "source_sha256": "REPLACE_WITH_FROZEN_ANALYSIS_PLAN_SHA256"
+  },
+  "scope_binding": {
+    "task_ids": [
+      "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001",
+      "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002"
+    ],
+    "task_contract_sha256": "4BFD62348E254A8EF7AFE9244FCC3E4349878F49761022C425149F357C2AE7B8",
+    "candidate_contract_sha256": "9D933FE215D654F371973E692A98A82D4DE874360AAD1BEB07D2E0C86F643805"
+  },
+  "acceptance_requirements": "REPLACE_WITH_EXTERNALLY_PREREGISTERED_COVERAGE_AND_NUMERIC_REQUIREMENTS",
+  "decision_rule": "REPLACE_WITH_EXTERNALLY_PREREGISTERED_PASS_FAIL_RULE",
+  "safety": {
+    "template_is_acceptance_evidence": false,
+    "repository_analysis_plan_is_external_registration": false,
+    "thresholds_are_A_to_E_scoring_thresholds": false,
+    "automatic_runtime_change_allowed": false,
+    "automatic_maturity_promotion_allowed": false,
+    "production_release_allowed": false
+  }
+}

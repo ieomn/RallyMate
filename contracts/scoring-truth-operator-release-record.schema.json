@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-operator-release-record.schema.json",
+  "title": "RallyMate local operator-reviewed annotation release record",
+  "description": "A local operational record that releases only the exact plan and M89 handoff for event/phase annotation. It is not a digital signature, trusted timestamp, calibration approval, promotion approval, or production-scoring authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "release_version",
+    "artifact_scope",
+    "release_id",
+    "released_at",
+    "reviewed_by",
+    "decision",
+    "plan",
+    "technical_handoff",
+    "scope_digest_sha256",
+    "role_protocol_digest_sha256",
+    "attestations",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "release_version": {
+      "const": "scoring-truth-operator-reviewed-local-release-v1.0.0"
+    },
+    "artifact_scope": {
+      "const": "scoring_truth_operator_reviewed_local_release"
+    },
+    "release_id": {"$ref": "#/$defs/identifier"},
+    "released_at": {"$ref": "#/$defs/timestamp"},
+    "reviewed_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "role"],
+      "properties": {
+        "reviewer_id": {"$ref": "#/$defs/identifier"},
+        "role": {"const": "annotation_release_operator"}
+      }
+    },
+    "decision": {
+      "const": "operator_released_for_independent_event_phase_annotation"
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan_id", "plan_version", "raw_sha256"],
+      "properties": {
+        "plan_id": {"$ref": "#/$defs/identifier"},
+        "plan_version": {
+          "const": "scoring-truth-event-annotation-plan-v2.0.0"
+        },
+        "raw_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "technical_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_raw_sha256",
+        "bundle_version",
+        "bundle_id",
+        "content_root_sha256",
+        "source_projection_sha256"
+      ],
+      "properties": {
+        "manifest_raw_sha256": {"$ref": "#/$defs/sha256"},
+        "bundle_version": {"const": "scoring-truth-event-handoff-v1.0.0"},
+        "bundle_id": {
+          "type": "string",
+          "pattern": "^m89-scoring-truth-event-[0-9A-F]{64}$"
+        },
+        "content_root_sha256": {"$ref": "#/$defs/sha256"},
+        "source_projection_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "scope_digest_sha256": {"$ref": "#/$defs/sha256"},
+    "role_protocol_digest_sha256": {"$ref": "#/$defs/sha256"},
+    "attestations": {
+      "const": {
+        "exact_plan_reviewed": true,
+        "exact_handoff_reviewed": true,
+        "blind_role_protocol_reviewed": true,
+        "annotation_only_scope_reviewed": true
+      }
+    },
+    "safety": {
+      "const": {
+        "annotation_workflow_release_only": true,
+        "digital_signature_authority": false,
+        "trusted_timestamp_authority": false,
+        "calibration_authorized": false,
+        "promotion_authorized": false,
+        "production_scoring_authorized": false
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?Z$"
+    }
+  }
+}

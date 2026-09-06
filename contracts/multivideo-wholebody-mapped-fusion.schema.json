@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-wholebody-mapped-fusion.schema.json",
+  "title": "RallyMate multivideo WholeBody133 mapped fusion summary",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "fusion_contract", "baseline_m68", "baseline_m72", "m73_projection", "remaining_residual", "by_video", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "multivideo-wholebody133-mapped-fusion-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "experimental_wholebody_mapped_fusion_regression_free_no_additional_indicator_recovery"},
+    "scope": {"type": "object", "required": ["video_count", "video_ids", "indicator_count", "indicator_instances", "target_frame_count"], "properties": {"video_count": {"const": 3}, "video_ids": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true}}},
+    "sources": {"type": "object"},
+    "fusion_contract": {"type": "object", "required": ["fusion_version", "baseline_keypoint_format", "candidate_keypoint_format", "target_to_candidate_joint_names", "mapping_is_one_to_one", "baseline_valid_coordinates_overwritten", "baseline_topology_preserved", "explicit_topology_map_required", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds"], "properties": {"baseline_keypoint_format": {"const": "halpe26"}, "candidate_keypoint_format": {"const": "coco_wholebody133"}, "mapping_is_one_to_one": {"const": true}, "baseline_valid_coordinates_overwritten": {"const": 0}, "baseline_topology_preserved": {"const": true}, "explicit_topology_map_required": {"const": true}, "selection_uses_feature_values": {"const": false}, "selection_uses_event_outcomes": {"const": false}, "selection_uses_grades_or_thresholds": {"const": false}}},
+    "baseline_m68": {"type": "object"},
+    "baseline_m72": {"type": "object"},
+    "m73_projection": {"type": "object", "required": ["candidate_pose_output_count", "candidate_pose_missing_count", "changed_frame_count", "added_valid_joint_observation_count", "feature_recovered_from_m68", "feature_regressed_from_m68", "feature_vector_complete", "feature_vector_incomplete", "operational_recovered_from_m68", "operational_regressed_from_m68", "operational_measured", "operational_unavailable", "measurement_hard_fail", "non_hard_fail_operational_residual", "additional_feature_recovery_over_m72", "additional_operational_recovery_over_m72", "lost_m72_feature_recovery_count", "lost_m72_operational_recovery_count"], "properties": {"feature_regressed_from_m68": {"const": 0}, "operational_regressed_from_m68": {"const": 0}, "additional_feature_recovery_over_m72": {"const": 0}, "additional_operational_recovery_over_m72": {"const": 0}, "lost_m72_feature_recovery_count": {"const": 0}, "lost_m72_operational_recovery_count": {"const": 0}}},
+    "remaining_residual": {"type": "object", "required": ["indicator_instance_count", "classification_counts", "invalid_feature_reason_counts", "invalid_feature_counts", "items"]},
+    "by_video": {"type": "array", "minItems": 3, "maxItems": 3},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted", "m72_recovered_sets_preserved", "additional_indicator_recovery_observed", "denser_topology_alone_did_not_resolve_remaining_indicator_contracts", "next_direction"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}, "m72_recovered_sets_preserved": {"const": true}, "additional_indicator_recovery_observed": {"const": false}, "denser_topology_alone_did_not_resolve_remaining_indicator_contracts": {"const": true}}},
+    "safety": {"type": "object", "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "point_count_is_not_accuracy_or_indicator_recovery"], "properties": {"accuracy_claim": {"const": false}, "ground_truth_provided": {"const": false}, "production_enabled": {"const": false}, "automatic_fallback_enabled": {"const": false}, "feature_gate_modified": {"const": false}, "measurement_gate_modified": {"const": false}, "event_boundaries_modified": {"const": false}, "grades_generated": {"const": false}, "thresholds_generated": {"const": false}, "maturity_promoted": {"const": false}, "point_count_is_not_accuracy_or_indicator_recovery": {"const": true}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

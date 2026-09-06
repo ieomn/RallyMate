@@ -1,0 +1,214 @@
+:root {
+  color-scheme: light;
+  --ink: #17243b;
+  --muted: #5f6f87;
+  --line: #dce5f2;
+  --blue: #2563eb;
+  --blue-soft: #eef5ff;
+  --green: #087f5b;
+  --amber: #9a6700;
+  --surface: #ffffff;
+  --page: #f4f7fb;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--page);
+  font: 16px/1.72 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+body > header,
+body > main,
+body > nav,
+body > footer,
+body > h1,
+body > h2,
+body > h3,
+body > h4,
+body > h5,
+body > h6,
+body > p,
+body > blockquote,
+body > ul,
+body > ol,
+body > table,
+body > pre,
+body > div.sourceCode {
+  width: min(1120px, calc(100% - 40px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body > header {
+  margin-top: 26px;
+  padding: 34px 38px 22px;
+  background: linear-gradient(135deg, #102a56, #245bc2);
+  color: white;
+  border-radius: 22px 22px 0 0;
+}
+
+header h1 { margin: 0; font-size: clamp(28px, 4vw, 48px); line-height: 1.2; }
+
+header .subtitle { opacity: .82; }
+
+/* Pandoc also preserves the source Markdown H1 after emitting its title block. */
+body > h1:first-of-type { display: none; }
+
+nav#TOC {
+  padding: 24px 34px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 0;
+  max-height: 460px;
+  overflow: auto;
+}
+
+nav#TOC::before {
+  content: "文档目录";
+  display: block;
+  margin-bottom: 10px;
+  color: var(--blue);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+nav#TOC ul { margin: 4px 0; padding-left: 22px; }
+
+body > h1,
+body > h2,
+body > h3,
+body > h4,
+body > p,
+body > blockquote,
+body > ul,
+body > ol,
+body > table,
+body > pre,
+body > div.sourceCode {
+  background: var(--surface);
+}
+
+body > h1,
+body > h2,
+body > h3,
+body > h4,
+body > p,
+body > blockquote,
+body > ul,
+body > ol,
+body > pre,
+body > div.sourceCode {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 38px;
+  padding-right: 38px;
+}
+
+body > h1,
+body > h2 { padding-top: 34px; }
+
+body > h3,
+body > h4 { padding-top: 24px; }
+
+body > p,
+body > ul,
+body > ol,
+body > blockquote { padding-top: 8px; padding-bottom: 8px; }
+
+h1, h2, h3, h4 { line-height: 1.35; }
+h2 { color: #173f83; border-top: 1px solid var(--line); }
+h3 { color: #2455a5; }
+
+a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: #1747b4; }
+
+blockquote {
+  color: var(--muted);
+  border-left: 5px solid #83aef8;
+}
+
+code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #edf2f8;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: .9em;
+}
+
+pre, div.sourceCode {
+  overflow: auto;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  color: #d9e7ff;
+  background: #101d33 !important;
+}
+
+pre code { padding: 0; color: inherit; background: transparent; }
+
+table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  padding: 12px 38px 20px;
+}
+
+th, td {
+  min-width: 118px;
+  padding: 11px 13px;
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid var(--line);
+}
+
+th { color: #173f83; background: var(--blue-soft); }
+tr:nth-child(even) td { background: #fbfcfe; }
+
+body::after {
+  content: "RallyMate 当前态文档 · 以权威源文件和运行产物为准";
+  display: block;
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto 40px;
+  padding: 26px 38px;
+  color: var(--muted);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 22px 22px;
+}
+
+@media (max-width: 720px) {
+  body > header,
+  body > main,
+  body > nav,
+  body > footer,
+  body > h1,
+  body > h2,
+  body > h3,
+  body > h4,
+  body > p,
+  body > blockquote,
+  body > ul,
+  body > ol,
+  body > table,
+  body > pre,
+  body > div.sourceCode { width: calc(100% - 16px); }
+  body > h1,
+  body > h2,
+  body > h3,
+  body > h4,
+  body > p,
+  body > blockquote,
+  body > ul,
+  body > ol { padding-left: 20px; padding-right: 20px; }
+  table { padding-left: 8px; padding-right: 8px; }
+}
+
+@media print {
+  body { background: white; }
+  nav#TOC { max-height: none; }
+  body > * { width: 100% !important; }
+}

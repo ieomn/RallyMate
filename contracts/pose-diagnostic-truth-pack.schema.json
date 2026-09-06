@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-diagnostic-truth-pack.schema.json",
+  "title": "RallyMate full-timeline Pose diagnostic truth pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pack_version",
+    "generated_at",
+    "status",
+    "video_id",
+    "source_queue",
+    "primary_timeline",
+    "review_media",
+    "frame_domain",
+    "diagnostic_types",
+    "matching_protocol",
+    "annotation_files",
+    "truth_contract",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pack_version": {"const": "pose-diagnostic-truth-pack-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "annotation_required"},
+    "video_id": {"type": "string", "minLength": 1},
+    "source_queue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "queue_version", "artifact_binding_sha256", "candidate_task_count"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "queue_version": {"const": "pose-diagnostic-review-queue-v1.0.0"},
+        "artifact_binding_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_task_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "primary_timeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "selection_algorithm_version"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "selection_algorithm_version": {"type": ["string", "null"]}
+      }
+    },
+    "review_media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "video_time_offset_ms", "semantics"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "video_time_offset_ms": {"type": "integer"},
+        "semantics": {"type": "string", "minLength": 1}
+      }
+    },
+    "frame_domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame_count", "first_source_frame_index", "last_source_frame_index", "start_timestamp_ms", "end_timestamp_ms", "source_frame_indexes_sha256"],
+      "properties": {
+        "frame_count": {"type": "integer", "minimum": 1},
+        "first_source_frame_index": {"type": "integer", "minimum": 0},
+        "last_source_frame_index": {"type": "integer", "minimum": 0},
+        "start_timestamp_ms": {"type": "integer", "minimum": 0},
+        "end_timestamp_ms": {"type": "integer", "minimum": 0},
+        "source_frame_indexes_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "diagnostic_types": {
+      "const": ["keypoint_jump", "left_right_swap", "primary_identity_ambiguity", "source_track_switch"]
+    },
+    "matching_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "frame_tolerance", "keypoint_jump_scope", "left_right_swap_scope", "source_track_switch_scope", "primary_identity_ambiguity_scope"],
+      "properties": {
+        "version": {"const": "exact-source-frame-and-diagnostic-scope-v1"},
+        "frame_tolerance": {"const": 0},
+        "keypoint_jump_scope": {"const": "exact_joint"},
+        "left_right_swap_scope": {"const": "exact_ordered_joint_pair"},
+        "source_track_switch_scope": {"const": "exact_frame"},
+        "primary_identity_ambiguity_scope": {"const": "exact_frame"}
+      }
+    },
+    "annotation_files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage", "positives"],
+      "properties": {
+        "coverage": {"$ref": "#/$defs/mutableTemplate"},
+        "positives": {"$ref": "#/$defs/mutableTemplate"}
+      }
+    },
+    "truth_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage_semantics", "minimum_independent_annotators", "independent_adjudicator_required", "candidate_only_review_is_recall_truth"],
+      "properties": {
+        "coverage_semantics": {"type": "string", "minLength": 1},
+        "minimum_independent_annotators": {"const": 2},
+        "independent_adjudicator_required": {"const": true},
+        "candidate_only_review_is_recall_truth": {"const": false}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manual_truth_present", "diagnostic_metrics_computed", "quality_gate_modified", "formal_scoring_accuracy_claim", "grades_generated", "thresholds_generated"],
+      "properties": {
+        "manual_truth_present": {"const": false},
+        "diagnostic_metrics_computed": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "formal_scoring_accuracy_claim": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "mutableTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "template_sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "template_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

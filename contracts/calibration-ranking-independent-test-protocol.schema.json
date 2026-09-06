@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-ranking-independent-test-protocol.schema.json",
+  "title": "RallyMate preregistered independent relative-order test protocol",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "protocol_id", "protocol_version", "indicator_id", "source", "candidate_binding", "acceptance", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["ranking_calibration_independent_test_protocol", "synthetic_test_only_ranking_independent_test_protocol"]},
+    "protocol_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "source_sha256", "registered_at"],
+      "properties": {
+        "kind": {"enum": ["preregistered_independent_ranking_test", "synthetic_test_fixture"]},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "candidate_binding": {
+      "type": "object",
+      "required": ["candidate_id", "candidate_version", "candidate_sha256", "seal_id", "seal_content_sha256"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "candidate_version": {"type": "string", "minLength": 1},
+        "candidate_sha256": {"$ref": "#/$defs/sha256"},
+        "seal_id": {"type": "string", "minLength": 1},
+        "seal_content_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["min_evaluated_pairs", "min_annotators", "min_pairwise_accuracy", "max_pairwise_log_loss", "min_mean_kendall_tau"],
+      "properties": {
+        "min_evaluated_pairs": {"type": "integer", "minimum": 0},
+        "min_annotators": {"type": "integer", "minimum": 0},
+        "min_pairwise_accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+        "max_pairwise_log_loss": {"type": "number", "minimum": 0},
+        "min_mean_kendall_tau": {"type": "number", "minimum": -1, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "const": {
+        "acceptance_applies_to": "relative_order_only",
+        "A_E_grade_approval_possible": false,
+        "production_scoring_approval_possible": false
+      }
+    }
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}},
+  "additionalProperties": false
+}

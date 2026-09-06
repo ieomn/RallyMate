@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-ranking-candidate.schema.json",
+  "title": "RallyMate non-scoring relative-order calibration candidate",
+  "type": "object",
+  "required": [
+    "schema_version", "artifact_scope", "candidate_id", "candidate_version", "indicator_id",
+    "backend", "target_semantics", "feature_order", "unit_by_feature",
+    "feature_version_by_feature", "coefficients", "explainability", "prepared_dataset",
+    "fit_protocol", "fit", "independent_test", "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["ranking_calibration_candidate", "synthetic_test_only_ranking_calibration_candidate"]},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "backend": {"const": "pairwise_logistic_ranker"},
+    "target_semantics": {
+      "const": {
+        "target": "relative_order_only",
+        "absolute_grade_anchor_present": false,
+        "A_E_grade_identified": false,
+        "prediction_status": "candidate_relative_order_not_scored"
+      }
+    },
+    "feature_order": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "unit_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "feature_version_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "coefficients": {"type": "array", "minItems": 1, "items": {"type": "number"}},
+    "explainability": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "prepared_dataset": {"type": "object"},
+    "fit_protocol": {"type": "object"},
+    "fit": {"type": "object"},
+    "independent_test": {"type": "object"},
+    "safety": {
+      "const": {
+        "grade": null,
+        "threshold_version": null,
+        "A_E_output_allowed": false,
+        "production_scoring_allowed": false,
+        "F3_promoted": false,
+        "F4_promoted": false,
+        "reason": "absolute_grade_anchor_and_separate_A_E_calibration_required"
+      }
+    }
+  },
+  "not": {
+    "anyOf": [
+      {"required": ["thresholds"]},
+      {"required": ["cutpoints"]},
+      {"required": ["grade_scale"]},
+      {"required": ["grade_numeric_mapping"]}
+    ]
+  },
+  "additionalProperties": false
+}

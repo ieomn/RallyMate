@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "replace-with-preregistered-policy-id",
+  "policy_version": "1.0.0",
+  "assignments": [
+    {"split": "train", "session_ids": ["replace-train-session"]},
+    {"split": "validation", "session_ids": ["replace-validation-session"]},
+    {"split": "independent_test", "session_ids": ["replace-independent-test-session"]}
+  ]
+}

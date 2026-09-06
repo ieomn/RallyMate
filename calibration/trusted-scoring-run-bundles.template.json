@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "trusted_scoring_run_bundles_template_not_loadable",
+  "ledger_id": "REPLACE_WITH_OPERATOR_LEDGER_ID",
+  "ledger_version": "REPLACE_WITH_IMMUTABLE_VERSION",
+  "source": {
+    "kind": "operator_controlled_local_ledger",
+    "authority_id": "REPLACE_WITH_RELEASE_AUTHORITY"
+  },
+  "registered_at": null,
+  "canonicalization": "rallymate-canonical-json-v1",
+  "entries": [],
+  "trust_boundary": "Template only. Register only a fully validated immutable scoring bundle after an explicit production-rescoring review. scoring_summary.file_sha256 means the SHA-256 of exact file bytes; bundle_root_sha256 means the canonical JSON SHA-256 of bundle_identity. Store the resulting non-template ledger outside uploads, job requests, runs and reports with operator-only write ACLs. Current M78/M81 evidence is F2 observability evidence and is not pre-authorized here."
+}

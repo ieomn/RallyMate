@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_version": "rtmpose-same-frame-diagnostic-2026-09-04.1",
+  "purpose": "same_frame_M_L_X_development_diagnostics_without_ground_truth_or_default_change",
+  "production_default_binding": {
+    "preset_id": "rtmpose-m-halpe26-online",
+    "registry_relative_path": "models/rtmpose/deployment-presets.json",
+    "registry_sha256": "A95B7B5F225C025371157C22A9A60397874DE03C85B4EAC512B3B9C443F14C69"
+  },
+  "source_registry_bindings": [
+    {
+      "role": "M_and_L_candidate_provenance",
+      "relative_path": "models/rtmpose/model-candidates.json",
+      "sha256": "8E53F978AC0D178056515629FF7AEF0C2486D1400451B24A943574EA4F152DC0"
+    },
+    {
+      "role": "X_candidate_and_development_protocol_provenance",
+      "relative_path": "models/rtmpose/m95-shadow-candidates.json",
+      "sha256": "11B656E536964E8D84415719D82CE5BB5451C4071CDEA295211962323AB2E81B"
+    }
+  ],
+  "development_protocol": {
+    "phase": "development_same_frame_diagnostic_only",
+    "videos": [
+      {
+        "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+        "video_relative_path": "FULL-TEST/3ae77ee3271d67de171585a5c39ddd69.mp4",
+        "video_sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9",
+        "frozen_frames_relative_path": "runs/full-test/3ae77ee3271d67de171585a5c39ddd69/frames.jsonl",
+        "frozen_frames_sha256": "5FFC066941496C81A6D3C88261C692F515D98D52068E88BF6D3B15CC79EDAA7F",
+        "frame_count": 1441
+      },
+      {
+        "video_id": "850cb0006b406c7176eeda8d711cd065",
+        "video_relative_path": "FULL-TEST/850cb0006b406c7176eeda8d711cd065.mp4",
+        "video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+        "frozen_frames_relative_path": "runs/full-test/850cb0006b406c7176eeda8d711cd065/frames.jsonl",
+        "frozen_frames_sha256": "2BF1BBB4607A059CEF6312D2F4C75B095796E923560CABD11FC3C12C8C43F14D",
+        "frame_count": 2911
+      },
+      {
+        "video_id": "8d7754d0de6d315674013d5b69a0b6ba",
+        "video_relative_path": "FULL-TEST/8d7754d0de6d315674013d5b69a0b6ba.mp4",
+        "video_sha256": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0",
+        "frozen_frames_relative_path": "runs/full-test/8d7754d0de6d315674013d5b69a0b6ba/frames.jsonl",
+        "frozen_frames_sha256": "84879E87A8B3CB58F31DCE14FA339CC7AA3264D855E5358FF9434798FA381784",
+        "frame_count": 11516
+      }
+    ],
+    "sealed_holdout": {
+      "video_id": "c235227fffcd3290b60572d0c3f9cc85",
+      "video_relative_path": "FULL-TEST/c235227fffcd3290b60572d0c3f9cc85.mp4",
+      "video_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "use_during_development": false
+    },
+    "sampling": {
+      "windows_per_video": 3,
+      "frames_per_window": 5,
+      "window_selection": "evenly_spaced_non_overlapping_chunks_from_consecutive_frames_with_same_largest_area_player_track",
+      "player_selection": "largest_frozen_player_detection_by_area_then_track_id",
+      "max_players": 1
+    },
+    "execution": {
+      "profile": "realtime",
+      "flip_test": false,
+      "roi_margin": 0.15,
+      "min_roi_size_px": 32,
+      "warmup_calls_per_model": 2,
+      "same_input_repeat_calls_per_video_and_model": 3,
+      "model_execution": "sequential_on_one_device"
+    },
+    "metrics": {
+      "confidence_thresholds": [0.3, 0.5, 0.7],
+      "cross_model_min_confidence": 0.3,
+      "normalized_distance_thresholds": [0.03, 0.05, 0.1],
+      "distance_normalizer": "pose_estimator_expanded_ROI_diagonal",
+      "missing_pose_counts_against_coverage_denominator": true
+    },
+    "ground_truth_used": false,
+    "accuracy_claim": false
+  },
+  "models": [
+    {
+      "family": "M",
+      "candidate_id": "rtmpose-m-halpe26-256x192-m96-diagnostic",
+      "source_role": "current_default_weights_executed_under_common_diagnostic_profile",
+      "model_relative_path": "models/rtmpose/rtmpose-m_halpe26_256x192.pth",
+      "checkpoint_sha256": "4D3E73DDD31222B7B0DB36CAEDA396AF1D7630C3B5A60451BDFA99A79E8DBB90",
+      "checkpoint_bytes": 55897557,
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+      "config_sha256": "606A725342F615C02806E259B584443259CB359E9DAA59B09F04976DA9C45630",
+      "input_size_hw": [256, 192],
+      "native_keypoint_format": "halpe26"
+    },
+    {
+      "family": "L",
+      "candidate_id": "rtmpose-l-halpe26-384x288-m96-diagnostic",
+      "source_role": "offline_shadow_weights_executed_under_common_diagnostic_profile",
+      "model_relative_path": "models/rtmpose/rtmpose-l_halpe26_384x288.pth",
+      "checkpoint_sha256": "734182CE2409BA84E96EA2A6361AEDB0EB40722F7AB52BB69331C73477D6A650",
+      "checkpoint_bytes": 113267415,
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-l_8xb512-700e_body8-halpe26-384x288.py",
+      "config_sha256": "DAA87B00B486E7A58E4BC30295A59E25C061F3DB8A12C0B6919808FF9222C606",
+      "input_size_hw": [384, 288],
+      "native_keypoint_format": "halpe26"
+    },
+    {
+      "family": "X",
+      "candidate_id": "rtmpose-x-halpe26-384x288-m96-diagnostic",
+      "source_role": "M95_offline_shadow_weights_executed_under_common_diagnostic_profile",
+      "model_relative_path": "models/rtmpose/rtmpose-x_halpe26_384x288.pth",
+      "checkpoint_sha256": "7FB6E239601082A06CA8442FEB7A9774B8D77A1C37911B2AD0F27C1E84BE4D21",
+      "checkpoint_bytes": 200397852,
+      "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-x_8xb256-700e_body8-halpe26-384x288.py",
+      "config_sha256": "961E5704E4983F27173BC008C17F08E8C2C5907FDB104EA8669AD06C4C68B678",
+      "input_size_hw": [384, 288],
+      "native_keypoint_format": "halpe26"
+    }
+  ],
+  "safety": {
+    "changes_deployment_registry": false,
+    "changes_production_default": false,
+    "opens_sealed_holdout": false,
+    "uses_ground_truth": false,
+    "claims_RallyMate_accuracy": false,
+    "promotes_candidate": false,
+    "promotes_F3_or_F4": false,
+    "generates_grade_or_threshold": false,
+    "uses_confidence_as_accuracy": false,
+    "uses_model_agreement_as_accuracy": false
+  }
+}

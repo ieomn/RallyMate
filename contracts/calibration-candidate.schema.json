@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-candidate.schema.json",
+  "title": "RallyMate non-production calibration candidate",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "candidate_id", "candidate_version", "backend", "indicator_id", "source", "truth_authorization", "target_semantics", "prepared_dataset", "fit_protocol", "fit", "independent_test", "promotion"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["calibration_candidate", "synthetic_test_only_calibration_candidate"]},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_version": {"type": "string", "minLength": 1},
+    "backend": {"enum": ["threshold_rule", "ordinal_regression"]},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "source": {"const": "coach_ground_truth_calibration_candidate"},
+    "truth_authorization": {"$ref": "#/$defs/truthAuthorization"},
+    "target_semantics": {
+      "type": "object",
+      "required": ["label_scale_order", "grade_numeric_mapping", "label_resolution_policy"],
+      "properties": {
+        "label_scale_order": {"const": ["E", "D", "C", "B", "A"]},
+        "grade_numeric_mapping": {"const": {"E": 0, "D": 1, "C": 2, "B": 3, "A": 4}},
+        "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]}
+      },
+      "additionalProperties": false
+    },
+    "prepared_dataset": {
+      "allOf": [
+        {"$ref": "#/$defs/provenance"},
+        {
+          "properties": {
+            "artifact_scope": {
+              "enum": ["calibration_input", "synthetic_test_only_calibration_input"]
+            }
+          }
+        }
+      ]
+    },
+    "fit_protocol": {
+      "allOf": [
+        {"$ref": "#/$defs/provenance"},
+        {
+          "properties": {
+            "artifact_scope": {
+              "enum": ["calibration_fit_protocol", "synthetic_test_only_fit_protocol"]
+            }
+          }
+        }
+      ]
+    },
+    "primary_feature": {"type": "string", "minLength": 1},
+    "primary_feature_version": {"type": "string", "minLength": 1},
+    "unit": {"type": "string", "minLength": 1},
+    "direction": {"enum": ["higher_is_better", "lower_is_better"]},
+    "thresholds": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}},
+    "feature_order": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "unit_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "feature_version_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "coefficients": {"type": "array", "minItems": 1, "items": {"type": "number"}},
+    "intercept": {"type": "number"},
+    "cutpoints": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}},
+    "fit": {
+      "type": "object",
+      "required": ["method", "objective", "train_metrics", "validation_metrics", "independent_test_metrics"],
+      "properties": {"independent_test_metrics": {"const": null}},
+      "additionalProperties": true
+    },
+    "independent_test": {
+      "type": "object",
+      "required": ["status", "approved_for_scoring", "accessed_during_fit", "seal_id", "record_count", "groups", "content_sha256", "canonicalization"],
+      "properties": {
+        "status": {"const": "sealed_not_evaluated"},
+        "approved_for_scoring": {"const": false},
+        "accessed_during_fit": {"const": false},
+        "seal_id": {"type": "string", "minLength": 1},
+        "record_count": {"type": "integer", "minimum": 1},
+        "groups": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "sample_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "canonicalization": {
+          "const": "rallymate-canonical-json-v1",
+          "description": "SHA-256 payload is the array of complete independent-test sample objects sorted by unique sample_id, serialized as UTF-8 JSON with sort_keys=true, separators=(',', ':'), ensure_ascii=false, and NaN/Infinity forbidden."
+        }
+      },
+      "additionalProperties": false
+    },
+    "promotion": {
+      "type": "object",
+      "required": ["scoring_allowed", "F3_promoted", "F4_promoted", "reason"],
+      "properties": {
+        "scoring_allowed": {"const": false},
+        "F3_promoted": {"const": false},
+        "F4_promoted": {"const": false},
+        "reason": {"const": "independent_test_and_explicit_promotion_required"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": ["artifact_scope", "label_resolution_policy", "content_sha256", "source_sha256"],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "dataset_version": {"type": "string", "minLength": 1},
+        "protocol_id": {"type": "string", "minLength": 1},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "artifact_scope": {"enum": ["calibration_input", "synthetic_test_only_calibration_input", "calibration_fit_protocol", "synthetic_test_only_fit_protocol"]},
+        "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+        ,"truth_authorization_binding_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "artifact_scope": {
+                "enum": ["calibration_input", "synthetic_test_only_calibration_input"]
+              }
+            },
+            "required": ["artifact_scope"]
+          },
+          "then": {"required": ["dataset_id", "dataset_version", "truth_authorization_binding_sha256"]}
+        },
+        {
+          "if": {
+            "properties": {
+              "artifact_scope": {
+                "enum": ["calibration_fit_protocol", "synthetic_test_only_fit_protocol"]
+              }
+            },
+            "required": ["artifact_scope"]
+          },
+          "then": {"required": ["protocol_id", "protocol_version"]}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "truthAuthorization": {
+      "type": "object",
+      "required": ["binding_version", "status", "canonicalization", "authorization_id", "event_protocol_authorization", "intake", "revision_lineage", "input_files", "binding_sha256"],
+      "properties": {
+        "binding_version": {"const": "scoring-truth-calibration-authorization-binding-v1.0.0"},
+        "status": {"enum": ["verified_authorized_intake_for_calibration", "synthetic_test_only_no_production_authority"]},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "authorization_id": {"type": "string", "minLength": 1},
+        "event_protocol_authorization": {"type": "object"},
+        "intake": {"type": "object"},
+        "revision_lineage": {"type": "object"},
+        "input_files": {"type": "object"},
+        "binding_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"backend": {"const": "threshold_rule"}}, "required": ["backend"]},
+      "then": {"required": ["primary_feature", "primary_feature_version", "unit", "direction", "thresholds"]}
+    },
+    {
+      "if": {"properties": {"backend": {"const": "ordinal_regression"}}, "required": ["backend"]},
+      "then": {"required": ["feature_order", "unit_by_feature", "feature_version_by_feature", "coefficients", "intercept", "cutpoints"]}
+    },
+    {
+      "if": {"properties": {"artifact_scope": {"const": "calibration_candidate"}}, "required": ["artifact_scope"]},
+      "then": {"properties": {"truth_authorization": {"properties": {"status": {"const": "verified_authorized_intake_for_calibration"}}}}}
+    },
+    {
+      "if": {"properties": {"artifact_scope": {"const": "synthetic_test_only_calibration_candidate"}}, "required": ["artifact_scope"]},
+      "then": {"properties": {"truth_authorization": {"properties": {"status": {"const": "synthetic_test_only_no_production_authority"}}}}}
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,640 @@
+{
+  "artifacts": [
+    {
+      "bytes": 6365,
+      "relative_path": "models/rtmpose/m96-same-frame-diagnostic.json",
+      "role": "M96 immutable protocol registry",
+      "sha256": "22F1D57FFD1BC52621E6874ABB250CE574302B61498E2F13E7B3C63B71DCCC08"
+    },
+    {
+      "bytes": 60270,
+      "relative_path": "src/rallymate_evaluation/pose_same_frame_diagnostic.py",
+      "role": "diagnostic implementation",
+      "sha256": "4C9D05E24B11DAEE28B359C2C827857475D81942332908C430B812D3F02E264D"
+    },
+    {
+      "bytes": 1791,
+      "relative_path": "scripts/run_m96_rtmpose_same_frame_diagnostic.py",
+      "role": "GPU runner",
+      "sha256": "95E86C3A760B626E1C4951C78734E3CE230AF5D497DCBCEAE89B22EC8ECF74E5"
+    },
+    {
+      "bytes": 16781,
+      "relative_path": "scripts/build_m96_same_frame_field_record.py",
+      "role": "field record builder",
+      "sha256": "0B6E3B74DE5D0B5D0E050D14CE9502879E252E3F9E648B81F8AB58638E131AF1"
+    },
+    {
+      "bytes": 15442,
+      "relative_path": "tests/test_pose_same_frame_diagnostic.py",
+      "role": "focused contract tests",
+      "sha256": "18E674C1365BCEBB10C8DA0889FD995B97CE2D0077FEE2F16A81E5C19148EA57"
+    },
+    {
+      "bytes": 1630810,
+      "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/diagnostic-report.json",
+      "role": "immutable raw diagnostic report",
+      "sha256": "B6361C909CF483C06B19B7EDA62DB1221D29BE1004E8F4FFF046FE7C5A0CCF71"
+    },
+    {
+      "bytes": 1299,
+      "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/summary.md",
+      "role": "human-readable diagnostic summary",
+      "sha256": "D39F696E05F5265B405B6063C0831205760B6CD0A491AFEDF7161C94B59419D3"
+    },
+    {
+      "bytes": 3687,
+      "relative_path": "models/rtmpose/deployment-presets.json",
+      "role": "unchanged production registry",
+      "sha256": "A95B7B5F225C025371157C22A9A60397874DE03C85B4EAC512B3B9C443F14C69"
+    },
+    {
+      "bytes": 3572,
+      "relative_path": "models/rtmpose/model-candidates.json",
+      "role": "source registry: M_and_L_candidate_provenance",
+      "sha256": "8E53F978AC0D178056515629FF7AEF0C2486D1400451B24A943574EA4F152DC0"
+    },
+    {
+      "bytes": 4474,
+      "relative_path": "models/rtmpose/m95-shadow-candidates.json",
+      "role": "source registry: X_candidate_and_development_protocol_provenance",
+      "sha256": "11B656E536964E8D84415719D82CE5BB5451C4071CDEA295211962323AB2E81B"
+    },
+    {
+      "bytes": 55897557,
+      "relative_path": "models/rtmpose/rtmpose-m_halpe26_256x192.pth",
+      "role": "M checkpoint",
+      "sha256": "4D3E73DDD31222B7B0DB36CAEDA396AF1D7630C3B5A60451BDFA99A79E8DBB90"
+    },
+    {
+      "bytes": 13567,
+      "relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+      "role": "M config",
+      "sha256": "606A725342F615C02806E259B584443259CB359E9DAA59B09F04976DA9C45630"
+    },
+    {
+      "bytes": 113267415,
+      "relative_path": "models/rtmpose/rtmpose-l_halpe26_384x288.pth",
+      "role": "L checkpoint",
+      "sha256": "734182CE2409BA84E96EA2A6361AEDB0EB40722F7AB52BB69331C73477D6A650"
+    },
+    {
+      "bytes": 13683,
+      "relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-l_8xb512-700e_body8-halpe26-384x288.py",
+      "role": "L config",
+      "sha256": "DAA87B00B486E7A58E4BC30295A59E25C061F3DB8A12C0B6919808FF9222C606"
+    },
+    {
+      "bytes": 200397852,
+      "relative_path": "models/rtmpose/rtmpose-x_halpe26_384x288.pth",
+      "role": "X checkpoint",
+      "sha256": "7FB6E239601082A06CA8442FEB7A9774B8D77A1C37911B2AD0F27C1E84BE4D21"
+    },
+    {
+      "bytes": 13676,
+      "relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-x_8xb256-700e_body8-halpe26-384x288.py",
+      "role": "X config",
+      "sha256": "961E5704E4983F27173BC008C17F08E8C2C5907FDB104EA8669AD06C4C68B678"
+    },
+    {
+      "bytes": 2494677,
+      "relative_path": "FULL-TEST/3ae77ee3271d67de171585a5c39ddd69.mp4",
+      "role": "development video 3ae77ee3271d67de171585a5c39ddd69",
+      "sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9"
+    },
+    {
+      "bytes": 8675225,
+      "relative_path": "runs/full-test/3ae77ee3271d67de171585a5c39ddd69/frames.jsonl",
+      "role": "frozen detection frames 3ae77ee3271d67de171585a5c39ddd69",
+      "sha256": "5FFC066941496C81A6D3C88261C692F515D98D52068E88BF6D3B15CC79EDAA7F"
+    },
+    {
+      "bytes": 7351558,
+      "relative_path": "FULL-TEST/850cb0006b406c7176eeda8d711cd065.mp4",
+      "role": "development video 850cb0006b406c7176eeda8d711cd065",
+      "sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9"
+    },
+    {
+      "bytes": 20507239,
+      "relative_path": "runs/full-test/850cb0006b406c7176eeda8d711cd065/frames.jsonl",
+      "role": "frozen detection frames 850cb0006b406c7176eeda8d711cd065",
+      "sha256": "2BF1BBB4607A059CEF6312D2F4C75B095796E923560CABD11FC3C12C8C43F14D"
+    },
+    {
+      "bytes": 24195384,
+      "relative_path": "FULL-TEST/8d7754d0de6d315674013d5b69a0b6ba.mp4",
+      "role": "development video 8d7754d0de6d315674013d5b69a0b6ba",
+      "sha256": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0"
+    },
+    {
+      "bytes": 92681641,
+      "relative_path": "runs/full-test/8d7754d0de6d315674013d5b69a0b6ba/frames.jsonl",
+      "role": "frozen detection frames 8d7754d0de6d315674013d5b69a0b6ba",
+      "sha256": "84879E87A8B3CB58F31DCE14FA339CC7AA3264D855E5358FF9434798FA381784"
+    }
+  ],
+  "claims": {
+    "F3_or_F4_promoted": false,
+    "RallyMate_accuracy_improved": false,
+    "RallyMate_accuracy_measured": false,
+    "candidate_promoted": false,
+    "confidence_is_accuracy": false,
+    "grade_or_threshold_generated": false,
+    "model_agreement_is_accuracy": false,
+    "production_default_changed": false
+  },
+  "comparative_orderings": {
+    "confidence_0.5_coverage_high_to_low": [
+      {
+        "family": "X",
+        "value": 0.769231
+      },
+      {
+        "family": "L",
+        "value": 0.747863
+      },
+      {
+        "family": "M",
+        "value": 0.734188
+      }
+    ],
+    "latency_p50_ms_low_to_high": [
+      {
+        "family": "M",
+        "value": 9.1244
+      },
+      {
+        "family": "L",
+        "value": 10.6427
+      },
+      {
+        "family": "X",
+        "value": 11.7265
+      }
+    ],
+    "observed_temporal_displacement_p50_low_to_high": [
+      {
+        "family": "L",
+        "value": 0.006017
+      },
+      {
+        "family": "X",
+        "value": 0.006166
+      },
+      {
+        "family": "M",
+        "value": 0.006323
+      }
+    ],
+    "pose_return_rate_high_to_low": [
+      {
+        "family": "M",
+        "value": 1.0
+      },
+      {
+        "family": "L",
+        "value": 1.0
+      },
+      {
+        "family": "X",
+        "value": 1.0
+      }
+    ],
+    "same_input_repeat_delta_p50_low_to_high": [
+      {
+        "family": "M",
+        "value": 0.0
+      },
+      {
+        "family": "L",
+        "value": 0.0
+      },
+      {
+        "family": "X",
+        "value": 0.0
+      }
+    ],
+    "semantics": "descriptive_orderings_only_no_composite_score_no_accuracy_winner"
+  },
+  "cross_model_snapshot": {
+    "consensus_centrality_descriptive_only": {
+      "L": {
+        "count": 1823,
+        "max": 0.764652,
+        "mean": 0.010094,
+        "min": 0.0,
+        "p10": 0.002047,
+        "p50": 0.006412,
+        "p90": 0.018102,
+        "p95": 0.023884
+      },
+      "M": {
+        "count": 1810,
+        "max": 0.715045,
+        "mean": 0.009906,
+        "min": 0.0,
+        "p10": 0.002167,
+        "p50": 0.006856,
+        "p90": 0.018864,
+        "p95": 0.025545
+      },
+      "X": {
+        "count": 1815,
+        "max": 0.764652,
+        "mean": 0.010043,
+        "min": 0.0,
+        "p10": 0.002051,
+        "p50": 0.006579,
+        "p90": 0.018531,
+        "p95": 0.026197
+      }
+    },
+    "distance_normalizer": "pose_estimator_expanded_ROI_diagonal",
+    "min_confidence": 0.3,
+    "pairwise": [
+      {
+        "both_pose_rate": 1.0,
+        "confidence_absolute_delta": {
+          "count": 1170,
+          "max": 0.62564,
+          "mean": 0.069023,
+          "min": 0.00034,
+          "p10": 0.008445,
+          "p50": 0.04995,
+          "p90": 0.15137,
+          "p95": 0.193458
+        },
+        "confidence_eligible_joint_pair_count": 909,
+        "distance_threshold_coverage": {
+          "0.03": {
+            "eligible_joint_pair_denominator": 909,
+            "joint_pair_count": 884,
+            "rate": 0.972497
+          },
+          "0.05": {
+            "eligible_joint_pair_denominator": 909,
+            "joint_pair_count": 901,
+            "rate": 0.991199
+          },
+          "0.1": {
+            "eligible_joint_pair_denominator": 909,
+            "joint_pair_count": 906,
+            "rate": 0.9967
+          }
+        },
+        "normalized_coordinate_distance": {
+          "count": 909,
+          "max": 0.715045,
+          "mean": 0.009957,
+          "min": 0.0,
+          "p10": 0.002162,
+          "p50": 0.006655,
+          "p90": 0.018452,
+          "p95": 0.023795
+        },
+        "pair": "M_vs_L",
+        "pose_presence_agreement_rate": 1.0,
+        "sample_count": 45
+      },
+      {
+        "both_pose_rate": 1.0,
+        "confidence_absolute_delta": {
+          "count": 1170,
+          "max": 0.86822,
+          "mean": 0.088148,
+          "min": 0.00016,
+          "p10": 0.011565,
+          "p50": 0.06172,
+          "p90": 0.188783,
+          "p95": 0.265239
+        },
+        "confidence_eligible_joint_pair_count": 901,
+        "distance_threshold_coverage": {
+          "0.03": {
+            "eligible_joint_pair_denominator": 901,
+            "joint_pair_count": 865,
+            "rate": 0.960044
+          },
+          "0.05": {
+            "eligible_joint_pair_denominator": 901,
+            "joint_pair_count": 888,
+            "rate": 0.985572
+          },
+          "0.1": {
+            "eligible_joint_pair_denominator": 901,
+            "joint_pair_count": 900,
+            "rate": 0.99889
+          }
+        },
+        "normalized_coordinate_distance": {
+          "count": 901,
+          "max": 0.115343,
+          "mean": 0.009853,
+          "min": 0.0,
+          "p10": 0.00222,
+          "p50": 0.007188,
+          "p90": 0.019171,
+          "p95": 0.02759
+        },
+        "pair": "M_vs_X",
+        "pose_presence_agreement_rate": 1.0,
+        "sample_count": 45
+      },
+      {
+        "both_pose_rate": 1.0,
+        "confidence_absolute_delta": {
+          "count": 1170,
+          "max": 0.86521,
+          "mean": 0.0747,
+          "min": 6e-05,
+          "p10": 0.009014,
+          "p50": 0.049585,
+          "p90": 0.162946,
+          "p95": 0.206802
+        },
+        "confidence_eligible_joint_pair_count": 914,
+        "distance_threshold_coverage": {
+          "0.03": {
+            "eligible_joint_pair_denominator": 914,
+            "joint_pair_count": 886,
+            "rate": 0.969365
+          },
+          "0.05": {
+            "eligible_joint_pair_denominator": 914,
+            "joint_pair_count": 909,
+            "rate": 0.99453
+          },
+          "0.1": {
+            "eligible_joint_pair_denominator": 914,
+            "joint_pair_count": 911,
+            "rate": 0.996718
+          }
+        },
+        "normalized_coordinate_distance": {
+          "count": 914,
+          "max": 0.764652,
+          "mean": 0.010231,
+          "min": 0.0,
+          "p10": 0.001986,
+          "p50": 0.006255,
+          "p90": 0.017929,
+          "p95": 0.023892
+        },
+        "pair": "L_vs_X",
+        "pose_presence_agreement_rate": 1.0,
+        "sample_count": 45
+      }
+    ],
+    "semantics": "agreement_between_models_on_identical_decoded_frames_and_frozen_ROIs; agreement can reflect shared error and is not ground-truth accuracy",
+    "three_model_consensus": {
+      "all_three_confidence_eligible_joint_count": 899,
+      "all_three_pose_rate": 1.0,
+      "distance_threshold_coverage": {
+        "0.03": {
+          "eligible_joint_denominator": 899,
+          "joint_count": 847,
+          "rate": 0.942158
+        },
+        "0.05": {
+          "eligible_joint_denominator": 899,
+          "joint_count": 884,
+          "rate": 0.983315
+        },
+        "0.1": {
+          "eligible_joint_denominator": 899,
+          "joint_count": 897,
+          "rate": 0.997775
+        }
+      },
+      "maximum_pairwise_normalized_coordinate_spread": {
+        "count": 899,
+        "max": 0.764652,
+        "mean": 0.013336,
+        "min": 0.0,
+        "p10": 0.003948,
+        "p50": 0.009447,
+        "p90": 0.023665,
+        "p95": 0.031593
+      },
+      "pose_presence_unanimous_rate": 1.0,
+      "sample_count": 45
+    }
+  },
+  "field_semantics": {
+    "confidence_threshold_coverage": "keypoints_at_or_above_threshold_divided_by_all_expected_26xROI_points_including_missing_poses",
+    "cross_model_agreement": "coordinate_similarity_on_identical_inputs_can_include_shared_error_not_accuracy",
+    "latency": "one_ROI_estimator_call_on_this_device_with_common_realtime_no_flip_profile_only",
+    "pose_return_rate": "returned_pose_count_divided_by_identical_frozen_ROI_call_count",
+    "same_input_repeat_delta": "same_decoded_frame_same_frozen_ROI_repeat_difference_not_accuracy",
+    "temporal_normalized_coordinate_displacement": "consecutive_frame_displacement_divided_by_mean_expanded_ROI_diagonal_contains_real_motion_and_model_variation_not_jitter_truth"
+  },
+  "generated_at": "2026-09-04T15:48:31.119070+00:00",
+  "not_completed": [
+    "human_Halpe26_ground_truth",
+    "ground_truth_keypoint_accuracy_comparison",
+    "fine_tuning",
+    "new_checkpoint_generation",
+    "candidate_promotion",
+    "production_default_change"
+  ],
+  "observed_snapshot": {
+    "L": {
+      "candidate_id": "rtmpose-l-halpe26-384x288-m96-diagnostic",
+      "confidence_threshold_coverage_including_missing_poses": {
+        "0.3": 0.801709,
+        "0.5": 0.747863,
+        "0.7": 0.588034
+      },
+      "cuda_steady_state_peak": {
+        "allocated_bytes": 152028672,
+        "reserved_bytes": 197132288,
+        "semantics": "model_resident_plus_warm_steady_state_inference_workspace"
+      },
+      "input_size_hw": [
+        384,
+        288
+      ],
+      "latency_ms_per_single_roi_call": {
+        "count": 45,
+        "max": 12.6274,
+        "mean": 10.620278,
+        "min": 8.9171,
+        "p10": 9.30434,
+        "p50": 10.6427,
+        "p90": 12.03504,
+        "p95": 12.26084
+      },
+      "pose_return_rate": 1.0,
+      "same_input_repeat_normalized_coordinate_delta": {
+        "count": 156,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0
+      },
+      "temporal_normalized_coordinate_displacement": {
+        "count": 732,
+        "max": 0.756132,
+        "mean": 0.010659,
+        "min": 0.0,
+        "p10": 0.001572,
+        "p50": 0.006017,
+        "p90": 0.021823,
+        "p95": 0.029482
+      }
+    },
+    "M": {
+      "candidate_id": "rtmpose-m-halpe26-256x192-m96-diagnostic",
+      "confidence_threshold_coverage_including_missing_poses": {
+        "0.3": 0.788034,
+        "0.5": 0.734188,
+        "0.7": 0.579487
+      },
+      "cuda_steady_state_peak": {
+        "allocated_bytes": 77434368,
+        "reserved_bytes": 98566144,
+        "semantics": "model_resident_plus_warm_steady_state_inference_workspace"
+      },
+      "input_size_hw": [
+        256,
+        192
+      ],
+      "latency_ms_per_single_roi_call": {
+        "count": 45,
+        "max": 10.6816,
+        "mean": 9.192816,
+        "min": 8.0499,
+        "p10": 8.52082,
+        "p50": 9.1244,
+        "p90": 9.92328,
+        "p95": 10.11972
+      },
+      "pose_return_rate": 1.0,
+      "same_input_repeat_normalized_coordinate_delta": {
+        "count": 156,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0
+      },
+      "temporal_normalized_coordinate_displacement": {
+        "count": 722,
+        "max": 0.075504,
+        "mean": 0.009574,
+        "min": 0.0,
+        "p10": 0.001816,
+        "p50": 0.006323,
+        "p90": 0.021336,
+        "p95": 0.028637
+      }
+    },
+    "X": {
+      "candidate_id": "rtmpose-x-halpe26-384x288-m96-diagnostic",
+      "confidence_threshold_coverage_including_missing_poses": {
+        "0.3": 0.818803,
+        "0.5": 0.769231,
+        "0.7": 0.647863
+      },
+      "cuda_steady_state_peak": {
+        "allocated_bytes": 258704896,
+        "reserved_bytes": 308281344,
+        "semantics": "model_resident_plus_warm_steady_state_inference_workspace"
+      },
+      "input_size_hw": [
+        384,
+        288
+      ],
+      "latency_ms_per_single_roi_call": {
+        "count": 45,
+        "max": 14.4681,
+        "mean": 11.842471,
+        "min": 10.3593,
+        "p10": 10.75702,
+        "p50": 11.7265,
+        "p90": 13.052,
+        "p95": 13.55384
+      },
+      "pose_return_rate": 1.0,
+      "same_input_repeat_normalized_coordinate_delta": {
+        "count": 156,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0
+      },
+      "temporal_normalized_coordinate_displacement": {
+        "count": 750,
+        "max": 0.777487,
+        "mean": 0.017923,
+        "min": 0.0,
+        "p10": 0.001738,
+        "p50": 0.006166,
+        "p90": 0.022097,
+        "p95": 0.038847
+      }
+    }
+  },
+  "preserved_state": {
+    "ground_truth_used": false,
+    "production_default_changed": false,
+    "production_default_preset": "rtmpose-m-halpe26-online",
+    "production_registry_sha256": "A95B7B5F225C025371157C22A9A60397874DE03C85B4EAC512B3B9C443F14C69",
+    "sealed_holdout_file_read_or_hashed": false,
+    "sealed_holdout_opened": false
+  },
+  "protocol_binding": {
+    "bytes": 6365,
+    "path": "models\\rtmpose\\m96-same-frame-diagnostic.json",
+    "protocol_version": "rtmpose-same-frame-diagnostic-2026-09-04.1",
+    "relative_path": "models/rtmpose/m96-same-frame-diagnostic.json",
+    "sha256": "22F1D57FFD1BC52621E6874ABB250CE574302B61498E2F13E7B3C63B71DCCC08"
+  },
+  "purpose": "retain_exact_M96_fields_artifact_hashes_and_claim_boundaries",
+  "record_version": "m96-same-frame-field-change-record-v1.0.0",
+  "report_binding": {
+    "bytes": 1630810,
+    "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/diagnostic-report.json",
+    "role": "immutable raw diagnostic report",
+    "sha256": "B6361C909CF483C06B19B7EDA62DB1221D29BE1004E8F4FFF046FE7C5A0CCF71"
+  },
+  "sample_binding": {
+    "development_video_count": 3,
+    "frames_per_window": 5,
+    "same_decoded_frames_and_frozen_ROIs_across_models": true,
+    "sample_count": 45,
+    "sample_manifest_sha256": "A2EA1CAEEBFE1274BECB7FDA4434C784FD0101E260152CECD27D97AEFA14413A",
+    "windows_per_video": 3
+  },
+  "schema_version": "1.0.0",
+  "self_hash_note": "record SHA-256 is reported externally because a file cannot contain its own hash",
+  "status": "same_frame_diagnostic_sealed_ground_truth_required",
+  "summary_binding": {
+    "bytes": 1299,
+    "relative_path": "reports/m96-rtmpose-same-frame-diagnostic/summary.md",
+    "role": "human-readable diagnostic summary",
+    "sha256": "D39F696E05F5265B405B6063C0831205760B6CD0A491AFEDF7161C94B59419D3"
+  },
+  "verification": {
+    "current_input_hashes_reverified": true,
+    "focused_tests": {
+      "command": "$env:PYTHONPATH='src'; .venv\\Scripts\\python.exe -m unittest tests.test_pose_same_frame_diagnostic tests.test_pose_shadow_smoke tests.test_pose_deployment_smoke_v2 -v",
+      "passed": true,
+      "test_count": 17,
+      "unittest_seconds": 0.146
+    },
+    "python_compile_passed": true,
+    "real_local_GPU_run_passed": true,
+    "report_recomputed_from_raw_observations": true,
+    "sample_selection_recomputed_from_frozen_frames": true,
+    "summary_matches_report": true
+  }
+}

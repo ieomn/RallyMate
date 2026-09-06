@@ -1,0 +1,56 @@
+* text=auto
+
+# Source code, configuration, documentation, and scripts use LF consistently.
+*.py text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.csv text eol=lf
+# Two trailing spaces are meaningful CommonMark hard line breaks.
+*.md text eol=lf whitespace=-blank-at-eol
+*.txt text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.svg text eol=lf
+*.xml text eol=lf
+*.drawio text eol=lf
+*.ps1 text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Images, video, model weights, archives, databases, and office artifacts are binary.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp4 binary
+*.mov binary
+*.avi binary
+*.mkv binary
+*.pt binary
+*.pth binary
+*.onnx binary
+*.engine binary
+*.safetensors binary
+*.npy binary
+*.npz binary
+*.pkl binary
+*.sqlite binary
+*.sqlite3 binary
+*.db binary
+*.zip binary
+*.gz binary
+*.whl binary
+*.pdf binary
+*.docx binary

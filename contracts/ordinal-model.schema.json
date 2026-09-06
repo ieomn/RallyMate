@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/ordinal-model.schema.json",
+  "type": "object",
+  "required": ["schema_version", "backend", "model_version", "indicator_id", "feature_order", "unit_by_feature", "feature_version_by_feature", "coefficients", "cutpoints", "source", "ground_truth_dataset_version", "artifact_scope", "independent_test"],
+  "properties": {
+    "schema_version": {"const": "1.2.0"},
+    "backend": {"const": "ordinal_regression"},
+    "model_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "feature_order": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "unit_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "feature_version_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "coefficients": {"type": "array", "minItems": 1, "items": {"type": "number"}},
+    "intercept": {"type": "number"},
+    "cutpoints": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}},
+    "source": {"const": "coach_ground_truth_calibration"},
+    "ground_truth_dataset_version": {"type": "string", "minLength": 1},
+    "artifact_scope": {"enum": ["production", "test_only"]},
+    "promotion_lineage": {"type": "object"},
+    "independent_test": {
+      "type": "object",
+      "required": ["status", "approved_for_scoring", "dataset_version", "report_version", "report_sha256", "acceptance_protocol_version", "evaluated_at"],
+      "properties": {
+        "status": {"enum": ["pending", "passed", "failed", "test_only"]},
+        "approved_for_scoring": {"type": "boolean"},
+        "dataset_version": {"type": ["string", "null"]},
+        "report_version": {"type": ["string", "null"]},
+        "report_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
+        "acceptance_protocol_version": {"type": ["string", "null"]},
+        "evaluated_at": {"type": ["string", "null"]}
+      }
+    },
+    "feedback_by_grade": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"artifact_scope": {"const": "test_only"}}, "required": ["artifact_scope"]},
+      "then": {
+        "properties": {
+          "independent_test": {
+            "properties": {
+              "status": {"const": "test_only"},
+              "approved_for_scoring": {"const": false}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_scope": {"const": "production"},
+          "independent_test": {"properties": {"status": {"const": "passed"}}, "required": ["status"]}
+        },
+        "required": ["artifact_scope", "independent_test"]
+      },
+      "then": {
+        "properties": {
+          "independent_test": {
+            "properties": {
+              "approved_for_scoring": {"const": true},
+              "dataset_version": {"type": "string", "minLength": 1},
+              "report_version": {"type": "string", "minLength": 1},
+              "report_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+              "acceptance_protocol_version": {"type": "string", "minLength": 1},
+              "evaluated_at": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"artifact_scope": {"const": "production"}}, "required": ["artifact_scope"]},
+      "then": {"required": ["promotion_lineage"]}
+    }
+  ]
+}

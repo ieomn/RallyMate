@@ -1,0 +1,243 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "indicator_scoring_requirements",
+  "requirements_version": "pose-wave-indicator-requirements-2026-08-22.17",
+  "source": {
+    "kind": "versioned_registry_and_manual_truth_contract",
+    "registry_version": "pose-wave-2026-08-22.17",
+    "registry_content_sha256": "683dc285bffcd705c5386dcb0bcbc8882bf739cdba75f40fdce1507c1b5f67ac",
+    "semantic_contract_version": "scoring-truth-pack-v0.3.0",
+    "semantic_contract_sha256": "1cce0993e207c64a54c21c816dbc32b3b66c054dc694a31f3c27759a999a601e",
+    "canonicalization": "rallymate-canonical-json-v1"
+  },
+  "indicators": [
+    {
+      "indicator_id": "FS01-M02",
+      "required_feature_names": [
+        "hip_center_y_body",
+        "left_knee_flexion_deg",
+        "right_knee_flexion_deg",
+        "stance_width_body",
+        "hip_center_relative_to_ankle_support"
+      ],
+      "required_phase_keys": [
+        "preload_ms"
+      ],
+      "required_semantic_keys": [],
+      "registry_indicator_sha256": "3bb1a217a003bce21e8f5f20f94f0ddc75a2622298958b57d901a5016773b478"
+    },
+    {
+      "indicator_id": "FS01-M03",
+      "required_feature_names": [
+        "bilateral_foot_rise_min_body",
+        "bilateral_foot_rise_synchrony_ms",
+        "bilateral_foot_rise_proxy_duration_ms",
+        "hip_center_vertical_velocity_body_s"
+      ],
+      "required_phase_keys": [
+        "takeoff_proxy_ms"
+      ],
+      "required_semantic_keys": [
+        "bilateral_foot_contact_state"
+      ],
+      "registry_indicator_sha256": "d64faef763722106b20ffc6694a153b7f6b84b9b02b5f7dfa1d9dbcfb7628458"
+    },
+    {
+      "indicator_id": "FS01-M04",
+      "required_feature_names": [
+        "bilateral_foot_vertical_slowdown_time_offset_ms",
+        "post_slowdown_stance_width_body",
+        "hip_center_lateral_variability_body"
+      ],
+      "required_phase_keys": [
+        "landing_proxy_ms"
+      ],
+      "required_semantic_keys": [
+        "left_foot_contact_or_settle",
+        "post_landing_stable_interval",
+        "right_foot_contact_or_settle"
+      ],
+      "registry_indicator_sha256": "b8c0cb1ab33a2cbcd7a3d14656f268305c09197fce94cd81331c4d3241e52f89"
+    },
+    {
+      "indicator_id": "FS01-M05",
+      "required_feature_names": [
+        "body_center_speed_body_s",
+        "hip_center_relative_to_ankle_support",
+        "torso_lean_deg",
+        "shoulder_hip_angular_velocity"
+      ],
+      "required_phase_keys": [
+        "initiation_ms",
+        "redistribution_ms"
+      ],
+      "required_semantic_keys": [],
+      "registry_indicator_sha256": "b5542cc8ab2a8a2d7e7583b9a9074ab2ce5ab1a5e984e07da8d7f781f18d258e"
+    },
+    {
+      "indicator_id": "FS02-M02",
+      "required_feature_names": [
+        "body_center_speed_body_s",
+        "hip_center_relative_to_ankle_support",
+        "torso_lean_deg",
+        "launch_direction_deg",
+        "target_direction_alignment_error_deg"
+      ],
+      "required_phase_keys": [
+        "direction_conversion_ms"
+      ],
+      "required_semantic_keys": [
+        "target_direction"
+      ],
+      "registry_indicator_sha256": "528b18cdc7fa17e10d2a767a9242f838c828a2ebc6a59d1a555a719756b90236"
+    },
+    {
+      "indicator_id": "FS02-M03",
+      "required_feature_names": [
+        "launch_direction_deg",
+        "drive_side_code",
+        "support_knee_extension_velocity_deg_s",
+        "hip_acceleration_along_launch_direction_body_s2",
+        "support_drive_to_moving_foot_rise_proxy_ms"
+      ],
+      "required_phase_keys": [
+        "lead_foot_motion_onset_proxy_ms",
+        "support_extension_proxy_ms"
+      ],
+      "required_semantic_keys": [
+        "support_side"
+      ],
+      "registry_indicator_sha256": "84dcde2dd50b5c71498ad554588bebce8b53225eaf2d7703adfcdf78d99eb5f7"
+    },
+    {
+      "indicator_id": "FS02-M04",
+      "required_feature_names": [
+        "launch_direction_deg",
+        "launch_side_code",
+        "launch_foot_speed_peak_body_s",
+        "launch_foot_relative_displacement_body",
+        "launch_foot_motion_duration_ms"
+      ],
+      "required_phase_keys": [
+        "lead_foot_motion_onset_proxy_ms"
+      ],
+      "required_semantic_keys": [
+        "launch_foot_contact_state",
+        "launch_side"
+      ],
+      "registry_indicator_sha256": "dcdaa37761f45167841ceffa3c254a51d300ded8f38ca26eecece76123c52010"
+    },
+    {
+      "indicator_id": "FS02-M05",
+      "required_feature_names": [
+        "launch_side_code",
+        "launch_foot_speed_drop_body_s",
+        "first_step_displacement_body",
+        "post_step_hip_direction_consistency",
+        "launch_foot_slowdown_to_post_hip_direction_ms",
+        "post_step_stance_width_body"
+      ],
+      "required_phase_keys": [
+        "first_step_slowdown_proxy_ms"
+      ],
+      "required_semantic_keys": [
+        "first_step_contact_or_settle",
+        "launch_side",
+        "post_step_direction_interval"
+      ],
+      "registry_indicator_sha256": "1ad600d254c95e38fa55a3d2a2dbd7f492970008683a8571262254846d9412fa"
+    },
+    {
+      "indicator_id": "FS09-M01",
+      "required_feature_names": [
+        "hip_center_speed_body_s",
+        "hip_center_motion_direction_deg",
+        "hip_center_relative_to_ankle_midpoint_x_body",
+        "hip_center_relative_to_ankle_midpoint_y_body",
+        "hip_center_speed_trend_body_s2"
+      ],
+      "required_phase_keys": [],
+      "required_semantic_keys": [
+        "camera_motion_audit",
+        "inertia_direction"
+      ],
+      "registry_indicator_sha256": "92d6a2afcebbf94c7d2275f07e84885c2d2f134bd0b9af2d7a217cc985a9e90a"
+    },
+    {
+      "indicator_id": "FS09-M02",
+      "required_feature_names": [
+        "left_ankle_speed_body_s",
+        "right_ankle_speed_body_s",
+        "left_ankle_speed_drop_body_s",
+        "right_ankle_speed_drop_body_s",
+        "braking_side_code",
+        "braking_ankle_speed_drop_body_s",
+        "left_knee_flexion_change_deg",
+        "right_knee_flexion_change_deg",
+        "hip_center_deceleration_body_s2",
+        "braking_ankle_slowdown_to_hip_deceleration_ms"
+      ],
+      "required_phase_keys": [],
+      "required_semantic_keys": [
+        "braking_foot_touchdown",
+        "braking_side"
+      ],
+      "registry_indicator_sha256": "3838083165dbc979fa528ae9f6b4f6a05a5771139cb1c180c7742643cb85dcbb"
+    },
+    {
+      "indicator_id": "FS09-M03",
+      "required_feature_names": [
+        "hip_center_deceleration_body_s2",
+        "hip_center_speed_drop_body_s",
+        "left_knee_flexion_change_deg",
+        "right_knee_flexion_change_deg",
+        "hip_height_delta_body",
+        "torso_lean_variability_deg"
+      ],
+      "required_phase_keys": [
+        "deceleration_peak_ms",
+        "peak_speed_ms"
+      ],
+      "required_semantic_keys": [],
+      "registry_indicator_sha256": "56f2d885df94fe9372f2df2a0a420dd632a1274fe264dc9e5b008fb5c8e1ae75"
+    },
+    {
+      "indicator_id": "FS09-M04",
+      "required_feature_names": [
+        "hip_center_relative_to_ankle_support",
+        "hip_center_relative_to_ankle_midpoint_x_body",
+        "hip_center_relative_to_ankle_midpoint_y_body",
+        "hip_center_speed_drop_body_s",
+        "stance_width_body",
+        "stability_duration_ms",
+        "shoulder_hip_angular_velocity_change_deg_s",
+        "double_support_proxy_duration_ms"
+      ],
+      "required_phase_keys": [
+        "restabilization_onset_ms"
+      ],
+      "required_semantic_keys": [
+        "stable_interval"
+      ],
+      "registry_indicator_sha256": "da8056fd53a73eb9b79b62a96af1d9fbd2c865f4b3d4f863e5533c741f410924"
+    },
+    {
+      "indicator_id": "FS09-M05",
+      "required_feature_names": [
+        "stability_duration_ms",
+        "hip_center_speed_drop_body_s",
+        "double_support_proxy_duration_ms",
+        "torso_lean_variability_deg",
+        "shoulder_hip_angular_velocity_change_deg_s",
+        "hip_deceleration_to_double_support_proxy_ms"
+      ],
+      "required_phase_keys": [
+        "stable_control_onset_ms"
+      ],
+      "required_semantic_keys": [
+        "stable_control_interval"
+      ],
+      "registry_indicator_sha256": "9617543625184e26e499fb59a14c98013b9cd390f3b7b092c3fc2b259f53ed65"
+    }
+  ]
+}

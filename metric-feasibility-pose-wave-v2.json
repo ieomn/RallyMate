@@ -1,0 +1,221 @@
+{
+  "schema_version": "2.0.0",
+  "registry_version": "pose-wave-2026-08-22.17",
+  "updated_at": "2026-08-22T23:30:00+08:00",
+  "scope": {
+    "capture": "fixed_camera",
+    "subjects": "single_primary_player",
+    "pose_topology_for_scoring": "coco17_or_superset_with_explicit_mapping",
+    "events": ["FS01", "FS02", "FS09"],
+    "indicator_count": 13,
+    "extends_registry": "minimum-scoring-loop-2026-08-13.1",
+    "output_without_calibration": "calibration_required_or_unavailable",
+    "exclusions": ["ball", "racket", "court_scoring", "total_score", "keypoint_refinement"]
+  },
+  "level_definitions": {
+    "F0": "structure_supported",
+    "F1": "event_localizable",
+    "F2": "feature_measurable",
+    "F3": "feature_discriminative_and_calibratable",
+    "F4": "independently_tested_and_scoreable"
+  },
+  "indicators": [
+    {
+      "indicator_id": "FS01-M02",
+      "name_zh": "重心预加载",
+      "feasibility_level": "F2",
+      "required_events": ["FS01.preload"],
+      "required_features": ["hip_center_y_body", "left_knee_flexion_deg", "right_knee_flexion_deg", "stance_width_body", "hip_center_relative_to_ankle_support"],
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "hip_knee_ankle_not_severely_occluded", "body_scale_observable"],
+      "ground_truth_requirements": ["manual_FS01_boundaries", "manual_phase_keyframes", "manual_corrected_hip_knee_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS01_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs01-m02.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS01-M03",
+      "name_zh": "双脚轻微离地",
+      "feasibility_level": "F2",
+      "required_events": ["FS01.takeoff_proxy"],
+      "required_features": ["bilateral_foot_rise_min_body", "bilateral_foot_rise_synchrony_ms", "bilateral_foot_rise_proxy_duration_ms", "hip_center_vertical_velocity_body_s"],
+      "feature_availability": {
+        "implemented": ["bilateral_foot_rise_min_body", "bilateral_foot_rise_synchrony_ms", "bilateral_foot_rise_proxy_duration_ms", "hip_center_vertical_velocity_body_s"],
+        "missing": [],
+        "assessment_basis": "fs01-fs02-pose-proxies-v0.5.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "both_foot_references_not_severely_occluded", "body_scale_observable", "image_vertical_is_stable"],
+      "ground_truth_requirements": ["manual_FS01_boundaries", "manual_bilateral_foot_rise_phase", "manual_corrected_hip_ankle_or_fine_foot_keypoints", "manual_ground_contact_labels_to_quantify_proxy_limit", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["ground_contact_not_directly_observable", "takeoff_proxy_boundary_error_not_evaluated", "ankle_fallback_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "phase_boundary_mae_ms": null, "foot_rise_feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs01-m03.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs01-fs02-pose-proxies-v0.5.0", "semantic_limit": "bilateral_foot_rise_proxy_not_true_airborne_or_contact"}
+    },
+    {
+      "indicator_id": "FS01-M04",
+      "name_zh": "双脚分开落地",
+      "feasibility_level": "F2",
+      "required_events": ["FS01.landing_proxy"],
+      "required_features": ["bilateral_foot_vertical_slowdown_time_offset_ms", "post_slowdown_stance_width_body", "hip_center_lateral_variability_body"],
+      "feature_availability": {
+        "implemented": ["bilateral_foot_vertical_slowdown_time_offset_ms", "post_slowdown_stance_width_body", "hip_center_lateral_variability_body"],
+        "missing": [],
+        "assessment_basis": "fs01-fs02-pose-proxies-v0.5.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "both_foot_references_not_severely_occluded", "post_slowdown_tail_available", "body_scale_observable"],
+      "ground_truth_requirements": ["manual_FS01_boundaries", "manual_left_and_right_contact_or_settle_times", "manual_corrected_hip_ankle_or_fine_foot_keypoints", "manual_post_landing_stable_interval", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["ground_contact_not_directly_observable", "landing_proxy_boundary_error_not_evaluated", "ankle_fallback_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "phase_boundary_mae_ms": null, "bilateral_settle_offset_mae_ms": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs01-m04.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs01-fs02-pose-proxies-v0.5.0", "semantic_limit": "foot_slowdown_proxy_not_true_landing_or_ground_contact"}
+    },
+    {
+      "indicator_id": "FS01-M05",
+      "name_zh": "重心重新分配并准备启动",
+      "feasibility_level": "F2",
+      "required_events": ["FS01.redistribution", "FS01.initiation"],
+      "required_features": ["body_center_speed_body_s", "hip_center_relative_to_ankle_support", "torso_lean_deg", "shoulder_hip_angular_velocity"],
+      "view_constraints": ["fixed_camera", "torso_and_ankle_support_visible", "camera_motion_below_quality_gate", "event_direction_observable_in_image_plane"],
+      "ground_truth_requirements": ["manual_FS01_boundaries", "manual_redistribution_and_initiation_keyframes", "manual_corrected_shoulder_hip_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS01_phase_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs01-m05.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "rallymate-features-v0.1.0"}
+    },
+    {
+      "indicator_id": "FS02-M02",
+      "name_zh": "重心向目标方向转换",
+      "feasibility_level": "F2",
+      "required_events": ["FS02.direction_conversion"],
+      "required_features": ["body_center_speed_body_s", "hip_center_relative_to_ankle_support", "torso_lean_deg", "launch_direction_deg", "target_direction_alignment_error_deg"],
+      "measurement_features": ["body_center_speed_body_s", "hip_center_relative_to_ankle_support", "torso_lean_deg", "launch_direction_deg"],
+      "feature_availability": {
+        "implemented": ["body_center_speed_body_s", "hip_center_relative_to_ankle_support", "torso_lean_deg", "launch_direction_deg", "target_direction_alignment_error_deg"],
+        "missing": [],
+        "assessment_basis": "Pose FEATURE_DEFINITIONS plus scoring-reference-context-v1.0.0 target-direction alignment pure function"
+      },
+      "view_constraints": ["fixed_camera", "hip_and_support_ankles_visible", "event_trajectory_long_enough_to_define_image_plane_direction", "tactical_target_direction_not_claimed_without_external_truth"],
+      "ground_truth_requirements": ["manual_FS02_boundaries", "manual_direction_conversion_keyframe", "manual_event_target_direction_or_rank_label", "manual_corrected_hip_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS02_ground_truth_missing", "tactical_target_direction_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "direction_error_deg": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs02-m02.2", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs01-fs02-pose-proxies-v0.5.0", "scoring_context": "scoring-reference-context-v1.0.0", "scoring_context_feature": "target-direction-alignment-v1.0.0"}
+    },
+    {
+      "indicator_id": "FS02-M03",
+      "name_zh": "支撑脚发力",
+      "feasibility_level": "F2",
+      "required_events": ["FS02.support_extension_proxy", "FS02.lead_foot_motion_onset_proxy"],
+      "required_features": ["launch_direction_deg", "drive_side_code", "support_knee_extension_velocity_deg_s", "hip_acceleration_along_launch_direction_body_s2", "support_drive_to_moving_foot_rise_proxy_ms"],
+      "feature_availability": {
+        "implemented": ["launch_direction_deg", "drive_side_code", "support_knee_extension_velocity_deg_s", "hip_acceleration_along_launch_direction_body_s2", "support_drive_to_moving_foot_rise_proxy_ms"],
+        "missing": [],
+        "assessment_basis": "fs01-fs02-pose-proxies-v0.5.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "both_hips_knees_and_foot_references_not_severely_occluded", "event_direction_observable_in_image_plane", "body_scale_observable"],
+      "ground_truth_requirements": ["manual_FS02_boundaries", "manual_support_side_label", "manual_support_extension_and_lead_foot_motion_keyframes", "manual_corrected_hip_knee_ankle_or_fine_foot_keypoints", "force_plate_or_pressure_truth_if_force_claim_is_ever_considered", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["support_force_not_directly_observable", "drive_side_proxy_error_not_evaluated", "phase_proxy_boundary_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "phase_boundary_mae_ms": null, "drive_side_accuracy": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs02-m03.2", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs01-fs02-pose-proxies-v0.5.0", "semantic_limit": "support_side_extension_and_acceleration_proxy_not_force_or_causality"}
+    },
+    {
+      "indicator_id": "FS02-M04",
+      "name_zh": "启动脚离地",
+      "feasibility_level": "F2",
+      "required_events": ["FS02.lead_foot_motion_onset_proxy"],
+      "required_features": ["launch_direction_deg", "launch_side_code", "launch_foot_speed_peak_body_s", "launch_foot_relative_displacement_body", "launch_foot_motion_duration_ms"],
+      "feature_availability": {
+        "implemented": ["launch_direction_deg", "launch_side_code", "launch_foot_speed_peak_body_s", "launch_foot_relative_displacement_body", "launch_foot_motion_duration_ms"],
+        "missing": [],
+        "assessment_basis": "fs01-fs02-pose-proxies-v0.5.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "both_foot_references_not_severely_occluded", "event_direction_observable_in_image_plane", "body_scale_observable"],
+      "ground_truth_requirements": ["manual_FS02_boundaries", "manual_launch_side_label", "manual_launch_foot_motion_onset", "manual_corrected_hip_ankle_or_fine_foot_keypoints", "manual_ground_contact_labels_to_quantify_proxy_limit", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["ground_contact_not_directly_observable", "launch_side_proxy_error_not_evaluated", "motion_onset_proxy_boundary_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "phase_boundary_mae_ms": null, "launch_side_accuracy": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs02-m04.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs01-fs02-pose-proxies-v0.5.0", "semantic_limit": "moving_foot_motion_proxy_not_true_takeoff_or_loss_of_contact"}
+    },
+    {
+      "indicator_id": "FS02-M05",
+      "name_zh": "第一步落地并建立移动方向",
+      "feasibility_level": "F2",
+      "required_events": ["FS02.first_step_slowdown_proxy"],
+      "required_features": ["launch_side_code", "launch_foot_speed_drop_body_s", "first_step_displacement_body", "post_step_hip_direction_consistency", "launch_foot_slowdown_to_post_hip_direction_ms", "post_step_stance_width_body"],
+      "feature_availability": {
+        "implemented": ["launch_side_code", "launch_foot_speed_drop_body_s", "first_step_displacement_body", "post_step_hip_direction_consistency", "launch_foot_slowdown_to_post_hip_direction_ms", "post_step_stance_width_body"],
+        "missing": [],
+        "assessment_basis": "fs01-fs02-pose-proxies-v0.5.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "both_foot_references_and_hips_not_severely_occluded", "post_step_tail_available", "image_plane_direction_only_without_court_calibration"],
+      "ground_truth_requirements": ["manual_FS02_boundaries", "manual_first_step_contact_or_settle_time", "manual_launch_side_and_step_displacement", "manual_post_step_direction_interval", "manual_corrected_hip_ankle_or_fine_foot_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["ground_contact_not_directly_observable", "first_step_slowdown_proxy_boundary_error_not_evaluated", "image_plane_direction_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "phase_boundary_mae_ms": null, "first_step_settle_mae_ms": null, "direction_error_deg": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs02-m05.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs01-fs02-pose-proxies-v0.5.0", "semantic_limit": "foot_slowdown_and_new_support_proxy_not_true_landing_or_tactical_correctness"}
+    },
+    {
+      "indicator_id": "FS09-M01",
+      "name_zh": "判断身体惯性方向",
+      "feasibility_level": "F2",
+      "required_events": ["FS09"],
+      "required_features": ["hip_center_speed_body_s", "hip_center_motion_direction_deg", "hip_center_relative_to_ankle_midpoint_x_body", "hip_center_relative_to_ankle_midpoint_y_body", "hip_center_speed_trend_body_s2"],
+      "feature_availability": {
+        "implemented": ["hip_center_speed_body_s", "hip_center_motion_direction_deg", "hip_center_relative_to_ankle_midpoint_x_body", "hip_center_relative_to_ankle_midpoint_y_body", "hip_center_speed_trend_body_s2"],
+        "missing": [],
+        "assessment_basis": "fs09-pose-proxies-v0.2.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "camera_motion_below_quality_gate", "shoulder_hip_and_support_ankles_visible", "image_plane_direction_only_without_court_calibration"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_inertia_direction_labels", "manual_corrected_shoulder_hip_ankle_keypoints", "camera_motion_audit", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS09_ground_truth_missing", "camera_motion_compensation_not_validated", "image_plane_direction_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "direction_error_deg": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m01.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs09-pose-proxies-v0.2.0"}
+    },
+    {
+      "indicator_id": "FS09-M02",
+      "name_zh": "制动脚落地",
+      "feasibility_level": "F2",
+      "required_events": ["FS09"],
+      "required_features": ["left_ankle_speed_body_s", "right_ankle_speed_body_s", "left_ankle_speed_drop_body_s", "right_ankle_speed_drop_body_s", "braking_side_code", "braking_ankle_speed_drop_body_s", "left_knee_flexion_change_deg", "right_knee_flexion_change_deg", "hip_center_deceleration_body_s2", "braking_ankle_slowdown_to_hip_deceleration_ms"],
+      "feature_availability": {
+        "implemented": ["left_ankle_speed_body_s", "right_ankle_speed_body_s", "left_ankle_speed_drop_body_s", "right_ankle_speed_drop_body_s", "braking_side_code", "braking_ankle_speed_drop_body_s", "left_knee_flexion_change_deg", "right_knee_flexion_change_deg", "hip_center_deceleration_body_s2", "braking_ankle_slowdown_to_hip_deceleration_ms"],
+        "missing": [],
+        "assessment_basis": "fs09-pose-proxies-v0.2.0 FEATURE_DEFINITIONS"
+      },
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "both_ankles_and_knees_not_severely_occluded", "ground_contact_is_estimated_without_pressure_or_depth_sensor"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_braking_side_label", "manual_braking_foot_touchdown_ms", "manual_corrected_knee_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["ground_contact_not_directly_observable", "braking_side_proxy_error_not_evaluated", "touchdown_proxy_boundary_error_not_evaluated", "manual_FS09_ground_truth_missing", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "braking_side_accuracy": null, "touchdown_boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m02.2", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs09-pose-proxies-v0.2.0", "semantic_limit": "kinematic_braking_proxy_not_true_touchdown"}
+    },
+    {
+      "indicator_id": "FS09-M03",
+      "name_zh": "下肢吸收身体惯性",
+      "feasibility_level": "F2",
+      "required_events": ["FS09.peak_speed", "FS09.deceleration"],
+      "required_features": ["hip_center_deceleration_body_s2", "hip_center_speed_drop_body_s", "left_knee_flexion_change_deg", "right_knee_flexion_change_deg", "hip_height_delta_body", "torso_lean_variability_deg"],
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "timestamp_ms_monotonic", "deceleration_interval_has_sufficient_valid_samples"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_deceleration_and_absorption_keyframes", "manual_corrected_hip_knee_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_FS09_phase_ground_truth_missing", "acceleration_noise_budget_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m03.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs09-pose-proxies-v0.2.0"}
+    },
+    {
+      "indicator_id": "FS09-M04",
+      "name_zh": "重心重新稳定",
+      "feasibility_level": "F2",
+      "required_events": ["FS09.restabilization"],
+      "required_features": ["hip_center_relative_to_ankle_support", "hip_center_relative_to_ankle_midpoint_x_body", "hip_center_relative_to_ankle_midpoint_y_body", "hip_center_speed_drop_body_s", "stance_width_body", "stability_duration_ms", "shoulder_hip_angular_velocity_change_deg_s", "double_support_proxy_duration_ms"],
+      "view_constraints": ["fixed_camera", "full_lower_body_visible", "post_deceleration_tail_available", "validated_stability_envelope_required"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_restabilization_onset", "manual_stable_interval", "manual_corrected_hip_ankle_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_restabilization_ground_truth_missing", "validated_stability_envelope_missing", "low_ankle_motion_proxy_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "stability_onset_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m04.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs09-pose-proxies-v0.2.0"}
+    },
+    {
+      "indicator_id": "FS09-M05",
+      "name_zh": "身体进入稳定控制状态",
+      "feasibility_level": "F2",
+      "required_events": ["FS09.stable_control"],
+      "required_features": ["stability_duration_ms", "hip_center_speed_drop_body_s", "double_support_proxy_duration_ms", "torso_lean_variability_deg", "shoulder_hip_angular_velocity_change_deg_s", "hip_deceleration_to_double_support_proxy_ms"],
+      "view_constraints": ["fixed_camera", "shoulder_hip_visible", "post_event_tail_available", "validated_stability_envelope_required"],
+      "ground_truth_requirements": ["manual_FS09_boundaries", "manual_stable_control_interval", "manual_corrected_shoulder_hip_keypoints", "multi_coach_grade_or_ranking_labels_for_F3"],
+      "current_blockers": ["manual_stable_control_ground_truth_missing", "post_event_tail_quality_not_validated", "validated_stability_envelope_missing", "low_ankle_motion_proxy_error_not_evaluated", "feature_error_not_evaluated", "coach_calibration_missing", "independent_test_missing"],
+      "acceptance_metrics": {"event_f1": null, "segment_iou": null, "boundary_mae_ms": null, "feature_mae": null, "feature_p95": null, "feature_bias": null, "feature_valid_rate": null, "inter_rater_agreement": null},
+      "versions": {"indicator_definition": "fs09-m05.1", "event_contract": "events.1.0.0", "event_detector": "pose-motion-bout-v0.4.1", "phase_contract": "pose-event-phase-proxies-v0.3.0", "primary_player": "primary-player-v0.3.0", "quality_policy": "indicator-event-quality-v1.6.0", "feature_contract": "fs09-pose-proxies-v0.2.0"}
+    }
+  ]
+}

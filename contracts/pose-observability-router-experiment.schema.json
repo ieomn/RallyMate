@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-observability-router-experiment.schema.json",
+  "title": "RallyMate Pose observability router experiment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_version",
+    "generated_at",
+    "status",
+    "video_id",
+    "sources",
+    "artifacts",
+    "settings",
+    "router_audit",
+    "composition_audit",
+    "feature_vector_impact",
+    "operational_measurement_impact",
+    "counts",
+    "decision",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "experiment_version": {"const": "pose-observability-router-experiment-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": [
+        "experimental_regression_free_observability_candidate_not_production",
+        "experimental_router_rejected_due_to_regression"
+      ]
+    },
+    "video_id": {"type": "string", "minLength": 1},
+    "sources": {"type": "object", "minProperties": 8},
+    "artifacts": {"type": "object", "required": ["routed_frames", "fixed_boundary_comparison"]},
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_pose_profile", "candidate_pose_profile", "pose_model_sha256", "baseline_roi_margin", "candidate_roi_margin", "keypoint_confidence_min"],
+      "properties": {
+        "baseline_pose_profile": {"type": "string", "minLength": 1},
+        "candidate_pose_profile": {"type": "string", "minLength": 1},
+        "pose_model_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "baseline_roi_margin": {"type": "number", "minimum": 0},
+        "candidate_roi_margin": {"type": "number", "exclusiveMinimum": 0},
+        "keypoint_confidence_min": {"const": 0.25}
+      }
+    },
+    "router_audit": {
+      "type": "object",
+      "required": ["router_version", "selection_policy", "required_joints", "target_frame_count", "selected_frame_count", "rejected_frame_count", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds", "equal_validity_keeps_baseline", "required_joint_validity_regression_allowed"],
+      "properties": {
+        "router_version": {"const": "required-joint-validity-superset-v1.0.0"},
+        "selection_policy": {"const": "candidate_required_joint_valid_set_strictly_contains_baseline"},
+        "required_joints": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "target_frame_count": {"type": "integer", "minimum": 1},
+        "selected_frame_count": {"type": "integer", "minimum": 0},
+        "rejected_frame_count": {"type": "integer", "minimum": 0},
+        "selection_uses_feature_values": {"const": false},
+        "selection_uses_event_outcomes": {"const": false},
+        "selection_uses_grades_or_thresholds": {"const": false},
+        "equal_validity_keeps_baseline": {"const": true},
+        "required_joint_validity_regression_allowed": {"const": false}
+      }
+    },
+    "composition_audit": {"type": "object"},
+    "feature_vector_impact": {"$ref": "#/$defs/impact"},
+    "operational_measurement_impact": {"$ref": "#/$defs/impact"},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["indicator_instances", "baseline_feature_complete", "routed_feature_complete", "baseline_operational_measured", "routed_operational_measured"],
+      "properties": {
+        "indicator_instances": {"type": "integer", "minimum": 1},
+        "baseline_feature_complete": {"type": "integer", "minimum": 0},
+        "routed_feature_complete": {"type": "integer", "minimum": 0},
+        "baseline_operational_measured": {"type": "integer", "minimum": 0},
+        "routed_operational_measured": {"type": "integer", "minimum": 0}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["production_default_changed", "candidate_promoted", "current_video_regression_free", "next_required_evidence"],
+      "properties": {
+        "production_default_changed": {"const": false},
+        "candidate_promoted": {"const": false},
+        "current_video_regression_free": {"type": "boolean"},
+        "next_required_evidence": {"type": "string", "minLength": 1}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_fallback_enabled", "measurement_gate_modified", "scoring_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "automatic_fallback_enabled": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "scoring_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "impact": {
+      "type": "object",
+      "required": ["status_transitions", "recovered_indicator_instance_count", "regressed_indicator_instance_count"],
+      "properties": {
+        "status_transitions": {"type": "object"},
+        "recovered_indicator_instance_count": {"type": "integer", "minimum": 0},
+        "regressed_indicator_instance_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

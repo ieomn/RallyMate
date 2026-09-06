@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-blocker-audit.schema.json",
+  "title": "RallyMate scoring blocker audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_version", "generated_at", "status", "source", "counts", "flag_metrics", "flag_combination_metrics", "human_review_priority", "indicator_metrics", "assertions"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "scoring-blocker-audit-v1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "audited_no_quality_gate_change"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scores", "summary", "video_id", "registry_version", "quality_policy_version", "scoring_loop_version"],
+      "properties": {
+        "scores": {"$ref": "#/$defs/source"},
+        "summary": {"$ref": "#/$defs/source"},
+        "video_id": {"type": "string", "minLength": 1},
+        "registry_version": {"type": "string", "minLength": 1},
+        "quality_policy_version": {"type": "string", "minLength": 1},
+        "scoring_loop_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["indicator_record_count", "status_counts", "mutually_exclusive_decomposition", "complete_feature_score_only_recoverable_to_calibration_required_if_all_truth_clears_count", "grade_count", "threshold_count"],
+      "properties": {
+        "indicator_record_count": {"type": "integer", "minimum": 1},
+        "status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "mutually_exclusive_decomposition": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "integer", "minimum": 0}},
+        "complete_feature_score_only_recoverable_to_calibration_required_if_all_truth_clears_count": {"type": "integer", "minimum": 0},
+        "grade_count": {"const": 0},
+        "threshold_count": {"const": 0}
+      }
+    },
+    "flag_metrics": {"type": "array", "items": {"$ref": "#/$defs/flagMetric"}},
+    "flag_combination_metrics": {"type": "array", "items": {"$ref": "#/$defs/combinationMetric"}},
+    "human_review_priority": {"type": "array", "items": {"$ref": "#/$defs/flagMetric"}},
+    "indicator_metrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["indicator_record_count", "calibration_required_count", "unavailable_count"],
+        "properties": {
+          "indicator_record_count": {"type": "integer", "minimum": 1},
+          "calibration_required_count": {"type": "integer", "minimum": 0},
+          "unavailable_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "assertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["typed_reason_mapping_consistent", "quality_gate_modified", "grade_generated", "threshold_generated", "maturity_promoted", "recoverable_means_calibration_required_not_scored", "counts_are_accuracy_metrics"],
+      "properties": {
+        "typed_reason_mapping_consistent": {"const": true},
+        "quality_gate_modified": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "recoverable_means_calibration_required_not_scored": {"const": true},
+        "counts_are_accuracy_metrics": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "flagMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flag", "truth_requirement", "indicator_record_count", "unique_event_count", "complete_feature_score_only_record_count", "complete_feature_score_only_unique_event_count", "sole_block_recoverable_to_calibration_required_count"],
+      "properties": {
+        "flag": {"type": "string", "minLength": 1},
+        "truth_requirement": {"type": "string", "minLength": 1},
+        "indicator_record_count": {"type": "integer", "minimum": 1},
+        "unique_event_count": {"type": "integer", "minimum": 1},
+        "complete_feature_score_only_record_count": {"type": "integer", "minimum": 0},
+        "complete_feature_score_only_unique_event_count": {"type": "integer", "minimum": 0},
+        "sole_block_recoverable_to_calibration_required_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "combinationMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flags", "indicator_record_count", "unique_event_count"],
+      "properties": {
+        "flags": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "indicator_record_count": {"type": "integer", "minimum": 1},
+        "unique_event_count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

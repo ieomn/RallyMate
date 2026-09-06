@@ -1,0 +1,18 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; }
+body { margin: 0; background: #0b1118; color: #e5edf5; }
+main { max-width: 1260px; margin: 0 auto; padding: 24px; }
+section { margin: 16px 0; padding: 16px; background: #121c27; border: 1px solid #29384a; border-radius: 10px; }
+.warning { padding: 14px; border-left: 5px solid #f59e0b; background: #251d0d; }
+.toolbar, .editor { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+label { display: grid; gap: 4px; min-width: 180px; }
+label:has(#task) { flex: 1 1 420px; }
+input, select, button { padding: 9px 11px; border: 1px solid #52657a; border-radius: 6px; background: #0d1620; color: #eef6ff; }
+button { cursor: pointer; background: #17314a; }
+button:hover { background: #214967; }
+.stage { display: grid; grid-template-columns: minmax(280px, 0.8fr) minmax(480px, 1.2fr); gap: 14px; }
+video, canvas { width: 100%; background: #000; border: 1px solid #52657a; }
+canvas { aspect-ratio: 16 / 9; cursor: crosshair; }
+.good { color: #5ee6a8; }
+.error { color: #ff8d8d; }
+pre { overflow: auto; white-space: pre-wrap; }
+@media (max-width: 820px) { .stage { grid-template-columns: 1fr; } main { padding: 12px; } }

@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rallymate-vision-demo"
+version = "0.2.0"
+description = "Tennis video analysis and evidence-aware scoring platform with GPU inference, event measurement, evaluation, and service workflows."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "opencv-python>=4.8",
+  "torch>=2.0",
+  "ultralytics>=8.4.21",
+]
+
+[project.optional-dependencies]
+service = [
+  "fastapi>=0.115",
+  "python-multipart>=0.0.9",
+  "uvicorn[standard]>=0.30",
+]
+training = [
+  "PyYAML>=6.0",
+]
+rtmpose = [
+  "numpy==1.26.4",
+  "mmengine==0.10.7",
+  "mmcv-lite==2.1.0",
+  "mmpose==1.3.2",
+  "mmdet==3.3.0",
+]
+dev = [
+  "httpx>=0.27",
+  "jsonschema[format]>=4.23",
+  "rfc3339-validator>=0.1.4",
+]
+
+[project.scripts]
+rallymate-vision = "rallymate_vision.cli:main"
+rallymate-train = "rallymate_training.cli:main"
+rallymate-api = "rallymate_service.cli:api_main"
+rallymate-worker = "rallymate_service.cli:worker_main"
+rallymate-dev = "rallymate_service.cli:dev_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rallymate_scoring = ["data/*.json"]
+rallymate_annotation = ["assets/*.html", "assets/*.js", "assets/*.css"]
+rallymate_evaluation = ["assets/*.js", "assets/*.css"]
+rallymate_service = ["assets/*.html", "assets/*.js", "assets/*.css"]
+rallymate_vision = ["pose/data/*.json"]
+rallymate_visualization = ["assets/*.html", "assets/*.js", "assets/*.css"]

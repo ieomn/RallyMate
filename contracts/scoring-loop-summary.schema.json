@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-loop-summary.schema.json",
+  "type": "object",
+  "required": ["schema_version", "loop_version", "video_id", "status", "scope", "event_counts", "event_evaluation", "feature_error_evaluation", "score_status_counts", "grade_counts", "indicator_feature_validity", "safety_assertions", "model_versions", "provenance", "artifacts"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "loop_version": {"type": "string", "minLength": 1},
+    "video_id": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "minLength": 1},
+    "scope": {"type": "object"},
+    "event_counts": {"type": "object"},
+    "event_evaluation": {"type": "object"},
+    "feature_error_evaluation": {"type": "object"},
+    "score_status_counts": {"type": "object"},
+    "indicator_score_status_counts": {"type": "object"},
+    "grade_counts": {"type": "object"},
+    "indicator_grade_counts": {"type": "object"},
+    "result_state": {"type": "object"},
+    "indicator_feature_validity": {"type": "object"},
+    "safety_assertions": {
+      "type": "object",
+      "required": ["any_non_null_grade_without_calibration", "fake_thresholds_generated"],
+      "properties": {
+        "any_non_null_grade_without_calibration": {"const": false},
+        "fake_thresholds_generated": {"const": false}
+      }
+    },
+    "model_versions": {"type": "object"},
+    "provenance": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "artifact_sha256": {
+      "type": "object",
+      "required": ["events_jsonl", "features_jsonl", "indicator_features_jsonl", "scores_jsonl", "event_feature_errors_json"],
+      "properties": {
+        "events_jsonl": {"$ref": "#/$defs/sha256"},
+        "features_jsonl": {"$ref": "#/$defs/sha256"},
+        "indicator_features_jsonl": {"$ref": "#/$defs/sha256"},
+        "scores_jsonl": {"$ref": "#/$defs/sha256"},
+        "event_feature_errors_json": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "loop_version": {
+            "not": {
+              "enum": [
+                "minimum-scoring-loop-v0.1.0",
+                "minimum-scoring-loop-v0.2.0"
+              ]
+            }
+          }
+        },
+        "required": ["loop_version"]
+      },
+      "then": {"required": ["artifact_sha256"]}
+    }
+  ]
+}

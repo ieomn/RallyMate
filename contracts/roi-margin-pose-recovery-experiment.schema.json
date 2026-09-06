@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/roi-margin-pose-recovery-experiment.schema.json",
+  "title": "RallyMate ROI margin pose recovery experiment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_version",
+    "generated_at",
+    "status",
+    "source",
+    "settings",
+    "inference",
+    "artifacts",
+    "feature_vector_impact",
+    "operational_measurement_impact",
+    "candidate_decision",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "experiment_version": {"const": "roi-margin-pose-recovery-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "experimental_observability_only_not_production"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video", "frames", "primary_timeline", "events", "indicator_features", "summary", "registry", "gap_audit", "pose_model", "pose_config", "current_profile"],
+      "properties": {
+        "video": {"$ref": "#/$defs/source"},
+        "frames": {"$ref": "#/$defs/source"},
+        "primary_timeline": {"$ref": "#/$defs/source"},
+        "events": {"$ref": "#/$defs/source"},
+        "indicator_features": {"$ref": "#/$defs/source"},
+        "summary": {"$ref": "#/$defs/source"},
+        "registry": {"$ref": "#/$defs/source"},
+        "gap_audit": {"$ref": "#/$defs/source"},
+        "pose_model": {"$ref": "#/$defs/source"},
+        "pose_config": {"$ref": "#/$defs/source"},
+        "current_profile": {"type": "string", "minLength": 1}
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_roi_margin", "experimental_roi_margin", "min_roi_size_px", "baseline_max_players", "keypoint_observation_confidence_min", "event_boundary_source", "selection_scope"],
+      "properties": {
+        "baseline_roi_margin": {"type": "number", "minimum": 0},
+        "experimental_roi_margin": {"type": "number", "exclusiveMinimum": 0},
+        "min_roi_size_px": {"type": "integer", "minimum": 1},
+        "baseline_max_players": {"type": "integer", "minimum": 1},
+        "keypoint_observation_confidence_min": {"type": "number", "minimum": 0, "maximum": 1},
+        "event_boundary_source": {"const": "candidate_not_truth"},
+        "selection_scope": {"const": "baseline_pose_present_frames_inside_feature_gap_events"},
+        "only_clipped_baseline_roi": {"type": "boolean"}
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["counts", "valid_keypoint_count_transition_counts", "frame_results"],
+      "properties": {
+        "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "valid_keypoint_count_transition_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "frame_results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["processed_index", "source_frame_index", "timestamp_ms", "track_id", "baseline_crop_box", "experimental_crop_box", "baseline_valid_keypoint_count", "experimental_valid_keypoint_count", "valid_keypoint_count_change", "pose_output_produced"],
+            "properties": {
+              "processed_index": {"type": "integer", "minimum": 0},
+              "source_frame_index": {"type": "integer", "minimum": 0},
+              "timestamp_ms": {"type": "integer", "minimum": 0},
+              "track_id": {"type": "integer", "minimum": 1},
+              "baseline_crop_box": {"$ref": "#/$defs/box"},
+              "experimental_crop_box": {"$ref": "#/$defs/box"},
+              "baseline_crop_clipped": {"type": "boolean"},
+              "baseline_valid_keypoint_count": {"type": "integer", "minimum": 0, "maximum": 133},
+              "experimental_valid_keypoint_count": {"type": "integer", "minimum": 0, "maximum": 133},
+              "valid_keypoint_count_change": {"type": "integer", "minimum": -133, "maximum": 133},
+              "pose_output_produced": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["experimental_frames", "fixed_boundary_comparison"],
+      "properties": {
+        "experimental_frames": {"$ref": "#/$defs/source"},
+        "fixed_boundary_comparison": {"$ref": "#/$defs/source"}
+      }
+    },
+    "feature_vector_impact": {"$ref": "#/$defs/impact"},
+    "operational_measurement_impact": {"$ref": "#/$defs/impact"},
+    "candidate_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eligible_for_production_promotion", "reason", "regression_free_observability_gain"],
+      "properties": {
+        "eligible_for_production_promotion": {"const": false},
+        "reason": {"const": "manual_keypoint_truth_and_independent_release_review_required"},
+        "regression_free_observability_gain": {"type": "boolean"}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "current_production_default_unchanged", "automatic_profile_fallback_enabled", "measurement_gate_modified", "scoring_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "same_model_weights_detection_track_and_event_boundaries", "experimental_frames_replace_same_track_pose_without_baseline_fallback", "feature_vector_status_is_not_operational_measurement_status", "recovered_means_observable_under_experimental_crop_not_accurate"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "current_production_default_unchanged": {"const": true},
+        "automatic_profile_fallback_enabled": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "scoring_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "same_model_weights_detection_track_and_event_boundaries": {"const": true},
+        "experimental_frames_replace_same_track_pose_without_baseline_fallback": {"const": true},
+        "feature_vector_status_is_not_operational_measurement_status": {"const": true},
+        "recovered_means_observable_under_experimental_crop_not_accurate": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"}
+      }
+    },
+    "box": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"type": "integer", "minimum": 0}
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "indicator_id"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "indicator_id": {"type": "string", "pattern": "^FS[0-9]{2}-M[0-9]{2}$"}
+      }
+    },
+    "impact": {
+      "type": "object",
+      "required": ["status_transitions", "recovered_indicator_instance_count", "regressed_indicator_instance_count", "recovered_indicator_instances", "regressed_indicator_instances"],
+      "properties": {
+        "status_transitions": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "recovered_indicator_instance_count": {"type": "integer", "minimum": 0},
+        "regressed_indicator_instance_count": {"type": "integer", "minimum": 0},
+        "recovered_indicator_instances": {"type": "array", "items": {"$ref": "#/$defs/identity"}},
+        "regressed_indicator_instances": {"type": "array", "items": {"$ref": "#/$defs/identity"}},
+        "preserved_quality_gate_status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "semantics": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  }
+}

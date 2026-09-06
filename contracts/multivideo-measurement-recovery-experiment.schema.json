@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-measurement-recovery-experiment.schema.json",
+  "title": "RallyMate multi-video measurement recovery experiment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_version", "recovery_id", "generated_at", "status", "scope", "sources", "baseline", "experiment", "experimental_projection", "indicator_operational_recovery_counts", "videos", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "multivideo-measurement-recovery-experiment-v1.0.0"},
+    "recovery_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "experimental_observability_gain_requires_keypoint_truth_and_release_protocol"},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["video_count", "indicator_count", "current_profile", "registry_version", "registry_sha256"],
+      "properties": {
+        "video_count": {"type": "integer", "minimum": 1},
+        "indicator_count": {"type": "integer", "minimum": 1},
+        "current_profile": {"type": "string", "minLength": 1},
+        "registry_version": {"type": "string", "minLength": 1},
+        "registry_sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "sources": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gap_audits", "small_roi_experiments"],
+      "properties": {
+        "gap_audits": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/videoSource"}},
+        "small_roi_experiments": {"type": "array", "items": {"$ref": "#/$defs/videoSource"}}
+      }
+    },
+    "baseline": {"$ref": "#/$defs/baseline"},
+    "experiment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligible_target_frames", "pose_output_recovered_frames", "feature_vector_recovered", "operational_measurement_recovered", "regressed_feature_vectors", "regressed_operational_measurements"],
+      "properties": {
+        "eligible_target_frames": {"type": "integer", "minimum": 0},
+        "pose_output_recovered_frames": {"type": "integer", "minimum": 0},
+        "feature_vector_recovered": {"type": "integer", "minimum": 0},
+        "operational_measurement_recovered": {"type": "integer", "minimum": 0},
+        "regressed_feature_vectors": {"const": 0},
+        "regressed_operational_measurements": {"const": 0}
+      }
+    },
+    "experimental_projection": {"$ref": "#/$defs/projection"},
+    "indicator_operational_recovery_counts": {
+      "type": "object",
+      "propertyNames": {"pattern": "^(GS|FS)[0-9]{2}-M[0-9]{2}(-[0-9]{2})?$"},
+      "additionalProperties": {"type": "integer", "minimum": 1}
+    },
+    "videos": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/video"}},
+    "safety": {
+      "type": "object", "additionalProperties": false,
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_fallback_enabled", "measurement_gate_modified", "scoring_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "experimental_projection_is_not_current_production_status", "keypoint_error_truth_and_independent_release_review_required"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "automatic_fallback_enabled": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "scoring_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "experimental_projection_is_not_current_production_status": {"const": true},
+        "keypoint_error_truth_and_independent_release_review_required": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha"}}
+    },
+    "videoSource": {
+      "type": "object", "additionalProperties": false,
+      "required": ["video_id", "report"],
+      "properties": {"video_id": {"type": "string", "minLength": 1}, "report": {"$ref": "#/$defs/source"}}
+    },
+    "baseline": {
+      "type": "object", "additionalProperties": false,
+      "required": ["indicator_instances", "operational_measured", "operational_unavailable", "feature_vector_complete", "feature_vector_incomplete", "measurement_hard_fail"],
+      "properties": {
+        "indicator_instances": {"type": "integer", "minimum": 0},
+        "operational_measured": {"type": "integer", "minimum": 0},
+        "operational_unavailable": {"type": "integer", "minimum": 0},
+        "feature_vector_complete": {"type": "integer", "minimum": 0},
+        "feature_vector_incomplete": {"type": "integer", "minimum": 0},
+        "measurement_hard_fail": {"type": "integer", "minimum": 0}
+      }
+    },
+    "projection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["operational_measured", "operational_unavailable", "feature_vector_complete", "feature_vector_incomplete", "measurement_hard_fail", "non_hard_fail_feature_incomplete"],
+      "properties": {
+        "operational_measured": {"type": "integer", "minimum": 0},
+        "operational_unavailable": {"type": "integer", "minimum": 0},
+        "feature_vector_complete": {"type": "integer", "minimum": 0},
+        "feature_vector_incomplete": {"type": "integer", "minimum": 0},
+        "measurement_hard_fail": {"type": "integer", "minimum": 0},
+        "non_hard_fail_feature_incomplete": {"type": "integer", "minimum": 0}
+      }
+    },
+    "video": {
+      "type": "object", "additionalProperties": false,
+      "required": ["video_id", "frame_count", "baseline", "preflight", "experiment_report", "experimental_projection"],
+      "properties": {
+        "video_id": {"type": "string", "minLength": 1},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "baseline": {"$ref": "#/$defs/baseline"},
+        "preflight": {
+          "type": "object", "additionalProperties": false,
+          "required": ["eligible_small_roi_target_frames", "counts"],
+          "properties": {
+            "eligible_small_roi_target_frames": {"type": "integer", "minimum": 0},
+            "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+          }
+        },
+        "experiment_report": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/source"}]},
+        "experimental_projection": {
+          "type": "object", "additionalProperties": false,
+          "required": ["feature_vector_recovered", "operational_measurement_recovered", "operational_measured", "operational_unavailable", "feature_vector_complete", "feature_vector_incomplete", "measurement_hard_fail_unchanged"],
+          "properties": {
+            "feature_vector_recovered": {"type": "integer", "minimum": 0},
+            "operational_measurement_recovered": {"type": "integer", "minimum": 0},
+            "operational_measured": {"type": "integer", "minimum": 0},
+            "operational_unavailable": {"type": "integer", "minimum": 0},
+            "feature_vector_complete": {"type": "integer", "minimum": 0},
+            "feature_vector_incomplete": {"type": "integer", "minimum": 0},
+            "measurement_hard_fail_unchanged": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    }
+  }
+}

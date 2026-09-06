@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "pexels-match-manual-court",
+  "source": {
+    "video_path": "../data/samples/pexels-tennis-match-992693.mp4"
+  },
+  "output": {
+    "directory": "../runs/match-manual"
+  },
+  "models": {
+    "detect": "../models/yolo26n.pt",
+    "pose": "../models/rtmpose/rtmpose-m_halpe26_256x192.pth",
+    "device": "auto",
+    "detect_imgsz": 1280,
+    "pose_imgsz": 640,
+    "detect_confidence": 0.12,
+    "pose_confidence": 0.2,
+    "pose_backend": "rtmpose",
+    "pose_runtime": "pytorch",
+    "pose_profile": "realtime",
+    "pose_config": "../runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+    "pose_preset": "rtmpose-m-halpe26-online",
+    "pose_native_keypoint_format": "halpe26"
+  },
+  "processing": {
+    "start_ms": 0,
+    "end_ms": 13440,
+    "frame_stride": 1,
+    "max_frames": 336,
+    "max_players": 2,
+    "court_every_n_frames": 25,
+    "write_annotated_video": true
+  },
+  "court": {
+    "mode": "manual",
+    "refresh_policy": "once",
+    "manual_polygon_role": "visible_region",
+    "manual_polygon_normalized": [
+      [0.0, 0.42],
+      [1.0, 0.39],
+      [1.0, 0.72],
+      [0.0, 0.57]
+    ]
+  },
+  "scoring": {"feasibility_registry": "../metric-feasibility-pose-wave-v2.json"},
+  "upstream_metadata": {
+    "source": "pexels",
+    "asset_id": "992693",
+    "capture_hint": "wide court view with upstream-supplied visible-court polygon"
+  }
+}

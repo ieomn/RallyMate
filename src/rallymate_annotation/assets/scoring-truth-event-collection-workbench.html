@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RallyMate 全片多事件人工标注工作台</title>
+  <link rel="stylesheet" href="scoring-truth-event-collection-workbench.css">
+  <script id="scoring-truth-event-collection-bootstrap" type="application/json">{}</script>
+  <script src="scoring-truth-event-collection-core.js" defer></script>
+  <script src="scoring-truth-event-collection-workbench.js" defer></script>
+</head>
+<body data-workbench-state="booting">
+<main class="shell">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">RallyMate · full-video manual event/phase collection</p>
+      <h1>三视频全片多事件标注</h1>
+      <p>角色由发布包 bootstrap 固定。A/B 独立标注，C 只在导入两份完整提交后逐版本裁决。</p>
+    </div>
+    <div class="role-card">
+      <span>固定角色</span>
+      <strong id="role-slot">—</strong>
+    </div>
+    <p id="workbench-status" class="status" role="status">正在校验发布包与页面契约…</p>
+    <p class="lineage mono">
+      bundle <span id="bundle-id">—</span><br>
+      authorization binding <span id="binding-sha">—</span>
+    </p>
+  </header>
+
+  <section class="panel identity-panel" aria-labelledby="identity-heading">
+    <h2 id="identity-heading">身份与本地草稿</h2>
+    <div class="toolbar">
+      <label>participant ID
+        <input id="participant-id" autocomplete="off" placeholder="ASCII 稳定匿名 ID">
+      </label>
+      <button id="start-session" type="button">进入固定角色工作区</button>
+      <button id="reset-session" type="button" disabled>清空当前身份草稿</button>
+    </div>
+    <p class="hint">首次进入后身份锁定；切换人员必须使用独立浏览器配置或重新打开相应角色入口。</p>
+  </section>
+
+  <section class="panel media-panel" aria-labelledby="media-heading">
+    <h2 id="media-heading">原始全片</h2>
+    <div class="toolbar">
+      <label>视频任务<select id="task-select" disabled></select></label>
+      <button id="play-pause" type="button" disabled>播放/暂停</button>
+      <button type="button" data-step-frames="-1" disabled>−1 帧</button>
+      <button type="button" data-step-frames="1" disabled>+1 帧</button>
+      <button type="button" data-step-ms="-100" disabled>−100 ms</button>
+      <button type="button" data-step-ms="100" disabled>+100 ms</button>
+    </div>
+    <video id="workbench-video" controls playsinline preload="metadata"></video>
+    <input id="seek-slider" type="range" min="0" max="0" step="0.001" value="0" disabled aria-label="视频时间">
+    <div class="media-meta">
+      <span id="media-time" class="mono">0 ms / —</span>
+      <span id="media-fps" class="mono">— fps</span>
+      <span id="media-status" role="status">尚未载入身份与媒体。</span>
+    </div>
+  </section>
+
+  <section id="annotator-workspace" class="workspace" hidden>
+    <section class="panel" aria-labelledby="event-list-heading">
+      <div class="section-heading">
+        <div><h2 id="event-list-heading">当前视频事件草稿</h2><p id="event-progress" class="hint"></p></div>
+        <button id="add-event" type="button" disabled>新增人工事件</button>
+      </div>
+      <div id="event-list" class="record-list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="event-editor-heading">
+      <h2 id="event-editor-heading">事件与 phase</h2>
+      <p id="event-editor-empty" class="empty">选择或新增事件后编辑。</p>
+      <fieldset id="event-editor" disabled hidden>
+        <div class="form-grid">
+          <label>annotation_id<input id="event-id" readonly></label>
+          <label>event_code
+            <select id="event-code">
+              <option value="">请选择（必填）</option>
+              <option value="FS01">FS01</option>
+              <option value="FS02">FS02</option>
+              <option value="FS09">FS09</option>
+            </select>
+          </label>
+          <label>start_ms<input id="event-start" inputmode="numeric"></label>
+          <button type="button" data-capture="event-start">取当前时间</button>
+          <label>end_ms<input id="event-end" inputmode="numeric"></label>
+          <button type="button" data-capture="event-end">取当前时间</button>
+          <label>confidence_milli 0–1000<input id="event-confidence" inputmode="numeric"></label>
+          <label>boundary uncertainty ms<input id="event-uncertainty" inputmode="numeric"></label>
+        </div>
+        <div id="event-phases" class="phase-grid"></div>
+        <label>notes<textarea id="event-notes" rows="3"></textarea></label>
+        <div class="actions">
+          <button id="save-event" type="button" disabled>保存当前事件草稿</button>
+          <button id="delete-event" type="button" class="danger" disabled>删除当前事件草稿</button>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="panel" aria-labelledby="review-heading">
+      <h2 id="review-heading">全片完成确认</h2>
+      <p>该记录是人工确认，不代表页面能自动证明观看质量。</p>
+      <label class="check"><input id="review-completed" type="checkbox" disabled>我已完整审阅当前原始全片并记录所有可见 FS01 / FS02 / FS09 事件</label>
+      <label>review notes<textarea id="review-notes" rows="2" disabled></textarea></label>
+      <button id="save-review" type="button" disabled>保存当前视频 full_review</button>
+      <div id="review-progress" class="review-progress"></div>
+    </section>
+
+    <section class="panel export-panel">
+      <h2>导出 A/B 独立提交</h2>
+      <p>导出要求三个视频均完成 full_review；未改变决策的重复导出只更新时间，不改变任何 revision。</p>
+      <button id="export-annotations" type="button" disabled>导出 canonical JSON submission</button>
+    </section>
+  </section>
+
+  <section id="reviewer-workspace" class="workspace" hidden>
+    <section class="panel" aria-labelledby="import-heading">
+      <h2 id="import-heading">导入 A/B 独立提交</h2>
+      <input id="import-submissions" type="file" accept="application/json,.json" multiple disabled>
+      <p id="import-status" class="hint">需要 exact A 与 B 两份 canonical JSON。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="comparison-heading">
+      <h2 id="comparison-heading">当前视频来源差异</h2>
+      <div class="toolbar">
+        <label>A 事件<select id="compare-a" disabled></select></label>
+        <label>B 事件<select id="compare-b" disabled></select></label>
+      </div>
+      <div id="comparison-grid" class="comparison-grid"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="adjudication-list-heading">
+      <div class="section-heading">
+        <div><h2 id="adjudication-list-heading">逐版本裁决</h2><p id="coverage-status" class="hint"></p></div>
+        <button id="add-adjudication" type="button" disabled>新增裁决</button>
+      </div>
+      <div id="adjudication-list" class="record-list"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="adjudication-editor-heading">
+      <h2 id="adjudication-editor-heading">裁决编辑器</h2>
+      <p id="adjudication-editor-empty" class="empty">导入 A/B 后选择或新增裁决。</p>
+      <fieldset id="adjudication-editor" disabled hidden>
+        <div class="form-grid">
+          <label>adjudication_id<input id="adjudication-id" readonly></label>
+          <label>decision_status
+            <select id="adjudication-status">
+              <option value="">请选择（必填）</option>
+              <option value="accepted_event">接受/重定边界事件</option>
+              <option value="rejected_sources">拒绝所选来源事件</option>
+              <option value="c_added_event">C 补充 A/B 均遗漏事件</option>
+            </select>
+          </label>
+        </div>
+        <h3>精确来源 revisions</h3>
+        <div id="source-revision-list" class="source-revision-list"></div>
+        <div id="final-event-fields">
+          <div class="form-grid">
+            <label>final event_id<input id="final-event-id"></label>
+            <label>event_code
+              <select id="final-event-code">
+                <option value="">请选择（必填）</option>
+                <option value="FS01">FS01</option>
+                <option value="FS02">FS02</option>
+                <option value="FS09">FS09</option>
+              </select>
+            </label>
+            <label>start_ms<input id="final-event-start" inputmode="numeric"></label>
+            <button type="button" data-capture="final-event-start">取当前时间</button>
+            <label>end_ms<input id="final-event-end" inputmode="numeric"></label>
+            <button type="button" data-capture="final-event-end">取当前时间</button>
+            <label>confidence_milli 0–1000<input id="final-event-confidence" inputmode="numeric"></label>
+            <label>boundary uncertainty ms<input id="final-event-uncertainty" inputmode="numeric"></label>
+          </div>
+          <div id="final-event-phases" class="phase-grid"></div>
+          <label>final event notes<textarea id="final-event-notes" rows="3"></textarea></label>
+        </div>
+        <label>decision reason<textarea id="adjudication-reason" rows="2"></textarea></label>
+        <div class="actions">
+          <button id="save-adjudication" type="button" disabled>保存并绑定当前来源 revisions</button>
+          <button id="delete-adjudication" type="button" class="danger" disabled>删除当前裁决</button>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="panel" aria-labelledby="c-review-heading">
+      <h2 id="c-review-heading">C 当前视频全片确认</h2>
+      <p>即使 A/B 在本视频均标为零事件，C 也必须完整核对原始全片并显式完成该视频确认。</p>
+      <label class="check"><input id="c-review-completed" type="checkbox" disabled>我已完整核对当前原始全片、A/B 来源差异与本视频全部裁决</label>
+      <label>C review notes<textarea id="c-review-notes" rows="2" disabled></textarea></label>
+      <button id="save-c-review" type="button" disabled>保存当前视频 C full_review</button>
+      <div id="c-review-progress" class="review-progress"></div>
+    </section>
+
+    <section class="panel export-panel">
+      <h2>导出 C 裁决提交</h2>
+      <p>所有 A/B source events 必须已进入接受、补充或拒绝决策；stale 草稿必须逐条重新核对保存。</p>
+      <button id="export-adjudications" type="button" disabled>导出 canonical JSON adjudication</button>
+    </section>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.2.0",
+  "artifact_scope": "trusted_calibration_promotion_ledger_template_not_loadable",
+  "ledger_id": "REPLACE_WITH_OPERATOR_LEDGER_ID",
+  "ledger_version": "REPLACE_WITH_VERSION",
+  "registered_at": null,
+  "source": {
+    "kind": "operator_controlled_local_ledger",
+    "authority_id": "REPLACE_WITH_RELEASE_AUTHORITY"
+  },
+  "entries": [],
+  "trust_boundary": "Template only. Generate a non-empty ledger with promote_calibration_candidate.py, store it outside uploads/requests/runs, and protect it with operator-only filesystem ACLs."
+}

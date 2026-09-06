@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/indicator-scoring-requirements.schema.json",
+  "title": "RallyMate authoritative indicator scoring requirements snapshot",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "requirements_version", "source", "indicators"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["indicator_scoring_requirements", "synthetic_test_only_indicator_scoring_requirements"]},
+    "requirements_version": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "registry_version", "registry_content_sha256", "semantic_contract_version", "semantic_contract_sha256", "canonicalization"],
+      "properties": {
+        "kind": {"enum": ["versioned_registry_and_manual_truth_contract", "synthetic_test_fixture"]},
+        "registry_version": {"type": "string", "minLength": 1},
+        "registry_content_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "semantic_contract_version": {"type": "string", "minLength": 1},
+        "semantic_contract_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"}
+      },
+      "additionalProperties": false
+    },
+    "indicators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["indicator_id", "required_feature_names", "required_phase_keys", "required_semantic_keys", "registry_indicator_sha256"],
+        "properties": {
+          "indicator_id": {"type": "string", "minLength": 1},
+          "required_feature_names": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "required_phase_keys": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "required_semantic_keys": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "registry_indicator_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

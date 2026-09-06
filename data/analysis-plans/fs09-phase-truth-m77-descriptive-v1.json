@@ -1,0 +1,274 @@
+{
+  "schema_version": "1.0.0",
+  "plan_version": "fs09-phase-analysis-plan-v1.3.0",
+  "plan_id": "m88-m77-fs09-two-task-descriptive-v3",
+  "artifact_scope": "repository_bound_descriptive_analysis_plan",
+  "status": "frozen_before_human_label_intake",
+  "frozen_at": "2026-08-30T01:52:00Z",
+  "registration_claim": {
+    "kind": "repository_content_hash_binding",
+    "external_registry_present": false,
+    "human_registrant_asserted": false,
+    "externally_registered_acceptance_protocol": false,
+    "human_labels_present_at_freeze": false,
+    "non_null_pilot_results_present_at_freeze": false
+  },
+  "study_binding": {
+    "pack_version": "fs09-phase-truth-pack-v1.3.0",
+    "evaluator_version": "fs09-phase-truth-evaluation-v1.3.0",
+    "video_ids": [
+      "8d7754d0de6d315674013d5b69a0b6ba"
+    ],
+    "view_groups": [
+      "fixed-camera-8d7754d0"
+    ],
+    "task_ids": [
+      "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001",
+      "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002"
+    ],
+    "indicator_ids": [
+      "FS09-M05"
+    ],
+    "event_codes": [
+      "FS09"
+    ],
+    "phase_keys": [
+      "peak_speed_ms",
+      "deceleration_peak_ms",
+      "restabilization_onset_ms",
+      "stable_control_onset_ms"
+    ],
+    "required_features": [
+      "stability_duration_ms",
+      "hip_center_speed_drop_body_s",
+      "double_support_proxy_duration_ms",
+      "torso_lean_variability_deg",
+      "shoulder_hip_angular_velocity_change_deg_s",
+      "hip_deceleration_to_double_support_proxy_ms"
+    ],
+    "task_contract_sha256": "4BFD62348E254A8EF7AFE9244FCC3E4349878F49761022C425149F357C2AE7B8",
+    "candidate_contract_sha256": "9D933FE215D654F371973E692A98A82D4DE874360AAD1BEB07D2E0C86F643805",
+    "tasks_artifact_sha256": "E44A6B633E9744771D8DEA2E95CDEBE552F21D6B459BBC87C5BA51D293B9F8F2",
+    "sealed_candidates_artifact_sha256": "1944D8FF92629852851617688A34BB9C42F11469062044704A2571864437CF10",
+    "workbench_artifact_sha256": {
+      "fs09-phase-truth-workbench.js": "390AB69F44893AF9FB62EF03357A4C251984656B1D8E8EA110D5BA7446D17340",
+      "fs09-phase-truth-workbench.css": "0052DFD0D3474607C4BB4C20C862EF03667581D5AB0FF56F7E9E40F5B8A56E95",
+      "review.html": "0AE0C9F90D0D7DD2EFB12FE791B5D954D153853BA00B96E4E6A81090E6858DE5",
+      "OPERATOR_README.md": "EC4342AFAE19DAA33E936E1BCAD595D45FC5E6330935E3A1D73800EF2EF968D9"
+    },
+    "blind_review_target_selection": {
+      "kind": "pre_frozen_candidate_selected_coarse_anchor",
+      "anchor_selects_action_only": true,
+      "anchor_constrains_submitted_boundary_or_phase": false,
+      "anchor_is_candidate_boundary_or_phase": false,
+      "exact_candidate_boundaries_derivable_from_public_window": false,
+      "candidate_selected_coarse_localization_disclosed": true,
+      "tasks": [
+        {
+          "task_id": "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001",
+          "review_start_ms": 331000,
+          "review_end_ms": 336000,
+          "target_selection_anchor_ms": 333500
+        },
+        {
+          "task_id": "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002",
+          "review_start_ms": 449500,
+          "review_end_ms": 454500,
+          "target_selection_anchor_ms": 452000
+        }
+      ]
+    },
+    "blind_handoff_version": "fs09-phase-blind-handoff-v1.1.0",
+    "blind_handoff_artifact_sha256": {
+      "OPERATOR_README.md": "FD512EE3B5A10250F8204664C0CED6DFAB16ABA22E40B44DD916F7D6867CD07E",
+      "serve_fs09_phase_blind_handoff.py": "3DCAFCA0B67DD3ED661D37216526ADB56922E34E763BEA2722678E71E0A00217"
+    },
+    "export_provenance_contract": {
+      "public_blind_handoff_required": true,
+      "handoff_bundle_id_on_every_row": true,
+      "analysis_plan_sha256_on_every_row": true,
+      "browser_storage_scoped_by_bundle_and_plan": true,
+      "decision_timestamp_persisted_at_valid_save": true,
+      "decision_edit_updates_decision_timestamp": true,
+      "repeat_export_preserves_decision_timestamp": true,
+      "export_timestamp_recorded_separately": true,
+      "mixed_handoff_exports_allowed": false,
+      "private_authority_pack_annotation_allowed": false,
+      "external_protocol_receipt_required_before_first_decision": true,
+      "technical_handoff_allows_human_export": false,
+      "adjudication_binds_exact_annotation_revisions": true
+    },
+    "annotation_revision_contract": {
+      "algorithm": "sha256_of_canonical_annotation_row_without_revision_or_exported_at",
+      "digest_encoding": "uppercase_hex",
+      "repeat_export_same_decision_revision_stable": true,
+      "changed_decision_or_decision_time_changes_revision": true,
+      "adjudication_source_ids_sorted": true,
+      "adjudication_source_revision_sha256s_same_order": true,
+      "source_revision_change_requires_re_adjudication": true,
+      "digest_is_signature_or_trusted_timestamp": false
+    },
+    "source_artifact_sha256": {
+      "m74_report": "C53D66B5D916E56F3E956FE498E58A99701B5D420663FBD5316A9EEB9F8F1575",
+      "review_clip_manifest": "C53A7E62830EDB200F8E415B31A58BC394E17EEEA4FE8D02ABC31A243B2F4AF8",
+      "source_video": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0",
+      "task_001_review_clip": "FADDE9A2A9AD794B04C371D0293D871E516DBF0D11B286F5DFEE582E64F756EF",
+      "task_002_review_clip": "028F4DD40B203A866F75378A61A4562866C73F2E2B711428302685F11A7DB5FD"
+    }
+  },
+  "population": {
+    "sampling_frame": "two_preselected_sealed_candidate_actions_with_coarse_selection_anchors",
+    "selection_timing": "selected_before_human_phase_truth",
+    "video_count": 1,
+    "task_count": 2,
+    "candidate_window_count": 2,
+    "all_accepted_adjudicated_tasks_included": true,
+    "full_timeline_reviewed": false,
+    "event_precision_estimable": false,
+    "event_recall_estimable": false,
+    "event_f1_estimable": false,
+    "missed_event_rate_estimable": false,
+    "population_prevalence_estimable": false,
+    "inferential_statistics_allowed": false,
+    "generalization_allowed": false,
+    "post_result_exclusion_allowed": false
+  },
+  "metric_plan": {
+    "numeric_convention": {
+      "error_sign": "candidate_minus_truth",
+      "p95_method": "numpy_quantile_linear",
+      "output_rounding_decimal_places": 8,
+      "non_finite_values_are_numeric": false,
+      "missing_numeric_value": null,
+      "zero_fill_missing_allowed": false,
+      "imputation_allowed": false
+    },
+    "event_interval": {
+      "eligibility": "adjudicated_event_present_true",
+      "task_accounting": "all_two_accepted_adjudicated_tasks_retained_in_counts",
+      "reported_metrics": [
+        "segment_iou_mean",
+        "boundary_start_mae_ms",
+        "boundary_end_mae_ms",
+        "boundary_start_bias_candidate_minus_truth_ms",
+        "boundary_end_bias_candidate_minus_truth_ms"
+      ],
+      "event_present_false_handling": "retain_in_counts_exclude_from_interval_numerics",
+      "truth_absent_count_semantics": "count_of_adjudicated_event_present_false_not_verified_detector_false_positives",
+      "zero_eligible_count": 0,
+      "zero_eligible_numeric_values": null,
+      "unsupported_estimands": [
+        "event_precision",
+        "event_recall",
+        "event_f1",
+        "missed_event_rate",
+        "population_prevalence"
+      ]
+    },
+    "phase_timing": {
+      "phase_keys": [
+        "peak_speed_ms",
+        "deceleration_peak_ms",
+        "restabilization_onset_ms",
+        "stable_control_onset_ms"
+      ],
+      "eligibility_all_of": [
+        "manual_event_present",
+        "truth_phase_status_observed",
+        "candidate_phase_timestamp_present"
+      ],
+      "reported_aggregate_fields": [
+        "count",
+        "mae",
+        "p95_absolute_error",
+        "bias_candidate_minus_truth"
+      ],
+      "retained_non_numeric_detail_cases": [
+        "truth_phase_not_observed",
+        "truth_phase_unobservable",
+        "candidate_phase_timestamp_missing"
+      ],
+      "excluded_from_numeric_aggregates": [
+        "manual_event_absent",
+        "truth_phase_not_observed",
+        "truth_phase_unobservable",
+        "candidate_phase_timestamp_missing"
+      ],
+      "zero_eligible_count": 0,
+      "zero_eligible_numeric_values": null,
+      "imputation_allowed": false
+    },
+    "feature_boundary_conditioning": {
+      "features": [
+        "stability_duration_ms",
+        "hip_center_speed_drop_body_s",
+        "double_support_proxy_duration_ms",
+        "torso_lean_variability_deg",
+        "shoulder_hip_angular_velocity_change_deg_s",
+        "hip_deceleration_to_double_support_proxy_ms"
+      ],
+      "detail_rows_per_manual_present_task": 6,
+      "candidate_condition": "candidate_event_and_phase_boundaries",
+      "reference_condition": "manual_event_and_phase_boundaries",
+      "pose_source": "same_model_pose_held_fixed",
+      "numeric_eligibility_all_of": [
+        "candidate_feature_valid",
+        "manual_boundary_conditioned_feature_valid",
+        "both_values_finite_numeric"
+      ],
+      "reported_aggregate_fields": [
+        "count",
+        "mae",
+        "p95_absolute_error",
+        "bias_candidate_minus_truth"
+      ],
+      "invalid_or_unavailable_handling": "retain_values_reasons_and_null_differences_exclude_from_numeric_aggregates",
+      "manual_event_absent_handling": "retain_task_count_no_feature_comparison_rows",
+      "zero_eligible_count": 0,
+      "zero_eligible_numeric_values": null,
+      "imputation_allowed": false
+    }
+  },
+  "interpretation_boundaries": {
+    "permitted_conclusion": "descriptive_disagreement_for_the_two_bound_review_windows_only",
+    "plan_is_external_preregistration": false,
+    "supports_pass_fail_decision": false,
+    "supports_model_selection": false,
+    "supports_accuracy_claim": false,
+    "supports_population_generalization": false,
+    "candidate_outputs_are_truth": false,
+    "feature_boundary_difference_is_pose_accuracy": false,
+    "feature_boundary_difference_is_total_feature_error": false,
+    "manual_stable_control_is_ground_contact_or_force_truth": false,
+    "low_ankle_motion_proxy_is_visual_stable_control_truth": false,
+    "low_ankle_motion_proxy_is_double_support_truth": false,
+    "low_ankle_motion_proxy_is_foot_contact_truth": false,
+    "low_ankle_motion_proxy_is_force_or_load_transfer_truth": false,
+    "two_task_pilot_can_support_maturity_promotion": false,
+    "private_authority_pack_may_be_served_or_distributed": false,
+    "public_blind_handoff_required_for_human_annotation": true,
+    "handoff_identity_required_on_every_human_export": true,
+    "decision_time_is_export_time": false,
+    "client_reported_times_are_trusted_timestamps": false,
+    "exact_candidate_boundaries_derivable_from_public_window": false,
+    "candidate_selected_coarse_localization_disclosed": true,
+    "target_selection_anchor_constrains_human_boundaries": false,
+    "technical_handoff_is_annotation_authorization": false,
+    "external_protocol_receipt_required_before_first_human_decision": true
+  },
+  "decision_authority": {
+    "classification": "descriptive_diagnostic_only_no_pass_fail",
+    "acceptance_thresholds": null,
+    "scoring_thresholds": null,
+    "external_acceptance_protocol_still_required": true,
+    "annotation_execution_authorized": false,
+    "runtime_event_change_allowed": false,
+    "runtime_feature_change_allowed": false,
+    "model_selection_allowed": false,
+    "grade_generation_allowed": false,
+    "threshold_generation_allowed": false,
+    "f2_to_f3_allowed": false,
+    "f3_to_f4_allowed": false,
+    "production_release_allowed": false
+  }
+}

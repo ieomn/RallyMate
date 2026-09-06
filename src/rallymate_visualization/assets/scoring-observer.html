@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RallyMate 动态评分观察器</title>
+  <link rel="stylesheet" href="scoring-observer.css">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">RTMPose-M · Halpe26 · 固定机位单球员</p>
+        <h1>RallyMate 动态评分观察器</h1>
+        <p class="subtitle">把视频、全身骨架、事件切分、13 项 Pose 特征与评分门禁放在同一条时间线上。</p>
+      </div>
+      <div class="safety-chip"><strong>F2 可测量</strong><span>不是 A～E 正式评分</span></div>
+    </header>
+
+    <nav id="video-selector" class="video-selector" aria-label="选择视频"></nav>
+
+    <section id="summary-strip" class="summary-strip" aria-label="视频计算摘要"></section>
+
+    <section class="observer-grid">
+      <div class="viewer-column">
+        <div class="video-stage" id="video-stage">
+          <video id="source-video" controls preload="metadata" playsinline></video>
+          <canvas id="pose-canvas" aria-label="RTMPose 模型骨架叠加"></canvas>
+          <div class="hud hud-left">
+            <span id="hud-time">00:00.000</span>
+            <span id="hud-frame">帧 —</span>
+          </div>
+          <div class="hud hud-right">
+            <span id="hud-event">无活动事件</span>
+            <span id="hud-track">Track —</span>
+          </div>
+        </div>
+
+        <div class="overlay-controls" aria-label="骨架显示控制">
+          <label><input id="toggle-skeleton" type="checkbox" checked> 全身骨架</label>
+          <label><input id="toggle-trail" type="checkbox" checked> 指标关节轨迹</label>
+          <label><input id="toggle-confidence" type="checkbox"> 置信度</label>
+          <label class="confidence-control">点阈值 <output id="confidence-output">0.25</output><input id="confidence-range" type="range" min="0" max="0.8" step="0.05" value="0.25"></label>
+          <span id="model-label" class="model-label"></span>
+        </div>
+
+        <section class="timeline-section" aria-labelledby="timeline-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="timeline-title">事件时间轴</h2>
+              <p>点击色块跳到候选事件；竖线跟随视频播放。</p>
+            </div>
+            <div class="event-nav">
+              <button id="previous-event" type="button">上一个事件</button>
+              <button id="next-event" type="button">下一个事件</button>
+            </div>
+          </div>
+          <div id="timeline" class="timeline" role="group" aria-label="FS01、FS02、FS09 事件时间轴"></div>
+        </section>
+      </div>
+
+      <aside class="evidence-column" aria-label="当前事件与评分证据">
+        <section class="event-panel">
+          <div class="section-heading compact">
+            <div>
+              <p id="event-code" class="event-code">等待视频</p>
+              <h2 id="event-title">当前事件</h2>
+            </div>
+            <span id="event-confidence" class="status-badge">—</span>
+          </div>
+          <div id="phase-strip" class="phase-strip"></div>
+          <div id="event-diagnostics" class="diagnostic-line"></div>
+        </section>
+
+        <section class="indicator-panel">
+          <div class="section-heading compact">
+            <div>
+              <h2>指标实例</h2>
+              <p>测量状态与正式评分状态分开显示。</p>
+            </div>
+          </div>
+          <div id="indicator-list" class="indicator-list"></div>
+        </section>
+
+        <section class="feature-panel">
+          <div class="section-heading compact">
+            <div>
+              <p id="selected-indicator-id" class="event-code">—</p>
+              <h2 id="selected-indicator-title">特征证据</h2>
+            </div>
+          </div>
+          <div id="selected-status" class="selected-status"></div>
+          <div id="feature-list" class="feature-list"></div>
+          <div id="reason-list" class="reason-list"></div>
+        </section>
+      </aside>
+    </section>
+
+    <footer class="safety-note">
+      <strong>怎么看：</strong>绿色“已测量”表示特征函数在该候选事件上得到了有效值；黄色“待标定”表示尚无教练真值，不能输出 A～E；红色“不可用”会同时列出缺失阶段、关键点诊断、身份或语义上下文等真实原因。模型骨架和事件色块都不是人工真值。
+    </footer>
+  </main>
+  <div id="fatal-error" class="fatal-error" hidden></div>
+  <script src="scoring-observer.js"></script>
+</body>
+</html>

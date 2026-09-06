@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/events.schema.json",
+  "type": "object",
+  "required": ["schema_version", "event_id", "person_track_id", "event_code", "start_ms", "end_ms", "key_phases_ms", "confidence", "boundary_uncertainty_ms", "quality_flags", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "video_id": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "person_track_id": {"type": "integer", "minimum": 1},
+    "event_code": {"enum": ["FS01", "FS02", "FS09"]},
+    "start_ms": {"type": "integer", "minimum": 0},
+    "end_ms": {"type": "integer", "minimum": 1},
+    "key_phases_ms": {"type": "object", "additionalProperties": {"type": ["integer", "null"]}},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "boundary_uncertainty_ms": {"type": "integer", "minimum": 0},
+    "quality_flags": {"type": "array", "items": {"type": "string"}},
+    "track_diagnostics": {
+      "type": "object",
+      "required": ["track_coverage_fraction", "source_track_switch_candidate_count", "confirmed_id_switch_count", "keypoint_valid_fraction", "left_right_swap_candidate_frames", "keypoint_jump_candidate_frames", "longest_pose_missing_frames", "longest_pose_missing_ms"],
+      "properties": {
+        "track_coverage_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "source_track_switch_candidate_count": {"type": "integer", "minimum": 0},
+        "confirmed_id_switch_count": {"type": ["integer", "null"], "minimum": 0},
+        "keypoint_valid_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "left_right_swap_candidate_frames": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "left_right_swap_candidate_joint_pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["left_joint", "right_joint", "frames"],
+            "properties": {
+              "left_joint": {"type": "string", "minLength": 1},
+              "right_joint": {"type": "string", "minLength": 1},
+              "frames": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+            },
+            "additionalProperties": false
+          }
+        },
+        "keypoint_jump_candidate_frames": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "keypoint_jump_candidate_joints": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "keypoint_jump_candidate_frames_by_joint": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0}
+          }
+        },
+        "longest_pose_missing_frames": {"type": "integer", "minimum": 0},
+        "longest_pose_missing_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "detector_version": {"type": "string", "minLength": 1},
+        "event_kinematic_coverage": {
+          "type": "object",
+          "required": ["scope", "start_index", "end_index", "sample_count", "valid_sample_count", "coverage_fraction", "minimum_required_fraction", "status", "semantics"],
+          "properties": {
+            "scope": {"const": "emitted_event_interval_inclusive"},
+            "start_index": {"type": "integer", "minimum": 0},
+            "end_index": {"type": "integer", "minimum": 0},
+            "sample_count": {"type": "integer", "minimum": 1},
+            "valid_sample_count": {"type": "integer", "minimum": 0},
+            "coverage_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "minimum_required_fraction": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "status": {"enum": ["sufficient", "low"]},
+            "semantics": {"const": "event_detection_signal_quality_only_not_A_to_E_threshold"}
+          },
+          "additionalProperties": false
+        },
+        "event_motion_reference": {
+          "type": "object",
+          "required": ["mode", "scope", "start_index", "end_index", "sample_count", "body_center_sample_count", "hip_center_fallback_sample_count", "missing_sample_count", "alignment", "semantics"],
+          "properties": {
+            "mode": {"enum": ["body_center_only", "body_center_with_aligned_hip_center_fallback", "direct_hip_center_only", "unavailable"]},
+            "scope": {"const": "emitted_event_interval_inclusive"},
+            "start_index": {"type": "integer", "minimum": 0},
+            "end_index": {"type": "integer", "minimum": 0},
+            "sample_count": {"type": "integer", "minimum": 1},
+            "body_center_sample_count": {"type": "integer", "minimum": 0},
+            "hip_center_fallback_sample_count": {"type": "integer", "minimum": 0},
+            "missing_sample_count": {"type": "integer", "minimum": 0},
+            "full_sequence_sample_count": {"type": "integer", "minimum": 1},
+            "full_sequence_body_center_sample_count": {"type": "integer", "minimum": 0},
+            "full_sequence_hip_center_fallback_sample_count": {"type": "integer", "minimum": 0},
+            "full_sequence_missing_sample_count": {"type": "integer", "minimum": 0},
+            "alignment": {
+              "type": "object",
+              "required": ["method", "status", "direct_overlap_sample_count", "offset_xy"],
+              "properties": {
+                "method": {"const": "robust_median_body_center_minus_hip_center_xy"},
+                "status": {"enum": ["estimated_from_direct_overlap", "not_used", "not_applicable_no_body_center_observation", "no_body_or_hip_center_observation"]},
+                "direct_overlap_sample_count": {"type": "integer", "minimum": 0},
+                "offset_xy": {
+                  "oneOf": [
+                    {"type": "null"},
+                    {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "items": false, "minItems": 2, "maxItems": 2}
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "semantics": {"const": "event_candidate_motion_reference_only_not_biomechanical_center_of_mass_not_keypoint_imputation_and_not_A_to_E_scoring"}
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "annotation_source": {"enum": ["manual"]},
+    "annotator_id": {"type": "string"},
+    "view_group": {"type": "string", "minLength": 1},
+    "reviewer_id": {"type": "string"},
+    "adjudication_status": {"enum": ["accepted"]}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "detector_version": {"enum": ["pose-motion-bout-v0.3.1", "pose-motion-bout-v0.4.0", "pose-motion-bout-v0.4.1"]}
+            },
+            "required": ["detector_version"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provenance": {"required": ["event_kinematic_coverage"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "detector_version": {"enum": ["pose-motion-bout-v0.4.0", "pose-motion-bout-v0.4.1"]}
+            },
+            "required": ["detector_version"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provenance": {"required": ["event_motion_reference"]}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "records": [
+    {
+      "video_id": "replace-with-video-id",
+      "person_track_id": 1,
+      "player_id": "replace-with-stable-player-id",
+      "session_id": "replace-with-capture-session-id",
+      "view_group": "fixed-rear"
+    }
+  ]
+}

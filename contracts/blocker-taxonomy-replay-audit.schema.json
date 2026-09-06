@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/blocker-taxonomy-replay-audit.schema.json",
+  "title": "RallyMate typed scoring blocker replay audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "audit_version",
+    "audit_id",
+    "generated_at",
+    "status",
+    "source",
+    "scope",
+    "replay_comparison",
+    "blocker_recovery_priority",
+    "blocker_groups",
+    "assertions",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "audit_version": { "const": "blocker-taxonomy-replay-audit-v1.0.0" },
+    "audit_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "status": { "const": "taxonomy_centralized_behavior_preserved_no_gate_change" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taxonomy", "readiness_audit", "baseline_runs_root", "replay_runs_root"],
+      "properties": {
+        "taxonomy": {
+          "allOf": [
+            { "$ref": "#/$defs/fileBinding" },
+            {
+              "type": "object",
+              "required": ["taxonomy_version"],
+              "properties": {
+                "taxonomy_version": { "const": "scoring-blocker-taxonomy-v1.0.0" }
+              }
+            }
+          ]
+        },
+        "readiness_audit": {
+          "allOf": [
+            { "$ref": "#/$defs/fileBinding" },
+            {
+              "type": "object",
+              "required": ["audit_id", "audit_version", "source_fingerprint_sha256"],
+              "properties": {
+                "audit_id": { "type": "string", "minLength": 1 },
+                "audit_version": { "type": "string", "minLength": 1 },
+                "source_fingerprint_sha256": { "$ref": "#/$defs/sha256" }
+              }
+            }
+          ]
+        },
+        "baseline_runs_root": { "type": "string", "minLength": 1 },
+        "replay_runs_root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video_ids", "indicator_ids", "indicator_event_instance_count", "registry_version"],
+      "properties": {
+        "video_ids": { "$ref": "#/$defs/nonEmptyUniqueStrings" },
+        "indicator_ids": { "$ref": "#/$defs/nonEmptyUniqueStrings" },
+        "indicator_event_instance_count": { "type": "integer", "minimum": 1 },
+        "registry_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "replay_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence_replay_tolerance",
+        "confidence_tolerance_semantics",
+        "differing_confidence_leaf_count",
+        "max_abs_confidence_delta",
+        "all_row_keys_exact",
+        "all_nonconfidence_payloads_exact",
+        "score_semantics_exact",
+        "videos"
+      ],
+      "properties": {
+        "confidence_replay_tolerance": { "type": "number", "exclusiveMinimum": 0 },
+        "confidence_tolerance_semantics": { "const": "serialization_rounding_replay_tolerance_not_scoring_threshold" },
+        "differing_confidence_leaf_count": { "type": "integer", "minimum": 0 },
+        "max_abs_confidence_delta": { "type": "number", "minimum": 0 },
+        "all_row_keys_exact": { "const": true },
+        "all_nonconfidence_payloads_exact": { "const": true },
+        "score_semantics_exact": { "const": true },
+        "videos": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["video_id", "artifacts"],
+            "properties": {
+              "video_id": { "type": "string", "minLength": 1 },
+              "artifacts": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["events.jsonl", "features.jsonl", "indicator-features.jsonl", "scores.jsonl"],
+                "properties": {
+                  "events.jsonl": { "$ref": "#/$defs/artifactComparison" },
+                  "features.jsonl": { "$ref": "#/$defs/artifactComparison" },
+                  "indicator-features.jsonl": { "$ref": "#/$defs/artifactComparison" },
+                  "scores.jsonl": { "$ref": "#/$defs/artifactComparison" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "blocker_recovery_priority": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "flag",
+          "reason_code",
+          "truth_requirement",
+          "blocker_group",
+          "active_indicator_occurrence_count",
+          "recovery_indicator_occurrence_count",
+          "sole_block_indicator_occurrence_count"
+        ],
+        "properties": {
+          "flag": { "type": "string", "minLength": 1 },
+          "reason_code": { "type": "string", "minLength": 1 },
+          "truth_requirement": { "type": "string", "minLength": 1 },
+          "blocker_group": { "type": "string", "minLength": 1 },
+          "active_indicator_occurrence_count": { "type": "integer", "minimum": 0 },
+          "recovery_indicator_occurrence_count": { "type": "integer", "minimum": 0 },
+          "sole_block_indicator_occurrence_count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "blocker_groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "blocker_group",
+          "flags",
+          "active_flag_occurrence_count",
+          "recovery_indicator_occurrence_count",
+          "count_semantics"
+        ],
+        "properties": {
+          "blocker_group": { "type": "string", "minLength": 1 },
+          "flags": { "$ref": "#/$defs/nonEmptyUniqueStrings" },
+          "active_flag_occurrence_count": { "type": "integer", "minimum": 0 },
+          "recovery_indicator_occurrence_count": { "type": "integer", "minimum": 0 },
+          "count_semantics": { "const": "overlapping_flag_occurrences_not_unique_indicator_instances" }
+        }
+      }
+    },
+    "assertions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "const": true }
+    },
+    "safety": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "const": false }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9A-F]{64}$" },
+    "nonEmptyUniqueStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "fileBinding": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifactComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_count_baseline",
+        "row_count_replay",
+        "row_keys_exact",
+        "nonconfidence_payloads_exact",
+        "confidence_structure_exact",
+        "differing_confidence_leaf_count",
+        "max_abs_confidence_delta",
+        "within_confidence_replay_tolerance",
+        "baseline",
+        "replay"
+      ],
+      "properties": {
+        "row_count_baseline": { "type": "integer", "minimum": 0 },
+        "row_count_replay": { "type": "integer", "minimum": 0 },
+        "row_keys_exact": { "const": true },
+        "nonconfidence_payloads_exact": { "const": true },
+        "confidence_structure_exact": { "const": true },
+        "differing_confidence_leaf_count": { "type": "integer", "minimum": 0 },
+        "max_abs_confidence_delta": { "type": "number", "minimum": 0 },
+        "within_confidence_replay_tolerance": { "const": true },
+        "baseline": { "$ref": "#/$defs/fileBinding" },
+        "replay": { "$ref": "#/$defs/fileBinding" }
+      }
+    }
+  }
+}

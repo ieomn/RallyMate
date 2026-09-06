@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-diagnostic-evaluation.schema.json",
+  "title": "RallyMate Pose diagnostic truth evaluation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evaluation_version", "generated_at", "status", "video_id", "matching_protocol", "source", "annotation_counts", "by_diagnostic_type", "micro_average_on_accepted_coverage", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "evaluation_version": {"const": "pose-diagnostic-evaluation-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "partial_coverage", "evaluated_full_timeline"]},
+    "video_id": {"type": "string", "minLength": 1},
+    "matching_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "frame_tolerance", "keypoint_jump_scope", "left_right_swap_scope", "source_track_switch_scope", "primary_identity_ambiguity_scope"],
+      "properties": {
+        "version": {"const": "exact-source-frame-and-diagnostic-scope-v1"},
+        "frame_tolerance": {"const": 0},
+        "keypoint_jump_scope": {"const": "exact_joint"},
+        "left_right_swap_scope": {"const": "exact_ordered_joint_pair"},
+        "source_track_switch_scope": {"const": "exact_frame"},
+        "primary_identity_ambiguity_scope": {"const": "exact_frame"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth_pack_version", "truth_pack_manifest_content_sha256", "truth_pack_manifest_canonicalization", "truth_pack_source_queue_sha256", "queue_artifact_binding_sha256", "coverage", "positives", "source_validation"],
+      "properties": {
+        "truth_pack_version": {"const": "pose-diagnostic-truth-pack-v1.0.0"},
+        "truth_pack_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+        "truth_pack_manifest_canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "truth_pack_source_queue_sha256": {"$ref": "#/$defs/sha256"},
+        "queue_artifact_binding_sha256": {"$ref": "#/$defs/sha256"},
+        "coverage": {"$ref": "#/$defs/inputFile"},
+        "positives": {"$ref": "#/$defs/inputFile"},
+        "source_validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "queue_and_run_artifacts_rehashed"],
+          "properties": {
+            "status": {"const": "passed"},
+            "queue_and_run_artifacts_rehashed": {"const": true}
+          }
+        }
+      }
+    },
+    "annotation_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage_rows", "accepted_coverage_rows", "positive_rows", "accepted_positive_rows", "unlocalized_candidate_tasks"],
+      "properties": {
+        "coverage_rows": {"type": "integer", "minimum": 0},
+        "accepted_coverage_rows": {"type": "integer", "minimum": 0},
+        "positive_rows": {"type": "integer", "minimum": 0},
+        "accepted_positive_rows": {"type": "integer", "minimum": 0},
+        "unlocalized_candidate_tasks": {"type": "integer", "minimum": 0}
+      }
+    },
+    "by_diagnostic_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keypoint_jump", "left_right_swap", "primary_identity_ambiguity", "source_track_switch"],
+      "properties": {
+        "keypoint_jump": {"$ref": "#/$defs/metrics"},
+        "left_right_swap": {"$ref": "#/$defs/metrics"},
+        "primary_identity_ambiguity": {"$ref": "#/$defs/metrics"},
+        "source_track_switch": {"$ref": "#/$defs/metrics"}
+      }
+    },
+    "micro_average_on_accepted_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["true_positive", "false_positive", "false_negative", "precision", "recall", "f1", "full_timeline"],
+      "properties": {
+        "true_positive": {"type": "integer", "minimum": 0},
+        "false_positive": {"type": "integer", "minimum": 0},
+        "false_negative": {"type": "integer", "minimum": 0},
+        "precision": {"$ref": "#/$defs/rate"},
+        "recall": {"$ref": "#/$defs/rate"},
+        "f1": {"$ref": "#/$defs/rate"},
+        "full_timeline": {"type": "boolean"}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_only_review_used_as_recall_truth", "quality_gate_modified", "formal_scoring_accuracy_claim", "grades_generated", "thresholds_generated", "maturity_promoted"],
+      "properties": {
+        "candidate_only_review_used_as_recall_truth": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "formal_scoring_accuracy_claim": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "inputFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage_status", "reviewed_frame_count", "timeline_frame_count", "coverage_fraction", "full_timeline_recall_ready", "prediction_count_total", "prediction_count_in_reviewed_coverage", "truth_positive_count", "true_positive", "false_positive", "false_negative", "precision", "recall", "f1", "metric_scope"],
+      "properties": {
+        "coverage_status": {"enum": ["missing", "partial", "full_timeline"]},
+        "reviewed_frame_count": {"type": "integer", "minimum": 0},
+        "timeline_frame_count": {"type": "integer", "minimum": 1},
+        "coverage_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "full_timeline_recall_ready": {"type": "boolean"},
+        "prediction_count_total": {"type": "integer", "minimum": 0},
+        "prediction_count_in_reviewed_coverage": {"type": "integer", "minimum": 0},
+        "truth_positive_count": {"type": "integer", "minimum": 0},
+        "true_positive": {"type": "integer", "minimum": 0},
+        "false_positive": {"type": "integer", "minimum": 0},
+        "false_negative": {"type": "integer", "minimum": 0},
+        "precision": {"$ref": "#/$defs/rate"},
+        "recall": {"$ref": "#/$defs/rate"},
+        "f1": {"$ref": "#/$defs/rate"},
+        "metric_scope": {"enum": ["accepted_coverage_only", "full_timeline"]}
+      }
+    }
+  }
+}

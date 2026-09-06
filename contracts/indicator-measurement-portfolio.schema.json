@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/indicator-measurement-portfolio.schema.json",
+  "type": "object",
+  "required": ["schema_version", "portfolio_version", "selection_policy_version", "generated_at", "status", "video", "sources", "registry", "model_versions", "summary", "selection_policy", "indicators", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "portfolio_version": {"const": "indicator-measurement-portfolio-v1.0.0"},
+    "selection_policy_version": {"const": "observation-quality-only-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["all_registry_indicators_measured", "partial_registry_indicator_measurement"]},
+    "video": {
+      "type": "object",
+      "required": ["video_id", "video_sha256"],
+      "properties": {
+        "video_id": {"type": "string", "minLength": 1},
+        "video_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+      },
+      "additionalProperties": false
+    },
+    "sources": {"type": "object", "minProperties": 4, "additionalProperties": {"$ref": "#/$defs/source"}},
+    "registry": {
+      "type": "object",
+      "required": ["registry_version", "indicator_ids"],
+      "properties": {
+        "registry_version": {"type": "string", "minLength": 1},
+        "indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": false
+    },
+    "model_versions": {"type": ["object", "null"]},
+    "summary": {
+      "type": "object",
+      "required": ["registry_indicator_count", "measured_indicator_count", "unavailable_indicator_count", "candidate_event_count", "indicator_event_instance_count", "measured_indicator_event_instance_count", "unavailable_indicator_event_instance_count", "formal_grade_count", "threshold_version_count"],
+      "properties": {
+        "registry_indicator_count": {"type": "integer", "minimum": 1},
+        "measured_indicator_count": {"type": "integer", "minimum": 0},
+        "unavailable_indicator_count": {"type": "integer", "minimum": 0},
+        "candidate_event_count": {"type": "integer", "minimum": 0},
+        "indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "measured_indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "unavailable_indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "formal_grade_count": {"const": 0},
+        "threshold_version_count": {"const": 0}
+      },
+      "additionalProperties": false
+    },
+    "selection_policy": {
+      "type": "object",
+      "required": ["purpose", "ranking", "feature_values_used_for_selection", "athletic_performance_used_for_selection", "cross_model_cherry_picking_used"],
+      "properties": {
+        "purpose": {"type": "string", "minLength": 1},
+        "ranking": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "feature_values_used_for_selection": {"const": false},
+        "athletic_performance_used_for_selection": {"const": false},
+        "cross_model_cherry_picking_used": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "indicators": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/indicator"}},
+    "safety": {
+      "type": "object",
+      "required": ["candidate_events_are_ground_truth", "accuracy_claim", "formal_scoring_ready", "grade_generated", "threshold_generated", "quality_gate_modified", "missing_value_zero_filled", "maturity_promoted"],
+      "properties": {
+        "candidate_events_are_ground_truth": {"const": false},
+        "accuracy_claim": {"const": false},
+        "formal_scoring_ready": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "missing_value_zero_filled": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}},
+      "additionalProperties": false
+    },
+    "feature": {
+      "type": "object",
+      "required": ["feature_name", "feature_version", "value", "unit", "confidence", "valid", "reason", "source_frames"],
+      "properties": {
+        "feature_name": {"type": "string", "minLength": 1},
+        "feature_version": {"type": "string", "minLength": 1},
+        "value": {},
+        "unit": {"type": "string", "minLength": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "valid": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1},
+        "source_frames": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}
+      },
+      "additionalProperties": false
+    },
+    "eventBase": {
+      "type": "object",
+      "required": ["event_id", "event_code", "start_ms", "end_ms", "person_track_id", "event_confidence"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_code": {"type": "string", "minLength": 1},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 0},
+        "person_track_id": {"type": ["integer", "string"]},
+        "event_confidence": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "representative": {
+      "allOf": [
+        {"$ref": "#/$defs/eventBase"},
+        {
+          "type": "object",
+          "required": ["selection_quality", "feature_vector", "scoring_status", "grade", "threshold_version"],
+          "properties": {
+            "selection_quality": {
+              "type": "object",
+              "required": ["minimum_required_feature_confidence", "mean_required_feature_confidence", "event_confidence", "quality_gate_status"],
+              "properties": {
+                "minimum_required_feature_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "mean_required_feature_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "event_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "quality_gate_status": {"enum": ["pass", "advisory", "hard_fail"]}
+              },
+              "additionalProperties": false
+            },
+            "feature_vector": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/feature"}},
+            "scoring_status": {"enum": ["calibration_required", "unavailable"]},
+            "grade": {"type": "null"},
+            "threshold_version": {"type": "null"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "diagnostic": {
+      "allOf": [
+        {"$ref": "#/$defs/eventBase"},
+        {
+          "type": "object",
+          "required": ["feature_vector", "reason_codes", "hard_fail_flags"],
+          "properties": {
+            "feature_vector": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/feature"}},
+            "reason_codes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "hard_fail_flags": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "indicator": {
+      "type": "object",
+      "required": ["indicator_id", "feasibility_level", "required_events", "required_features", "measurement_status", "candidate_event_count", "measured_candidate_count", "unavailable_candidate_count", "all_candidate_event_ids", "measured_candidate_event_ids", "representative_measurement", "best_unavailable_diagnostic", "formal_score_status"],
+      "properties": {
+        "indicator_id": {"type": "string", "minLength": 1},
+        "feasibility_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]},
+        "required_events": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "required_features": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "required_scoring_features": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "measurement_status": {"enum": ["measured", "unavailable"]},
+        "candidate_event_count": {"type": "integer", "minimum": 0},
+        "measured_candidate_count": {"type": "integer", "minimum": 0},
+        "unavailable_candidate_count": {"type": "integer", "minimum": 0},
+        "all_candidate_event_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "measured_candidate_event_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "representative_measurement": {"anyOf": [{"$ref": "#/$defs/representative"}, {"type": "null"}]},
+        "best_unavailable_diagnostic": {"anyOf": [{"$ref": "#/$defs/diagnostic"}, {"type": "null"}]},
+        "formal_score_status": {"const": "not_authorized_F2_measurement_only"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

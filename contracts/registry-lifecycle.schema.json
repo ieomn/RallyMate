@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/registry-lifecycle.schema.json",
+  "title": "RallyMate fixed registry lifecycle authority",
+  "description": "A closed authority for the two production registry roles and the two explicitly retained non-runtime root artifacts. It is not a mutable catalog and has no latest pointer.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_scope",
+    "authority_version",
+    "roles",
+    "non_runtime_artifacts"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"const": "registry_lifecycle_authority"},
+    "authority_version": {"type": "string", "minLength": 1},
+    "roles": {
+      "type": "object",
+      "required": [
+        "runtime_feasibility",
+        "current_scoring_requirements"
+      ],
+      "properties": {
+        "runtime_feasibility": {
+          "$ref": "#/$defs/current_feasibility"
+        },
+        "current_scoring_requirements": {
+          "$ref": "#/$defs/current_scoring_requirements"
+        }
+      },
+      "additionalProperties": false
+    },
+    "non_runtime_artifacts": {
+      "type": "object",
+      "required": [
+        "historical_feasibility",
+        "measurement_plans"
+      ],
+      "properties": {
+        "historical_feasibility": {
+          "$ref": "#/$defs/historical_feasibility"
+        },
+        "measurement_plans": {
+          "$ref": "#/$defs/planning_measurement_plans"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\\\/:]+(?:/[^\\\\/:]+)*$",
+      "not": {"pattern": "(^|/)\\.{1,2}(/|$)"}
+    },
+    "current_feasibility": {
+      "type": "object",
+      "required": [
+        "kind",
+        "lifecycle",
+        "relative_path",
+        "file_sha256",
+        "embedded_version",
+        "source_registry_version"
+      ],
+      "properties": {
+        "kind": {"const": "metric_feasibility_registry"},
+        "lifecycle": {"const": "current"},
+        "relative_path": {"$ref": "#/$defs/relative_path"},
+        "file_sha256": {"$ref": "#/$defs/sha256"},
+        "embedded_version": {"type": "string", "minLength": 1},
+        "source_registry_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "current_scoring_requirements": {
+      "type": "object",
+      "required": [
+        "kind",
+        "lifecycle",
+        "relative_path",
+        "file_sha256",
+        "embedded_version",
+        "source_registry_version"
+      ],
+      "properties": {
+        "kind": {"const": "indicator_scoring_requirements"},
+        "lifecycle": {"const": "derived_current"},
+        "relative_path": {"$ref": "#/$defs/relative_path"},
+        "file_sha256": {"$ref": "#/$defs/sha256"},
+        "embedded_version": {"type": "string", "minLength": 1},
+        "source_registry_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "historical_feasibility": {
+      "type": "object",
+      "required": [
+        "kind",
+        "lifecycle",
+        "relative_path",
+        "file_sha256",
+        "embedded_version"
+      ],
+      "properties": {
+        "kind": {"const": "metric_feasibility_registry"},
+        "lifecycle": {"const": "historical"},
+        "relative_path": {"$ref": "#/$defs/relative_path"},
+        "file_sha256": {"$ref": "#/$defs/sha256"},
+        "embedded_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "planning_measurement_plans": {
+      "type": "object",
+      "required": [
+        "kind",
+        "lifecycle",
+        "relative_path",
+        "file_sha256",
+        "embedded_version",
+        "source_registry_version"
+      ],
+      "properties": {
+        "kind": {"const": "metric_measurement_plans"},
+        "lifecycle": {"const": "planning_only"},
+        "relative_path": {"$ref": "#/$defs/relative_path"},
+        "file_sha256": {"$ref": "#/$defs/sha256"},
+        "embedded_version": {"type": "string", "minLength": 1},
+        "source_registry_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

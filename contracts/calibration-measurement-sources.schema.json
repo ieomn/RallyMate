@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-measurement-sources.schema.json",
+  "title": "RallyMate multi-video calibration measurement sources",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "manifest_version", "source_set_id", "generated_at", "status", "source_fingerprint_sha256", "truth_manifest", "feasibility_registry", "shared_pose_contract", "required_primary_player_version", "video_count", "total_frame_count", "sources", "safety"],
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha"}}
+    },
+    "poseContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend", "runtime", "profile", "model_name", "model_sha256", "native_keypoint_format", "native_keypoint_count", "input_size", "config_sha256"],
+      "properties": {
+        "backend": {"type": "string", "minLength": 1},
+        "runtime": {"type": "string", "minLength": 1},
+        "profile": {"type": "string", "minLength": 1},
+        "model_name": {"type": "string", "minLength": 1},
+        "model_sha256": {"$ref": "#/$defs/sha"},
+        "native_keypoint_format": {"type": "string", "minLength": 1},
+        "native_keypoint_count": {"type": "integer", "minimum": 1},
+        "input_size": {"type": ["array", "null"], "items": {"type": "integer", "minimum": 1}},
+        "config_sha256": {"anyOf": [{"$ref": "#/$defs/sha"}, {"type": "null"}]}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "manifest_version": {"const": "calibration-measurement-sources-v1.0.0"},
+    "source_set_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "ready_for_manual_event_feature_measurement"},
+    "source_fingerprint_sha256": {"$ref": "#/$defs/sha"},
+    "truth_manifest": {"$ref": "#/$defs/artifact"},
+    "feasibility_registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "version"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "shared_pose_contract": {"$ref": "#/$defs/poseContract"},
+    "required_primary_player_version": {"const": "primary-player-v0.3.0"},
+    "video_count": {"type": "integer", "minimum": 1},
+    "total_frame_count": {"type": "integer", "minimum": 1},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["video_id", "source_video", "frames", "pose_summary", "primary_timeline", "primary_summary", "frame_count", "first_timestamp_ms", "last_timestamp_ms", "pose_contract", "primary_player_version"],
+        "properties": {
+          "video_id": {"type": "string", "minLength": 1},
+          "source_video": {"$ref": "#/$defs/artifact"},
+          "frames": {"$ref": "#/$defs/artifact"},
+          "pose_summary": {"$ref": "#/$defs/artifact"},
+          "primary_timeline": {"$ref": "#/$defs/artifact"},
+          "primary_summary": {"$ref": "#/$defs/artifact"},
+          "frame_count": {"type": "integer", "minimum": 1},
+          "first_timestamp_ms": {"type": "integer", "minimum": 0},
+          "last_timestamp_ms": {"type": "integer", "minimum": 0},
+          "pose_contract": {"$ref": "#/$defs/poseContract"},
+          "primary_player_version": {"const": "primary-player-v0.3.0"}
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gpu_inference_executed", "existing_pose_frames_reused", "candidate_events_used", "manual_truth_generated", "grades_generated", "thresholds_generated", "accuracy_claim", "automatic_F3_or_F4_promotion"],
+      "properties": {
+        "gpu_inference_executed": {"const": false},
+        "existing_pose_frames_reused": {"const": true},
+        "candidate_events_used": {"const": false},
+        "manual_truth_generated": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "accuracy_claim": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false}
+      }
+    }
+  }
+}

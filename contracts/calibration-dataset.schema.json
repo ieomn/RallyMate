@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-dataset.schema.json",
+  "title": "RallyMate calibration dataset manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "compiler_version", "artifact_scope", "dataset_id", "dataset_version",
+    "generated_at", "status", "registry", "canonicalization", "source_files",
+    "source_files_sha256", "truth_authorization", "content_seed_sha256", "outputs", "counts", "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "compiler_version": {"const": "rallymate-calibration-dataset-v1.2.0"},
+    "artifact_scope": {"enum": ["calibration_input", "synthetic_test_only_calibration_input", "unverified_truth_diagnostic_input"]},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "insufficient", "prepared_for_external_protocol_review"]},
+    "registry": {
+      "type": "object",
+      "required": ["version", "indicator_ids", "indicator_count"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "indicator_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "canonicalization": {
+      "type": "object",
+      "required": ["id", "specification", "independent_test_seal_payload"],
+      "properties": {"id": {"const": "rallymate-canonical-json-v1"}}
+    },
+    "source_files": {
+      "type": "object",
+      "required": ["indicator_features"],
+      "properties": {
+        "indicator_features": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "sha256", "source_metadata"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "source_metadata": {"$ref": "#/$defs/indicatorFeatureSourceMetadata"}
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source_files_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "truth_authorization": {
+      "type": "object",
+      "required": ["binding_version", "status", "canonicalization", "authorization_id", "event_protocol_authorization", "intake", "revision_lineage", "input_files", "binding_sha256"],
+      "properties": {
+        "binding_version": {"const": "scoring-truth-calibration-authorization-binding-v1.0.0"},
+        "status": {"enum": ["verified_authorized_intake_for_calibration", "unverified_private_truth_diagnostic", "synthetic_test_only_no_production_authority"]},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "authorization_id": {"type": "string", "minLength": 1},
+        "event_protocol_authorization": {"type": "object"},
+        "intake": {"type": "object"},
+        "revision_lineage": {"type": "object"},
+        "input_files": {"type": "object"},
+        "binding_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "content_seed_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "outputs": {"type": "object"},
+    "counts": {"type": "object"},
+    "safety": {
+      "type": "object",
+      "required": [
+        "generated_thresholds", "trained_scoring_model", "automatic_F3_or_F4_promotion",
+        "candidate_events_promoted_to_truth", "majority_or_median_grade_resolution",
+        "acceptance_thresholds_applied"
+      ],
+      "properties": {
+        "generated_thresholds": {"const": false},
+        "trained_scoring_model": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false},
+        "candidate_events_promoted_to_truth": {"const": false},
+        "majority_or_median_grade_resolution": {"const": false},
+        "acceptance_thresholds_applied": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "indicatorFeatureSourceMetadata": {
+      "type": "object",
+      "required": [
+        "metadata_version", "canonicalization", "video_id", "indicator_features_raw_sha256",
+        "indicator_feature_record_count", "scoring_summary_raw_sha256", "run_bundle_root_sha256",
+        "run_bundle_entry_id", "run_bundle_ledger_id", "run_bundle_ledger_version",
+        "run_bundle_ledger_canonical_sha256", "run_bundle_authority_id"
+      ],
+      "properties": {
+        "metadata_version": {"const": "indicator-feature-source-metadata-v1.0.0"},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "video_id": {"type": ["string", "null"], "minLength": 1},
+        "indicator_features_raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "indicator_feature_record_count": {"type": "integer", "minimum": 0},
+        "scoring_summary_raw_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "run_bundle_root_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "run_bundle_entry_id": {"type": ["string", "null"], "minLength": 1},
+        "run_bundle_ledger_id": {"type": ["string", "null"], "minLength": 1},
+        "run_bundle_ledger_version": {"type": ["string", "null"], "minLength": 1},
+        "run_bundle_ledger_canonical_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "run_bundle_authority_id": {"type": ["string", "null"], "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

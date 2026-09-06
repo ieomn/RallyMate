@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/primary-player.schema.json",
+  "type": "object",
+  "required": ["schema_version", "processed_index", "source_frame_index", "timestamp_ms", "primary_player_id", "selection_status", "source_track_id", "selection_algorithm_version"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "processed_index": {"type": "integer", "minimum": 0},
+    "source_frame_index": {"type": "integer", "minimum": 0},
+    "timestamp_ms": {"type": "integer", "minimum": 0},
+    "primary_player_id": {"const": 1},
+    "selection_status": {"enum": ["selected", "missing"]},
+    "source_track_id": {"type": ["integer", "null"], "minimum": 1},
+    "bbox_px": {"type": ["array", "null"], "minItems": 4, "maxItems": 4},
+    "pose_present": {"type": "boolean"},
+    "keypoint_valid_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "selection_prior_score": {"type": ["number", "null"]},
+    "selection_candidate_count": {"type": "integer", "minimum": 0},
+    "selection_best_score": {
+      "type": ["number", "null"],
+      "description": "Complete-segment Viterbi max-marginal score for the selected candidate; not an identity probability."
+    },
+    "selection_second_best_score": {
+      "type": ["number", "null"],
+      "description": "Best complete-segment Viterbi max-marginal among other candidates in the frame."
+    },
+    "selection_score_margin": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Best minus second-best selector score; diagnostic only and not identity accuracy or scoring confidence."
+    },
+    "selection_competing_source_track_id": {"type": ["integer", "null"], "minimum": 1},
+    "identity_ambiguous": {
+      "type": ["boolean", "null"],
+      "description": "True only when competing selector scores tie within numerical tolerance; this is not an identity-ground-truth result."
+    },
+    "identity_ambiguity_status": {
+      "enum": ["ambiguous_score_tie", "distinct_score", "single_candidate", "missing"]
+    },
+    "selection_algorithm_version": {"type": "string"}
+  }
+}

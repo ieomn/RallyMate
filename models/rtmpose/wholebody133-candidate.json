@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "candidate_id": "rtmpose-m-coco-wholebody133-256x192",
+  "status": "visual_and_contract_candidate_not_scoring_promoted",
+  "model_family": "RTMPose-M",
+  "native_keypoint_format": "coco_wholebody133",
+  "native_keypoint_count": 133,
+  "groups": {
+    "body": 17,
+    "foot": 6,
+    "face": 68,
+    "left_hand": 21,
+    "right_hand": 21
+  },
+  "input_size_hw": [256, 192],
+  "checkpoint": "rtmpose-m_coco-wholebody133_256x192.pth",
+  "checkpoint_url": "https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-coco-wholebody_pt-aic-coco_270e-256x192-cd5e845c_20230123.pth",
+  "checkpoint_sha256": "3DA02694CD6479D3B333FF42EBD0723F96BFA06ADAC1DB1E2E815ED2E9E1B02D",
+  "checkpoint_bytes": 72010049,
+  "config_runtime_relative_path": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/wholebody_2d_keypoint/rtmpose/coco-wholebody/rtmpose-m_8xb64-270e_coco-wholebody-256x192.py",
+  "model_zoo_metadata": "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/wholebody_2d_keypoint/rtmpose/coco-wholebody/rtmpose_coco-wholebody.yml",
+  "topology_source": "https://github.com/open-mmlab/mmpose/blob/main/configs/_base_/datasets/coco_wholebody.py",
+  "official_metrics_note": "OpenMMLab model-zoo metrics are background evidence only and are not RallyMate accuracy or scoring promotion evidence."
+}

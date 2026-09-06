@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-diagnostic-review-decision-report.schema.json",
+  "title": "RallyMate Pose diagnostic review decision validation report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_version", "generated_at", "status", "queue", "decisions", "truth_status", "source_validation", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "pose-diagnostic-review-decisions-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["review_in_progress", "review_complete_not_adjudicated"]},
+    "queue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "artifact_binding_sha256", "task_count"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "artifact_binding_sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "task_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "decision_counts"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "decision_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}}
+      }
+    },
+    "truth_status": {"const": "not_adjudicated"},
+    "source_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "validated_artifacts", "review_media_validated", "source_video_validated", "task_count"],
+      "properties": {
+        "status": {"const": "passed"},
+        "validated_artifacts": {"type": "integer", "minimum": 1},
+        "review_media_validated": {"const": true},
+        "source_video_validated": {"type": "boolean"},
+        "task_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy_claim", "decisions_are_adjudicated_truth", "quality_gate_modified", "grades_generated", "thresholds_generated"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "decisions_are_adjudicated_truth": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false}
+      }
+    }
+  }
+}

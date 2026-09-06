@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-independent-test-protocol.schema.json",
+  "title": "RallyMate preregistered calibration independent-test protocol",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "protocol_id", "protocol_version", "indicator_id", "source", "label_scale", "label_resolution_policy", "acceptance_metrics"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["independent_test_protocol", "synthetic_test_only_independent_test_protocol"]},
+    "protocol_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "source_sha256", "registered_at"],
+      "properties": {
+        "kind": {"enum": ["preregistered_independent_test_protocol", "synthetic_test_fixture"]},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "registered_at": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "label_scale": {"const": ["E", "D", "C", "B", "A"]},
+    "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]},
+    "acceptance_metrics": {
+      "type": "object",
+      "required": ["minimum_record_count", "minimum_leakage_group_count", "minimum_valid_rate", "maximum_mean_absolute_grade_error", "maximum_absolute_bias_grade_steps", "minimum_quadratic_weighted_kappa", "required_grade_coverage", "required_view_groups"],
+      "properties": {
+        "minimum_record_count": {"type": "integer", "minimum": 0},
+        "minimum_leakage_group_count": {"type": "integer", "minimum": 0},
+        "minimum_valid_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum_mean_absolute_grade_error": {"type": "number", "minimum": 0},
+        "maximum_absolute_bias_grade_steps": {"type": "number", "minimum": 0},
+        "minimum_quadratic_weighted_kappa": {"type": "number", "minimum": -1, "maximum": 1},
+        "required_grade_coverage": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["E", "D", "C", "B", "A"]}},
+        "required_view_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

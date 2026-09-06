@@ -1,0 +1,292 @@
+{
+  "artifact_version": "rallymate-user-demo-contract-v1.2.0",
+  "schema_version": "1.2.0",
+  "result_version": "rallymate-user-demo-result-v1.2.0",
+  "result_kind": "real_video_training_feedback_preview",
+  "http_api_version": "1.2.0",
+  "status": "implemented_and_verified",
+  "history": {
+    "previous_contract": "reports/m96-user-demo-v1.1/demo-contract.json",
+    "previous_field_record": "reports/m96-user-demo-v1.1/field-change-record.json",
+    "previous_summary": "reports/m96-user-demo-v1.1/summary.md",
+    "v1_1_fields_retained": true,
+    "v1_1_fields_are_primary_user_score": false,
+    "previous_evidence_must_not_be_overwritten": true
+  },
+  "endpoint": {
+    "method": "GET",
+    "path": "/v1/jobs/{job_id}/demo-result",
+    "ready_job_status": "succeeded",
+    "response_status": 200,
+    "explicit_business_route_count": 9,
+    "artifact_allowlist_count": 18
+  },
+  "result_required_fields": [
+    "schema_version",
+    "result_version",
+    "result_kind",
+    "job_id",
+    "status",
+    "headline_zh",
+    "training_evaluation",
+    "final_demo_score",
+    "analysis_quality",
+    "display_score",
+    "formal_scoring",
+    "actions",
+    "model",
+    "runtime",
+    "safety"
+  ],
+  "registered_actions": {
+    "FS01": {
+      "label_zh": "准备与分腿垫步",
+      "indicator_ids": [
+        "FS01-M02",
+        "FS01-M03",
+        "FS01-M04",
+        "FS01-M05"
+      ]
+    },
+    "FS02": {
+      "label_zh": "第一步启动",
+      "indicator_ids": [
+        "FS02-M02",
+        "FS02-M03",
+        "FS02-M04",
+        "FS02-M05"
+      ]
+    },
+    "FS09": {
+      "label_zh": "制动与重新稳定",
+      "indicator_ids": [
+        "FS09-M01",
+        "FS09-M02",
+        "FS09-M03",
+        "FS09-M04",
+        "FS09-M05"
+      ]
+    }
+  },
+  "training_evaluation_contract": {
+    "field": "training_evaluation",
+    "evaluation_version": "rallymate-training-evaluation-beta-v1.0.0",
+    "label_zh": "动作表现参考分（Beta）",
+    "primary_user_display": true,
+    "indicator_count": 13,
+    "unknown_indicator_policy": "ignored",
+    "required_fields": [
+      "evaluation_version",
+      "available",
+      "label_zh",
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "meaning_zh",
+      "evaluated_indicator_count",
+      "total_indicator_count",
+      "strengths_zh",
+      "priorities_zh",
+      "action_evaluations",
+      "indicator_evaluations",
+      "component_weights",
+      "formal_grade",
+      "is_formal_coach_score"
+    ],
+    "indicator_required_fields": [
+      "evaluation_version",
+      "indicator_id",
+      "event_code",
+      "name_zh",
+      "definition_zh",
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "observation_zh",
+      "suggestion_zh",
+      "measured_instance_count",
+      "total_instance_count",
+      "components",
+      "component_weights",
+      "representative_measurements",
+      "limitations_zh",
+      "formal_grade",
+      "is_formal_coach_score"
+    ],
+    "action_evaluation_required_fields": [
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "evaluated_indicator_count",
+      "total_indicator_count",
+      "indicator_evaluations"
+    ],
+    "component_fields": [
+      "measured_instance_ratio_percent",
+      "required_feature_coverage_percent",
+      "median_feature_confidence_percent",
+      "repeatability_percent",
+      "scoring_evidence_ratio_percent"
+    ],
+    "component_weights": {
+      "measured_instance_ratio": 0.3,
+      "required_feature_coverage": 0.2,
+      "median_feature_confidence": 0.15,
+      "repeatability": 0.25,
+      "scoring_evidence_ratio": 0.1
+    },
+    "overall_aggregation": "rounded_arithmetic_mean_of_non_null_allowlisted_indicator_scores",
+    "action_aggregation": "rounded_arithmetic_mean_of_non_null_action_indicator_scores",
+    "unavailable_score": null,
+    "unavailable_label_zh": "暂无法评价",
+    "coerce_unavailable_to_zero": false,
+    "formal_grade": null,
+    "is_formal_coach_score": false,
+    "suggestion_claim_boundary": "training_goal_or_training_check_not_coach_validated_fact"
+  },
+  "action_projection_contract": {
+    "performance_field": "actions[].performance_assessment",
+    "performance_required_fields": [
+      "score_0_to_100",
+      "level_zh",
+      "summary_zh",
+      "evaluated_indicator_count",
+      "total_indicator_count"
+    ],
+    "indicator_field": "actions[].indicator_evaluations",
+    "indicator_source": "training_evaluation.action_evaluations[event_code].indicator_evaluations",
+    "legacy_diagnostic_field": "actions[].formation_assessment",
+    "formation_assessment_is_performance_score": false
+  },
+  "compatibility_contract": {
+    "retained_fields": [
+      "final_demo_score",
+      "analysis_quality",
+      "display_score",
+      "actions[].formation_assessment",
+      "actions[].summary_zh",
+      "actions[].amplitudes"
+    ],
+    "final_demo_score_is_primary_user_display": false,
+    "analysis_quality_is_secondary_context": true,
+    "display_score_compatibility_alias_for": "analysis_quality",
+    "compatibility_fields_are_formal_scores": false
+  },
+  "formal_scoring_invariants": {
+    "available": false,
+    "score_0_to_100": null,
+    "grade": null,
+    "status": "calibration_required",
+    "A_to_E_generated": false,
+    "upstream_grade_exposed": false,
+    "beta_score_may_fill_formal_score": false
+  },
+  "runtime_contract": {
+    "required_fields": [
+      "accelerator",
+      "device_name",
+      "device_used",
+      "pose_backend",
+      "pose_profile",
+      "cpu_thread_limit",
+      "annotated_video_generated"
+    ],
+    "default_pose_preset": "rtmpose-m-halpe26-online",
+    "accelerator_values": [
+      "GPU",
+      "CPU"
+    ],
+    "cpu_thread_limit_default": 4,
+    "cpu_thread_override_environment": "RALLYMATE_CPU_THREADS",
+    "cpu_thread_override_cli": "-CpuThreads",
+    "cpu_thread_override_precedence": [
+      "-CpuThreads",
+      "RALLYMATE_CPU_THREADS",
+      "default_4"
+    ],
+    "cpu_thread_limit_nullable_for_legacy_jobs": true,
+    "cpu_limit_scope": "configured Torch/OpenCV/OpenMP/MKL/OpenBLAS/NumExpr pools, not an absolute whole-process or FFmpeg thread count",
+    "browser_annotated_video_default": false,
+    "api_write_annotated_video_default_for_compatibility": true,
+    "annotated_video_link_only_when_generated": true
+  },
+  "browser_contract": {
+    "primary_score_source": "result.training_evaluation",
+    "fallback_to_final_demo_score": false,
+    "strict_indicator_allowlist": true,
+    "strict_indicator_count": 13,
+    "null_rendering_zh": "暂无法评价",
+    "raw_json_visible": false,
+    "internal_report_links_visible": false,
+    "only_optional_result_link": "annotated.mp4",
+    "raw_job_error_visible": false,
+    "public_error_code_and_status_mapping": true,
+    "query_job_id_recovery": {
+      "query_parameter": "job_id",
+      "accepted_format": "UUID",
+      "persisted_value": "opaque_job_id_only",
+      "token_in_url_or_local_storage": false
+    },
+    "static_asset_cache_versions": {
+      "user-demo.css": "1.2.0",
+      "user-demo.js": "1.2.0"
+    }
+  },
+  "browser_batch_contract": {
+    "file_input_multiple": true,
+    "backend_job_api_changed": false,
+    "submission_order": "selected_file_order",
+    "submission_mode": "one_file_per_POST_v1_jobs_then_poll_then_demo_result",
+    "progress_label": "one_based_current_index_over_total",
+    "completed_results_retained": true,
+    "completed_results_switchable": true,
+    "local_storage_key": "rallymate-demo-batch-v1",
+    "local_storage_schema_version": "1.0.0",
+    "local_storage_allowlist": [
+      "version",
+      "submitted_job_ids",
+      "completed_job_ids",
+      "failed_job_ids",
+      "active_job_id",
+      "current_index",
+      "total"
+    ],
+    "local_storage_forbidden": [
+      "token",
+      "authorization_header",
+      "video_bytes",
+      "file_object",
+      "file_name",
+      "result_payload"
+    ]
+  },
+  "legacy_job_contract": {
+    "condition": "job_status_succeeded_and_indicator-features.jsonl_missing",
+    "http_status": 409,
+    "code": "legacy_job_requires_reanalysis",
+    "action": "reupload_and_reanalyze",
+    "http_500_allowed_for_missing_artifact": false
+  },
+  "verified_real_result": {
+    "job_id": "d7c617d6-89d2-44f2-83e5-de25cb24b689",
+    "training_score_0_to_100": 78,
+    "evaluated_indicator_count": 13,
+    "total_indicator_count": 13,
+    "action_scores": {
+      "FS01": 78,
+      "FS02": 77,
+      "FS09": 78
+    },
+    "accelerator": "GPU",
+    "device_name": "NVIDIA GeForce RTX 5070 Ti",
+    "pose_backend": "rtmpose",
+    "pose_profile": "realtime",
+    "cpu_thread_limit": null,
+    "cpu_thread_limit_note": "legacy successful run created before the runtime thread-limit field was persisted",
+    "annotated_video_generated": true,
+    "annotated_video_note": "explicitly enabled for this run; browser default remains false",
+    "formal_score_0_to_100": null,
+    "formal_grade": null,
+    "claim_boundary": "contract_and_real-output_replay_evidence_not_accuracy_or_formal_coach_calibration"
+  }
+}

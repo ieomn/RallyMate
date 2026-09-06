@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-blocker-taxonomy.schema.json",
+  "type": "object",
+  "required": ["schema_version", "taxonomy_version", "exact_entries", "prefix_entries", "auxiliary_truth_requirements", "unknown_policy", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "taxonomy_version": {"const": "scoring-blocker-taxonomy-v1.0.0"},
+    "exact_entries": {
+      "type": "array",
+      "minItems": 8,
+      "items": {"$ref": "#/$defs/exact"}
+    },
+    "prefix_entries": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/prefix"}
+    },
+    "auxiliary_truth_requirements": {
+      "type": "object",
+      "required": ["restabilization_not_observed"],
+      "properties": {"restabilization_not_observed": {"const": "manual_restabilization_phase_and_keypoint_truth"}},
+      "additionalProperties": false
+    },
+    "unknown_policy": {
+      "type": "object",
+      "required": ["reason_code", "truth_requirement", "blocker_group"],
+      "properties": {
+        "reason_code": {"const": "event_scoring_context_unverified"},
+        "truth_requirement": {"const": "external_manual_review_required"},
+        "blocker_group": {"const": "external_review"}
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "required": ["quality_gate_modified", "measurement_gate_modified", "scoring_gate_modified", "grade_generated", "threshold_generated", "accuracy_claim"],
+      "properties": {
+        "quality_gate_modified": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "scoring_gate_modified": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "accuracy_claim": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "exact": {
+      "type": "object",
+      "required": ["flag", "reason_code", "truth_requirement", "blocker_group", "feedback"],
+      "properties": {
+        "flag": {"$ref": "#/$defs/nonempty"},
+        "reason_code": {"$ref": "#/$defs/nonempty"},
+        "truth_requirement": {"$ref": "#/$defs/nonempty"},
+        "blocker_group": {"$ref": "#/$defs/nonempty"},
+        "feedback": {"$ref": "#/$defs/nonempty"}
+      },
+      "additionalProperties": false
+    },
+    "prefix": {
+      "type": "object",
+      "required": ["flag_prefix", "reason_code", "truth_requirement_template", "blocker_group", "feedback_template"],
+      "properties": {
+        "flag_prefix": {"$ref": "#/$defs/nonempty"},
+        "reason_code": {"$ref": "#/$defs/nonempty"},
+        "truth_requirement_template": {"$ref": "#/$defs/nonempty"},
+        "blocker_group": {"$ref": "#/$defs/nonempty"},
+        "feedback_template": {"$ref": "#/$defs/nonempty"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

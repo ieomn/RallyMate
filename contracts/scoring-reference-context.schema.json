@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-reference-context.schema.json",
+  "title": "RallyMate operator-declared scoring reference context",
+  "type": "object",
+  "required": ["schema_version", "artifact_version", "artifact_scope", "video", "source", "coordinate_convention", "observations", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_version": {"const": "scoring-reference-context-v1.0.0"},
+    "artifact_scope": {"const": "operator_declared_scoring_reference"},
+    "video": {
+      "type": "object",
+      "required": ["video_id", "video_sha256"],
+      "properties": {
+        "video_id": {"type": "string", "minLength": 1},
+        "video_sha256": {"type": "string", "pattern": "^[0-9A-Fa-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind", "created_at", "created_by"],
+      "properties": {
+        "kind": {"enum": ["coach_declared_training_target", "manual_event_adjudication"]},
+        "created_at": {"type": "string", "format": "date-time"},
+        "created_by": {"type": ["string", "null"], "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "coordinate_convention": {"const": "0_deg_image_right_90_deg_image_up"},
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["observation_id", "event_id", "event_code", "start_ms", "end_ms", "indicator_id", "semantic_key", "status", "target_direction_deg", "coordinate_frame", "confidence", "observer_id", "reviewer_id", "reason"],
+        "properties": {
+          "observation_id": {"type": "string", "minLength": 1},
+          "event_id": {"type": "string", "minLength": 1},
+          "event_code": {"const": "FS02"},
+          "start_ms": {"type": "integer", "minimum": 0},
+          "end_ms": {"type": "integer", "minimum": 1},
+          "indicator_id": {"const": "FS02-M02"},
+          "semantic_key": {"const": "target_direction"},
+          "status": {"enum": ["pending", "accepted", "unobservable"]},
+          "target_direction_deg": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+          "coordinate_frame": {"type": ["string", "null"], "enum": ["image_plane", null]},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "observer_id": {"type": ["string", "null"], "minLength": 1},
+          "reviewer_id": {"type": ["string", "null"], "minLength": 1},
+          "reason": {"type": ["string", "null"], "minLength": 1}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "accepted"}}},
+            "then": {
+              "properties": {
+                "target_direction_deg": {"type": "number"},
+                "coordinate_frame": {"const": "image_plane"},
+                "confidence": {"type": "number"},
+                "observer_id": {"type": "string", "minLength": 1},
+                "reviewer_id": {"type": "string", "minLength": 1},
+                "reason": {"type": "null"}
+              }
+            },
+            "else": {
+              "properties": {
+                "target_direction_deg": {"type": "null"},
+                "coordinate_frame": {"type": "null"},
+                "confidence": {"type": "null"},
+                "observer_id": {"type": "null"},
+                "reviewer_id": {"type": "null"},
+                "reason": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        ],
+        "additionalProperties": false
+      }
+    },
+    "safety": {
+      "type": "object",
+      "required": ["is_grade", "contains_A_to_E_thresholds", "movement_direction_is_not_target_direction"],
+      "properties": {
+        "is_grade": {"const": false},
+        "contains_A_to_E_thresholds": {"const": false},
+        "movement_direction_is_not_target_direction": {"const": true}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

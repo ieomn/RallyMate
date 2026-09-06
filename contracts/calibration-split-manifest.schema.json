@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-split-manifest.schema.json",
+  "title": "RallyMate leakage-audited split manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "dataset_id", "dataset_version", "canonicalization",
+    "policy", "splits", "unassigned_sample_ids", "sample_assignments",
+    "leakage_components", "leakage_audit"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "canonicalization": {"const": "rallymate-canonical-json-v1"},
+    "policy": {
+      "type": "object",
+      "required": ["status", "policy_id", "policy_version", "policy_sha256", "strategy", "group_key"],
+      "properties": {
+        "status": {"enum": ["preregistered", "missing"]},
+        "strategy": {"const": "explicit_group_constraints"},
+        "group_key": {"const": "leakage_component_id"}
+      }
+    },
+    "splits": {
+      "type": "object",
+      "required": ["train", "validation", "independent_test"],
+      "properties": {
+        "train": {"$ref": "#/$defs/split"},
+        "validation": {"$ref": "#/$defs/split"},
+        "independent_test": {"$ref": "#/$defs/split"}
+      }
+    },
+    "unassigned_sample_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "sample_assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sample_id", "indicator_id", "split", "leakage_group_id"],
+        "properties": {
+          "sample_id": {"type": "string", "minLength": 1},
+          "indicator_id": {"type": "string", "minLength": 1},
+          "split": {"type": ["string", "null"], "enum": ["train", "validation", "independent_test", null]},
+          "leakage_group_id": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "leakage_components": {"type": "array", "items": {"type": "object"}},
+    "leakage_audit": {
+      "type": "object",
+      "required": [
+        "status", "component_cross_split_count", "conflicts", "unassigned_component_count",
+        "identity_metadata_complete", "unknown_identity_policy", "data_leakage_detected"
+      ]
+    }
+  },
+  "$defs": {
+    "split": {
+      "type": "object",
+      "required": [
+        "sample_ids", "leakage_group_ids", "counts", "indicator_distribution",
+        "grade_distribution", "view_distribution", "player_distribution", "session_distribution"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

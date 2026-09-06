@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/runtime-scoring-profile.schema.json",
+  "title": "RallyMate exact runtime scoring profile",
+  "type": "object",
+  "required": ["schema_version", "profile_version", "profile_id", "pose", "pipeline", "view", "canonicalization"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "profile_version": {"const": "runtime-scoring-profile-v1"},
+    "profile_id": {"type": "string", "minLength": 1},
+    "pose": {
+      "type": "object",
+      "required": ["backend", "runtime", "profile", "model_sha256", "native_keypoint_format", "native_keypoint_count", "keypoint_schema_version"],
+      "properties": {
+        "backend": {"type": "string", "minLength": 1},
+        "runtime": {"type": "string", "minLength": 1},
+        "profile": {"type": "string", "minLength": 1},
+        "model_sha256": {"$ref": "#/$defs/sha256"},
+        "native_keypoint_format": {"type": "string", "minLength": 1},
+        "native_keypoint_count": {"type": "integer", "minimum": 1},
+        "keypoint_schema_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "pipeline": {
+      "type": "object",
+      "required": ["indicator_definition", "event_contract", "event_detector", "phase_contract", "primary_player", "quality_policy", "feature_contract"],
+      "properties": {
+        "indicator_definition": {"type": "string", "minLength": 1},
+        "event_contract": {"type": "string", "minLength": 1},
+        "event_detector": {"type": "string", "minLength": 1},
+        "phase_contract": {"type": "string", "minLength": 1},
+        "primary_player": {"type": "string", "minLength": 1},
+        "quality_policy": {"type": "string", "minLength": 1},
+        "feature_contract": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "view": {
+      "type": "object",
+      "required": ["view_profile_id", "view_group", "required_constraints", "verification_protocol_version"],
+      "properties": {
+        "view_profile_id": {"type": "string", "minLength": 1},
+        "view_group": {"type": "string", "minLength": 1},
+        "required_constraints": {"$ref": "#/$defs/nonEmptyStrings"},
+        "verification_protocol_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "canonicalization": {"const": "rallymate-canonical-json-v1"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "nonEmptyStrings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "additionalProperties": false
+}

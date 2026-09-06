@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "taxonomy_version": "scoring-blocker-taxonomy-v1.0.0",
+  "exact_entries": [
+    {
+      "flag": "source_track_switch_candidates_present",
+      "reason_code": "event_identity_continuity_unverified",
+      "truth_requirement": "manual_primary_identity_continuity_truth",
+      "blocker_group": "identity_continuity",
+      "feedback": "主球员身份连续性尚未确认"
+    },
+    {
+      "flag": "primary_identity_ambiguous",
+      "reason_code": "event_identity_continuity_unverified",
+      "truth_requirement": "manual_primary_identity_continuity_truth",
+      "blocker_group": "identity_continuity",
+      "feedback": "主球员身份连续性尚未确认"
+    },
+    {
+      "flag": "keypoint_jump_candidates_present",
+      "reason_code": "keypoint_jump_diagnostic_unverified",
+      "truth_requirement": "full_timeline_manual_keypoint_jump_truth",
+      "blocker_group": "pose_diagnostic",
+      "feedback": "关键点跳变诊断尚未完成独立验证"
+    },
+    {
+      "flag": "left_right_swap_candidates_present",
+      "reason_code": "left_right_assignment_unverified",
+      "truth_requirement": "full_timeline_manual_left_right_swap_truth",
+      "blocker_group": "pose_diagnostic",
+      "feedback": "左右关键点分配尚未确认"
+    },
+    {
+      "flag": "tactical_target_direction_not_observed",
+      "reason_code": "tactical_target_direction_required",
+      "truth_requirement": "manual_target_direction_semantics",
+      "blocker_group": "tactical_context",
+      "feedback": "目标方向语义尚未提供"
+    },
+    {
+      "flag": "pose_kinematic_coverage_low",
+      "reason_code": "event_boundary_evidence_low",
+      "truth_requirement": "manual_event_boundary_truth",
+      "blocker_group": "event_boundary",
+      "feedback": "自动事件边界的 Pose 运动学覆盖不足"
+    },
+    {
+      "flag": "primary_pose_coverage_low",
+      "reason_code": "primary_pose_observation_coverage_low",
+      "truth_requirement": "manual_pose_observation_and_event_boundary_review",
+      "blocker_group": "pose_observation",
+      "feedback": "事件内主球员 Pose 观测覆盖不足"
+    },
+    {
+      "flag": "lead_foot_side_proxy_ambiguous",
+      "reason_code": "lead_foot_side_assignment_unverified",
+      "truth_requirement": "manual_launch_side_semantics",
+      "blocker_group": "side_semantics",
+      "feedback": "左右脚活动峰接近，启动脚侧别代理尚未确认"
+    }
+  ],
+  "prefix_entries": [
+    {
+      "flag_prefix": "phase_proxy_right_censored_peak:",
+      "reason_code": "event_phase_proxy_right_censored_unverified",
+      "truth_requirement_template": "manual_phase_boundary:{phase_key}",
+      "blocker_group": "event_phase",
+      "feedback_template": "阶段 {phase_keys} 仅由事件右边界前的实测峰代理，尚未通过人工边界验证"
+    },
+    {
+      "flag_prefix": "phase_proxy_low_sample_peak:",
+      "reason_code": "event_phase_proxy_low_sample_unverified",
+      "truth_requirement_template": "manual_phase_boundary:{phase_key}",
+      "blocker_group": "event_phase",
+      "feedback_template": "阶段 {phase_keys} 仅由两样本实测峰代理，尚未通过人工边界验证"
+    }
+  ],
+  "auxiliary_truth_requirements": {
+    "restabilization_not_observed": "manual_restabilization_phase_and_keypoint_truth"
+  },
+  "unknown_policy": {
+    "reason_code": "event_scoring_context_unverified",
+    "truth_requirement": "external_manual_review_required",
+    "blocker_group": "external_review"
+  },
+  "safety": {
+    "quality_gate_modified": false,
+    "measurement_gate_modified": false,
+    "scoring_gate_modified": false,
+    "grade_generated": false,
+    "threshold_generated": false,
+    "accuracy_claim": false
+  }
+}

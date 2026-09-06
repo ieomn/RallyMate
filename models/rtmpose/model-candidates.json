@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "registry_version": "rtmpose-halpe26-candidates-2026-08-22.2",
+  "official_source": "https://github.com/open-mmlab/mmpose/blob/main/configs/body_2d_keypoint/rtmpose/body8/rtmpose_body8-halpe26.md",
+  "keypoint_source": "https://github.com/open-mmlab/mmpose/blob/main/configs/_base_/datasets/halpe.py",
+  "candidates": [
+    {
+      "candidate_id": "rtmpose-s-halpe26-256x192",
+      "config": "rtmpose-s_8xb1024-700e_body8-halpe26-256x192.py",
+      "config_package_relative_path": "mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-s_8xb1024-700e_body8-halpe26-256x192.py",
+      "checkpoint": "rtmpose-s_halpe26_256x192.pth",
+      "checkpoint_url": "https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-s_simcc-body7_pt-body7-halpe26_700e-256x192-7f134165_20230605.pth",
+      "checkpoint_sha256": "7F1341650E9360D737DC7CB29193296625F2E93F9FBA40850B13407B0D1E817C",
+      "checkpoint_bytes": 22922769,
+      "input_size_hw": [256, 192],
+      "official_metrics": {"pck_at_0_1": 93.01, "auc": 68.62, "params_m": 5.70, "flops_g": 0.70}
+    },
+    {
+      "candidate_id": "rtmpose-m-halpe26-256x192",
+      "config": "rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+      "config_package_relative_path": "mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-256x192.py",
+      "checkpoint": "rtmpose-m_halpe26_256x192.pth",
+      "checkpoint_url": "https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-body7_pt-body7-halpe26_700e-256x192-4d3e73dd_20230605.pth",
+      "checkpoint_sha256": "4D3E73DDD31222B7B0DB36CAEDA396AF1D7630C3B5A60451BDFA99A79E8DBB90",
+      "checkpoint_bytes": 55897557,
+      "input_size_hw": [256, 192],
+      "official_metrics": {"pck_at_0_1": 94.75, "auc": 71.91, "params_m": 13.93, "flops_g": 1.95}
+    },
+    {
+      "candidate_id": "rtmpose-m-halpe26-384x288",
+      "config": "rtmpose-m_8xb512-700e_body8-halpe26-384x288.py",
+      "config_package_relative_path": "mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-m_8xb512-700e_body8-halpe26-384x288.py",
+      "checkpoint": "rtmpose-m_halpe26_384x288.pth",
+      "checkpoint_url": "https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-body7_pt-body7-halpe26_700e-384x288-89e6428b_20230605.pth",
+      "checkpoint_sha256": "89E6428B38901B5003D0F753619E94D269999E1F5A922349F9068430387863F2",
+      "checkpoint_bytes": 56436913,
+      "input_size_hw": [384, 288],
+      "official_metrics": {"pck_at_0_1": 95.15, "auc": 73.56, "params_m": 14.06, "flops_g": 4.37}
+    },
+    {
+      "candidate_id": "rtmpose-l-halpe26-384x288",
+      "config": "rtmpose-l_8xb512-700e_body8-halpe26-384x288.py",
+      "config_package_relative_path": "mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-l_8xb512-700e_body8-halpe26-384x288.py",
+      "checkpoint": "rtmpose-l_halpe26_384x288.pth",
+      "checkpoint_url": "https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-l_simcc-body7_pt-body7-halpe26_700e-384x288-734182ce_20230605.pth",
+      "checkpoint_sha256": "734182CE2409BA84E96EA2A6361AEDB0EB40722F7AB52BB69331C73477D6A650",
+      "checkpoint_bytes": 113267415,
+      "input_size_hw": [384, 288],
+      "official_metrics": {"pck_at_0_1": 95.60, "auc": 74.40}
+    }
+  ],
+  "notes": [
+    "Official metrics are model-zoo background only and do not satisfy RallyMate promotion gates.",
+    "RTMPose-M Halpe26 256x192 is the default F2 measurement backend; this does not promote any indicator to F3/F4 or authorize A-E scoring."
+  ]
+}

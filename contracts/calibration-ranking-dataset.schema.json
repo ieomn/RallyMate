@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-ranking-dataset.schema.json",
+  "title": "RallyMate ranking-only prepared calibration dataset",
+  "type": "object",
+  "required": [
+    "schema_version", "artifact_scope", "dataset_id", "dataset_version",
+    "indicator_id", "target_semantics", "source", "feature_order",
+    "unit_by_feature", "feature_version_by_feature", "split_policy", "items",
+    "pairs", "agreement", "independent_test_seal", "readiness", "integrity", "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {
+      "enum": ["ranking_calibration_input", "synthetic_test_only_ranking_calibration_input"]
+    },
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "target_semantics": {
+      "const": {
+        "target": "relative_order_only",
+        "rank_convention": "rank_1_is_best_equal_rank_is_tie",
+        "absolute_grade_anchor_present": false,
+        "A_E_grade_identified": false
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind", "source_dataset_id", "source_dataset_version", "source_samples_sha256", "prepared_at"],
+      "properties": {
+        "kind": {"enum": ["human_coach_ranking_ground_truth", "synthetic_test_fixture"]},
+        "source_dataset_id": {"type": "string", "minLength": 1},
+        "source_dataset_version": {"type": "string", "minLength": 1},
+        "source_samples_sha256": {"$ref": "#/$defs/sha256"},
+        "prepared_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "feature_order": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "unit_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "feature_version_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "split_policy": {
+      "type": "object",
+      "required": ["strategy", "leakage_group_field", "train_groups", "validation_groups", "independent_test_groups"],
+      "properties": {
+        "strategy": {"const": "inherited_group_holdout_no_cross_split_rank_groups"},
+        "leakage_group_field": {"const": "groups.leakage_group_id"},
+        "train_groups": {"$ref": "#/$defs/stringArray"},
+        "validation_groups": {"$ref": "#/$defs/stringArray"},
+        "independent_test_groups": {"$ref": "#/$defs/stringArray"}
+      },
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sample_id", "video_id", "event_id", "split", "leakage_group_id",
+          "player_id", "session_id", "view_group", "features", "unit_by_feature",
+          "feature_version_by_feature", "ranking_labels", "source_sample_sha256"
+        ],
+        "properties": {
+          "sample_id": {"type": "string", "minLength": 1},
+          "video_id": {"type": "string", "minLength": 1},
+          "event_id": {"type": "string", "minLength": 1},
+          "split": {"enum": ["train", "validation"]},
+          "leakage_group_id": {"type": "string", "minLength": 1},
+          "player_id": {"type": "string", "minLength": 1},
+          "session_id": {"type": "string", "minLength": 1},
+          "view_group": {"type": "string", "minLength": 1},
+          "features": {"type": "object", "additionalProperties": {"type": "number"}},
+          "unit_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+          "feature_version_by_feature": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+          "ranking_labels": {"type": "array", "items": {"$ref": "#/$defs/rankingLabel"}},
+          "source_sample_sha256": {"$ref": "#/$defs/sha256"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pair_id", "split", "rank_group_id", "annotator_id", "left_sample_id",
+          "right_sample_id", "left_rank", "right_rank", "outcome",
+          "target_probability_left_preferred", "feature_difference_left_minus_right",
+          "source_annotation_ids"
+        ],
+        "properties": {
+          "pair_id": {"type": "string", "minLength": 1},
+          "split": {"enum": ["train", "validation"]},
+          "rank_group_id": {"type": "string", "minLength": 1},
+          "annotator_id": {"type": "string", "minLength": 1},
+          "left_sample_id": {"type": "string", "minLength": 1},
+          "right_sample_id": {"type": "string", "minLength": 1},
+          "left_rank": {"type": "integer", "minimum": 1},
+          "right_rank": {"type": "integer", "minimum": 1},
+          "outcome": {"enum": ["left_preferred", "right_preferred", "tie"]},
+          "target_probability_left_preferred": {"enum": [0, 0.5, 1]},
+          "feature_difference_left_minus_right": {"type": "object", "additionalProperties": {"type": "number"}},
+          "source_annotation_ids": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "agreement": {"type": "object"},
+    "independent_test_seal": {
+      "type": "object",
+      "required": ["seal_id", "indicator_id", "record_count", "groups", "sample_ids", "content_sha256", "canonicalization", "labels_withheld_from_fitter"],
+      "properties": {
+        "seal_id": {"type": "string", "minLength": 1},
+        "indicator_id": {"type": "string", "minLength": 1},
+        "record_count": {"type": "integer", "minimum": 0},
+        "groups": {"$ref": "#/$defs/stringArray"},
+        "sample_ids": {"$ref": "#/$defs/stringArray"},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "canonicalization": {"const": "rallymate-canonical-json-v1"},
+        "labels_withheld_from_fitter": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "readiness": {
+      "type": "object",
+      "required": ["status", "blockers", "F3_claimed"],
+      "properties": {
+        "status": {"enum": ["insufficient", "prepared_for_ranking_fit"]},
+        "blockers": {"$ref": "#/$defs/stringArray"},
+        "F3_claimed": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "integrity": {"type": "object"},
+    "safety": {
+      "const": {
+        "generated_A_E_thresholds": false,
+        "generated_A_E_cutpoints": false,
+        "trained_absolute_grade_model": false,
+        "production_scoring_allowed": false
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "stringArray": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "rankingLabel": {
+      "type": "object",
+      "required": ["schema_version", "annotation_id", "video_id", "event_id", "indicator_id", "annotator_id", "label_type", "rank_group_id", "rank"],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "annotation_id": {"type": "string", "minLength": 1},
+        "video_id": {"type": "string", "minLength": 1},
+        "event_id": {"type": "string", "minLength": 1},
+        "indicator_id": {"type": "string", "minLength": 1},
+        "annotator_id": {"type": "string", "minLength": 1},
+        "label_type": {"const": "ranking"},
+        "rank_group_id": {"type": "string", "minLength": 1},
+        "rank": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

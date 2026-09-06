@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_scope": "trusted_runtime_profile_bindings_template_not_loadable",
+  "registry_id": "REPLACE_WITH_OPERATOR_REGISTRY_ID",
+  "registry_version": "REPLACE_WITH_IMMUTABLE_VERSION",
+  "source": {
+    "authority_id": "REPLACE_WITH_RELEASE_AUTHORITY",
+    "source_sha256": "REPLACE_WITH_64_HEX_SHA256",
+    "registered_at": null
+  },
+  "registered_at": null,
+  "canonicalization": "rallymate-canonical-json-v1",
+  "entries": [],
+  "trust_boundary": "Template only. Each active entry must bind one promoted calibration hash, trusted promotion-ledger entry, exact F4 registry hash, observed pose/pipeline profile, and independent compatibility review. Store the resulting registry outside uploads/requests/runs with operator-only write ACLs."
+}

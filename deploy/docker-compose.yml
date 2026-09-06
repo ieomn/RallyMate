@@ -1,0 +1,52 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["rallymate-api", "--host", "0.0.0.0", "--port", "8000"]
+    environment: &rallymate_environment
+      RALLYMATE_DATA_ROOT: /app/service_data
+      RALLYMATE_DATABASE_PATH: /app/service_data/jobs.sqlite3
+      RALLYMATE_DETECT_MODEL: /app/models/yolo26n.pt
+      # Halpe26 is the F2 measurement default. Set yolo-baseline explicitly
+      # for rollback; neither preset bypasses calibration/F4 scoring gates.
+      RALLYMATE_POSE_PRESET: ${RALLYMATE_POSE_PRESET:-rtmpose-m-halpe26-online}
+      RALLYMATE_DEVICE: "0"
+      RALLYMATE_ENVIRONMENT: ${RALLYMATE_ENVIRONMENT:-development}
+      RALLYMATE_MODEL_LICENSE_ACK: ${RALLYMATE_MODEL_LICENSE_ACK:-development}
+      RALLYMATE_API_KEY: ${RALLYMATE_API_KEY:-}
+      RALLYMATE_MAX_UPLOAD_BYTES: ${RALLYMATE_MAX_UPLOAD_BYTES:-2147483648}
+      RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST: ${RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST:-/app/registry-lifecycle.json}
+      RALLYMATE_SCORING_FEASIBILITY_REGISTRY: ${RALLYMATE_SCORING_FEASIBILITY_REGISTRY:-/app/metric-feasibility-pose-wave-v2.json}
+      RALLYMATE_SCORING_CALIBRATION_ASSETS: ${RALLYMATE_SCORING_CALIBRATION_ASSETS:-}
+      RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER: ${RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER:-/app/calibration/trusted-calibration-promotion-ledger.json}
+      RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS: ${RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS:-/app/calibration/trusted-runtime-profile-bindings.json}
+      RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR: ${RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR:-/app/calibration/runtime-view-evidence}
+    ports:
+      - "${RALLYMATE_PORT:-8000}:8000"
+    volumes:
+      - ../service_data:/app/service_data
+      - ../models:/app/models:ro
+      - ../calibration:/app/calibration:ro
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["rallymate-worker", "--poll-seconds", "2"]
+    environment: *rallymate_environment
+    volumes:
+      - ../service_data:/app/service_data
+      - ../models:/app/models:ro
+      - ../calibration:/app/calibration:ro
+    gpus: all
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

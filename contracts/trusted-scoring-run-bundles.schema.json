@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/trusted-scoring-run-bundles.schema.json",
+  "title": "RallyMate operator-controlled scoring run-bundle allow-list",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_scope",
+    "ledger_id",
+    "ledger_version",
+    "source",
+    "registered_at",
+    "canonicalization",
+    "entries",
+    "trust_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"const": "trusted_scoring_run_bundles"},
+    "ledger_id": {"type": "string", "minLength": 1},
+    "ledger_version": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "authority_id"],
+      "properties": {
+        "kind": {"const": "operator_controlled_local_ledger"},
+        "authority_id": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "registered_at": {"type": "string", "format": "date-time"},
+    "canonicalization": {"const": "rallymate-canonical-json-v1"},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Runtime validation additionally requires unique entry_id values, unique active bundle roots, and at most one active entry per video_id; replace an authorized run by revoking its prior entry.",
+      "items": {"$ref": "#/$defs/entry"}
+    },
+    "trust_boundary": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "artifact_sha256": {
+      "type": "object",
+      "required": [
+        "events_jsonl",
+        "features_jsonl",
+        "indicator_features_jsonl",
+        "scores_jsonl",
+        "event_feature_errors_json"
+      ],
+      "properties": {
+        "events_jsonl": {"$ref": "#/$defs/sha256"},
+        "features_jsonl": {"$ref": "#/$defs/sha256"},
+        "indicator_features_jsonl": {"$ref": "#/$defs/sha256"},
+        "scores_jsonl": {"$ref": "#/$defs/sha256"},
+        "event_feature_errors_json": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "bundle_identity": {
+      "type": "object",
+      "required": [
+        "binding_version",
+        "scoring_summary",
+        "video",
+        "artifact_sha256"
+      ],
+      "properties": {
+        "binding_version": {"const": "scoring-run-bundle-v1"},
+        "scoring_summary": {
+          "type": "object",
+          "required": ["schema_version", "loop_version", "file_sha256"],
+          "properties": {
+            "schema_version": {"const": "1.0.0"},
+            "loop_version": {"type": "string", "minLength": 1},
+            "file_sha256": {
+              "allOf": [{"$ref": "#/$defs/sha256"}],
+              "description": "SHA-256 of the exact scoring-loop-summary.json file bytes, not its canonical JSON projection"
+            }
+          },
+          "additionalProperties": false
+        },
+        "video": {
+          "type": "object",
+          "required": ["video_id", "video_sha256"],
+          "properties": {
+            "video_id": {"type": "string", "minLength": 1},
+            "video_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "additionalProperties": false
+        },
+        "artifact_sha256": {"$ref": "#/$defs/artifact_sha256"}
+      },
+      "additionalProperties": false
+    },
+    "authorization_review": {
+      "type": "object",
+      "required": [
+        "decision",
+        "review_id",
+        "reviewer_id",
+        "source_sha256",
+        "reviewed_at"
+      ],
+      "properties": {
+        "decision": {"const": "approved_for_production_rescoring"},
+        "review_id": {"type": "string", "minLength": 1},
+        "reviewer_id": {"type": "string", "minLength": 1},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "reviewed_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "entry_id",
+        "status",
+        "bundle_identity",
+        "bundle_root_sha256",
+        "authorization_review",
+        "registered_at"
+      ],
+      "properties": {
+        "entry_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["active", "revoked"]},
+        "bundle_identity": {"$ref": "#/$defs/bundle_identity"},
+        "bundle_root_sha256": {"$ref": "#/$defs/sha256"},
+        "authorization_review": {"$ref": "#/$defs/authorization_review"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

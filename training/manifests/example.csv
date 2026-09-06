@@ -1,0 +1,3 @@
+image_path,label_path,session_id,subject_id,camera_id,consent,license,split
+../dataset/images/session-001/frame-000001.jpg,../dataset/labels/session-001/frame-000001.txt,session-001,player-001,camera-fixed-01,yes,owned,
+../dataset/images/session-002/frame-000001.jpg,../dataset/labels/session-002/frame-000001.txt,session-002,player-002,camera-fixed-01,yes,owned,val

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-visual-observer-video.schema.json",
+  "title": "RallyMate synchronized scoring observer video payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "observer_version", "video_id", "display_name", "video_href", "video", "model", "joint_names", "frames", "events", "summary", "safety", "source_sha256", "content_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "observer_version": {"const": "dynamic-scoring-observer-v1.1.0"},
+    "video_id": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "display_name": {"type": "string", "minLength": 1},
+    "video_href": {"type": "string", "pattern": "^\\.\\./\\.\\./FULL-TEST/[a-f0-9]{32}\\.mp4$"},
+    "video": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "duration_ms", "frame_count"],
+      "properties": {
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "duration_ms": {"type": "integer", "minimum": 0},
+        "frame_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "model": {"type": "object", "additionalProperties": true},
+    "joint_names": {"type": "array", "minItems": 17, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "frames": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["i", "s", "t", "track", "pose_confidence", "keypoint_valid_fraction", "selection_margin", "points", "jump", "swap"],
+        "properties": {
+          "i": {"type": "integer", "minimum": 0},
+          "s": {"type": "integer", "minimum": 0},
+          "t": {"type": "integer", "minimum": 0},
+          "track": {"type": ["integer", "null"]},
+          "pose_confidence": {"type": ["number", "null"]},
+          "keypoint_valid_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "selection_margin": {"type": ["number", "null"]},
+          "points": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "array", "minItems": 17, "items": {"type": "array", "prefixItems": [{"type": ["number", "null"]}, {"type": ["number", "null"]}, {"type": ["number", "null"]}], "minItems": 3, "maxItems": 3}}
+            ]
+          },
+          "jump": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+          "swap": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["event_id", "event_code", "start_ms", "end_ms", "key_phases_ms", "indicators"]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_count", "indicator_instance_count", "feature_status_counts", "scoring_status_counts", "scoring_block_flag_counts", "grade_count", "threshold_count"],
+      "properties": {
+        "event_count": {"type": "integer", "minimum": 1},
+        "indicator_instance_count": {"type": "integer", "minimum": 1},
+        "feature_status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "scoring_status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "scoring_block_flag_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "grade_count": {"const": 0},
+        "threshold_count": {"const": 0}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pose_overlay_is_model_output_not_truth", "event_intervals_are_candidates_not_ground_truth", "feature_measurement_is_not_accuracy", "grades_or_thresholds_generated", "aggregate_score_defined"],
+      "properties": {
+        "pose_overlay_is_model_output_not_truth": {"const": true},
+        "event_intervals_are_candidates_not_ground_truth": {"const": true},
+        "feature_measurement_is_not_accuracy": {"const": true},
+        "grades_or_thresholds_generated": {"const": false},
+        "aggregate_score_defined": {"const": false}
+      }
+    },
+    "source_sha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video", "frames", "primary_timeline", "events", "indicator_features", "scores", "summary"],
+      "properties": {
+        "video": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "frames": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "primary_timeline": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "events": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "indicator_features": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "scores": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "summary": {"type": "string", "pattern": "^[A-F0-9]{64}$"}
+      }
+    },
+    "content_sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"}
+  }
+}

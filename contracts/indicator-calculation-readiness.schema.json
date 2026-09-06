@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/indicator-calculation-readiness.schema.json",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "sources", "scope", "summary", "per_indicator", "measurement_remediation", "formal_scoring_truth_requirements", "interpretation", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "indicator-calculation-readiness-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["no_candidate_events", "all_registry_indicators_have_measured_candidate", "some_registry_indicators_have_no_measured_candidate"]},
+    "sources": {"type": "object", "minProperties": 4, "additionalProperties": {"$ref": "#/$defs/source"}},
+    "scope": {
+      "type": "object",
+      "required": ["video_id", "feasibility_registry_version", "indicator_ids", "event_codes", "candidate_events_are_ground_truth"],
+      "properties": {
+        "video_id": {"type": "string", "minLength": 1},
+        "feasibility_registry_version": {"type": "string", "minLength": 1},
+        "indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "event_codes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "candidate_events_are_ground_truth": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": ["registry_indicator_count", "candidate_event_count", "indicator_event_instance_count", "measured_indicator_event_instance_count", "unavailable_indicator_event_instance_count", "indicator_with_candidate_count", "indicator_with_measured_candidate_count", "indicator_without_measured_candidate_count", "all_registry_indicators_effectively_calculated_on_this_video", "formal_scoring_ready"],
+      "properties": {
+        "registry_indicator_count": {"type": "integer", "minimum": 1},
+        "candidate_event_count": {"type": "integer", "minimum": 0},
+        "indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "measured_indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "unavailable_indicator_event_instance_count": {"type": "integer", "minimum": 0},
+        "indicator_with_candidate_count": {"type": "integer", "minimum": 0},
+        "indicator_with_measured_candidate_count": {"type": "integer", "minimum": 0},
+        "indicator_without_measured_candidate_count": {"type": "integer", "minimum": 0},
+        "all_registry_indicators_effectively_calculated_on_this_video": {"type": "boolean"},
+        "formal_scoring_ready": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "per_indicator": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/indicator"}},
+    "measurement_remediation": {"type": "array", "items": {"$ref": "#/$defs/remediation"}},
+    "formal_scoring_truth_requirements": {"type": "array", "items": {"$ref": "#/$defs/remediation"}},
+    "interpretation": {"type": "object", "required": ["effectively_calculated_means", "does_not_mean", "formal_scoring_blockers_are_separate"], "additionalProperties": {"type": "string", "minLength": 1}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "event_ground_truth_provided", "keypoint_ground_truth_provided", "quality_gate_modified", "missing_value_zero_filled", "grade_generated_by_report", "threshold_generated_by_report", "maturity_promoted"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "event_ground_truth_provided": {"const": false},
+        "keypoint_ground_truth_provided": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "missing_value_zero_filled": {"const": false},
+        "grade_generated_by_report": {"const": false},
+        "threshold_generated_by_report": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "source": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}, "additionalProperties": false},
+    "countMap": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+    "evidence": {
+      "type": "object",
+      "required": ["event_id", "event_code", "start_ms", "end_ms", "person_track_id", "source_frames"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_code": {"type": "string", "minLength": 1},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 0},
+        "person_track_id": {"type": ["integer", "string"]},
+        "source_frames": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}
+      },
+      "additionalProperties": false
+    },
+    "indicator": {
+      "type": "object",
+      "required": ["indicator_id", "feasibility_level", "required_events", "required_features", "event_instance_count", "measured_instance_count", "unavailable_instance_count", "calculation_status", "score_status_counts", "feature_failure_reason_counts", "measurement_block_flag_counts", "scoring_block_flag_counts", "measured_evidence_examples"],
+      "properties": {
+        "indicator_id": {"type": "string", "minLength": 1},
+        "feasibility_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]},
+        "required_events": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "required_features": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "required_scoring_features": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "event_instance_count": {"type": "integer", "minimum": 0},
+        "measured_instance_count": {"type": "integer", "minimum": 0},
+        "unavailable_instance_count": {"type": "integer", "minimum": 0},
+        "calculation_status": {"enum": ["measured_on_at_least_one_candidate", "candidate_instances_present_but_none_measured", "required_event_candidate_missing"]},
+        "score_status_counts": {"$ref": "#/$defs/countMap"},
+        "feature_failure_reason_counts": {"$ref": "#/$defs/countMap"},
+        "measurement_block_flag_counts": {"$ref": "#/$defs/countMap"},
+        "scoring_block_flag_counts": {"$ref": "#/$defs/countMap"},
+        "measured_evidence_examples": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/evidence"}}
+      },
+      "additionalProperties": false
+    },
+    "remediation": {
+      "type": "object",
+      "required": ["layer", "reason", "affected_indicator_ids", "affected_event_ids", "recommended_action", "automatic_quality_gate_relaxation_allowed"],
+      "properties": {
+        "layer": {"enum": ["measurement", "scoring"]},
+        "reason": {"type": "string", "minLength": 1},
+        "affected_indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "affected_event_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "recommended_action": {"type": "string", "minLength": 1},
+        "automatic_quality_gate_relaxation_allowed": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

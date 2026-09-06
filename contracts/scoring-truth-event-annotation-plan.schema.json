@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-event-annotation-plan.schema.json",
+  "title": "RallyMate M90 operator-released independent event/phase annotation plan",
+  "description": "An incompatible v2 plan for a local operator-reviewed annotation release. The plan and its hashes are not approvals, signatures, trusted timestamps, calibration authority, promotion authority, or production authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plan_version",
+    "plan_id",
+    "created_at",
+    "frozen_at",
+    "artifact_scope",
+    "technical_handoff",
+    "scope",
+    "roles",
+    "decision_contract",
+    "data_access",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "plan_version": {"const": "scoring-truth-event-annotation-plan-v2.0.0"},
+    "plan_id": {"$ref": "#/$defs/identifier"},
+    "created_at": {"$ref": "#/$defs/timestamp"},
+    "frozen_at": {"$ref": "#/$defs/timestamp"},
+    "artifact_scope": {"const": "scoring_truth_event_annotation_plan"},
+    "technical_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_path",
+        "manifest_raw_sha256",
+        "bundle_version",
+        "bundle_id",
+        "content_root_sha256",
+        "source_projection_sha256"
+      ],
+      "properties": {
+        "manifest_path": {"const": "event-handoff-manifest.json"},
+        "manifest_raw_sha256": {"$ref": "#/$defs/sha256"},
+        "bundle_version": {"const": "scoring-truth-event-handoff-v1.0.0"},
+        "bundle_id": {
+          "type": "string",
+          "pattern": "^m89-scoring-truth-event-[0-9A-F]{64}$"
+        },
+        "content_root_sha256": {"$ref": "#/$defs/sha256"},
+        "source_projection_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "scope": {
+      "const": {
+        "event_codes": ["FS01", "FS02", "FS09"],
+        "phase_keys_by_event": {
+          "FS01": [
+            "preload_ms",
+            "takeoff_proxy_ms",
+            "landing_proxy_ms",
+            "redistribution_ms",
+            "initiation_ms"
+          ],
+          "FS02": [
+            "direction_conversion_ms",
+            "support_extension_proxy_ms",
+            "lead_foot_motion_onset_proxy_ms",
+            "first_step_slowdown_proxy_ms"
+          ],
+          "FS09": [
+            "peak_speed_ms",
+            "deceleration_peak_ms",
+            "restabilization_onset_ms",
+            "stable_control_onset_ms"
+          ]
+        },
+        "tasks": [
+          {
+            "task_id": "m89:3ae77ee3271d67de171585a5c39ddd69:full-video-event-phase",
+            "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+            "video_sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9",
+            "full_video_review_required": true
+          },
+          {
+            "task_id": "m89:850cb0006b406c7176eeda8d711cd065:full-video-event-phase",
+            "video_id": "850cb0006b406c7176eeda8d711cd065",
+            "video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+            "full_video_review_required": true
+          },
+          {
+            "task_id": "m89:8d7754d0de6d315674013d5b69a0b6ba:full-video-event-phase",
+            "video_id": "8d7754d0de6d315674013d5b69a0b6ba",
+            "video_sha256": "FEDA989F394818B27AE38E5BA12DF4690E6139DF53DB9CD87E6C6278B3C2E7E0",
+            "full_video_review_required": true
+          }
+        ]
+      }
+    },
+    "roles": {
+      "const": {
+        "annotator_slots": ["A", "B"],
+        "reviewer_slot": "C",
+        "required_distinct_people": 3,
+        "annotator_blinding_required": true,
+        "reviewer_sees_both_only_after_both_submitted": true
+      }
+    },
+    "decision_contract": {
+      "const": {
+        "event_scope": "full_timeline_all_occurrences",
+        "phase_observation": "observed_or_unobservable_with_reason",
+        "missing_not_zero": true,
+        "full_video_review_before_submit": true,
+        "first_write_requires_verified_operator_release": true,
+        "revision_binding_required": true,
+        "adjudication_binds_both_exact_revision_sha256": true
+      }
+    },
+    "data_access": {
+      "const": {
+        "public_released_bundle_only": true,
+        "repository_access_forbidden": true,
+        "reports_access_forbidden": true,
+        "model_output_access_forbidden": true,
+        "private_truth_pack_access_forbidden": true
+      }
+    },
+    "safety": {
+      "const": {
+        "hash_is_operator_identity_or_approval": false,
+        "technical_handoff_is_annotation_authority": false,
+        "plan_is_annotation_authority": false,
+        "operator_release_record_required": true,
+        "operator_release_record_is_digital_signature": false,
+        "operator_release_record_is_trusted_timestamp": false,
+        "grades_or_thresholds_supported": false,
+        "calibration_authorized": false,
+        "promotion_authorized": false,
+        "production_enabled": false
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?Z$"
+    }
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-diagnostic-review-queue.schema.json",
+  "title": "RallyMate Pose diagnostic manual review queue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "queue_version",
+    "generated_at",
+    "status",
+    "video_id",
+    "source",
+    "review_media",
+    "scope",
+    "counts",
+    "tasks",
+    "decision_contract",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "queue_version": {"const": "pose-diagnostic-review-queue-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["review_required", "no_candidates"]},
+    "video_id": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_directory",
+        "scoring_loop_version",
+        "pose_model",
+        "source_video_path",
+        "source_video_sha256",
+        "artifacts",
+        "artifact_binding_sha256"
+      ],
+      "properties": {
+        "run_directory": {"type": "string", "minLength": 1},
+        "scoring_loop_version": {"type": "string", "minLength": 1},
+        "pose_model": {"type": "object"},
+        "source_video_path": {"type": ["string", "null"]},
+        "source_video_sha256": {"type": ["string", "null"], "pattern": "^[0-9A-F]{64}$"},
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/artifact"},
+          "minProperties": 5
+        },
+        "artifact_binding_sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"}
+      }
+    },
+    "review_media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "video_time_offset_ms", "semantics"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "video_time_offset_ms": {"type": "integer"},
+        "semantics": {"type": "string", "minLength": 1}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["diagnostic_types", "deduplication", "context_ms"],
+      "properties": {
+        "diagnostic_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["keypoint_jump", "left_right_swap", "source_track_switch", "primary_identity_ambiguity"]}
+        },
+        "deduplication": {"type": "string", "minLength": 1},
+        "context_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tasks", "pending", "by_diagnostic_type", "unique_candidate_frames", "unique_affected_indicator_instances", "task_indicator_links"],
+      "properties": {
+        "tasks": {"type": "integer", "minimum": 0},
+        "pending": {"type": "integer", "minimum": 0},
+        "by_diagnostic_type": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+        "unique_candidate_frames": {"type": "integer", "minimum": 0},
+        "unique_affected_indicator_instances": {"type": "integer", "minimum": 0},
+        "task_indicator_links": {"type": "integer", "minimum": 0}
+      }
+    },
+    "tasks": {"type": "array", "items": {"$ref": "#/$defs/task"}},
+    "decision_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_values", "required_for_non_pending", "export_semantics"],
+      "properties": {
+        "allowed_values": {
+          "const": ["pending", "confirmed_issue", "false_positive", "uncertain", "not_observable"]
+        },
+        "required_for_non_pending": {"const": ["annotator_id", "reviewed_at"]},
+        "export_semantics": {"type": "string", "minLength": 1}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy_claim", "diagnostic_candidates_are_ground_truth", "review_decisions_generated", "pose_coordinates_are_manual_corrections", "quality_gate_modified", "grades_generated", "thresholds_generated"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "diagnostic_candidates_are_ground_truth": {"const": false},
+        "review_decisions_generated": {"const": false},
+        "pose_coordinates_are_manual_corrections": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"}
+      }
+    },
+    "eventRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_code", "start_ms", "end_ms"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_code": {"enum": ["FS01", "FS02", "FS09"]},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "jointValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["joint", "x_normalized", "y_normalized", "confidence", "in_frame"],
+      "properties": {
+        "joint": {"type": "string", "minLength": 1},
+        "x_normalized": {"type": ["number", "null"]},
+        "y_normalized": {"type": ["number", "null"]},
+        "confidence": {"type": ["number", "null"]},
+        "in_frame": {"type": ["boolean", "null"]}
+      }
+    },
+    "jointObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "source_frame_index", "processed_index", "timestamp_ms", "source_track_id", "joints"],
+      "properties": {
+        "role": {"enum": ["previous", "candidate", "next"]},
+        "source_frame_index": {"type": "integer", "minimum": 0},
+        "processed_index": {"type": "integer", "minimum": 0},
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "source_track_id": {"type": ["integer", "null"]},
+        "joints": {"type": "array", "items": {"$ref": "#/$defs/jointValue"}}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "diagnostic_type", "diagnostic_flag", "review_status", "decision", "candidate_source_frame_index", "processed_index", "timestamp_ms", "review_media_time_ms", "clip_start_ms", "clip_end_ms", "joints", "joint_pairs", "track_transition", "event_refs", "affected_indicator_ids", "affected_indicator_instances", "advisory_only_indicator_ids", "joint_observations", "review_semantics"],
+      "properties": {
+        "task_id": {"type": "string", "pattern": "^pdr-[0-9a-f]{16}$"},
+        "diagnostic_type": {"enum": ["keypoint_jump", "left_right_swap", "source_track_switch", "primary_identity_ambiguity"]},
+        "diagnostic_flag": {"type": "string", "minLength": 1},
+        "review_status": {"const": "pending"},
+        "decision": {"type": "null"},
+        "candidate_source_frame_index": {"type": ["integer", "null"], "minimum": 0},
+        "processed_index": {"type": ["integer", "null"], "minimum": 0},
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "review_media_time_ms": {"type": "integer", "minimum": 0},
+        "clip_start_ms": {"type": "integer", "minimum": 0},
+        "clip_end_ms": {"type": "integer", "minimum": 0},
+        "joints": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "joint_pairs": {"type": "array", "items": {"type": "array", "prefixItems": [{"type": "string"}, {"type": "string"}], "items": false}},
+        "track_transition": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["from_source_track_id", "to_source_track_id"],
+              "properties": {
+                "from_source_track_id": {"type": ["integer", "null"]},
+                "to_source_track_id": {"type": ["integer", "null"]}
+              }
+            }
+          ]
+        },
+        "event_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/eventRef"}},
+        "affected_indicator_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "affected_indicator_instances": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "advisory_only_indicator_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "joint_observations": {"type": "array", "items": {"$ref": "#/$defs/jointObservation"}},
+        "review_semantics": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

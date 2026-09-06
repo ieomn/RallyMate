@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-evidence-plan.schema.json",
+  "title": "RallyMate scoring truth evidence acquisition plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "plan_version", "generated_at", "status", "source", "counts", "units", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "plan_version": {"const": "scoring-truth-evidence-acquisition-plan-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "evidence_acquisition_in_progress", "evidence_units_satisfied_pending_scoring_recompute"]},
+    "source": {"type": "object"},
+    "counts": {
+      "type": "object",
+      "required": ["input_work_items", "input_indicator_instances", "input_instance_action_links", "evidence_units", "work_item_to_evidence_unit_links", "by_status", "by_evidence_type"],
+      "properties": {
+        "input_work_items": {"type": "integer", "minimum": 1},
+        "input_indicator_instances": {"type": "integer", "minimum": 1},
+        "input_instance_action_links": {"type": "integer", "minimum": 1},
+        "evidence_units": {"type": "integer", "minimum": 1},
+        "work_item_to_evidence_unit_links": {"type": "integer", "minimum": 1},
+        "by_status": {"type": "object"},
+        "by_evidence_type": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["unit_id", "deduplication_key", "evidence_type", "scope", "status", "target_artifact", "required_human_roles", "linked_work_item_ids", "affected_indicator_instances", "affected_indicator_ids", "work_item_count", "indicator_instance_count", "priority_rank"],
+        "properties": {
+          "unit_id": {"type": "string", "pattern": "^steu-[0-9a-f]{16}$"},
+          "deduplication_key": {"type": "string", "minLength": 1},
+          "evidence_type": {"type": "string", "minLength": 1},
+          "scope": {"enum": ["full_timeline", "event", "video_event_code"]},
+          "event_id": {"type": ["string", "null"]},
+          "event_code": {"type": ["string", "null"]},
+          "start_ms": {"type": ["integer", "null"], "minimum": 0},
+          "end_ms": {"type": ["integer", "null"], "minimum": 0},
+          "status": {"enum": ["evidence_satisfied", "review_in_progress_not_adjudicated", "annotation_required"]},
+          "target_artifact": {"type": "string", "minLength": 1},
+          "required_human_roles": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+          "diagnostic_type": {"type": "string"},
+          "phase_name": {"type": "string"},
+          "semantic_key": {"type": "string"},
+          "semantic_keys": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "feature_names": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "linked_work_item_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+          "affected_indicator_instances": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+          "affected_indicator_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+          "work_item_count": {"type": "integer", "minimum": 1},
+          "indicator_instance_count": {"type": "integer", "minimum": 1},
+          "priority_rank": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "safety": {"type": "object"}
+  }
+}

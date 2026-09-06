@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/anchored-pose-profile-extension.schema.json",
+  "title": "RallyMate M69-anchored Pose-profile extension",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "video_id", "sources", "artifacts", "router_audit", "comparison_to_m68", "m69_preservation", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "anchored-pose-profile-extension-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["experimental_m69_anchored_extension_regression_free_requires_truth", "experimental_m69_anchored_extension_rejected"]},
+    "video_id": {"type": "string", "minLength": 1},
+    "sources": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "router_audit": {"type": "object", "required": ["selected_frame_count", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds", "required_joint_validity_regression_allowed"]},
+    "comparison_to_m68": {"type": "object"},
+    "m69_preservation": {"type": "object", "required": ["additional_feature_recovery_count", "lost_m69_feature_recovery_count", "additional_operational_recovery_count", "lost_m69_operational_recovery_count"]},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_profile_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted"],
+      "properties": {
+        "accuracy_claim": {"const": false}, "ground_truth_provided": {"const": false}, "production_enabled": {"const": false}, "automatic_profile_fallback_enabled": {"const": false}, "feature_gate_modified": {"const": false}, "measurement_gate_modified": {"const": false}, "event_boundaries_modified": {"const": false}, "grades_generated": {"const": false}, "thresholds_generated": {"const": false}, "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

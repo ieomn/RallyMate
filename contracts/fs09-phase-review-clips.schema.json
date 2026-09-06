@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/fs09-phase-review-clips.schema.json",
+  "type": "object",
+  "required": ["schema_version", "renderer_version", "generated_at", "status", "sources", "window_contract", "clips", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "renderer_version": {"const": "m77-fs09-blind-review-clips-v1.1.0"},
+    "generated_at": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+    "status": {"const": "passed"},
+    "sources": {
+      "type": "object",
+      "required": ["m74_report", "video", "ffmpeg", "ffprobe"],
+      "properties": {
+        "m74_report": {"$ref": "#/$defs/source"},
+        "video": {"$ref": "#/$defs/source"},
+        "ffmpeg": {"$ref": "#/$defs/source"},
+        "ffprobe": {"$ref": "#/$defs/source"}
+      },
+      "additionalProperties": false
+    },
+    "window_contract": {
+      "const": {
+        "kind": "pre_frozen_candidate_selected_coarse_anchor",
+        "anchor_selects_action_only": true,
+        "anchor_constrains_submitted_boundary_or_phase": false,
+        "anchor_is_candidate_boundary_or_phase": false,
+        "exact_candidate_boundaries_derivable_from_window": false,
+        "candidate_selected_coarse_localization_disclosed": true,
+        "tasks": [
+          {"task_id": "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-001", "review_start_ms": 331000, "review_end_ms": 336000, "target_selection_anchor_ms": 333500},
+          {"task_id": "m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-002", "review_start_ms": 449500, "review_end_ms": 454500, "target_selection_anchor_ms": 452000}
+        ]
+      }
+    },
+    "clips": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/clip"}
+    },
+    "safety": {
+      "type": "object",
+      "required": ["pose_overlay_rendered", "candidate_boundary_overlay_rendered", "candidate_phase_overlay_rendered", "audio_included", "source_metadata_or_filename_retained", "target_selection_anchor_is_boundary_or_phase", "accuracy_claim", "production_enabled"],
+      "properties": {
+        "pose_overlay_rendered": {"const": false},
+        "candidate_boundary_overlay_rendered": {"const": false},
+        "candidate_phase_overlay_rendered": {"const": false},
+        "audio_included": {"const": false},
+        "source_metadata_or_filename_retained": {"const": false},
+        "target_selection_anchor_is_boundary_or_phase": {"const": false},
+        "accuracy_claim": {"const": false},
+        "production_enabled": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}},
+      "additionalProperties": false
+    },
+    "probe": {
+      "type": "object",
+      "required": ["codec_fourcc", "frame_count", "fps", "duration_ms", "width", "height", "decode_samples"],
+      "properties": {
+        "codec_fourcc": {"const": "h264"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "duration_ms": {"type": "integer", "minimum": 1},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "decode_samples": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {"type": "object", "required": ["frame_index", "decoded"], "properties": {"frame_index": {"type": "integer", "minimum": 0}, "decoded": {"const": true}}, "additionalProperties": false}
+        }
+      },
+      "additionalProperties": false
+    },
+    "clip": {
+      "type": "object",
+      "required": ["task_id", "source_start_ms", "source_end_ms", "source_time_offset_ms", "target_selection_anchor_ms", "requested_duration_ms", "clip", "probe", "metadata_audit"],
+      "properties": {
+        "task_id": {"type": "string", "pattern": "^m77:8d7754d0de6d315674013d5b69a0b6ba:fs09-phase-00[12]$"},
+        "source_start_ms": {"type": "integer", "minimum": 0},
+        "source_end_ms": {"type": "integer", "minimum": 1},
+        "source_time_offset_ms": {"type": "integer", "minimum": 0},
+        "target_selection_anchor_ms": {"type": "integer", "minimum": 0},
+        "requested_duration_ms": {"type": "integer", "minimum": 1},
+        "clip": {"$ref": "#/$defs/source"},
+        "probe": {"$ref": "#/$defs/probe"},
+        "metadata_audit": {
+          "type": "object",
+          "required": ["ffprobe_sha256", "forbidden_tag_keys_present", "source_path_or_filename_present", "passed"],
+          "properties": {
+            "ffprobe_sha256": {"$ref": "#/$defs/sha256"},
+            "forbidden_tag_keys_present": {"const": []},
+            "source_path_or_filename_present": {"const": false},
+            "passed": {"const": true}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

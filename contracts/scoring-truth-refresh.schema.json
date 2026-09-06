@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/scoring-truth-refresh.schema.json",
+  "title": "RallyMate immutable scoring truth evidence refresh",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "refresh_version", "refresh_id", "generated_at", "status", "source_fingerprint_sha256", "source", "states", "counts", "artifacts", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "refresh_version": {"const": "scoring-truth-evidence-refresh-v1.0.0"},
+    "refresh_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "published_fail_closed_truth_evidence_snapshot"},
+    "source_fingerprint_sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "source": {"type": "object"},
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth_pack", "scoring_truth_evaluation", "pose_diagnostic_evaluation", "action_readiness", "evidence_plan"],
+      "properties": {
+        "truth_pack": {"type": "string"},
+        "scoring_truth_evaluation": {"type": "string"},
+        "pose_diagnostic_evaluation": {"type": "string"},
+        "action_readiness": {"type": "string"},
+        "evidence_plan": {"type": "string"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manual_events", "manual_keypoint_frames", "manual_semantics", "coach_labels", "work_items", "satisfied_work_items", "indicator_instances", "satisfied_indicator_instances", "evidence_units", "satisfied_evidence_units"],
+      "properties": {
+        "manual_events": {"type": "integer", "minimum": 0},
+        "manual_keypoint_frames": {"type": "integer", "minimum": 0},
+        "manual_semantics": {"type": "integer", "minimum": 0},
+        "coach_labels": {"type": "integer", "minimum": 0},
+        "work_items": {"type": "integer", "minimum": 1},
+        "satisfied_work_items": {"type": "integer", "minimum": 0},
+        "indicator_instances": {"type": "integer", "minimum": 1},
+        "satisfied_indicator_instances": {"type": "integer", "minimum": 0},
+        "evidence_units": {"type": "integer", "minimum": 1},
+        "satisfied_evidence_units": {"type": "integer", "minimum": 0}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "minProperties": 18,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"}
+        }
+      }
+    },
+    "safety": {"type": "object"}
+  }
+}

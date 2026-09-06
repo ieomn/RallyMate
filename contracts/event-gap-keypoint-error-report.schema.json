@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/event-gap-keypoint-error-report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "evaluator_version", "generated_at", "status", "pack", "counts", "metrics", "per_joint", "per_view_group", "per_event_code", "details", "feature_error_followup", "acceptance", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "evaluator_version": {"const": "event-gap-keypoint-error-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "evaluated_external_acceptance_protocol_required"]},
+    "pack": {
+      "type": "object",
+      "required": ["pack_version", "manifest_sha256", "validation_report_sha256", "task_contract_sha256", "prediction_contract_sha256"],
+      "properties": {
+        "pack_version": {"const": "event-gap-keypoint-truth-pack-v1.0.0"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "validation_report_sha256": {"$ref": "#/$defs/sha256"},
+        "task_contract_sha256": {"$ref": "#/$defs/sha256"},
+        "prediction_contract_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "required": ["required_joint_tasks", "accepted_joint_truth", "visible_joint_truth", "invisible_joint_truth"],
+      "properties": {
+        "required_joint_tasks": {"const": 142},
+        "accepted_joint_truth": {"type": "integer", "minimum": 0, "maximum": 142},
+        "visible_joint_truth": {"type": "integer", "minimum": 0, "maximum": 142},
+        "invisible_joint_truth": {"type": "integer", "minimum": 0, "maximum": 142}
+      },
+      "additionalProperties": false
+    },
+    "metrics": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/metrics"}]},
+    "per_joint": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/metrics"}}]},
+    "per_view_group": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/metrics"}}]},
+    "per_event_code": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/metrics"}}]},
+    "details": {"type": "array", "maxItems": 142, "items": {"type": "object"}},
+    "feature_error_followup": {
+      "type": "object",
+      "required": ["status", "automatic_feature_gate_change_allowed"],
+      "properties": {"status": {"enum": ["manual_keypoint_truth_required", "manual_pose_replay_required"]}, "automatic_feature_gate_change_allowed": {"const": false}},
+      "additionalProperties": false
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["status", "thresholds", "production_interpolation_allowed"],
+      "properties": {"status": {"const": "external_preregistered_protocol_required"}, "thresholds": {"const": null}, "production_interpolation_allowed": {"const": false}},
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "required": ["ground_truth_provided", "full_ground_truth_coverage", "metrics_are_interpolation_localization_error", "prediction_values_used_as_truth", "acceptance_threshold_generated", "production_enabled", "grade_generated", "threshold_generated", "maturity_promoted"],
+      "properties": {
+        "ground_truth_provided": {"type": "boolean"},
+        "full_ground_truth_coverage": {"type": "boolean"},
+        "metrics_are_interpolation_localization_error": {"type": "boolean"},
+        "prediction_values_used_as_truth": {"const": false},
+        "acceptance_threshold_generated": {"const": false},
+        "production_enabled": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "nullableNumber": {"type": ["number", "null"]},
+    "metrics": {
+      "type": "object",
+      "required": ["task_count", "visible_truth_count", "invisible_truth_count", "predicted_available_count", "prediction_available_on_invisible_truth_count", "valid_rate", "mae_euclidean_px", "p95_euclidean_px", "mae_euclidean_bbox_long_side", "p95_euclidean_bbox_long_side", "bias_x_px", "bias_y_px", "bias_x_normalized", "bias_y_normalized"],
+      "properties": {
+        "task_count": {"type": "integer", "minimum": 0},
+        "visible_truth_count": {"type": "integer", "minimum": 0},
+        "invisible_truth_count": {"type": "integer", "minimum": 0},
+        "predicted_available_count": {"type": "integer", "minimum": 0},
+        "prediction_available_on_invisible_truth_count": {"type": "integer", "minimum": 0},
+        "valid_rate": {"$ref": "#/$defs/nullableNumber"},
+        "mae_euclidean_px": {"$ref": "#/$defs/nullableNumber"},
+        "p95_euclidean_px": {"$ref": "#/$defs/nullableNumber"},
+        "mae_euclidean_bbox_long_side": {"$ref": "#/$defs/nullableNumber"},
+        "p95_euclidean_bbox_long_side": {"$ref": "#/$defs/nullableNumber"},
+        "bias_x_px": {"$ref": "#/$defs/nullableNumber"},
+        "bias_y_px": {"$ref": "#/$defs/nullableNumber"},
+        "bias_x_normalized": {"$ref": "#/$defs/nullableNumber"},
+        "bias_y_normalized": {"$ref": "#/$defs/nullableNumber"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

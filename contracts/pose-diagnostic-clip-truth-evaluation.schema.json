@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-diagnostic-clip-truth-evaluation.schema.json",
+  "title": "RallyMate M79 pose diagnostic candidate precision evaluation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evaluation_version", "generated_at", "status", "source", "counts", "metrics_by_diagnostic_type", "limitations", "acceptance", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "evaluation_version": {"const": "pose-diagnostic-candidate-precision-v1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["annotation_required", "completed_candidate_precision_only"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "sealed_candidates", "coverage_annotations", "positive_annotations", "candidate_adjudications"],
+      "properties": {
+        "manifest": {"$ref": "#/$defs/binding"},
+        "sealed_candidates": {"$ref": "#/$defs/binding"},
+        "coverage_annotations": {"$ref": "#/$defs/binding"},
+        "positive_annotations": {"$ref": "#/$defs/binding"},
+        "candidate_adjudications": {"$ref": "#/$defs/binding"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_tasks", "coverage_annotations", "positive_annotations", "candidate_adjudications", "by_diagnostic_type"],
+      "properties": {
+        "candidate_tasks": {"type": "integer", "minimum": 1},
+        "coverage_annotations": {"type": "integer", "minimum": 0},
+        "positive_annotations": {"type": "integer", "minimum": 0},
+        "candidate_adjudications": {"type": "integer", "minimum": 0},
+        "by_diagnostic_type": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["keypoint_jump", "left_right_swap"],
+          "properties": {"keypoint_jump": {"$ref": "#/$defs/type_counts"}, "left_right_swap": {"$ref": "#/$defs/type_counts"}}
+        }
+      }
+    },
+    "metrics_by_diagnostic_type": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["keypoint_jump", "left_right_swap"],
+          "properties": {"keypoint_jump": {"$ref": "#/$defs/type_metrics"}, "left_right_swap": {"$ref": "#/$defs/type_metrics"}}
+        }
+      ]
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_precision_evaluable_when_complete", "full_timeline_recall_evaluable", "candidate_windows_reveal_a_candidate_exists_somewhere_in_window", "blind_page_reveals_candidate_frame_or_joint"],
+      "properties": {
+        "candidate_precision_evaluable_when_complete": {"const": true},
+        "full_timeline_recall_evaluable": {"const": false},
+        "candidate_windows_reveal_a_candidate_exists_somewhere_in_window": {"const": true},
+        "blind_page_reveals_candidate_frame_or_joint": {"const": false}
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quality_gate_change_allowed", "runtime_candidate_override_allowed", "f2_to_f3_allowed"],
+      "properties": {
+        "quality_gate_change_allowed": {"const": false},
+        "runtime_candidate_override_allowed": {"const": false},
+        "f2_to_f3_allowed": {"const": false}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["partial_annotations_report_metrics", "candidate_precision_is_accuracy", "recall_claim", "quality_gate_modified", "grade_generated", "threshold_generated", "maturity_promoted"],
+      "properties": {
+        "partial_annotations_report_metrics": {"const": false},
+        "candidate_precision_is_accuracy": {"const": false},
+        "recall_claim": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "maturity_promoted": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "type_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_tasks", "adjudicated_tasks", "confirmed_true", "confirmed_false", "unobservable"],
+      "properties": {
+        "candidate_tasks": {"type": "integer", "minimum": 1},
+        "adjudicated_tasks": {"type": "integer", "minimum": 0},
+        "confirmed_true": {"type": "integer", "minimum": 0},
+        "confirmed_false": {"type": "integer", "minimum": 0},
+        "unobservable": {"type": "integer", "minimum": 0}
+      }
+    },
+    "type_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_precision", "recall", "f1", "recall_unavailable_reason"],
+      "properties": {
+        "candidate_precision": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "recall": {"const": null},
+        "f1": {"const": null},
+        "recall_unavailable_reason": {"const": "candidate_window_review_not_full_timeline_coverage"}
+      }
+    }
+  }
+}

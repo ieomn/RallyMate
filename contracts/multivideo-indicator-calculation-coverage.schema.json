@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-indicator-calculation-coverage.schema.json",
+  "title": "RallyMate multi-video indicator calculation coverage",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "coverage_version", "coverage_id", "generated_at", "status", "source", "scope", "counts", "videos", "indicators", "source_fingerprint_sha256", "safety", "artifacts"],
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "countMap": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feature_name", "feature_version", "value", "unit", "confidence", "valid", "reason", "source_frames"],
+      "properties": {
+        "feature_name": {"type": "string", "minLength": 1},
+        "feature_version": {"type": "string", "minLength": 1},
+        "value": {},
+        "unit": {"type": "string", "minLength": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "valid": {"const": true},
+        "reason": {"type": "string", "minLength": 1},
+        "source_frames": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "evidence": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["selection_rule", "event_id", "event_code", "person_track_id", "start_ms", "end_ms", "features"],
+      "properties": {
+        "selection_rule": {"const": "earliest_start_ms_then_event_id_no_feature_value_ranking"},
+        "event_id": {"type": "string", "minLength": 1},
+        "event_code": {"enum": ["FS01", "FS02", "FS09"]},
+        "person_track_id": {"type": "integer"},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 0},
+        "features": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/feature"}}
+      }
+    },
+    "videoIndicator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video_id", "candidate_instances", "measured_feature_vectors", "unavailable_feature_vectors", "measurement_rate", "score_status_counts", "measurement_failure_reason_counts", "first_measured_evidence"],
+      "properties": {
+        "video_id": {"type": "string", "minLength": 1},
+        "candidate_instances": {"type": "integer", "minimum": 0},
+        "measured_feature_vectors": {"type": "integer", "minimum": 0},
+        "unavailable_feature_vectors": {"type": "integer", "minimum": 0},
+        "measurement_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "score_status_counts": {"$ref": "#/$defs/countMap"},
+        "measurement_failure_reason_counts": {"$ref": "#/$defs/countMap"},
+        "first_measured_evidence": {"$ref": "#/$defs/evidence"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "coverage_version": {"const": "multivideo-indicator-calculation-coverage-v1.0.0"},
+    "coverage_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "all_registry_indicators_measured_in_every_video_candidate_events_unvalidated"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["measurement_sources", "source_set_id", "registry", "registry_version", "source_reports"],
+      "properties": {
+        "measurement_sources": {"$ref": "#/$defs/artifact"},
+        "source_set_id": {"type": "string", "minLength": 1},
+        "registry": {"$ref": "#/$defs/artifact"},
+        "registry_version": {"type": "string", "minLength": 1},
+        "source_reports": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_report", "summary", "events", "indicator_features", "scores", "scoring_loop_report"],
+            "properties": {
+              "source_report": {"$ref": "#/$defs/artifact"},
+              "summary": {"$ref": "#/$defs/artifact"},
+              "events": {"$ref": "#/$defs/artifact"},
+              "indicator_features": {"$ref": "#/$defs/artifact"},
+              "scores": {"$ref": "#/$defs/artifact"},
+              "scoring_loop_report": {"$ref": "#/$defs/artifact"}
+            }
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video_ids", "indicator_ids", "event_codes", "pose_contract", "primary_player_version"],
+      "properties": {
+        "video_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "indicator_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "event_codes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["FS01", "FS02", "FS09"]}},
+        "pose_contract": {"type": "object", "minProperties": 6},
+        "primary_player_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["videos", "frames", "candidate_events", "indicator_event_instances", "measured_feature_vectors", "unavailable_feature_vectors", "indicators", "indicators_with_measured_vector", "indicators_measured_in_every_video", "score_status_counts", "quality_gate_status_counts", "score_reason_counts", "scoring_block_flag_counts", "grade_count", "threshold_version_count"],
+      "properties": {
+        "videos": {"type": "integer", "minimum": 1},
+        "frames": {"type": "integer", "minimum": 1},
+        "candidate_events": {"type": "integer", "minimum": 1},
+        "indicator_event_instances": {"type": "integer", "minimum": 1},
+        "measured_feature_vectors": {"type": "integer", "minimum": 1},
+        "unavailable_feature_vectors": {"type": "integer", "minimum": 0},
+        "indicators": {"type": "integer", "minimum": 1},
+        "indicators_with_measured_vector": {"type": "integer", "minimum": 1},
+        "indicators_measured_in_every_video": {"type": "integer", "minimum": 1},
+        "score_status_counts": {"$ref": "#/$defs/countMap"},
+        "quality_gate_status_counts": {"$ref": "#/$defs/countMap"},
+        "score_reason_counts": {"$ref": "#/$defs/countMap"},
+        "scoring_block_flag_counts": {"$ref": "#/$defs/countMap"},
+        "grade_count": {"const": 0},
+        "threshold_version_count": {"const": 0}
+      }
+    },
+    "videos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["video_id", "frame_count", "duration_ms", "candidate_event_counts", "candidate_event_count", "indicator_event_instances", "measured_feature_vectors", "unavailable_feature_vectors", "indicators_with_measured_vector", "score_status_counts", "quality_gate_status_counts", "score_reason_counts", "scoring_block_flag_counts", "grade_count", "threshold_version_count"],
+        "properties": {
+          "video_id": {"type": "string", "minLength": 1},
+          "frame_count": {"type": "integer", "minimum": 1},
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "candidate_event_counts": {"$ref": "#/$defs/countMap"},
+          "candidate_event_count": {"type": "integer", "minimum": 1},
+          "indicator_event_instances": {"type": "integer", "minimum": 1},
+          "measured_feature_vectors": {"type": "integer", "minimum": 1},
+          "unavailable_feature_vectors": {"type": "integer", "minimum": 0},
+          "indicators_with_measured_vector": {"type": "integer", "minimum": 1},
+          "score_status_counts": {"$ref": "#/$defs/countMap"},
+          "quality_gate_status_counts": {"$ref": "#/$defs/countMap"},
+          "score_reason_counts": {"$ref": "#/$defs/countMap"},
+          "scoring_block_flag_counts": {"$ref": "#/$defs/countMap"},
+          "grade_count": {"const": 0},
+          "threshold_version_count": {"const": 0}
+        }
+      }
+    },
+    "indicators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["indicator_id", "feasibility_level", "required_events", "measurement_features", "candidate_instances", "measured_feature_vectors", "unavailable_feature_vectors", "measurement_rate", "videos_with_measured_vector", "measured_in_every_video", "score_status_counts", "measurement_failure_reason_counts", "by_video"],
+        "properties": {
+          "indicator_id": {"type": "string", "minLength": 1},
+          "feasibility_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]},
+          "required_events": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "measurement_features": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "candidate_instances": {"type": "integer", "minimum": 1},
+          "measured_feature_vectors": {"type": "integer", "minimum": 1},
+          "unavailable_feature_vectors": {"type": "integer", "minimum": 0},
+          "measurement_rate": {"type": "number", "minimum": 0, "maximum": 1},
+          "videos_with_measured_vector": {"type": "integer", "minimum": 1},
+          "measured_in_every_video": {"const": true},
+          "score_status_counts": {"$ref": "#/$defs/countMap"},
+          "measurement_failure_reason_counts": {"$ref": "#/$defs/countMap"},
+          "by_video": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/videoIndicator"}}
+        }
+      }
+    },
+    "source_fingerprint_sha256": {"$ref": "#/$defs/sha"},
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gpu_inference_executed", "existing_pose_frames_reused", "candidate_events_are_ground_truth", "event_accuracy_claim", "feature_accuracy_claim", "formal_score_claim", "cross_video_feature_value_pooling", "cross_model_cherry_picking", "grades_generated", "thresholds_generated", "automatic_F3_or_F4_promotion", "measurement_success_is_accuracy", "maximum_status_without_calibration"],
+      "properties": {
+        "gpu_inference_executed": {"const": false},
+        "existing_pose_frames_reused": {"const": true},
+        "candidate_events_are_ground_truth": {"const": false},
+        "event_accuracy_claim": {"const": false},
+        "feature_accuracy_claim": {"const": false},
+        "formal_score_claim": {"const": false},
+        "cross_video_feature_value_pooling": {"const": false},
+        "cross_model_cherry_picking": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false},
+        "measurement_success_is_accuracy": {"const": false},
+        "maximum_status_without_calibration": {"const": "calibration_required_or_unavailable"}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index_html"],
+      "properties": {"index_html": {"$ref": "#/$defs/artifact"}}
+    }
+  }
+}

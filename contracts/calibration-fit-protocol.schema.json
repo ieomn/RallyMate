@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-fit-protocol.schema.json",
+  "title": "RallyMate preregistered calibration fitting protocol",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "indicator_id", "protocol_id", "protocol_version", "source", "label_scale", "label_resolution_policy", "requirements", "backends"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "artifact_scope": {"enum": ["calibration_fit_protocol", "synthetic_test_only_fit_protocol"]},
+    "indicator_id": {"type": "string", "pattern": "^(GS|FS)[0-9]{2}-M[0-9]{2}(-[0-9]{2})?$"},
+    "protocol_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
+    "candidate_version_prefix": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "source_sha256", "registered_at"],
+      "properties": {
+        "kind": {"enum": ["preregistered_calibration_protocol", "synthetic_test_fixture"]},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "registered_at": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "label_scale": {"const": ["E", "D", "C", "B", "A"]},
+    "label_resolution_policy": {"enum": ["unanimous_multi_coach_only_v1", "external_adjudicated_v1"]},
+    "requirements": {
+      "type": "object",
+      "required": ["min_records_by_split", "min_records_per_grade_by_split", "min_annotators", "min_shared_items", "agreement_metric", "min_agreement_value"],
+      "properties": {
+        "min_records_by_split": {
+          "type": "object",
+          "required": ["train", "validation", "independent_test"],
+          "properties": {
+            "train": {"type": "integer", "minimum": 0},
+            "validation": {"type": "integer", "minimum": 0},
+            "independent_test": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "min_records_per_grade_by_split": {
+          "type": "object",
+          "required": ["train", "validation"],
+          "properties": {
+            "train": {"$ref": "#/$defs/gradeCounts"},
+            "validation": {"$ref": "#/$defs/gradeCounts"}
+          },
+          "additionalProperties": false
+        },
+        "min_annotators": {"type": "integer", "minimum": 2},
+        "min_shared_items": {"type": "integer", "minimum": 0},
+        "agreement_metric": {"const": "quadratic_weighted_kappa"},
+        "min_agreement_value": {"type": "number", "minimum": -1, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "backends": {
+      "type": "object",
+      "properties": {
+        "threshold_rule": {
+          "type": "object",
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "primary_feature": {"type": "string", "minLength": 1},
+            "direction": {"enum": ["higher_is_better", "lower_is_better"]},
+            "objective": {"const": "mean_absolute_grade_error"}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"enabled": {"const": true}}, "required": ["enabled"]},
+              "then": {"required": ["primary_feature", "direction", "objective"]}
+            }
+          ],
+          "additionalProperties": false
+        },
+        "ordinal_regression": {
+          "type": "object",
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "optimizer": {
+              "type": "object",
+              "required": ["algorithm", "max_iterations", "learning_rate", "l2", "tolerance", "min_cutpoint_gap"],
+              "properties": {
+                "algorithm": {"const": "projected_gradient_descent_v1"},
+                "max_iterations": {"type": "integer", "minimum": 1},
+                "learning_rate": {"type": "number", "exclusiveMinimum": 0},
+                "l2": {"type": "number", "minimum": 0},
+                "tolerance": {"type": "number", "minimum": 0},
+                "min_cutpoint_gap": {"type": "number", "exclusiveMinimum": 0}
+              },
+              "additionalProperties": false
+            }
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"enabled": {"const": true}}, "required": ["enabled"]},
+              "then": {"required": ["optimizer"]}
+            }
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "gradeCounts": {
+      "type": "object",
+      "required": ["E", "D", "C", "B", "A"],
+      "properties": {
+        "E": {"type": "integer", "minimum": 0},
+        "D": {"type": "integer", "minimum": 0},
+        "C": {"type": "integer", "minimum": 0},
+        "B": {"type": "integer", "minimum": 0},
+        "A": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

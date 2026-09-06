@@ -1,0 +1,103 @@
+# Python caches and local environments.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+*.egg-info/
+
+# Front-end and general build caches.
+*.tsbuildinfo
+build/
+dist/
+coverage/
+
+# Local tooling scratch space and downloaded runtime environments.
+.codex_tmp/
+runtime/**
+!runtime/
+!runtime/rtmpose/
+!runtime/rtmpose/README.md
+!runtime/rtmpose/requirements-lock.txt
+
+# Local configuration and credentials. Example files remain versioned.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Downloaded model binaries.
+models/**/*.pt
+models/**/*.pth
+models/**/*.onnx
+models/**/*.ckpt
+models/**/*.safetensors
+models/**/*.engine
+models/**/*.bin
+
+# Private source media, annotations, and training data.
+FULL-TEST/
+data/samples/
+data/annotations/
+data/training/*
+!data/training/.gitkeep
+
+# Generated runs, registries, training outputs, and deployed service state.
+runs/*
+!runs/.gitkeep
+model_registry/*
+!model_registry/.gitkeep
+service_data/*
+!service_data/.gitkeep
+training/generated/*
+!training/generated/.gitkeep
+
+# Reports are generated locally. Keep directories traversable so that only
+# the repository guide, sentinel files, and the evidence allowlist below pass.
+reports/**
+!reports/**/
+!reports/README.md
+!reports/**/.gitkeep
+
+# Selected user-demo evidence.
+!reports/user-demo-v1.2/summary.md
+!reports/user-demo-v1.2/demo-contract.json
+!reports/user-demo-v1.2/field-change-record.json
+!reports/m96-user-demo-v1.1/summary.md
+!reports/m96-user-demo-v1.1/demo-contract.json
+!reports/m96-user-demo-v1.1/field-change-record.json
+
+# Selected M96 pose-pilot and same-frame diagnostic evidence.
+!reports/m96-pose-pilot/summary.md
+!reports/m96-pose-pilot/pilot-contract.json
+!reports/m96-pose-pilot/field-change-record.json
+!reports/m96-rtmpose-same-frame-diagnostic/summary.md
+!reports/m96-rtmpose-same-frame-diagnostic/field-change-record.json
+!reports/m96-rtmpose-same-frame-diagnostic/diagnostic-report.json
+
+# Selected M97 measurement-recovery evidence.
+!reports/measurement-recovery-m97/summary/summary.md
+!reports/measurement-recovery-m97/summary/report.json
+!reports/measurement-recovery-m97/field-change-record.json
+
+# Reproducible document-render QA.
+docs/_qa/
+
+# Local working-session handoff notes are not public project documentation.
+docs/新对话无缝交接文档.md
+
+# Operating-system and editor metadata.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

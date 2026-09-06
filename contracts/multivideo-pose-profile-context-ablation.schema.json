@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-pose-profile-context-ablation.schema.json",
+  "title": "RallyMate multivideo Pose-profile/context ablation",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "context_replay", "baseline", "strategies", "by_video", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "multivideo-pose-profile-context-ablation-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "m69_anchored_extension_regression_free_requires_truth"},
+    "scope": {"type": "object"},
+    "sources": {"type": "object"},
+    "context_replay": {"type": "object", "required": ["target_frame_count", "source_frame_count_by_policy", "pose_output_produced", "pose_output_missing", "changes_only_pose_profile_with_exact_m68_crop_context"], "properties": {"changes_only_pose_profile_with_exact_m68_crop_context": {"const": true}}},
+    "baseline": {"type": "object"},
+    "strategies": {"type": "object", "required": ["context_matched_profile_only", "uniform_context_m69", "naive_multicandidate", "m69_anchored_extension"]},
+    "by_video": {"type": "array", "minItems": 3, "maxItems": 3},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted", "naive_multicandidate_rejected", "anchored_extension_is_best_current_regression_free_candidate"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}, "naive_multicandidate_rejected": {"const": true}, "anchored_extension_is_best_current_regression_free_candidate": {"const": true}}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_profile_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "current_three_video_regression_free_is_not_independent_validation"],
+      "properties": {
+        "accuracy_claim": {"const": false}, "ground_truth_provided": {"const": false}, "production_enabled": {"const": false}, "automatic_profile_fallback_enabled": {"const": false}, "feature_gate_modified": {"const": false}, "measurement_gate_modified": {"const": false}, "event_boundaries_modified": {"const": false}, "grades_generated": {"const": false}, "thresholds_generated": {"const": false}, "maturity_promoted": {"const": false}, "current_three_video_regression_free_is_not_independent_validation": {"const": true}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

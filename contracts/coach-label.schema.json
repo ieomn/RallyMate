@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/coach-label.schema.json",
+  "type": "object",
+  "required": ["schema_version", "annotation_id", "video_id", "event_id", "indicator_id", "annotator_id", "label_type"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "annotation_id": {"type": "string", "minLength": 1},
+    "video_id": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "annotator_id": {"type": "string", "minLength": 1},
+    "label_type": {"enum": ["grade", "ranking"]},
+    "grade": {"enum": ["A", "B", "C", "D", "E"]},
+    "rank_group_id": {"type": "string"},
+    "rank": {"type": "integer", "minimum": 1}
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0.0",
+  "formats": {
+    "coco17": {
+      "count": 17,
+      "source": "Ultralytics COCO pose ordering",
+      "keypoints": [
+        {"index": 0, "name": "nose", "downstream_joint_id": "J004"},
+        {"index": 1, "name": "left_eye", "downstream_joint_id": "J008"},
+        {"index": 2, "name": "right_eye", "downstream_joint_id": "J009"},
+        {"index": 3, "name": "left_ear", "downstream_joint_id": "J006"},
+        {"index": 4, "name": "right_ear", "downstream_joint_id": "J007"},
+        {"index": 5, "name": "left_shoulder", "downstream_joint_id": "J033"},
+        {"index": 6, "name": "right_shoulder", "downstream_joint_id": "J034"},
+        {"index": 7, "name": "left_elbow", "downstream_joint_id": "J101"},
+        {"index": 8, "name": "right_elbow", "downstream_joint_id": "J121"},
+        {"index": 9, "name": "left_wrist", "downstream_joint_id": "J103"},
+        {"index": 10, "name": "right_wrist", "downstream_joint_id": "J123"},
+        {"index": 11, "name": "left_hip", "downstream_joint_id": "J071"},
+        {"index": 12, "name": "right_hip", "downstream_joint_id": "J072"},
+        {"index": 13, "name": "left_knee", "downstream_joint_id": "J141"},
+        {"index": 14, "name": "right_knee", "downstream_joint_id": "J161"},
+        {"index": 15, "name": "left_ankle", "downstream_joint_id": "J143"},
+        {"index": 16, "name": "right_ankle", "downstream_joint_id": "J163"}
+      ]
+    },
+    "halpe26": {
+      "count": 26,
+      "source": "OpenMMLab MMPose configs/_base_/datasets/halpe.py",
+      "source_url": "https://github.com/open-mmlab/mmpose/blob/main/configs/_base_/datasets/halpe.py",
+      "keypoints": [
+        {"index": 0, "name": "nose", "downstream_joint_id": "J004"},
+        {"index": 1, "name": "left_eye", "downstream_joint_id": "J008"},
+        {"index": 2, "name": "right_eye", "downstream_joint_id": "J009"},
+        {"index": 3, "name": "left_ear", "downstream_joint_id": "J006"},
+        {"index": 4, "name": "right_ear", "downstream_joint_id": "J007"},
+        {"index": 5, "name": "left_shoulder", "downstream_joint_id": "J033"},
+        {"index": 6, "name": "right_shoulder", "downstream_joint_id": "J034"},
+        {"index": 7, "name": "left_elbow", "downstream_joint_id": "J101"},
+        {"index": 8, "name": "right_elbow", "downstream_joint_id": "J121"},
+        {"index": 9, "name": "left_wrist", "downstream_joint_id": "J103"},
+        {"index": 10, "name": "right_wrist", "downstream_joint_id": "J123"},
+        {"index": 11, "name": "left_hip", "downstream_joint_id": "J071"},
+        {"index": 12, "name": "right_hip", "downstream_joint_id": "J072"},
+        {"index": 13, "name": "left_knee", "downstream_joint_id": "J141"},
+        {"index": 14, "name": "right_knee", "downstream_joint_id": "J161"},
+        {"index": 15, "name": "left_ankle", "downstream_joint_id": "J143"},
+        {"index": 16, "name": "right_ankle", "downstream_joint_id": "J163"},
+        {"index": 17, "name": "head", "downstream_joint_id": null},
+        {"index": 18, "name": "neck", "downstream_joint_id": null},
+        {"index": 19, "name": "hip", "downstream_joint_id": null},
+        {"index": 20, "name": "left_big_toe", "downstream_joint_id": null},
+        {"index": 21, "name": "right_big_toe", "downstream_joint_id": null},
+        {"index": 22, "name": "left_small_toe", "downstream_joint_id": null},
+        {"index": 23, "name": "right_small_toe", "downstream_joint_id": null},
+        {"index": 24, "name": "left_heel", "downstream_joint_id": null},
+        {"index": 25, "name": "right_heel", "downstream_joint_id": null}
+      ]
+    }
+  }
+}

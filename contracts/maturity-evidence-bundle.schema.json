@@ -1,0 +1,524 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/maturity-evidence-bundle.schema.json",
+  "title": "RallyMate fail-closed F0-to-F4 maturity evidence bundle",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "bundle_version",
+    "artifact_scope",
+    "bundle_id",
+    "indicator_id",
+    "canonicalization",
+    "created_at",
+    "source",
+    "transitions",
+    "final_registry"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "bundle_version": {"const": "maturity-evidence-bundle-v1"},
+    "artifact_scope": {
+      "enum": [
+        "maturity_evidence",
+        "synthetic_test_only_maturity_evidence"
+      ]
+    },
+    "bundle_id": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "canonicalization": {"const": "rallymate-canonical-json-v1"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "source": {"$ref": "#/$defs/reference"},
+    "transitions": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"$ref": "#/$defs/transitionF1"},
+        {"$ref": "#/$defs/transitionF2"},
+        {"$ref": "#/$defs/transitionF3"},
+        {"$ref": "#/$defs/transitionF4"}
+      ],
+      "items": false
+    },
+    "final_registry": {
+      "allOf": [
+        {"$ref": "#/$defs/registryBinding"},
+        {"properties": {"indicator_level": {"const": "F4"}}}
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "reference": {
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "artifact_version",
+        "content_sha256",
+        "source_sha256",
+        "source_kind",
+        "registered_at"
+      ],
+      "properties": {
+        "artifact_id": {"type": "string", "minLength": 1},
+        "artifact_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "source_kind": {
+          "enum": [
+            "synthetic_test_fixture",
+            "human_bundle_record",
+            "evaluation_report",
+            "human_review_record",
+            "external_preregistered_protocol",
+            "manual_event_annotations",
+            "manual_corrected_keypoints",
+            "coach_ground_truth_grade_gap_analysis",
+            "multi_coach_human_labels",
+            "independent_human_test_set"
+          ]
+        },
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "registryBinding": {
+      "type": "object",
+      "required": [
+        "registry_version",
+        "content_sha256",
+        "indicator_id",
+        "indicator_level"
+      ],
+      "properties": {
+        "registry_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "indicator_id": {"type": "string", "minLength": 1},
+        "indicator_level": {"enum": ["F0", "F1", "F2", "F3", "F4"]}
+      },
+      "additionalProperties": false
+    },
+    "reviewer": {
+      "type": "object",
+      "required": ["reviewer_id", "role"],
+      "properties": {
+        "reviewer_id": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["decision", "protocol", "reviewer", "reviewed_at", "source"],
+      "properties": {
+        "decision": {"const": "passed"},
+        "protocol": {"$ref": "#/$defs/reference"},
+        "reviewer": {"$ref": "#/$defs/reviewer"},
+        "reviewed_at": {"type": "string", "format": "date-time"},
+        "source": {"$ref": "#/$defs/reference"}
+      },
+      "additionalProperties": false
+    },
+    "errorStats": {
+      "type": "object",
+      "required": ["mae", "p95", "bias", "valid_rate", "eligible_count", "valid_count"],
+      "properties": {
+        "mae": {"type": "number", "minimum": 0},
+        "p95": {"type": "number", "minimum": 0},
+        "bias": {"type": "number"},
+        "valid_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "eligible_count": {"type": "integer", "minimum": 1},
+        "valid_count": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "featureMetric": {
+      "type": "object",
+      "required": [
+        "feature_name",
+        "unit",
+        "mae",
+        "p95",
+        "bias",
+        "valid_rate",
+        "eligible_count",
+        "valid_count",
+        "by_view"
+      ],
+      "properties": {
+        "feature_name": {"type": "string", "minLength": 1},
+        "unit": {"type": "string", "minLength": 1},
+        "mae": {"type": "number", "minimum": 0},
+        "p95": {"type": "number", "minimum": 0},
+        "bias": {"type": "number"},
+        "valid_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "eligible_count": {"type": "integer", "minimum": 1},
+        "valid_count": {"type": "integer", "minimum": 1},
+        "by_view": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["view_group", "mae", "p95", "bias", "valid_rate", "eligible_count", "valid_count"],
+            "properties": {
+              "view_group": {"type": "string", "minLength": 1},
+              "mae": {"type": "number", "minimum": 0},
+              "p95": {"type": "number", "minimum": 0},
+              "bias": {"type": "number"},
+              "valid_rate": {"type": "number", "minimum": 0, "maximum": 1},
+              "eligible_count": {"type": "integer", "minimum": 1},
+              "valid_count": {"type": "integer", "minimum": 1}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "metricSummary": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["metric_name", "value", "unit"],
+        "properties": {
+          "metric_name": {"type": "string", "minLength": 1},
+          "value": {"type": "number"},
+          "unit": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "eventPayload": {
+      "type": "object",
+      "required": ["event_evaluation", "manual_event_truth"],
+      "properties": {
+        "event_evaluation": {
+          "type": "object",
+          "required": [
+            "status",
+            "event_codes",
+            "event_f1",
+            "mean_segment_iou",
+            "boundary_mae_ms",
+            "evaluated_event_count"
+          ],
+          "properties": {
+            "status": {"const": "evaluated"},
+            "event_codes": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "event_f1": {"type": "number", "minimum": 0, "maximum": 1},
+            "mean_segment_iou": {"type": "number", "minimum": 0, "maximum": 1},
+            "boundary_mae_ms": {"type": "number", "minimum": 0},
+            "evaluated_event_count": {"type": "integer", "minimum": 1}
+          },
+          "additionalProperties": false
+        },
+        "manual_event_truth": {"$ref": "#/$defs/reference"}
+      },
+      "additionalProperties": false
+    },
+    "featurePayload": {
+      "type": "object",
+      "required": [
+        "feature_evaluation",
+        "error_budget",
+        "manual_keypoint_truth",
+        "manual_event_truth",
+        "grade_gap_assessment"
+      ],
+      "properties": {
+        "feature_evaluation": {
+          "type": "object",
+          "required": ["status", "features"],
+          "properties": {
+            "status": {"const": "evaluated"},
+            "features": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "#/$defs/featureMetric"}
+            }
+          },
+          "additionalProperties": false
+        },
+        "error_budget": {
+          "type": "object",
+          "required": ["method", "features"],
+          "properties": {
+            "method": {
+              "const": "one_factor_counterfactual_differences_not_additive_shapley_decomposition"
+            },
+            "features": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "feature_name",
+                  "pose_error",
+                  "event_boundary_error",
+                  "smoothing_error",
+                  "missing_value_impact"
+                ],
+                "properties": {
+                  "feature_name": {"type": "string", "minLength": 1},
+                  "pose_error": {"$ref": "#/$defs/errorStats"},
+                  "event_boundary_error": {"$ref": "#/$defs/errorStats"},
+                  "smoothing_error": {"$ref": "#/$defs/errorStats"},
+                  "missing_value_impact": {
+                    "type": "object",
+                    "required": ["mean_valid_fraction_loss", "p95_valid_fraction_loss"],
+                    "properties": {
+                      "mean_valid_fraction_loss": {"type": "number", "minimum": 0, "maximum": 1},
+                      "p95_valid_fraction_loss": {"type": "number", "minimum": 0, "maximum": 1}
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "manual_keypoint_truth": {"$ref": "#/$defs/reference"},
+        "manual_event_truth": {"$ref": "#/$defs/reference"},
+        "grade_gap_assessment": {
+          "type": "object",
+          "required": ["status", "method", "feature_decisions", "report", "semantics"],
+          "properties": {
+            "status": {"const": "passed"},
+            "method": {"const": "external_preregistered_protocol"},
+            "feature_decisions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["feature_name", "status"],
+                "properties": {
+                  "feature_name": {"type": "string", "minLength": 1},
+                  "status": {"const": "passed"}
+                },
+                "additionalProperties": false
+              }
+            },
+            "report": {"$ref": "#/$defs/reference"},
+            "semantics": {
+              "const": "feature_error_materially_smaller_than_potential_grade_separation"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "f3Payload": {
+      "type": "object",
+      "required": ["grade_separation", "multi_coach_agreement", "internal_validation"],
+      "properties": {
+        "grade_separation": {
+          "type": "object",
+          "required": ["status", "method", "metric_summary", "report"],
+          "properties": {
+            "status": {"const": "passed"},
+            "method": {"type": "string", "minLength": 1},
+            "metric_summary": {"$ref": "#/$defs/metricSummary"},
+            "report": {"$ref": "#/$defs/reference"}
+          },
+          "additionalProperties": false
+        },
+        "multi_coach_agreement": {
+          "type": "object",
+          "required": ["status", "coach_count", "metric_summary", "report", "coach_label_source"],
+          "properties": {
+            "status": {"const": "evaluated"},
+            "coach_count": {"type": "integer", "minimum": 2},
+            "metric_summary": {"$ref": "#/$defs/metricSummary"},
+            "report": {"$ref": "#/$defs/reference"},
+            "coach_label_source": {"$ref": "#/$defs/reference"}
+          },
+          "additionalProperties": false
+        },
+        "internal_validation": {
+          "type": "object",
+          "required": ["status", "validation_scheme", "metric_summary", "report"],
+          "properties": {
+            "status": {"const": "validated"},
+            "validation_scheme": {"type": "string", "minLength": 1},
+            "metric_summary": {"$ref": "#/$defs/metricSummary"},
+            "report": {"$ref": "#/$defs/reference"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "f4Payload": {
+      "type": "object",
+      "required": ["independent_test"],
+      "properties": {
+        "independent_test": {
+          "type": "object",
+          "required": [
+            "status",
+            "approved_for_scoring",
+            "dataset",
+            "report",
+            "protocol",
+            "metric_summary",
+            "independence_attestation"
+          ],
+          "properties": {
+            "status": {"const": "passed"},
+            "approved_for_scoring": {"const": true},
+            "dataset": {"$ref": "#/$defs/reference"},
+            "report": {"$ref": "#/$defs/reference"},
+            "protocol": {"$ref": "#/$defs/reference"},
+            "metric_summary": {"$ref": "#/$defs/metricSummary"},
+            "independence_attestation": {
+              "type": "object",
+              "required": ["train_test_disjoint", "held_out_until_final_evaluation", "source"],
+              "properties": {
+                "train_test_disjoint": {"const": true},
+                "held_out_until_final_evaluation": {"const": true},
+                "source": {"$ref": "#/$defs/reference"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidenceF1": {"$ref": "#/$defs/evidenceWrapperF1"},
+    "evidenceF2": {"$ref": "#/$defs/evidenceWrapperF2"},
+    "evidenceF3": {"$ref": "#/$defs/evidenceWrapperF3"},
+    "evidenceF4": {"$ref": "#/$defs/evidenceWrapperF4"},
+    "evidenceWrapperF1": {
+      "type": "object",
+      "required": ["evidence_id", "evidence_version", "evaluated_at", "source", "payload", "payload_sha256"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "evidence_version": {"type": "string", "minLength": 1},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "source": {"$ref": "#/$defs/reference"},
+        "payload": {"$ref": "#/$defs/eventPayload"},
+        "payload_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "evidenceWrapperF2": {
+      "type": "object",
+      "required": ["evidence_id", "evidence_version", "evaluated_at", "source", "payload", "payload_sha256"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "evidence_version": {"type": "string", "minLength": 1},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "source": {"$ref": "#/$defs/reference"},
+        "payload": {"$ref": "#/$defs/featurePayload"},
+        "payload_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "evidenceWrapperF3": {
+      "type": "object",
+      "required": ["evidence_id", "evidence_version", "evaluated_at", "source", "payload", "payload_sha256"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "evidence_version": {"type": "string", "minLength": 1},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "source": {"$ref": "#/$defs/reference"},
+        "payload": {"$ref": "#/$defs/f3Payload"},
+        "payload_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "evidenceWrapperF4": {
+      "type": "object",
+      "required": ["evidence_id", "evidence_version", "evaluated_at", "source", "payload", "payload_sha256"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "evidence_version": {"type": "string", "minLength": 1},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "source": {"$ref": "#/$defs/reference"},
+        "payload": {"$ref": "#/$defs/f4Payload"},
+        "payload_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "transitionF1": {
+      "type": "object",
+      "required": ["transition_id", "from_level", "to_level", "previous_transition_sha256", "transition_sha256", "registry_before", "registry_after", "evidence", "acceptance"],
+      "properties": {
+        "transition_id": {"type": "string", "minLength": 1},
+        "from_level": {"const": "F0"},
+        "to_level": {"const": "F1"},
+        "previous_transition_sha256": {"type": "null"},
+        "transition_sha256": {"$ref": "#/$defs/sha256"},
+        "registry_before": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F0"}}}]},
+        "registry_after": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F1"}}}]},
+        "evidence": {"$ref": "#/$defs/evidenceF1"},
+        "acceptance": {"$ref": "#/$defs/acceptance"}
+      },
+      "additionalProperties": false
+    },
+    "transitionF2": {
+      "type": "object",
+      "required": ["transition_id", "from_level", "to_level", "previous_transition_sha256", "transition_sha256", "registry_before", "registry_after", "evidence", "acceptance"],
+      "properties": {
+        "transition_id": {"type": "string", "minLength": 1},
+        "from_level": {"const": "F1"},
+        "to_level": {"const": "F2"},
+        "previous_transition_sha256": {"$ref": "#/$defs/sha256"},
+        "transition_sha256": {"$ref": "#/$defs/sha256"},
+        "registry_before": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F1"}}}]},
+        "registry_after": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F2"}}}]},
+        "evidence": {"$ref": "#/$defs/evidenceF2"},
+        "acceptance": {"$ref": "#/$defs/acceptance"}
+      },
+      "additionalProperties": false
+    },
+    "transitionF3": {
+      "type": "object",
+      "required": ["transition_id", "from_level", "to_level", "previous_transition_sha256", "transition_sha256", "registry_before", "registry_after", "evidence", "acceptance"],
+      "properties": {
+        "transition_id": {"type": "string", "minLength": 1},
+        "from_level": {"const": "F2"},
+        "to_level": {"const": "F3"},
+        "previous_transition_sha256": {"$ref": "#/$defs/sha256"},
+        "transition_sha256": {"$ref": "#/$defs/sha256"},
+        "registry_before": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F2"}}}]},
+        "registry_after": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F3"}}}]},
+        "evidence": {"$ref": "#/$defs/evidenceF3"},
+        "acceptance": {"$ref": "#/$defs/acceptance"}
+      },
+      "additionalProperties": false
+    },
+    "transitionF4": {
+      "type": "object",
+      "required": ["transition_id", "from_level", "to_level", "previous_transition_sha256", "transition_sha256", "registry_before", "registry_after", "evidence", "acceptance"],
+      "properties": {
+        "transition_id": {"type": "string", "minLength": 1},
+        "from_level": {"const": "F3"},
+        "to_level": {"const": "F4"},
+        "previous_transition_sha256": {"$ref": "#/$defs/sha256"},
+        "transition_sha256": {"$ref": "#/$defs/sha256"},
+        "registry_before": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F3"}}}]},
+        "registry_after": {"allOf": [{"$ref": "#/$defs/registryBinding"}, {"properties": {"indicator_level": {"const": "F4"}}}]},
+        "evidence": {"$ref": "#/$defs/evidenceF4"},
+        "acceptance": {"$ref": "#/$defs/acceptance"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

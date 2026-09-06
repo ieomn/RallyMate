@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/small-roi-keypoint-truth-pack.schema.json",
+  "type": "object",
+  "required": ["schema_version", "pack_version", "generated_at", "status", "video_id", "sources", "scope", "frames", "workbench", "safety", "artifacts", "task_contract_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pack_version": {"const": "small-roi-keypoint-truth-pack-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "annotation_required"},
+    "video_id": {"type": "string", "minLength": 1},
+    "sources": {"type": "object", "minProperties": 6, "additionalProperties": {"$ref": "#/$defs/source"}},
+    "scope": {
+      "type": "object",
+      "required": ["frame_selection", "frame_count", "joint_names", "joint_task_count", "required_independent_annotators", "required_independent_reviewer", "keypoint_confidence_min_for_model_evaluation", "bbox_size_stratification"],
+      "properties": {
+        "frame_selection": {"const": "all_recovered_frames_from_small_roi_experiment"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "joint_names": {"type": "array", "minItems": 14, "maxItems": 14, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "joint_task_count": {"type": "integer", "minimum": 14},
+        "required_independent_annotators": {"const": 2},
+        "required_independent_reviewer": {"const": 1},
+        "keypoint_confidence_min_for_model_evaluation": {"const": 0.25},
+        "bbox_size_stratification": {
+          "type": "object",
+          "required": ["method", "long_side_edges_px", "not_an_acceptance_threshold"],
+          "properties": {
+            "method": {"const": "empirical_quartiles_descriptive_only"},
+            "long_side_edges_px": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "minimum": 0}},
+            "not_an_acceptance_threshold": {"const": true}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "frames": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_frame_index", "processed_index", "timestamp_ms", "width", "height", "person_track_id", "bbox_px", "bbox_width_px", "bbox_height_px", "bbox_long_side_px", "experimental_valid_scoring_joint_count", "experimental_valid_native_keypoint_count", "affected_event_ids", "bbox_size_stratum"],
+        "properties": {
+          "source_frame_index": {"type": "integer", "minimum": 0}, "processed_index": {"type": "integer", "minimum": 0}, "timestamp_ms": {"type": "integer", "minimum": 0},
+          "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1}, "person_track_id": {"type": ["integer", "string"]},
+          "bbox_px": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}},
+          "bbox_width_px": {"type": "number", "exclusiveMinimum": 0}, "bbox_height_px": {"type": "number", "exclusiveMinimum": 0}, "bbox_long_side_px": {"type": "number", "exclusiveMinimum": 0},
+          "experimental_valid_scoring_joint_count": {"type": "integer", "minimum": 0, "maximum": 14}, "experimental_valid_native_keypoint_count": {"type": "integer", "minimum": 0, "maximum": 26},
+          "affected_event_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "bbox_size_stratum": {"enum": ["Q1_smallest", "Q2", "Q3", "Q4_largest"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "workbench": {"type": "object", "required": ["source_video", "comparison_video", "annotation_csv", "adjudication_csv", "compiled_keypoints", "validation_report"], "additionalProperties": {"type": "string"}},
+    "safety": {
+      "type": "object",
+      "required": ["model_keypoints_embedded_in_annotation_ui", "truth_prefilled_from_model", "independent_adjudication_required", "accuracy_claim", "production_enabled", "automatic_profile_fallback_enabled", "grade_generated", "threshold_generated", "maturity_promoted", "partial_annotations_change_runtime"],
+      "properties": {
+        "model_keypoints_embedded_in_annotation_ui": {"const": false}, "truth_prefilled_from_model": {"const": false}, "independent_adjudication_required": {"const": true}, "accuracy_claim": {"const": false}, "production_enabled": {"const": false}, "automatic_profile_fallback_enabled": {"const": false}, "grade_generated": {"const": false}, "threshold_generated": {"const": false}, "maturity_promoted": {"const": false}, "partial_annotations_change_runtime": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {"type": "object", "minProperties": 4, "additionalProperties": {"$ref": "#/$defs/source"}},
+    "task_contract_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "source": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

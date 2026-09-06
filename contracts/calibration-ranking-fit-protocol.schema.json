@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-ranking-fit-protocol.schema.json",
+  "title": "RallyMate preregistered ranking-only fit protocol",
+  "type": "object",
+  "required": ["schema_version", "artifact_scope", "protocol_id", "protocol_version", "indicator_id", "source", "dataset_binding", "target_semantics", "requirements", "backend"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "artifact_scope": {"enum": ["ranking_calibration_fit_protocol", "synthetic_test_only_ranking_fit_protocol"]},
+    "protocol_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
+    "indicator_id": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "required": ["kind", "source_sha256", "registered_at"],
+      "properties": {
+        "kind": {"enum": ["preregistered_ranking_protocol", "synthetic_test_fixture"]},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "dataset_binding": {
+      "type": "object",
+      "required": ["dataset_id", "dataset_version", "content_sha256", "independent_test_seal_id", "independent_test_content_sha256"],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "dataset_version": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "independent_test_seal_id": {"type": "string", "minLength": 1},
+        "independent_test_content_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "target_semantics": {
+      "const": {"target": "relative_order_only", "absolute_grade_anchor_present": false, "A_E_output_allowed": false}
+    },
+    "requirements": {
+      "type": "object",
+      "required": ["min_train_pairs", "min_validation_pairs", "min_independent_test_samples", "min_annotators", "min_shared_pairs", "agreement_metric", "min_agreement_value"],
+      "properties": {
+        "min_train_pairs": {"type": "integer", "minimum": 0},
+        "min_validation_pairs": {"type": "integer", "minimum": 0},
+        "min_independent_test_samples": {"type": "integer", "minimum": 0},
+        "min_annotators": {"type": "integer", "minimum": 2},
+        "min_shared_pairs": {"type": "integer", "minimum": 0},
+        "agreement_metric": {"const": "kendall_tau"},
+        "min_agreement_value": {"type": "number", "minimum": -1, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "backend": {
+      "type": "object",
+      "required": ["name", "include_equal_rank_ties", "optimizer"],
+      "properties": {
+        "name": {"const": "pairwise_logistic_ranker"},
+        "include_equal_rank_ties": {"type": "boolean"},
+        "optimizer": {
+          "type": "object",
+          "required": ["algorithm", "max_iterations", "learning_rate", "l2", "tolerance"],
+          "properties": {
+            "algorithm": {"const": "batch_gradient_descent_v1"},
+            "max_iterations": {"type": "integer", "minimum": 1},
+            "learning_rate": {"type": "number", "exclusiveMinimum": 0},
+            "l2": {"type": "number", "minimum": 0},
+            "tolerance": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}},
+  "additionalProperties": false
+}

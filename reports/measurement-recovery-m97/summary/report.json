@@ -1,0 +1,406 @@
+{
+  "schema_version": "1.0.0",
+  "report_version": "multivideo-rtmpose-x-operational-extension-v1.0.0",
+  "generated_at": "2026-09-04T16:17:44.545626+00:00",
+  "status": "experimental_x_extension_regression_free_to_m70_but_does_not_preserve_m71_recovery",
+  "scope": {
+    "video_count": 3,
+    "video_ids": [
+      "3ae77ee3271d67de171585a5c39ddd69",
+      "850cb0006b406c7176eeda8d711cd065",
+      "8d7754d0de6d315674013d5b69a0b6ba"
+    ],
+    "indicator_count": 13,
+    "indicator_instances": 2366,
+    "target_frame_count": 258
+  },
+  "sources": {
+    "protocol": {
+      "path": "models\\rtmpose\\m97-x-operational-protocol.json",
+      "relative_path": "models/rtmpose/m97-x-operational-protocol.json",
+      "sha256": "FEA766D88E0D2072B2A2859E4FF144FD8CE9DDE4CD9FA154493BC1DB938C42F1",
+      "bytes": 6462,
+      "version": "rtmpose-x-operational-extension-2026-09-04.1"
+    },
+    "historical_summaries": {
+      "M68": {
+        "path": "reports\\measurement-recovery-m68\\summary\\report.json",
+        "relative_path": "reports/measurement-recovery-m68/summary/report.json",
+        "sha256": "BBE5991F09381B35A2AD3097EE5BF9BDCDFDC89B16966F064C1F7CBBB850229D",
+        "bytes": 4318
+      },
+      "M70": {
+        "path": "reports\\measurement-recovery-m70\\summary\\report.json",
+        "relative_path": "reports/measurement-recovery-m70/summary/report.json",
+        "sha256": "A1A35DC8709E14E6CE03F20CAA100F733C31908B8B0FB26CECD83C4A5B55D554",
+        "bytes": 6939
+      },
+      "M71": {
+        "path": "reports\\measurement-recovery-m71\\summary\\report.json",
+        "relative_path": "reports/measurement-recovery-m71/summary/report.json",
+        "sha256": "2F0D19D6CEFB627B1FA821CCBEEE64C5E7C66A0BACE090DF76F5B1C530DA9A8F",
+        "bytes": 5792
+      }
+    },
+    "per_video_reports": [
+      {
+        "path": "reports\\measurement-recovery-m97\\rtmpose-x-384-context-extension-v1\\3ae77ee3271d67de171585a5c39ddd69\\report.json",
+        "sha256": "EAEFF102DD2A70579AA02F3BAB217C09F4034BFD16FDA30F69661DC107F7DD09",
+        "bytes": 16786
+      },
+      {
+        "path": "reports\\measurement-recovery-m97\\rtmpose-x-384-context-extension-v1\\850cb0006b406c7176eeda8d711cd065\\report.json",
+        "sha256": "7C06A3A7AED922C615CEDF4635161FD9190EAC3A387607B4C5039FD24B7BFFA8",
+        "bytes": 16753
+      },
+      {
+        "path": "reports\\measurement-recovery-m97\\rtmpose-x-384-context-extension-v1\\8d7754d0de6d315674013d5b69a0b6ba\\report.json",
+        "sha256": "6AABCDFB10446CDB2ADB2EF9A4C64C58A5F08D2902AB21A9A594D053BDD55B6D",
+        "bytes": 14518
+      }
+    ]
+  },
+  "candidate": {
+    "candidate_id": "rtmpose-x-halpe26-384x288-m95-shadow",
+    "model_sha256": "7FB6E239601082A06CA8442FEB7A9774B8D77A1C37911B2AD0F27C1E84BE4D21",
+    "config_sha256": "961E5704E4983F27173BC008C17F08E8C2C5907FDB104EA8669AD06C4C68B678",
+    "input_size_hw": [
+      384,
+      288
+    ],
+    "native_keypoint_format": "halpe26",
+    "profile": "analysis",
+    "flip_test": true,
+    "selection_policy": "required_joint_validity_strict_superset_on_M70_residual_frames"
+  },
+  "comparability": {
+    "same_258_frames_as_M71_L": true,
+    "same_per_frame_ROI_context_as_M71_L": true,
+    "same_analysis_profile_and_flip_test_as_M71_L": true,
+    "same_M70_router_baseline_as_M71_L": true,
+    "same_M68_fixed_boundary_baseline_as_M71_L": true
+  },
+  "inference": {
+    "pose_output_produced": 254,
+    "pose_output_missing": 4,
+    "latency_ms": {
+      "count": 255,
+      "mean": 24.835216,
+      "p50": 21.1203,
+      "p95": 25.57492,
+      "min": 0.024,
+      "max": 300.1518
+    },
+    "latency_ms_by_video": [
+      {
+        "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+        "count": 93,
+        "mean": 23.633829,
+        "p50": 20.3151,
+        "p95": 24.19342,
+        "min": 17.9294,
+        "max": 300.1518
+      },
+      {
+        "video_id": "850cb0006b406c7176eeda8d711cd065",
+        "count": 102,
+        "mean": 25.44238,
+        "p50": 23.27755,
+        "p95": 26.228995,
+        "min": 0.024,
+        "max": 298.9488
+      },
+      {
+        "video_id": "8d7754d0de6d315674013d5b69a0b6ba",
+        "count": 60,
+        "mean": 25.665188,
+        "p50": 20.5192,
+        "p95": 24.767915,
+        "min": 18.3033,
+        "max": 297.0001
+      }
+    ],
+    "latency_semantics": "GPU-synchronized PoseEstimator call per target ROI; excludes video decode, source binding, routing, and fixed-boundary evaluation",
+    "direct_M_or_L_latency_comparator_in_this_run": false
+  },
+  "baseline_M68": {
+    "feature_vector_complete": 2329,
+    "feature_vector_incomplete": 37,
+    "operational_measured": 2320,
+    "operational_unavailable": 46,
+    "measurement_hard_fail": 18,
+    "non_hard_fail_feature_incomplete": 28
+  },
+  "baseline_M70": {
+    "extension_selected_frame_count": 15,
+    "feature_recovered": 9,
+    "feature_regressed": 0,
+    "feature_vector_complete": 2338,
+    "feature_vector_incomplete": 28,
+    "operational_recovered": 7,
+    "operational_regressed": 0,
+    "operational_measured": 2327,
+    "operational_unavailable": 39,
+    "measurement_hard_fail": 18,
+    "non_hard_fail_feature_incomplete": 21,
+    "additional_feature_recovery_over_m69": 3,
+    "additional_operational_recovery_over_m69": 1,
+    "lost_m69_feature_recovery_count": 0,
+    "lost_m69_operational_recovery_count": 0
+  },
+  "baseline_M71": {
+    "selected_frame_count": 46,
+    "feature_recovered_from_m68": 15,
+    "feature_regressed_from_m68": 0,
+    "feature_vector_complete": 2344,
+    "feature_vector_incomplete": 22,
+    "operational_recovered_from_m68": 13,
+    "operational_regressed_from_m68": 0,
+    "operational_measured": 2333,
+    "operational_unavailable": 33,
+    "measurement_hard_fail": 18,
+    "non_hard_fail_operational_residual": 15,
+    "additional_feature_recovery_over_m70": 6,
+    "additional_operational_recovery_over_m70": 6,
+    "lost_m70_feature_recovery_count": 0,
+    "lost_m70_operational_recovery_count": 0
+  },
+  "X_projection": {
+    "selected_frame_count": 56,
+    "feature_recovered_from_m68": 13,
+    "feature_regressed_from_m68": 0,
+    "feature_vector_complete": 2342,
+    "feature_vector_incomplete": 24,
+    "operational_recovered_from_m68": 11,
+    "operational_regressed_from_m68": 0,
+    "operational_measured": 2331,
+    "operational_unavailable": 35,
+    "measurement_hard_fail": 18,
+    "non_hard_fail_operational_residual": 17
+  },
+  "comparison_to_M70": {
+    "feature_vector": {
+      "reference_recovery_count": 9,
+      "candidate_recovery_count": 13,
+      "shared_recovery_count": 9,
+      "additional_recovery_count": 4,
+      "lost_reference_recovery_count": 0,
+      "reference_regression_count": 0,
+      "candidate_regression_count": 0,
+      "additional_candidate_regression_count": 0,
+      "additional_recoveries": [
+        {
+          "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+          "event_id": "fs01-026-9eb9dc227294",
+          "indicator_id": "FS01-M03"
+        },
+        {
+          "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+          "event_id": "fs01-026-9eb9dc227294",
+          "indicator_id": "FS01-M04"
+        },
+        {
+          "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+          "event_id": "fs02-025-d71099ebf537",
+          "indicator_id": "FS02-M03"
+        },
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-005-d9d36428b672",
+          "indicator_id": "FS01-M04"
+        }
+      ],
+      "lost_reference_recoveries": [],
+      "additional_candidate_regressions": []
+    },
+    "operational_measurement": {
+      "reference_recovery_count": 7,
+      "candidate_recovery_count": 11,
+      "shared_recovery_count": 7,
+      "additional_recovery_count": 4,
+      "lost_reference_recovery_count": 0,
+      "reference_regression_count": 0,
+      "candidate_regression_count": 0,
+      "additional_candidate_regression_count": 0,
+      "additional_recoveries": [
+        {
+          "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+          "event_id": "fs01-026-9eb9dc227294",
+          "indicator_id": "FS01-M03"
+        },
+        {
+          "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+          "event_id": "fs01-026-9eb9dc227294",
+          "indicator_id": "FS01-M04"
+        },
+        {
+          "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+          "event_id": "fs02-025-d71099ebf537",
+          "indicator_id": "FS02-M03"
+        },
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-005-d9d36428b672",
+          "indicator_id": "FS01-M04"
+        }
+      ],
+      "lost_reference_recoveries": [],
+      "additional_candidate_regressions": []
+    }
+  },
+  "comparison_to_M71": {
+    "feature_vector": {
+      "reference_recovery_count": 15,
+      "candidate_recovery_count": 13,
+      "shared_recovery_count": 12,
+      "additional_recovery_count": 1,
+      "lost_reference_recovery_count": 3,
+      "reference_regression_count": 0,
+      "candidate_regression_count": 0,
+      "additional_candidate_regression_count": 0,
+      "additional_recoveries": [
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-005-d9d36428b672",
+          "indicator_id": "FS01-M04"
+        }
+      ],
+      "lost_reference_recoveries": [
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-024-3bcd2a8b290f",
+          "indicator_id": "FS01-M03"
+        },
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-030-ef3407c9db93",
+          "indicator_id": "FS01-M03"
+        },
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-030-ef3407c9db93",
+          "indicator_id": "FS01-M04"
+        }
+      ],
+      "additional_candidate_regressions": []
+    },
+    "operational_measurement": {
+      "reference_recovery_count": 13,
+      "candidate_recovery_count": 11,
+      "shared_recovery_count": 10,
+      "additional_recovery_count": 1,
+      "lost_reference_recovery_count": 3,
+      "reference_regression_count": 0,
+      "candidate_regression_count": 0,
+      "additional_candidate_regression_count": 0,
+      "additional_recoveries": [
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-005-d9d36428b672",
+          "indicator_id": "FS01-M04"
+        }
+      ],
+      "lost_reference_recoveries": [
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-024-3bcd2a8b290f",
+          "indicator_id": "FS01-M03"
+        },
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-030-ef3407c9db93",
+          "indicator_id": "FS01-M03"
+        },
+        {
+          "video_id": "850cb0006b406c7176eeda8d711cd065",
+          "event_id": "fs01-030-ef3407c9db93",
+          "indicator_id": "FS01-M04"
+        }
+      ],
+      "additional_candidate_regressions": []
+    }
+  },
+  "by_video": [
+    {
+      "video_id": "3ae77ee3271d67de171585a5c39ddd69",
+      "target_frames": 94,
+      "pose_output_produced": 93,
+      "selected_frames": 26,
+      "feature_recovered_from_M68": 8,
+      "feature_regressed_from_M68": 0,
+      "operational_recovered_from_M68": 6,
+      "operational_regressed_from_M68": 0,
+      "additional_operational_recovery_over_M70": 3,
+      "lost_M70_operational_recovery_count": 0,
+      "additional_operational_recovery_over_M71": 0,
+      "lost_M71_operational_recovery_count": 0
+    },
+    {
+      "video_id": "850cb0006b406c7176eeda8d711cd065",
+      "target_frames": 103,
+      "pose_output_produced": 101,
+      "selected_frames": 30,
+      "feature_recovered_from_M68": 4,
+      "feature_regressed_from_M68": 0,
+      "operational_recovered_from_M68": 4,
+      "operational_regressed_from_M68": 0,
+      "additional_operational_recovery_over_M70": 1,
+      "lost_M70_operational_recovery_count": 0,
+      "additional_operational_recovery_over_M71": 1,
+      "lost_M71_operational_recovery_count": 3
+    },
+    {
+      "video_id": "8d7754d0de6d315674013d5b69a0b6ba",
+      "target_frames": 61,
+      "pose_output_produced": 60,
+      "selected_frames": 0,
+      "feature_recovered_from_M68": 1,
+      "feature_regressed_from_M68": 0,
+      "operational_recovered_from_M68": 1,
+      "operational_regressed_from_M68": 0,
+      "additional_operational_recovery_over_M70": 0,
+      "lost_M70_operational_recovery_count": 0,
+      "additional_operational_recovery_over_M71": 0,
+      "lost_M71_operational_recovery_count": 0
+    }
+  ],
+  "decision": {
+    "production_default_changed": false,
+    "candidate_promoted": false,
+    "M68_regression_free": true,
+    "M70_recovered_sets_preserved": true,
+    "M71_recovered_sets_preserved": false,
+    "operational_gain_is_observability_not_accuracy": true,
+    "next_required_evidence": "human corrected Halpe26 keypoints, per-view feature error, and a preregistered independent-video release validation"
+  },
+  "field_semantics": {
+    "feature_complete": "fixed_candidate_event_boundaries_and_unchanged_feature_functions",
+    "operational_measured": "feature_complete_and_original_source_quality_gate_preserved",
+    "recovery": "M68_unavailable_or_incomplete_instance_becomes_available_or_complete",
+    "regression": "M68_available_or_complete_instance_becomes_unavailable_or_incomplete",
+    "comparison_to_M70_or_M71": "set_difference_between_recoveries_measured_against_the_same_M68_baseline"
+  },
+  "safety": {
+    "accuracy_claim": false,
+    "ground_truth_provided": false,
+    "sealed_holdout_opened_or_hashed": false,
+    "production_enabled": false,
+    "automatic_profile_fallback_enabled": false,
+    "feature_gate_modified": false,
+    "measurement_gate_modified": false,
+    "event_boundaries_modified": false,
+    "routing_uses_feature_values": false,
+    "routing_uses_event_outcomes": false,
+    "routing_uses_grades_or_thresholds": false,
+    "grades_generated": false,
+    "thresholds_generated": false,
+    "maturity_promoted": false,
+    "current_three_video_result_is_not_independent_validation": true
+  },
+  "not_completed": [
+    "human_keypoint_accuracy_comparison",
+    "independent_video_release_validation",
+    "candidate_promotion",
+    "production_default_change"
+  ]
+}

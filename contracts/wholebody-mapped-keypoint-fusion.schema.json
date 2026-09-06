@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/wholebody-mapped-keypoint-fusion.schema.json",
+  "title": "RallyMate WholeBody133 mapped-keypoint fusion experiment",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "video_id", "sources", "candidate", "artifacts", "inference", "fusion_audit", "comparison_to_m68", "m72_preservation", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "wholebody133-mapped-keypoint-fusion-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["experimental_wholebody_mapped_fusion_regression_free_requires_truth", "experimental_wholebody_mapped_fusion_rejected"]},
+    "video_id": {"type": "string", "minLength": 1},
+    "sources": {"type": "object"},
+    "candidate": {"type": "object", "required": ["candidate_id", "native_keypoint_format", "native_keypoint_count", "input_size_hw", "checkpoint_url"], "properties": {"native_keypoint_format": {"const": "coco_wholebody133"}, "native_keypoint_count": {"const": 133}, "input_size_hw": {"const": [256, 192]}}},
+    "artifacts": {"type": "object"},
+    "inference": {"type": "object", "required": ["target_frame_count", "pose_output_produced", "pose_output_missing", "frame_results"]},
+    "fusion_audit": {
+      "type": "object",
+      "required": ["fusion_version", "selection_policy", "confidence_min", "baseline_keypoint_format", "candidate_keypoint_format", "target_to_candidate_joint_names", "mapping_is_one_to_one", "target_frame_count", "changed_frame_count", "unchanged_target_frame_count", "added_valid_joint_observation_count", "added_valid_joint_counts", "candidate_source_joint_counts", "decision_reason_counts", "baseline_valid_joint_observations_preserved", "baseline_valid_coordinates_overwritten", "baseline_topology_preserved", "non_target_frames_preserved", "non_pose_frame_data_preserved", "non_selected_poses_preserved", "explicit_topology_map_required", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds"],
+      "properties": {
+        "fusion_version": {"const": "mapped-topology-missing-keypoint-addition-v1.0.0"},
+        "baseline_keypoint_format": {"const": "halpe26"},
+        "candidate_keypoint_format": {"const": "coco_wholebody133"},
+        "mapping_is_one_to_one": {"const": true},
+        "baseline_valid_coordinates_overwritten": {"const": 0},
+        "baseline_topology_preserved": {"const": true},
+        "non_target_frames_preserved": {"const": true},
+        "non_pose_frame_data_preserved": {"const": true},
+        "non_selected_poses_preserved": {"const": true},
+        "explicit_topology_map_required": {"const": true},
+        "selection_uses_feature_values": {"const": false},
+        "selection_uses_event_outcomes": {"const": false},
+        "selection_uses_grades_or_thresholds": {"const": false}
+      }
+    },
+    "comparison_to_m68": {"type": "object"},
+    "m72_preservation": {"type": "object", "required": ["m72_feature_recovery_count", "fused_feature_recovery_count", "additional_feature_recovery_count", "lost_m72_feature_recovery_count", "m72_operational_recovery_count", "fused_operational_recovery_count", "additional_operational_recovery_count", "lost_m72_operational_recovery_count", "additional_operational_recoveries"]},
+    "decision": {"type": "object", "required": ["production_default_changed", "candidate_promoted", "current_video_regression_free", "next_required_evidence"], "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}}},
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_fallback_enabled", "feature_gate_modified", "measurement_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted"],
+      "properties": {"accuracy_claim": {"const": false}, "ground_truth_provided": {"const": false}, "production_enabled": {"const": false}, "automatic_fallback_enabled": {"const": false}, "feature_gate_modified": {"const": false}, "measurement_gate_modified": {"const": false}, "event_boundaries_modified": {"const": false}, "grades_generated": {"const": false}, "thresholds_generated": {"const": false}, "maturity_promoted": {"const": false}},
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

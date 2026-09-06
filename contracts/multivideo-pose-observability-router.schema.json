@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/multivideo-pose-observability-router.schema.json",
+  "title": "RallyMate multivideo Pose observability router summary",
+  "type": "object",
+  "required": ["schema_version", "report_version", "generated_at", "status", "scope", "sources", "router", "baseline", "routed_projection", "comparison_to_uniform_margin", "decision", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_version": {"const": "multivideo-required-joint-superset-router-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"const": "regression_free_observability_router_candidate_requires_truth"},
+    "scope": {"type": "object", "required": ["video_count", "video_ids", "indicator_count", "indicator_instances", "registry_sha256", "pose_model_sha256", "required_joints"]},
+    "sources": {"type": "object", "required": ["router_reports", "m67_summary"]},
+    "router": {
+      "type": "object",
+      "required": ["router_version", "candidate_margin_target_frames", "selected_margin_frames", "rejected_margin_frames", "total_composed_experimental_frames", "selection_policy", "selection_uses_feature_values", "selection_uses_event_outcomes", "selection_uses_grades_or_thresholds"],
+      "properties": {
+        "router_version": {"const": "required-joint-validity-superset-v1.0.0"},
+        "candidate_margin_target_frames": {"type": "integer", "minimum": 1},
+        "selected_margin_frames": {"type": "integer", "minimum": 0},
+        "rejected_margin_frames": {"type": "integer", "minimum": 0},
+        "total_composed_experimental_frames": {"type": "integer", "minimum": 1},
+        "selection_policy": {"const": "candidate_required_joint_valid_set_strictly_contains_baseline"},
+        "selection_uses_feature_values": {"const": false},
+        "selection_uses_event_outcomes": {"const": false},
+        "selection_uses_grades_or_thresholds": {"const": false}
+      }
+    },
+    "baseline": {"type": "object"},
+    "routed_projection": {
+      "type": "object",
+      "required": ["feature_vector_recovered", "feature_vector_regressed", "feature_vector_complete", "feature_vector_incomplete", "operational_recovered", "operational_regressed", "operational_measured", "operational_unavailable", "measurement_hard_fail", "non_hard_fail_feature_incomplete"],
+      "properties": {
+        "feature_vector_regressed": {"const": 0},
+        "operational_regressed": {"const": 0}
+      }
+    },
+    "comparison_to_uniform_margin": {"type": "object"},
+    "decision": {
+      "type": "object",
+      "required": ["production_default_changed", "candidate_promoted", "reason_codes", "next_required_evidence"],
+      "properties": {"production_default_changed": {"const": false}, "candidate_promoted": {"const": false}}
+    },
+    "safety": {
+      "type": "object",
+      "required": ["accuracy_claim", "ground_truth_provided", "production_enabled", "automatic_fallback_enabled", "measurement_gate_modified", "scoring_gate_modified", "event_boundaries_modified", "grades_generated", "thresholds_generated", "maturity_promoted", "current_three_video_regression_free_is_not_independent_validation"],
+      "properties": {
+        "accuracy_claim": {"const": false},
+        "ground_truth_provided": {"const": false},
+        "production_enabled": {"const": false},
+        "automatic_fallback_enabled": {"const": false},
+        "measurement_gate_modified": {"const": false},
+        "scoring_gate_modified": {"const": false},
+        "event_boundaries_modified": {"const": false},
+        "grades_generated": {"const": false},
+        "thresholds_generated": {"const": false},
+        "maturity_promoted": {"const": false},
+        "current_three_video_regression_free_is_not_independent_validation": {"const": true}
+      }
+    }
+  }
+}

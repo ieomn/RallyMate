@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/metric-measurement-plan.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "registry_version",
+    "source_metric_registry_version",
+    "source_feasibility_registry_version",
+    "generated_at",
+    "policy",
+    "summary",
+    "primitive_catalog",
+    "plans"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "registry_version": {"type": "string", "minLength": 1},
+    "source_metric_registry_version": {"type": "string", "minLength": 1},
+    "source_feasibility_registry_version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "policy": {
+      "type": "object",
+      "required": ["valid_measurement_states", "grade_without_calibration", "missing_value_representation"],
+      "properties": {
+        "valid_measurement_states": {
+          "type": "array",
+          "items": {"enum": ["measured", "calibration_required", "unavailable"]}
+        },
+        "grade_without_calibration": {"const": "forbidden"},
+        "missing_value_representation": {"const": "null_not_zero"}
+      }
+    },
+    "summary": {"type": "object"},
+    "primitive_catalog": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["primitive_id", "dependency", "implementation_status", "feature_names"]
+      }
+    },
+    "plans": {
+      "type": "array",
+      "minItems": 298,
+      "maxItems": 298,
+      "items": {
+        "type": "object",
+        "required": [
+          "indicator_id",
+          "domain",
+          "event_code",
+          "stage_code",
+          "dependencies",
+          "required_joint_ids",
+          "event_localization",
+          "measurement_requirements",
+          "runtime_status",
+          "current_blockers",
+          "output_policy",
+          "versions"
+        ],
+        "properties": {
+          "indicator_id": {"type": "string", "minLength": 1},
+          "domain": {"enum": ["GS", "FS"]},
+          "event_code": {"type": "string", "pattern": "^(GS|FS)[0-9]{2}$"},
+          "stage_code": {"type": "string", "minLength": 1},
+          "dependencies": {
+            "type": "array",
+            "items": {"enum": ["pose", "ball", "racket", "court", "tracking"]}
+          },
+          "required_joint_ids": {"type": "array", "items": {"type": "string", "pattern": "^J[0-9]{3}$"}},
+          "event_localization": {
+            "type": "object",
+            "required": ["status", "event_model_version", "ground_truth_status"]
+          },
+          "measurement_requirements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["source_clause", "primitive_ids", "implementation_status"]
+            }
+          },
+          "runtime_status": {
+            "enum": [
+              "implemented_f2_calibration_required",
+              "feature_implementation_required",
+              "event_implementation_required",
+              "dependency_implementation_required"
+            ]
+          },
+          "current_blockers": {"type": "array", "items": {"type": "string"}},
+          "output_policy": {
+            "type": "object",
+            "required": ["when_valid_features", "when_invalid_or_missing", "grade"]
+          },
+          "versions": {"type": "object"}
+        }
+      }
+    }
+  }
+}

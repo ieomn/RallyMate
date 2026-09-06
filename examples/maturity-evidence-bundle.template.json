@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "bundle_version": "maturity-evidence-bundle-v1",
+  "artifact_scope": "template_only_not_evidence",
+  "bundle_id": "",
+  "indicator_id": "",
+  "canonicalization": "rallymate-canonical-json-v1",
+  "created_at": "",
+  "source": {},
+  "transitions": [
+    {
+      "from_level": "F0",
+      "to_level": "F1",
+      "required_payload": "Event F1, mean Segment IoU, Boundary MAE, manual-event source, external pre-registered protocol decision"
+    },
+    {
+      "from_level": "F1",
+      "to_level": "F2",
+      "required_payload": "per-feature MAE/P95/Bias/valid-rate/by-view results, four-part error budget, manual truth, externally reviewed grade-gap separation decision"
+    },
+    {
+      "from_level": "F2",
+      "to_level": "F3",
+      "required_payload": "grade separation, multi-coach agreement, internal validation and human coach-label sources"
+    },
+    {
+      "from_level": "F3",
+      "to_level": "F4",
+      "required_payload": "independent held-out test, scoring approval and independence attestations"
+    }
+  ],
+  "final_registry": {},
+  "template_notice": "This file is intentionally invalid and cannot authorize scoring. Build a complete bundle against contracts/maturity-evidence-bundle.schema.json and validate all canonical hashes."
+}

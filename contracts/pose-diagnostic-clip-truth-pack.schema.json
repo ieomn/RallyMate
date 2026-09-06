@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/pose-diagnostic-clip-truth-pack.schema.json",
+  "title": "RallyMate M80 pose diagnostic clip truth pack with adjudication overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pack_version", "generated_at", "status", "plan", "renderer", "artifacts", "truth_contract", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pack_version": {"const": "pose-diagnostic-clip-truth-pack-v1.2.2"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "annotation_required"},
+    "plan": {"$ref": "#/$defs/plan"},
+    "renderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "ffmpeg", "encoding"],
+      "properties": {
+        "version": {"const": "m80-blind-clips-plus-adjudication-overlay-v1.0.0"},
+        "ffmpeg": {"$ref": "#/$defs/binding"},
+        "encoding": {"const": "H.264/yuv420p/no-audio/faststart"}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sealed_candidates", "blind_review_html", "adjudication_html"],
+      "properties": {
+        "sealed_candidates": {
+          "allOf": [
+            {"$ref": "#/$defs/binding"},
+            {"type": "object", "required": ["canonical_sha256"], "properties": {"canonical_sha256": {"$ref": "#/$defs/sha256"}}}
+          ]
+        },
+        "blind_review_html": {"$ref": "#/$defs/binding"},
+        "adjudication_html": {"$ref": "#/$defs/binding"}
+      }
+    },
+    "truth_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["independent_annotators_per_clip_type", "independent_reviewer_required", "candidate_precision_only", "full_timeline_recall_available", "partial_annotation_metrics_available", "adjudication_pose_overlay_required", "adjudication_pose_overlay_is_ground_truth"],
+      "properties": {
+        "independent_annotators_per_clip_type": {"const": 2},
+        "independent_reviewer_required": {"const": true},
+        "candidate_precision_only": {"const": true},
+        "full_timeline_recall_available": {"const": false},
+        "partial_annotation_metrics_available": {"const": false},
+        "adjudication_pose_overlay_required": {"const": true},
+        "adjudication_pose_overlay_is_ground_truth": {"const": false}
+      }
+    },
+    "safety": {"$ref": "#/$defs/manifest_safety"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+    "binding": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codec_fourcc", "frame_count", "fps", "duration_ms", "width", "height", "decode_samples"],
+      "properties": {
+        "codec_fourcc": {"const": "h264"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "duration_ms": {"type": "integer", "minimum": 1},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "decode_samples": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["frame_index", "decoded"],
+            "properties": {
+              "frame_index": {"type": "integer", "minimum": 0},
+              "decoded": {"const": true}
+            }
+          }
+        }
+      }
+    },
+    "clip_media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "probe", "semantics"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "probe": {"$ref": "#/$defs/probe"},
+        "semantics": {"const": "blind_candidate_window_without_pose_or_diagnostic_overlay"}
+      }
+    },
+    "pose_evidence_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "url", "sha256", "canonical_sha256", "frame_count", "pose_frame_count", "keypoint_format", "semantics"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "pattern": "^pose-evidence/m79-[0-9a-f]{32}-clip-[0-9]{3}-pose-evidence\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "canonical_sha256": {"$ref": "#/$defs/sha256"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "pose_frame_count": {"type": "integer", "minimum": 0},
+        "keypoint_format": {"type": "string", "minLength": 1},
+        "semantics": {"const": "adjudicator_only_model_pose_not_ground_truth"}
+      }
+    },
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clip_id", "sequence_index", "requested_start_ms", "requested_end_ms", "source_start_frame_index", "source_end_frame_index", "source_start_timestamp_ms", "source_end_timestamp_ms", "source_timestamps_ms", "frame_count", "reel_start_frame_index", "reel_end_frame_index", "candidate_task_count", "media_url", "clip_media", "adjudication_pose_evidence"],
+      "properties": {
+        "clip_id": {"type": "string", "pattern": "^m79-[0-9a-f]{32}-clip-[0-9]{3}$"},
+        "sequence_index": {"type": "integer", "minimum": 0},
+        "requested_start_ms": {"type": "integer", "minimum": 0},
+        "requested_end_ms": {"type": "integer", "minimum": 0},
+        "source_start_frame_index": {"type": "integer", "minimum": 0},
+        "source_end_frame_index": {"type": "integer", "minimum": 0},
+        "source_start_timestamp_ms": {"type": "integer", "minimum": 0},
+        "source_end_timestamp_ms": {"type": "integer", "minimum": 0},
+        "source_timestamps_ms": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "reel_start_frame_index": {"type": "integer", "minimum": 0},
+        "reel_end_frame_index": {"type": "integer", "minimum": 0},
+        "candidate_task_count": {"type": "integer", "minimum": 1},
+        "media_url": {"type": "string", "pattern": "^media/m79-[0-9a-f]{32}-clip-[0-9]{3}-browser\\.mp4$"},
+        "clip_media": {"$ref": "#/$defs/clip_media"},
+        "adjudication_pose_evidence": {"$ref": "#/$defs/pose_evidence_binding"}
+      }
+    },
+    "video": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["video_id", "queue", "source_video", "primary_timeline", "frames_observations", "fps", "segments", "reel_frame_count"],
+      "properties": {
+        "video_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "queue": {
+          "allOf": [
+            {"$ref": "#/$defs/binding"},
+            {"type": "object", "required": ["queue_version", "artifact_binding_sha256"], "properties": {"queue_version": {"type": "string", "minLength": 1}, "artifact_binding_sha256": {"$ref": "#/$defs/sha256"}}}
+          ]
+        },
+        "source_video": {"$ref": "#/$defs/binding"},
+        "primary_timeline": {"$ref": "#/$defs/binding"},
+        "frames_observations": {"$ref": "#/$defs/binding"},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "segments": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/segment"}},
+        "reel_frame_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "planner_version", "generated_at", "sources", "diagnostic_types", "videos", "counts", "safety"],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "planner_version": {"const": "score-relevant-pose-diagnostic-clips-v1.1.0"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["m78_audit", "taxonomy"],
+          "properties": {"m78_audit": {"$ref": "#/$defs/binding"}, "taxonomy": {"$ref": "#/$defs/binding"}}
+        },
+        "diagnostic_types": {"const": ["keypoint_jump", "left_right_swap"]},
+        "videos": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/video"}},
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["videos", "clips", "candidate_tasks", "candidate_tasks_by_type", "unique_affected_indicator_instances", "source_frame_observations"],
+          "properties": {
+            "videos": {"type": "integer", "minimum": 1},
+            "clips": {"type": "integer", "minimum": 1},
+            "candidate_tasks": {"type": "integer", "minimum": 1},
+            "candidate_tasks_by_type": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["keypoint_jump", "left_right_swap"],
+              "properties": {"keypoint_jump": {"type": "integer", "minimum": 1}, "left_right_swap": {"type": "integer", "minimum": 1}}
+            },
+            "unique_affected_indicator_instances": {"type": "integer", "minimum": 1},
+            "source_frame_observations": {"type": "integer", "minimum": 1}
+          }
+        },
+        "safety": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate_only_review_measures_recall", "candidate_tasks_exposed_to_blind_annotators", "model_overlay_rendered", "quality_gate_modified", "grade_generated", "threshold_generated", "accuracy_claim"],
+          "properties": {
+            "candidate_only_review_measures_recall": {"const": false},
+            "candidate_tasks_exposed_to_blind_annotators": {"const": false},
+            "model_overlay_rendered": {"const": false},
+            "quality_gate_modified": {"const": false},
+            "grade_generated": {"const": false},
+            "threshold_generated": {"const": false},
+            "accuracy_claim": {"const": false}
+          }
+        }
+      }
+    },
+    "manifest_safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manual_truth_present", "candidate_tasks_are_truth", "candidate_details_loaded_by_blind_page", "pose_or_diagnostic_overlay_rendered", "quality_gate_modified", "grade_generated", "threshold_generated", "accuracy_claim"],
+      "properties": {
+        "manual_truth_present": {"const": false},
+        "candidate_tasks_are_truth": {"const": false},
+        "candidate_details_loaded_by_blind_page": {"const": false},
+        "pose_or_diagnostic_overlay_rendered": {"const": false},
+        "quality_gate_modified": {"const": false},
+        "grade_generated": {"const": false},
+        "threshold_generated": {"const": false},
+        "accuracy_claim": {"const": false}
+      }
+    }
+  }
+}

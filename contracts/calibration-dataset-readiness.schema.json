@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/calibration-dataset-readiness.schema.json",
+  "title": "RallyMate calibration dataset readiness report",
+  "type": "object",
+  "required": [
+    "schema_version", "dataset_id", "dataset_version", "status", "registry_version",
+    "indicator_count", "indicators", "raw_counts", "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "insufficient", "prepared_for_external_protocol_review"]},
+    "registry_version": {"type": "string", "minLength": 1},
+    "indicator_count": {"type": "integer", "minimum": 1},
+    "indicators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "indicator_id", "registry_feasibility_level", "status", "counts",
+          "grade_distribution", "split_distribution", "view_distribution",
+          "player_distribution", "session_distribution", "agreement", "raw_label_count",
+          "blockers", "acceptance_thresholds_applied", "F3_claimed"
+        ],
+        "properties": {
+          "status": {"enum": ["insufficient", "prepared_for_external_protocol_review"]},
+          "blockers": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+          "acceptance_thresholds_applied": {"const": false},
+          "F3_claimed": {"const": false}
+        }
+      }
+    },
+    "raw_counts": {"type": "object"},
+    "safety": {
+      "type": "object",
+      "properties": {
+        "generated_thresholds": {"const": false},
+        "trained_scoring_model": {"const": false},
+        "automatic_F3_or_F4_promotion": {"const": false},
+        "acceptance_thresholds_applied": {"const": false}
+      }
+    }
+  },
+  "additionalProperties": false
+}

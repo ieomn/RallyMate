@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.1.0",
+  "artifact_scope": "calibration_promotion_decision",
+  "decision_id": "REPLACE_WITH_IMMUTABLE_DECISION_ID",
+  "decision_version": "REPLACE_WITH_VERSION",
+  "calibration_version": "REPLACE_WITH_NEW_CALIBRATION_VERSION",
+  "indicator_id": "REPLACE_WITH_INDICATOR_ID",
+  "decision": "approved",
+  "requested_artifact_scope": "production",
+  "reviewer": {
+    "reviewer_id": "REPLACE_WITH_REVIEWER_ID",
+    "role": "REPLACE_WITH_AUTHORIZED_ROLE"
+  },
+  "source": {
+    "kind": "human_promotion_record",
+    "source_sha256": "REPLACE_WITH_64_HEX_SHA256_OF_SIGNED_DECISION_SOURCE",
+    "registered_at": "REPLACE_WITH_ISO_8601_REGISTRATION_TIME"
+  },
+  "decided_at": "REPLACE_WITH_ISO_8601_DECISION_TIME",
+  "candidate": {
+    "candidate_id": "COPY_FROM_CANDIDATE",
+    "candidate_version": "COPY_FROM_CANDIDATE",
+    "backend": "threshold_rule",
+    "content_sha256": "REPLACE_WITH_CANONICAL_CANDIDATE_SHA256"
+  },
+  "prepared_dataset": {
+    "dataset_id": "COPY_FROM_CANDIDATE",
+    "dataset_version": "COPY_FROM_CANDIDATE",
+    "artifact_scope": "calibration_input",
+    "label_resolution_policy": "unanimous_multi_coach_only_v1",
+    "content_sha256": "COPY_FROM_CANDIDATE",
+    "source_sha256": "COPY_FROM_CANDIDATE",
+    "truth_authorization_binding_sha256": "COPY_FROM_CANDIDATE"
+  },
+  "fit_protocol": {
+    "protocol_id": "COPY_FROM_CANDIDATE",
+    "protocol_version": "COPY_FROM_CANDIDATE",
+    "artifact_scope": "calibration_fit_protocol",
+    "label_resolution_policy": "unanimous_multi_coach_only_v1",
+    "content_sha256": "COPY_FROM_CANDIDATE",
+    "source_sha256": "COPY_FROM_CANDIDATE"
+  },
+  "independent_test": {
+    "seal_id": "COPY_FROM_CANDIDATE",
+    "content_sha256": "COPY_FROM_CANDIDATE",
+    "record_count": "COPY_FROM_CANDIDATE",
+    "canonicalization": "rallymate-canonical-json-v1"
+  },
+  "independent_test_report": {
+    "report_version": "COPY_FROM_REPORT",
+    "content_sha256": "REPLACE_WITH_CANONICAL_REPORT_SHA256"
+  },
+  "independent_test_protocol": {
+    "protocol_id": "COPY_FROM_REPORT",
+    "protocol_version": "COPY_FROM_REPORT",
+    "content_sha256": "COPY_FROM_REPORT",
+    "source_sha256": "COPY_FROM_REPORT",
+    "registered_at": "COPY_FROM_REPORT"
+  },
+  "feasibility_registry": {
+    "registry_version": "COPY_FROM_F4_REGISTRY",
+    "content_sha256": "REPLACE_WITH_CANONICAL_F4_REGISTRY_SHA256",
+    "indicator_level": "F4"
+  },
+  "maturity_evidence": {
+    "bundle_id": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+    "bundle_version": "maturity-evidence-bundle-v1",
+    "artifact_scope": "maturity_evidence",
+    "indicator_id": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+    "content_sha256": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+    "final_transition_sha256": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+    "final_registry": {
+      "registry_version": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+      "content_sha256": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+      "indicator_id": "COPY_FROM_VALIDATED_MATURITY_EVIDENCE_BINDING",
+      "indicator_level": "F4"
+    },
+    "canonicalization": "rallymate-canonical-json-v1"
+  },
+  "attestations": {
+    "candidate_lineage_reviewed": true,
+    "independent_test_reviewed": true,
+    "registry_maturity_reviewed": true,
+    "no_manual_threshold_or_coefficient_edits": true,
+    "maturity_evidence_reviewed": true
+  }
+}

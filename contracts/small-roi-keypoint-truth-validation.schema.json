@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/small-roi-keypoint-truth-validation.schema.json",
+  "type": "object",
+  "required": ["schema_version", "pack_version", "generated_at", "status", "counts", "errors", "readiness", "sources", "artifacts", "safety"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pack_version": {"const": "small-roi-keypoint-truth-pack-v1.0.0"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["annotation_required", "invalid_annotations", "ready_for_keypoint_error_evaluation"]},
+    "counts": {"type": "object", "required": ["frames", "joint_tasks", "raw_annotations", "tasks_with_two_independent_annotators", "accepted_adjudications", "compiled_keypoint_records", "compiled_joint_values"], "additionalProperties": {"type": "integer", "minimum": 0}},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "readiness": {"type": "object", "required": ["two_independent_annotators_per_task", "independent_adjudication_per_task", "full_task_coverage", "production_profile_change_allowed"], "properties": {"two_independent_annotators_per_task": {"type": "boolean"}, "independent_adjudication_per_task": {"type": "boolean"}, "full_task_coverage": {"type": "boolean"}, "production_profile_change_allowed": {"const": false}}, "additionalProperties": false},
+    "sources": {"type": "object", "minProperties": 4, "additionalProperties": {"$ref": "#/$defs/source"}},
+    "artifacts": {"type": "object", "required": ["manual_keypoints"], "additionalProperties": {"$ref": "#/$defs/source"}},
+    "safety": {"type": "object", "required": ["ground_truth_complete", "model_values_used_as_truth", "partial_annotations_change_runtime", "production_enabled", "grade_generated", "threshold_generated", "maturity_promoted"], "properties": {"ground_truth_complete": {"type": "boolean"}, "model_values_used_as_truth": {"const": false}, "partial_annotations_change_runtime": {"const": false}, "production_enabled": {"const": false}, "grade_generated": {"const": false}, "threshold_generated": {"const": false}, "maturity_promoted": {"const": false}}, "additionalProperties": false}
+  },
+  "$defs": {"source": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"}}, "additionalProperties": false}},
+  "additionalProperties": false
+}
