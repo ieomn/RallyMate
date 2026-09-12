@@ -3,10 +3,15 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import SplitResult, urlsplit
 
 from rallymate_scoring.registry_lifecycle import (
     ResolvedRegistryArtifact,
     resolve_runtime_feasibility_registry,
+)
+from rallymate_scoring.technique_registry import (
+    TechniqueRegistryError,
+    load_technique_registry,
 )
 from rallymate_vision.pose.presets import (
     default_pose_deployment_preset_id,
@@ -16,6 +21,79 @@ from rallymate_vision.pose.presets import (
 
 class ServiceConfigError(ValueError):
     """Raised when deployment settings are incomplete or unsafe."""
+
+
+def _split_http_url(value: str, setting_name: str) -> SplitResult:
+    """Parse an operator-supplied HTTP(S) URL with safe failure semantics."""
+
+    if not isinstance(value, str) or not value:
+        raise ServiceConfigError(f"{setting_name} must be a non-empty URL")
+    if any(char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+        raise ServiceConfigError(f"{setting_name} must not contain whitespace or control characters")
+    # Backslashes are not valid in an origin and can be interpreted differently
+    # by URL parsers/proxies.  Reject them rather than normalizing implicitly.
+    if "\\" in value:
+        raise ServiceConfigError(f"{setting_name} must be a valid HTTP(S) URL")
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        # Accessing .port validates malformed/non-numeric ports and bad IPv6
+        # brackets.  The value itself is not needed after this check.
+        _ = parsed.port
+    except ValueError as exc:
+        raise ServiceConfigError(f"{setting_name} must be a valid HTTP(S) URL") from exc
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or not hostname
+        or parsed.netloc.endswith(":")
+    ):
+        raise ServiceConfigError(f"{setting_name} must be a valid HTTP(S) URL")
+    if parsed.username is not None or parsed.password is not None:
+        raise ServiceConfigError(f"{setting_name} must not contain URL credentials")
+    # A query/fragment is never part of an API origin and would make generated
+    # links ambiguous.  Check the raw separators so a trailing '?'/'#' is also
+    # rejected even though urlsplit returns an empty component for it.
+    if parsed.query or parsed.fragment or "?" in value or "#" in value:
+        raise ServiceConfigError(f"{setting_name} must not contain a query or fragment")
+    return parsed
+
+
+def _validate_web_origins(
+    public_base_url: str | None,
+    cors_origins: tuple[str, ...],
+    environment: str,
+) -> None:
+    if public_base_url is not None:
+        parsed_public = _split_http_url(
+            public_base_url, "RALLYMATE_PUBLIC_BASE_URL"
+        )
+        if parsed_public.path not in {"", "/"}:
+            raise ServiceConfigError(
+                "RALLYMATE_PUBLIC_BASE_URL must contain only scheme and host"
+            )
+
+    if len(set(cors_origins)) != len(cors_origins):
+        raise ServiceConfigError("RALLYMATE_CORS_ORIGINS contains duplicate origins")
+    for origin in cors_origins:
+        if origin == "*":
+            if environment.strip().lower() == "production" or public_base_url is not None:
+                raise ServiceConfigError(
+                    "RALLYMATE_CORS_ORIGINS must list explicit origins for a public deployment"
+                )
+            continue
+        parsed = _split_http_url(origin, "RALLYMATE_CORS_ORIGINS")
+        # A CORS origin is scheme + authority only.  A slash path does not match
+        # the browser Origin header and therefore silently disables the intended
+        # policy; reject it at startup instead of accepting a dead configuration.
+        if parsed.path not in {"", "/"}:
+            raise ServiceConfigError(
+                "RALLYMATE_CORS_ORIGINS entries must not contain a path"
+            )
+        if parsed.path == "/":
+            raise ServiceConfigError(
+                "RALLYMATE_CORS_ORIGINS entries must omit the trailing slash"
+            )
 
 
 @dataclass(frozen=True)
@@ -36,7 +114,10 @@ class ServiceSettings:
     scoring_trusted_promotion_ledger: Path | None = None
     scoring_trusted_runtime_profile_bindings: Path | None = None
     scoring_runtime_view_evidence_dir: Path | None = None
+    technique_registry: Path | None = None
     api_key: str | None = None
+    cors_origins: tuple[str, ...] = ()
+    public_base_url: str | None = None
     environment: str = "development"
     model_license_ack: str = "development"
     device: str = "auto"
@@ -86,6 +167,12 @@ class ServiceSettings:
             )
         return authority
 
+    @property
+    def resolved_technique_registry(self) -> Path | None:
+        """Return the optional operator-pinned qualitative registry path."""
+
+        return self.technique_registry.resolve() if self.technique_registry else None
+
     def ensure_directories(self) -> None:
         self.data_root.mkdir(parents=True, exist_ok=True)
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
@@ -93,20 +180,43 @@ class ServiceSettings:
         self.runs_dir.mkdir(parents=True, exist_ok=True)
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def validate_license(self) -> None:
+    def validate_license(self, *, check_registry_authority: bool = True) -> None:
+        """Validate startup policy and operator-controlled runtime paths.
+
+        ``create_app`` performs the non-authority checks before accepting an
+        injected settings object, while readiness still evaluates the scoring
+        lifecycle authority.  Keeping that distinction preserves the existing
+        diagnostic behavior for an intentionally unapproved scoring override:
+        the API can expose a useful ``not_ready`` response instead of failing
+        during app construction.
+        """
         accepted = {
             "development",
             "enterprise",
             "agpl-compliant",
             "alternative-backend",
         }
+        if not isinstance(self.environment, str):
+            raise ServiceConfigError(
+                "RALLYMATE_ENVIRONMENT must be development, staging, production or test"
+            )
+        environment = self.environment.strip().lower()
+        if environment not in {
+            "development",
+            "staging",
+            "production",
+            "test",
+        }:
+            raise ServiceConfigError(
+                "RALLYMATE_ENVIRONMENT must be development, staging, production or test"
+            )
         if self.model_license_ack not in accepted:
             raise ServiceConfigError(
                 "RALLYMATE_MODEL_LICENSE_ACK must be development, enterprise, "
                 "agpl-compliant or alternative-backend"
             )
         if (
-            self.environment == "production"
+            environment == "production"
             and self.model_license_ack == "development"
         ):
             raise ServiceConfigError(
@@ -194,6 +304,13 @@ class ServiceSettings:
                 self.scoring_runtime_view_evidence_dir,
             ),
         ]
+        protected_paths.extend(
+            (
+                f"RALLYMATE_SCORING_CALIBRATION_ASSETS[{index}]",
+                path,
+            )
+            for index, path in enumerate(self.scoring_calibration_assets)
+        )
         for setting_name, configured_path in protected_paths:
             if configured_path is None:
                 continue
@@ -211,25 +328,48 @@ class ServiceSettings:
                     f"{setting_name} cannot be inside "
                     "job-writable uploads, requests or runs directories"
                 )
-        try:
-            registry_authority = self.resolved_scoring_registry_authority
-        except (FileNotFoundError, ValueError) as exc:
-            raise ServiceConfigError(
-                f"scoring registry lifecycle validation failed: {exc}"
-            ) from exc
-        for writable_root in (
-            self.uploads_dir,
-            self.requests_dir,
-            self.runs_dir,
-        ):
+        if check_registry_authority:
             try:
-                registry_authority.path.relative_to(writable_root.resolve())
-            except ValueError:
-                continue
-            raise ServiceConfigError(
-                "registry lifecycle runtime_feasibility artifact cannot be inside "
-                "job-writable uploads, requests or runs directories"
-            )
+                registry_authority = self.resolved_scoring_registry_authority
+            except (FileNotFoundError, ValueError) as exc:
+                raise ServiceConfigError(
+                    f"scoring registry lifecycle validation failed: {exc}"
+                ) from exc
+            for writable_root in (
+                self.uploads_dir,
+                self.requests_dir,
+                self.runs_dir,
+            ):
+                try:
+                    registry_authority.path.relative_to(writable_root.resolve())
+                except ValueError:
+                    continue
+                raise ServiceConfigError(
+                    "registry lifecycle runtime_feasibility artifact cannot be inside "
+                    "job-writable uploads, requests or runs directories"
+                )
+        if self.technique_registry is not None:
+            try:
+                load_technique_registry(self.technique_registry)
+            except (TechniqueRegistryError, OSError) as exc:
+                raise ServiceConfigError(
+                    f"technique registry validation failed: {exc}"
+                ) from exc
+            technique_path = self.technique_registry.resolve()
+            for writable_root in (self.uploads_dir, self.requests_dir, self.runs_dir):
+                try:
+                    technique_path.relative_to(writable_root.resolve())
+                except ValueError:
+                    continue
+                raise ServiceConfigError(
+                    "RALLYMATE_TECHNIQUE_REGISTRY cannot be inside job-writable "
+                    "uploads, requests or runs directories"
+                )
+        _validate_web_origins(
+            self.public_base_url,
+            self.cors_origins,
+            environment,
+        )
 
 
 def _int_env(name: str, default: int, minimum: int = 1) -> int:
@@ -350,8 +490,21 @@ def load_settings() -> ServiceSettings:
                 str(workspace / "calibration" / "runtime-view-evidence"),
             )
         ).resolve(),
-        api_key=os.getenv("RALLYMATE_API_KEY") or None,
-        environment=os.getenv("RALLYMATE_ENVIRONMENT", "development").lower(),
+        technique_registry=(
+            Path(os.environ["RALLYMATE_TECHNIQUE_REGISTRY"]).resolve()
+            if os.getenv("RALLYMATE_TECHNIQUE_REGISTRY")
+            else None
+        ),
+        # Environment files often leave accidental surrounding whitespace.  A
+        # single canonical value keeps readiness and Bearer comparison aligned.
+        api_key=(os.getenv("RALLYMATE_API_KEY") or "").strip() or None,
+        cors_origins=tuple(
+            origin.strip()
+            for origin in os.getenv("RALLYMATE_CORS_ORIGINS", "").split(",")
+            if origin.strip()
+        ),
+        public_base_url=os.getenv("RALLYMATE_PUBLIC_BASE_URL") or None,
+        environment=os.getenv("RALLYMATE_ENVIRONMENT", "development").strip().lower(),
         model_license_ack=os.getenv(
             "RALLYMATE_MODEL_LICENSE_ACK", "development"
         ).lower(),

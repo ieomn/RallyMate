@@ -38,6 +38,8 @@ export interface Scenario {
   eventConfidence: number;
   dependencyCoverage: Record<Dependency, number>;
   globalCoverage?: Partial<Record<Dependency, number>>;
+  /** Provenance for each dependency value; UI must not present proxies as measurements. */
+  coverageSource?: Partial<Record<Dependency, string>>;
   facts: Array<{ label: string; value: string }>;
   caveat: string;
 }
@@ -349,10 +351,30 @@ export function scenarioFromStage1Summary(summary: Record<string, unknown>): Sce
   const asRecord = (value: unknown): Record<string, unknown> =>
     value !== null && typeof value === "object" ? (value as Record<string, unknown>) : {};
   const coverage = asRecord(summary.coverage);
+  const primaryContainer = asRecord(summary.primary_player);
+  const primary = asRecord(primaryContainer.diagnostics ?? primaryContainer);
   const input = asRecord(summary.input);
   const video = asRecord(input.video);
   const processing = asRecord(summary.processing);
   const jobId = String(summary.job_id ?? `imported-${Date.now()}`);
+  const finiteFraction = (value: unknown, fallback = 0): number => {
+    const numeric = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    return Math.max(0, Math.min(1, numeric));
+  };
+  const hasNumber = (value: unknown): value is number =>
+    typeof value === "number" && Number.isFinite(value);
+  const globalPose = finiteFraction(coverage.pose_frame_fraction);
+  const globalTracking = finiteFraction(coverage.player_frame_fraction);
+  const primaryPose = hasNumber(primary.pose_coverage_fraction)
+    ? finiteFraction(primary.pose_coverage_fraction)
+    : globalPose;
+  const primaryTracking = hasNumber(primary.track_coverage_fraction)
+    ? finiteFraction(primary.track_coverage_fraction)
+    : globalTracking;
+  const hasCalibratedCourt = hasNumber(coverage.court_calibrated_fraction);
+  const court = hasCalibratedCourt
+    ? finiteFraction(coverage.court_calibrated_fraction)
+    : finiteFraction(coverage.court_detected_fraction);
   return {
     id: jobId,
     label: `导入一期结果 · ${jobId.replace(/^full-test-/, "").slice(0, 8)}`,
@@ -363,23 +385,39 @@ export function scenarioFromStage1Summary(summary: Record<string, unknown>): Sce
     baseScore: null,
     eventConfidence: 0,
     dependencyCoverage: {
-      pose: Number(coverage.pose_frame_fraction ?? 0),
-      ball: Number(coverage.ball_frame_fraction ?? 0),
-      racket: Number(coverage.racket_frame_fraction ?? 0),
-      court: Number(coverage.court_detected_fraction ?? 0),
-      tracking: Number(coverage.player_frame_fraction ?? 0) * 0.75,
+      pose: primaryPose,
+      ball: finiteFraction(coverage.ball_frame_fraction),
+      racket: finiteFraction(coverage.racket_frame_fraction),
+      court,
+      tracking: primaryTracking,
     },
     globalCoverage: {
-      pose: Number(coverage.pose_frame_fraction ?? 0),
-      ball: Number(coverage.ball_frame_fraction ?? 0),
-      racket: Number(coverage.racket_frame_fraction ?? 0),
-      court: Number(coverage.court_detected_fraction ?? 0),
+      pose: globalPose,
+      ball: finiteFraction(coverage.ball_frame_fraction),
+      racket: finiteFraction(coverage.racket_frame_fraction),
+      court: court,
+      tracking: globalTracking,
+    },
+    coverageSource: {
+      pose: hasNumber(primary.pose_coverage_fraction)
+        ? "summary.primary_player.pose_coverage_fraction"
+        : "summary.coverage.pose_frame_fraction (global upper-bound proxy)",
+      tracking: hasNumber(primary.track_coverage_fraction)
+        ? "summary.primary_player.track_coverage_fraction"
+        : "summary.coverage.player_frame_fraction (global upper-bound proxy)",
+      ball: "summary.coverage.ball_frame_fraction",
+      racket: "summary.coverage.racket_frame_fraction",
+      court: hasCalibratedCourt
+        ? "summary.coverage.court_calibrated_fraction"
+        : "summary.coverage.court_detected_fraction (region hint; not calibration)",
     },
     facts: [
       { label: "分辨率", value: `${video.width ?? "?"} × ${video.height ?? "?"}` },
       { label: "帧率", value: `${video.fps ?? "?"} fps` },
       { label: "处理帧", value: String(processing.processed_frames ?? "?") },
     ],
-    caveat: "summary.json 没有主球员轨迹覆盖率，本审计把全局 pose 覆盖率视为上限；因此不会输出技术等级。",
+    caveat: hasNumber(primary.pose_coverage_fraction) || hasNumber(primary.track_coverage_fraction)
+      ? "主球员覆盖率优先取 primary_player 诊断；场地只在存在 calibrated_fraction 时用于场地依赖指标。新技术目录仍只输出证据就绪度，不输出技术等级。"
+      : "summary.json 没有主球员轨迹诊断，本审计把全局 pose/track 覆盖率标记为上限代理；场地检测区域不等同标定，因此不会输出技术等级。",
   };
 }

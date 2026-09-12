@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/technique-assessment.schema.json",
+  "title": "RallyMate Evidence-Gated Technique Assessment",
+  "description": "Qualitative evidence readiness. It is not a coach-calibrated score or grade.",
+  "type": "object",
+  "required": [
+    "assessment_version",
+    "registry_version",
+    "registry_snapshot",
+    "overall_evidence_score_0_to_100",
+    "formal_score_available",
+    "formal_score_message_zh",
+    "coverage",
+    "coverage_detail",
+    "coverage_source",
+    "family_summary",
+    "techniques",
+    "policy",
+    "safety"
+  ],
+  "properties": {
+    "assessment_version": {"type": "string", "minLength": 1},
+    "registry_version": {"type": "string", "minLength": 1},
+    "registry_snapshot": {
+      "type": "object",
+      "required": ["status", "expected", "actual"],
+      "properties": {
+        "status": {"enum": ["verified", "legacy_unpinned"]},
+        "expected": {"type": ["object", "null"]},
+        "actual": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "job_id": {"type": ["string", "null"]},
+    "overall_evidence_score_0_to_100": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+    "formal_score_available": {"const": false},
+    "formal_score_message_zh": {"type": "string", "minLength": 1},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": {"type": "number", "minimum": 0, "maximum": 100}
+    },
+    "coverage_detail": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/coverageDetail"}
+    },
+    "coverage_source": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "family_summary": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/familySummary"}
+    },
+    "techniques": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/technique"}
+    },
+    "policy": {"type": "object", "additionalProperties": true},
+    "safety": {"type": "object", "additionalProperties": {"type": "boolean"}}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "coverageDetail": {
+      "type": "object",
+      "required": ["fraction", "percent", "source", "field", "scope", "fallback_used"],
+      "properties": {
+        "fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "source": {"type": "string", "minLength": 1},
+        "field": {"type": ["string", "null"]},
+        "scope": {"type": "string", "minLength": 1},
+        "source_kind": {"type": "string", "minLength": 1},
+        "fallback_used": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "familySummary": {
+      "type": "object",
+      "required": ["name_zh", "observed_count", "total_count", "evidence_score_0_to_100"],
+      "properties": {
+        "name_zh": {"type": "string", "minLength": 1},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "total_count": {"type": "integer", "minimum": 0},
+        "evidence_score_0_to_100": {"type": ["number", "null"], "minimum": 0, "maximum": 100}
+      },
+      "additionalProperties": true
+    },
+    "technique": {
+      "type": "object",
+      "required": [
+        "technique_id",
+        "family",
+        "family_name_zh",
+        "name_zh",
+        "status",
+        "observed",
+        "evidence_score_0_to_100",
+        "score_0_to_100",
+        "formal_grade",
+        "phase_statuses",
+        "evidence",
+        "core_visual_features",
+        "reference_constraints",
+        "limitations_zh",
+        "semantics"
+      ],
+      "properties": {
+        "technique_id": {"type": "string", "minLength": 1},
+        "family": {"type": "string", "minLength": 1},
+        "family_name_zh": {"type": "string", "minLength": 1},
+        "name_zh": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "observed": {"type": "boolean"},
+        "evidence_score_0_to_100": {"type": "number", "minimum": 0, "maximum": 100},
+        "score_0_to_100": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "formal_grade": {"type": ["string", "null"]},
+        "phase_statuses": {"type": "array"},
+        "evidence": {"type": "object"},
+        "core_visual_features": {"type": "array", "items": {"type": "string"}},
+        "reference_constraints": {"type": "array", "items": {"type": "object"}},
+        "limitations_zh": {"type": "array", "items": {"type": "string"}},
+        "semantics": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    }
+  }
+}

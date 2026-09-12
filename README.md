@@ -1,5 +1,8 @@
 # RallyMate
 
+当前 HTTP 发现版本为 `1.3.0`，OpenAPI `info.version=1.2.0` 作为旧客户端兼容标识；
+以 `GET /v1/meta` 返回的 `api_version`、`compatibility_version` 和注册表哈希为联调依据。
+
 RallyMate 是面向网球训练复盘的本地视频分析原型。系统对上传视频执行画面质量检查、
 目标检测、人员跟踪、人体姿态估计、候选动作分段和指标测量，并生成结构化结果与自然语言训练建议。
 
@@ -18,6 +21,8 @@ RallyMate 是面向网球训练复盘的本地视频分析原型。系统对上�
 - 13 项 Pose-only 指标的 Beta 分、自然语言观察、证据摘要和训练建议；
 - JSONL、汇总 JSON、预览图和可选骨架标注视频；
 - GPU/CPU、模型档位和运行配置的结果留痕。
+
+本次指标重构另外注册了五份最新技术定义：底线、发球、接发、网前进攻（正手截击、反手截击、高压）和步伐，共 24 个可发现的技术条目。它们先输出“证据就绪度”，不把 Word 文档中没有给出的权重、阈值或教练标定公式擅自变成正式分数。
 
 当前 13 项指标包括：
 
@@ -84,10 +89,24 @@ RTMPose 权重会按登记的文件大小和 SHA-256 校验。
 
 启动后访问：
 
-- 用户上传页面：`http://127.0.0.1:8000/`
+- API 兼容上传页（旧版）：`http://127.0.0.1:8000/`
 - OpenAPI：`http://127.0.0.1:8000/docs`
 - 存活检查：`http://127.0.0.1:8000/health/live`
 - 就绪检查：`http://127.0.0.1:8000/health/ready`
+
+推广级主前端在 `scoring-demo-web/`，与 API 分开启动（第二个终端）：
+
+```powershell
+Set-Location scoring-demo-web
+npm install
+$env:VITE_RALLYMATE_API_URL = "http://127.0.0.1:8000"
+npm run dev
+```
+
+然后打开 `http://127.0.0.1:3000/`。该页面统一承载视频上传、证据预览、球轨迹
+和球拍观测；API 根路径的旧页面仅保留给历史客户端，不是新推广入口。当前 vinext
+构建包含兼容 route handler，生产应运行 `npm run build && npm run start` 并由 Nginx
+反代；按 [`deploy/README.md`](deploy/README.md) 配置 API 域名、CORS 和短期认证。
 
 无可用 CUDA 时可显式使用 CPU：
 
@@ -117,7 +136,27 @@ curl.exe -X POST "http://127.0.0.1:8000/v1/jobs" `
 ```text
 GET /v1/jobs/{id}
 GET /v1/jobs/{id}/demo-result
+GET /v1/jobs/{id}/trajectory
+GET /v1/jobs/{id}/technique-assessment
+GET /v1/techniques
+GET /v1/meta
 ```
+
+`trajectory` 是从 `frames.jsonl` 派生的只读预览：球轨迹包含观测点和短时常速度外推（`heuristic_preview`，并用 `predicted_covered_horizon_ms` 标出实际覆盖时长），球拍目前只承诺通用检测框/跟踪置信度（`bbox_only`），不虚构拍头、拍柄、握拍或真实触球关键点。预览解析对 artifact 设有字节、行数和观测点上限，超限会 fail closed。`technique-assessment` 会在缺少球、球拍、场地或事件证据时返回 `unavailable`/`partial`，不会补成零分或技术等级。具体字段和来源边界见 [`docs/TECHNIQUE_METRICS_CONTRACT.md`](docs/TECHNIQUE_METRICS_CONTRACT.md)。
+
+### AutoDL 推理与独立域名
+
+API 与网页已经按“同源开发、远程 GPU 推理”拆开。AutoDL/API 容器通过环境变量发布稳定的跨域与链接合同：
+
+```text
+# 同源网页网关模式用 app.example.com；独立 API 链接模式用 api.example.com
+RALLYMATE_PUBLIC_BASE_URL=https://app.example.com
+RALLYMATE_CORS_ORIGINS=https://app.example.com,http://localhost:3000
+# 留空使用随包注册表；使用审计覆盖时，先按 deploy/README.md 只读挂载文件。
+RALLYMATE_TECHNIQUE_REGISTRY=
+```
+
+网页端的公开配置写在 `scoring-demo-web/.env.example`，可使用 `NEXT_PUBLIC_RALLYMATE_API_URL` 或 `VITE_RALLYMATE_API_URL` 指向 API。生产环境建议由反向代理或同源网关注入 Bearer 认证；不要把长期 API key 编译进浏览器 bundle。AutoDL、只读模型挂载、域名反向代理和审计注册表覆盖步骤见 [`deploy/README.md`](deploy/README.md)，Docker 部署样例见 `deploy/docker-compose.yml` 和 `deploy/.env.example`。
 
 API 为兼容旧客户端仍将 `write_annotated_video` 的表单默认值保留为 `true`。
 不需要骨架视频时应明确传入 `false`，以减少 CPU 编码和磁盘占用。
@@ -155,7 +194,7 @@ examples/ · scripts/         示例、配置及运行维护脚本
 tests/ · docs/               测试与当前说明书
 reports/                     经筛选的小型合同与审计摘要
 runtime/rtmpose/             隔离运行时说明与依赖锁定，不含本地虚拟环境
-scoring-demo-web/            298 项指标可追溯展示前端
+scoring-demo-web/            推广级上传/证据前端（兼容 298 条旧规则 + 24 项新技术目录）
 ```
 
 `service_data/`、`runs/`、模型权重、原始视频和大体积实验报告属于本地或生成内容，

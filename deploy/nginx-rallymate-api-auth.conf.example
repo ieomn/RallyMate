@@ -1,0 +1,5 @@
+# Copy this file to /etc/nginx/snippets/rallymate-api-auth.conf, replace the
+# placeholder with the same secret configured as RALLYMATE_API_KEY, and chmod
+# 600. The promotion-domain server in nginx-rallymate.conf.example includes it
+# to inject authentication server-side; it is never sent to the browser.
+set $rallymate_api_authorization "Bearer REPLACE_WITH_RALLYMATE_API_KEY";

@@ -42,6 +42,10 @@ export interface ScorecardResponse
     | "formula"
   > {
   registryVersion: string;
+  apiVersion?: string;
+  compatibilityVersion?: string;
+  surface?: string;
+  registryKind?: string;
   resultCount: number;
   results: ScorecardResult[];
 }
@@ -49,6 +53,9 @@ export interface ScorecardResponse
 export interface ScorecardCapabilities {
   service: string;
   apiVersion: string;
+  compatibilityVersion?: string;
+  surface?: string;
+  registryKind?: string;
   registryVersion: string;
   indicatorCount: number;
   scenarios: Array<{
@@ -58,6 +65,47 @@ export interface ScorecardCapabilities {
     description: string;
   }>;
   usage?: string;
+  [key: string]: unknown;
+}
+
+/** Versioned qualitative catalog served by the Python API. */
+export interface TechniqueCatalogItem {
+  id: string;
+  family: string;
+  name_zh: string;
+  aliases?: string[];
+  phases: string[];
+  core_visual_features: string[];
+  required_evidence: string[];
+  enhanced_evidence: string[];
+  proxy_limits?: string[];
+  reference_constraints?: Array<Record<string, unknown>>;
+  [key: string]: unknown;
+}
+
+export interface TechniqueCatalogResponse {
+  schema_version: string;
+  registry_id: string;
+  registry_version: string;
+  registry_sha256: string;
+  source_documents: Array<Record<string, unknown>>;
+  semantics: Record<string, unknown>;
+  default_phase_contracts: Record<string, string[]>;
+  techniques: TechniqueCatalogItem[];
+  [key: string]: unknown;
+}
+
+export interface RallyMateMetaResponse {
+  service: string;
+  api_version: string;
+  compatibility_version?: string;
+  environment?: string;
+  public_base_url?: string | null;
+  authentication?: Record<string, unknown>;
+  capabilities?: Record<string, unknown>;
+  technique_registry?: Record<string, unknown>;
+  client_configuration?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export type JobStatus =
@@ -74,6 +122,16 @@ export interface JobSubmission {
   id: string;
   status: JobStatus | string;
   error?: string | null;
+  progress?: number | {
+    phase?: string;
+    percent?: number;
+    message?: string;
+    [key: string]: unknown;
+  };
+  trajectory_url?: string | null;
+  technique_assessment_url?: string | null;
+  demo_result_url?: string | null;
+  artifact_urls?: Record<string, string>;
   createdAt?: string;
   created_at?: string;
   [key: string]: unknown;
@@ -104,6 +162,132 @@ export interface DemoResultResponse {
   artifacts?: { evidence_frames?: EvidenceFrame[]; [key: string]: unknown };
   features?: { ball?: { trajectory?: BallTrajectory }; [key: string]: unknown };
   signals?: { racket?: RacketSignal; grip?: GripSignal; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
+export interface TrajectoryPoint {
+  frame_index?: number;
+  processed_index?: number;
+  timestamp_ms: number;
+  x: number;
+  y: number;
+  confidence?: number;
+  track_id?: number | null;
+  bbox?: [number, number, number, number];
+}
+
+export interface TrajectoryTrack {
+  track_id: number | null;
+  track_id_status: string;
+  track_count: number;
+  observed_count: number;
+  coverage_fraction: number;
+  confidence: {
+    mean: number | null;
+    median: number | null;
+    min: number | null;
+    max: number | null;
+  };
+  observed: TrajectoryPoint[];
+  [key: string]: unknown;
+}
+
+export interface TrajectoryPreviewResponse {
+  schema_version: string;
+  result_kind: string;
+  job_id?: string;
+  status: "ready" | "not_observed" | string;
+  source: {
+    frames_path: string;
+    frame_count: number;
+    width: number | null;
+    height: number | null;
+    coordinate_space: string;
+    timebase: string;
+    [key: string]: unknown;
+  };
+  ball: TrajectoryTrack & {
+    prediction_status: "heuristic_preview" | "not_available" | "not_requested" | string;
+    prediction_reason: string | null;
+    prediction_horizon_ms: number;
+    predicted_covered_horizon_ms: number;
+    predicted: TrajectoryPoint[];
+    velocity: {
+      direction_image_deg?: number;
+      segment_count?: number;
+      [key: string]: unknown;
+    } | null;
+    semantics: string;
+  };
+  racket: TrajectoryTrack & {
+    geometry_status: "bbox_only" | string;
+    association_status: "unassociated";
+    association_reason: string;
+    recognition_status: "generic_bbox_detection" | "not_observed" | string;
+    keypoint_status: string;
+    prediction_status: string;
+    prediction_reason: string;
+    semantics: string;
+  };
+  limitations: string[];
+}
+
+export interface TechniqueAssessmentItem {
+  technique_id: string;
+  family: string;
+  family_name_zh: string;
+  name_zh: string;
+  status: "not_observed" | "unavailable" | "partial" | "ready" | string;
+  observed: boolean;
+  evidence_score_0_to_100: number;
+  score_0_to_100: number | null;
+  formal_grade: string | null;
+  phase_statuses: Array<{ phase: string; status: string; evidence_source?: string | null }>;
+  evidence: {
+    required_coverage: Record<string, number>;
+    enhanced_coverage: Record<string, number>;
+    contact_status: string;
+    contact_policy_version: string;
+    event_codes: string[];
+  };
+  core_visual_features: string[];
+  reference_constraints: Array<Record<string, unknown>>;
+  limitations_zh: string[];
+  semantics: string;
+}
+
+export interface TechniqueAssessmentResponse {
+  assessment_version: string;
+  registry_version: string;
+  job_id?: string;
+  overall_evidence_score_0_to_100: number | null;
+  formal_score_available: boolean;
+  formal_score_message_zh: string;
+  coverage: Record<string, number>;
+  coverage_detail: Record<string, {
+    fraction: number;
+    percent: number;
+    source: string;
+    field: string | null;
+    scope: string;
+    source_kind?: string;
+    fallback_used: boolean;
+  }>;
+  coverage_source: Record<string, string>;
+  family_summary: Record<string, {
+    name_zh: string;
+    observed_count: number;
+    total_count: number;
+    evidence_score_0_to_100: number | null;
+  }>;
+  techniques: TechniqueAssessmentItem[];
+  registry_snapshot: {
+    status: "verified" | "legacy_unpinned";
+    expected: Record<string, unknown> | null;
+    actual: Record<string, unknown>;
+  };
+  policy: Record<string, unknown>;
+  safety: Record<string, boolean>;
   [key: string]: unknown;
 }
 
@@ -151,6 +335,7 @@ export interface RallyMateApiConfig {
   baseUrl: string;
   scorecardPath: string;
   jobsPath: string;
+  techniquesPath: string;
 }
 
 export class RallyMateApiError extends Error {

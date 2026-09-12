@@ -1,0 +1,110 @@
+# Replace the domains and certificate paths before enabling this file.
+# Keep the FastAPI container bound to a private interface; expose only Nginx.
+
+upstream rallymate_api {
+    server 127.0.0.1:8000;
+    keepalive 16;
+}
+
+upstream rallymate_web {
+    # Run `npm run build && npm run start` in scoring-demo-web on this host.
+    server 127.0.0.1:3000;
+    keepalive 16;
+}
+
+# Same-origin browser gateway (recommended for the promotion frontend):
+# create this root-readable, mode-600 file before loading the config:
+#   /etc/nginx/snippets/rallymate-api-auth.conf
+# It must contain only a server-side variable assignment, for example:
+#   set $rallymate_api_authorization "Bearer <the-RALLYMATE_API_KEY>";
+# Never put that value in NEXT_PUBLIC_* / VITE_* or in this repository.
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/api.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+
+    # Must be <= RALLYMATE_MAX_UPLOAD_BYTES (2 GiB in the example env).
+    client_max_body_size 2g;
+    proxy_request_buffering off;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+
+    location / {
+        proxy_pass http://rallymate_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $http_x_request_id;
+    }
+}
+
+# Promotion frontend (vinext SSR). The current App Router build includes the
+# local compatibility route handler, so `dist/client` is an asset directory,
+# not a standalone index.html. Proxy the Node server unless you deliberately
+# add and verify a separate static-export build.
+server {
+    listen 443 ssl http2;
+    server_name app.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/app.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.example.com/privkey.pem;
+
+    # These paths are proxied from the browser's same-origin app domain to the
+    # private API. The include injects the long-lived key server-side, so the
+    # browser never receives it. Keep the direct api.example.com server above
+    # protected by its normal Bearer check for operators and non-browser jobs.
+    include /etc/nginx/snippets/rallymate-api-auth.conf;
+
+    location = /v1 {
+        proxy_pass http://rallymate_api;
+        proxy_http_version 1.1;
+        proxy_set_header Authorization $rallymate_api_authorization;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Request-ID $http_x_request_id;
+    }
+
+    location /v1/ {
+        proxy_pass http://rallymate_api;
+        proxy_http_version 1.1;
+        proxy_request_buffering off;
+        proxy_set_header Authorization $rallymate_api_authorization;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Request-ID $http_x_request_id;
+    }
+
+    location /health/ {
+        proxy_pass http://rallymate_api;
+        proxy_http_version 1.1;
+        proxy_set_header Authorization $rallymate_api_authorization;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $http_x_request_id;
+    }
+
+    # vinext produces a client bundle under dist/client. The server bundle
+    # stays private; use `vinext start` instead when deploying SSR rather than
+    # exposing dist/server as static files.
+    location / {
+        proxy_pass http://rallymate_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

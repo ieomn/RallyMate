@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from rallymate_service.training_evaluation import build_training_evaluation
+from rallymate_scoring.technique_assessment import build_technique_assessment
 
 USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.2.0"
 FORMATION_SCORE_VERSION = "recognizable-motion-information-v1.0.0"
@@ -303,6 +304,8 @@ def _formation_assessment(
 def build_user_demo_result(
     summary: Mapping[str, Any],
     indicator_feature_records: Iterable[Mapping[str, Any]],
+    *,
+    technique_registry_path: Path | None = None,
 ) -> dict[str, Any]:
     if not isinstance(summary, Mapping):
         raise UserDemoResultError("summary must be an object")
@@ -484,6 +487,11 @@ def build_user_demo_result(
     )
     training_score = training_evaluation.get("score_0_to_100")
     training_headline = training_evaluation.get("level_zh")
+    technique_assessment = build_technique_assessment(
+        summary,
+        records,
+        registry_path=technique_registry_path,
+    )
 
     return {
         "schema_version": "1.2.0",
@@ -497,6 +505,7 @@ def build_user_demo_result(
             else formation_headline
         ),
         "training_evaluation": training_evaluation,
+        "technique_assessment": technique_assessment,
         "final_demo_score": {
             "label_zh": "动作信息成型参考分",
             "value_0_to_100": final_demo_score_value,

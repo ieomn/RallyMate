@@ -15,6 +15,10 @@ services:
       RALLYMATE_ENVIRONMENT: ${RALLYMATE_ENVIRONMENT:-development}
       RALLYMATE_MODEL_LICENSE_ACK: ${RALLYMATE_MODEL_LICENSE_ACK:-development}
       RALLYMATE_API_KEY: ${RALLYMATE_API_KEY:-}
+      # Frontend may be hosted on a separate domain/CDN. Keep origins explicit.
+      RALLYMATE_CORS_ORIGINS: ${RALLYMATE_CORS_ORIGINS:-http://localhost:3000}
+      RALLYMATE_PUBLIC_BASE_URL: ${RALLYMATE_PUBLIC_BASE_URL:-}
+      RALLYMATE_TECHNIQUE_REGISTRY: ${RALLYMATE_TECHNIQUE_REGISTRY:-}
       RALLYMATE_MAX_UPLOAD_BYTES: ${RALLYMATE_MAX_UPLOAD_BYTES:-2147483648}
       RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST: ${RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST:-/app/registry-lifecycle.json}
       RALLYMATE_SCORING_FEASIBILITY_REGISTRY: ${RALLYMATE_SCORING_FEASIBILITY_REGISTRY:-/app/metric-feasibility-pose-wave-v2.json}
@@ -23,11 +27,15 @@ services:
       RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS: ${RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS:-/app/calibration/trusted-runtime-profile-bindings.json}
       RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR: ${RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR:-/app/calibration/runtime-view-evidence}
     ports:
-      - "${RALLYMATE_PORT:-8000}:8000"
+      # Bind to loopback by default; put Nginx/Caddy in front for public HTTPS.
+      - "${RALLYMATE_BIND_ADDR:-127.0.0.1}:${RALLYMATE_PORT:-8000}:8000"
     volumes:
       - ../service_data:/app/service_data
       - ../models:/app/models:ro
       - ../calibration:/app/calibration:ro
+      # Optional audited qualitative registry override; keep commented when
+      # using the packaged registry.  Mirror the mount in the worker below.
+      # - ../config/technique-metrics-audited.json:/app/technique-metrics-audited.json:ro
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8000/health/live"]
       interval: 15s
@@ -45,6 +53,8 @@ services:
       - ../service_data:/app/service_data
       - ../models:/app/models:ro
       - ../calibration:/app/calibration:ro
+      # Optional audited qualitative registry override (see api volume above).
+      # - ../config/technique-metrics-audited.json:/app/technique-metrics-audited.json:ro
     gpus: all
     depends_on:
       api:

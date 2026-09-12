@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rallymate.local/contracts/trajectory-preview.schema.json",
+  "title": "RallyMate Trajectory and Racket Observability Preview",
+  "description": "Read-only preview derived from Stage 1 frames.jsonl. It is not a detector accuracy or formal coaching score.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "result_kind",
+    "status",
+    "source",
+    "ball",
+    "racket",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "result_kind": {"const": "trajectory_and_racket_observability_preview"},
+    "job_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["ready", "not_observed"]},
+    "source": {"$ref": "#/$defs/source"},
+    "ball": {"$ref": "#/$defs/ball"},
+    "racket": {"$ref": "#/$defs/racket"},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "nullableNumber": {"type": ["number", "null"]},
+    "nullableInteger": {"type": ["integer", "null"], "minimum": 0},
+    "source": {
+      "type": "object",
+      "required": [
+        "frames_path",
+        "frames_schema_versions",
+        "frame_count",
+        "width",
+        "height",
+        "coordinate_space",
+        "timebase"
+      ],
+      "properties": {
+        "frames_path": {"type": "string", "minLength": 1},
+        "frames_schema_versions": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "frame_count": {"type": "integer", "minimum": 0},
+        "width": {"type": ["integer", "null"], "minimum": 1},
+        "height": {"type": ["integer", "null"], "minimum": 1},
+        "coordinate_space": {"const": "normalized_frame_0_1"},
+        "timebase": {"const": "source_video_timestamp_ms"}
+      },
+      "additionalProperties": true
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["mean", "median", "min", "max"],
+      "properties": {
+        "mean": {"$ref": "#/$defs/nullableNumber"},
+        "median": {"$ref": "#/$defs/nullableNumber"},
+        "min": {"$ref": "#/$defs/nullableNumber"},
+        "max": {"$ref": "#/$defs/nullableNumber"}
+      },
+      "additionalProperties": true
+    },
+    "observedPoint": {
+      "type": "object",
+      "required": [
+        "frame_index",
+        "processed_index",
+        "timestamp_ms",
+        "x",
+        "y",
+        "confidence",
+        "track_id"
+      ],
+      "properties": {
+        "frame_index": {"type": "integer", "minimum": 0},
+        "processed_index": {"type": "integer", "minimum": 0},
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "x": {"type": "number", "minimum": 0, "maximum": 1},
+        "y": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "track_id": {"type": ["integer", "null"], "minimum": 1},
+        "bbox": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      },
+      "additionalProperties": true
+    },
+    "predictedPoint": {
+      "type": "object",
+      "required": [
+        "timestamp_ms",
+        "x",
+        "y",
+        "clamped_to_frame",
+        "source"
+      ],
+      "properties": {
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "x": {"type": "number", "minimum": 0, "maximum": 1},
+        "y": {"type": "number", "minimum": 0, "maximum": 1},
+        "clamped_to_frame": {"type": "boolean"},
+        "source": {"const": "constant_velocity_extrapolation"}
+      },
+      "additionalProperties": true
+    },
+    "track": {
+      "type": "object",
+      "required": [
+        "track_id",
+        "track_id_status",
+        "track_count",
+        "observed_count",
+        "coverage_fraction",
+        "first_timestamp_ms",
+        "last_timestamp_ms",
+        "longest_missing_run_frames",
+        "missing_run_semantics",
+        "confidence",
+        "observed"
+      ],
+      "properties": {
+        "track_id": {"type": ["integer", "null"], "minimum": 1},
+        "track_id_status": {
+          "enum": ["stable_id", "untracked_observations", "not_observed"]
+        },
+        "track_count": {"type": "integer", "minimum": 0},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "coverage_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "first_timestamp_ms": {"$ref": "#/$defs/nullableInteger"},
+        "last_timestamp_ms": {"$ref": "#/$defs/nullableInteger"},
+        "longest_missing_run_frames": {"type": "integer", "minimum": 0},
+        "missing_run_semantics": {"type": "string", "minLength": 1},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "observed": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/observedPoint"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "ball": {
+      "allOf": [
+        {"$ref": "#/$defs/track"},
+        {
+          "type": "object",
+          "required": [
+            "prediction_status",
+            "prediction_reason",
+            "prediction_horizon_ms",
+            "predicted_covered_horizon_ms",
+            "predicted",
+            "velocity",
+            "semantics"
+          ],
+          "properties": {
+            "prediction_status": {
+              "enum": ["heuristic_preview", "not_available", "not_requested"]
+            },
+            "prediction_reason": {"type": ["string", "null"]},
+            "prediction_horizon_ms": {"type": "integer", "minimum": 0, "maximum": 5000},
+            "predicted_covered_horizon_ms": {"type": "integer", "minimum": 0, "maximum": 5000},
+            "predicted": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/predictedPoint"}
+            },
+            "velocity": {
+              "oneOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "required": [
+                    "vx_normalized_per_s",
+                    "vy_normalized_per_s",
+                    "speed_normalized_per_s",
+                    "direction_image_deg",
+                    "segment_count",
+                    "source"
+                  ],
+                  "properties": {
+                    "vx_normalized_per_s": {"type": "number"},
+                    "vy_normalized_per_s": {"type": "number"},
+                    "speed_normalized_per_s": {"type": "number", "minimum": 0},
+                    "direction_image_deg": {"type": "number"},
+                    "segment_count": {"type": "integer", "minimum": 1},
+                    "source": {"const": "median_of_last_observed_segments"}
+                  },
+                  "additionalProperties": true
+                }
+              ]
+            },
+            "semantics": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "racket": {
+      "allOf": [
+        {"$ref": "#/$defs/track"},
+        {
+          "type": "object",
+          "required": [
+            "association_status",
+            "geometry_status",
+            "recognition_status",
+            "keypoint_status",
+            "prediction_status",
+            "prediction_reason",
+            "semantics"
+          ],
+          "properties": {
+            "association_status": {"const": "unassociated"},
+            "association_reason": {"type": "string", "minLength": 1},
+            "geometry_status": {"const": "bbox_only"},
+            "recognition_status": {"enum": ["generic_bbox_detection", "not_observed"]},
+            "keypoint_status": {"const": "not_available_from_current_detection_contract"},
+            "prediction_status": {"const": "not_available"},
+            "prediction_reason": {"type": "string", "minLength": 1},
+            "semantics": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  }
+}

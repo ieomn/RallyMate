@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./sites-vite-plugin";
 
@@ -33,7 +33,16 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode }) => {
+  // Vite does not populate process.env from .env files.  Load the complete
+  // environment explicitly so the documented proxy override works in local
+  // dev while still allowing a shell variable to win.
+  const loadedEnv = loadEnv(mode, process.cwd(), "");
+  const localApiProxy = (
+    loadedEnv.RALLYMATE_API_PROXY ||
+    process.env.RALLYMATE_API_PROXY ||
+    "http://127.0.0.1:8000"
+  ).replace(/\/+$/, "");
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -44,9 +53,17 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      ...(isCodexSeatbeltSandbox
+        ? { watch: { useFsEvents: false, usePolling: true } }
+        : {}),
+      // Local development keeps the browser same-origin while the Python API
+      // remains independently deployable on AutoDL or behind a domain.
+      proxy: {
+        "/v1": { target: localApiProxy, changeOrigin: true },
+        "/health": { target: localApiProxy, changeOrigin: true },
+      },
+    },
     plugins: [
       vinext(),
       sites(),
