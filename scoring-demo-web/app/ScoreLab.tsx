@@ -11,6 +11,7 @@ import {
   type Scenario,
 } from "./scoring/engine";
 import { SCENARIOS } from "./scoring/scenarios";
+import { createApiClient, RallyMateApiError, type JobProgress } from "./lib/api-client";
 
 const EVENT_NAMES: Record<string, string> = {
   GS01: "正手上旋",
@@ -47,12 +48,69 @@ const STATUS_LABELS = {
 
 type Source = { domain: string; fileName: string; indicatorCount: number; stageCount: number };
 
+type ImportState =
+  | { status: "idle" }
+  | { status: "reading"; fileName: string }
+  | { status: "success"; fileName: string }
+  | { status: "error"; message: string };
+
 function pct(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
 function scoreText(value: number | null) {
   return value === null ? "—" : value.toFixed(1);
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function jobPercent(job: JobProgress | null, fallback: number) {
+  const value = typeof job?.progress === "object" ? job.progress.percent : job?.progress;
+  return Math.max(0, Math.min(100, Number(value ?? fallback)));
+}
+
+function jobPhase(job: JobProgress | null) {
+  return typeof job?.progress === "object" ? job.progress.phase || job.progress.message : job?.stage || job?.message;
+}
+
+function DemoEvidencePanel() {
+  return (
+    <section className="evidence-preview" id="evidence" aria-labelledby="evidence-title">
+      <div className="evidence-heading">
+        <div><span className="card-kicker">EVIDENCE PREVIEW · DEMO / MOCK</span><h2 id="evidence-title">把评分还原到可核验的画面</h2><p>以下是离线占位视觉，用于展示真实服务返回后会落位的数据结构。不会冒充模型预测或球员成绩。</p></div>
+        <span className="demo-badge">DEMO DATA</span>
+      </div>
+      <div className="evidence-grid">
+        <article className="frame-card">
+          <div className="frame-toolbar"><span>证据帧 · 00:02.480</span><span>pose + ball + racket</span></div>
+          <div className="court-frame" role="img" aria-label="Demo 网球场证据帧占位图，包含球员骨架和球拍框线">
+            <div className="court-lines" /><div className="player-skeleton"><i className="sk-head" /><i className="sk-body" /><i className="sk-arm" /><i className="sk-racket" /><i className="sk-leg left" /><i className="sk-leg right" /></div><span className="ball-dot" /><span className="frame-label">MOCK FRAME</span>
+          </div>
+          <div className="frame-caption"><strong>准备阶段 / GS01-M01</strong><span>来源：离线演示占位，不代表实际检测结果</span></div>
+        </article>
+        <article className="trajectory-card">
+          <div className="frame-toolbar"><span>球轨迹预测</span><span className="confidence-high">置信度 0.84 · Demo</span></div>
+          <svg className="trajectory-chart" viewBox="0 0 520 190" role="img" aria-label="Demo 球轨迹预测可视化">
+            <defs><linearGradient id="traj" x1="0" x2="1"><stop offset="0" stopColor="#9ee15a"/><stop offset="1" stopColor="#6cb7ff"/></linearGradient></defs>
+            <path d="M26 151 C 115 140, 120 42, 218 61 S 348 156, 486 29" fill="none" stroke="url(#traj)" strokeWidth="4" strokeDasharray="8 7" />
+            <path d="M26 166 H486 M26 22 V166" stroke="rgba(255,255,255,.14)" /><circle cx="26" cy="151" r="6" fill="#c9ff43"/><circle cx="486" cy="29" r="6" fill="#71a7ff"/>
+            <text x="28" y="181" fill="rgba(255,255,255,.5)" fontSize="10">起始帧</text><text x="445" y="181" fill="rgba(255,255,255,.5)" fontSize="10">落点区间</text>
+          </svg>
+          <div className="trajectory-meta"><span><b>方向</b> 右前方</span><span><b>连续帧</b> 18 / 22</span><span><b>来源</b> ball.track · mock</span></div>
+        </article>
+        <article className="signal-card">
+          <div className="frame-toolbar"><span>专项观测</span><span>数据来源</span></div>
+          <div className="signal-row"><span className="signal-icon">R</span><div><strong>球拍识别</strong><small>racket.keypoint_geometry</small></div><b>0.79</b></div>
+          <div className="signal-row"><span className="signal-icon grip">G</span><div><strong>握拍状态</strong><small>仅作候选状态，不下技术结论</small></div><b>待确认</b></div>
+          <div className="signal-row"><span className="signal-icon court">C</span><div><strong>场地标定</strong><small>court.calibration · demo</small></div><b>0.91</b></div>
+          <p className="signal-note">接入真实 API 后，这些卡片会由 artifact / feature 字段驱动；缺失字段保持“待确认”。</p>
+        </article>
+      </div>
+    </section>
+  );
 }
 
 function StatBar({ label, value, tone = "lime" }: { label: string; value: number; tone?: "lime" | "blue" | "orange" }) {
@@ -149,7 +207,13 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
   const [selectedId, setSelectedId] = useState("GS01-M01-01");
   const [query, setQuery] = useState("");
   const [visible, setVisible] = useState(8);
+  const [importState, setImportState] = useState<ImportState>({ status: "idle" });
   const fileInput = useRef<HTMLInputElement>(null);
+  const videoInput = useRef<HTMLInputElement>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadState, setUploadState] = useState<"idle" | "ready" | "uploading" | "processing" | "complete" | "error">("idle");
+  const [job, setJob] = useState<JobProgress | null>(null);
+  const [uploadError, setUploadError] = useState("");
 
   const scenarios = importedScenario ? [...SCENARIOS, importedScenario] : SCENARIOS;
   const scenario = scenarios.find((item) => item.id === scenarioId) ?? SCENARIOS[0];
@@ -169,6 +233,46 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
   const partialCount = report.results.filter((item) => item.status === "partial").length;
   const blockedCount = report.results.filter((item) => item.status === "blocked").length;
   const currentStageName = eventResults.find((item) => item.card.stageCode === stageCode)?.card.stageName;
+
+  function chooseVideo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    if (!file.type.startsWith("video/") && !/\.(mp4|mov|webm)$/i.test(file.name)) {
+      setVideoFile(null); setUploadState("error"); setUploadError("请选择 MP4、MOV 或 WebM 视频文件。"); return;
+    }
+    setVideoFile(file); setUploadState("ready");
+  }
+
+  function acceptVideoFile(file: File | undefined) {
+    if (!file) return;
+    setUploadError("");
+    if (!file.type.startsWith("video/") && !/\.(mp4|mov|webm)$/i.test(file.name)) {
+      setVideoFile(null); setUploadState("error"); setUploadError("请选择 MP4、MOV 或 WebM 视频文件。"); return;
+    }
+    setVideoFile(file); setUploadState("ready");
+  }
+
+  async function submitVideo() {
+    if (!videoFile) return;
+    setUploadState("uploading"); setUploadError("");
+    try {
+      const client = createApiClient();
+      const submitted = await client.submitVideo(videoFile, { courtMode: "auto" });
+      setJob(submitted); setUploadState("processing");
+      let latest = submitted;
+      for (let attempt = 0; attempt < 30 && !["completed", "succeeded", "failed", "cancelled"].includes(String(latest.status).toLowerCase()); attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1200));
+        latest = await client.getJob(String(latest.id));
+        setJob(latest);
+      }
+      if (["completed", "succeeded"].includes(String(latest.status).toLowerCase())) setUploadState("complete");
+      else if (["failed", "cancelled"].includes(String(latest.status).toLowerCase())) { setUploadState("error"); setUploadError(latest.error || "处理失败，请检查服务端日志。"); }
+    } catch (error) {
+      setUploadState("error");
+      setUploadError(error instanceof RallyMateApiError ? `${error.message}（${error.status}）` : "无法连接评分服务。可先使用离线 Demo 继续浏览。");
+    }
+  }
 
   function switchDomain(next: Domain) {
     const firstEvent = next === "GS" ? "GS01" : "FS01";
@@ -192,13 +296,15 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
   async function importSummary(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    setImportState({ status: "reading", fileName: file.name });
     try {
       const summary = JSON.parse(await file.text());
       const nextScenario = scenarioFromStage1Summary(summary);
       setImportedScenario(nextScenario);
       setScenarioId(nextScenario.id);
+      setImportState({ status: "success", fileName: file.name });
     } catch {
-      window.alert("无法读取该 JSON。请确认它是一期 pipeline 生成的 summary.json。");
+      setImportState({ status: "error", message: "无法读取该 JSON。请确认它是一期 pipeline 生成的 summary.json。" });
     } finally {
       event.target.value = "";
     }
@@ -233,14 +339,16 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" aria-busy={importState.status === "reading"}>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="RallyMate Score Lab 首页">
           <span className="brand-mark">RM</span>
           <span><strong>RallyMate</strong><small>SCORE LAB</small></span>
         </a>
         <nav className="topnav" aria-label="页面导航">
+          <a href="#upload">上传分析</a>
           <a href="#scoreboard">评分台</a>
+          <a href="#evidence">证据回放</a>
           <a href="#rules">规则明细</a>
           <a href="#system">系统逻辑</a>
         </nav>
@@ -253,9 +361,16 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
           <h1>让每一分，<br /><em>都能追溯到证据。</em></h1>
           <p>把两份评分指标卡转化为一套能运行、能解释、能守住不可评价边界的动作评分系统。</p>
           <div className="hero-actions">
-            <a className="primary-button" href="#scoreboard">进入评分台 <span>↘</span></a>
-            <button className="ghost-button" onClick={() => fileInput.current?.click()}>导入一期 summary.json</button>
+            <a className="primary-button" href="#upload">上传视频 <span>↘</span></a>
+            <button className="ghost-button" onClick={() => fileInput.current?.click()} aria-describedby="import-status" disabled={importState.status === "reading"}>
+              {importState.status === "reading" ? "正在读取…" : "导入一期 summary.json"}
+            </button>
             <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={importSummary} />
+          </div>
+          <div id="import-status" className={`import-status import-${importState.status}`} role="status" aria-live="polite">
+            {importState.status === "reading" && <>正在解析 {importState.fileName}，请稍候…</>}
+            {importState.status === "success" && <>已载入 {importState.fileName}。当前场景标记为导入数据。</>}
+            {importState.status === "error" && <><strong>导入失败：</strong> {importState.message}</>}
           </div>
         </div>
         <div className="hero-system-map" aria-label="评分系统数据流">
@@ -268,6 +383,23 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
           <div className="map-footer"><span>✓ 技术分与证据覆盖率分离</span><span>✓ 不可评价不补分</span></div>
         </div>
       </section>
+
+      <section className="upload-section" id="upload" aria-labelledby="upload-title">
+        <div className="upload-copy"><span className="card-kicker">01 / VIDEO INTAKE</span><h2 id="upload-title">上传一段击球视频，开始证据链分析。</h2><p>支持本地 API、AutoDL 或部署域名。上传仅提交到你配置的服务端；未连接服务时仍可浏览下方离线 Demo。</p><div className="source-chip"><i /> API 来源：{createApiClient().config.baseUrl || "当前站点 /api"}</div></div>
+        <div className="upload-card">
+          <input ref={videoInput} type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" hidden onChange={chooseVideo} />
+          <button className={`dropzone ${uploadState === "error" ? "has-error" : ""}`} onClick={() => videoInput.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); acceptVideoFile(event.dataTransfer.files?.[0]); }} aria-label="选择或拖入视频文件">
+            <span className="upload-icon">↑</span><strong>{videoFile ? videoFile.name : "选择或拖入视频文件"}</strong><small>{videoFile ? formatBytes(videoFile.size) : "MP4 / MOV / WebM · 建议 200 MB 以内"}</small>
+          </button>
+          {videoFile && <div className="upload-file-row"><span><b>已选择</b> {formatBytes(videoFile.size)}</span><button onClick={() => { setVideoFile(null); setUploadState("idle"); }}>移除</button></div>}
+          {uploadState !== "idle" && uploadState !== "ready" && <div className="progress-block" aria-live="polite"><div className="progress-head"><span>{uploadState === "uploading" ? "正在上传" : uploadState === "processing" ? (jobPhase(job) || "正在分析视频") : uploadState === "complete" ? "分析完成" : "处理异常"}</span><strong>{Math.round(jobPercent(job, uploadState === "complete" ? 100 : 18))}%</strong></div><div className="progress-track"><span style={{ width: `${Math.max(4, jobPercent(job, uploadState === "complete" ? 100 : 18))}%` }} /></div></div>}
+          {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
+          <button className="primary-button upload-submit" disabled={!videoFile || uploadState === "uploading" || uploadState === "processing"} onClick={submitVideo}>{uploadState === "processing" ? "处理中…" : uploadState === "complete" ? "再次分析" : "开始分析"}<span>→</span></button>
+          <p className="upload-footnote">隐私提示：文件由配置的 API 处理。Demo/Mock 视图不会写入真实模型结果。</p>
+        </div>
+      </section>
+
+      <DemoEvidencePanel />
 
       <section className="scenario-strip" id="scoreboard">
         <div>
@@ -323,15 +455,15 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
             <span className="section-number">02</span>
             <div><span className="card-kicker">RULE EXPLORER</span><h2>逐项评分与证据回放</h2></div>
           </div>
-          <div className="domain-switch" role="tablist">
-            <button className={domain === "GS" ? "active" : ""} onClick={() => switchDomain("GS")}>GS 底线击球</button>
-            <button className={domain === "FS" ? "active" : ""} onClick={() => switchDomain("FS")}>FS 步伐事件</button>
+          <div className="domain-switch" role="tablist" aria-label="评分域">
+            <button role="tab" aria-selected={domain === "GS"} tabIndex={domain === "GS" ? 0 : -1} className={domain === "GS" ? "active" : ""} onClick={() => switchDomain("GS")}>GS 底线击球</button>
+            <button role="tab" aria-selected={domain === "FS"} tabIndex={domain === "FS" ? 0 : -1} className={domain === "FS" ? "active" : ""} onClick={() => switchDomain("FS")}>FS 步伐事件</button>
           </div>
         </div>
 
         <div className="event-rail">
           {domainResult.groups.map((group) => (
-            <button key={group.code} className={eventCode === group.code ? "active" : ""} onClick={() => chooseEvent(group.code)}>
+            <button key={group.code} aria-pressed={eventCode === group.code} className={eventCode === group.code ? "active" : ""} onClick={() => chooseEvent(group.code)}>
               <span>{group.code}</span><strong>{EVENT_NAMES[group.code] ?? group.name}</strong><small>{scoreText(group.score ?? group.evidence)}</small>
             </button>
           ))}
@@ -342,7 +474,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
             <span>动作阶段</span>
             {stageCodes.map((code) => {
               const name = eventResults.find((item) => item.card.stageCode === code)?.card.stageName ?? code;
-              return <button key={code} className={stageCode === code ? "active" : ""} onClick={() => { setStageCode(code); const first = eventResults.find((item) => item.card.stageCode === code); if (first) setSelectedId(first.card.id); setVisible(8); }}>{code.split("-")[1]} · {name}</button>;
+              return <button key={code} aria-pressed={stageCode === code} className={stageCode === code ? "active" : ""} onClick={() => { setStageCode(code); const first = eventResults.find((item) => item.card.stageCode === code); if (first) setSelectedId(first.card.id); setVisible(8); }}>{code.split("-")[1]} · {name}</button>;
             })}
           </div>
         )}
@@ -362,7 +494,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
                   <span className="result-score">{result.score === null ? `${Math.round(result.evidence * 100)}%` : result.score.toFixed(1)}<b>{result.grade ?? ""}</b></span>
                 </button>
               ))}
-              {displayedResults.length === 0 && <div className="empty-state">没有匹配的指标。</div>}
+              {displayedResults.length === 0 && <div className="empty-state" role="status"><strong>没有匹配的指标</strong><span>尝试清除搜索词，或切换其他动作阶段。</span></div>}
             </div>
             {visible < filteredResults.length && <button className="load-more" onClick={() => setVisible((value) => value + 8)}>再显示 {Math.min(8, filteredResults.length - visible)} 项</button>}
           </div>

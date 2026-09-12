@@ -9,6 +9,7 @@
 - 真实数据审慎模式：内置四组一期 FULL-TEST 摘要，也可在页面导入新的 `summary.json`。
 - 可追溯报告：每项展示依赖、计算方式、等级原文和 AI 教练反馈，并可导出 JSON。
 - HTTP 接口：`GET /api/scorecard` 查看能力；`POST /api/scorecard` 生成报告。
+- 前端 API client：可通过公开环境变量切换同源 API、本地 Python 服务或 AutoDL/域名服务，不在代码中写死地址。
 
 ## 评分边界
 
@@ -26,5 +27,32 @@ npm run dev
 ```bash
 npm test
 ```
+
+## 接入视频服务
+
+浏览器端请求由 `app/lib/api-client.ts` 统一封装。默认使用同源
+`/api/scorecard` 与 `/v1/jobs`；部署到远程服务时设置以下变量（`NEXT_PUBLIC_*`
+或对应的 `VITE_*`）：
+
+```text
+NEXT_PUBLIC_RALLYMATE_API_URL=https://your-api.example.com
+NEXT_PUBLIC_RALLYMATE_SCORECARD_PATH=/api/scorecard
+NEXT_PUBLIC_RALLYMATE_JOBS_PATH=/v1/jobs
+```
+
+任务接口应返回 `POST /v1/jobs` 的 `{ id, status }`，并提供
+`GET /v1/jobs/{id}`（状态、`progress`、`stage`、错误信息）和
+`GET /v1/jobs/{id}/demo-result`（结果或 `summary`）。评分接口的结果字段是
+`overallScore`、`overallGrade`、`overallEvidence`、`acceptanceStatus`、`domains`、
+`results[]`；每项结果至少包含 `indicatorId`、`status`、`score`（不可评分时为
+`null`）、`grade`、`evidence`、`confidence`、`dimensions`、`verdict` 和
+`feedback`。真实数据不足时请保持 `score`/`grade` 为 `null`，由前端展示证据审计状态。
+
+结果页的可选增强字段建议放在 `demo-result` 中：`artifacts.evidence_frames[]`
+（`frame_url`、`timestamp_ms`、`labels`、`source`）、`features.ball.trajectory`
+（点序列、预测方向、`confidence`）、`signals.racket`（识别状态、关键点、`confidence`）
+和 `signals.grip`（候选状态、`confidence`、`status`）。每个来源应携带
+`source`/`is_demo`；缺失或未确认的观测返回 `status: "unavailable"`，前端会保留为待确认，
+不会把占位视觉当成模型结果。
 
 规则注册表由 `scripts/extract_metric_cards.py` 从源 Word 文件生成到 `app/data/metric-cards.json`。
