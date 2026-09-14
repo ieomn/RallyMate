@@ -62,6 +62,13 @@ if (-not (Test-Path -LiteralPath $pythonExe)) {
 
 $env:RALLYMATE_DEVICE = $Device
 $env:RALLYMATE_POSE_PRESET = $PosePreset
+# This script is a local-development launcher.  Keep the production default
+# strict, but make browser preflight work for the local Vite/vinext ports when
+# the operator has not supplied an explicit CORS policy.  An explicit value is
+# always preserved so callers can use a narrower origin list.
+if ([string]::IsNullOrWhiteSpace($env:RALLYMATE_CORS_ORIGINS)) {
+    $env:RALLYMATE_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+}
 if ($PosePreset -ne "yolo-baseline") {
     $env:RALLYMATE_MODEL_LICENSE_ACK = "alternative-backend"
 }

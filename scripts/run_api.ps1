@@ -63,6 +63,13 @@ if (-not (Test-Path -LiteralPath $pythonExe)) {
 # launched worker must receive the same -PosePreset value.
 $env:PYTHONPATH = Join-Path $Root "src"
 $env:RALLYMATE_POSE_PRESET = $PosePreset
+# This launcher is intended for local development. Preserve an explicit
+# operator policy, otherwise allow the local Vite/vinext origins so browser
+# preflight requests can reach the API. Production deployments should use the
+# explicit CORS values in deploy/.env instead.
+if ([string]::IsNullOrWhiteSpace($env:RALLYMATE_CORS_ORIGINS)) {
+    $env:RALLYMATE_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+}
 Push-Location -LiteralPath $Root
 try {
     & $pythonExe -m pip install -e ".[service]" | Out-Host

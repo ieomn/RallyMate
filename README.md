@@ -99,14 +99,20 @@ RTMPose 权重会按登记的文件大小和 SHA-256 校验。
 ```powershell
 Set-Location scoring-demo-web
 npm install
-$env:VITE_RALLYMATE_API_URL = "http://127.0.0.1:8000"
+# 本地开发保持 API URL 为空，使用 Vite 的同源代理转发到 Python API。
+# 只有生产独立域名部署时，才设置 VITE_RALLYMATE_API_URL。
+$env:RALLYMATE_API_PROXY = "http://127.0.0.1:8000"
 npm run dev
 ```
 
-然后打开 `http://127.0.0.1:3000/`。该页面统一承载视频上传、证据预览、球轨迹
+然后打开终端输出的本地地址（通常是 `http://localhost:3000/`）。该页面统一承载视频上传、证据预览、球轨迹
 和球拍观测；API 根路径的旧页面仅保留给历史客户端，不是新推广入口。当前 vinext
 构建包含兼容 route handler，生产应运行 `npm run build && npm run start` 并由 Nginx
 反代；按 [`deploy/README.md`](deploy/README.md) 配置 API 域名、CORS 和短期认证。
+
+如果本地确实要让浏览器直连 API，必须在启动 API 前显式设置前端来源白名单，
+例如 `$env:RALLYMATE_CORS_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"`，
+然后重启 API；否则浏览器的 `OPTIONS /v1/jobs` 预检会返回 400。
 
 无可用 CUDA 时可显式使用 CPU：
 
