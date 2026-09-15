@@ -195,6 +195,28 @@ function isStage1Summary(value: unknown): value is Record<string, unknown> {
   return hasJobId && (hasCoverage || hasProcessing);
 }
 
+/** A model export may contain only the technique assessment (without the
+ * pipeline's Stage 1 summary). Keep this shape importable so users can review
+ * and re-export the evidence produced by inference jobs. */
+function isTechniqueAssessment(value: unknown): value is TechniqueAssessmentResponse {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const item = value as Record<string, unknown>;
+  return Array.isArray(item.techniques)
+    && (typeof item.assessment_version === "string" || typeof item.schema_version === "string")
+    && typeof item.registry_version === "string";
+}
+
+function extractTechniqueAssessment(value: unknown): TechniqueAssessmentResponse | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const root = value as Record<string, unknown>;
+  const candidates = [
+    root.assessment,
+    root.technique_assessment,
+    (root.result && typeof root.result === "object" ? (root.result as Record<string, unknown>).technique_assessment : null),
+  ];
+  return candidates.find(isTechniqueAssessment) ?? (isTechniqueAssessment(value) ? value : null);
+}
+
 function DemoEvidencePanel({
   evidence,
   catalog,
@@ -206,7 +228,7 @@ function DemoEvidencePanel({
   const assessment = evidence.assessment;
   const observed = trajectory?.ball.observed ?? [];
   const predicted = trajectory?.ball.predicted ?? [];
-  const predictedLine = observed.length > 0 ? [observed[observed.length - 1], ...predicted] : predicted;
+  const predictionIsHeuristic = trajectory?.ball.prediction_status === "heuristic_preview" && predicted.length > 0;
   // The mode is explicit rather than inferred from nullable payloads.  A
   // failed enhancement request must never make a completed real job fall back
   // to synthetic demo marks or numbers.
@@ -256,20 +278,22 @@ function DemoEvidencePanel({
           <div className="frame-caption"><strong>{isLive ? `已观测技术 ${observedTechniques.length} / ${assessment?.techniques.length ?? catalog?.techniques.length ?? 24}` : "准备阶段 / 底线准备阶段"}</strong><span>{isLive ? hasVideo ? "模型识别标注回放；可暂停查看动作与轨迹。" : "当前视频尚无回放文件；下方仅展示已返回的观察。" : "来源：离线演示占位，不代表实际检测结果"}</span></div>
         </article>
         <article className="trajectory-card">
-          <div className="frame-toolbar"><span>球轨迹预测</span><span className="confidence-high">{isLive ? `${trajectory?.ball.prediction_status === "heuristic_preview" ? "启发式预览" : "待观测"} · ${confidenceLabel(trajectory?.ball.confidence.mean)}` : "置信度 0.84 · Demo"}</span></div>
-          <svg className="trajectory-chart" viewBox="0 0 520 190" role="img" aria-label={`${isLive ? "当前任务" : "Demo"} 球轨迹预测可视化`}>
+          <div className="frame-toolbar"><span>{isLive ? "球轨迹 · 真实观测" : "球轨迹预览"}</span><span className="confidence-high">{isLive ? `观测置信度 ${confidenceLabel(trajectory?.ball.confidence.mean)}` : "Demo 预览"}</span></div>
+          <svg className="trajectory-chart" viewBox="0 0 520 190" role="img" aria-label={`${isLive ? "当前任务真实观测轨迹" : "Demo 球轨迹预览"}`}>
             <defs><linearGradient id="traj" x1="0" x2="1"><stop offset="0" stopColor="#9ee15a"/><stop offset="1" stopColor="#6cb7ff"/></linearGradient></defs>
             <path d="M26 166 H486 M26 22 V166" stroke="rgba(255,255,255,.14)" />
             {!isLive && <path d="M26 151 C 115 140, 120 42, 218 61 S 348 156, 486 29" fill="none" stroke="url(#traj)" strokeWidth="4" strokeDasharray="8 7" />}
             {isLive && observed.length > 1 && <polyline points={chartPoints(observed)} fill="none" stroke="#c9ff43" strokeWidth="3" />}
-            {isLive && predictedLine.length > 1 && <polyline points={chartPoints(predictedLine)} fill="none" stroke="#71a7ff" strokeWidth="3" strokeDasharray="8 7" />}
+            {isLive && predictionIsHeuristic && predicted.length > 1 && <polyline points={chartPoints(predicted)} fill="none" stroke="#71a7ff" strokeWidth="3" strokeDasharray="8 7" />}
             {!isLive && <><circle cx="26" cy="151" r="6" fill="#c9ff43"/><circle cx="486" cy="29" r="6" fill="#71a7ff"/></>}
             {isLive && observed.length > 0 && <circle cx={26 + observed[0].x * 460} cy={22 + observed[0].y * 144} r="5" fill="#c9ff43" />}
-            {isLive && predicted.length > 0 && <circle cx={26 + predicted[predicted.length - 1].x * 460} cy={22 + predicted[predicted.length - 1].y * 144} r="5" fill="#71a7ff" />}
+            {isLive && predictionIsHeuristic && predicted.length > 0 && <circle cx={26 + predicted[predicted.length - 1].x * 460} cy={22 + predicted[predicted.length - 1].y * 144} r="5" fill="#71a7ff" />}
             {isLive && observed.length === 0 && <text x="175" y="100" fill="rgba(255,255,255,.55)" fontSize="12">暂无可用球观测点</text>}
-            <text x="28" y="181" fill="rgba(255,255,255,.5)" fontSize="10">观测</text><text x="445" y="181" fill="rgba(255,255,255,.5)" fontSize="10">外推</text>
+            <text x="28" y="181" fill="rgba(255,255,255,.5)" fontSize="10">真实观测</text>{predictionIsHeuristic && <text x="420" y="181" fill="rgba(255,255,255,.5)" fontSize="10">启发式外推</text>}
           </svg>
-          <div className="trajectory-meta"><span><b>方向</b> {isLive ? directionLabel(trajectory?.ball.velocity?.direction_image_deg) : "右前方"}</span><span><b>连续帧</b> {isLive ? `${trajectory?.ball.observed_count ?? 0} / ${trajectory?.source.frame_count ?? 0}` : "18 / 22"}</span><span><b>来源</b> {isLive ? "frames.jsonl · API" : "ball.track · mock"}</span></div>
+          <div className="trajectory-meta"><span><b>观测方向</b> {isLive ? directionLabel(trajectory?.ball.velocity?.direction_image_deg) : "右前方"}</span><span><b>球观测点 / 视频帧</b> {isLive ? `${trajectory?.ball.observed_count ?? 0} / ${trajectory?.source.frame_count ?? 0}` : "18 / 22"}</span><span><b>观测覆盖</b> {isLive ? coveragePercent(trajectory?.ball.coverage_fraction) : "82%"}</span></div>
+          <div className="trajectory-meta trajectory-meta-secondary"><span><b>坐标</b> {isLive ? trajectory?.source.coordinate_space ?? "—" : "归一化画布"}</span><span><b>外推</b> {isLive ? predictionIsHeuristic ? `${predicted.length} 点 · 仅供参考` : "未提供" : "演示数据"}</span><span><b>来源</b> {isLive ? "frames.jsonl · API" : "ball.track · mock"}</span></div>
+          {isLive && predictionIsHeuristic && <p className="trajectory-disclosure">蓝色虚线是基于已观测点的短时常速度外推，不代表真实球路或落点；评分只使用服务端动作证据。</p>}
         </article>
         <article className="signal-card">
           <div className="frame-toolbar"><span>专项观测</span><span>数据来源</span></div>
@@ -597,14 +621,53 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
       if (file.size > 5 * 1024 * 1024) throw new Error("报告超过 5 MB，请选择任务摘要或本站导出的报告。");
       const data = JSON.parse(await file.text());
       if (data?.schemaVersion === "rallymate-practice-report/1" && typeof data.jobId === "string" && /^[a-zA-Z0-9_-]{8,80}$/.test(data.jobId)) {
+        // Prefer the self-contained result embedded by our exporter. This
+        // keeps downloaded reports reviewable when the API is offline; only
+        // fall back to polling the job when the export contains no result.
+        const embeddedResult = data.result && typeof data.result === "object" ? data.result as DemoResultResponse : null;
+        const embeddedAssessment = extractTechniqueAssessment(data) ?? embeddedResult?.technique_assessment ?? null;
+        if (embeddedResult || embeddedAssessment) {
+          const summary = data.summary && typeof data.summary === "object" ? data.summary as Record<string, unknown> : null;
+          if (summary && isStage1Summary(summary)) {
+            const nextScenario = scenarioFromStage1Summary(summary);
+            setImportedSummary(summary); setImportedScenario(nextScenario); setScenarioId(nextScenario.id);
+          }
+          const fallbackResult: DemoResultResponse = { job_id: data.jobId, ...(embeddedAssessment ? { technique_assessment: embeddedAssessment } : {}) };
+          setEvidence({ mode: "live", jobId: data.jobId, trajectory: data.trajectory ?? null, assessment: embeddedAssessment, result: embeddedResult ?? fallbackResult, error: null });
+          setJob({ id: data.jobId, status: "completed" });
+          setUploadState("complete"); setScoreContext("live");
+          setImportState({ status: "success", fileName: file.name });
+          return;
+        }
         try { localStorage.setItem("rallymate.activeJob", data.jobId); } catch { /* Optional storage. */ }
         setImportState({ status: "success", fileName: file.name });
         await monitorJob(data.jobId);
         return;
       }
+      const importedAssessment = extractTechniqueAssessment(data);
+      if (importedAssessment) {
+        const rawResult = data.result && typeof data.result === "object" ? data.result as DemoResultResponse : null;
+        const jobId = typeof data.job_id === "string" && /^[a-zA-Z0-9_-]{8,80}$/.test(data.job_id)
+          ? data.job_id
+          : typeof importedAssessment.job_id === "string" ? importedAssessment.job_id : undefined;
+        const summary = data.summary && typeof data.summary === "object" && isStage1Summary(data.summary)
+          ? data.summary as Record<string, unknown> : null;
+        if (summary) {
+          const nextScenario = scenarioFromStage1Summary(summary);
+          setImportedSummary(summary); setImportedScenario(nextScenario); setScenarioId(nextScenario.id);
+        } else {
+          setImportedSummary(null); setImportedScenario(null); setScenarioId(SCENARIOS[0].id);
+        }
+        setJob(jobId ? { id: jobId, status: "completed" } : null);
+        setUploadState("complete");
+        setEvidence({ mode: "live", jobId, trajectory: data.trajectory ?? null, assessment: importedAssessment, result: rawResult ?? { technique_assessment: importedAssessment, ...(jobId ? { job_id: jobId } : {}) }, error: null });
+        setScoreContext("live");
+        setImportState({ status: "success", fileName: file.name });
+        return;
+      }
       const summary = data.summary ?? data;
       if (!isStage1Summary(summary)) {
-        throw new Error("该 JSON 不是有效的 Stage 1 summary：需要 job_id，以及 coverage 或 processing 字段。");
+        throw new Error("该 JSON 不是可识别的分析文件：请提供 Stage 1 summary、模型技术评价（techniques）或本站导出的报告。");
       }
       setImportedSummary(summary);
       const nextScenario = scenarioFromStage1Summary(summary);
@@ -633,7 +696,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
         status: "error",
         message: error instanceof Error
           ? error.message
-          : "无法读取该 JSON。请确认它是一期 pipeline 生成的 summary.json。",
+          : "无法读取该 JSON。请确认它是模型技术评价、本站导出报告或一期 pipeline 生成的 summary.json。",
       });
     } finally {
       event.target.value = "";
@@ -659,7 +722,16 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
         feedback: result.feedback,
       })),
     };
-    const exportData = evidence.mode === "live" ? { schemaVersion: "rallymate-practice-report/1", result: evidence.result ?? null, summary: importedSummary ?? job?.summary ?? null, trajectory: evidence.trajectory, assessment: evidence.assessment, jobId: evidence.jobId, advice } : compactReport;
+    const exportData = evidence.mode === "live" ? {
+      schemaVersion: "rallymate-practice-report/1",
+      exportedAt: new Date().toISOString(),
+      result: evidence.result ?? null,
+      summary: importedSummary ?? job?.summary ?? null,
+      trajectory: evidence.trajectory,
+      assessment: evidence.assessment,
+      jobId: evidence.jobId ?? evidence.assessment?.job_id ?? null,
+      advice,
+    } : compactReport;
     const blob = new Blob([JSON.stringify(exportData, null, 2).replace(/\bGS(?=\d|\b)/g, "baseline").replace(/\bFS(?=\d|\b)/g, "footwork")], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -734,7 +806,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
 
       <DemoEvidencePanel evidence={evidence} catalog={techniqueCatalog} />
 
-      {!showLegacy && <LiveResults result={evidence.result ?? null} assessment={evidence.assessment} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} /> }
+      {!showLegacy && <LiveResults result={evidence.result ?? null} assessment={evidence.assessment} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} trajectory={evidence.trajectory} summary={job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null} /> }
 
       {showLegacy && <>
 
@@ -847,7 +919,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
 
       </>}
 
-      {evidence.result && <div className="report-actions"><button className="ghost-button" onClick={exportReport}>导出本次完整报告 ↓</button></div>}
+      {(evidence.result || evidence.assessment || report.results.length > 0) && <div className="report-actions"><button className="ghost-button" onClick={exportReport}>导出本次完整报告 ↓</button></div>}
 
       <section className="coach-section" id="coach"><div className="logic-heading"><span className="section-number">03</span><div><span className="card-kicker">COACH NOTE</span><h2>基于这次练习，问一个下一步。</h2><p>分析完成后会优先使用服务端核验的动作证据；上下文暂不可用时会安全降级为通用练习建议。</p></div></div><div className="coach-layout"><form className="coach-form" onSubmit={(event) => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="AI 练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><label>你的问题 <span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={(event) => setAdviceNotes(event.target.value)} placeholder="例如：击球点有时在身后，回位会慢半拍。" /></label><button className="primary-button" disabled={adviceLoading}>{adviceLoading ? "整理中…" : "生成练习建议"}<span>→</span></button>{adviceNotice && <p className="upload-error" role="status">{adviceNotice}</p>}</form><aside className="coach-result"><span className="card-kicker">{adviceTechnique} · NEXT STEP</span><h3>{advice.summary}</h3><div className="coach-columns"><div><b>下一步</b>{advice.nextSteps.map((item) => <p key={item}>＋ {item}</p>)}</div><div><b>推荐练习</b>{advice.drills.map((drill) => <div key={drill.name}><p>{drill.name} · {drill.durationMin} 分钟</p><ol>{drill.steps.map(step => <li key={step}>{step}</li>)}</ol></div>)}</div></div><small>{advice.safetyNotes[0]}</small></aside></div></section>
 

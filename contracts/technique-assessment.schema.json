@@ -118,10 +118,33 @@
         "formal_grade": {"type": ["string", "null"]},
         "phase_statuses": {"type": "array"},
         "evidence": {"type": "object"},
+        "key_field_analysis": {"$ref": "#/$defs/keyFieldAnalysis"},
         "core_visual_features": {"type": "array", "items": {"type": "string"}},
         "reference_constraints": {"type": "array", "items": {"type": "object"}},
         "limitations_zh": {"type": "array", "items": {"type": "string"}},
         "semantics": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "keyFieldAnalysis": {
+      "type": "object",
+      "required": ["required_fields", "enhanced_fields", "missing_required_fields"],
+      "properties": {
+        "required_fields": {"type": "array", "items": {"$ref": "#/$defs/keyField"}},
+        "enhanced_fields": {"type": "array", "items": {"$ref": "#/$defs/keyField"}},
+        "missing_required_fields": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "keyField": {
+      "type": "object",
+      "required": ["field", "required", "coverage_percent", "status"],
+      "properties": {
+        "field": {"type": "string", "minLength": 1},
+        "field_label_zh": {"type": "string"},
+        "required": {"type": "boolean"},
+        "coverage_percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "status": {"type": "string", "minLength": 1}
       },
       "additionalProperties": true
     }

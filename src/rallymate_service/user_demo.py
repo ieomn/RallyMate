@@ -126,8 +126,34 @@ def _reject_nonfinite_constant(value: str) -> None:
 def load_indicator_feature_records(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     try:
-        with path.open("r", encoding="utf-8", newline="") as handle:
-            for line_number, raw_line in enumerate(handle, start=1):
+        text = path.read_text(encoding="utf-8")
+        # Accept a regular JSON export as well as the historical JSONL format.
+        # JSONL remains the fallback because concatenated objects are not one
+        # valid JSON document.
+        try:
+            document = json.loads(
+                text,
+                object_pairs_hook=_duplicate_rejecting_object,
+                parse_constant=_reject_nonfinite_constant,
+            )
+        except json.JSONDecodeError:
+            document = None
+        if document is not None:
+            if isinstance(document, list):
+                candidates = document
+            elif isinstance(document, dict):
+                candidates = next(
+                    (document[key] for key in ("records", "indicator_features", "predictions", "detections", "actions", "events") if isinstance(document.get(key), list)),
+                    [document],
+                )
+            else:
+                candidates = []
+            for index, value in enumerate(candidates, start=1):
+                if not isinstance(value, dict):
+                    raise UserDemoResultError(f"indicator feature item {index} is not an object")
+                records.append(value)
+        else:
+            for line_number, raw_line in enumerate(text.splitlines(), start=1):
                 if not raw_line.strip():
                     continue
                 value = json.loads(

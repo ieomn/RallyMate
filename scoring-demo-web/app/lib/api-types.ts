@@ -285,6 +285,12 @@ export interface TechniqueAssessmentItem {
     contact_policy_version: string;
     event_codes: string[];
   };
+  /** Per-field evidence emitted by the inference analyzer. */
+  key_field_analysis?: {
+    required_fields: Array<{ field: string; field_label_zh?: string; required: boolean; coverage_percent: number; status: string }>;
+    enhanced_fields: Array<{ field: string; field_label_zh?: string; required: boolean; coverage_percent: number; status: string }>;
+    missing_required_fields: string[];
+  };
   core_visual_features: string[];
   reference_constraints: Array<Record<string, unknown>>;
   limitations_zh: string[];

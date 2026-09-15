@@ -19,7 +19,7 @@ from rallymate_scoring.technique_registry import (
 )
 
 
-TECHNIQUE_ASSESSMENT_VERSION = "rallymate-technique-assessment-v1.0.0"
+TECHNIQUE_ASSESSMENT_VERSION = "rallymate-technique-assessment-v1.1.0"
 
 
 class TechniqueRegistrySnapshotError(ValueError):
@@ -88,6 +88,12 @@ _EVENT_TO_TECHNIQUE = {
     "GS03": "baseline_one_hand_backhand",
     "GS04": "backhand_slice",
     "GS05": "forehand_slice",
+    "GS06": "serve",
+    "GS07": "return_forehand",
+    "GS08": "return_two_hand_backhand",
+    "GS09": "return_one_hand_backhand",
+    "GS10": "return_backhand_slice",
+    "GS11": "return_forehand_slice",
     "FS01": "split_step",
     "FS02": "first_step",
     "FS03": "crossover_step",
@@ -99,6 +105,50 @@ _EVENT_TO_TECHNIQUE = {
     "FS09": "braking_stabilization",
     "FS10": "recovery_positioning",
 }
+
+# Model adapters do not all emit the canonical ``FS01``/``GS01`` event code.
+# Keep this small, deterministic vocabulary at the assessment boundary so a
+# raw inference JSON can still be analysed without making the UI guess.
+_EVENT_NAME_ALIASES = {
+    "底线正手": "GS01", "正手底线": "GS01", "baseline_forehand": "GS01",
+    "底线双手反手": "GS02", "双手反手": "GS02", "双反": "GS02", "baseline_two_hand_backhand": "GS02",
+    "底线单手反手": "GS03", "单手反手": "GS03", "单反": "GS03", "baseline_one_hand_backhand": "GS03",
+    "反手切削": "GS04", "反手削球": "GS04", "backhand_slice": "GS04",
+    "正手切削": "GS05", "正手削球": "GS05", "forehand_slice": "GS05",
+    "发球": "GS06", "serve": "GS06",
+    "正手接发": "GS07", "return_forehand": "GS07",
+    "双手反手接发": "GS08", "return_two_hand_backhand": "GS08",
+    "单手反手接发": "GS09", "return_one_hand_backhand": "GS09",
+    "反手切削接发": "GS10", "return_backhand_slice": "GS10",
+    "正手切削接发": "GS11", "return_forehand_slice": "GS11",
+    "分腿垫步": "FS01", "split_step": "FS01", "第一步启动": "FS02", "first_step": "FS02",
+    "交叉步": "FS03", "crossover_step": "FS03", "并步移动": "FS04", "并步": "FS04", "shuffle_step": "FS04",
+    "小碎步调整": "FS05", "调整步": "FS05", "open_stance": "FS06", "开放式支撑": "FS06", "开放式站位": "FS06",
+    "closed_stance": "FS07", "闭合式支撑": "FS07", "关闭式站位": "FS07", "跨步支撑": "FS08", "跨步": "FS08", "lunge_support": "FS08",
+    "制动急停与稳定": "FS09", "制动急停": "FS09", "braking_stabilization": "FS09",
+    "击球后回位": "FS10", "回位": "FS10", "recovery_positioning": "FS10",
+}
+
+
+def _canonical_event_code(value: Any) -> str | None:
+    """Resolve canonical event codes from model JSON labels and aliases."""
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    upper = text.upper()
+    if upper in _EVENT_TO_TECHNIQUE:
+        return upper
+    folded = text.casefold()
+    direct = _EVENT_NAME_ALIASES.get(folded) or _EVENT_NAME_ALIASES.get(text)
+    if direct:
+        return direct
+    compact = "".join(folded.replace("_", " ").split())
+    for alias, code in _EVENT_NAME_ALIASES.items():
+        if compact == "".join(alias.casefold().replace("_", " ").split()):
+            return code
+    return None
 
 _PHASE_ALIASES = {
     "observation": {"observation", "tracking", "look", "盯球", "观察"},
@@ -234,6 +284,48 @@ def _coverage(summary: Mapping[str, Any]) -> dict[str, float]:
     return _coverage_with_detail(summary)[0]
 
 
+def _augment_coverage_from_records(
+    coverage: dict[str, float],
+    detail: dict[str, dict[str, Any]],
+    records: list[Mapping[str, Any]],
+) -> None:
+    """Fill missing pose/tracking coverage from measured model records.
+
+    Some inference JSON exports contain only indicator rows and omit the Stage
+    1 ``coverage`` block.  A measured row is direct evidence that the pose and
+    player track existed for that row; use it as a scoped fallback while
+    preserving explicit summary coverage whenever present.
+    """
+    measured = False
+    for record in records:
+        status = record.get("feature_status") or record.get("scoring_feature_status")
+        if status == "measured":
+            measured = True
+            break
+        features = record.get("features") or record.get("scoring_features")
+        if isinstance(features, list) and any(
+            isinstance(item, Mapping) and item.get("valid") is True
+            for item in features
+        ):
+            measured = True
+            break
+    if not measured:
+        return
+    for key in ("pose", "tracking"):
+        if coverage.get(key, 0.0) > 0.0:
+            continue
+        coverage[key] = 1.0
+        detail[key] = {
+            "fraction": 1.0,
+            "percent": 100.0,
+            "source": "indicator_feature_records",
+            "field": None,
+            "scope": "record",
+            "source_kind": "record",
+            "fallback_used": True,
+        }
+
+
 def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -> set[str]:
     result: set[str] = set()
     loop = summary.get("minimum_scoring_loop")
@@ -247,19 +339,57 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
         value = summary.get(key)
         if isinstance(value, Mapping): count_sources.append(value)
     for counts in count_sources:
-        result.update(str(key) for key, value in counts.items() if _number(value) and float(value) > 0)
+        for key, value in counts.items():
+            code = _canonical_event_code(key)
+            if code and _number(value) and float(value) > 0:
+                result.add(code)
     for record in records:
-        code = record.get("event_code")
-        if isinstance(code, str) and code.strip():
-            result.add(code.strip())
+        for key in ("event_code", "event", "action", "action_type", "technique_id", "technique", "label", "name", "name_zh"):
+            code = _canonical_event_code(record.get(key))
+            if code:
+                result.add(code)
     # A future detector can publish a stable list without requiring a new
     # version of this module.
     for key in ("technique_events", "observed_techniques", "detected_techniques"):
         values = summary.get(key)
         if isinstance(values, Mapping):
-            result.update(str(item) for item, value in values.items() if value)
+            for item, value in values.items():
+                code = _canonical_event_code(item)
+                if code and value:
+                    result.add(code)
         elif isinstance(values, list):
-            result.update(str(item) for item in values if isinstance(item, str))
+            for item in values:
+                code = _canonical_event_code(item)
+                if code:
+                    result.add(code)
+
+    # New model exports often nest detections below ``predictions``,
+    # ``detections`` or ``actions``. Walk only those known containers (rather
+    # than every string in the summary) to avoid treating prose as evidence.
+    def visit(value: Any, depth: int = 0) -> None:
+        if depth > 4:
+            return
+        if isinstance(value, Mapping):
+            # A prior assessment may itself be embedded in a model export and
+            # contain all registry techniques with ``observed: false``. Do not
+            # mistake those catalog labels for detections.
+            explicitly_absent = value.get("observed") is False or value.get("detected") is False
+            if not explicitly_absent:
+                for key in ("event_code", "event", "action", "action_type", "technique_id", "technique", "label", "name", "name_zh", "class_name"):
+                    code = _canonical_event_code(value.get(key))
+                    if code:
+                        result.add(code)
+            for key in ("predictions", "detections", "actions", "events", "techniques", "results", "inference", "model_output"):
+                child = value.get(key)
+                if isinstance(child, (Mapping, list, tuple)):
+                    visit(child, depth + 1)
+        elif isinstance(value, (list, tuple)):
+            for child in value:
+                visit(child, depth + 1)
+
+    visit(summary)
+    for record in records:
+        visit(record)
     return result
 
 
@@ -312,6 +442,49 @@ def _status(observed: bool, required_score: float) -> str:
     if required_score < 0.72:
         return "partial"
     return "ready"
+
+
+def _key_field_analysis(
+    required: list[str], enhanced: list[str], coverage: Mapping[str, float], observed: bool
+) -> dict[str, Any]:
+    """Expose per-field evidence so consumers can explain a not-observed row.
+
+    The prior contract returned only an aggregate readiness percentage.  That
+    made it impossible for the frontend/exporter to tell whether a baseline
+    action was absent or merely missing tracking.  Values remain evidence
+    coverage (never a technique score).
+    """
+    field_labels = {
+        "pose": "人体姿态骨架",
+        "tracking": "球员跟踪",
+        "ball": "球轨迹",
+        "racket": "球拍观测",
+        "court": "场地标定",
+    }
+    fields: list[dict[str, Any]] = []
+    for name in required:
+        fraction = max(0.0, min(1.0, float(coverage.get(name, 0.0))))
+        fields.append({
+            "field": name,
+            "field_label_zh": field_labels.get(name, name),
+            "required": True,
+            "coverage_percent": round(fraction * 100),
+            "status": "ready" if observed and fraction >= 0.72 else "partial" if observed and fraction > 0 else "missing",
+        })
+    for name in enhanced:
+        fraction = max(0.0, min(1.0, float(coverage.get(name, 0.0))))
+        fields.append({
+            "field": name,
+            "field_label_zh": field_labels.get(name, name),
+            "required": False,
+            "coverage_percent": round(fraction * 100),
+            "status": "available" if observed and fraction > 0 else "optional_missing",
+        })
+    return {
+        "required_fields": fields[: len(required)],
+        "enhanced_fields": fields[len(required):],
+        "missing_required_fields": [item["field"] for item in fields[: len(required)] if item["status"] == "missing"],
+    }
 
 
 def _has_strike_phase(technique: Mapping[str, Any]) -> bool:
@@ -428,6 +601,7 @@ def build_technique_assessment(
     records = [item for item in indicator_feature_records if isinstance(item, Mapping)]
     registry, registry_snapshot = _resolve_registry_snapshot(summary, registry_path)
     coverage, coverage_detail = _coverage_with_detail(summary)
+    _augment_coverage_from_records(coverage, coverage_detail, records)
     events = _event_codes(summary, records)
     observed_ids = {
         _EVENT_TO_TECHNIQUE[event]
@@ -485,6 +659,7 @@ def build_technique_assessment(
                     "contact_policy_version": CONTACT_POLICY_VERSION,
                     "event_codes": sorted(events),
                 },
+                "key_field_analysis": _key_field_analysis(required, enhanced, coverage, observed),
                 "core_visual_features": list(technique["core_visual_features"]),
                 "reference_constraints": deepcopy(
                     list(technique.get("reference_constraints", []))
