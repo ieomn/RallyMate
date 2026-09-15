@@ -6,6 +6,7 @@ import secrets
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import (
     Depends,
@@ -907,21 +908,16 @@ def create_app(
         if job["status"] != "succeeded":
             raise HTTPException(409, "job has not succeeded")
         indicator_features_path = Path(job["output_dir"]) / "indicator-features.jsonl"
-        if not indicator_features_path.is_file():
-            raise HTTPException(
-                409,
-                {
-                    "code": "legacy_job_requires_reanalysis",
-                    "message_zh": (
-                        "这个旧任务缺少新版结果所需的动作测量文件。"
-                        "请回到当前 Demo，重新选择原视频并运行分析。"
-                    ),
-                    "required_artifact": "indicator-features.jsonl",
-                    "action": "reupload_and_reanalyze",
-                },
-            )
+        # A successful run can legitimately contain no measured indicator
+        # records (for example a short clip with no detectable motion).  Keep
+        # the result contract available in that case so the UI can show a
+        # truthful "not observed" report instead of falling back to synthetic
+        # scores or forcing a re-upload.  Non-empty artifacts remain strictly
+        # validated by ``load_indicator_feature_records`` below.
+        records: list[dict[str, Any]] = []
         try:
-            records = load_indicator_feature_records(indicator_features_path)
+            if indicator_features_path.is_file() and indicator_features_path.stat().st_size > 0:
+                records = load_indicator_feature_records(indicator_features_path)
             result = build_user_demo_result(
                 job.get("summary") or {},
                 records,

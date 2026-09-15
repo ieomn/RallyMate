@@ -308,7 +308,7 @@ class ServiceTests(unittest.TestCase):
                 self.assertEqual(jobs.status_code, 200)
                 self.assertEqual(jobs.json()["count"], 1)
 
-    def test_old_succeeded_job_without_indicator_features_returns_actionable_409(self) -> None:
+    def test_succeeded_job_without_indicator_features_returns_empty_demo_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             settings = self._settings(root)
@@ -341,14 +341,22 @@ class ServiceTests(unittest.TestCase):
                     },
                 )
 
+                # A completed run may legitimately have no measurable motion
+                # records.  The result endpoint must still return a truthful
+                # empty report so clients do not invent a score or force a
+                # duplicate upload.
+                (output_dir / "indicator-features.jsonl").write_text("", encoding="utf-8")
                 response = client.get(f"/v1/jobs/{job_id}/demo-result")
 
-            self.assertEqual(response.status_code, 409, response.text)
-            detail = response.json()["detail"]
-            self.assertEqual(detail["code"], "legacy_job_requires_reanalysis")
-            self.assertEqual(detail["required_artifact"], "indicator-features.jsonl")
-            self.assertEqual(detail["action"], "reupload_and_reanalyze")
-            self.assertIn("重新选择原视频", detail["message_zh"])
+            self.assertEqual(response.status_code, 200, response.text)
+            payload = response.json()
+            self.assertEqual(payload["job_id"], job_id)
+            self.assertEqual(payload["status"], "ready")
+            self.assertIsNone(payload["training_evaluation"]["score_0_to_100"])
+            self.assertFalse(payload["training_evaluation"]["available"])
+            self.assertEqual(payload["analysis_quality"]["value_0_to_100"], 0)
+            self.assertFalse(payload["formal_scoring"]["available"])
+            self.assertIsNone(payload["formal_scoring"]["grade"])
 
     def test_bearer_auth_is_enforced(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

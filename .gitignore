@@ -101,3 +101,10 @@ docs/新对话无缝交接文档.md
 Thumbs.db
 .idea/
 .vscode/
+
+# Worker secrets and temporary review patches.
+.dev.vars
+.dev.vars.*
+**/.dev.vars
+**/.dev.vars.*
+_review_tmp/

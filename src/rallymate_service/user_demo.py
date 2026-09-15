@@ -595,6 +595,11 @@ def build_user_demo_result(
             else None,
             "cpu_thread_limit": runtime.get("cpu_thread_limit"),
             "annotated_video_generated": bool(artifacts.get("annotated_video")),
+            "annotated_video_compatibility": (
+                dict(artifacts["annotated_video_compatibility"])
+                if isinstance(artifacts.get("annotated_video_compatibility"), Mapping)
+                else None
+            ),
         },
         "safety": {
             "uses_real_uploaded_video_outputs": True,

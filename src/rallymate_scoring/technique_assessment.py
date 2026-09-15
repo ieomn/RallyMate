@@ -237,10 +237,17 @@ def _coverage(summary: Mapping[str, Any]) -> dict[str, float]:
 def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -> set[str]:
     result: set[str] = set()
     loop = summary.get("minimum_scoring_loop")
-    if isinstance(loop, Mapping):
-        counts = loop.get("event_counts")
-        if isinstance(counts, Mapping):
-            result.update(str(key) for key, value in counts.items() if _number(value) and float(value) > 0)
+    count_sources: list[Mapping[str, Any]] = []
+    if isinstance(loop, Mapping) and isinstance(loop.get("event_counts"), Mapping):
+        count_sources.append(loop["event_counts"])
+    # New technique detectors may publish action counts at the summary root;
+    # accept both names so serve/return/net actions can become observable
+    # without requiring the legacy event namespace.
+    for key in ("event_counts", "technique_counts", "action_counts"):
+        value = summary.get(key)
+        if isinstance(value, Mapping): count_sources.append(value)
+    for counts in count_sources:
+        result.update(str(key) for key, value in counts.items() if _number(value) and float(value) > 0)
     for record in records:
         code = record.get("event_code")
         if isinstance(code, str) and code.strip():

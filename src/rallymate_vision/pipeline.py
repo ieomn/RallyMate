@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import platform
+import shutil
+import subprocess
 import time
 from collections import Counter
 from collections.abc import Callable
@@ -63,6 +66,97 @@ DEFAULT_REGISTRY_LIFECYCLE_MANIFEST = "registry-lifecycle.json"
 DEFAULT_TRUSTED_PROMOTION_LEDGER = (
     "calibration/trusted-calibration-promotion-ledger.json"
 )
+
+
+def _find_ffmpeg_executable() -> str | None:
+    """Resolve ffmpeg from PATH or an installed imageio-ffmpeg bundle.
+
+    The optional wheel ships its executable; this lookup never downloads it.
+    """
+
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg:
+        return ffmpeg
+    try:
+        import imageio_ffmpeg
+        bundled = imageio_ffmpeg.get_ffmpeg_exe()
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return None
+    return bundled if bundled and Path(bundled).is_file() else None
+
+
+def _transcode_annotated_video_for_browser(
+    video_path: Path,
+    *,
+    timeout_seconds: int = 180,
+) -> dict[str, str | int | None]:
+    """Best-effort H.264 transcode with a safe mp4v fallback.
+
+    OpenCV's portable MP4 writer emits ``mp4v``.  That is accepted by many
+    desktop browsers but is not reliably playable in Safari/iOS.  Production
+    images include ffmpeg, so use a bounded, argument-list subprocess to
+    replace the file atomically with H.264/yuv420p when ``ffmpeg`` is present.
+    The original file remains intact for local environments without an H.264
+    encoder or when transcoding fails.
+    """
+
+    fallback: dict[str, str | int | None] = {
+        "status": "fallback",
+        "codec": "mp4v",
+        "pixel_format": None,
+        "message": "浏览器兼容转码不可用，保留 OpenCV MP4 产物。",
+    }
+    ffmpeg = _find_ffmpeg_executable()
+    if not ffmpeg:
+        return fallback
+    source = Path(video_path)
+    if not source.is_file() or source.stat().st_size <= 0:
+        return {**fallback, "message": "标注视频不存在或为空，未执行转码。"}
+    temporary = source.with_name(f".{source.stem}.h264.tmp{source.suffix}")
+    command = [
+        ffmpeg,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-i",
+        str(source),
+        "-map",
+        "0:v:0",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        str(temporary),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=max(1, int(timeout_seconds)),
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        temporary.unlink(missing_ok=True)
+        return fallback
+    if completed.returncode != 0 or not temporary.is_file() or temporary.stat().st_size <= 0:
+        temporary.unlink(missing_ok=True)
+        return fallback
+    try:
+        os.replace(temporary, source)
+    except OSError:
+        temporary.unlink(missing_ok=True)
+        return fallback
+    return {
+        "status": "transcoded",
+        "codec": "h264",
+        "pixel_format": "yuv420p",
+        "message": "已生成适合主流浏览器与 Safari 的 H.264 视频。",
+    }
 
 
 def _load_runtime_authorization_json(path: Path, label: str) -> dict:
@@ -653,8 +747,17 @@ def run_pipeline(
                 break
 
     capture.release()
+    annotated_video_compatibility: dict[str, str | int | None] = {
+        "status": "disabled",
+        "codec": None,
+        "pixel_format": None,
+        "message": "未请求生成标注视频。",
+    }
     if writer is not None:
         writer.release()
+        annotated_video_compatibility = _transcode_annotated_video_for_browser(
+            video_path
+        )
     if processed == 0:
         raise RuntimeError("no frames were processed; check start/end/stride settings")
 
@@ -987,6 +1090,7 @@ def run_pipeline(
                 if writer is not None
                 else None
             ),
+            "annotated_video_compatibility": annotated_video_compatibility,
             "preview_image": (
                 relative_or_absolute(preview_path, request.output_dir)
                 if preview_path.exists()
