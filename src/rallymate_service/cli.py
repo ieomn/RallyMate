@@ -59,6 +59,16 @@ def dev_main() -> None:
     )
     settings = load_settings()
     database = JobDatabase(settings.database_path)
+    # Bind the listening socket before loading the inference worker.  When a
+    # second launcher is started on the same port, uvicorn now fails here and
+    # no model thread is created or GPU/CPU resources consumed.
+    config = uvicorn.Config(
+        create_app(settings, database),
+        host=args.host,
+        port=args.port,
+        workers=1,
+    )
+    socket = config.bind_socket()
     stop_event = Event()
 
     def worker_target() -> None:
@@ -72,12 +82,8 @@ def dev_main() -> None:
     worker = Thread(target=worker_target, name="rallymate-gpu-worker", daemon=True)
     worker.start()
     try:
-        uvicorn.run(
-            create_app(settings, database),
-            host=args.host,
-            port=args.port,
-            workers=1,
-        )
+        server = uvicorn.Server(config)
+        server.run(sockets=[socket])
     finally:
         stop_event.set()
         worker.join(timeout=15)
