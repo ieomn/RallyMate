@@ -1,0 +1,337 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "rallymate-technique-metrics",
+  "registry_version": "2026-09-12.1",
+  "source_documents": [
+    {
+      "file_name": "底线基础_五阶段完整简化版.docx",
+      "scope": "baseline",
+      "phase_contract": "盯球 → 准备 → 稳定调整 → 挥拍击打 → 随挥收拍",
+      "source_sha256": "044d3643b0e9889d6c6c0c1fed9cf58ecdc1b61f93e09f513b7d205678c04f61"
+    },
+    {
+      "file_name": "发球技术_精简视觉识别定义版.docx",
+      "scope": "serve",
+      "phase_contract": "准备 → 抛球 → 引拍蓄力 → 挥拍击球 → 随挥落地 → 恢复",
+      "source_sha256": "a8b8228299471b23ae11b98ddefa691f677338195170b460fd298efea25f934d"
+    },
+    {
+      "file_name": "接发技术_精简视觉识别定义版.docx",
+      "scope": "return",
+      "phase_contract": "观察准备 → 分腿垫步 → 启动调整 → 短引拍稳定 → 挥拍击打 → 收拍恢复",
+      "source_sha256": "11ba48b880f260aa08f207e826497d13d9a5ffa7d4b615cf10489031a8d7443c"
+    },
+    {
+      "file_name": "网前进攻技术_正手截击_反手截击_高压_精简视觉识别版.docx",
+      "scope": "net_attack",
+      "phase_contract": "网前准备/判断 → 定位/短准备 → 击打 → 恢复",
+      "source_sha256": "a7ddfe87a916301a2d0394cb0ec6e45d5a854c48f1198e64162e2a6d4c687388"
+    },
+    {
+      "file_name": "步伐_精简视觉识别定义版.docx",
+      "scope": "footwork",
+      "phase_contract": "事件与连续位移识别",
+      "source_sha256": "bbab99f521994420286820e60e8d8057729f0b53e7e0d0ce5ac5fd48bf8b47fe"
+    }
+  ],
+  "semantics": {
+    "score_kind": "evidence_readiness_reference",
+    "score_range": [0, 100],
+    "formal_coach_score": false,
+    "requires_calibration_for_technique_grade": true,
+    "missing_evidence_policy": "return_unavailable_instead_of_imputing",
+    "eye_gaze_policy": "head_orientation_and_continuous_response_are_proxies_only",
+    "contact_policy": "real_ball_racket_contact_requires_reliable_ball_and_racket_tracks"
+  },
+  "default_phase_contracts": {
+    "baseline": ["observation", "preparation", "stability", "strike", "recovery"],
+    "serve": ["setup", "toss", "trophy", "strike", "landing", "recovery"],
+    "return": ["observation", "split_step", "first_step", "compact_preparation", "strike", "recovery"],
+    "net_attack": ["observation", "compact_preparation", "positioning", "strike", "recovery"],
+    "footwork": ["trigger", "direction_change", "support", "braking", "recovery"]
+  },
+  "techniques": [
+    {
+      "id": "baseline_forehand",
+      "family": "baseline",
+      "name_zh": "底线正手",
+      "aliases": ["正手底线", "forehand"],
+      "phases": ["observation", "preparation", "stability", "strike", "recovery"],
+      "core_visual_features": ["持续响应来球", "肩髋转体带动引拍", "击球前稳定支撑", "下肢—髋—躯干—手臂—球拍连续释放", "击球后连续随挥并恢复平衡"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["没有可靠球轨迹时不判断真实视线", "没有球拍关键点时只判断持拍手与人体关系", "没有教练标定时不输出技术等级"]
+    },
+    {
+      "id": "baseline_two_hand_backhand",
+      "family": "baseline",
+      "name_zh": "底线双手反手",
+      "aliases": ["双反", "two-hand backhand"],
+      "phases": ["observation", "preparation", "stability", "strike", "recovery"],
+      "core_visual_features": ["双手共同控制球拍", "转肩带动双手引拍", "双腕同步加速", "击球后双手持续控制并完成旋转恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["双手与球拍关键点不足时不确认握拍类型", "球拍轨迹中断时不确认真实触球"]
+    },
+    {
+      "id": "baseline_one_hand_backhand",
+      "family": "baseline",
+      "name_zh": "底线单手反手",
+      "aliases": ["单反", "one-hand backhand"],
+      "phases": ["observation", "preparation", "stability", "strike", "recovery"],
+      "core_visual_features": ["充分侧身", "非持拍手在引拍阶段辅助", "非持拍手释放后持拍手单独加速", "击球后双臂展开并保持平衡"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["遮挡或低帧率下不强行判断单反", "只有持拍手轨迹不足以证明动作质量"]
+    },
+    {
+      "id": "backhand_slice",
+      "family": "baseline",
+      "name_zh": "反手切削",
+      "aliases": ["反手削球", "backhand slice"],
+      "phases": ["observation", "preparation", "stability", "strike", "recovery"],
+      "core_visual_features": ["侧身与高位引拍", "高位保持稳定", "球拍向前下方运动", "低位连续收拍并保持平衡"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket"],
+      "proxy_limits": ["没有球拍关键点时只报告持拍腕方向代理", "切削方向不等同球飞行方向"]
+    },
+    {
+      "id": "forehand_slice",
+      "family": "baseline",
+      "name_zh": "正手切削",
+      "aliases": ["正手削球", "forehand slice"],
+      "phases": ["observation", "preparation", "stability", "strike", "recovery"],
+      "core_visual_features": ["正手侧身与高位引拍", "稳定蓄势", "球拍向前下方释放", "较低位置随挥并恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket"],
+      "proxy_limits": ["高位到前下方是视觉方向代理，不对球路做强结论"]
+    },
+    {
+      "id": "serve",
+      "family": "serve",
+      "name_zh": "发球",
+      "aliases": ["serve"],
+      "phases": ["setup", "toss", "trophy", "strike", "landing", "recovery"],
+      "core_visual_features": ["底线后稳定站位", "非持拍手连续上举与抛球", "Trophy Pose：肩髋倾斜、持拍肘离身、非持拍臂定位", "下肢上伸与持拍腕向上前方加速", "随挥落地后恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "reference_constraints": [
+        {
+          "id": "serve_toss_height_about_player_height_1_8x",
+          "kind": "relative_height_reference",
+          "value": 1.8,
+          "unit": "player_height",
+          "source": "发球技术_精简视觉识别定义版.docx",
+          "semantics": "visual_reference_only_not_scoring_threshold"
+        },
+        {
+          "id": "serve_landing_racket_side_leg_lift",
+          "kind": "optional_positive_observation",
+          "value": null,
+          "unit": "qualitative",
+          "source": "发球技术_精简视觉识别定义版.docx",
+          "semantics": "optional_reference_only_no_numeric_bonus"
+        }
+      ],
+      "proxy_limits": ["抛球高度与触球点需要球轨迹", "没有球拍关键点时只报告上方挥拍窗口", "落地稳定不等同真实足底压力"]
+    },
+    {
+      "id": "return_forehand",
+      "family": "return",
+      "name_zh": "正手接发",
+      "aliases": ["正手接发球", "forehand return"],
+      "phases": ["observation", "split_step", "first_step", "compact_preparation", "strike", "recovery"],
+      "core_visual_features": ["面对发球方并持续响应", "分腿垫步落地后立即启动", "短引拍与快速稳定", "身体转动和手臂连续释放", "快速恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["发球者/来球方向缺失时不判断方向正确性", "短引拍识别不等同技术等级"]
+    },
+    {
+      "id": "return_two_hand_backhand",
+      "family": "return",
+      "name_zh": "双手反手接发",
+      "aliases": ["双反接发", "two-hand return"],
+      "phases": ["observation", "split_step", "first_step", "compact_preparation", "strike", "recovery"],
+      "core_visual_features": ["短促双手引拍", "启动与引拍连续", "双腕同步加速", "击球后迅速恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["无法确认发球速度时使用相对时序，不使用固定绝对阈值"]
+    },
+    {
+      "id": "return_one_hand_backhand",
+      "family": "return",
+      "name_zh": "单手反手接发",
+      "aliases": ["单反接发", "one-hand return"],
+      "phases": ["observation", "split_step", "first_step", "compact_preparation", "strike", "recovery"],
+      "core_visual_features": ["短促单反引拍", "非持拍手辅助后释放", "侧身支撑后单手释放", "连续随挥与回位"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["遮挡时不强行区分单反和切削"]
+    },
+    {
+      "id": "return_backhand_slice",
+      "family": "return",
+      "name_zh": "反手切削接发",
+      "aliases": ["反手削接发", "backhand slice return"],
+      "phases": ["observation", "split_step", "first_step", "compact_preparation", "strike", "recovery"],
+      "core_visual_features": ["高位短引拍", "快速建立支撑", "向前下方切削", "低位随挥后恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["没有球拍关键点时只报告腕部运动方向"]
+    },
+    {
+      "id": "return_forehand_slice",
+      "family": "return",
+      "name_zh": "正手切削接发",
+      "aliases": ["正手削接发", "forehand slice return"],
+      "phases": ["observation", "split_step", "first_step", "compact_preparation", "strike", "recovery"],
+      "core_visual_features": ["高位短引拍", "正手侧稳定支撑", "向前下方切削", "连续收拍恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["不把切削方向直接当作球路质量"]
+    },
+    {
+      "id": "forehand_volley",
+      "family": "net_attack",
+      "name_zh": "正手截击",
+      "aliases": ["forehand volley"],
+      "phases": ["observation", "compact_preparation", "positioning", "strike", "recovery"],
+      "core_visual_features": ["网前低重心与球拍在身体前方", "小幅正手侧转体", "稳定拍面短促前送", "短收拍并快速恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["没有球/球拍联合轨迹时只报告截击窗口代理", "不把高位截击混淆为高压"]
+    },
+    {
+      "id": "backhand_volley",
+      "family": "net_attack",
+      "name_zh": "反手截击",
+      "aliases": ["backhand volley"],
+      "phases": ["observation", "compact_preparation", "positioning", "strike", "recovery"],
+      "core_visual_features": ["球拍前置与持续盯球代理", "反手侧小幅转肩", "稳定拍面短促前送", "短随挥快速回到身前"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["不要求固定站位，先判断支撑和短结构", "触球质量需要球拍与球轨迹"]
+    },
+    {
+      "id": "overhead",
+      "family": "net_attack",
+      "name_zh": "高压",
+      "aliases": ["overhead", "smash"],
+      "phases": ["observation", "positioning", "trophy", "stability", "strike", "recovery"],
+      "core_visual_features": ["先判断高球与下落位置", "移动到球下方", "侧身上举、非持拍手定位", "头顶上方连续释放", "随挥落地并恢复"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "racket", "court"],
+      "proxy_limits": ["高压首先是空间判断", "没有球轨迹时不确认高球性质", "后退高球仍归入高压，不单列类别"]
+    },
+    {
+      "id": "split_step",
+      "family": "footwork",
+      "name_zh": "分腿垫步",
+      "aliases": ["split step"],
+      "phases": ["trigger", "support", "direction_change"],
+      "core_visual_features": ["轻微下沉", "双脚小幅离地并分开落地", "落地后立即可启动", "时机与对手击球相匹配"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball"],
+      "proxy_limits": ["脚部运动代理不等同真实触地或离地"]
+    },
+    {
+      "id": "first_step",
+      "family": "footwork",
+      "name_zh": "第一步启动",
+      "aliases": ["first step"],
+      "phases": ["trigger", "direction_change", "support"],
+      "core_visual_features": ["紧接垫步落地", "身体中心与启动脚朝同一目标方向", "避免先向反方向晃动", "第一步后快速建立支撑"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "court"],
+      "proxy_limits": ["没有来球轨迹时只评价图像平面方向"]
+    },
+    {
+      "id": "crossover_step",
+      "family": "footwork",
+      "name_zh": "交叉步",
+      "aliases": ["crossover"],
+      "phases": ["direction_change", "support"],
+      "core_visual_features": ["双脚明确交叉", "连续横向位移", "用于中远距离覆盖", "上肢保持相对稳定"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["court"],
+      "proxy_limits": ["脚部关键点不足时不把横向位移误判为交叉步"]
+    },
+    {
+      "id": "shuffle_step",
+      "family": "footwork",
+      "name_zh": "并步移动",
+      "aliases": ["shuffle step"],
+      "phases": ["direction_change", "support"],
+      "core_visual_features": ["移动脚先走、跟随脚跟进", "双脚不交叉", "短距离横向调整", "重心相对稳定"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["court"],
+      "proxy_limits": ["需要连续双踝轨迹才能和交叉步区分"]
+    },
+    {
+      "id": "adjustment_steps",
+      "family": "footwork",
+      "name_zh": "小碎步调整",
+      "aliases": ["adjustment steps"],
+      "phases": ["direction_change", "support"],
+      "core_visual_features": ["接近击球点后步幅变小", "步频提高", "人体中心小范围修正", "最终形成合适击球距离"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball"],
+      "proxy_limits": ["没有预计击球点时只评价位移模式"]
+    },
+    {
+      "id": "open_stance",
+      "family": "footwork",
+      "name_zh": "开放式支撑",
+      "aliases": ["open stance"],
+      "phases": ["support"],
+      "core_visual_features": ["双脚横向分布", "前后错位较小", "击球侧外侧腿承担主要支撑", "膝部保持弹性"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["court"],
+      "proxy_limits": ["不能只用肩部朝向判断，脚位关系是主要依据"]
+    },
+    {
+      "id": "closed_stance",
+      "family": "footwork",
+      "name_zh": "闭合式支撑",
+      "aliases": ["closed stance"],
+      "phases": ["support"],
+      "core_visual_features": ["前脚向击球方向跨出", "双脚形成前后支撑", "肩髋更明显侧身", "落地后保持稳定"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["court"],
+      "proxy_limits": ["脚位不足时不以侧身代替闭合站位判定"]
+    },
+    {
+      "id": "lunge_support",
+      "family": "footwork",
+      "name_zh": "跨步支撑",
+      "aliases": ["lunge"],
+      "phases": ["direction_change", "support"],
+      "core_visual_features": ["一侧脚明显大幅跨出", "支撑跨度显著增大", "重心降低或伸展", "落地后仍保持平衡"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "court"],
+      "proxy_limits": ["普通闭合站位的小幅前跨不应误判为跨步支撑"]
+    },
+    {
+      "id": "braking_stabilization",
+      "family": "footwork",
+      "name_zh": "制动急停与稳定",
+      "aliases": ["braking", "stabilization"],
+      "phases": ["braking", "support"],
+      "core_visual_features": ["移动后明显减速", "制动脚建立支撑", "膝部屈曲吸收惯性", "人体中心速度趋于稳定"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["court"],
+      "proxy_limits": ["只描述运动学制动代理，不测量真实冲击力"]
+    },
+    {
+      "id": "recovery_positioning",
+      "family": "footwork",
+      "name_zh": "击球后回位",
+      "aliases": ["recovery"],
+      "phases": ["recovery", "support"],
+      "core_visual_features": ["击球后主动向下一拍准备区域移动", "路线连续且有目标", "到位后重新稳定并可进入下一次垫步"],
+      "required_evidence": ["pose", "tracking"],
+      "enhanced_evidence": ["ball", "court"],
+      "proxy_limits": ["没有场地和对手信息时不评价战术位置是否最优"]
+    }
+  ]
+}

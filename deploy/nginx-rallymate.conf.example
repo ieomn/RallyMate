@@ -12,6 +12,14 @@ upstream rallymate_web {
     keepalive 16;
 }
 
+# Include these directives inside the Nginx `http { ... }` block. They are a
+# coarse edge limit; retain tenant/session quotas in the application gateway.
+limit_req_zone $binary_remote_addr zone=rallymate_api_rate:10m rate=30r/m;
+limit_req_zone $binary_remote_addr zone=rallymate_api_read:10m rate=120r/m;
+limit_req_zone $binary_remote_addr zone=rallymate_upload_rate:10m rate=2r/m;
+limit_conn_zone $binary_remote_addr zone=rallymate_api_conn:10m;
+limit_req_status 429;
+
 # Same-origin browser gateway (recommended for the promotion frontend):
 # create this root-readable, mode-600 file before loading the config:
 #   /etc/nginx/snippets/rallymate-api-auth.conf
@@ -31,8 +39,12 @@ server {
     proxy_request_buffering off;
     proxy_read_timeout 3600s;
     proxy_send_timeout 3600s;
+    client_body_timeout 60s;
+    send_timeout 60s;
 
     location / {
+        limit_req zone=rallymate_api_rate burst=12 nodelay;
+        limit_conn rallymate_api_conn 8;
         proxy_pass http://rallymate_api;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -54,13 +66,28 @@ server {
     ssl_certificate     /etc/letsencrypt/live/app.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/app.example.com/privkey.pem;
 
+    # The app gateway injects one server-side API Bearer key. Require a
+    # separate user credential too, otherwise anyone who discovers this
+    # domain could submit/read jobs through the shared key. Create this file
+    # outside the repository before `nginx -t` (for example: `htpasswd -c
+    # /etc/nginx/.htpasswd-rallymate <username>`) and keep it mode 600.
+    auth_basic "RallyMate private practice";
+    auth_basic_user_file /etc/nginx/.htpasswd-rallymate;
+
     # These paths are proxied from the browser's same-origin app domain to the
     # private API. The include injects the long-lived key server-side, so the
     # browser never receives it. Keep the direct api.example.com server above
     # protected by its normal Bearer check for operators and non-browser jobs.
     include /etc/nginx/snippets/rallymate-api-auth.conf;
 
+    # Keep upload size and idle-client limits aligned with the API settings.
+    client_max_body_size 2g;
+    client_body_timeout 60s;
+    send_timeout 60s;
+
     location = /v1 {
+        limit_req zone=rallymate_api_rate burst=12 nodelay;
+        limit_conn rallymate_api_conn 8;
         proxy_pass http://rallymate_api;
         proxy_http_version 1.1;
         proxy_set_header Authorization $rallymate_api_authorization;
@@ -72,7 +99,26 @@ server {
         proxy_set_header X-Request-ID $http_x_request_id;
     }
 
+    # Uploads are expensive GPU work: keep a separate low rate at the edge.
+    # Polling and metadata use the higher read limit below.
+    location = /v1/jobs {
+        limit_req zone=rallymate_upload_rate burst=1 nodelay;
+        limit_conn rallymate_api_conn 4;
+        proxy_pass http://rallymate_api;
+        proxy_http_version 1.1;
+        proxy_request_buffering off;
+        proxy_set_header Authorization $rallymate_api_authorization;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Request-ID $http_x_request_id;
+    }
+
     location /v1/ {
+        limit_req zone=rallymate_api_read burst=30 nodelay;
+        limit_conn rallymate_api_conn 8;
         proxy_pass http://rallymate_api;
         proxy_http_version 1.1;
         proxy_request_buffering off;
@@ -86,6 +132,7 @@ server {
     }
 
     location /health/ {
+        limit_req zone=rallymate_api_rate burst=30 nodelay;
         proxy_pass http://rallymate_api;
         proxy_http_version 1.1;
         proxy_set_header Authorization $rallymate_api_authorization;

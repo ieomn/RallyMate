@@ -17,6 +17,37 @@ RallyMate Worker（同一 AutoDL GPU 节点，持久化模型进程）
 `/v1/jobs/{id}/technique-assessment`。没有提供真实域名时，把下面的
 `app.example.com` 和 `api.example.com` 换成自己的域名即可。
 
+本仓库没有绑定云账号、GPU 主机或 DNS 区域，因此以下内容是可复现的部署清单，
+不是已完成的线上发布声明。每次换主机或域名都必须重新执行健康检查、上传烟测和
+证书检查；不要把示例域名直接用于生产。
+
+### 本机开发与云端发布边界
+
+- 本机只需运行 `rallymate-dev`（或前端的 Vite 代理）即可验证推理；不要把开发
+  端口直接暴露到公网。
+- Compose 默认使用 `production`，并要求显式提供 `RALLYMATE_API_KEY` 与
+  `RALLYMATE_MODEL_LICENSE_ACK`；缺失时应让 `docker compose config` 直接失败。
+  临时本机 Compose 验证也要在未提交的 `.env` 中设置随机测试密钥，并使用
+  `RALLYMATE_ENVIRONMENT=development`。
+- 云端需要一台可访问 GPU 的主机运行 API/Worker、一个只读模型挂载和持久化
+  `service_data`。前端可独立运行在 Node/vinext 或经验证的静态托管上。
+
+### DNS 与 HTTPS 上线清单
+
+1. 在 DNS 服务商为 `app.<domain>` 添加指向前端入口的 A/AAAA 或 CNAME；若使用
+   独立 API，再为 `api.<domain>` 添加指向 Nginx 的记录。等待解析并确认没有旧记录。
+2. 在 Nginx/Caddy 配置中替换示例域名和证书路径，强制 HTTPS（HTTP 仅 301 跳转），
+   并将 FastAPI 绑定在 `127.0.0.1` 或私网地址。
+3. 复制 `nginx-rallymate-api-auth.conf.example` 到 root-only（`chmod 600`）的
+   Secret 文件；长期 API key 只在服务端注入。为 app 网关创建独立的
+   `/etc/nginx/.htpasswd-rallymate`（`htpasswd -c`，权限 600）；示例配置的
+   `auth_basic` 会在该文件缺失时让 Nginx 启动失败，避免共享 API key 变成匿名入口。
+   `/v1/jobs` 上传已单独限制为约 2 次/分钟，结果轮询约 120 次/分钟；仍需保持
+   WAF/租户级配额开启。
+4. 仅当 `https://app.<domain>` 的 `/v1/meta`、`/v1/techniques` 和一段受支持视频
+   的完整任务链路通过后，才把域名交给用户；记录 `/health/live`、`/health/ready`
+   结果和证书到期时间。
+
 ## 1. 在 AutoDL 准备目录
 
 在仓库根目录执行（目录由部署者创建，不能让浏览器请求选择路径）：
@@ -128,7 +159,9 @@ docker compose -f deploy/docker-compose.yml logs -f api worker
 复制为 `/etc/nginx/snippets/rallymate-api-auth.conf`，替换为 API 的 Bearer key，
 并将文件权限设为 `600`。示例中的 `app.example.com` `/v1/` 与 `/health/`
 location 会把请求转发到本机 API，并由 Nginx 注入 header；浏览器因此不需要、
-也不应持有长期 key。若网页直接请求 `api.example.com`，则必须由另一个服务端
+也不应持有长期 key。示例 app server 同时启用 Basic Auth（`.htpasswd-rallymate`），
+这是单用户/私有部署的最低入口保护；多用户产品应替换为短期会话和按用户的 job
+ownership。若网页直接请求 `api.example.com`，则必须由另一个服务端
 会话/短期 token 层完成同样的认证注入，不能只把 `VITE_RALLYMATE_API_URL`
 指向受保护 API。
 

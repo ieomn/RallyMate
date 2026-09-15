@@ -1,4 +1,6 @@
 import vinext from "vinext";
+import { existsSync, readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 import { defineConfig, loadEnv } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./sites-vite-plugin";
@@ -37,12 +39,16 @@ export default defineConfig(async ({ mode }) => {
   // Vite does not populate process.env from .env files.  Load the complete
   // environment explicitly so the documented proxy override works in local
   // dev while still allowing a shell variable to win.
-  const loadedEnv = loadEnv(mode, process.cwd(), "");
+  const workerDevEnv = existsSync(".dev.vars") ? parseEnv(readFileSync(".dev.vars", "utf8")) : {};
+  const loadedEnv = { ...workerDevEnv, ...loadEnv(mode, process.cwd(), "") };
   const localApiProxy = (
-    loadedEnv.RALLYMATE_API_PROXY ||
     process.env.RALLYMATE_API_PROXY ||
+    process.env.RALLYMATE_API_ORIGIN ||
+    loadedEnv.RALLYMATE_API_PROXY ||
+    loadedEnv.RALLYMATE_API_ORIGIN ||
     "http://127.0.0.1:8000"
   ).replace(/\/+$/, "");
+  const localApiKey = process.env.RALLYMATE_API_KEY || loadedEnv.RALLYMATE_API_KEY;
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -60,8 +66,8 @@ export default defineConfig(async ({ mode }) => {
       // Local development keeps the browser same-origin while the Python API
       // remains independently deployable on AutoDL or behind a domain.
       proxy: {
-        "/v1": { target: localApiProxy, changeOrigin: true },
-        "/health": { target: localApiProxy, changeOrigin: true },
+        "/v1": { target: localApiProxy, changeOrigin: true, headers: localApiKey ? { Authorization: `Bearer ${localApiKey}` } : undefined },
+        "/health": { target: localApiProxy, changeOrigin: true, headers: localApiKey ? { Authorization: `Bearer ${localApiKey}` } : undefined },
       },
     },
     plugins: [

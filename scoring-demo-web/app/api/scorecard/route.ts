@@ -1,95 +1,11 @@
-import registry from "../../data/metric-cards.json";
-import {
-  buildScoreReport,
-  scenarioFromStage1Summary,
-  type Domain,
-  type MetricCard,
-  type Scenario,
-} from "../../scoring/engine";
-import { SCENARIOS } from "../../scoring/scenarios";
+import catalog from "../../data/technique-catalog.json";
+
+const CATEGORY_NAMES: Record<string, string> = { baseline: "底线击球", serve: "发球", return: "接发", net_attack: "网前进攻", footwork: "步伐" };
 
 export async function GET() {
-  return Response.json({
-    service: "RallyMate Score Lab",
-    apiVersion: "1.3.0",
-    compatibilityVersion: "1.2.0",
-    surface: "local_compatibility_scorecard_adapter",
-    registryKind: "legacy_gs_fs_cards",
-    registryVersion: registry.registryVersion,
-    techniqueRegistry: {
-      source: "FastAPI /v1/techniques",
-      endpoint: "/v1/techniques",
-      semantics: "qualitative_evidence_readiness_only",
-    },
-    indicatorCount: registry.cards.length,
-    scenarios: SCENARIOS.map(({ id, label, mode, description }) => ({ id, label, mode, description })),
-    usage: "POST { scenarioId, domain? } or { stage1Summary, domain? }",
-  });
+  return Response.json({ service: "RallyMate 练习伴侣", apiVersion: "2.0.0", surface: "practice_catalog", registryVersion: catalog.registry_version, techniqueCount: catalog.techniques.length, categories: Object.entries(CATEGORY_NAMES).map(([id, name]) => ({ id, name, techniques: catalog.techniques.filter((technique) => technique.family === id).map((technique) => ({ id: technique.id, name: technique.name_zh, phases: technique.phases, focusPoints: technique.core_visual_features, observationLimits: technique.proxy_limits })) })), semantics: { purpose: "帮助普通网球爱好者理解动作并选择下一次练习", adviceKind: "general_practice_guidance", numericalGrades: false, competitiveRanking: false, missingEvidencePolicy: "信息不足时说明不确定性，不推测动作表现", observationPolicy: "头部朝向不能证明真实视线；缺少可靠球与球拍轨迹时不判断真实触球" }, sourceDocuments: catalog.source_documents.map((source) => source.file_name), adviceEndpoint: "/api/advice" }, { headers: { "Cache-Control": "public, max-age=3600" } });
 }
 
-export async function POST(request: Request) {
-  let body: { scenarioId?: string; domain?: Domain; stage1Summary?: Record<string, unknown> };
-  try {
-    const parsed: unknown = await request.json();
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return Response.json({ error: "request_body_must_be_an_object" }, { status: 400 });
-    }
-    body = parsed as typeof body;
-  } catch {
-    return Response.json({ error: "invalid_json" }, { status: 400 });
-  }
-
-  let scenario: Scenario | undefined;
-  if (body.stage1Summary !== undefined) {
-    if (body.stage1Summary === null || typeof body.stage1Summary !== "object" || Array.isArray(body.stage1Summary)) {
-      return Response.json({ error: "stage1Summary_must_be_an_object" }, { status: 400 });
-    }
-    scenario = scenarioFromStage1Summary(body.stage1Summary);
-  } else {
-    scenario = SCENARIOS.find((item) => item.id === body.scenarioId);
-  }
-  if (!scenario) {
-    return Response.json({ error: "unknown_scenario", validScenarioIds: SCENARIOS.map((item) => item.id) }, { status: 400 });
-  }
-  if (body.domain && body.domain !== "GS" && body.domain !== "FS") {
-    return Response.json({ error: "domain_must_be_GS_or_FS" }, { status: 400 });
-  }
-
-  const report = buildScoreReport(registry.cards as MetricCard[], scenario);
-  const results = report.results
-    .filter((result) => !body.domain || result.card.domain === body.domain)
-    .map((result) => ({
-      indicatorId: result.card.id,
-      indicatorName: result.card.name,
-      domain: result.card.domain,
-      eventCode: result.card.eventCode,
-      stageCode: result.card.stageCode,
-      status: result.status,
-      score: result.score,
-      grade: result.grade,
-      evidence: result.evidence,
-      confidence: result.confidence,
-      dimensions: result.dimensions,
-      verdict: result.verdict,
-      feedback: result.feedback,
-    }));
-
-  return Response.json({
-    apiVersion: "1.3.0",
-    compatibilityVersion: "1.2.0",
-    surface: "local_compatibility_scorecard_adapter",
-    reportVersion: report.reportVersion,
-    registryKind: "legacy_gs_fs_cards",
-    registryVersion: registry.registryVersion,
-    generatedAt: report.generatedAt,
-    scenario: report.scenario,
-    overallScore: report.overallScore,
-    overallGrade: report.overallGrade,
-    overallEvidence: report.overallEvidence,
-    acceptanceStatus: report.acceptanceStatus,
-    domains: report.domains,
-    formula: report.formula,
-    resultCount: results.length,
-    results,
-  });
+export async function POST() {
+  return Response.json({ error: "scorecard_retired", message: "原评分接口已停用，请使用练习建议接口。", adviceEndpoint: "/api/advice" }, { status: 410, headers: { "Cache-Control": "no-store", Link: '</api/advice>; rel="successor-version"' } });
 }

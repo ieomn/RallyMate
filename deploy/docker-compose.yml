@@ -12,9 +12,12 @@ services:
       # for rollback; neither preset bypasses calibration/F4 scoring gates.
       RALLYMATE_POSE_PRESET: ${RALLYMATE_POSE_PRESET:-rtmpose-m-halpe26-online}
       RALLYMATE_DEVICE: "0"
-      RALLYMATE_ENVIRONMENT: ${RALLYMATE_ENVIRONMENT:-development}
-      RALLYMATE_MODEL_LICENSE_ACK: ${RALLYMATE_MODEL_LICENSE_ACK:-development}
-      RALLYMATE_API_KEY: ${RALLYMATE_API_KEY:-}
+      # Fail closed when this compose file is used without an explicit
+      # operator-created .env.  Local development can opt in with
+      # RALLYMATE_ENVIRONMENT=development and a separate random key.
+      RALLYMATE_ENVIRONMENT: ${RALLYMATE_ENVIRONMENT:-production}
+      RALLYMATE_MODEL_LICENSE_ACK: ${RALLYMATE_MODEL_LICENSE_ACK:?set RALLYMATE_MODEL_LICENSE_ACK after reviewing the model license}
+      RALLYMATE_API_KEY: ${RALLYMATE_API_KEY:?set a long random RALLYMATE_API_KEY}
       # Frontend may be hosted on a separate domain/CDN. Keep origins explicit.
       RALLYMATE_CORS_ORIGINS: ${RALLYMATE_CORS_ORIGINS:-http://localhost:3000}
       RALLYMATE_PUBLIC_BASE_URL: ${RALLYMATE_PUBLIC_BASE_URL:-}
@@ -42,6 +45,11 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
 
   worker:
     build:
@@ -60,3 +68,8 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m

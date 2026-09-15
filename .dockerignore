@@ -1,3 +1,5 @@
+# Keep credentials, private media, model binaries and generated state out of
+# the Docker build context. Production models/data are mounted by Compose.
 .git
 .codex_tmp
 .venv
@@ -25,3 +27,12 @@ scoring-demo-web
 service_data
 tests
 training
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.pem
+*.key
+*.p12
+*.pfx

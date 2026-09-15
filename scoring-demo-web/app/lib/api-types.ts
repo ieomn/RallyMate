@@ -154,6 +154,10 @@ export interface JobProgress extends JobSubmission {
 }
 
 export interface DemoResultResponse {
+  training_evaluation?: TrainingEvaluation;
+  actions?: ActionEvaluation[];
+  technique_assessment?: TechniqueAssessmentResponse;
+  artifact_urls?: Record<string, string>;
   job_id?: string;
   video_id?: string;
   status?: string;
@@ -163,6 +167,37 @@ export interface DemoResultResponse {
   features?: { ball?: { trajectory?: BallTrajectory }; [key: string]: unknown };
   signals?: { racket?: RacketSignal; grip?: GripSignal; [key: string]: unknown };
   [key: string]: unknown;
+}
+
+export interface IndicatorEvaluation {
+  indicator_id: string;
+  name_zh: string;
+  definition_zh?: string;
+  score_0_to_100: number | null;
+  level_zh?: string;
+  summary_zh?: string;
+  observation_zh?: string;
+  suggestion_zh?: string;
+  measured_instance_count?: number;
+  total_instance_count?: number;
+  limitations_zh?: string[];
+}
+export interface ActionEvaluation {
+  family?: string;
+  event_code: string;
+  name_zh: string;
+  detected_segments: number;
+  summary_zh?: string;
+  indicator_evaluations?: IndicatorEvaluation[];
+  performance_assessment?: { score_0_to_100: number | null; level_zh?: string };
+}
+export interface TrainingEvaluation {
+  score_0_to_100: number | null;
+  level_zh: string;
+  summary_zh: string;
+  strengths_zh?: string[];
+  priorities_zh?: string[];
+  indicator_evaluations?: IndicatorEvaluation[];
 }
 
 export interface TrajectoryPoint {

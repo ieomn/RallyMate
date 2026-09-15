@@ -84,7 +84,7 @@ export interface RallyMateApiClient {
   scorecard(request: ScorecardRequest, signal?: AbortSignal): Promise<ScorecardResponse>;
   submitVideo(file: File | Blob, options?: SubmitVideoOptions): Promise<JobSubmission>;
   getJob(jobId: string, signal?: AbortSignal): Promise<JobProgress>;
-  getDemoResult(jobId: string, signal?: AbortSignal): Promise<DemoResultResponse>;
+  getDemoResult(jobId: string, options?: { endpoint?: string | null; signal?: AbortSignal }): Promise<DemoResultResponse>;
   getTrajectory(
     jobId: string,
     options?: {
@@ -106,7 +106,13 @@ export function createApiClient(
 ): RallyMateApiClient {
   const resolvedConfig = { ...getApiConfig(), ...config };
   const urlFor = (path: string) => {
-    if (/^https?:\/\//i.test(path)) return path;
+    // Result links can contain the analyzer's private address. Always request
+    // their API path through the configured browser gateway.
+    if (/^https?:\/\//i.test(path)) {
+      const parsed = new URL(path);
+      if (!parsed.pathname.startsWith("/v1/")) throw new RallyMateApiError("服务返回了无效的结果地址", 502);
+      path = parsed.pathname + parsed.search;
+    }
     return `${resolvedConfig.baseUrl}${ensurePath(path, "/")}`;
   };
 
@@ -137,11 +143,14 @@ export function createApiClient(
           : `RallyMate API request failed (${response.status})`;
       throw new RallyMateApiError(message, response.status, payload);
     }
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new RallyMateApiError("服务未返回有效 JSON，请检查 API 代理配置", 502);
+    }
     return payload as T;
   }
 
   const get = <T>(path: string, signal?: AbortSignal) =>
-    fetchImpl(urlFor(path), { method: "GET", headers: { "X-Request-ID": requestId() }, signal }).then((response) => parseResponse<T>(response));
+    fetchImpl(urlFor(path), { method: "GET", headers: { "X-Request-ID": requestId() }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }).then((response) => parseResponse<T>(response));
 
   return {
     config: resolvedConfig,
@@ -167,13 +176,13 @@ export function createApiClient(
           method: "POST",
           headers: { "X-Request-ID": requestId() },
           body: form,
-          signal: options.signal,
+          signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(300000)]) : AbortSignal.timeout(300000),
         }),
       );
     },
     getJob: (jobId, signal) => get<JobProgress>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}`, signal),
-    getDemoResult: (jobId, signal) =>
-      get<DemoResultResponse>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, signal),
+    getDemoResult: (jobId, options = {}) =>
+      get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal),
     getTrajectory: (jobId, options = {}) => {
       const endpoint = options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/trajectory`;
       const query = new URLSearchParams();
