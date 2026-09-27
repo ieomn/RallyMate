@@ -40,7 +40,8 @@
         "width",
         "height",
         "coordinate_space",
-        "timebase"
+        "timebase",
+        "is_partial"
       ],
       "properties": {
         "frames_path": {"type": "string", "minLength": 1},
@@ -53,6 +54,9 @@
         "height": {"type": ["integer", "null"], "minimum": 1},
         "coordinate_space": {"const": "normalized_frame_0_1"},
         "timebase": {"const": "source_video_timestamp_ms"}
+        ,"is_partial": {"type": "boolean"}
+        ,"start_timestamp_ms": {"type": ["integer", "null"], "minimum": 0}
+        ,"end_timestamp_ms": {"type": ["integer", "null"], "minimum": 0}
       },
       "additionalProperties": true
     },
@@ -160,7 +164,8 @@
             "predicted_covered_horizon_ms",
             "predicted",
             "velocity",
-            "semantics"
+            "semantics",
+            "reconstruction"
           ],
           "properties": {
             "prediction_status": {
@@ -199,6 +204,7 @@
               ]
             },
             "semantics": {"type": "string", "minLength": 1}
+            ,"reconstruction": {"$ref": "#/$defs/reconstruction"}
           },
           "additionalProperties": true
         }
@@ -231,6 +237,108 @@
           "additionalProperties": true
         }
       ]
+    },
+    "reconstructionPoint": {
+      "type": "object",
+      "required": ["x", "y", "timestamp_ms", "frame_index", "processed_index", "confidence", "source"],
+      "properties": {
+        "x": {"type": "number", "minimum": 0, "maximum": 1},
+        "y": {"type": "number", "minimum": 0, "maximum": 1},
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "frame_index": {"type": ["integer", "null"], "minimum": 0},
+        "processed_index": {"type": ["integer", "null"], "minimum": 0},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "source": {"enum": ["observed", "interpolated"]}
+      },
+      "additionalProperties": true
+    },
+    "reconstruction": {
+      "type": "object",
+      "required": ["version", "status", "coordinate_space", "segments", "summary", "limitations_zh"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "status": {"enum": ["ready", "partial", "not_observed"]},
+        "coordinate_space": {"const": "normalized_frame_0_1"},
+        "segments": {"type": "array", "items": {"$ref": "#/$defs/reconstructionSegment"}},
+        "summary": {"$ref": "#/$defs/reconstructionSummary"},
+        "limitations_zh": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": true
+    },
+    "reconstructionSegment": {
+      "type": "object",
+      "required": ["segment_id", "track_ids", "start_ms", "end_ms", "observed_count", "interpolated_count", "points", "analysis"],
+      "properties": {
+        "segment_id": {"type": "integer", "minimum": 1},
+        "track_ids": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 0},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "interpolated_count": {"type": "integer", "minimum": 0},
+        "bridged_gap_count": {"type": "integer", "minimum": 0},
+        "max_bridged_gap_ms": {"type": "integer", "minimum": 0, "maximum": 600},
+        "interpolation_intervals_complete": {"type": "boolean", "description": "False means the interval payload was capped; consumers must conservatively style the whole segment as reconstructed."},
+        "interpolation_intervals": {
+          "type": "array",
+          "maxItems": 12000,
+          "items": {
+            "type": "object",
+            "required": ["start_ms", "end_ms", "method"],
+            "properties": {
+              "start_ms": {"type": "integer", "minimum": 0},
+              "end_ms": {"type": "integer", "minimum": 0},
+              "method": {"enum": ["linear", "bounded_hermite"]}
+            },
+            "additionalProperties": false
+          },
+          "description": "Measured endpoint intervals containing display-only interpolation. Kept independently of point downsampling; never a contact observation."
+        },
+        "sampling": {
+          "type": "object",
+          "required": ["method", "is_sampled", "original_point_count", "returned_point_count"],
+          "properties": {
+            "method": {"const": "endpoint_preserving_even"},
+            "is_sampled": {"type": "boolean"},
+            "original_point_count": {"type": "integer", "minimum": 0},
+            "returned_point_count": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "points": {"type": "array", "items": {"$ref": "#/$defs/reconstructionPoint"}},
+        "analysis": {"$ref": "#/$defs/reconstructionAnalysis"}
+      },
+      "additionalProperties": true
+    },
+    "reconstructionAnalysis": {
+      "type": "object",
+      "required": ["duration_ms", "displacement_normalized", "path_length_normalized", "mean_speed_normalized_per_s", "direction_image_deg", "motion_status"],
+      "properties": {
+        "duration_ms": {"type": "integer", "minimum": 0},
+        "displacement_normalized": {"type": "number", "minimum": 0},
+        "path_length_normalized": {"type": "number", "minimum": 0},
+        "mean_speed_normalized_per_s": {"type": ["number", "null"], "minimum": 0},
+        "direction_image_deg": {"type": ["number", "null"]},
+        "motion_status": {"enum": ["moving", "stationary", "insufficient"]}
+      },
+      "additionalProperties": true
+    },
+    "reconstructionSummary": {
+      "type": "object",
+      "required": ["segment_count", "observed_count", "observed_frame_count", "interpolated_count", "coverage_fraction", "rejected_observation_count", "confidence"],
+      "properties": {
+        "segment_count": {"type": "integer", "minimum": 0},
+        "returned_segment_count": {"type": "integer", "minimum": 0},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "observed_frame_count": {"type": "integer", "minimum": 0},
+        "interpolated_count": {"type": "integer", "minimum": 0},
+        "bridged_gap_count": {"type": "integer", "minimum": 0},
+        "bridged_gap_duration_ms": {"type": "integer", "minimum": 0},
+        "extended_bridge_count": {"type": "integer", "minimum": 0, "description": "Display bridges longer than the base 250 ms tracking gate, accepted only with unambiguous two-sided motion support."},
+        "coverage_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "rejected_observation_count": {"type": "integer", "minimum": 0}
+        ,"confidence": {"$ref": "#/$defs/confidence"}
+      },
+      "additionalProperties": true
     }
   }
 }

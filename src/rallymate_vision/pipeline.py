@@ -42,9 +42,9 @@ from rallymate_scoring.runtime_profile_binding import (
 from rallymate_scoring.scoring_context import load_scoring_reference_context
 from rallymate_scoring.report import write_analysis_report
 from rallymate_scoring.scoring_loop_report import write_scoring_loop_report
+from rallymate_scoring.stroke_candidates import recognize_strokes_from_artifacts
 from rallymate_tracking import build_primary_player_artifacts
 from rallymate_vision.contracts import FRAME_SCHEMA_VERSION, SCHEMA_VERSION, PipelineRequest
-from rallymate_vision.court import CourtDetector
 from rallymate_vision.inference import Yolo26Perception
 from rallymate_vision.pose.metadata import keypoint_schema, sha256_file
 from rallymate_vision.quality import (
@@ -66,6 +66,21 @@ DEFAULT_REGISTRY_LIFECYCLE_MANIFEST = "registry-lifecycle.json"
 DEFAULT_TRUSTED_PROMOTION_LEDGER = (
     "calibration/trusted-calibration-promotion-ledger.json"
 )
+
+
+def _disabled_court_observation() -> dict:
+    """Return the explicit no-court contract used by pose/ball analysis."""
+    return {
+        "status": "disabled",
+        "method": "disabled_by_configuration",
+        "downstream_system": "S05",
+        "confidence": 0.0,
+        "region_usable": False,
+        "calibration_usable": False,
+        "polygon_px": [],
+        "polygon_normalized": [],
+        "line_segments_px": [],
+    }
 
 
 def _find_ffmpeg_executable() -> str | None:
@@ -548,12 +563,6 @@ def run_pipeline(
                 f"expected={expected}, actual={actual}"
             )
     tracker = SimpleMultiClassTracker()
-    court_detector = CourtDetector(
-        mode=request.court.mode,
-        manual_polygon_normalized=request.court.manual_polygon_normalized,
-        manual_polygon_role=request.court.manual_polygon_role,
-    )
-
     frames_path = request.output_dir / "frames.jsonl"
     summary_path = request.output_dir / "summary.json"
     video_path = request.output_dir / "annotated.mp4"
@@ -607,7 +616,6 @@ def run_pipeline(
     person_frame_count = 0
     quality_samples: list[dict] = []
     timings = Counter()
-    latest_court: dict | None = None
     court_status_counts: Counter[str] = Counter()
 
     with frames_path.open("w", encoding="utf-8", newline="\n") as frames_file:
@@ -645,31 +653,10 @@ def run_pipeline(
             if poses:
                 pose_frame_count += 1
 
-            court_interval_due = (
-                processed % request.processing.court_every_n_frames == 0
-            )
-            should_refresh_court = latest_court is None
-            if latest_court is not None and court_interval_due:
-                if request.court.refresh_policy == "interval":
-                    should_refresh_court = True
-                elif request.court.refresh_policy == "until_usable":
-                    should_refresh_court = not bool(
-                        latest_court.get("region_usable", False)
-                    )
-            if should_refresh_court:
-                stage_started = time.perf_counter()
-                latest_court = court_detector.detect(
-                    frame,
-                    player_boxes=[
-                        player["bbox_px"] for player in players
-                    ],
-                )
-                timings["court_seconds"] += time.perf_counter() - stage_started
-                latest_court["observed_at_frame"] = source_frame_index
-            court = dict(latest_court)
-            court["age_frames"] = source_frame_index - int(
-                court.get("observed_at_frame", source_frame_index)
-            )
+            # Court localization is deliberately disabled. Pose, ball and
+            # racket evidence remain image-coordinate based and do not depend
+            # on a guessed polygon.
+            court = _disabled_court_observation()
             court_status_counts[court["status"]] += 1
 
             seen_this_frame: set[str] = set()
@@ -726,6 +713,9 @@ def run_pipeline(
             processed += 1
             source_frame_index += 1
             if processed == 1 or processed % progress_interval == 0:
+                # Let live trajectory readers see complete rows before the UI
+                # receives progress for those frames.
+                frames_file.flush()
                 elapsed_now = max(time.perf_counter() - started_at, 1e-6)
                 emit_progress(
                     {
@@ -770,6 +760,12 @@ def run_pipeline(
         primary_summary_path,
     )
     timings["primary_player_seconds"] += time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    # Keep reviewable swing/serve candidates separate from the FS scoring loop
+    # and from confirmed ball-racket contacts. This also supports API backfills.
+    action_recognition = recognize_strokes_from_artifacts(frames_path, primary_timeline_path)
+    timings["action_recognition_seconds"] += time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
     # Fail closed if an operator replaces the registry while inference is in
@@ -1016,6 +1012,8 @@ def run_pipeline(
             "detect": str(request.models.detect),
             "pose": str(request.models.pose),
             "target_classes": ["player", "ball", "racket"],
+            "detection_policy": (perception.detection_metadata()
+                                 if callable(getattr(perception, "detection_metadata", None)) else None),
             "pose_format": pose_metadata["native_keypoint_format"],
             "pose_backend": pose_metadata,
             "pose_deployment_preset": request.models.pose_preset,
@@ -1023,8 +1021,8 @@ def run_pipeline(
                 point["downstream_joint_id"]
                 for point in native_pose_schema["keypoints"]
             ],
-            "court_detector": "manual_polygon_or_validated_hough_hint",
-            "court_refresh_policy": request.court.refresh_policy,
+            "court_detector": "disabled",
+            "court_refresh_policy": "disabled",
         },
         "processing": {
             "processed_frames": processed,
@@ -1046,6 +1044,7 @@ def run_pipeline(
         },
         "coverage": coverage,
         "primary_player": primary_player["diagnostics"],
+        "action_recognition": action_recognition,
         "minimum_scoring_loop": scoring_loop["summary"],
         "calculation_readiness": calculation_readiness["summary"],
         "measurement_portfolio": measurement_portfolio["summary"],
@@ -1057,6 +1056,8 @@ def run_pipeline(
         "next_stage": {
             "ready": hit_event_ready,
             "ready_for_hit_event_detection": hit_event_ready,
+            "hit_event_detector_enabled": False,
+            "action_candidate_detector_enabled": True,
             "ready_for_court_region_events": court_region_ready,
             "ready_for_metric_court_metrics": metric_court_ready,
             "ready_for_final_scoring": (
@@ -1072,7 +1073,7 @@ def run_pipeline(
             "contract": "frame observations keyed by timestamp_ms and track_id",
             "limitations": [
                 "COCO sports-ball and tennis-racket detections are generic baselines",
-                "automatic court output is a validated region hint, not metric calibration",
+                "court localization is disabled; court-dependent metrics remain unavailable",
                 "racket face and sweet-spot keypoints require a custom model",
             ],
             "requirements_gap": {

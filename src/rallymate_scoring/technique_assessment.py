@@ -19,7 +19,7 @@ from rallymate_scoring.technique_registry import (
 )
 
 
-TECHNIQUE_ASSESSMENT_VERSION = "rallymate-technique-assessment-v1.1.0"
+TECHNIQUE_ASSESSMENT_VERSION = "rallymate-technique-assessment-v1.4.0"
 
 
 class TechniqueRegistrySnapshotError(ValueError):
@@ -344,6 +344,8 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
             if code and _number(value) and float(value) > 0:
                 result.add(code)
     for record in records:
+        if _candidate_only(record):
+            continue
         for key in ("event_code", "event", "action", "action_type", "technique_id", "technique", "label", "name", "name_zh"):
             code = _canonical_event_code(record.get(key))
             if code:
@@ -355,7 +357,7 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
         if isinstance(values, Mapping):
             for item, value in values.items():
                 code = _canonical_event_code(item)
-                if code and value:
+                if code and value and not (isinstance(value, Mapping) and _candidate_only(value)):
                     result.add(code)
         elif isinstance(values, list):
             for item in values:
@@ -370,6 +372,8 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
         if depth > 4:
             return
         if isinstance(value, Mapping):
+            if _candidate_only(value):
+                return
             # A prior assessment may itself be embedded in a model export and
             # contain all registry techniques with ``observed: false``. Do not
             # mistake those catalog labels for detections.
@@ -393,6 +397,34 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
     return result
 
 
+def _candidate_only(value: Mapping[str, Any]) -> bool:
+    """A review candidate is not an observed technique or a scored phase."""
+    return value.get("status") in ("candidate", "candidate_only", "pending_review") or (
+        value.get("candidate_type") is not None and value.get("contact_confirmed") is False
+    )
+
+
+def _action_recognition(summary: Mapping[str, Any]) -> dict[str, Any]:
+    raw = summary.get("action_recognition")
+    if not isinstance(raw, Mapping):
+        return {"status": "not_run", "candidate_count": None, "candidates": [],
+                "by_family": {"baseline": None, "serve": None}, "confirmed_contact_count": None}
+    candidates = []
+    values = raw.get("candidates")
+    for candidate in values if isinstance(values, list) else []:
+        if not isinstance(candidate, Mapping) or candidate.get("family") not in {"baseline", "serve"}:
+            continue
+        times = [_number(candidate.get(key)) for key in ("start_ms", "peak_ms", "end_ms")]
+        if (candidate.get("status") != "candidate" or candidate.get("contact_confirmed") is not False
+                or any(value is None for value in times) or not 0 <= times[0] < times[1] < times[2]):
+            continue
+        candidates.append(deepcopy(dict(candidate)))
+    unavailable = raw.get("status") in ("unavailable", "not_run", "insufficient_pose")
+    return {**deepcopy(dict(raw)), "candidates": candidates, "candidate_count": None if unavailable else len(candidates),
+            "by_family": {family: None if unavailable else sum(c["family"] == family for c in candidates) for family in ("baseline", "serve")},
+            "confirmed_contact_count": None}
+
+
 def _technique_observed(technique: Mapping[str, Any], events: set[str]) -> bool:
     technique_id = str(technique["id"])
     if technique_id in events:
@@ -405,6 +437,91 @@ def _technique_observed(technique: Mapping[str, Any], events: set[str]) -> bool:
     return bool(aliases & {item.casefold() for item in events})
 
 
+def _family_recognition(
+    family: str,
+    observed: bool,
+    action_recognition: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Describe measured movement separately from confirmed registry events.
+
+    Rule-inferred stroke labels and measured movement phases do not emit GS
+    events, confirm contact, or become scored registry phases. Their episode
+    count is separate from ``observed_count`` (registry types) and hit counts.
+    """
+    if observed:
+        return {
+            "recognition_status": "observed",
+            "recognition_reason_zh": "已关联该类动作的专项事件证据。",
+        }
+    motion = action_recognition.get("motion_analysis")
+    motion_families = motion.get("families") if isinstance(motion, Mapping) else None
+    family_motion = motion_families.get(family) if isinstance(motion_families, Mapping) else None
+    if isinstance(family_motion, Mapping):
+        episodes = family_motion.get("episodes")
+        episode_count = sum(isinstance(episode, Mapping) and episode.get("method") == "rule_based"
+                            and episode.get("contact_confirmed") is False for episode in episodes) if isinstance(episodes, list) else 0
+        unavailable = motion.get("status") == "unavailable"
+        return {
+            "recognition_status": "analysis_unavailable" if unavailable else "motion_analyzed" if episode_count else "motion_unavailable",
+            "motion_episode_count": None if unavailable else episode_count,
+            "recognition_reason_zh": str(family_motion.get("reason_zh") or
+                                        "本次提供二维挥拍测量，不作为确认触球或技术评分。"),
+        }
+    if family not in {"baseline", "serve"}:
+        return {
+            "recognition_status": "not_observed",
+            "recognition_reason_zh": "本次运行未提供该类动作的专项事件证据。",
+        }
+    candidate_count = action_recognition["by_family"].get(family)
+    if isinstance(candidate_count, int) and candidate_count > 0:
+        if family == "baseline":
+            return {
+                "recognition_status": "motion_detected_unclassified",
+                "recognition_reason_zh": "已检测到挥拍运动；正手、反手及切削尚未分类，触球次数暂不可用。",
+            }
+        return {
+            "recognition_status": "candidate_only",
+            "recognition_reason_zh": "检测到发球式挥拍；真实发球与球拍触球尚未确认。",
+        }
+    if action_recognition.get("status") in {"unavailable", "not_run", "insufficient_pose"}:
+        return {
+            "recognition_status": "analysis_unavailable",
+            "recognition_reason_zh": "本次运行动作分析证据不足，不能据此判断没有发生击球。",
+        }
+    if str(action_recognition.get("detector_version", "")).startswith("pose-racket-stroke-candidates-"):
+        return {
+            "recognition_status": "classifier_unavailable",
+            "recognition_reason_zh": (
+                "当前分析仅定位挥拍运动，尚未提供正手、反手或切削分类；未定位到动作不代表没有击球。"
+                if family == "baseline" else
+                "当前分析仅定位发球式挥拍，尚未确认真实发球或触球；未定位到动作不代表没有发球。"
+            ),
+        }
+    return {
+        "recognition_status": "not_observed",
+        "recognition_reason_zh": "本次运行未提供该类动作的专项事件证据。",
+    }
+
+
+def _record_technique_ids(record: Mapping[str, Any]) -> set[str]:
+    """Require a phase to name its technique; generic phase names are not IDs."""
+    result: set[str] = set()
+    for key in ("technique_id", "action_type", "event_code", "event", "action", "technique"):
+        value = record.get(key)
+        if not isinstance(value, str) or not value.strip():
+            continue
+        code = _canonical_event_code(value)
+        # Preserve unknown explicit IDs too, so contradictory records cannot
+        # borrow a known event's identity and silently certify its phases.
+        result.add(_EVENT_TO_TECHNIQUE[code] if code else value.strip())
+    indicator = record.get("indicator_id")
+    if isinstance(indicator, str):
+        code = _canonical_event_code(indicator.split("-", 1)[0])
+        if code:
+            result.add(_EVENT_TO_TECHNIQUE[code])
+    return result
+
+
 def _phase_statuses(
     technique: Mapping[str, Any],
     records: list[Mapping[str, Any]],
@@ -413,8 +530,12 @@ def _phase_statuses(
     phases = [str(item) for item in technique.get("phases", [])]
     explicit: set[str] = set()
     for record in records:
-        record_technique = record.get("technique_id") or record.get("action_type")
-        if record_technique and str(record_technique) != str(technique["id"]):
+        if _candidate_only(record):
+            continue
+        # FS/GS feature records usually identify an event, not a technique_id.
+        # Previously their generic phase (e.g. support or recovery) could mark
+        # unrelated, even unobserved techniques as measured.
+        if _record_technique_ids(record) != {str(technique["id"])}:
             continue
         for key in ("phase_key", "phase", "stage", "stage_code"):
             value = record.get(key)
@@ -603,6 +724,7 @@ def build_technique_assessment(
     coverage, coverage_detail = _coverage_with_detail(summary)
     _augment_coverage_from_records(coverage, coverage_detail, records)
     events = _event_codes(summary, records)
+    action_recognition = _action_recognition(summary)
     observed_ids = {
         _EVENT_TO_TECHNIQUE[event]
         for event in events
@@ -636,8 +758,16 @@ def build_technique_assessment(
         evidence_score = round((required_score * 0.7 + enhanced_score * 0.3) * 100)
         item_status = _status(observed, required_score)
         limitations = list(technique.get("proxy_limits", []))
+        # A family-level cross-body motion cannot distinguish the five baseline
+        # subtypes. Keep those rows unobserved and expose the intervals at the
+        # family level. Serve has one registry row, so it can carry its own
+        # candidate intervals while observed/score remain unchanged.
+        technique_candidates = [candidate for candidate in action_recognition["candidates"]
+                                if candidate["family"] == "serve"] if technique_id == "serve" else []
         if not observed:
             limitations.insert(0, "当前运行没有该技术的事件证据；不会根据缺失数据推断动作已发生。")
+        if technique_candidates:
+            limitations.insert(0, "发现可复核的发球姿态候选；尚未确认真实发球或球拍触球，不计入击球次数。")
         if required_score < 0.72 and observed:
             limitations.insert(0, "必需证据覆盖不足，当前只适合做局部复核。")
         result_items.append(
@@ -648,6 +778,9 @@ def build_technique_assessment(
                 "name_zh": technique["name_zh"],
                 "status": item_status,
                 "observed": observed,
+                "candidate_count": len(technique_candidates),
+                "candidate_intervals": technique_candidates,
+                "recognition_status": "observed" if observed else "candidate" if technique_candidates else "not_observed",
                 "evidence_score_0_to_100": evidence_score if observed else 0,
                 "score_0_to_100": None,
                 "formal_grade": None,
@@ -681,6 +814,9 @@ def build_technique_assessment(
             "observed_count": len(observed_family),
             "total_count": len(items),
             "evidence_score_0_to_100": round(statistics.fmean(item["evidence_score_0_to_100"] for item in observed_family)) if observed_family else None,
+            "candidate_count": action_recognition["by_family"].get(family, 0),
+            "candidate_intervals": [candidate for candidate in action_recognition["candidates"] if candidate["family"] == family],
+            **_family_recognition(family, bool(observed_family), action_recognition),
         }
     return {
         "assessment_version": TECHNIQUE_ASSESSMENT_VERSION,
@@ -696,6 +832,7 @@ def build_technique_assessment(
             key: value["source"] for key, value in coverage_detail.items()
         },
         "family_summary": family_summary,
+        "action_recognition": action_recognition,
         "techniques": result_items,
         "policy": {
             "version": ASSESSMENT_POLICY_VERSION,

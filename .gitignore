@@ -31,6 +31,19 @@ runtime/**
 **/.env
 **/.env.*
 !**/.env.example
+runtime.env
+runtime.env.*
+!runtime.env.example
+.ssh/
+known_hosts
+known_hosts.*
+monitor_key
+monitor_key.*
+deploy_key
+deploy_key.*
+id_rsa
+id_ed25519
+id_ecdsa
 *.pem
 *.key
 *.p12
@@ -101,6 +114,9 @@ docs/新对话无缝交接文档.md
 Thumbs.db
 .idea/
 .vscode/
+
+# Downloaded AutoDL executables are rebuilt from deployment instructions.
+/tools/
 
 # Worker secrets and temporary review patches.
 .dev.vars

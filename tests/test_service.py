@@ -55,10 +55,9 @@ class ServiceTests(unittest.TestCase):
             with TestClient(app) as client:
                 console = client.get("/")
                 self.assertEqual(console.status_code, 200)
-                self.assertIn("动作表现参考分（Beta）", console.text)
-                self.assertIn("分析完成度", console.text)
-                self.assertIn("动作表现参考分为 Beta 反馈", console.text)
-                self.assertIn("不生成虚构 A～E", console.text)
+                self.assertEqual(console.json()["service"], "RallyMate Vision API")
+                self.assertNotIn("网球动作分析 Demo", console.text)
+                self.assertEqual(client.get("/assets/user-demo.html").status_code, 404)
                 self.assertEqual(
                     client.get("/openapi.json").json()["info"]["version"], "1.2.0"
                 )

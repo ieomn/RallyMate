@@ -1,10 +1,17 @@
 # AutoDL + 独立域名部署手册
 
+AutoDL 同机运行网页、GPU 推理和 Cloudflare 随机域名隧道的步骤见
+[`autodl/README.md`](autodl/README.md)。网站访问无需账号或密码，内部分析 API
+仍保留 Bearer key 鉴权。以下内容适用于 Docker 与独立域名的部署方式。
+
 这份部署文件把网页和推理服务拆成两个可独立发布的单元：
 
 ```text
 浏览器 / app.example.com
-        │  HTTPS（短期会话或反向代理注入 Bearer）
+        │  HTTPS（无需网站登录）
+        ▼
+同源网页网关（服务端注入 Bearer）
+        │  私网 / HTTPS
         ▼
 RallyMate API（api.example.com，FastAPI）
         │  SQLite/文件队列
@@ -17,8 +24,7 @@ RallyMate Worker（同一 AutoDL GPU 节点，持久化模型进程）
 `/v1/jobs/{id}/technique-assessment`。没有提供真实域名时，把下面的
 `app.example.com` 和 `api.example.com` 换成自己的域名即可。
 
-本仓库没有绑定云账号、GPU 主机或 DNS 区域，因此以下内容是可复现的部署清单，
-不是已完成的线上发布声明。每次换主机或域名都必须重新执行健康检查、上传烟测和
+以下独立域名配置是部署模板。每次换主机或域名都必须重新执行健康检查、上传烟测和
 证书检查；不要把示例域名直接用于生产。
 
 ### 本机开发与云端发布边界
@@ -39,11 +45,9 @@ RallyMate Worker（同一 AutoDL GPU 节点，持久化模型进程）
 2. 在 Nginx/Caddy 配置中替换示例域名和证书路径，强制 HTTPS（HTTP 仅 301 跳转），
    并将 FastAPI 绑定在 `127.0.0.1` 或私网地址。
 3. 复制 `nginx-rallymate-api-auth.conf.example` 到 root-only（`chmod 600`）的
-   Secret 文件；长期 API key 只在服务端注入。为 app 网关创建独立的
-   `/etc/nginx/.htpasswd-rallymate`（`htpasswd -c`，权限 600）；示例配置的
-   `auth_basic` 会在该文件缺失时让 Nginx 启动失败，避免共享 API key 变成匿名入口。
-   `/v1/jobs` 上传已单独限制为约 2 次/分钟，结果轮询约 120 次/分钟；仍需保持
-   WAF/租户级配额开启。
+   Secret 文件；长期 API key 只在服务端注入。app 网关无需网站登录，持有链接即可
+   上传和查看对应任务结果。`/v1/jobs` 上传已单独限制为约 2 次/分钟，结果轮询约
+   120 次/分钟；这些限流仍然保留。
 4. 仅当 `https://app.<domain>` 的 `/v1/meta`、`/v1/techniques` 和一段受支持视频
    的完整任务链路通过后，才把域名交给用户；记录 `/health/live`、`/health/ready`
    结果和证书到期时间。
@@ -159,9 +163,8 @@ docker compose -f deploy/docker-compose.yml logs -f api worker
 复制为 `/etc/nginx/snippets/rallymate-api-auth.conf`，替换为 API 的 Bearer key，
 并将文件权限设为 `600`。示例中的 `app.example.com` `/v1/` 与 `/health/`
 location 会把请求转发到本机 API，并由 Nginx 注入 header；浏览器因此不需要、
-也不应持有长期 key。示例 app server 同时启用 Basic Auth（`.htpasswd-rallymate`），
-这是单用户/私有部署的最低入口保护；多用户产品应替换为短期会话和按用户的 job
-ownership。若网页直接请求 `api.example.com`，则必须由另一个服务端
+也不应持有长期 key。示例 app server 无需账号或密码，内部 API 仍校验 Bearer key。
+若网页直接请求 `api.example.com`，则必须由另一个服务端
 会话/短期 token 层完成同样的认证注入，不能只把 `VITE_RALLYMATE_API_URL`
 指向受保护 API。
 

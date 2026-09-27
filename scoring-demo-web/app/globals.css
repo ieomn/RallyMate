@@ -294,11 +294,11 @@ footer .brand small { color: rgba(255,255,255,.35); }
 .frame-caption span, .trajectory-meta { font-size: 12px; }
 .trajectory-meta-secondary { padding-top: 0; color: rgba(255,255,255,.42); }
 .trajectory-disclosure { margin: 0 15px 16px; padding: 10px 12px; border-left: 2px solid #71a7ff; background: rgba(113,167,255,.08); color: rgba(255,255,255,.64); font-size: 11px; line-height: 1.5; }
-.live-stats { margin: 18px 0 28px; padding: 22px; border: 1px solid rgba(255,255,255,.12); background: linear-gradient(135deg, rgba(24,39,29,.96), rgba(14,23,25,.96)); }
+.live-stats { margin: 18px 0 28px; padding: 22px; border: 1px solid rgba(255,255,255,.12); background: linear-gradient(135deg, rgba(24,39,29,.96), rgba(14,23,25,.96)); color:#edf3ef; }
 .live-stats-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
 .live-stats-head h2 { margin: 3px 0 0; font-size: 20px; letter-spacing: -.02em; }
 .stats-disclosure { color: rgba(255,255,255,.45); font: 500 10px var(--mono); }
-.live-stats-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.live-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
 .live-stats-grid article { min-height: 92px; padding: 14px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.025); }
 .live-stats-grid article span, .live-stats-grid article small { display: block; color: rgba(255,255,255,.55); font-size: 11px; }
 .live-stats-grid article strong { display: block; margin: 8px 0 4px; color: var(--lime); font: 700 25px var(--mono); }
@@ -396,6 +396,48 @@ footer .brand small { color: rgba(255,255,255,.35); }
 .technical-details > summary { padding:28px; cursor:pointer; color:var(--muted); border-top:1px solid var(--line); }
 .score-disclosure { font-size:13px!important; color:var(--muted); }
 .evidence-video { width:100%; height:270px; object-fit:contain; background:#080c0a; }
+.ball-trajectory-viewer { background:#080c0a; }
+.ball-trajectory-stage { position:relative; aspect-ratio:16/10; overflow:hidden; background:linear-gradient(160deg,#204a3d,#10231e); }
+.ball-trajectory-video { display:block; width:100%; height:100%; object-fit:contain; background:#080c0a; }
+.ball-trajectory-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.ball-trajectory-empty { position:absolute; inset:0; display:grid; place-content:center; gap:6px; text-align:center; color:rgba(255,255,255,.62); }
+.ball-trajectory-empty strong { color:#fff; font-size:13px; }
+.ball-trajectory-empty span { font-size:10px; }
+.ball-trajectory-axis { position:absolute; bottom:8px; left:12px; right:12px; display:flex; justify-content:space-between; color:rgba(255,255,255,.38); font:600 9px var(--mono); }
+.ball-trajectory-controls { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid rgba(255,255,255,.12); }
+.ball-trajectory-controls button { border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#fff; border-radius:3px; padding:5px 9px; font:700 10px var(--mono); cursor:pointer; }
+.ball-trajectory-controls button:disabled { opacity:.45; cursor:not-allowed; }
+.ball-trajectory-controls input { flex:1; accent-color:var(--lime); min-width:0; }
+.ball-trajectory-controls span { min-width:44px; color:rgba(255,255,255,.58); text-align:right; font:600 10px var(--mono); }
+.ball-trajectory-segments { display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; }
+.ball-trajectory-segments label { display:flex; align-items:center; flex-wrap:wrap; gap:6px; color:#cbd6ce; font-size:11px; }
+.ball-trajectory-segments select { background:#17271e; color:#fff; padding:7px; border:1px solid #526654; max-width:100%; }
+.ball-trajectory-analysis { color:#dae6de; font-size:11px; line-height:1.8; margin:0 14px 12px; }
+.trajectory-summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:18px; }
+.trajectory-summary-grid div { display:flex; flex-direction:column; gap:5px; }
+.trajectory-summary-grid strong { font-size:26px; color:var(--lime); }
+.trajectory-summary-grid span { font-size:11px; color:#b0c1b6; }
+.trajectory-timeline { display:block; width:100%; padding:0 16px; }
+.ball-trajectory-segments button { display:flex; flex-direction:column; gap:3px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:rgba(255,255,255,.58); padding:6px 8px; text-align:left; cursor:pointer; }
+.ball-trajectory-segments button.active { border-color:var(--lime); color:#fff; background:rgba(201,255,67,.08); }
+.ball-trajectory-segments span { font:700 9px var(--mono); }
+.ball-trajectory-segments small { font-size:9px; }
+.ball-trajectory-legend { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:0 14px 12px; color:rgba(255,255,255,.58); font-size:10px; }
+.ball-trajectory-legend span { display:inline-flex; align-items:center; gap:5px; }
+.ball-trajectory-legend i { width:8px; height:3px; display:inline-block; background:var(--lime); }
+.ball-trajectory-legend i.interpolated { background:#71a7ff; border-top:1px dashed #fff; }
+.ball-trajectory-timebase { margin-left:auto; color:rgba(255,255,255,.38); }
+.ball-trajectory-limitations { margin:0 14px 14px; padding:8px 10px; border-left:2px solid #71a7ff; color:rgba(255,255,255,.5); font-size:10px; line-height:1.5; }
+.ball-trajectory-options { border-top:1px solid rgba(255,255,255,.1); margin-bottom:12px; }
+.ball-trajectory-options > summary, .trajectory-observation-details > summary { padding:12px 14px; color:#c2cec6; font-size:11px; cursor:pointer; }
+.ball-trajectory-options-body { display:flex; flex-wrap:wrap; gap:12px; padding:0 14px 12px; }
+.ball-trajectory-options-body label { display:flex; align-items:center; gap:6px; color:#d3ddd6; font-size:11px; }
+.ball-trajectory-options input { accent-color:#a8c59d; }
+.ball-trajectory-options input:disabled { opacity:.4; }
+.trajectory-observation-details { border-top:1px solid rgba(255,255,255,.1); }
+.live-stats-details { margin-top:14px; border-top:1px solid var(--line); }
+.live-stats-details > summary { padding:12px 0; color:#c2cec6; font-size:12px; cursor:pointer; }
+.ball-trajectory-options summary:focus-visible, .trajectory-observation-details summary:focus-visible, .live-stats-details summary:focus-visible { outline:2px solid var(--lime-deep); outline-offset:2px; }
 .coach-form textarea:focus-visible { outline:2px solid var(--lime-deep); outline-offset:4px; }
 @media(max-width:720px) { .live-action-cards { grid-template-columns:1fr; } .evidence-video { height:220px; } }
 
@@ -405,5 +447,53 @@ footer .brand small { color: rgba(255,255,255,.35); }
 .task-link span { color:var(--muted); }
 .coach-form select { padding:12px; margin-bottom:18px; background:var(--white); border:1px solid var(--line); border-radius:8px; }
 .coach-columns ol { padding-left:20px; font-size:13px; line-height:1.8; color:rgba(255,255,255,.8); }
+.coach-result h3 { font-size:clamp(20px,2vw,28px); line-height:1.5; letter-spacing:0; }
+.coach-status { color:var(--muted); font-size:13px; line-height:1.7; margin-top:16px; }
+.coach-evidence-copy,.coach-evidence { font-size:14px; line-height:1.8; color:rgba(255,255,255,.8); }
+.coach-evidence { margin:20px 0; }
+.coach-evidence b { display:block; color:var(--lime); margin-top:14px; }
+.coach-evidence ul { padding-left:20px; margin:8px 0 16px; }
+.coach-columns-single { grid-template-columns:1fr; }
 .hero h1 { font-family:var(--sans); font-size:clamp(44px,4.8vw,76px); font-weight:600; line-height:1.15; letter-spacing:-.06em; }
 .hero h1 em { font-style:normal; color:var(--muted); -webkit-text-stroke:0; font-weight:400; }
+.trajectory-view-modes { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.trajectory-held-label { position: absolute; right: 10px; top: 10px; padding: 5px 8px; border-radius: 5px; background: rgba(12, 25, 15, .72); color: #eef6df; font-size: 11px; pointer-events: none; }
+.trajectory-view-modes button { border: 1px solid #66745d; background: transparent; color: inherit; border-radius: 7px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.trajectory-view-modes button[aria-pressed="true"] { background: #d8ff66; color: #112014; border-color: #d8ff66; }
+.motion-analysis-panel { margin-top: 22px; border: 1px solid var(--line, #c9cec4); border-radius: 12px; padding: 28px; background: var(--panel, #fafbf6); color: #152219; }
+.motion-analysis-heading, .motion-episode-heading, .motion-episode-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.motion-analysis-heading { padding-bottom: 18px; border-bottom: 1px solid #dce1d7; }
+.motion-analysis-heading h3 { margin: 0; font-size: 22px; }
+.motion-analysis-heading > span { font-size: 12px; color: #65745e; }
+.motion-episode-heading { margin-top: 24px; }
+.motion-episode-heading strong { font-size: 27px; }
+.motion-episode-heading p, .motion-analysis-reason, .motion-analysis-note, .motion-evidence, .motion-empty p { color: #65705f; line-height: 1.8; font-size: 14px; }
+.motion-analysis-panel button { border: 1px solid #b3beaa; background: transparent; border-radius: 7px; padding: 10px 14px; font: inherit; cursor: pointer; color: #263c24; }
+.motion-analysis-panel button:hover:not(:disabled) { background: #edf5dc; }
+.motion-analysis-panel button:disabled { opacity: .35; cursor: default; }
+.motion-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+.motion-phase-disclosure { color: #68775f; font-size: 12px; line-height: 1.7; margin: 18px 0 -12px; }
+.motion-phases button:disabled { opacity: 1; color: #7a8174; background: #eef0e9; border-left-color: #c0c7b8; }
+.motion-phases button { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-left: 3px solid #849d3e; }
+.motion-phases small { font-size: 12px; color: #64715b; }
+.motion-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 18px 0; }
+.motion-metrics article { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: #eff2e9; border-radius: 8px; }
+.motion-metrics span, .motion-metrics small { font-size: 12px; color: #67765e; }
+.motion-metrics strong { font-size: 28px; font-weight: 600; }
+.motion-episode-nav { margin-top: 10px; }
+.motion-episode-nav > span { font-size: 12px; color: #75836a; }
+.motion-analysis-note { border-top: 1px solid #dce1d7; padding-top: 18px; margin: 22px 0 12px; }
+.motion-evidence summary { cursor: pointer; }
+.motion-evidence p { margin: 8px 0; }
+.motion-empty { padding: 32px 0 20px; max-width: 800px; }
+.motion-empty strong { font-size: 20px; }
+@media (max-width: 700px) {
+  .motion-analysis-panel { padding: 20px 16px; }
+  .motion-analysis-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .motion-metrics { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .motion-phases { gap: 5px; }
+  .motion-phases button { padding: 9px 7px; font-size: 13px; }
+  .motion-phases small { font-size: 10px; }
+  .motion-episode-heading strong { font-size: 23px; }
+  .motion-episode-heading button { padding: 10px; font-size: 12px; white-space: nowrap; }
+}

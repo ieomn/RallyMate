@@ -110,6 +110,61 @@ _REGISTERED_DEMO_INDICATOR_IDS = frozenset(
 )
 
 
+def _post_analysis_capabilities(summary: Mapping[str, Any], action_recognition: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Expose hit/trajectory availability without inventing detections.
+
+    Pose scoring runs (the current production loop) may contain only FS events.
+    A ball or racket *observation* is not a hit event, so this helper returns a
+    nullable count and an explicit reason. GS action counts also do not prove
+    contact; candidate motion intervals remain separate from hit statistics.
+    """
+    next_stage = summary.get("next_stage")
+    next_stage = next_stage if isinstance(next_stage, Mapping) else {}
+    artifacts = summary.get("artifacts")
+    artifacts = artifacts if isinstance(artifacts, Mapping) else {}
+    capability = next_stage.get("capability_checks")
+    capability = capability if isinstance(capability, Mapping) else {}
+    counts: dict[str, int] = {}
+    for source in (summary.get("event_counts"),
+                   (summary.get("minimum_scoring_loop") or {}).get("event_counts")
+                   if isinstance(summary.get("minimum_scoring_loop"), Mapping) else None):
+        if isinstance(source, Mapping):
+            for code in ("GS01", "GS02", "GS03", "GS04", "GS05", "GS06", "GS07", "GS08", "GS09", "GS10", "GS11"):
+                value = source.get(code)
+                if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+                    counts[code] = value
+    candidate_count = action_recognition.get("candidate_count")
+    has_candidates = isinstance(candidate_count, int) and candidate_count > 0
+    hit_status = "candidates_only" if has_candidates else "unsupported"
+    hit_reason = ("已找到可复核的挥拍/发球动作候选；候选次数不等于击球次数，尚未确认球拍触球。"
+                  if has_candidates else "当前运行未启用经验证的触球检测器；球/球拍观测或 GS 动作事件不能替代确认击球。")
+    trajectory_status = "available" if artifacts.get("frames_jsonl") else "unavailable"
+    return (
+        {
+            "status": hit_status,
+            "total_count": None,
+            # Canonical names consumed by summarizeLiveStats; null means the
+            # upstream detector did not emit a hit/contact event count.
+            "shot_count": None,
+            "contact_count": None,
+            "candidate_count": candidate_count,
+            "candidate_by_family": dict(action_recognition.get("by_family") or {}),
+            "by_event_code": counts,
+            "upstream_action_event_counts": counts,
+            "reason_zh": hit_reason,
+            "count_semantics": "confirmed_contact_unavailable; motion_candidates_and_GS_actions_are_not_hit_counts",
+        },
+        {
+            "status": trajectory_status,
+            "source_artifact": "frames.jsonl" if trajectory_status == "available" else None,
+            "endpoint_required": True,
+            "ball_observation": "available_via_trajectory_endpoint" if capability.get("ball_observation") is True else "not_available_in_stage1_capability",
+            "racket_observation": "available_via_trajectory_endpoint" if capability.get("racket_observation") is True else "not_available_in_stage1_capability",
+            "reason_zh": "轨迹是可观测性预览，不代表专项轨迹精度或击球识别。" if trajectory_status == "available" else "缺少 frames.jsonl。",
+        },
+    )
+
+
 def _duplicate_rejecting_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
@@ -518,6 +573,8 @@ def build_user_demo_result(
         records,
         registry_path=technique_registry_path,
     )
+    action_recognition = technique_assessment["action_recognition"]
+    hit_statistics, trajectory_analysis = _post_analysis_capabilities(summary, action_recognition)
 
     return {
         "schema_version": "1.2.0",
@@ -532,6 +589,11 @@ def build_user_demo_result(
         ),
         "training_evaluation": training_evaluation,
         "technique_assessment": technique_assessment,
+        # Additive post-analysis fields consumed by the live results view.
+        # Counts remain null unless the upstream model emitted GS hit events.
+        "hit_statistics": hit_statistics,
+        "action_recognition": action_recognition,
+        "trajectory_analysis": trajectory_analysis,
         "final_demo_score": {
             "label_zh": "动作信息成型参考分",
             "value_0_to_100": final_demo_score_value,

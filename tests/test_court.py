@@ -99,6 +99,23 @@ class CourtDetectorTests(unittest.TestCase):
         for point in result["polygon_normalized"]:
             self.assertTrue(all(0.0 <= value <= 1.0 for value in point))
 
+    def test_tall_scene_support_is_not_used_as_court_boundary(self) -> None:
+        frame = np.zeros((600, 1000, 3), dtype=np.uint8)
+        frame[:] = (80, 150, 80)
+        # A pole crossing the upper half should not pull the court hull into
+        # the sky. Add plausible lower court lines around it.
+        cv2.line(frame, (80, 540), (460, 360), (255, 255, 255), 6)
+        cv2.line(frame, (920, 540), (540, 360), (255, 255, 255), 6)
+        cv2.line(frame, (0, 420), (1000, 420), (255, 255, 255), 6)
+        cv2.line(frame, (180, 0), (180, 340), (0, 220, 120), 12)
+        result = CourtDetector(mode="auto").detect(frame)
+        if result["polygon_normalized"]:
+            self.assertGreaterEqual(
+                min(point[1] for point in result["polygon_normalized"]), 0.20
+            )
+        if result["status"] == "detected":
+            self.assertTrue(result["diagnostics"]["validation"]["no_sky_vertex"])
+
 
 if __name__ == "__main__":
     unittest.main()

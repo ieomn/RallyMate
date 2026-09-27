@@ -79,6 +79,9 @@ class UserDemoResultTests(unittest.TestCase):
         self.assertEqual(
             result["result_version"], "rallymate-user-demo-result-v1.2.0"
         )
+        self.assertEqual(result["hit_statistics"]["status"], "unsupported")
+        self.assertIsNone(result["hit_statistics"]["total_count"])
+        self.assertEqual(result["trajectory_analysis"]["status"], "unavailable")
         self.assertEqual(result["final_demo_score"]["value_0_to_100"], 42)
         self.assertEqual(
             result["final_demo_score"]["semantics"],
@@ -392,6 +395,32 @@ class UserDemoResultTests(unittest.TestCase):
     def test_rejects_summary_that_is_not_completed(self) -> None:
         with self.assertRaisesRegex(UserDemoResultError, "not completed"):
             build_user_demo_result(self._summary(status="failed"), [])
+
+    def test_gs_action_counts_and_input_readiness_do_not_claim_hits(self) -> None:
+        summary = self._summary()
+        summary["event_counts"] = {"GS01": 17, "GS06": 2}
+        summary["next_stage"] = {"ready_for_hit_event_detection": True}
+        result = build_user_demo_result(summary, [])
+        hits = result["hit_statistics"]
+        self.assertEqual(hits["status"], "unsupported")
+        self.assertIsNone(hits["total_count"])
+        self.assertIsNone(hits["shot_count"])
+        self.assertIsNone(hits["contact_count"])
+        self.assertEqual(hits["upstream_action_event_counts"], {"GS01": 17, "GS06": 2})
+
+    def test_motion_candidates_are_passed_through_separately_from_hits(self) -> None:
+        summary = self._summary()
+        summary["action_recognition"] = {
+            "status": "candidates_detected", "candidate_count": 1, "by_family": {"baseline": 0, "serve": 1},
+            "confirmed_contact_count": None,
+            "candidates": [{"candidate_id": "serve-test", "status": "candidate", "family": "serve",
+                            "contact_confirmed": False, "start_ms": 5000, "peak_ms": 6100, "end_ms": 6400}],
+        }
+        result = build_user_demo_result(summary, [])
+        self.assertEqual(result["action_recognition"]["candidate_count"], 1)
+        self.assertEqual(result["hit_statistics"]["status"], "candidates_only")
+        self.assertIsNone(result["hit_statistics"]["shot_count"])
+        self.assertEqual(result["hit_statistics"]["candidate_by_family"]["serve"], 1)
 
     def test_loads_valid_jsonl_and_skips_blank_lines(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

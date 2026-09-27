@@ -53,6 +53,7 @@ class Yolo26Perception:
         pose_config: Path | None = None,
         pose_native_keypoint_format: str | None = None,
         pose_backend_instance: PoseBackend | None = None,
+        ball_refinement_imgsz: int | None = 1536,
     ) -> None:
         try:
             from ultralytics import YOLO
@@ -68,6 +69,7 @@ class Yolo26Perception:
         self.pose_imgsz = pose_imgsz
         self.detect_confidence = detect_confidence
         self.pose_confidence = pose_confidence
+        self.ball_refinement_imgsz = ball_refinement_imgsz
         self.detect_model = YOLO(str(detect_model))
         self.pose_backend = pose_backend_instance or build_pose_backend(
             pose_backend_name,
@@ -102,6 +104,27 @@ class Yolo26Perception:
             device=self.device,
             verbose=False,
         )[0]
+        detections = self._decode_detections(result, width, height)
+        # HD tennis balls can shrink to only a few pixels at the base input
+        # size. Refine this class alone; player/racket boxes and low-resolution
+        # inputs retain their existing inference path.
+        refinement_size = self.ball_refinement_imgsz
+        ball_classes = [key for key, name in self.detect_model.names.items()
+                        if self.TARGET_ALIASES.get(name) == "ball"]
+        if (refinement_size and max(width, height) >= 1600
+                and self.detect_imgsz < refinement_size and ball_classes):
+            refined = self.detect_model.predict(
+                frame, imgsz=refinement_size, conf=max(self.detect_confidence, 0.25),
+                classes=ball_classes, device=self.device, verbose=False,
+            )[0]
+            extras = [item for item in self._decode_detections(refined, width, height)
+                      if item["class_name"] == "ball"
+                      and self._small_ball_refinement(item, width, height)]
+            detections = self._merge_ball_scales(detections, extras)
+        return self._deduplicate(detections)
+
+    @classmethod
+    def _decode_detections(cls, result, width: int, height: int) -> list[dict]:
         detections: list[dict] = []
         if result.boxes is None:
             return detections
@@ -110,7 +133,7 @@ class Yolo26Perception:
         confidences = result.boxes.conf.detach().cpu().tolist()
         for box, class_id, confidence in zip(boxes, classes, confidences):
             raw_name = str(result.names[int(class_id)])
-            alias = self.TARGET_ALIASES.get(raw_name)
+            alias = cls.TARGET_ALIASES.get(raw_name)
             if alias is None:
                 continue
             bbox = [
@@ -143,7 +166,53 @@ class Yolo26Perception:
                     "track_id": None,
                 }
             )
-        return self._deduplicate(detections)
+        return detections
+
+    @staticmethod
+    def _small_ball_refinement(item: dict, width: int, height: int) -> bool:
+        # This extra scale recovers tiny balls only. Large circular signage is
+        # a common HD false positive; larger genuine balls keep the base path.
+        x1, y1, x2, y2 = item["bbox_px"]
+        short_side, long_side = sorted((x2 - x1, y2 - y1))
+        return 0 < short_side <= min(width, height) * 0.03 and long_side <= short_side * 3.5
+
+    @staticmethod
+    def _merge_ball_scales(base: list[dict], refined: list[dict]) -> list[dict]:
+        """Fuse overlapping observations of one ball without merging neighbours."""
+        kept = [item for item in base if item["class_name"] != "ball"]
+        balls = [item for item in base if item["class_name"] == "ball"]
+        unmatched = set(range(len(balls)))
+        extras: list[dict] = []
+        for item in sorted(refined, key=lambda item: item["confidence"], reverse=True):
+            box = item["bbox_px"]
+            area = (box[2] - box[0]) * (box[3] - box[1])
+            matches = []
+            for index in unmatched:
+                old = balls[index]["bbox_px"]
+                old_area = (old[2] - old[0]) * (old[3] - old[1])
+                if min(area, old_area) <= 0 or max(area, old_area) > min(area, old_area) * 4:
+                    continue
+                overlap = box_iou(box, old)
+                if overlap >= 0.3 or box_intersection_over_min_area(box, old) >= 0.65:
+                    matches.append((overlap, index))
+            if matches:
+                _, index = max(matches)
+                unmatched.remove(index)
+                if item["confidence"] > balls[index]["confidence"]:
+                    balls[index] = item
+            else:
+                extras.append(item)
+        balls.extend(extras)
+        return kept + balls
+
+    def detection_metadata(self) -> dict:
+        return {"policy_version": "hd-ball-multiscale-v1.0.0",
+                "base_imgsz": self.detect_imgsz,
+                "ball_refinement_imgsz": self.ball_refinement_imgsz,
+                "minimum_source_long_edge": 1600,
+                "refinement_min_confidence": max(self.detect_confidence, 0.25),
+                "refinement_max_short_side_fraction": 0.03,
+                "semantics": "additional_model_observations_not_interpolated_points"}
 
     @staticmethod
     def _deduplicate(detections: list[dict]) -> list[dict]:

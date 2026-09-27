@@ -142,6 +142,42 @@ class TechniqueAssessmentTests(unittest.TestCase):
         self.assertEqual(serve["evidence_score_0_to_100"], 0)
         self.assertIsNone(serve["score_0_to_100"])
 
+    def test_event_scoped_phase_cannot_mark_other_techniques_measured(self) -> None:
+        result = build_technique_assessment({}, [
+            {"event_code": "GS01", "phase": "strike"},
+            {"indicator_id": "FS09-M01", "phase": "support"},
+        ])
+        rows = {item["technique_id"]: item for item in result["techniques"]}
+        forehand = {phase["phase"]: phase["status"] for phase in rows["baseline_forehand"]["phase_statuses"]}
+        self.assertEqual(forehand["strike"], "measured")
+        for name in ("baseline_two_hand_backhand", "baseline_one_hand_backhand", "backhand_slice", "serve"):
+            self.assertTrue(all(phase["status"] == "unavailable" for phase in rows[name]["phase_statuses"]), name)
+
+    def test_unscoped_or_contradictory_phases_are_not_measured(self) -> None:
+        for record in (
+            {"phase": "strike"},
+            {"technique_id": "serve", "event_code": "GS01", "phase": "strike"},
+            {"technique_id": "unknown_action", "event_code": "GS01", "phase": "strike"},
+        ):
+            with self.subTest(record=record):
+                result = build_technique_assessment({}, [record])
+                self.assertTrue(all(
+                    phase["status"] != "measured"
+                    for item in result["techniques"] for phase in item["phase_statuses"]
+                ))
+
+    def test_named_technique_and_event_alias_phases_remain_measurable(self) -> None:
+        for record in (
+            {"technique_id": "baseline_forehand", "phase": "strike"},
+            {"action_type": "底线正手", "stage": "击球"},
+            {"indicator_id": "GS01-M01", "phase_key": "strike"},
+        ):
+            with self.subTest(record=record):
+                result = build_technique_assessment({}, [record])
+                forehand = next(item for item in result["techniques"] if item["technique_id"] == "baseline_forehand")
+                strike = next(phase for phase in forehand["phase_statuses"] if phase["phase"] == "strike")
+                self.assertEqual(strike["status"], "measured")
+
     def test_api_discovery_and_assessment_routes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

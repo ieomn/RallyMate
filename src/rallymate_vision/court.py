@@ -18,7 +18,7 @@ class CourtDetector:
 
     def __init__(
         self,
-        mode: str = "auto",
+        mode: str = "disabled",
         manual_polygon_normalized: list[list[float]] | None = None,
         manual_polygon_role: str = "visible_region",
     ) -> None:
@@ -132,6 +132,13 @@ class CourtDetector:
             x1, y1, x2, y2 = [int(value) for value in raw]
             length = math.hypot(x2 - x1, y2 - y1)
             if length < min_length:
+                continue
+            # Fences, light poles and the tall green support in the source
+            # videos often produce a strong vertical Hough line. They are
+            # scene structure, not a court boundary. A court side line may be
+            # steep, but it should reach the lower playing surface before it
+            # becomes part of the region hull.
+            if abs(x2 - x1) < width * 0.035:
                 continue
             midpoint_y = (y1 + y2) / 2.0
             if midpoint_y < height * 0.20:
@@ -265,6 +272,7 @@ class CourtDetector:
         polygon_area = abs(float(cv2.contourArea(polygon)))
         area_ratio = polygon_area / max(float(width * height), 1.0)
         polygon_center_y = float(np.mean(polygon[:, 1])) / height
+        polygon_top_y = float(np.min(polygon[:, 1])) / height
         polygon_bottom_y = float(np.max(polygon[:, 1])) / height
 
         angles = sorted(angle for _, _, angle, _, _ in selected)
@@ -319,6 +327,10 @@ class CourtDetector:
             "lower_frame_extent": (
                 polygon_center_y >= 0.38 and polygon_bottom_y >= 0.55
             ),
+            # A valid visible court region may start near the horizon, but a
+            # point in the upper sky is almost always a pole, fence, or roof
+            # edge. Reject it rather than painting a confident false boundary.
+            "no_sky_vertex": polygon_top_y >= 0.18,
             "not_closeup_occluded": max_player_area_ratio < 0.14,
         }
         validated = all(validation.values())
@@ -348,6 +360,7 @@ class CourtDetector:
                 "line_count": len(segments),
                 "polygon_area_ratio": safe_float(area_ratio, 4),
                 "polygon_center_y": safe_float(polygon_center_y, 4),
+                "polygon_top_y": safe_float(polygon_top_y, 4),
                 "polygon_bottom_y": safe_float(polygon_bottom_y, 4),
                 "angle_family_count": angle_family_count,
                 "mean_local_contrast": safe_float(mean_contrast, 3),

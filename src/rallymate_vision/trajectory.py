@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import math
 import statistics
+from bisect import bisect_right
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from pathlib import Path
@@ -37,6 +38,16 @@ MAX_VELOCITY_SEGMENT_GAP_MS = 500
 MAX_FRAMES_ARTIFACT_BYTES = 256 * 1024 * 1024
 MAX_FRAMES_ARTIFACT_LINES = 2_000_000
 MAX_OBSERVATION_POINTS = 500_000
+# These are conservative image-plane association gates, not calibrated ball
+# physics. A failed gate creates a new segment rather than inventing continuity.
+MAX_RECONSTRUCTION_GAP_MS = 250
+MAX_SUPPORTED_BRIDGE_GAP_MS = 600
+MAX_BRIDGE_CANDIDATES = 64
+MAX_GAP_INTERPOLATION_POINTS = 18
+MAX_RECONSTRUCTION_SPEED = 3.0
+MAX_RECONSTRUCTION_SEGMENTS = 1000
+MAX_RECONSTRUCTION_POINTS = 12_000
+MIN_RECONSTRUCTION_CONFIDENCE = 0.15
 
 
 class TrajectoryExtractionError(ValueError):
@@ -230,6 +241,8 @@ def _point_from_detection(
 
 def _read_observations(
     frames_path: Path,
+    *,
+    allow_partial: bool = False,
 ) -> tuple[
     int,
     dict[str, set[str]],
@@ -258,20 +271,39 @@ def _read_observations(
         "ball": defaultdict(list),
         "racket": defaultdict(list),
     }
-    dimensions: dict[str, Any] = {"width": None, "height": None}
+    dimensions: dict[str, Any] = {
+        "width": None,
+        "height": None,
+        "start_timestamp_ms": None,
+        "end_timestamp_ms": None,
+    }
     try:
-        handle = frames_path.open("r", encoding="utf-8")
+        handle = frames_path.open("rb")
     except OSError as exc:
         raise TrajectoryExtractionError(f"cannot open frames artifact: {exc}") from exc
 
     observation_count = 0
+    # Parse a fixed-size snapshot so a running worker cannot append bytes while
+    # this read is in progress.
     with handle:
-        for line_number, raw_line in enumerate(handle, start=1):
+        remaining_bytes = artifact_bytes
+        line_number = 0
+        while remaining_bytes > 0:
+            raw_line = handle.readline(remaining_bytes)
+            if not raw_line:
+                break
+            remaining_bytes -= len(raw_line)
+            line_number += 1
             if line_number > MAX_FRAMES_ARTIFACT_LINES:
                 raise TrajectoryExtractionError(
                     "frames artifact exceeds the trajectory preview line limit "
                     f"({MAX_FRAMES_ARTIFACT_LINES}): {frames_path}"
                 )
+            # A worker flushes complete JSONL rows. During live inference the
+            # final row may be only partly written, including a partial UTF-8
+            # character. Never suppress errors in a completed (newline) row.
+            if allow_partial and not raw_line.endswith(b"\n"):
+                break
             if not raw_line.strip():
                 continue
             try:
@@ -299,6 +331,12 @@ def _read_observations(
                 dimensions["width"] = width
             if dimensions["height"] is None and height is not None:
                 dimensions["height"] = height
+            timestamp_ms = _positive_int(frame.get("timestamp_ms"))
+            if timestamp_ms is not None:
+                start = dimensions["start_timestamp_ms"]
+                end = dimensions["end_timestamp_ms"]
+                dimensions["start_timestamp_ms"] = timestamp_ms if start is None else min(start, timestamp_ms)
+                dimensions["end_timestamp_ms"] = timestamp_ms if end is None else max(end, timestamp_ms)
             detections = record.get("detections", [])
             if not isinstance(detections, list):
                 continue
@@ -485,11 +523,366 @@ def _empty_track_payload(include_box: bool) -> dict[str, Any]:
     return payload
 
 
+def _point_distance(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
+    return math.hypot(float(a["x"]) - float(b["x"]), float(a["y"]) - float(b["y"]))
+
+
+def _segment_gap_ms(a: Mapping[str, Any], b: Mapping[str, Any]) -> int:
+    return int(b["timestamp_ms"]) - int(a["timestamp_ms"])
+
+
+def _link_is_plausible(a: Mapping[str, Any], b: Mapping[str, Any]) -> bool:
+    gap = _segment_gap_ms(a, b)
+    if gap <= 0 or gap > MAX_RECONSTRUCTION_GAP_MS:
+        return False
+    # Permit rapid image-plane movement but reject a large jump across a short
+    # gap. This gate intentionally errs toward splitting instead of smoothing.
+    return _point_distance(a, b) <= 0.035 + MAX_RECONSTRUCTION_SPEED * gap / 1000.0
+
+
+def _clean_track_points(points: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+    """Deduplicate a track and reject a point that is a two-sided spike."""
+    by_frame: dict[tuple[int, int], dict[str, Any]] = {}
+    rejected = 0
+    for point in sorted(points, key=lambda item: (item["timestamp_ms"], item["processed_index"])):
+        key = (int(point["processed_index"]), int(point["timestamp_ms"]))
+        previous = by_frame.get(key)
+        if previous is None or point["confidence"] > previous["confidence"]:
+            if previous is not None:
+                rejected += 1
+            by_frame[key] = point
+        else:
+            rejected += 1
+    values = list(by_frame.values())
+    if len(values) < 3:
+        return values, rejected
+    clean: list[dict[str, Any]] = [values[0]]
+    for index in range(1, len(values) - 1):
+        previous, current, following = values[index - 1], values[index], values[index + 1]
+        if (
+            current["confidence"] < MIN_RECONSTRUCTION_CONFIDENCE
+            and _link_is_plausible(previous, following)
+            and not _link_is_plausible(previous, current)
+            and not _link_is_plausible(current, following)
+        ):
+            rejected += 1
+            continue
+        clean.append(current)
+    clean.append(values[-1])
+    return clean, rejected
+
+
+def _endpoint_velocity(
+    points: list[dict[str, Any]], *, leading: bool
+) -> tuple[float, float] | None:
+    """Estimate an endpoint tangent only from nearby, measured observations."""
+    values = points[:3] if leading else points[-3:]
+    velocities = []
+    for a, b in zip(values, values[1:]):
+        gap = _segment_gap_ms(a, b)
+        if 0 < gap <= MAX_RECONSTRUCTION_GAP_MS:
+            velocities.append(tuple((float(b[k]) - float(a[k])) * 1000 / gap for k in ("x", "y")))
+    if not velocities:
+        return None
+    return tuple(statistics.median(v[k] for v in velocities) for k in (0, 1))
+
+
+def _supported_bridge(
+    left: list[dict[str, Any]], right: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """Require compatible motion on *both* sides before reconnecting fragments.
+
+    This is intentionally stricter than the per-track 250 ms sampling gate.
+    Static detections, an unsupported singleton and motion reversals cannot
+    establish the identity of a ball hidden between two fragments.
+    """
+    a, b = left[-1], right[0]
+    gap = _segment_gap_ms(a, b)
+    if not 0 < gap <= MAX_SUPPORTED_BRIDGE_GAP_MS:
+        return None
+    before = _endpoint_velocity(left, leading=False)
+    after = _endpoint_velocity(right, leading=True)
+    distance = _point_distance(a, b)
+    if before is None or after is None or distance < 0.01:
+        return None
+    speeds = [math.hypot(*v) for v in (before, after)]
+    chord = ((float(b["x"]) - float(a["x"])), (float(b["y"]) - float(a["y"])))
+    chord_speed = distance * 1000 / gap
+    if min(speeds) < 0.025 or max(*speeds, chord_speed) > MAX_RECONSTRUCTION_SPEED:
+        return None
+    if max(*speeds, chord_speed) / min(*speeds, chord_speed) > 4.0:
+        return None
+    # Consistent lateral progress is required even when a curved flight has
+    # different vertical tangents on either end. No extrapolated endpoint is
+    # ever exposed or used as a contact observation.
+    for velocity, speed in zip((before, after), speeds):
+        if sum(velocity[k] * chord[k] for k in (0, 1)) / (speed * distance) < 0.4:
+            return None
+    if sum(before[k] * after[k] for k in (0, 1)) / (speeds[0] * speeds[1]) < 0.0:
+        return None
+    duration = gap / 1000.0
+    errors = [
+        math.hypot(*(chord[k] - velocity[k] * duration for k in (0, 1)))
+        for velocity in (before, after)
+    ]
+    tolerance = 0.025 + 0.65 * distance
+    if max(errors) > tolerance:
+        return None
+    return {"cost": sum(errors) / max(0.025, distance), "tangents": (before, after)}
+
+
+def _stitch_fragments(
+    fragments: list[tuple[Any, list[dict[str, Any]]]],
+) -> list[dict[str, Any]]:
+    """Reconnect mutual, unambiguous two-sided matches, including ID changes."""
+    fragments.sort(key=lambda item: (item[1][0]["timestamp_ms"], item[1][0]["processed_index"]))
+    starts = [int(points[0]["timestamp_ms"]) for _, points in fragments]
+    track_frames: dict[Any, set[int]] = defaultdict(set)
+    for track_id, points in fragments:
+        track_frames[track_id].update(int(point["processed_index"]) for point in points)
+    outgoing: dict[int, list[tuple[float, int, dict[str, Any]]]] = defaultdict(list)
+    incoming: dict[int, list[tuple[float, int, dict[str, Any]]]] = defaultdict(list)
+    for left_index, (left_id, left) in enumerate(fragments):
+        end = int(left[-1]["timestamp_ms"])
+        lower = bisect_right(starts, end)
+        upper = bisect_right(starts, end + MAX_SUPPORTED_BRIDGE_GAP_MS)
+        # A crowded/duplicated detection window is ambiguous, and must not
+        # turn this bounded read-only preview into a quadratic association job.
+        if upper - lower > MAX_BRIDGE_CANDIDATES:
+            continue
+        for right_index in range(lower, upper):
+            right_id, right = fragments[right_index]
+            # IDs observed simultaneously are distinct detections. A future
+            # attractive endpoint must not silently switch to the other ball.
+            if left_id != right_id and not track_frames[left_id].isdisjoint(track_frames[right_id]):
+                continue
+            bridge = _supported_bridge(left, right)
+            if bridge is None:
+                continue
+            cost = float(bridge["cost"]) + (0.15 if left_id != right_id else 0.0)
+            outgoing[left_index].append((cost, right_index, bridge))
+            incoming[right_index].append((cost, left_index, bridge))
+
+    def unique_best(options: list[tuple[float, int, dict[str, Any]]]) -> tuple[float, int, dict[str, Any]] | None:
+        options.sort(key=lambda item: (item[0], item[1]))
+        if not options:
+            return None
+        if len(options) > 1 and options[1][0] <= options[0][0] * 1.35 + 0.15:
+            return None
+        return options[0]
+
+    next_fragment: dict[int, tuple[int, dict[str, Any]]] = {}
+    has_previous: set[int] = set()
+    for left_index, options in outgoing.items():
+        best = unique_best(options)
+        if best is None:
+            continue
+        _, right_index, bridge = best
+        reverse = unique_best(incoming[right_index])
+        if reverse is not None and reverse[1] == left_index:
+            next_fragment[left_index] = (right_index, bridge)
+            has_previous.add(right_index)
+    segments: list[dict[str, Any]] = []
+    for start_index in range(len(fragments)):
+        if start_index in has_previous:
+            continue
+        segment: dict[str, Any] = {"_track_ids": [], "_observed": [], "_bridges": {}}
+        index = start_index
+        while True:
+            track_id, points = fragments[index]
+            segment["_observed"].extend(points)
+            if isinstance(track_id, int) and track_id not in segment["_track_ids"]:
+                segment["_track_ids"].append(track_id)
+            if index not in next_fragment:
+                break
+            next_index, bridge = next_fragment[index]
+            segment["_bridges"][(int(points[-1]["timestamp_ms"]), starts[next_index])] = bridge
+            index = next_index
+        segments.append(segment)
+    return segments
+
+
+def _interpolated_point(
+    start: Mapping[str, Any], end: Mapping[str, Any], timestamp_ms: int,
+    tangents: tuple[tuple[float, float], tuple[float, float]] | None = None,
+) -> dict[str, Any]:
+    fraction = (timestamp_ms - int(start["timestamp_ms"])) / max(
+        1, int(end["timestamp_ms"]) - int(start["timestamp_ms"])
+    )
+    coordinates = {}
+    duration = (int(end["timestamp_ms"]) - int(start["timestamp_ms"])) / 1000.0
+    for axis, key in enumerate(("x", "y")):
+        a, b = float(start[key]), float(end[key])
+        value = a + (b - a) * fraction
+        if tangents is not None:
+            # Monotone Hermite tangents prevent a noisy estimate from adding
+            # a fictitious loop or overshooting the measured endpoint bounds.
+            delta = b - a
+            slopes = [velocity[axis] * duration for velocity in tangents]
+            slopes = [0.0 if slope * delta <= 0 else math.copysign(min(abs(slope), 3 * abs(delta)), delta) for slope in slopes]
+            t = fraction
+            value = (2*t**3 - 3*t**2 + 1)*a + (t**3 - 2*t**2 + t)*slopes[0] + (-2*t**3 + 3*t**2)*b + (t**3 - t**2)*slopes[1]
+            value = max(min(a, b), min(max(a, b), value))
+        coordinates[key] = _round(value)
+    return {
+        **coordinates,
+        "timestamp_ms": timestamp_ms,
+        "frame_index": None,
+        "processed_index": None,
+        "confidence": _round(min(float(start["confidence"]), float(end["confidence"])) * 0.85, 4),
+        "source": "interpolated",
+    }
+
+
+def _build_reconstruction(
+    tracks: Mapping[Any, list[dict[str, Any]]],
+    frame_count: int,
+    *,
+    sample_limit: int,
+) -> dict[str, Any]:
+    """Build bounded, evidence-preserving ball segments from every track."""
+    fragments: list[tuple[Any, list[dict[str, Any]]]] = []
+    rejected = 0
+    for track_id, raw_points in tracks.items():
+        points, removed = _clean_track_points(raw_points)
+        rejected += removed
+        if not points:
+            continue
+        current = [points[0]]
+        for point in points[1:]:
+            if _link_is_plausible(current[-1], point):
+                current.append(point)
+            else:
+                fragments.append((track_id, current))
+                current = [point]
+        fragments.append((track_id, current))
+
+    segments = _stitch_fragments(fragments)
+
+    rendered: list[dict[str, Any]] = []
+    total_observed = total_interpolated = 0
+    total_bridged_gaps = total_bridged_duration = extended_bridge_count = 0
+    all_observed_points: list[dict[str, Any]] = []
+    observed_frames: set[int] = set()
+    for segment_id, segment in enumerate(segments, start=1):
+        observed = sorted(segment["_observed"], key=lambda p: (p["timestamp_ms"], p["processed_index"]))
+        points: list[dict[str, Any]] = []
+        interpolation_intervals: list[dict[str, Any]] = []
+        for index, current in enumerate(observed):
+            if index:
+                previous = observed[index - 1]
+                gap = _segment_gap_ms(previous, current)
+                skipped_frames = int(current["processed_index"]) - int(previous["processed_index"]) - 1
+                bridge = segment["_bridges"].get((int(previous["timestamp_ms"]), int(current["timestamp_ms"])))
+                if skipped_frames > 0 and (bridge is not None or _link_is_plausible(previous, current)):
+                    step = min(MAX_GAP_INTERPOLATION_POINTS, skipped_frames)
+                    interpolation_intervals.append({
+                        "start_ms": int(previous["timestamp_ms"]),
+                        "end_ms": int(current["timestamp_ms"]),
+                        "method": "bounded_hermite" if bridge else "linear",
+                    })
+                    total_bridged_gaps += 1
+                    total_bridged_duration += gap
+                    extended_bridge_count += int(gap > MAX_RECONSTRUCTION_GAP_MS)
+                    for interpolation_index in range(1, step + 1):
+                        timestamp = int(previous["timestamp_ms"] + gap * interpolation_index / (step + 1))
+                        points.append(_interpolated_point(previous, current, timestamp, bridge["tangents"] if bridge else None))
+                        total_interpolated += 1
+            point = dict(current)
+            point["source"] = "observed"
+            points.append(point)
+        total_observed += len(observed)
+        all_observed_points.extend(observed)
+        observed_frames.update(int(p["processed_index"]) for p in observed)
+        duration = max(0, int(observed[-1]["timestamp_ms"]) - int(observed[0]["timestamp_ms"]))
+        displacement = _point_distance(observed[0], observed[-1]) if len(observed) > 1 else 0.0
+        path_length = sum(_point_distance(a, b) for a, b in zip(observed, observed[1:]))
+        direction = math.degrees(math.atan2(float(observed[-1]["y"]) - float(observed[0]["y"]), float(observed[-1]["x"]) - float(observed[0]["x"]))) if displacement else None
+        span = math.hypot(max(p["x"] for p in observed) - min(p["x"] for p in observed),
+                          max(p["y"] for p in observed) - min(p["y"] for p in observed))
+        motion_status = (
+            "insufficient" if len(observed) < 2 or duration <= 0
+            else "moving" if span >= 0.04
+            else "stationary"
+        )
+        rendered.append({
+            "segment_id": segment_id,
+            "track_ids": sorted(segment["_track_ids"]),
+            "start_ms": int(observed[0]["timestamp_ms"]),
+            "end_ms": int(observed[-1]["timestamp_ms"]),
+            "observed_count": len(observed),
+            "interpolated_count": sum(1 for p in points if p["source"] == "interpolated"),
+            "bridged_gap_count": len(interpolation_intervals),
+            "max_bridged_gap_ms": max((item["end_ms"] - item["start_ms"] for item in interpolation_intervals), default=0),
+            "interpolation_intervals": interpolation_intervals,
+            "points": points,
+            "analysis": {
+                "duration_ms": duration,
+                "displacement_normalized": _round(displacement),
+                "path_length_normalized": _round(path_length),
+                "mean_speed_normalized_per_s": _round(path_length / (duration / 1000.0)) if duration else None,
+                "direction_image_deg": _round(direction),
+                "motion_status": motion_status,
+            },
+        })
+    # Keep all segments' statistics while bounding serialized point payload.
+    returned = _sample_evenly(rendered, MAX_RECONSTRUCTION_SEGMENTS)
+    point_budget = min(MAX_RECONSTRUCTION_POINTS, max(240, sample_limit * 20, len(returned) * 2))
+    minimum = sum(min(2, len(s["points"])) for s in returned)
+    extras = sum(max(0, len(s["points"]) - 2) for s in returned)
+    remaining = max(0, point_budget - minimum)
+    interval_budget = MAX_RECONSTRUCTION_POINTS
+    for segment in returned:
+        count = len(segment["points"])
+        allocation = min(2, count) + (math.floor(remaining * max(0, count - 2) / extras) if extras else 0)
+        segment["points"] = _sample_evenly(segment["points"], min(count, allocation))
+        segment["sampling"] = {
+            "method": "endpoint_preserving_even",
+            "is_sampled": len(segment["points"]) < count,
+            "original_point_count": count,
+            "returned_point_count": len(segment["points"]),
+        }
+        intervals = segment["interpolation_intervals"]
+        segment["interpolation_intervals_complete"] = len(intervals) <= interval_budget
+        segment["interpolation_intervals"] = intervals[:interval_budget]
+        interval_budget -= len(segment["interpolation_intervals"])
+    coverage = len(observed_frames) / max(frame_count, 1)
+    status = "not_observed" if not rendered else ("ready" if len(rendered) == 1 and coverage >= 0.8 else "partial")
+    return {
+        "version": "1.1.0",
+        "status": status,
+        "coordinate_space": "normalized_frame_0_1",
+        "segments": returned,
+        "summary": {
+            "segment_count": len(rendered),
+            "returned_segment_count": min(len(rendered), MAX_RECONSTRUCTION_SEGMENTS),
+            "returned_point_count": sum(len(s["points"]) for s in returned),
+            "observed_count": total_observed,
+            "observed_frame_count": len(observed_frames),
+            "interpolated_count": total_interpolated,
+            "bridged_gap_count": total_bridged_gaps,
+            "bridged_gap_duration_ms": total_bridged_duration,
+            "extended_bridge_count": extended_bridge_count,
+            "coverage_fraction": _round(coverage, 4),
+            "rejected_observation_count": rejected,
+            "confidence": _confidence_summary(all_observed_points),
+        },
+        "limitations_zh": [
+            "仅基于检测中心与时间门控重建，不代表真实网球物理轨迹。",
+            "250–600毫秒缺口仅在双端运动方向与速度一致、身份无竞争时平滑连接；更长漏检保持断开。",
+            "插值区间单独标注，即使返回点因数量上限而采样，也不会把补线当作真实观测。",
+            "插值点仅用于前端连线展示，评分不会把插值点当作击球证据。",
+            "未生成米制速度、落点、旋转或击球事件。",
+        ],
+    }
+
+
 def build_trajectory_preview(
     frames_path: str | Path,
     *,
     sample_limit: int = DEFAULT_SAMPLE_LIMIT,
     prediction_horizon_ms: int = DEFAULT_PREDICTION_HORIZON_MS,
+    allow_partial: bool = False,
 ) -> dict[str, Any]:
     """Build a bounded, JSON-safe trajectory/racket observability payload.
 
@@ -512,7 +905,11 @@ def build_trajectory_preview(
         )
 
     path = Path(frames_path).resolve()
-    frame_count, metadata, tracks, dimensions = _read_observations(path)
+    if not isinstance(allow_partial, bool):
+        raise TrajectoryExtractionError("allow_partial must be a boolean")
+    frame_count, metadata, tracks, dimensions = _read_observations(
+        path, allow_partial=allow_partial
+    )
     ball_track_id, ball_points = _select_track(tracks["ball"])
     racket_track_id, racket_points = _select_track(tracks["racket"])
 
@@ -535,6 +932,9 @@ def build_trajectory_preview(
     )
     ball.update(
         {
+            "reconstruction": _build_reconstruction(
+                tracks["ball"], frame_count, sample_limit=sample_limit
+            ),
             "prediction_status": prediction_status,
             "prediction_reason": prediction_reason,
             "prediction_horizon_ms": prediction_horizon_ms,
@@ -605,6 +1005,9 @@ def build_trajectory_preview(
             "height": dimensions["height"],
             "coordinate_space": "normalized_frame_0_1",
             "timebase": "source_video_timestamp_ms",
+            "is_partial": allow_partial,
+            "start_timestamp_ms": dimensions["start_timestamp_ms"],
+            "end_timestamp_ms": dimensions["end_timestamp_ms"],
         },
         "ball": ball,
         "racket": racket,

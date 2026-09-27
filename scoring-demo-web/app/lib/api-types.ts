@@ -154,6 +154,7 @@ export interface JobProgress extends JobSubmission {
 }
 
 export interface DemoResultResponse {
+  action_recognition?: { motion_analysis?: MotionAnalysis; [key: string]: unknown };
   training_evaluation?: TrainingEvaluation;
   actions?: ActionEvaluation[];
   technique_assessment?: TechniqueAssessmentResponse;
@@ -166,11 +167,63 @@ export interface DemoResultResponse {
   artifacts?: { evidence_frames?: EvidenceFrame[]; [key: string]: unknown };
   features?: { ball?: { trajectory?: BallTrajectory }; [key: string]: unknown };
   signals?: { racket?: RacketSignal; grip?: GripSignal; [key: string]: unknown };
+  hit_statistics?: {
+    status: "observed" | "not_observed" | "unsupported" | string;
+    total_count: number | null;
+    by_event_code?: Record<string, number>;
+    reason_zh?: string;
+    count_semantics?: string;
+  };
+  trajectory_analysis?: {
+    status: "available" | "unavailable" | string;
+    source_artifact?: string | null;
+    endpoint_required?: boolean;
+    reason_zh?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
+}
+
+export interface MotionEpisode {
+  episode_id: string;
+  family: "baseline" | "serve" | "return";
+  person_track_id?: number;
+  start_ms: number;
+  peak_ms: number;
+  end_ms: number;
+  classification: { label: string; label_zh: string; status: "rule_inferred" | "unclassified"; reason_zh: string };
+  method: string;
+  contact_confirmed: false;
+  analysis_status?: "complete" | "partial";
+  phase_timing_status?: "estimated_from_2d_motion" | string;
+  candidate_peak_ms?: number;
+  phases: Array<{ phase: string; label_zh: string; start_ms: number | null; end_ms: number | null; status: string }>;
+  metrics: { duration_ms?: number | null; peak_wrist_speed_torso_per_s?: number | null; wrist_path_torso?: number | null; elbow_extension_deg?: number | null; shoulder_line_change_deg?: number | null };
+  evidence?: { pose_samples?: number; racket_associated_frames?: number; [key: string]: unknown };
+  limitations_zh: string[];
+  metric_notes_zh?: string[];
+}
+
+export interface MotionFamily {
+  status: "analyzed" | "insufficient_evidence";
+  reason_zh: string;
+  episodes: MotionEpisode[];
+  summary?: { analyzed_count: number; classifications: Record<string, number> };
+}
+
+export interface MotionAnalysis {
+  schema_version: string;
+  analysis_version: string;
+  method: string;
+  status: "available" | "insufficient_evidence" | "unavailable";
+  contact_confirmed: false;
+  families: Partial<Record<"baseline" | "serve" | "return", MotionFamily>>;
+  limitations_zh: string[];
 }
 
 export interface IndicatorEvaluation {
   indicator_id: string;
+  event_code?: string;
   name_zh: string;
   definition_zh?: string;
   score_0_to_100: number | null;
@@ -201,14 +254,60 @@ export interface TrainingEvaluation {
 }
 
 export interface TrajectoryPoint {
-  frame_index?: number;
-  processed_index?: number;
+  frame_index?: number | null;
+  processed_index?: number | null;
   timestamp_ms: number;
   x: number;
   y: number;
   confidence?: number;
   track_id?: number | null;
   bbox?: [number, number, number, number];
+  /** Whether this point comes from detector evidence or short-gap interpolation. */
+  source?: "observed" | "interpolated" | string;
+}
+
+export interface BallReconstructionAnalysis {
+  duration_ms: number;
+  displacement_normalized: number;
+  path_length_normalized: number;
+  mean_speed_normalized_per_s: number | null;
+  direction_image_deg?: number | null;
+  motion_status?: "moving" | "stationary" | "insufficient";
+  [key: string]: unknown;
+}
+
+export interface BallReconstructionSegment {
+  segment_id: string | number;
+  track_ids: number[];
+  start_ms: number;
+  end_ms: number;
+  observed_count: number;
+  interpolated_count: number;
+  points: TrajectoryPoint[];
+  analysis?: BallReconstructionAnalysis;
+  interpolation_intervals?: Array<{ start_ms: number; end_ms: number; method: string }>;
+  interpolation_intervals_complete?: boolean;
+  sampling?: { method: string; is_sampled: boolean; original_point_count: number; returned_point_count: number };
+}
+
+export interface BallTrajectoryReconstruction {
+  version: string;
+  status: "ready" | "partial" | "not_available" | "not_observed" | string;
+  coordinate_space: "normalized_frame_0_1" | string;
+  segments: BallReconstructionSegment[];
+  summary: {
+    segment_count: number;
+    observed_count: number;
+    observed_frame_count?: number;
+    returned_segment_count?: number;
+    returned_point_count?: number;
+    confidence?: { mean: number | null; median: number | null; min: number | null; max: number | null };
+    interpolated_count: number;
+    coverage_fraction: number;
+    rejected_observation_count?: number;
+    [key: string]: unknown;
+  };
+  limitations_zh: string[];
 }
 
 export interface TrajectoryTrack {
@@ -239,6 +338,9 @@ export interface TrajectoryPreviewResponse {
     height: number | null;
     coordinate_space: string;
     timebase: string;
+    is_partial?: boolean;
+    start_timestamp_ms?: number;
+    end_timestamp_ms?: number;
     [key: string]: unknown;
   };
   ball: TrajectoryTrack & {
@@ -253,6 +355,7 @@ export interface TrajectoryPreviewResponse {
       [key: string]: unknown;
     } | null;
     semantics: string;
+    reconstruction?: BallTrajectoryReconstruction | null;
   };
   racket: TrajectoryTrack & {
     geometry_status: "bbox_only" | string;
@@ -274,6 +377,7 @@ export interface TechniqueAssessmentItem {
   name_zh: string;
   status: "not_observed" | "unavailable" | "partial" | "ready" | string;
   observed: boolean;
+  recognition_status?: "observed" | "candidate" | "not_observed";
   evidence_score_0_to_100: number;
   score_0_to_100: number | null;
   formal_grade: string | null;
@@ -318,6 +422,9 @@ export interface TechniqueAssessmentResponse {
   family_summary: Record<string, {
     name_zh: string;
     observed_count: number;
+    candidate_count?: number;
+    recognition_status?: "observed" | "motion_analyzed" | "motion_unavailable" | "motion_detected_unclassified" | "candidate_only" | "analysis_unavailable" | "classifier_unavailable" | "not_observed";
+    recognition_reason_zh?: string;
     total_count: number;
     evidence_score_0_to_100: number | null;
   }>;
@@ -365,7 +472,8 @@ export interface GripSignal {
 }
 
 export interface SubmitVideoOptions {
-  courtMode?: "auto" | "manual";
+  courtMode?: "auto" | "manual" | "disabled";
+  onUploadProgress?: (progress: import("./resumable-upload").UploadProgress) => void;
   writeAnnotatedVideo?: boolean;
   signal?: AbortSignal;
   metadata?: Record<string, string>;

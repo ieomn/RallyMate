@@ -1,0 +1,373 @@
+"""Reviewable swing/serve motion candidates from tracked pose and racket boxes.
+
+This is a deterministic, image-plane candidate detector, not a contact detector
+or a trained tennis technique classifier. Its output must never be added to GS
+event counts or treated as confirmed hits. Every candidate retains its player
+identity and source-video interval for review.
+"""
+
+from __future__ import annotations
+
+from collections import Counter, defaultdict
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+import hashlib
+import json
+import math
+from pathlib import Path
+import statistics
+from typing import Any
+
+
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v1.1.0"
+MIN_KEYPOINT_CONFIDENCE = 0.35
+MAX_POSE_GAP_MS = 160
+LIMITATIONS = [
+    "姿态与近手球拍时序规则只提出动作候选，未经专项标注集验证。",
+    "候选次数不是击球次数；规则运动类型与真实触球分别处理，不输出确认击球次数。",
+    "侧视角、遮挡、球拍漏检或球员跟踪中断会漏掉动作，需结合候选时间窗复核。",
+]
+
+
+@dataclass
+class Sample:
+    time: int
+    frame_index: int
+    track: int
+    center: tuple[float, float]
+    scale: float
+    points: dict[str, tuple[float, float]]
+    racket_sides: set[str]
+    selection_epoch: int = 0
+
+
+def _number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (float, int)):
+        return None
+    return float(value) if math.isfinite(value) else None
+
+
+def _point(item: Mapping[str, Any]) -> tuple[float, float] | None:
+    x, y, confidence = (_number(item.get(key)) for key in ("x_px", "y_px", "confidence"))
+    if x is None or y is None or confidence is None or confidence < MIN_KEYPOINT_CONFIDENCE:
+        return None
+    if item.get("in_frame") is False:
+        return None
+    return x, y
+
+
+def _distance(a: tuple[float, float], b: tuple[float, float]) -> float:
+    return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def _midpoint(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
+    return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+
+
+def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
+    track, timestamp = pose.get("person_track_id"), frame.get("timestamp_ms")
+    if not isinstance(track, int) or isinstance(track, bool) or _number(timestamp) is None:
+        return None
+    raw = {item.get("name"): point for item in pose.get("keypoints", [])
+           if isinstance(item, Mapping) and (point := _point(item)) is not None}
+    torso = ("left_shoulder", "right_shoulder", "left_hip", "right_hip")
+    if any(name not in raw for name in torso):
+        return None
+    center = _midpoint(raw["left_shoulder"], raw["right_shoulder"])
+    hips = _midpoint(raw["left_hip"], raw["right_hip"])
+    scale = max(_distance(center, hips), _distance(raw["left_shoulder"], raw["right_shoulder"]) * 0.75)
+    if scale < 12:
+        return None
+    points = {name: ((point[0] - center[0]) / scale, (point[1] - center[1]) / scale)
+              for name, point in raw.items()}
+    return Sample(int(timestamp), int(frame.get("index", 0)), track, center, scale, points, set())
+
+
+def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, Any]]) -> None:
+    """Associate a box to one nearby wrist, rejecting ambiguous player ownership."""
+    for detection in detections:
+        if not isinstance(detection, Mapping) or detection.get("class_name") != "racket":
+            continue
+        confidence = _number(detection.get("confidence"))
+        box = detection.get("bbox_px")
+        if confidence is None or confidence < 0.25 or not isinstance(box, (list, tuple)) or len(box) != 4:
+            continue
+        if any(_number(value) is None for value in box) or box[2] < box[0] or box[3] < box[1]:
+            continue
+        choices = []
+        for sample in samples:
+            for side in ("left", "right"):
+                wrist = sample.points.get(f"{side}_wrist")
+                if wrist is None:
+                    continue
+                x = wrist[0] * sample.scale + sample.center[0]
+                y = wrist[1] * sample.scale + sample.center[1]
+                distance = math.hypot(max(box[0] - x, 0, x - box[2]), max(box[1] - y, 0, y - box[3])) / sample.scale
+                choices.append((distance, sample, side))
+        choices.sort(key=lambda value: value[0])
+        if not choices or choices[0][0] > 0.35:
+            continue
+        distance, owner, side = choices[0]
+        competitor = next((value for value in choices[1:] if value[1].track != owner.track), None)
+        if competitor is not None and competitor[0] - distance < 0.15:
+            continue
+        owner.racket_sides.add(side)
+
+
+def _smooth_segment(segment: list[Sample], side: str) -> list[tuple[float, float]]:
+    name = f"{side}_wrist"
+    # Segments already exclude missing wrists and timestamp gaps. A three-frame
+    # median removes isolated pose spikes without filling any absent samples.
+    result = []
+    for index in range(len(segment)):
+        points = [sample.points[name] for sample in segment[max(0, index - 1):index + 2]]
+        result.append((statistics.median(p[0] for p in points), statistics.median(p[1] for p in points)))
+    return result
+
+
+def _segments(samples: list[Sample], side: str) -> Iterable[list[Sample]]:
+    segment: list[Sample] = []
+    for sample in samples:
+        valid = f"{side}_wrist" in sample.points and f"{side}_elbow" in sample.points
+        continuous = not segment or (0 < sample.time - segment[-1].time <= MAX_POSE_GAP_MS
+                                    and sample.selection_epoch == segment[-1].selection_epoch
+                                    and _distance(sample.center, segment[-1].center) / sample.scale < 0.8
+                                    and 0.65 < sample.scale / segment[-1].scale < 1.55)
+        if not valid or not continuous:
+            if len(segment) >= 7:
+                yield segment
+            segment = []
+        if valid:
+            segment.append(sample)
+    if len(segment) >= 7:
+        yield segment
+
+
+def _candidate(segment: list[Sample], side: str, start: int, peak: int, end: int,
+               family: str, evidence: dict[str, Any]) -> dict[str, Any]:
+    first, maximum, last = segment[start], segment[peak], segment[end]
+    candidate_type = "serve_motion" if family == "serve" else "groundstroke_swing"
+    identity = f"{DETECTOR_VERSION}:{first.track}:{candidate_type}:{maximum.time}"
+    return {
+        "candidate_id": hashlib.sha256(identity.encode()).hexdigest()[:20],
+        "family": family, "candidate_type": candidate_type, "status": "candidate",
+        "person_track_id": first.track, "racket_hand_candidate": side,
+        "start_ms": first.time, "peak_ms": maximum.time, "end_ms": last.time,
+        "start_frame": first.frame_index, "peak_frame": maximum.frame_index, "end_frame": last.frame_index,
+        "contact_confirmed": False,
+        "evidence": {"source": "tracked_pose_and_near_wrist_racket_boxes", **evidence},
+        "limitations_zh": LIMITATIONS[:2],
+    }
+
+
+def _racket_support(segment: list[Sample], side: str, start: int, end: int) -> int:
+    return sum(side in sample.racket_sides for sample in segment[start:end + 1])
+
+
+def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
+    points = _smooth_segment(segment, side)
+    times = [sample.time for sample in segment]
+    result = []
+    other = "right" if side == "left" else "left"
+    # A serve candidate needs a sequential opposite-arm lift, racket-arm
+    # overhead extension and follow-through. A lone raised arm is insufficient.
+    for peak in range(2, len(segment) - 2):
+        if points[peak][1] > -0.65 or not (points[peak][1] <= points[peak - 1][1] and points[peak][1] < points[peak + 1][1]):
+            continue
+        before = [i for i in range(peak) if 150 <= times[peak] - times[i] <= 2000]
+        after = [i for i in range(peak + 1, len(segment)) if 120 <= times[i] - times[peak] <= 1200]
+        toss = [i for i in before if (w := segment[i].points.get(f"{other}_wrist")) is not None
+                and w[1] < -0.45 and points[i][1] > -0.35]
+        if not toss or not after:
+            continue
+        toss_index = toss[-1]
+        setup = [i for i in before if i <= toss_index and points[i][1] - points[peak][1] >= 0.9]
+        follow = [i for i in after if points[i][1] > 0.05 and points[i][1] - points[peak][1] >= 0.9]
+        if not setup or not follow:
+            continue
+        start, end = setup[-1], follow[0]
+        support = _racket_support(segment, side, start, end)
+        duration = times[end] - times[start]
+        if support < 2 or duration < 450 or duration > 3200:
+            continue
+        result.append(_candidate(segment, side, start, peak, end, "serve", {
+            "racket_associated_frames": support, "pose_samples": end - start + 1,
+            "opposite_arm_lift_ms": times[toss_index],
+            "overhead_height_torso_units": round(-points[peak][1], 3),
+            "racket_arm_upward_excursion_torso_units": round(points[start][1] - points[peak][1], 3),
+            "follow_through_drop_torso_units": round(points[end][1] - points[peak][1], 3),
+            "ball_toss_confirmed": False, "court_location_confirmed": False,
+        }))
+
+    # Groundstroke-like cross-body sweeps: body-relative wrist motion, sustained
+    # displacement and racket association. Do not infer handedness or contact.
+    speed = [0.0] * len(segment)
+    for i in range(1, len(segment) - 1):
+        speed[i] = _distance(points[i + 1], points[i - 1]) * 1000 / (times[i + 1] - times[i - 1])
+    for peak in range(2, len(segment) - 2):
+        if speed[peak] < 1.5 or not (speed[peak] >= speed[peak - 1] and speed[peak] > speed[peak + 1]):
+            continue
+        before = [i for i in range(peak) if 80 <= times[peak] - times[i] <= 650]
+        after = [i for i in range(peak + 1, len(segment)) if 80 <= times[i] - times[peak] <= 650]
+        pairs = [(start, end) for start in before for end in after
+                 if points[start][0] * points[end][0] < 0
+                 and abs(points[end][0] - points[start][0]) >= 0.9
+                 and 200 <= times[end] - times[start] <= 1200]
+        if not pairs:
+            continue
+        start, end = min(pairs, key=lambda pair: times[pair[1]] - times[pair[0]])
+        window = points[start:end + 1]
+        horizontal = abs(points[end][0] - points[start][0])
+        vertical = max(point[1] for point in window) - min(point[1] for point in window)
+        if min(point[1] for point in window) < -0.5 or horizontal < vertical * 0.8:
+            continue
+        path = sum(_distance(a, b) for a, b in zip(window, window[1:]))
+        if path > horizontal * 2.5:
+            continue
+        support = _racket_support(segment, side, start, end)
+        if support < 2:
+            continue
+        result.append(_candidate(segment, side, start, peak, end, "baseline", {
+            "racket_associated_frames": support, "pose_samples": end - start + 1,
+            "horizontal_excursion_torso_units": round(horizontal, 3),
+            "peak_wrist_speed_torso_units_per_second": round(speed[peak], 3),
+            "court_location_confirmed": False, "forehand_backhand_classification": "unavailable",
+        }))
+    return result
+
+
+def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]:
+    from .stroke_analysis import racket_hand_evidence
+
+    candidates = []
+    for samples in by_track.values():
+        samples.sort(key=lambda sample: sample.time)
+        separated_hand = racket_hand_evidence(samples)["hand"]
+        hand_votes = Counter(side for sample in samples for side in sample.racket_sides)
+        dominant = hand_votes.most_common(1)
+        # A box briefly near the free hand is not evidence that this hand is
+        # swinging the racket. Use repeated within-track associations when one
+        # anatomical side has clear support. This does not classify handedness.
+        supported_sides = ("left", "right")
+        if separated_hand is not None:
+            supported_sides = (separated_hand,)
+        elif dominant and dominant[0][1] >= 10:
+            side, votes = dominant[0]
+            other = "left" if side == "right" else "right"
+            if votes >= max(1, hand_votes[other]) * 2:
+                supported_sides = (side,)
+        for side in supported_sides:
+            for segment in _segments(samples, side):
+                candidates.extend(_detect_segment(segment, side))
+    # Suppress duplicate peaks and both-hand detections of the same motion.
+    # Serve wins an overlapping generic swing; identities never suppress each other.
+    candidates.sort(key=lambda item: (item["family"] != "serve", -item["evidence"]["racket_associated_frames"]))
+    accepted: list[dict[str, Any]] = []
+    for candidate in candidates:
+        if any(other["person_track_id"] == candidate["person_track_id"]
+               and (abs(other["peak_ms"] - candidate["peak_ms"]) < 1200
+                    or (other["family"] == "serve" and candidate["family"] == "baseline"
+                        and other["start_ms"] - 300 < candidate["peak_ms"] < other["end_ms"] + 1200)
+                    or max(other["start_ms"], candidate["start_ms"]) < min(other["end_ms"], candidate["end_ms"]))
+               for other in accepted):
+            continue
+        accepted.append(candidate)
+    accepted.sort(key=lambda item: (item["start_ms"], item["person_track_id"]))
+    return accepted
+
+
+def detect_stroke_candidates(
+    frames: Iterable[Mapping[str, Any]], *,
+    primary_timeline: Iterable[Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Read tracked motion and measurements without claiming confirmed contact.
+
+    Primary-player selection gates every measured episode. Other tracks are
+    only context for a potential return and must never become primary episodes.
+    """
+    from .stroke_analysis import build_motion_analysis
+
+    selected = None if primary_timeline is None else {
+        item.get("processed_index"): item.get("source_track_id")
+        for item in primary_timeline if isinstance(item, Mapping) and item.get("selection_status") == "selected"
+        and item.get("identity_ambiguous") is not True
+    }
+    by_track: dict[int, list[Sample]] = defaultdict(list)
+    all_tracks: dict[int, list[Sample]] = defaultdict(list)
+    ball_observations = []
+    seen: set[tuple[int, int]] = set()
+    frame_count = 0
+    selection_epoch, previous_selected = 0, None
+    for record in frames:
+        if not isinstance(record, Mapping) or not isinstance(record.get("frame"), Mapping):
+            continue
+        frame = record["frame"]
+        frame_count += 1
+        current_selected = selected.get(frame.get("processed_index")) if selected is not None else None
+        if selected is not None and current_selected != previous_selected:
+            selection_epoch += 1
+        previous_selected = current_selected
+        samples = [sample for pose in record.get("poses", []) if isinstance(pose, Mapping)
+                   and (sample := _sample(pose, frame)) is not None]
+        _associate_rackets(samples, record.get("detections", []))
+        for sample in samples:
+            key = sample.track, sample.time
+            if key in seen:
+                continue
+            seen.add(key)
+            all_tracks[sample.track].append(sample)
+            if selected is None or current_selected == sample.track:
+                sample.selection_epoch = selection_epoch
+                by_track[sample.track].append(sample)
+        for detection in record.get("detections", []):
+            if not isinstance(detection, Mapping) or detection.get("class_name") != "ball":
+                continue
+            track, confidence = detection.get("track_id"), _number(detection.get("confidence"))
+            box, timestamp = detection.get("bbox_px"), _number(frame.get("timestamp_ms"))
+            if (isinstance(track, int) and not isinstance(track, bool) and confidence is not None and confidence >= 0.45
+                    and timestamp is not None and isinstance(box, (list, tuple)) and len(box) == 4
+                    and all(_number(v) is not None for v in box) and box[2] > box[0] and box[3] > box[1]):
+                ball_observations.append({"track": track, "time": int(timestamp), "point": ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)})
+    accepted = _detect_tracks(by_track)
+    # Need the opponent's full tracked serve as context, not the primary filter.
+    context_serves = [candidate for candidate in _detect_tracks(all_tracks) if candidate["family"] == "serve"] if selected is not None else []
+    counts = Counter(item["family"] for item in accepted)
+    valid_samples = sum(len(samples) for samples in by_track.values())
+    return {
+        "schema_version": "1.0.0", "detector_version": DETECTOR_VERSION,
+        "status": "candidates_detected" if accepted else "no_candidates" if valid_samples >= 7 else "insufficient_pose",
+        "scope": "primary_player_timeline" if selected is not None else "all_tracks_independently",
+        "candidate_count": len(accepted), "by_family": {"baseline": counts["baseline"], "serve": counts["serve"]},
+        "confirmed_contact_count": None, "candidates": accepted,
+        "motion_analysis": build_motion_analysis(accepted, by_track, all_tracks=all_tracks,
+                                                  context_serves=context_serves, ball_observations=ball_observations),
+        "diagnostics": {"frame_count": frame_count, "valid_pose_samples": valid_samples, "track_count": len(by_track)},
+        "count_semantics": "reviewable_motion_candidates_not_hits_or_confirmed_ball_racket_contacts",
+        "limitations_zh": LIMITATIONS,
+    }
+
+
+def recognize_strokes_from_artifacts(frames_path: str | Path, primary_timeline_path: str | Path) -> dict[str, Any]:
+    """Derive candidates for new or completed runs without loading GPU models.
+
+    Missing/corrupt artifacts mean unavailable analysis, never zero hits. A
+    primary timeline is required here so API backfills use the same athlete as
+    the original scoring pipeline.
+    """
+    try:
+        with Path(primary_timeline_path).open(encoding="utf-8") as handle:
+            timeline = [json.loads(line) for line in handle if line.strip()]
+        with Path(frames_path).open(encoding="utf-8") as handle:
+            return detect_stroke_candidates((json.loads(line) for line in handle if line.strip()), primary_timeline=timeline)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        from .stroke_analysis import build_motion_analysis
+        motion_analysis = build_motion_analysis([], {})
+        motion_analysis["status"] = "unavailable"
+        for family in motion_analysis["families"].values():
+            family["reason_zh"] = "本次分析所需的逐帧姿态或主球员时间线不可用，无法测量动作；未据此判断动作不存在。"
+        return {"schema_version": "1.0.0", "detector_version": DETECTOR_VERSION,
+                "status": "unavailable", "candidate_count": None,
+                "by_family": {"baseline": None, "serve": None}, "candidates": [],
+                "motion_analysis": motion_analysis,
+                "confirmed_contact_count": None, "error_kind": type(exc).__name__,
+                "limitations_zh": ["动作候选分析所需的逐帧姿态或主球员时间线不可用；未据此判定动作不存在。", *LIMITATIONS]}

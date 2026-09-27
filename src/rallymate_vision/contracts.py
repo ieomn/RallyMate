@@ -47,7 +47,10 @@ class ProcessingConfig:
 
 @dataclass
 class CourtConfig:
-    mode: str = "auto"
+    # Court localization is opt-in.  Player pose, ball and racket analysis do
+    # not depend on a guessed court polygon, and an inaccurate automatic hint
+    # is more confusing than an explicitly disabled court stage.
+    mode: str = "disabled"
     manual_polygon_normalized: list[list[float]] | None = None
     manual_polygon_role: str = "visible_region"
     refresh_policy: str = "until_usable"
@@ -277,7 +280,7 @@ def load_request(path: str | Path) -> PipelineRequest:
             )
 
     court = CourtConfig(
-        mode=str(court_data.get("mode", "auto")),
+        mode=str(court_data.get("mode", "disabled")),
         manual_polygon_normalized=polygon,
         manual_polygon_role=str(
             court_data.get("manual_polygon_role", "visible_region")

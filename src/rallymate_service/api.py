@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import secrets
 import uuid
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from fastapi import (
@@ -17,14 +20,17 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
     UploadFile,
 )
+from starlette.concurrency import run_in_threadpool
+from rallymate_service.uploads import CHUNK_BYTES, UploadStore
 from fastapi.responses import FileResponse
-from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from rallymate_scoring.granularity import static_model_capability
+from rallymate_scoring.stroke_candidates import DETECTOR_VERSION, recognize_strokes_from_artifacts
+from rallymate_scoring.stroke_analysis import ANALYSIS_VERSION
 from rallymate_scoring.registry_lifecycle import RegistryLifecycleError
 from rallymate_scoring.technique_registry import (
     TechniqueRegistryError,
@@ -80,8 +86,6 @@ INLINE_PREVIEW_ARTIFACTS = {
     "analysis-report.html",
     "scoring-loop-report.html",
 }
-DEMO_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-DEMO_HTML_PATH = DEMO_ASSETS_DIR / "user-demo.html"
 _REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _PATH_FIELD_PATTERN = re.compile(
     r"(?:^|_)(?:path|directory|dir|file)$|(?:_path)$", re.IGNORECASE
@@ -296,7 +300,10 @@ def _public_job(
     else:
         public["artifact_urls"] = {}
         public["demo_result_url"] = None
-        public["trajectory_url"] = None
+        public["trajectory_url"] = (
+            _public_url(f"/v1/jobs/{job['id']}/trajectory", public_base_url)
+            if job.get("status") == "running" else None
+        )
         public["technique_assessment_url"] = None
     return public
 
@@ -349,6 +356,36 @@ def create_app(
     service_settings.validate_license(check_registry_authority=False)
     service_settings.ensure_directories()
     db = database or JobDatabase(service_settings.database_path)
+    # Cache bounded previews only while the underlying frame snapshot matches.
+    # A progressing job or a transition to succeeded always invalidates it.
+    trajectory_cache: OrderedDict[tuple, dict] = OrderedDict()
+    trajectory_cache_lock = Lock()
+    action_cache: OrderedDict[tuple, dict] = OrderedDict()
+    action_cache_lock = Lock()
+
+    def summary_with_actions(job: dict) -> dict:
+        summary = dict(job.get("summary") or {})
+        recognition = summary.get("action_recognition") or {}
+        motion = recognition.get("motion_analysis") or {}
+        if job["status"] != "succeeded" or (recognition.get("detector_version") == DETECTOR_VERSION
+                                            and motion.get("analysis_version") == ANALYSIS_VERSION):
+            return summary
+        paths = [Path(job["output_dir"]) / name for name in ("frames.jsonl", "primary-player.jsonl")]
+        def signature(path):
+            try:
+                stat = path.stat()
+                return (str(path), stat.st_mtime_ns, stat.st_size)
+            except OSError:
+                return (str(path), None, None)
+        key = (DETECTOR_VERSION, ANALYSIS_VERSION, *(signature(path) for path in paths))
+        with action_cache_lock:
+            if key not in action_cache:
+                action_cache[key] = recognize_strokes_from_artifacts(*paths)
+                while len(action_cache) > 12:
+                    action_cache.popitem(last=False)
+            action_cache.move_to_end(key)
+            summary["action_recognition"] = action_cache[key]
+        return summary
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -388,12 +425,10 @@ def create_app(
         CORSMiddleware,
         allow_origins=list(service_settings.cors_origins),
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256"],
         expose_headers=["X-Request-ID"],
     )
-    app.mount("/assets", StaticFiles(directory=DEMO_ASSETS_DIR), name="assets")
-
     def authorize(
         request: Request,
         authorization: str | None = Header(default=None),
@@ -455,6 +490,7 @@ def create_app(
             },
             "capabilities": {
                 "async_video_jobs": True,
+                "resumable_uploads": {"chunk_bytes": CHUNK_BYTES, "parallel_chunks": 2, "expires_after_hours": 24},
                 "trajectory_preview": True,
                 "racket_bbox_observability": True,
                 "technique_registry": technique_registry_info["available"],
@@ -597,9 +633,15 @@ def create_app(
             ),
         }
 
-    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-    def user_demo() -> str:
-        return DEMO_HTML_PATH.read_text(encoding="utf-8")
+    @app.get("/", include_in_schema=False)
+    def api_root() -> dict[str, str]:
+        """Do not serve the retired Demo UI from the analysis API."""
+
+        return {
+            "service": "RallyMate Vision API",
+            "frontend": "RallyMate 动作识别工作台",
+            "message": "Use the web frontend on the configured public port.",
+        }
 
     @app.get("/v1/model-capabilities")
     def model_capabilities(_: None = Depends(authorize)) -> dict:
@@ -707,19 +749,13 @@ def create_app(
             "count": len(jobs),
         }
 
-    @app.post("/v1/jobs", status_code=202)
-    async def submit_job(
-        request: Request,
-        video: UploadFile = File(...),
-        court_mode: str = Form("auto"),
-        manual_polygon_normalized: str | None = Form(None),
-        manual_polygon_role: str = Form("court_outer_doubles_corners"),
-        write_annotated_video: bool = Form(True),
-        max_players: int = Form(2),
-        start_ms: int = Form(0),
-        end_ms: int | None = Form(None),
-        max_frames: int | None = Form(None),
-        _: None = Depends(authorize),
+    async def _submit_video(
+        request: Request, video: UploadFile, court_mode: str = "disabled",
+        manual_polygon_normalized: str | None = None,
+        manual_polygon_role: str = "court_outer_doubles_corners",
+        write_annotated_video: bool = True, max_players: int = 2,
+        start_ms: int = 0, end_ms: int | None = None,
+        max_frames: int | None = None, job_id: str | None = None,
     ) -> dict:
         if court_mode not in {"auto", "manual", "disabled"}:
             raise HTTPException(422, "court_mode must be auto, manual or disabled")
@@ -772,10 +808,12 @@ def create_app(
         if suffix not in ALLOWED_EXTENSIONS:
             raise HTTPException(415, f"unsupported video extension: {suffix}")
 
-        job_id = str(uuid.uuid4())
+        job_id = job_id or str(uuid.uuid4())
         video_path = service_settings.uploads_dir / f"{job_id}{suffix}"
         total = 0
         try:
+            if video_path.exists() and db.get_job(job_id) is None:
+                video_path.unlink()
             with video_path.open("xb") as handle:
                 while chunk := await video.read(1024 * 1024):
                     total += len(chunk)
@@ -889,11 +927,97 @@ def create_app(
             redact_summary=_should_redact_public(service_settings),
         )
 
+
+    @app.post("/v1/jobs", status_code=202)
+    async def submit_job(
+        request: Request,
+        video: UploadFile = File(...),
+        # Court localization is opt-in.  The default analysis output focuses
+        # on RTMPose joints plus YOLO ball/racket evidence.
+        court_mode: str = Form("disabled"),
+        manual_polygon_normalized: str | None = Form(None),
+        manual_polygon_role: str = Form("court_outer_doubles_corners"),
+        write_annotated_video: bool = Form(True),
+        max_players: int = Form(2),
+        start_ms: int = Form(0),
+        end_ms: int | None = Form(None),
+        max_frames: int | None = Form(None),
+        _: None = Depends(authorize),
+    ) -> dict:
+        return await _submit_video(
+            request, video, court_mode, manual_polygon_normalized,
+            manual_polygon_role, write_annotated_video, max_players,
+            start_ms, end_ms, max_frames,
+        )
+
+    uploads = UploadStore(service_settings.uploads_dir / ".chunks", service_settings.max_upload_bytes)
+
+    @app.post("/v1/uploads", status_code=201)
+    def create_upload(payload: dict, _: None = Depends(authorize)) -> dict:
+        filename = _safe_filename(str(payload.get("filename", "")))
+        if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
+            raise HTTPException(415, "不支持的视频格式")
+        options = payload.get("options", {})
+        allowed = {"court_mode", "write_annotated_video", "max_players", "start_ms", "end_ms", "max_frames", "manual_polygon_normalized", "manual_polygon_role"}
+        if not isinstance(options, dict) or set(options) - allowed:
+            raise HTTPException(422, "无效的分析选项")
+        for key in ("max_players", "start_ms", "end_ms", "max_frames"):
+            if key in options and options[key] is not None and (isinstance(options[key], bool) or not isinstance(options[key], int)):
+                raise HTTPException(422, "分析参数必须为整数")
+        if "write_annotated_video" in options and not isinstance(options["write_annotated_video"], bool):
+            raise HTTPException(422, "write_annotated_video必须为布尔值")
+        for key in ("court_mode", "manual_polygon_normalized", "manual_polygon_role"):
+            if key in options and options[key] is not None and not isinstance(options[key], str):
+                raise HTTPException(422, "分析参数格式不正确")
+        if options.get("court_mode", "disabled") not in {"auto", "manual", "disabled"}:
+            raise HTTPException(422, "无效的场地模式")
+        if options.get("manual_polygon_role", "court_outer_doubles_corners") not in {"visible_region", "court_outer_doubles_corners"}:
+            raise HTTPException(422, "无效的场地标定类型")
+        players, start = options.get("max_players", 2), options.get("start_ms", 0)
+        end, frames = options.get("end_ms"), options.get("max_frames")
+        if players is None or start is None or not 1 <= players <= 4 or start < 0:
+            raise HTTPException(422, "无效的人数或起始时间")
+        if (end is not None and end <= start) or (frames is not None and frames < 1):
+            raise HTTPException(422, "无效的视频分析范围")
+        polygon = _parse_polygon(options.get("manual_polygon_normalized"))
+        if options.get("court_mode") == "manual" and polygon is None:
+            raise HTTPException(422, "手工场地模式需要标定点")
+        return uploads.create(str(payload.get("upload_id", "")), filename, payload.get("size"), options)
+
+    @app.get("/v1/uploads/{upload_id}")
+    def upload_status(upload_id: str, _: None = Depends(authorize)) -> dict:
+        return uploads.status(upload_id)
+
+    @app.put("/v1/uploads/{upload_id}/chunks/{index}")
+    async def upload_chunk(upload_id: str, index: int, request: Request, _: None = Depends(authorize)) -> dict:
+        # Bound each request even when Content-Length is absent or forged.
+        uploads.status(upload_id)
+        content = bytearray()
+        async for block in request.stream():
+            if len(content) + len(block) > CHUNK_BYTES:
+                raise HTTPException(413, "分块过大")
+            content.extend(block)
+        return await run_in_threadpool(uploads.put, upload_id, index, bytes(content), request.headers.get("X-Chunk-SHA256", ""))
+
+    @app.post("/v1/uploads/{upload_id}/complete", status_code=202)
+    def complete_upload(upload_id: str, request: Request, _: None = Depends(authorize)) -> dict:
+        def existing(job_id):
+            job = db.get_job(job_id)
+            return _public_job(job, service_settings.public_base_url, redact_summary=_should_redact_public(service_settings)) if job else None
+
+        def enqueue(path, manifest):
+            with path.open("rb") as handle:
+                video = UploadFile(file=handle, filename=manifest["filename"])
+                return asyncio.run(_submit_video(request, video, job_id=upload_id, **manifest["options"]))
+
+        return uploads.complete(upload_id, enqueue, existing)
+
     @app.get("/v1/jobs/{job_id}")
     def get_job(job_id: str, _: None = Depends(authorize)) -> dict:
         job = db.get_job(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
+        job["summary"] = summary_with_actions(job)
         return _public_job(
             job,
             service_settings.public_base_url,
@@ -919,7 +1043,7 @@ def create_app(
             if indicator_features_path.is_file() and indicator_features_path.stat().st_size > 0:
                 records = load_indicator_feature_records(indicator_features_path)
             result = build_user_demo_result(
-                job.get("summary") or {},
+                summary_with_actions(job),
                 records,
                 technique_registry_path=service_settings.resolved_technique_registry,
             )
@@ -947,6 +1071,7 @@ def create_app(
     @app.get("/v1/jobs/{job_id}/trajectory")
     def get_trajectory(
         job_id: str,
+        response: Response,
         sample_limit: int = Query(
             240,
             ge=1,
@@ -974,29 +1099,41 @@ def create_app(
         job = db.get_job(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
-        if job["status"] != "succeeded":
-            raise HTTPException(409, "job has not succeeded")
+        if job["status"] not in {"running", "succeeded"}:
+            raise HTTPException(409, "trajectory requires a running or succeeded job")
         frames_path = Path(job["output_dir"]) / "frames.jsonl"
         if not frames_path.is_file():
             raise HTTPException(
                 409,
                 {
                     "code": "trajectory_requires_frames_artifact",
-                    "message": "trajectory preview requires a successful frames.jsonl artifact",
+                    "message": "trajectory preview is waiting for frames.jsonl observations",
                     "required_artifact": "frames.jsonl",
                 },
             )
         try:
-            payload = build_trajectory_preview(
-                frames_path,
-                sample_limit=sample_limit,
-                prediction_horizon_ms=prediction_horizon_ms,
-            )
+            stat = frames_path.stat()
+            cache_key = (str(frames_path), stat.st_mtime_ns, stat.st_size,
+                         job["status"], sample_limit, prediction_horizon_ms)
+            with trajectory_cache_lock:
+                payload = trajectory_cache.get(cache_key)
+                if payload is None:
+                    payload = build_trajectory_preview(
+                        frames_path,
+                        sample_limit=sample_limit,
+                        prediction_horizon_ms=prediction_horizon_ms,
+                        allow_partial=job["status"] == "running",
+                    )
+                    payload["job_id"] = job_id
+                    payload["source"]["frames_path"] = "frames.jsonl"
+                    trajectory_cache[cache_key] = payload
+                    while len(trajectory_cache) > 6:
+                        trajectory_cache.popitem(last=False)
+                trajectory_cache.move_to_end(cache_key)
             # Do not expose the worker's absolute filesystem path to a browser
             # or a remote client.  The artifact remains addressable through the
             # authenticated artifact route if a caller needs the raw JSONL.
-            payload["job_id"] = job_id
-            payload["source"]["frames_path"] = "frames.jsonl"
+            response.headers["Cache-Control"] = "no-store"
             return payload
         except TrajectoryExtractionError as exc:
             raise HTTPException(
@@ -1034,7 +1171,7 @@ def create_app(
                 ) from exc
         try:
             result = build_technique_assessment(
-                job.get("summary") or {},
+                summary_with_actions(job),
                 records,
                 registry_path=service_settings.resolved_technique_registry,
             )

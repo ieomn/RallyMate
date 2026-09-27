@@ -1,13 +1,14 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { requireAccess, proxyAnalysis, type GatewayEnv } from "./gateway";
+import { proxyAnalysis, type GatewayEnv } from "./gateway";
 
 interface Env extends GatewayEnv {
   ASSETS: Fetcher;
   DB: D1Database;
   RALLYMATE_API_ORIGIN?: string;
   RALLYMATE_API_KEY?: string;
+  RALLYMATE_LOCAL_TUNNEL?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -34,11 +35,8 @@ const worker = {
     // vinext's Node production server does not supply Cloudflare bindings.
     // Copy only the server settings the application uses from process.env.
     const processEnv: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {};
-    const names = ["RALLYMATE_API_ORIGIN", "RALLYMATE_API_KEY", "RALLYMATE_WEB_USER", "RALLYMATE_WEB_PASSWORD", "MIMO_API_KEY", "MIMO_PROVIDER", "MIMO_MODEL", "MIMO_BASE_URL", "MIMO_ALLOWED_ORIGIN"];
+    const names = ["RALLYMATE_API_ORIGIN", "RALLYMATE_API_KEY", "RALLYMATE_LOCAL_TUNNEL", "MIMO_ADVICE_ENABLED", "MIMO_API_KEY", "MIMO_PROVIDER", "MIMO_MODEL", "MIMO_BASE_URL", "MIMO_ALLOWED_ORIGIN"];
     env = { ...Object.fromEntries(names.filter(name => processEnv[name] !== undefined).map(name => [name, processEnv[name]])), ...env } as Env;
-
-    const denied = await requireAccess(request, env);
-    if (denied) return denied;
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

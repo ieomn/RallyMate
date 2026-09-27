@@ -34,66 +34,56 @@ def annotate_frame(
     frame_index: int,
     timestamp_ms: int,
     quality: dict,
+    *,
+    show_detections: bool = False,
+    show_pose: bool = False,
+    show_status: bool = False,
 ) -> np.ndarray:
-    canvas = frame.copy()
-    court_is_usable = court.get("status") in {"detected", "calibrated"}
-    if court_is_usable:
-        for segment in court.get("line_segments_px", []):
-            x1, y1, x2, y2 = [int(value) for value in segment]
-            cv2.line(
-                canvas,
-                (x1, y1),
-                (x2, y2),
-                (180, 180, 180),
-                1,
-                cv2.LINE_AA,
-            )
-    polygon = court.get("polygon_px", [])
-    if len(polygon) >= 4 and court_is_usable:
-        points = np.array(polygon, dtype=np.int32).reshape((-1, 1, 2))
-        cv2.polylines(
-            canvas,
-            [points],
-            True,
-            (170, 80, 255),
-            2,
-            cv2.LINE_AA,
-        )
+    """Return a clean replay frame unless diagnostic overlays are requested.
 
-    for detection in detections:
-        x1, y1, x2, y2 = [int(value) for value in detection["bbox_px"]]
+    Overlay choices affect only rendered pixels. Detections, poses and scoring
+    evidence are preserved by the inference pipeline regardless of this view.
+    """
+    canvas = frame.copy()
+    for detection in detections if show_detections else []:
+        # ``player`` boxes are inference plumbing for the pose ROI.  Showing
+        # them in the exported video makes the result look like a YOLO pose
+        # render and obscures the RTMPose skeleton the user is evaluating.
+        if detection.get("class_name") == "player" or detection.get("confidence", 0) < 0.6:
+            continue
         color = COLORS.get(detection["class_name"], (255, 255, 255))
-        cv2.rectangle(canvas, (x1, y1), (x2, y2), color, 2)
-        label = (
-            f'{detection["class_name"]} #{detection["track_id"]} '
-            f'{detection["confidence"]:.2f}'
-        )
+        center = detection.get("center_px")
+        if not isinstance(center, list) or len(center) != 2:
+            continue
+        cx, cy = int(center[0]), int(center[1])
+        cv2.circle(canvas, (cx, cy), 5, color, -1, cv2.LINE_AA)
+        label = f'{detection["class_name"]} #{detection["track_id"]}'
         cv2.putText(
             canvas,
             label,
-            (x1, max(18, y1 - 7)),
+            (cx + 8, max(18, cy - 7)),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.55,
+            0.45,
             color,
-            2,
+            1,
             cv2.LINE_AA,
         )
 
-    for pose in poses:
+    for pose in poses if show_pose else []:
         points = pose["keypoints"]
         for first, second in POSE_CONNECTIONS:
             if (
                 first >= len(points)
                 or second >= len(points)
-                or points[first]["confidence"] < 0.2
-                or points[second]["confidence"] < 0.2
+                or points[first]["confidence"] < 0.5
+                or points[second]["confidence"] < 0.5
             ):
                 continue
             point_a = (int(points[first]["x_px"]), int(points[first]["y_px"]))
             point_b = (int(points[second]["x_px"]), int(points[second]["y_px"]))
             cv2.line(canvas, point_a, point_b, (255, 90, 210), 2, cv2.LINE_AA)
         for point in points:
-            if point["confidence"] < 0.2:
+            if point["confidence"] < 0.5:
                 continue
             cv2.circle(
                 canvas,
@@ -104,10 +94,13 @@ def annotate_frame(
                 cv2.LINE_AA,
             )
 
+    if not show_status:
+        return canvas
+
     quality_color = (0, 220, 0) if quality["status"] == "ok" else (0, 180, 255)
     status_text = (
         f"frame={frame_index} t={timestamp_ms / 1000:.2f}s "
-        f"quality={quality['status']} court={court.get('status', 'unknown')}"
+        f"quality={quality['status']} pose=RTMPose"
     )
     cv2.rectangle(canvas, (0, 0), (min(canvas.shape[1], 760), 38), (0, 0, 0), -1)
     cv2.putText(

@@ -58,7 +58,7 @@ class TrajectoryApiTests(unittest.TestCase):
         app = create_app(settings, database)
         return app, settings, database
 
-    def _succeeded_job(self, settings: ServiceSettings, database: JobDatabase) -> str:
+    def _succeeded_job(self, settings: ServiceSettings, database: JobDatabase, *, running: bool = False) -> str:
         database.initialize()
         job_id = "22222222-2222-4222-8222-222222222222"
         video_path = settings.uploads_dir / "input.mp4"
@@ -79,6 +79,8 @@ class TrajectoryApiTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
+        if running:
+            return job_id
         database.mark_succeeded(
             job_id,
             {
@@ -174,6 +176,56 @@ class TrajectoryApiTests(unittest.TestCase):
                     headers={"Authorization": "Bearer secret"},
                 )
                 self.assertEqual(response.status_code, 200, response.text)
+
+    def test_running_preview_reads_complete_prefix_and_refreshes_after_append(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app, settings, database = self._app(Path(directory))
+            job_id = self._succeeded_job(settings, database, running=True)
+            frames = settings.runs_dir / job_id / "frames.jsonl"
+            prefix = frames.read_bytes()
+            with frames.open("ab") as stream:
+                stream.write(b'{"frame":')
+            with TestClient(app) as client:
+                job = client.get(f"/v1/jobs/{job_id}").json()
+                self.assertEqual(job["status"], "running")
+                self.assertEqual(job["trajectory_url"], f"/v1/jobs/{job_id}/trajectory")
+                self.assertFalse(job.get("artifact_urls"))
+                url = f"/v1/jobs/{job_id}/trajectory?prediction_horizon_ms=0"
+                response = client.get(url)
+                self.assertEqual(response.status_code, 200, response.text)
+                first = response.json()
+                self.assertTrue(first["source"]["is_partial"])
+                self.assertEqual(first["source"]["frame_count"], 4)
+                self.assertEqual(first["source"]["frames_path"], "frames.jsonl")
+                self.assertIn("no-store", response.headers["cache-control"])
+                self.assertEqual(client.get(url).json(), first)
+
+                frames.write_bytes(prefix + (json.dumps(_frame(4, 0.6, 0.24)) + "\n").encode())
+                next_preview = client.get(url).json()
+                self.assertEqual(next_preview["source"]["frame_count"], 5)
+                self.assertTrue(next_preview["source"]["is_partial"])
+                database.mark_succeeded(job_id, {"status": "completed", "job_id": job_id})
+                final = client.get(url).json()
+                self.assertFalse(final["source"]["is_partial"])
+                self.assertEqual(final["source"]["frame_count"], 5)
+
+    def test_running_preview_rejects_malformed_complete_row(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app, settings, database = self._app(Path(directory))
+            job_id = self._succeeded_job(settings, database, running=True)
+            with (settings.runs_dir / job_id / "frames.jsonl").open("ab") as stream:
+                stream.write(b'{"broken":\n')
+            with TestClient(app) as client:
+                response = client.get(f"/v1/jobs/{job_id}/trajectory")
+                self.assertEqual(response.status_code, 422, response.text)
+
+    def test_failed_job_does_not_expose_partial_preview(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app, settings, database = self._app(Path(directory))
+            job_id = self._succeeded_job(settings, database, running=True)
+            database.mark_failed(job_id, "test failure")
+            with TestClient(app) as client:
+                self.assertEqual(client.get(f"/v1/jobs/{job_id}/trajectory").status_code, 409)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import { uploadResumable } from "./resumable-upload";
 import type {
   DemoResultResponse,
   JobProgress,
@@ -150,7 +151,7 @@ export function createApiClient(
   }
 
   const get = <T>(path: string, signal?: AbortSignal) =>
-    fetchImpl(urlFor(path), { method: "GET", headers: { "X-Request-ID": requestId() }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }).then((response) => parseResponse<T>(response));
+    fetchImpl(urlFor(path), { method: "GET", cache: "no-store", headers: { "X-Request-ID": requestId() }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }).then((response) => parseResponse<T>(response));
 
   return {
     config: resolvedConfig,
@@ -164,22 +165,7 @@ export function createApiClient(
         body: JSON.stringify(request),
         signal,
       }).then((response) => parseResponse<ScorecardResponse>(response)),
-    submitVideo: async (file, options = {}) => {
-      const form = new FormData();
-      const fileName = typeof File !== "undefined" && file instanceof File ? file.name : "rallymate-video.mp4";
-      form.set("video", file, fileName);
-      form.set("court_mode", options.courtMode ?? "auto");
-      form.set("write_annotated_video", String(options.writeAnnotatedVideo ?? false));
-      Object.entries(options.metadata ?? {}).forEach(([key, value]) => form.set(key, value));
-      return parseResponse<JobSubmission>(
-        await fetchImpl(urlFor(resolvedConfig.jobsPath), {
-          method: "POST",
-          headers: { "X-Request-ID": requestId() },
-          body: form,
-          signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(300000)]) : AbortSignal.timeout(300000),
-        }),
-      );
-    },
+    submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}`, signal),
     getDemoResult: (jobId, options = {}) =>
       get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal),

@@ -15,7 +15,14 @@ import {
 import { SCENARIOS } from "./scoring/scenarios";
 import { createApiClient, RallyMateApiError, type JobProgress } from "./lib/api-client";
 import { watchAnalysis } from "./lib/analysis-session";
-import LiveResults from "./LiveResults";
+import LiveResults, { TechniqueFamilyChip } from "./LiveResults";
+import { motionAnalysisOf } from "./lib/motion-analysis";
+import ReportExportActions from "./ReportExportActions";
+import type { UploadProgress } from "./lib/resumable-upload";
+import BallTrajectoryViewer from "./BallTrajectoryViewer";
+import BallTrajectorySummary from "./BallTrajectorySummary";
+import AdviceResult from "./AdviceResult";
+import { adviceContextKey, adviceForContext, adviceNotice as describeAdvice, type AdviceResponse, type ScopedAdvice } from "./lib/advice-display";
 import type {
   TechniqueAssessmentResponse,
   TechniqueCatalogResponse,
@@ -83,8 +90,6 @@ const EMPTY_EVIDENCE: LiveEvidence = {
   error: null,
 };
 
-type Advice = { summary: string; strengths: string[]; nextSteps: string[]; drills: Array<{ name: string; steps: string[]; durationMin: number }>; safetyNotes: string[]; confidence: "low" | "medium" | "high" };
-const DEFAULT_ADVICE: Advice = { summary: "先从低强度开始，把一个动作提示做得连续。", strengths: [], nextSteps: ["每组只关注一个动作提示", "练习后记录一个最明显的变化"], drills: [{ name: "准备姿态循环", steps: ["分腿站稳", "完成准备到收拍", "回到准备位置"], durationMin: 6 }], safetyNotes: ["保持可以正常说话的强度；出现不适请立即停止。"], confidence: "low" };
 const DOMAIN_TECHNIQUE: Record<Domain, string> = { GS: "底线击球", FS: "步伐" };
 
 const DEFAULT_TECHNIQUE_FAMILIES = [
@@ -220,21 +225,39 @@ function extractTechniqueAssessment(value: unknown): TechniqueAssessmentResponse
 function DemoEvidencePanel({
   evidence,
   catalog,
+  localVideoSrc,
+  pending = false,
+  error,
 }: {
   evidence: LiveEvidence;
   catalog: TechniqueCatalogResponse | null;
+  localVideoSrc?: string | null;
+  pending?: boolean;
+  error?: string | null;
 }) {
   const trajectory = evidence.trajectory;
   const assessment = evidence.assessment;
-  const observed = trajectory?.ball.observed ?? [];
+  const motionAnalysis = motionAnalysisOf(evidence.result ?? null, assessment);
+  // Older demo-result payloads embed a compact ball trajectory while newer
+  // jobs expose /trajectory. Keep both visible so an optional endpoint outage
+  // does not erase the model's real observations.
+  const embeddedPoints = evidence.result?.features?.ball?.trajectory?.points ?? [];
+  const reconstructedPoints = trajectory?.ball.reconstruction?.segments.flatMap((segment) => segment.points) ?? [];
+  const observed = reconstructedPoints.length > 0 ? reconstructedPoints : trajectory?.ball.observed ?? embeddedPoints.map((point, index) => ({
+    x: point.x, y: point.y, timestamp_ms: point.timestamp_ms ?? index, confidence: evidence.result?.features?.ball?.trajectory?.confidence,
+  }));
   const predicted = trajectory?.ball.predicted ?? [];
-  const predictionIsHeuristic = trajectory?.ball.prediction_status === "heuristic_preview" && predicted.length > 0;
+  const predictionIsHeuristic = !trajectory?.ball.reconstruction && trajectory?.ball.prediction_status === "heuristic_preview" && predicted.length > 0;
   // The mode is explicit rather than inferred from nullable payloads.  A
   // failed enhancement request must never make a completed real job fall back
   // to synthetic demo marks or numbers.
   const isLive = evidence.mode === "live";
   const mediaBase = evidence.jobId ? `/v1/jobs/${encodeURIComponent(evidence.jobId)}/artifacts` : "";
-  const hasVideo = Boolean(evidence.result?.artifact_urls?.["annotated.mp4"]);
+  const hasVideo = Boolean(localVideoSrc || evidence.result?.artifact_urls?.["annotated.mp4"]);
+  // Prefer the clean H.264 replay after inference; phone MOV/HEVC is not
+  // playable in every browser. The original is a temporary local preview.
+  const usingLocalVideo = !evidence.result?.artifact_urls?.["annotated.mp4"] && Boolean(localVideoSrc);
+  const selectedVideoSrc = usingLocalVideo ? localVideoSrc : hasVideo ? `${mediaBase}/annotated.mp4` : null;
   const [videoFailed, setVideoFailed] = useState<string | null>(null);
   const observedTechniques = assessment?.techniques.filter((item) => item.observed) ?? [];
   const racket = trajectory?.racket;
@@ -263,21 +286,31 @@ function DemoEvidencePanel({
   return (
     <section className="evidence-preview" id="evidence" aria-labelledby="evidence-title">
       <div className="evidence-heading">
-        <div><span className="card-kicker">{isLive ? "EVIDENCE PREVIEW · LIVE API" : "EVIDENCE PREVIEW · DEMO / MOCK"}</span><h2 id="evidence-title">把评分还原到可核验的画面</h2><p>{isLive ? "以下轨迹与证据就绪度来自当前任务的 Stage 1 产物；短时外推仍是可视化启发式，不是物理模型或准确率承诺。" : "以下是离线占位视觉，用于展示真实服务返回后会落位的数据结构。不会冒充模型预测或球员成绩。"}</p></div>
+        <div><span className="card-kicker">{isLive ? "EVIDENCE PREVIEW · LIVE API" : "EVIDENCE PREVIEW · DEMO / MOCK"}</span><h2 id="evidence-title">把评分还原到可核验的画面</h2><p>{isLive ? "球路随视频展开，保留当前一段完整轨迹。短缺口以虚线区分，不叠加人体骨架；可定位回放动作阶段。" : "以下是离线占位视觉，用于展示真实服务返回后会落位的数据结构。不会冒充模型预测或球员成绩。"}</p></div>
         <span className="demo-badge">{isLive ? "LIVE OBSERVATION" : "DEMO DATA"}</span>{isLive && evidence.result?.training_evaluation && <div className="live-score-badge"><small>动作表现参考分</small><strong>{String(evidence.result.training_evaluation.score_0_to_100 ?? "待确认")}</strong></div>}
       </div>
       <div className="evidence-grid">
         <article className="frame-card">
-          <div className="frame-toolbar"><span>{isLive ? "证据画布 · 当前任务" : "证据帧 · 00:02.480"}</span><span>{isLive ? "当前视频 · 可回放" : "pose + ball + racket"}</span></div>
-          {isLive && hasVideo && videoFailed !== evidence.jobId ? <video key={evidence.jobId} className="evidence-video" src={`${mediaBase}/annotated.mp4`} poster={`${mediaBase}/preview.jpg`} controls playsInline muted preload="metadata" onError={() => setVideoFailed(evidence.jobId ?? "unknown")} aria-label="本次视频的动作识别回放" /> : isLive && evidence.result?.artifact_urls?.["preview.jpg"] ? <Image unoptimized src={`${mediaBase}/preview.jpg`} className="evidence-video" width={1280} height={720} alt="本次视频的动作识别预览帧" /> : <div className={`court-frame ${isLive ? "live-court-frame" : ""}`} role="img" aria-label={`${isLive ? "当前任务暂无原始帧，仅显示空白场地构图" : "Demo 网球场证据帧插画，包含球员骨架和球拍框线"}`}>
+          <div className="frame-toolbar"><span>{isLive ? "证据画布 · 当前任务" : "证据帧 · 00:02.480"}</span><span>{isLive ? "当前视频 · 可回放" : "球路预览示意"}</span></div>
+          {isLive ? <BallTrajectoryViewer
+            key={selectedVideoSrc ?? "coordinates"}
+            trajectory={trajectory}
+            pending={pending}
+            error={error}
+            videoSrc={videoFailed !== selectedVideoSrc ? selectedVideoSrc : null}
+            poster={evidence.result?.artifact_urls?.["preview.jpg"] ? `${mediaBase}/preview.jpg` : null}
+            embeddedPoints={embeddedPoints.map((point, index) => ({ ...point, timestamp_ms: point.timestamp_ms ?? index }))}
+            videoTimeOriginMs={usingLocalVideo ? 0 : (trajectory?.source.start_timestamp_ms ?? 0)}
+            onVideoError={() => setVideoFailed(selectedVideoSrc ?? "unknown")}
+          /> : <div className="court-frame" role="img" aria-label="Demo 网球场与球观测示意">
             <div className="court-lines" />
-            {!isLive && <><div className="player-skeleton"><i className="sk-head" /><i className="sk-body" /><i className="sk-arm" /><i className="sk-racket" /><i className="sk-leg left" /><i className="sk-leg right" /></div><span className="ball-dot" /><span className="frame-label">MOCK FRAME</span></>}
-            {isLive && <div className="live-frame-placeholder"><strong>暂无真实帧资产</strong><span>ILLUSTRATION ONLY</span><small>轨迹与 bbox 数值仍来自 API；此画布不绘制本次任务的虚构人体或球。</small></div>}
+            <><span className="ball-dot" /><span className="frame-label">MOCK FRAME</span></>
           </div>
           }
-          <div className="frame-caption"><strong>{isLive ? `已观测技术 ${observedTechniques.length} / ${assessment?.techniques.length ?? catalog?.techniques.length ?? 24}` : "准备阶段 / 底线准备阶段"}</strong><span>{isLive ? hasVideo ? "模型识别标注回放；可暂停查看动作与轨迹。" : "当前视频尚无回放文件；下方仅展示已返回的观察。" : "来源：离线演示占位，不代表实际检测结果"}</span></div>
+          <div className="frame-caption"><strong>{isLive ? `已观测技术 ${observedTechniques.length} / ${assessment?.techniques.length ?? catalog?.techniques.length ?? 24}` : "准备阶段 / 底线准备阶段"}</strong><span>{isLive ? hasVideo ? "视频与球路同步回放；人体骨架、识别点默认不显示。" : "当前视频尚无回放文件；轨迹播放器仍展示已返回的观察。" : "来源：离线演示占位，不代表实际检测结果"}</span></div>
         </article>
         <article className="trajectory-card">
+          {isLive ? <BallTrajectorySummary trajectory={trajectory} pending={pending} error={error} /> : <>
           <div className="frame-toolbar"><span>{isLive ? "球轨迹 · 真实观测" : "球轨迹预览"}</span><span className="confidence-high">{isLive ? `观测置信度 ${confidenceLabel(trajectory?.ball.confidence.mean)}` : "Demo 预览"}</span></div>
           <svg className="trajectory-chart" viewBox="0 0 520 190" role="img" aria-label={`${isLive ? "当前任务真实观测轨迹" : "Demo 球轨迹预览"}`}>
             <defs><linearGradient id="traj" x1="0" x2="1"><stop offset="0" stopColor="#9ee15a"/><stop offset="1" stopColor="#6cb7ff"/></linearGradient></defs>
@@ -291,9 +324,10 @@ function DemoEvidencePanel({
             {isLive && observed.length === 0 && <text x="175" y="100" fill="rgba(255,255,255,.55)" fontSize="12">暂无可用球观测点</text>}
             <text x="28" y="181" fill="rgba(255,255,255,.5)" fontSize="10">真实观测</text>{predictionIsHeuristic && <text x="420" y="181" fill="rgba(255,255,255,.5)" fontSize="10">启发式外推</text>}
           </svg>
-          <div className="trajectory-meta"><span><b>观测方向</b> {isLive ? directionLabel(trajectory?.ball.velocity?.direction_image_deg) : "右前方"}</span><span><b>球观测点 / 视频帧</b> {isLive ? `${trajectory?.ball.observed_count ?? 0} / ${trajectory?.source.frame_count ?? 0}` : "18 / 22"}</span><span><b>观测覆盖</b> {isLive ? coveragePercent(trajectory?.ball.coverage_fraction) : "82%"}</span></div>
-          <div className="trajectory-meta trajectory-meta-secondary"><span><b>坐标</b> {isLive ? trajectory?.source.coordinate_space ?? "—" : "归一化画布"}</span><span><b>外推</b> {isLive ? predictionIsHeuristic ? `${predicted.length} 点 · 仅供参考` : "未提供" : "演示数据"}</span><span><b>来源</b> {isLive ? "frames.jsonl · API" : "ball.track · mock"}</span></div>
+          <div className="trajectory-meta"><span><b>观测方向</b> {isLive ? directionLabel(trajectory?.ball.velocity?.direction_image_deg) : "右前方"}</span><span><b>球观测点 / 视频帧</b> {isLive ? `${trajectory?.ball.reconstruction?.summary.observed_count ?? trajectory?.ball.observed_count ?? observed.length} / ${trajectory?.source.frame_count ?? "—"}` : "18 / 22"}</span><span><b>观测覆盖</b> {isLive ? coveragePercent(trajectory?.ball.reconstruction?.summary.coverage_fraction ?? trajectory?.ball.coverage_fraction) : "82%"}</span></div>
+          <div className="trajectory-meta trajectory-meta-secondary"><span><b>坐标</b> {isLive ? trajectory?.source.coordinate_space ?? "—" : "归一化画布"}</span><span><b>外推</b> {isLive ? predictionIsHeuristic ? `${predicted.length} 点 · 仅供参考` : "未提供" : "演示数据"}</span><span><b>来源</b> {isLive ? evidence.result?.trajectory_analysis?.source_artifact ?? "trajectory endpoint" : "ball.track · mock"}</span></div>
           {isLive && predictionIsHeuristic && <p className="trajectory-disclosure">蓝色虚线是基于已观测点的短时常速度外推，不代表真实球路或落点；评分只使用服务端动作证据。</p>}
+          </>}
         </article>
         <article className="signal-card">
           <div className="frame-toolbar"><span>专项观测</span><span>数据来源</span></div>
@@ -304,10 +338,7 @@ function DemoEvidencePanel({
         </article>
       </div>
       <div className="technique-strip" aria-label="最新技术指标目录">
-        {familyRows.map(([key, label, total]) => {
-          const summary = assessment?.family_summary[key];
-          return <div key={key} className="technique-chip"><span>{label}</span><strong>{summary ? `${summary.observed_count} / ${summary.total_count}` : `${total} 项`}</strong><small>{summary ? `就绪度 ${summary.evidence_score_0_to_100 ?? "—"}` : "指标契约"}</small></div>;
-        })}
+        {familyRows.map(([key, label, total]) => <TechniqueFamilyChip key={key} family={key} label={label} total={total} summary={assessment?.family_summary[key]} motion={motionAnalysis?.families[key as "baseline" | "serve" | "return"]} />)}
       </div>
       {evidence.error && <p className="upload-error evidence-error" role="status">部分增强证据暂不可用：{evidence.error}</p>}
     </section>
@@ -413,7 +444,11 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
   const fileInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFile, updateVideoFile] = useState<File | null>(null);
+  const [localVideoSrc, setLocalVideoSrc] = useState<string | null>(null);
+  const localVideoRef = useRef<string | null>(null);
+  const [localVideoJobId, setLocalVideoJobId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadState, setUploadState] = useState<"idle" | "ready" | "uploading" | "processing" | "complete" | "error">("idle");
   const [job, setJob] = useState<JobProgress | null>(null);
   const [uploadError, setUploadError] = useState("");
@@ -421,14 +456,25 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
   const [techniqueCatalog, setTechniqueCatalog] = useState<TechniqueCatalogResponse | null>(null);
   const [catalogError, setCatalogError] = useState("");
   const apiClient = useMemo(() => createApiClient(), []);
-  const [advice, setAdvice] = useState<Advice>(DEFAULT_ADVICE);
+  const [savedAdvice, setSavedAdvice] = useState<ScopedAdvice | null>(null);
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [adviceNotice, setAdviceNotice] = useState("");
   const [adviceNotes, setAdviceNotes] = useState("");
   const [coachTechnique, setCoachTechnique] = useState("");
   const adviceTechnique = coachTechnique || (evidence.assessment?.family_summary.footwork?.observed_count ? "步伐" : DOMAIN_TECHNIQUE[domain]);
+  const currentAdviceKey = adviceContextKey(evidence.jobId, adviceTechnique);
+  const currentAdvice = adviceForContext(savedAdvice, currentAdviceKey);
   const analysisRunRef = useRef(0);
   const analysisAbort = useRef<AbortController | null>(null);
+
+  function setVideoFile(file: File | null) {
+    if (localVideoRef.current) URL.revokeObjectURL(localVideoRef.current);
+    localVideoRef.current = file ? URL.createObjectURL(file) : null;
+    setLocalVideoSrc(localVideoRef.current);
+    setLocalVideoJobId(null);
+    updateVideoFile(file);
+  }
+  useEffect(() => () => { if (localVideoRef.current) URL.revokeObjectURL(localVideoRef.current); }, []);
 
   function invalidateAnalysisRun() {
     analysisRunRef.current += 1;
@@ -509,7 +555,9 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
     try { localStorage.setItem("rallymate.activeJob", id); } catch { /* Optional storage. */ }
     setEvidence({ mode: "live", jobId: id, trajectory: null, assessment: null, error: null });
     try {
-      const completed = await watchAnalysis(apiClient, id, controller.signal, setJob);
+      const completed = await watchAnalysis(apiClient, id, controller.signal, setJob, 2000, (preview) => {
+        if (!controller.signal.aborted) setEvidence((previous) => previous.jobId === id ? { ...previous, trajectory: preview } : previous);
+      });
       if (controller.signal.aborted) return;
       setEvidence({ mode: "live", jobId: id, trajectory: completed.trajectory, assessment: completed.assessment ?? completed.result.technique_assessment ?? null, result: completed.result, error: completed.warning });
       if (isStage1Summary(completed.job.summary)) {
@@ -540,14 +588,15 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
     invalidateAnalysisRun();
     const runId = analysisRunRef.current;
     const controller = new AbortController(); analysisAbort.current = controller;
-    setUploadState("uploading"); setUploadError(""); setJob(null);
+    setUploadState("uploading"); setUploadProgress(null); setUploadError(""); setJob(null);
     setImportedScenario(null); setScenarioId(SCENARIOS[0].id); setScoreContext("live-pending");
     setEvidence({ mode: "live", trajectory: null, assessment: null, error: null });
     try {
-      const submitted = await apiClient.submitVideo(videoFile, { courtMode: "auto", writeAnnotatedVideo: true, signal: controller.signal });
+      const submitted = await apiClient.submitVideo(videoFile, { courtMode: "auto", writeAnnotatedVideo: true, signal: controller.signal, onUploadProgress: (progress) => { if (!controller.signal.aborted) setUploadProgress(progress); } });
       if (analysisRunRef.current !== runId) return;
       if (typeof submitted.id !== "string" || !/^[a-zA-Z0-9_-]{8,80}$/.test(submitted.id)) throw new Error("服务没有返回有效任务，请检查上传接口配置。");
       setJob(submitted);
+      setLocalVideoJobId(submitted.id);
       try { localStorage.setItem("rallymate.activeJob", submitted.id); } catch { /* Storage is optional. */ }
       await monitorJob(submitted.id);
     } catch (error) {
@@ -559,11 +608,15 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
 
   async function askCoach() {
     setAdviceLoading(true); setAdviceNotice("");
+    const contextKey = currentAdviceKey;
+    setSavedAdvice({ contextKey, response: {} });
     try {
       const response = await fetch("/api/advice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ technique: adviceTechnique, skillLevel: "业余进阶", sessionGoal: "稳定性", observations: adviceNotes, ...(evidence.jobId ? { jobId: evidence.jobId } : {}) }) });
-      const payload = await response.json() as { error?: string; advice?: Advice; contextStatus?: string; source?: string };
+      const payload = await response.json() as AdviceResponse;
       if (!response.ok) throw new Error(response.status === 429 ? "提问较频繁，请稍后再试。" : response.status === 400 ? "请用 600 字以内描述网球练习问题，避免填写私人信息。" : "建议服务暂时不可用，请稍后重试。");
-      setAdvice(payload.advice ?? DEFAULT_ADVICE); setAdviceNotice(payload.contextStatus === "unavailable" ? (uploadState === "processing" || uploadState === "uploading" ? "视频仍在分析，已先回答通用练习问题。完成后可结合结果继续提问。" : "视频证据暂未读取，以下是通用练习提示。") : payload.source === "fallback" ? "当前使用基础建议。" : "建议已根据当前练习信息生成。");
+      if (!payload.advice) throw new Error("建议返回不完整，当前没有可展示的建议；请稍后重试。");
+      setSavedAdvice({ contextKey, response: payload });
+      setAdviceNotice(describeAdvice(payload));
     } catch (error) { setAdviceNotice(error instanceof Error ? error.message : "建议暂时不可用"); }
     finally { setAdviceLoading(false); }
   }
@@ -615,6 +668,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
     const file = event.target.files?.[0];
     if (!file) return;
     invalidateAnalysisRun();
+    setVideoFile(null);
     setImportState({ status: "reading", fileName: file.name });
     setUploadError("");
     try {
@@ -703,43 +757,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
     }
   }
 
-  function exportReport() {
-    const compactReport = {
-      ...report,
-      results: report.results.map((result) => ({
-        indicatorId: result.card.id,
-        indicatorName: result.card.name,
-        domain: result.card.domain,
-        eventCode: result.card.eventCode,
-        stageCode: result.card.stageCode,
-        status: result.status,
-        score: result.score,
-        grade: result.grade,
-        evidence: result.evidence,
-        confidence: result.confidence,
-        dimensions: result.dimensions,
-        verdict: result.verdict,
-        feedback: result.feedback,
-      })),
-    };
-    const exportData = evidence.mode === "live" ? {
-      schemaVersion: "rallymate-practice-report/1",
-      exportedAt: new Date().toISOString(),
-      result: evidence.result ?? null,
-      summary: importedSummary ?? job?.summary ?? null,
-      trajectory: evidence.trajectory,
-      assessment: evidence.assessment,
-      jobId: evidence.jobId ?? evidence.assessment?.job_id ?? null,
-      advice,
-    } : compactReport;
-    const blob = new Blob([JSON.stringify(exportData, null, 2).replace(/\bGS(?=\d|\b)/g, "baseline").replace(/\bFS(?=\d|\b)/g, "footwork")], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `rallymate-score-${scenario.id}.json`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
+  const exportInput = { mode: scoreContext, uploadState, job, evidence, summary: importedSummary ?? (job?.summary as Record<string, unknown> | undefined), videoName: videoFile?.name, demoReport: report };
 
   return (
     <main className="app-shell" aria-busy={importState.status === "reading"}>
@@ -796,17 +814,22 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
             <span className="upload-icon">↑</span><strong>{videoFile ? videoFile.name : "选择或拖入视频文件"}</strong><small>{videoFile ? formatBytes(videoFile.size) : "MP4 / MOV / M4V / AVI / MKV · 建议 200 MB 以内"}</small>
           </button>
           {videoFile && <div className="upload-file-row"><span><b>已选择</b> {formatBytes(videoFile.size)}</span><button onClick={() => { invalidateAnalysisRun(); setVideoFile(null); setJob(null); setUploadState("idle"); setUploadError(""); setImportState({ status: "idle" }); setEvidence(EMPTY_EVIDENCE); setScoreContext("demo"); setImportedScenario(null); setScenarioId(SCENARIOS[0].id); }}>移除</button></div>}
-          {uploadState !== "idle" && uploadState !== "ready" && <div className="progress-block" aria-live="polite"><div className="progress-head"><span>{uploadState === "uploading" ? "正在上传" : uploadState === "processing" ? (job?.status === "queued" ? "排队中 · 视频已接收" : jobPhase(job) || "正在分析视频") : uploadState === "complete" ? "分析完成" : "处理异常"}</span><strong>{uploadState === "complete" ? "100%" : typeof job?.progress === "object" && job.progress.percent !== undefined ? `${Math.round(jobPercent(job, 0))}%` : "请稍候"}</strong></div><div className="progress-track"><span style={{ width: `${Math.max(4, jobPercent(job, uploadState === "complete" ? 100 : 18))}%` }} /></div></div>}
+          {uploadState !== "idle" && uploadState !== "ready" && <div className="progress-block" aria-live="polite">
+            <div className="progress-head"><span>{uploadState === "uploading" ? uploadProgress?.phase === "merging" ? "上传完成 · 校验合并中" : uploadProgress?.resumed ? "正在续传" : "正在上传" : uploadState === "processing" ? (job?.status === "queued" ? "排队中 · 视频已接收" : jobPhase(job) || "正在分析视频") : uploadState === "complete" ? "分析完成" : "连接或处理异常"}</span>
+              <strong>{uploadState === "uploading" ? `${Math.floor(uploadProgress?.percent ?? 0)}%` : uploadState === "complete" ? "100%" : `${Math.round(jobPercent(job, 0))}%`}</strong></div>
+            <div className="progress-track"><span style={{ width: `${uploadState === "uploading" ? uploadProgress?.percent ?? 0 : jobPercent(job, uploadState === "complete" ? 100 : 0)}%` }} /></div>
+            {uploadProgress && (uploadState === "uploading" || (uploadState === "error" && !evidence.jobId)) && <p className="upload-privacy">已确认 {(uploadProgress.uploadedBytes / 1048576).toFixed(1)} / {(uploadProgress.totalBytes / 1048576).toFixed(1)} MB{uploadProgress.bytesPerSecond > 0 ? ` · ${(uploadProgress.bytesPerSecond / 1048576).toFixed(2)} MB/s` : ""} · 断线可续传</p>}
+          </div>}
           {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
-          <button className="primary-button upload-submit" disabled={(!videoFile && !evidence.jobId) || uploadState === "uploading" || uploadState === "processing"} onClick={() => { if (uploadState === "error" && evidence.jobId && !["failed", "cancelled"].includes(job?.status ?? "")) void monitorJob(evidence.jobId); else if (!videoFile) videoInput.current?.click(); else void submitVideo(); }}>{uploadState === "processing" ? "处理中…" : uploadState === "complete" ? (videoFile ? "再次分析" : "分析新视频") : uploadState === "error" && evidence.jobId && !["failed", "cancelled"].includes(job?.status ?? "") ? "继续读取结果" : "开始分析"}<span>→</span></button>
+          <button className="primary-button upload-submit" disabled={(!videoFile && !evidence.jobId) || uploadState === "uploading" || uploadState === "processing"} onClick={() => { if (uploadState === "error" && evidence.jobId && !["failed", "cancelled"].includes(job?.status ?? "")) void monitorJob(evidence.jobId); else if (!videoFile) videoInput.current?.click(); else void submitVideo(); }}>{uploadState === "processing" ? "处理中…" : uploadState === "complete" ? (videoFile ? "再次分析" : "分析新视频") : uploadState === "error" && evidence.jobId && !["failed", "cancelled"].includes(job?.status ?? "") ? "继续读取结果" : uploadState === "error" && videoFile ? "继续上传" : "开始分析"}<span>→</span></button>
           {evidence.jobId && <p className="task-link"><a href={`?job=${encodeURIComponent(evidence.jobId)}#scoreboard`}>重新打开本次任务 ↗</a><span>刷新后自动继续读取</span></p>}
           <p className="upload-footnote">隐私提示：文件由配置的 API 处理。Demo/Mock 视图不会写入真实模型结果。</p>
         </div>
       </section>
 
-      <DemoEvidencePanel evidence={evidence} catalog={techniqueCatalog} />
+      <DemoEvidencePanel key={evidence.jobId ?? evidence.mode} evidence={evidence} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} error={uploadError || evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} />
 
-      {!showLegacy && <LiveResults result={evidence.result ?? null} assessment={evidence.assessment} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} trajectory={evidence.trajectory} summary={job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null} /> }
+      {!showLegacy && <LiveResults status={job?.status} error={uploadError || evidence.error} result={evidence.result ?? null} assessment={evidence.assessment} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} trajectory={evidence.trajectory} summary={job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null} /> }
 
       {showLegacy && <>
 
@@ -919,9 +942,20 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
 
       </>}
 
-      {(evidence.result || evidence.assessment || report.results.length > 0) && <div className="report-actions"><button className="ghost-button" onClick={exportReport}>导出本次完整报告 ↓</button></div>}
+      <ReportExportActions input={exportInput} />
 
-      <section className="coach-section" id="coach"><div className="logic-heading"><span className="section-number">03</span><div><span className="card-kicker">COACH NOTE</span><h2>基于这次练习，问一个下一步。</h2><p>分析完成后会优先使用服务端核验的动作证据；上下文暂不可用时会安全降级为通用练习建议。</p></div></div><div className="coach-layout"><form className="coach-form" onSubmit={(event) => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="AI 练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><label>你的问题 <span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={(event) => setAdviceNotes(event.target.value)} placeholder="例如：击球点有时在身后，回位会慢半拍。" /></label><button className="primary-button" disabled={adviceLoading}>{adviceLoading ? "整理中…" : "生成练习建议"}<span>→</span></button>{adviceNotice && <p className="upload-error" role="status">{adviceNotice}</p>}</form><aside className="coach-result"><span className="card-kicker">{adviceTechnique} · NEXT STEP</span><h3>{advice.summary}</h3><div className="coach-columns"><div><b>下一步</b>{advice.nextSteps.map((item) => <p key={item}>＋ {item}</p>)}</div><div><b>推荐练习</b>{advice.drills.map((drill) => <div key={drill.name}><p>{drill.name} · {drill.durationMin} 分钟</p><ol>{drill.steps.map(step => <li key={step}>{step}</li>)}</ol></div>)}</div></div><small>{advice.safetyNotes[0]}</small></aside></div></section>
+      <section className="coach-section" id="coach">
+        <div className="logic-heading"><span className="section-number">03</span><div><span className="card-kicker">COACH NOTE</span><h2>基于这次练习，问一个下一步。</h2><p>只解释所选动作的已核验证据。未有效识别时，会说明不能判断的部分，并给出补录或复核建议。</p></div></div>
+        <div className="coach-layout">
+          <form className="coach-form" onSubmit={event => { event.preventDefault(); void askCoach(); }}>
+            <label>练习主题<select aria-label="AI 练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label>
+            <label>你的问题 <span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={event => setAdviceNotes(event.target.value)} placeholder="例如：这次接发是否有足够的识别依据？需要补拍什么？" /></label>
+            <button className="primary-button" disabled={adviceLoading}>{adviceLoading ? "整理中…" : "查看解释与建议"}<span>→</span></button>
+            {adviceNotice && savedAdvice?.contextKey === currentAdviceKey && <p className="coach-status" role="status">{adviceNotice}</p>}
+          </form>
+          <AdviceResult technique={adviceTechnique} response={currentAdvice} />
+        </div>
+      </section>
 
       <details className="technical-details" id="system"><summary>查看评分说明与系统信息</summary><section className="logic-section">
         <div className="logic-heading"><span className="section-number">03</span><div><span className="card-kicker">SCORING CONTRACT</span><h2>一套能被验收的评分逻辑</h2><p>先判断能不能评，再计算评多少；最后把模块得分合成，但始终保留证据覆盖率。最新 24 项技术目录默认只返回证据就绪度。</p></div></div>
@@ -945,7 +979,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
       </section>
 
       <section className="acceptance-section">
-        <div className="acceptance-copy"><span className="card-kicker">{scoreContext === "demo" ? "DEMO ACCEPTANCE" : "LIVE AUDIT STATUS"}</span><h2>{scoreContext === "demo" ? "本 Demo 已覆盖什么？" : "本次任务现在能确认什么？"}</h2><p>{scoreContext === "demo" ? "它验证的是评分系统能否完整运转，也明确暴露一期数据距离真实技术评分还有哪些缺口。" : "真实任务只展示服务端返回的证据与就绪度；兼容层的 PASS 不会被当成本次视频的技术通过。"}</p><button className="primary-button" onClick={exportReport}>导出当前{scoreContext === "demo" ? "完整报告" : "审计报告"} <span>↓</span></button></div>
+        <div className="acceptance-copy"><span className="card-kicker">{scoreContext === "demo" ? "DEMO ACCEPTANCE" : "LIVE AUDIT STATUS"}</span><h2>{scoreContext === "demo" ? "本 Demo 已覆盖什么？" : "本次任务现在能确认什么？"}</h2><p>{scoreContext === "demo" ? "它验证的是评分系统能否完整运转，也明确暴露一期数据距离真实技术评分还有哪些缺口。" : "真实任务只展示服务端返回的证据与就绪度；兼容层的 PASS 不会被当成本次视频的技术通过。"}</p><ReportExportActions input={exportInput} /></div>
         {scoreContext === "demo" ? (
           <div className="acceptance-list">
             <div><span>01</span><p><strong>24 项动作定义已载入</strong><small>{sources.map((source) => `${source.domain === "GS" ? "底线击球" : "步伐"} ${source.indicatorCount}`).join(" · ")}</small></p><b>PASS</b></div>
