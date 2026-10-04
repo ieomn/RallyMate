@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { recentReports, type RecentReport } from "./lib/training-report";
+import { AnimatedDisclosure } from "./AnimatedDisclosure";
 
 export type WorkspaceView = "overview" | "sessions" | "analysis" | "guide";
 type IconName = "home" | "sessions" | "analysis" | "guide" | "plus" | "arrow-right" | "arrow-up-right" | "search" | "chevron-right" | "chevron-down" | "clock" | "play" | "check" | "camera" | "frame" | "upload" | "movement" | "close" | "menu" | "tennis";
@@ -39,6 +40,24 @@ const navigation: Array<{ view: WorkspaceView; label: string; icon: IconName }> 
   { view: "guide", label: "拍摄指南", icon: "guide" },
 ];
 
+function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: ReactNode }) {
+  const contentRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const content = contentRef.current;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!content?.animate || motion.matches) return;
+    // Animate the existing surface; never remount the player or upload inputs.
+    const entry = content.animate([
+      { opacity: 0.55, transform: "translateY(10px)" },
+      { opacity: 1, transform: "translateY(0)" },
+    ], { duration: 320, easing: "cubic-bezier(.22, 1, .36, 1)" });
+    const stop = () => { if (motion.matches) entry.cancel(); };
+    motion.addEventListener("change", stop);
+    return () => { entry.cancel(); motion.removeEventListener("change", stop); };
+  }, [view]);
+  return <main ref={contentRef} id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>;
+}
+
 export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, busy = false }: {
   view: WorkspaceView; onNavigate: (view: WorkspaceView) => void; onNewAnalysis: () => void;
   children: ReactNode; currentName?: string; busy?: boolean;
@@ -54,7 +73,7 @@ export function ProductShell({ view, onNavigate, onNewAnalysis, children, curren
     </aside>
     <div className="pw-workspace">
       <header className="pw-topbar"><div className="pw-breadcrumb"><button type="button" className="pw-mobile-brand" onClick={() => onNavigate("overview")} aria-label="RallyMate 训练总览"><ProductIcon name="tennis" size={24} /></button><span className="pw-breadcrumb-root">训练空间</span><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></header>
-      <main id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>
+      <WorkspaceSurface view={view}>{children}</WorkspaceSurface>
       <footer className="pw-footer"><span>RallyMate</span><span>看见动作，理解训练。</span></footer>
     </div>
     <nav className="pw-mobile-nav" aria-label="移动主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} size={21} /><span>{item.label}</span></button>)}</nav>
@@ -131,5 +150,5 @@ const guideSections: Array<{ icon: IconName; title: string; summary: string; det
 export function CaptureGuide({ onNewAnalysis }: { onNewAnalysis: () => void }) {
   const [checked, setChecked] = useState<Set<number>>(() => new Set());
   const checklist = ["机位稳定，全身与双脚都在画面里", "光线清楚，肩髋和持拍手尽量没有遮挡", "保留动作前的准备和动作后的恢复", "准备好未经变速和拼接的原视频"];
-  return <div className="pw-guide"><div className="pw-page-heading"><div><p className="pw-eyebrow">BETTER FOOTAGE. CLEARER DETAILS.</p><h1>拍得清楚，<br className="pw-mobile-break" />才能看得明白。</h1><p>几个简单的准备，让下一次训练更值得回看。</p></div><span className="pw-guide-heading-icon"><ProductIcon name="camera" size={38} /></span></div><div className="pw-guide-layout"><section className="pw-guide-articles" aria-label="拍摄建议">{guideSections.map((section, index) => <details className="pw-guide-detail" key={section.title} open={index === 0 ? true : undefined}><summary><span className="pw-guide-icon"><ProductIcon name={section.icon} size={22} /></span><span><small>0{index + 1}</small><strong>{section.title}</strong><span>{section.summary}</span></span><ProductIcon name="plus" size={18} /></summary><div className="pw-guide-detail-body">{section.details}</div></details>)}<div className="pw-guide-context"><ProductIcon name="guide" size={21} /><p>视频中的二维测量可帮助定位复核片段。动作是否合理、应该怎样改进，仍需结合具体情境与教练判断。</p></div></section><aside className="pw-checklist"><p className="pw-eyebrow">BEFORE YOU PRESS RECORD</p><h2>开拍前，检查一下。</h2><p className="pw-checklist-intro">勾选只是给自己的拍摄提醒，<br />不会影响视频能否上传。</p><div className="pw-checklist-items">{checklist.map((item, index) => <label key={item} className={checked.has(index) ? "is-checked" : undefined}><input type="checkbox" checked={checked.has(index)} onChange={() => setChecked(previous => { const next = new Set(previous); if (next.has(index)) next.delete(index); else next.add(index); return next; })} /><span className="pw-custom-check"><ProductIcon name="check" size={13} /></span><span>{item}</span></label>)}</div><p className="pw-checklist-count" aria-live="polite">{checked.size === checklist.length ? "准备就绪，带上你的训练视频。" : `已检查 ${checked.size} / ${checklist.length} 项`}</p><button type="button" className="pw-button pw-button-accent" onClick={onNewAnalysis}>开始视频分析<ProductIcon name="arrow-right" size={18} /></button></aside></div></div>;
+  return <div className="pw-guide"><div className="pw-page-heading"><div><p className="pw-eyebrow">BETTER FOOTAGE. CLEARER DETAILS.</p><h1>拍得清楚，<br className="pw-mobile-break" />才能看得明白。</h1><p>几个简单的准备，让下一次训练更值得回看。</p></div><span className="pw-guide-heading-icon"><ProductIcon name="camera" size={38} /></span></div><div className="pw-guide-layout"><section className="pw-guide-articles" aria-label="拍摄建议">{guideSections.map((section, index) => <AnimatedDisclosure className="pw-guide-detail" bodyClassName="pw-guide-detail-body" key={section.title} defaultOpen={index === 0} summary={<><span className="pw-guide-icon"><ProductIcon name={section.icon} size={22} /></span><span><small>0{index + 1}</small><strong>{section.title}</strong><span>{section.summary}</span></span><ProductIcon name="plus" size={18} /></>}>{section.details}</AnimatedDisclosure>)}<div className="pw-guide-context"><ProductIcon name="guide" size={21} /><p>视频中的二维测量可帮助定位复核片段。动作是否合理、应该怎样改进，仍需结合具体情境与教练判断。</p></div></section><aside className="pw-checklist"><p className="pw-eyebrow">BEFORE YOU PRESS RECORD</p><h2>开拍前，检查一下。</h2><p className="pw-checklist-intro">勾选只是给自己的拍摄提醒，<br />不会影响视频能否上传。</p><div className="pw-checklist-items">{checklist.map((item, index) => <label key={item} className={checked.has(index) ? "is-checked" : undefined}><input type="checkbox" checked={checked.has(index)} onChange={() => setChecked(previous => { const next = new Set(previous); if (next.has(index)) next.delete(index); else next.add(index); return next; })} /><span className="pw-custom-check"><ProductIcon name="check" size={13} /></span><span>{item}</span></label>)}</div><p className="pw-checklist-count" aria-live="polite">{checked.size === checklist.length ? "准备就绪，带上你的训练视频。" : `已检查 ${checked.size} / ${checklist.length} 项`}</p><button type="button" className="pw-button pw-button-accent" onClick={onNewAnalysis}>开始视频分析<ProductIcon name="arrow-right" size={18} /></button></aside></div></div>;
 }

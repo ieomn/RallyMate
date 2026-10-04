@@ -60,7 +60,8 @@
 .product-app .pw-breadcrumb .pw-current-name { min-width: 0; max-width: 270px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pw-muted); flex-shrink: 1; }
 .product-app .pw-mobile-brand, .product-app .pw-mobile-nav { display: none; }
 .product-app .pw-content { width: 100%; max-width: 1488px; margin-inline: auto; padding: 36px clamp(22px, 3vw, 48px) 48px; flex: 1; min-width: 0; outline: none; }
-.product-app .pw-footer { display: flex; justify-content: space-between; gap: 16px; margin: 0 clamp(22px, 3vw, 48px); padding: 20px 0 25px; border-top: 1px solid var(--pw-line); font-size: 10px; color: var(--pw-dim); letter-spacing: .4px; }
+.product-app .pw-footer { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; min-height: 0; margin: 0 clamp(22px, 3vw, 48px); padding: 20px 0 25px; border-top: 1px solid var(--pw-line); background: transparent; font-size: 10px; color: var(--pw-dim); letter-spacing: .4px; }
+.product-app .pw-footer > span { display: block; color: inherit; font: inherit; }
 .product-app .pw-footer > span:first-child { font-weight: 650; letter-spacing: -.2px; }
 .product-app .pw-button { min-height: 41px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; border-radius: 8px; padding: 0 16px; font-size: 12px; font-weight: 650; line-height: 1.4; white-space: nowrap; transition: background .18s, border-color .18s, transform .18s; }
 .product-app .pw-button > svg { flex: none; }

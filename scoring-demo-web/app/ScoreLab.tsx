@@ -347,7 +347,7 @@ export default function ScoreLab({ registryVersion, sources }: { registryVersion
   const exportInput = { mode: scoreContext, uploadState, job, evidence, summary: importedSummary ?? (job?.summary as Record<string, unknown> | undefined), videoName: currentName };
   const progress = uploadState === "uploading" ? uploadProgress?.percent ?? 0 : jobPercent(job, uploadState === "complete" ? 100 : 0);
   const stageLabel = uploadState === "uploading" ? uploadProgress?.phase === "merging" ? "正在校验视频" : uploadProgress?.resumed ? "正在继续上传" : "正在上传视频" : job?.status === "queued" ? "视频已接收，等待分析" : "正在分析你的动作";
-  const openSection = (id: string) => { setReportSection(id); const section = document.getElementById(id); if (section instanceof HTMLDetailsElement) section.open = true; section?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const openSection = (id: string) => { setReportSection(id); const section = document.getElementById(id); if (section instanceof HTMLDetailsElement) section.open = true; section?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); };
   return <ProductShell view={view} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} onNewAnalysis={newAnalysis} currentName={hasReport || videoFile ? currentName : undefined} busy={busy}>
     <input ref={videoInput} type="file" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.mov,.m4v,.avi,.mkv" hidden onChange={chooseVideo} />
     <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={importSummary} />

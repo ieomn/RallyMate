@@ -1,0 +1,120 @@
+/* A shared, responsive motion rhythm. Actions never wait for an animation. */
+.product-app {
+  --motion-press: 80ms;
+  --motion-release: 220ms;
+  --motion-surface: 320ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keep transforms separate from positioning transforms (e.g. the play icon). */
+.product-app :is(button, summary, select, .pw-checklist-items label) {
+  touch-action: manipulation;
+  transition: scale var(--motion-release) var(--motion-ease),
+    background-color var(--motion-release) ease,
+    border-color var(--motion-release) ease,
+    color var(--motion-release) ease,
+    box-shadow var(--motion-release) ease;
+}
+.product-app button:not(:disabled):active {
+  scale: .97;
+  transition-duration: var(--motion-press);
+}
+.product-app :is(.pw-report-card, .product-dropzone):not(:disabled):active { scale: .988; }
+.product-app :is(.pw-desktop-nav, .pw-mobile-nav) button:active { scale: .96; }
+.product-app :is(.pw-button, .product-primary, .product-secondary, .primary-button, .ghost-button) {
+  min-height: 44px;
+  border-radius: 999px;
+  transform: none;
+}
+.product-app :is(.pw-button-accent, .product-primary) {
+  box-shadow: inset 0 1px 0 #ffffff30, 0 2px 7px #00000020;
+}
+.product-app :is(.pw-button-accent, .primary-button):hover:not(:disabled) { transform: none; }
+.product-app :is(.pw-text-button, .product-capture-checklist > button) { min-height: 44px; }
+.product-app :is(.pw-text-button, .pw-button, .product-primary, .product-secondary) > svg:last-child {
+  transition: translate var(--motion-release) var(--motion-ease);
+}
+.product-app :is(input:not([type="range"]), textarea) {
+  transition: border-color var(--motion-release) ease, box-shadow var(--motion-release) ease;
+}
+.product-app :is(.pw-desktop-nav, .pw-mobile-nav) button { border-radius: 13px; }
+.product-app .pw-desktop-nav button.is-active {
+  background: #d8fc7515;
+  border-color: #d8fc7526;
+  box-shadow: inset 0 1px 0 #ffffff06;
+}
+.product-app .pw-mobile-nav button.is-active { background: #d8fc7518; }
+.product-app .pw-topbar { background: #0b0d10e8; }
+.product-app .pw-mobile-nav {
+  background: #101317ec;
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  backdrop-filter: blur(20px) saturate(135%);
+  box-shadow: 0 -8px 32px #00000018;
+}
+.product-app :is(.product-upload-panel, .product-capture-checklist, .pw-checklist) { border-radius: 20px; }
+.product-app .product-dropzone { border-radius: 16px; }
+.product-app .product-upload-symbol {
+  transition: translate var(--motion-surface) var(--motion-ease), background-color var(--motion-release) ease;
+}
+.product-app .pw-report-card { border-radius: 16px; transform: none; }
+.product-app .pw-report-card:hover { transform: none; }
+.product-app .pw-report-preview img { transition: scale 480ms var(--motion-ease); }
+.product-app .pw-preview-play { transition: scale var(--motion-release) var(--motion-ease), background-color var(--motion-release) ease; }
+.product-app .pw-guide-detail {
+  border-radius: 16px;
+  transition: background-color var(--motion-release) ease, border-color var(--motion-release) ease;
+}
+.product-app .pw-guide-detail summary { border-radius: 15px; }
+.product-app .pw-guide-detail summary:active { background: #ffffff08; }
+.product-app .pw-guide-detail summary > svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 7px;
+  border-radius: 50%;
+  background: #ffffff09;
+  transition: transform var(--motion-surface) var(--motion-ease), background-color var(--motion-release) ease;
+}
+.product-app .pw-guide-detail[data-expanded="false"] summary > svg { transform: rotate(0); }
+.product-app .pw-guide-detail[data-expanded="true"] summary > svg { transform: rotate(45deg); }
+.product-app .pw-custom-check {
+  transition: background-color 160ms ease, border-color 160ms ease, scale 220ms var(--motion-ease);
+}
+.product-app .pw-custom-check svg {
+  scale: .5;
+  opacity: 0;
+  transition: scale 240ms var(--motion-ease), opacity 140ms ease;
+}
+.product-app .is-checked .pw-custom-check svg { scale: 1; opacity: 1; }
+.product-app .pw-checklist-items label:active .pw-custom-check { scale: .88; }
+.product-app .replay-control-row button { min-height: 44px; min-width: 44px; border-radius: 50%; }
+.product-app .replay-speed select { min-height: 44px; }
+.product-app .product-report-nav button { min-height: 44px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .product-app :is(.pw-button-accent, .product-primary):hover:not(:disabled) { box-shadow: inset 0 1px 0 #ffffff40, 0 4px 16px #d8fc7514; }
+  .product-app :is(.pw-text-button, .pw-button, .product-primary, .product-secondary):hover:not(:disabled) > svg:last-child { translate: 2px 0; }
+  .product-app .pw-report-card:hover { border-color: #59634f; box-shadow: 0 8px 30px #00000026; }
+  .product-app .pw-report-card:hover .pw-report-preview img { scale: 1.025; }
+  .product-app .pw-report-card:hover .pw-preview-play { scale: 1.08; background: #101317d9; }
+  .product-app .product-dropzone:hover .product-upload-symbol { translate: 0 -3px; background: #2b3527; }
+  .product-app .pw-guide-detail summary:hover { background: #ffffff03; }
+}
+@media (max-width: 720px) {
+  .product-app .pw-footer { font-size: 11px; padding-block: 18px; }
+  .product-app .pw-checklist-items label { min-height: 44px; align-items: center; }
+  .product-app .pw-custom-check { margin-top: 0; }
+  .product-app .pw-checklist-items input { top: 50%; transform: translateY(-50%); }
+  .product-app .replay-control-row { gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-app *, .product-app *::before, .product-app *::after { animation: none !important; transition: none !important; }
+  .product-app :is(button, summary):active,
+  .product-app .pw-report-card:hover .pw-report-preview img,
+  .product-app .pw-report-card:hover .pw-preview-play,
+  .product-app .pw-checklist-items label:active .pw-custom-check { scale: 1 !important; }
+  .product-app :is(.pw-text-button, .pw-button, .product-primary, .product-secondary):hover > svg:last-child,
+  .product-app .product-dropzone:hover .product-upload-symbol { translate: none; }
+}

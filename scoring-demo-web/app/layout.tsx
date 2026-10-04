@@ -3,6 +3,7 @@ import "./globals.css";
 import "./product-workspace.css";
 import "./product-report.css";
 import "./product-analysis.css";
+import "./product-motion.css";
 
 export const metadata: Metadata = {
   title: "RallyMate · 网球训练空间",
