@@ -7,6 +7,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 function compiledUrl(fileUrl) {
   let js = ts.transpileModule(fs.readFileSync(fileUrl, "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
+  js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
     const local = new URL(`${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;

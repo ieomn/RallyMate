@@ -122,6 +122,28 @@ def _rotation_local_windows(rotation: Mapping[str, Any], episode: Mapping[str, A
     return windows
 
 
+def _no_candidate_reason(summary: Mapping[str, Any], recognition: Mapping[str, Any]) -> str | None:
+    """Describe recorded admission counts, never infer a continuous interval."""
+    source = recognition if "candidate_count" in recognition else _object(summary.get("action_recognition"))
+    if source.get("candidate_count") != 0 or isinstance(source.get("candidate_count"), bool):
+        return None
+    processing = _object(summary.get("processing"))
+    diagnostics = _object(source.get("diagnostics"))
+    total, samples = _number(processing.get("processed_frames")), _number(diagnostics.get("valid_pose_samples"))
+    if (total is None or not total.is_integer() or total <= 0 or samples is None
+            or not samples.is_integer() or not 0 <= samples <= total
+            or _number(diagnostics.get("frame_count")) != total):
+        return None
+    reason = f"共处理 {int(total)} 帧，其中 {int(samples)} 帧满足动作识别入口条件"
+    counts = _object(_object(processing.get("camera_motion")).get("status_counts"))
+    values = [_number(value) for value in counts.values()]
+    unavailable = _number(counts.get("unavailable", 0))
+    if (counts and all(value is not None and value.is_integer() and value >= 0 for value in values)
+            and sum(values) == total and unavailable is not None and unavailable > 0):
+        reason += f"；{int(unavailable)} 帧相机校正证据不足"
+    return reason + "。入口帧数不代表连续时长，未形成候选不代表没有该动作。"
+
+
 def build_analysis_report(result: Mapping[str, Any], *, summary: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Build an additive user report; never alter existing scores or artifacts."""
     training = _object(result.get("training_evaluation"))
@@ -129,6 +151,8 @@ def build_analysis_report(result: Mapping[str, Any], *, summary: Mapping[str, An
     motion = _object(recognition.get("motion_analysis"))
     families = _object(motion.get("families"))
     episodes = _motion_episodes(families)
+    summary = _object(summary)
+    no_candidate_reason = _no_candidate_reason(summary, recognition) if not episodes else None
     footwork = _object(result.get("footwork_review"))
     foot_observations, foot_measured, foot_missing = _footwork_observations(footwork)
     rotation_observations = []
@@ -192,7 +216,8 @@ def build_analysis_report(result: Mapping[str, Any], *, summary: Mapping[str, An
                             basis="动作识别不确定与测量缺失分开处理。", row=unknown[0], status="partial"))
     elif not focus:
         focus.append(_focus("capture-full-motion", "保留一段完整动作",
-                            "当前没有可定位的独立测量。保持人物全身在画面内，录下准备、移动、挥拍和恢复过程后重新分析。",
+                            (no_candidate_reason or "当前没有可定位的独立测量。")
+                            + "保持人物全身在画面内，录下准备、移动、挥拍和恢复过程后重新分析。",
                             basis="当前缺少可复核的动作窗口。", kind="capture", status="unavailable"))
 
     score = _number(training.get("score_0_to_100"))
@@ -213,7 +238,7 @@ def build_analysis_report(result: Mapping[str, Any], *, summary: Mapping[str, An
         {"id": "subject", "label_zh": "主体连续片段", "status": "available" if primary else "unknown",
          "reason_zh": "测量不跨主体切换、相机参考变化与时间缺口。", "source": "primary_player"},
         {"id": "recognition", "label_zh": "动作与阶段", "status": "partial" if unknown else "available" if episodes else "unavailable",
-         "reason_zh": "规则基线提出动作和阶段候选；候选中心不是确认触球。", "source": "action_recognition.motion_analysis"},
+         "reason_zh": no_candidate_reason or "规则基线提出动作和阶段候选；候选中心不是确认触球。", "source": "action_recognition.motion_analysis"},
         {"id": "measurement", "label_zh": "逐项测量", "status": "available" if has_measurement else "unavailable",
          "reason_zh": "分别使用关节、连续时间窗与适用性检查；局部有效不等于整组可评分。", "source": "footwork_review;rotation_analysis"},
         {"id": "evaluation", "label_zh": "参考评价", "status": "available" if score is not None else "unavailable",

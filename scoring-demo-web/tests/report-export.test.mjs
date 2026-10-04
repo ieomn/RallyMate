@@ -13,6 +13,7 @@ function compiledUrl(fileUrl) {
   return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
 }
 const { getReportExportGate, buildPracticeReport, renderReportMarkdown, renderReportHtml, buildReportBackup, reportDownloadName } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
+const { reportVideoDurationMs } = await import(compiledUrl(new URL("../app/lib/workspace-navigation.ts", import.meta.url)));
 
 function completed() {
   return {
@@ -26,6 +27,16 @@ function completed() {
     summary: { job_id: "job-12345678", input: { video_path: "/root/private/source.mp4", video: { duration_ms: 12000, width: 1920, height: 1080, frame_count: 300 } }, processing: { processed_frames: 300, elapsed_seconds: 30 }, action_recognition: { status: "candidates_detected", confirmed_contact_count: null, candidates: [{ family: "serve", start_ms: 1200, peak_ms: 1900, end_ms: 2500, contact_confirmed: false, evidence: { racket_associated_frames: 7, pose_samples: 12 }, limitations_zh: ["抛球未确认。"] }, { family: "baseline", start_ms: 4200, peak_ms: 4500, end_ms: 4800, evidence: {} }], limitations_zh: ["仅候选时间区间。"] } },
   };
 }
+
+test("backup round trips retain the safe video bounds used to reject out-of-range replay", () => {
+  const input = completed();
+  input.evidence.result.input = { video: { duration_ms: 5000, width: 1920, height: 1080, frame_count: 125, video_path: "/root/private/video.mp4", token: "private-value" } };
+  const backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
+  assert.equal(reportVideoDurationMs(backup.result), 5000);
+  assert.deepEqual(backup.result.input.video, { duration_ms: 5000, width: 1920, height: 1080, frame_count: 125 });
+  delete input.evidence.result.input;
+  assert.equal(reportVideoDurationMs(buildReportBackup(input).result), 12000);
+});
 
 test("pending, failed, stale-task and empty result exports fail closed even with leftover data", () => {
   for (const overrides of [

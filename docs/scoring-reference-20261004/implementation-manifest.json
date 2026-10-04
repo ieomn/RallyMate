@@ -1,0 +1,84 @@
+[
+  {
+    "path": "scoring-demo-web/app/scoring/engine.ts",
+    "sha256": "36cff32e39dee982246a219657eb31a2ea5a52591ef57ee3a88349366918ab36",
+    "bytes": 14672
+  },
+  {
+    "path": "scoring-demo-web/app/data/metric-cards.json",
+    "sha256": "43180db292ff78e10d2c03dae2b10d7dad32f89810e3482c508aeeef59bd0bc5",
+    "bytes": 489267
+  },
+  {
+    "path": "scoring-demo-web/app/data/technique-catalog.json",
+    "sha256": "6b2229f69afccb8724db7da7adfe684981c0c71b78c438177d244bbcb7dd2046",
+    "bytes": 17096
+  },
+  {
+    "path": "src/rallymate_scoring/scoring.py",
+    "sha256": "0c574dc61385a6ec37fb1bd3f22adc57e5824c9c684d25ed2f333c86eccb4012",
+    "bytes": 24748
+  },
+  {
+    "path": "src/rallymate_scoring/technique_registry.py",
+    "sha256": "b037514635e6bf1adbc3687e0547bd39be5458970d4946cd25fef8d41fa6685e",
+    "bytes": 11727
+  },
+  {
+    "path": "src/rallymate_scoring/technique_assessment.py",
+    "sha256": "ac1f07a9679bec5423df685d77139972cd780d66a5630f433465e7d020a31f65",
+    "bytes": 38993
+  },
+  {
+    "path": "src/rallymate_scoring/data/metric_cards.json",
+    "sha256": "43180db292ff78e10d2c03dae2b10d7dad32f89810e3482c508aeeef59bd0bc5",
+    "bytes": 489267
+  },
+  {
+    "path": "src/rallymate_scoring/data/technique_metrics.json",
+    "sha256": "6b2229f69afccb8724db7da7adfe684981c0c71b78c438177d244bbcb7dd2046",
+    "bytes": 17096
+  },
+  {
+    "path": "metric-feasibility.json",
+    "sha256": "5f7952c6d9514856ad979e27a556cfa2d80b188eaeffd8333a25f32aacf5dfcc",
+    "bytes": 8035
+  },
+  {
+    "path": "metric-feasibility-pose-wave-v2.json",
+    "sha256": "dc5f3622d70f22ad5da8e933dcd38e7d8c4c57fd5255941fa521704984feac0e",
+    "bytes": 26506
+  },
+  {
+    "path": "metric-measurement-plans.json",
+    "sha256": "f22eb67ca23e927a8c7712221e8fee5cda16488a9133a65cb0c4eeb290132a08",
+    "bytes": 896500
+  },
+  {
+    "path": "indicator-scoring-requirements-pose-wave-v1.json",
+    "sha256": "d76216d543abc147be4451aa915eb43e0cae61d710277b717d1944716c8bbf04",
+    "bytes": 8394
+  },
+  {
+    "path": "src/rallymate_scoring/calibration.py",
+    "sha256": "dd0d8b000621ccb8ba4d11d177d09dafee88802052d035ff81ee97fd41a0513e",
+    "bytes": 15852
+  },
+  {
+    "path": "src/rallymate_scoring/quality_policy.py",
+    "sha256": "3e07d53d3aff5036d338fe14f5130443fdf0db97cf9e744212a1dce448ae9be0",
+    "bytes": 14446
+  },
+  {
+    "path": "src/rallymate_features/event_features.py",
+    "sha256": "811f985e7646110726c31a8085e820cddabba4b59364baf6b4f1e8d993d9cbb7",
+    "bytes": 53632,
+    "read_stage": "supplemental_read"
+  },
+  {
+    "path": "src/rallymate_events/rules.py",
+    "sha256": "c365775116d6eaabbd16cf9af86ad893473cc8e365e8e3314db15198e5827b2e",
+    "bytes": 61690,
+    "read_stage": "supplemental_read"
+  }
+]

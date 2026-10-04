@@ -7,6 +7,8 @@ import ts from "typescript";
 
 function compiledUrl(fileUrl) {
   let js = ts.transpileModule(fs.readFileSync(fileUrl, "utf8"), { fileName: fileUrl.pathname, compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
+  js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
     const local = new URL(`${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;
@@ -38,7 +40,7 @@ test("historical scores are suppressed without discarding partial or single-samp
   assert.match(html, /技术评分待教练标定/);
   assert.match(html, /分腿垫步（候选）/);
   assert.match(html, /12 % 身体尺度/);
-  assert.doesNotMatch(html, /97|score-ring/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /97|score-ring/);
 });
 
 test("empty evidence stays readable, and missing metrics never turn into a new aggregate score", () => {
@@ -101,7 +103,7 @@ test("declared evidence reference scores survive API, screen and report round tr
   assert.match(html, /测量证据参考分（Beta）|非技术评分/);
   assert.match(html, /高分不代表动作正确/);
   assert.match(html, /<details class="inspector-section measurement-evidence"><summary/);
-  assert.doesNotMatch(html, /97|99/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /97|99/);
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const markdown = renderReportMarkdown(buildPracticeReport(input));
   assert.match(markdown, /81 \/ 100/);

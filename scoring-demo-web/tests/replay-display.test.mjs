@@ -8,6 +8,8 @@ import ts from "typescript";
 function compiledUrl(fileUrl) {
   const source = fs.readFileSync(fileUrl, "utf8");
   let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
+  js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
     const local = new URL(`${name}.ts`, fileUrl);
     const url = name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name);
@@ -139,7 +141,7 @@ test("many baseline candidates are summarized without counts or unconfirmed hit 
   assert.equal((html.match(/status-pill status-not_observed">未分类<\/span>/g) ?? []).length, 5);
   assert.match(html, /最新动作定义 · 未分类/);
   for (const item of assessmentRows("baseline")) assert.ok(html.includes(item.name_zh));
-  assert.doesNotMatch(html, /57|action-candidates|action-candidate-list|已定位|<span>已确认触球<\/span>/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /57|action-candidates|action-candidate-list|已定位|<span>已确认触球<\/span>/);
 });
 
 test("unavailable classification keeps all five baseline rows explicit", () => {
@@ -169,7 +171,7 @@ test("preview family chips show recognition limits without candidate counts", ()
   for (const [family, state, label] of [["baseline", "motion_detected_unclassified", "挥拍待分类"], ["serve", "candidate_only", "动作待确认"], ["baseline", "classifier_unavailable", "分类暂不可用"]]) {
     const html = renderToStaticMarkup(createElement(TechniqueFamilyChip, { family, label: family, total: 5, summary: { observed_count: 0, total_count: 5, candidate_count: 57, recognition_status: state } }));
     assert.ok(html.includes(label));
-    assert.doesNotMatch(html, /57|段候选|就绪度|0 \/ 5/);
+    assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /57|段候选|就绪度|0 \/ 5/);
   }
   const measured = renderToStaticMarkup(createElement(TechniqueFamilyChip, { family: "baseline", label: "底线", total: 5, summary: { observed_count: 2, total_count: 5, recognition_status: "observed", evidence_score_0_to_100: 80 } }));
   assert.match(measured, /2 \/ 5/);
@@ -191,7 +193,7 @@ test("motion results show one measured episode and phases without restoring the 
   assert.match(html, /触球未确认/);
   assert.match(html, /下一片段/);
   assert.equal((html.match(/motion-episode-heading/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /57|已定位|status-pill status-not_observed/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /57|已定位|status-pill status-not_observed/);
 });
 
 test("return analysis explains missing context and never fills it with a zero score", () => {

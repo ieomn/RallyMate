@@ -7,6 +7,10 @@ from collections.abc import Iterable, Mapping
 from importlib.resources import files
 from typing import Any
 
+from rallymate_service.score_explanation import (
+    explain_aggregate_score, explain_evidence_gaps, explain_indicator_score,
+)
+
 
 TRAINING_EVALUATION_VERSION = "rallymate-training-evaluation-beta-v1.3.0"
 SCORE_SEMANTICS = "measurement_evidence_quality"
@@ -272,7 +276,10 @@ _PROXY_LIMITS = {
 def _finite(value: Any) -> float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    number = float(value)
+    try:
+        number = float(value)
+    except OverflowError:
+        return None
     return number if math.isfinite(number) else None
 
 
@@ -474,11 +481,15 @@ def _indicator_evaluation(
     confidences: list[float] = []
     valid_slots = 0
     scoring_allowed = 0
+    evidence_observations = []
     for record in records:
         gate = record.get("quality_gate")
+        feature_map = _valid_feature_map(record)
+        evidence_observations.append({"measured": _is_measured(record),
+                                      "valid_features": tuple(feature_map), "quality_gate": gate,
+                                      "event_id": record.get("event_id") if _event_identity(record) is not None else None})
         if not _is_measured(record):
             continue
-        feature_map = _valid_feature_map(record)
         if (
             isinstance(gate, Mapping)
             and gate.get("scoring_allowed") is True
@@ -531,6 +542,16 @@ def _indicator_evaluation(
     }
     available = bool(measured_records and valid_slots)
     score, effective_weights = _reference_score(components, available=available)
+    score_explanation = explain_indicator_score(
+        score=score, components=components, effective_weights=effective_weights,
+        repeatability_status=repeatability_status,
+    )
+    score_explanation.update(explain_evidence_gaps(evidence_observations, required_features, _FEATURE_LABELS))
+    score_explanation["counts"] = {
+        "valid_feature_slots": valid_slots, "required_feature_slots": total * len(required_features),
+        "feature_confidence_samples": len(confidences), "scoring_eligible_instances": scoring_allowed,
+        "repeatability_samples": repeatability_sample_count,
+    }
 
     name_zh = str(card.get("name") or indicator_id)
     representative = _representative_measurements(indicator_id, values_by_name)
@@ -564,6 +585,7 @@ def _indicator_evaluation(
         "label_zh": "测量证据参考分（Beta）",
         "definition_zh": str(card.get("definition") or ""),
         "score_0_to_100": score,
+        "score_explanation": score_explanation,
         "available": available,
         "measurement_status": "measured" if available else "unavailable",
         "level_zh": level_zh,
@@ -661,6 +683,7 @@ def build_training_evaluation(
         "available": bool(measured),
         "label_zh": "测量证据参考分（Beta）",
         "score_0_to_100": overall_score,
+        "score_explanation": explain_aggregate_score(evaluations, overall_score),
         "level_zh": _reference_level(overall_score),
         "summary_zh": (
             f"测量证据参考分 {overall_score}/100；当前 {len(evaluations)} 项中有 {len(measured)} 项有测量，不代表技术水平。"

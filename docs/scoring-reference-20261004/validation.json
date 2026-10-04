@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "errors": [],
+  "checks": {
+    "all_seven_sources_present": true,
+    "all_source_hashes_unchanged": true,
+    "unique_formal_indicators": 298,
+    "source_fields_compared_to_independent_extraction": 5710,
+    "implementation_values_compared_across_two_registries": 10924,
+    "source_and_implementation_value_mismatches": 0,
+    "qualified_paragraph_reference_occurrences": 22499,
+    "unique_qualified_paragraph_references": 6703,
+    "unresolved_paragraph_references": 0,
+    "formal_scores_enabled": false,
+    "native_math_object_count": 0,
+    "direct_source_text_objects_verified": 1527,
+    "visual_source_quotes_verified": 276,
+    "source_table_cell_references_verified": 2183,
+    "source_xpath_mismatches": 0,
+    "reference_metadata_errors": 0
+  },
+  "source_hash_checks": [
+    {
+      "source_id": "VIS-FS",
+      "unchanged": true
+    },
+    {
+      "source_id": "VIS-SV",
+      "unchanged": true
+    },
+    {
+      "source_id": "VIS-GS",
+      "unchanged": true
+    },
+    {
+      "source_id": "VIS-RT",
+      "unchanged": true
+    },
+    {
+      "source_id": "VIS-NET",
+      "unchanged": true
+    },
+    {
+      "source_id": "CARD-FS",
+      "unchanged": true
+    },
+    {
+      "source_id": "CARD-GS",
+      "unchanged": true
+    }
+  ],
+  "scope_validations": {
+    "GS": {
+      "all_248_source_cards_parsed": true,
+      "all_50_stage_summary_counts_match": true,
+      "backend_frontend_registry_bytes_equal": true,
+      "qualitative_technique_catalog_equal": true,
+      "GS_in_feasibility_and_requirements": 0,
+      "native_OMML_formula_count": 0,
+      "audit_uses_snapshot": true
+    },
+    "visual": null
+  },
+  "limitations": [
+    "只验证本地文件与来源文字/定位，不代表视频测量或教练标定已验证",
+    "没有渲染Word，不报告推测页码",
+    "实现快照可能与同时进行的后续工程修改不同；以记录SHA为准"
+  ],
+  "implementation_working_tree_drift_at_final_check": []
+}

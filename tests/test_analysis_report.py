@@ -42,6 +42,38 @@ class AnalysisReportTests(unittest.TestCase):
         self.assertEqual(report["focus_areas"][0]["kind"], "capture")
         self.assertIsNone(report["focus_areas"][0]["start_ms"])
 
+    def test_no_candidate_report_uses_existing_counts_without_claiming_continuity(self):
+        recognition = {"candidate_count": 0, "diagnostics": {"frame_count": 225, "valid_pose_samples": 33}}
+        summary = {"processing": {"processed_frames": 225, "camera_motion": {"status_counts": {
+            "reference": 1, "unavailable": 192, "stationary": 31, "moving": 1}}},
+            "action_recognition": recognition}
+        before = copy.deepcopy(summary)
+        report = build_analysis_report({"action_recognition": recognition}, summary=summary)
+        reason = next(item["reason_zh"] for item in report["layers"] if item["id"] == "recognition")
+        self.assertIn("225 帧", reason)
+        self.assertIn("33 帧满足动作识别入口条件", reason)
+        self.assertIn("192 帧相机校正证据不足", reason)
+        self.assertIn("入口帧数不代表连续时长", reason)
+        self.assertIn("未形成候选不代表没有该动作", reason)
+        self.assertIn(reason, report["focus_areas"][0]["summary_zh"])
+        self.assertEqual(before, summary)
+
+    def test_no_candidate_diagnostics_reject_inconsistent_or_invalid_counts(self):
+        for samples in (True, -1, 226, 1.5, float("nan")):
+            with self.subTest(samples=samples):
+                recognition = {"candidate_count": 0, "diagnostics": {"frame_count": 225, "valid_pose_samples": samples}}
+                report = build_analysis_report({"action_recognition": recognition}, summary={"processing": {"processed_frames": 225}})
+                self.assertNotIn("入口条件", report["focus_areas"][0]["summary_zh"])
+        recognition = {"candidate_count": 0, "diagnostics": {"frame_count": 225, "valid_pose_samples": 33}}
+        summary = {"processing": {"processed_frames": 225, "camera_motion": {"status_counts": {"unavailable": 999}}}}
+        report = build_analysis_report({"action_recognition": recognition}, summary=summary)
+        self.assertNotIn("999", report["focus_areas"][0]["summary_zh"])
+
+    def test_existing_candidates_do_not_use_no_candidate_diagnostics(self):
+        recognition = {"candidate_count": 1, "diagnostics": {"frame_count": 225, "valid_pose_samples": 33}}
+        report = build_analysis_report({"action_recognition": recognition}, summary={"processing": {"processed_frames": 225}})
+        self.assertNotIn("入口条件", report["focus_areas"][0]["summary_zh"])
+
     def test_score_requires_explicit_semantics_and_availability(self):
         for change in ({"score_semantics": None}, {"available": False}, {"score_0_to_100": True},
                        {"score_0_to_100": float("nan")}, {"score_0_to_100": 200}):

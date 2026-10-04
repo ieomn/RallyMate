@@ -283,6 +283,7 @@ export interface MotionAnalysis {
 }
 
 export interface IndicatorEvaluation {
+  score_explanation?: unknown;
   technical_grade?: null;
   formal_grade?: null;
   available?: boolean;
@@ -317,6 +318,7 @@ export interface ActionEvaluation {
   performance_assessment?: { score_0_to_100: number | null; level_zh?: string; score_semantics?: string; technical_score_0_to_100?: null; technical_grade?: null; formal_grade?: null };
 }
 export interface TrainingEvaluation {
+  score_explanation?: unknown;
   technical_grade?: null;
   formal_grade?: null;
   available?: boolean;

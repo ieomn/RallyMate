@@ -4,6 +4,7 @@ import type { ScoreReport } from "../scoring/engine";
 import { footworkEpisodes } from "./footwork-review";
 import { analysisReportOf, reportFocus } from "./training-report";
 import { motionAnalysisOf, ROTATION_METRICS } from "./motion-analysis";
+import { scoreExplanationOf } from "./score-explanation";
 
 export type ReportExportInput = {
   mode: "demo" | "live" | "live-pending";
@@ -205,6 +206,21 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     ],
   }];
   const parsedMotion = motionAnalysisOf(input.evidence.result ?? null, input.evidence.assessment, summary);
+  const explanationState = scoreExplanationOf(input.evidence.result ?? null);
+  if (explanationState.status === "verified") {
+    const explanation = explanationState.explanation;
+    sections.push({ title: "分数解释", paragraphs: [
+      `测量证据参考分：${numberText(explanation.score, " / 100")}。这不是技术评分；差额不表示动作错误扣分。`,
+      `仅平均 ${explanation.includedIds.length} 项可计算的指标参考分；${explanation.excludedIds.length} 项未纳入，不补零。`,
+      `未取整合计 ${numberText(explanation.raw)}；逐项取整对总分的影响 ${numberText(explanation.indicatorRounding)}；总分取整影响 ${numberText(explanation.aggregateRounding)}。`,
+    ], columns: ["分量", "满额", "实得", "证据差额", "原因"], rows: explanation.components.map(item => [item.label, numberText(item.maximum), numberText(item.earned), numberText(item.deduction), text(item.reason)]) });
+    sections.push({ title: "逐项分数与证据缺口", paragraphs: ["片段证据支持复核，聚合差额不分摊为单段技术扣分。"], columns: ["指标", "参考分", "分量构成（实得 / 满额）", "证据限制"], rows: explanation.indicators.map(item => [
+      `${text(item.name)}（${item.id}）`, item.included ? numberText(item.score) : "未纳入",
+      item.components.map(part => `${part.label} ${part.included ? `${numberText(part.earned)} / ${numberText(part.maximum)}` : "不计入"}`).join("；"),
+      [...item.gaps.map(gap => `${text(gap.label)}：${gap.unavailable}/${gap.total} 条未取得`), ...item.blockers.map(blocker => `${text(blocker.reason)}（涉及 ${blocker.affected} 条记录）`)].join("；") || "技术评级仍需原文条件与教练标定",
+    ]) });
+  } else sections.push({ title: "分数解释", paragraphs: [explanationState.status === "missing" ? "这份历史报告尚未保存分数构成，不补造扣分明细。" : "分数构成未通过一致性校验，暂不展示扣分明细。"] });
+  sections.push({ title: "原文核验范围", paragraphs: ["依据 scoring-reference-20261004：7 份 Word、298 项评分指标及 24 类动作视觉定义。原文没有完整百分制换算、权重与扣分公式。", "当前仅 13 项步伐指标有相关二维测量，尚不能完整等价执行原文技术判据；没有正式 A～E 技术等级。", "GS01-M10-04 含相邻章节标题，GS02-M01-01 与 GS02-M01-02 名称与定义存在错配；相关原文保留待核实。", "看不清、未识别或缺少关联证据不记作 0 分或 E 级。"] });
   const focus = reportFocus(input.evidence.result ?? null, parsedMotion);
   if (focus.length) sections.push({ title: "这次先关注", paragraphs: ["以下为证据关联的复核与拍摄建议，不是技术错误诊断。"], columns: ["重点", "建议", "回放区间"], rows: focus.map(item => [text(item.title), text(item.detail), item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
   const analysisReport = analysisReportOf(result.analysis_report);
@@ -318,17 +334,32 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   if (report.isDemo) return report;
   if (input.evidence.result) input = { ...input, evidence: { ...input.evidence, result: normalizeMeasurementResult(input.evidence.result) } };
   const selected = (root: unknown, fields: string[]): RecordValue => Object.fromEntries(fields.filter(key => Object.hasOwn(asRecord(root), key)).map(key => [key, asRecord(root)[key]]));
+  const resultInput = asRecord(input.evidence.result?.input);
+  const summaryInput = asRecord(summaryOf(input).input);
+  const videoMetadata = asRecord(resultInput.video ?? resultInput.metadata ?? summaryInput.video ?? summaryInput.metadata);
+  const safeVideoMetadata = Object.fromEntries(["duration_ms", "width", "height", "frame_count"].flatMap(key => {
+    const value = finite(videoMetadata[key]);
+    return value !== null && value >= 0 ? [[key, value]] : [];
+  }));
+  // The ledger's child score rows omit score_semantics. Preserve only these exact
+  // objects after the complete ledger has passed arithmetic and parent checks.
+  const trustedScoreRows = new WeakSet<object>();
+  if (scoreExplanationOf(input.evidence.result ?? null).status === "verified") {
+    const ledger = asRecord(input.evidence.result?.training_evaluation?.score_explanation);
+    for (const row of asArray(ledger.indicator_scores)) if (row && typeof row === "object") trustedScoreRows.add(row);
+  }
   const scrub = (value: unknown, depth = 0): unknown => {
     if (depth > 16) return null;
+    if (value === undefined) return undefined;
     if (typeof value === "string") return text(value, "");
     if (typeof value === "number") return finite(value);
     if (value === null || typeof value === "boolean") return value;
     if (Array.isArray(value)) return value.map(item => scrub(item, depth + 1));
-    return Object.fromEntries(Object.entries(asRecord(value)).filter(([key]) => key === "wrist_path_torso" || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
+    return Object.fromEntries(Object.entries(asRecord(value)).filter(([key]) => key === "wrist_path_torso" || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? trustedScoreRows.has(asRecord(value)) ? finite(item) : evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
   };
   return scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
     assessment: selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"]),
     summary: selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"]),
     trajectory: input.evidence.trajectory ? selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]) : null,

@@ -1,4 +1,11 @@
 /* Report components use the product palette without changing the legacy demo. */
+.product-app .report-reference-highlight { margin-top:18px; padding-top:18px; border-top:1px solid var(--product-border); }
+.product-app .report-reference-highlight>span { font-size:16px; color:var(--product-text); }
+.product-app .report-reference-highlight>strong { display:flex; align-items:baseline; gap:12px; margin-top:10px; font-size:56px; font-weight:600; letter-spacing:-.04em; color:var(--product-accent); }
+.product-app .report-reference-highlight small { font-size:16px; font-weight:400; letter-spacing:0; color:var(--product-muted); }
+.product-app .report-reference-highlight p { font-size:15px; line-height:1.7; color:var(--product-muted); margin:8px 0 16px; }
+.product-app .report-reference-highlight button { display:flex; align-items:center; justify-content:space-between; width:100%; padding:12px 14px; min-height:44px; border:1px solid #d8fc7540; border-radius:8px; background:#d8fc7508; color:var(--product-accent); font-size:15px; cursor:pointer; }
+.product-app .report-reference-highlight button:hover { background:#d8fc7518; }
 .product-app .live-results { color:var(--product-text); }
 .product-app .report-primary { grid-template-columns:minmax(0,1.8fr) minmax(300px,.85fr); gap:20px; align-items:start; }
 .product-app .report-primary.without-replay { grid-template-columns:1fr; }
