@@ -19,16 +19,18 @@ def irregular_derivative(
     for column in range(flat_in.shape[1]):
         series = flat_in[:, column]
         finite_indexes = np.flatnonzero(np.isfinite(series))
-        for position, index in enumerate(finite_indexes):
-            if position == 0:
-                left, right = index, finite_indexes[position + 1] if len(finite_indexes) > 1 else index
-            elif position == len(finite_indexes) - 1:
-                left, right = finite_indexes[position - 1], index
-            else:
-                left, right = finite_indexes[position - 1], finite_indexes[position + 1]
-            dt = timestamps[right] - timestamps[left]
-            if right != left and dt > 0:
-                flat_out[index, column] = (series[right] - series[left]) / dt
+        if finite_indexes.size < 2:
+            continue
+        # Keep exactly the previous finite-neighbour stencil, including its
+        # one-sided endpoints and per-column gaps. Batch the arithmetic rather
+        # than revisiting every frame in Python for every event feature.
+        left = np.concatenate((finite_indexes[:1], finite_indexes[:-1]))
+        right = np.concatenate((finite_indexes[1:], finite_indexes[-1:]))
+        dt = timestamps[right] - timestamps[left]
+        valid = (right != left) & (dt > 0)
+        flat_out[finite_indexes[valid], column] = (
+            series[right[valid]] - series[left[valid]]
+        ) / dt[valid]
     return output
 
 

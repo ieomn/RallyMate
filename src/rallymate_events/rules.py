@@ -981,6 +981,10 @@ def detect_pose_events(
     median_dt = int(np.median(np.diff(timestamps)))
     uncertainty = max(2 * median_dt, 40)
     events = []
+    # Position smoothing and derivatives belong to this continuous camera
+    # window. Only the positive body-scale factor changes between bouts.
+    # The support projection is dimensionless and must not be rescaled.
+    base_phase_signals = _phase_signals(sequence, scale=1.0)
     for bout_index, (onset, active_end, bout_diagnostics) in enumerate(bouts):
         active_threshold = float(np.nanmedian(activity_thresholds[onset:active_end + 1]))
         next_onset = bouts[bout_index + 1][0] if bout_index + 1 < len(bouts) else len(timestamps) - 1
@@ -1009,7 +1013,10 @@ def detect_pose_events(
         if blocked_after.size:
             post_end = active_end + int(blocked_after[0])
         phase_scale = float(np.nanmedian(scale_values[pre_start:post_end + 1]))
-        phase_signals = _phase_signals(sequence, scale=phase_scale)
+        phase_signals = {
+            name: values if name == "hip_support_redistribution_speed_body_s" else values / phase_scale
+            for name, values in base_phase_signals.items()
+        }
         fs09_start = min(peak, post_end - 1)
         pre_hip = hips[pre_start : onset + 1, 1]
         pre_valid = hip_valid[pre_start : onset + 1] & np.isfinite(pre_hip)

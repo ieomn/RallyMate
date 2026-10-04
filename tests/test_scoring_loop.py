@@ -91,6 +91,7 @@ class ScoringLoopTests(unittest.TestCase):
                 "".join(json.dumps(item) + "\n" for item in timeline_records),
                 encoding="utf-8",
             )
+            progress = []
             result = run_minimum_scoring_loop(
                 frames_path=frames,
                 primary_timeline_path=timeline,
@@ -98,7 +99,12 @@ class ScoringLoopTests(unittest.TestCase):
                 feasibility_registry_path=root / "metric-feasibility-pose-wave-v2.json",
                 source_id="static-no-event",
                 pose_model={"backend": "test", "runtime": "cpu"},
+                progress_callback=progress.append,
             )
+            self.assertEqual({item["phase"] for item in progress}, {
+                "detecting_events", "extracting_features", "scoring", "writing_results",
+            })
+            self.assertEqual(progress[-1], {"phase": "writing_results", "completed": 1, "total": 1})
             self.assertEqual(result["events"], [])
             self.assertEqual(result["indicator_records"], [])
             self.assertEqual(result["scores"], [])

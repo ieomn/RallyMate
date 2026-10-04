@@ -107,17 +107,14 @@ export default function MarketingLanding() {
         <img className="mk-hero-image" src="/marketing/rally-court-hero.png" width="1672" height="941" alt="暮色球场上，一位球员专注完成正手挥拍的品牌概念画面" fetchPriority="high" />
         <div className="mk-hero-shade" />
         <div className="mk-hero-content">
-          <p className="mk-eyebrow"><span className="mk-live-dot" />FOR THE LOVE OF THE GAME</p>
           <h1 id="mk-hero-title">下一拍，<br /><span>更有方向。</span></h1>
           <p className="mk-hero-description">用一段训练视频，<br />回到值得看清的瞬间。</p>
           <div className="mk-hero-actions"><a href="/?view=analysis" className="mk-button mk-button-lime">开启我的复盘<ProductIcon name="arrow-up-right" size={20} /></a><a href="#experience" className="mk-watch-link"><span><ProductIcon name="play" size={14} /></span>先体验一下</a></div>
         </div>
-        <div className="mk-hero-caption"><span className="mk-crosshair" aria-hidden="true" /><span>专注当下。<br /><strong>看清每一次可能。</strong></span></div>
-        <div className="mk-hero-bottom"><a href="#experience"><span className="mk-scroll-line" aria-hidden="true" />向下探索</a><span>YOUR NEXT POINT STARTS HERE.</span><span>01 / 04</span></div>
+        <div className="mk-hero-bottom"><a href="#experience"><span className="mk-scroll-line" aria-hidden="true" />向下探索</a></div>
       </section>
 
       <section className="mk-manifesto mk-wrap mk-reveal" aria-labelledby="mk-manifesto-title">
-        <p className="mk-eyebrow">PLAY. LOOK BACK. GO FURTHER.</p>
         <div><h2 id="mk-manifesto-title">热爱，让你走上球场。<br /><span>看清，让下一步更坚定。</span></h2><p>那些来不及留意的脚步、挥拍与恢复，<br className="mk-desktop-break" />值得在场下，再认真看一次。</p></div>
         <div className="mk-values"><div><ProductIcon name="frame" size={23} /><span>回到关键片段</span></div><div><ProductIcon name="play" size={22} /><span>放慢动作细节</span></div><div><ProductIcon name="sessions" size={22} /><span>留下每次复盘</span></div></div>
       </section>
@@ -125,23 +122,23 @@ export default function MarketingLanding() {
       <TrainingExperience />
 
       <section id="workflow" className="mk-workflow mk-wrap" aria-labelledby="mk-workflow-title">
-        <div className="mk-section-heading mk-reveal"><div><p className="mk-eyebrow">A LITTLE LOOK BACK. A BIG NEXT STEP.</p><h2 id="mk-workflow-title">从这一拍，<br /><span>走向下一次上场。</span></h2></div><p>无需改变你热爱的训练。<br />只多留一点，回看的时间。</p></div>
+        <div className="mk-section-heading mk-reveal"><div><h2 id="mk-workflow-title">从这一拍，<br /><span>走向下一次上场。</span></h2></div><p>无需改变你热爱的训练。<br />只多留一点，回看的时间。</p></div>
         <div className="mk-workflow-layout mk-reveal">
-          <div className="mk-step-list" role="tablist" aria-label="开始复盘的三个步骤">{steps.map((item, index) => <button id={`mk-step-${index}`} key={item.tag} type="button" role="tab" aria-selected={step === index} aria-controls="mk-step-panel" tabIndex={step === index ? 0 : -1} onClick={() => setStep(index)} onKeyDown={event => { let next = index; if (event.key === "ArrowDown" || event.key === "ArrowRight") next = (index + 1) % steps.length; else if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = (index + steps.length - 1) % steps.length; else if (event.key === "Home") next = 0; else if (event.key === "End") next = steps.length - 1; else return; event.preventDefault(); setStep(next); document.getElementById(`mk-step-${next}`)?.focus(); }}><span className="mk-step-index">0{index + 1}</span><span><small>{item.tag}</small><strong>{item.label}</strong></span><ProductIcon name="arrow-up-right" size={24} /></button>)}</div>
+          <div className="mk-step-list" role="tablist" aria-label="开始复盘的三个步骤">{steps.map((item, index) => <button id={`mk-step-${index}`} key={item.tag} type="button" role="tab" aria-selected={step === index} aria-controls="mk-step-panel" tabIndex={step === index ? 0 : -1} onClick={() => setStep(index)} onKeyDown={event => { let next = index; if (event.key === "ArrowDown" || event.key === "ArrowRight") next = (index + 1) % steps.length; else if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = (index + steps.length - 1) % steps.length; else if (event.key === "Home") next = 0; else if (event.key === "End") next = steps.length - 1; else return; event.preventDefault(); setStep(next); document.getElementById(`mk-step-${next}`)?.focus(); }}><strong>{item.label}</strong><ProductIcon name="arrow-up-right" size={24} /></button>)}</div>
           <div id="mk-step-panel" className="mk-step-panel" role="tabpanel" tabIndex={0} aria-labelledby={`mk-step-${step}`}>
-            <div className={`mk-step-art mk-step-art-${step}`} aria-hidden="true"><div className="mk-orbit mk-orbit-one" /><div className="mk-orbit mk-orbit-two" /><div className="mk-art-court"><i /><i /><i /></div><div className="mk-art-icon"><ProductIcon name={steps[step].icon} size={42} /></div><span className="mk-art-label">RALLYMATE / {steps[step].tag}</span><span className="mk-art-corner">0{step + 1}</span></div>
+            <div className={`mk-step-art mk-step-art-${step}`} aria-hidden="true"><div className="mk-orbit mk-orbit-one" /><div className="mk-orbit mk-orbit-two" /><div className="mk-art-court"><i /><i /><i /></div><div className="mk-art-icon"><ProductIcon name={steps[step].icon} size={42} /></div></div>
             <div key={step} className="mk-step-copy"><h3>{steps[step].title.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</h3><p>{steps[step].text}</p><a href={steps[step].href} className="mk-text-link">{steps[step].link}<ProductIcon name="arrow-right" size={18} /></a></div>
           </div>
         </div>
       </section>
 
-      <section className="mk-belief" aria-labelledby="mk-belief-title"><div className="mk-wrap mk-reveal"><p className="mk-eyebrow">BUILT AROUND YOUR GAME</p><h2 id="mk-belief-title">不止看一拍。<br />是为了，<em>更懂自己的球。</em></h2><div className="mk-belief-bottom"><span><ProductIcon name="tennis" size={30} />RallyMate</span><p>把画面留下，把问题说清。<br />和教练一起，让复盘回到训练里。</p><a href="/?view=analysis" className="mk-button mk-button-dark">从我的视频开始<ProductIcon name="arrow-up-right" size={18} /></a></div></div></section>
+      <section className="mk-belief" aria-labelledby="mk-belief-title"><div className="mk-wrap mk-reveal"><h2 id="mk-belief-title">不止看一拍。<br />是为了，<em>更懂自己的球。</em></h2><div className="mk-belief-bottom"><span><ProductIcon name="tennis" size={30} />RallyMate</span><p>把画面留下，把问题说清。<br />和教练一起，让复盘回到训练里。</p><a href="/?view=analysis" className="mk-button mk-button-dark">从我的视频开始<ProductIcon name="arrow-up-right" size={18} /></a></div></div></section>
 
-      <section id="questions" className="mk-faq mk-wrap" aria-labelledby="mk-faq-title"><div className="mk-faq-heading mk-reveal"><p className="mk-eyebrow">BEFORE YOU STEP IN</p><h2 id="mk-faq-title">还有些问题？</h2><p>开始之前，先了解这几件事。</p><a className="mk-text-link" href="/?view=guide">查看完整拍摄指南<ProductIcon name="arrow-up-right" size={17} /></a></div><div className="mk-faq-list mk-reveal">{questions.map((question, index) => <AnimatedDisclosure key={question.title} className="mk-faq-item" bodyClassName="mk-faq-answer" summary={<><span className="mk-faq-number">0{index + 1}</span><strong>{question.title}</strong><ProductIcon name="plus" size={18} /></>}><p>{question.text}</p></AnimatedDisclosure>)}</div></section>
+      <section id="questions" className="mk-faq mk-wrap" aria-labelledby="mk-faq-title"><div className="mk-faq-heading mk-reveal"><h2 id="mk-faq-title">还有些问题？</h2><a className="mk-text-link" href="/?view=guide">查看完整拍摄指南<ProductIcon name="arrow-up-right" size={17} /></a></div><div className="mk-faq-list mk-reveal">{questions.map((question) => <AnimatedDisclosure key={question.title} className="mk-faq-item" bodyClassName="mk-faq-answer" summary={<><strong>{question.title}</strong><ProductIcon name="plus" size={18} /></>}><p>{question.text}</p></AnimatedDisclosure>)}</div></section>
 
-      <section className="mk-last-call mk-wrap mk-reveal" aria-labelledby="mk-last-title"><div><p className="mk-eyebrow">SEE YOUR GAME. FIND YOUR NEXT.</p><h2 id="mk-last-title">下一拍，<span>从这里开始。</span></h2></div><a href="/?view=analysis" className="mk-round-cta" aria-label="上传视频，开始我的复盘"><ProductIcon name="arrow-up-right" size={48} /></a><div className="mk-last-line"><span>你的热爱，值得再看一遍。</span><a href="/?view=overview">进入训练空间<ProductIcon name="arrow-up-right" size={15} /></a></div></section>
+      <section className="mk-last-call mk-wrap mk-reveal" aria-labelledby="mk-last-title"><div><h2 id="mk-last-title">下一拍，<span>从这里开始。</span></h2></div><a href="/?view=analysis" className="mk-round-cta" aria-label="上传视频，开始我的复盘"><ProductIcon name="arrow-up-right" size={48} /></a><div className="mk-last-line"><a href="/?view=overview">进入训练空间<ProductIcon name="arrow-up-right" size={15} /></a></div></section>
     </main>
 
-    <footer className="mk-footer"><div className="mk-wrap"><div className="mk-footer-top"><a href="/welcome" className="mk-brand"><ProductIcon name="tennis" size={23} /><span>RallyMate</span></a><p>看见动作，理解训练。</p><a href="#marketing-main" className="mk-back-top">回到顶部<ProductIcon name="arrow-up-right" size={16} /></a></div><div className="mk-wordmark" aria-hidden="true">RallyMate<span>↗</span></div><div className="mk-footer-bottom"><p>© 2026 RallyMate</p><p>原创品牌概念视觉 · 演示内容为交互示意</p><a href="/?view=overview">训练工作台<ProductIcon name="arrow-up-right" size={14} /></a></div></div></footer>
+    <footer className="mk-footer"><div className="mk-wrap"><div className="mk-footer-top"><a href="/welcome" className="mk-brand"><ProductIcon name="tennis" size={23} /><span>RallyMate</span></a><a href="#marketing-main" className="mk-back-top">回到顶部<ProductIcon name="arrow-up-right" size={16} /></a></div><div className="mk-wordmark" aria-hidden="true">RallyMate<span>↗</span></div><div className="mk-footer-bottom"><p>© 2026 RallyMate</p><p>原创品牌概念视觉 · 演示内容为交互示意</p><a href="/?view=overview">训练工作台<ProductIcon name="arrow-up-right" size={14} /></a></div></div></footer>
   </div>;
 }

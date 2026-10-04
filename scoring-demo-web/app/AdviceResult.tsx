@@ -4,8 +4,8 @@ export default function AdviceResult({ technique, response }: { technique: strin
   const advice = response?.advice;
   const evidence = response?.evidence;
   const unsupported = evidence && ["no_video", "analysis_unavailable", "insufficient_evidence"].includes(evidence.status);
-  return <aside className="coach-result" aria-label="建议与识别依据">
-    <span className="card-kicker">{technique} · {unsupported ? "识别证据说明" : "解释与建议"}</span>
+  return <aside className="coach-result" aria-label={`${technique}建议与识别依据`}>
+    {unsupported && <p className="coach-evidence-status">识别证据说明</p>}
     <h3>{advice?.summary ?? "先确认识别依据，再给出建议。"}</h3>
     {!advice && <p className="coach-evidence-copy">选择动作并提交问题后，会说明本次识别到了什么、哪些部分还不能判断，以及可以怎样补充证据。未识别不等于动作错误。</p>}
     {evidence && <div className="coach-evidence" aria-label="本次所选动作的证据">

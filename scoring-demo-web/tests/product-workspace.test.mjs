@@ -100,6 +100,30 @@ test("desktop and mobile navigation call all four destinations and expose the cu
   }
 });
 
+test("every workspace view can return to the public homepage, including while analysis is busy", () => {
+  for (const view of ["overview", "sessions", "analysis", "guide"]) {
+    for (const busy of [false, true]) {
+      const shell = ProductShell({ view, busy, onNavigate: noop, onNewAnalysis: noop, children: "报告内容" });
+      const nodes = elements(shell);
+      const brand = nodes.find(node => node.props.className === "pw-brand");
+      const returnHome = nodes.find(node => node.props.className === "pw-home-link");
+      for (const link of [brand, returnHome]) {
+        assert.ok(link, `${view} must have both a brand and a visible return link`);
+        // Native navigation must work without relying on the client router or an idle job.
+        assert.equal(link.type, "a");
+        assert.equal(link.props.href, "/welcome");
+        assert.equal(link.props.disabled, undefined);
+        assert.equal(link.props.onClick, undefined);
+      }
+      assert.match(textOf(renderToStaticMarkup(returnHome)), /返回首页/);
+      const topbar = nodes.find(node => node.type === "header");
+      assert.ok(elements(topbar).includes(returnHome), "return link is in the header, outside the desktop-only sidebar");
+      const overview = nodes.filter(node => node.type === "button" && elements(node).some(child => child.type === "span" && child.props.children === "训练总览"));
+      assert.equal(overview.length, 2, "returning to the homepage does not remove desktop or mobile overview navigation");
+    }
+  }
+});
+
 test("busy overview exposes progress while other navigation remains available", () => {
   const html = render(TrainingHome, { ...homeProps, busy: true, currentName: "正在处理.mp4" });
   assert.match(textOf(html), /你的训练视频正在分析/);

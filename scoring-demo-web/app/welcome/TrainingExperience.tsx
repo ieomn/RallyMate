@@ -3,9 +3,9 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
 const phases = [
-  { name: "准备", position: 15, cue: "让下一拍，提前发生。", description: "回看启动前的一瞬间。准备姿态、移动方向与来球，值得放在一起观察。", detail: "观察准备与启动", number: "01" },
-  { name: "挥拍", position: 50, cue: "看清那个关键瞬间。", description: "把连续动作慢下来。在回放中找到关注的片段，连接脚步、转体与挥拍。", detail: "定位关注的动作", number: "02" },
-  { name: "恢复", position: 85, cue: "这一拍之后，还有下一拍。", description: "观察击球后的回位与衔接。完整看完一个动作，才更容易理解整段训练。", detail: "回看动作的衔接", number: "03" },
+  { name: "准备", position: 15, cue: "让下一拍，提前发生。", description: "回看启动前的一瞬间，一起观察准备姿态、移动方向与来球。" },
+  { name: "挥拍", position: 50, cue: "看清那个关键瞬间。", description: "把连续动作慢下来，连接脚步、转体与挥拍，找到值得回看的细节。" },
+  { name: "恢复", position: 85, cue: "这一拍之后，还有下一拍。", description: "观察击球后的回位与衔接，把一个动作完整看完。" },
 ] as const;
 
 function ballPosition(progress: number) {
@@ -104,13 +104,12 @@ export function TrainingExperience() {
 
   return <section className="marketing-experience" id="experience" ref={sectionRef} aria-labelledby={`${identifier}-heading`}>
     <div className="mx-heading">
-      <div><p className="mx-eyebrow">A CLOSER LOOK</p><h2 id={`${identifier}-heading`}>有些进步，<br /><span>回看才看得见。</span></h2></div>
-      <p className="mx-heading-copy">好的训练，不止于多打一拍。<br />还在于看懂这一拍。<br /><span>动动手，感受回看的节奏。</span></p>
+      <h2 id={`${identifier}-heading`}>有些进步，<br /><span>回看才看得见。</span></h2>
+      <p className="mx-heading-copy">拖动时间轴，<br />回看动作的三个阶段。</p>
     </div>
 
     <div className="mx-explorer">
       <div className="mx-court-panel">
-        <div className="mx-court-top"><span className="mx-live-label"><i />THE RALLY, RECONSIDERED</span><span className="mx-diagram-label">动作回看示意</span></div>
         <svg className="mx-court" viewBox="0 0 820 520" aria-hidden="true" fill="none">
           <defs>
             <linearGradient id={`${identifier}-surface`} x1="250" y1="60" x2="510" y2="475" gradientUnits="userSpaceOnUse"><stop stopColor="#24352a" /><stop offset="1" stopColor="#131e18" /></linearGradient>
@@ -141,31 +140,27 @@ export function TrainingExperience() {
           <ellipse cx={ball.x + 5} cy={ball.y + 23} rx="10" ry="4" fill="#050a05" opacity=".7" filter={`url(#${identifier}-shadow)`} />
           <circle cx={ball.x} cy={ball.y} r="19" fill="#d8fc75" fillOpacity=".06" />
           <g transform={`translate(${ball.x} ${ball.y})`}><circle r="7.5" fill="#d8fc75" /><path d="M-6-4c6 0 6 8 12 8" stroke="#7c9c35" strokeWidth="1" strokeLinecap="round" /></g>
-          <g className="mx-court-annotation" fill="#a5b79e"><text x="179" y="410">准备位置</text><text x="393" y="401">回位</text><text x="587" y="207" fill="#d8fc75" fillOpacity=".65">动作衔接</text></g>
         </svg>
-        <div className="mx-court-bottom"><span><span className="mx-stage-index">0{stage + 1}</span> / 03</span><p>交互示意 · 非真实视频测量</p><span className="mx-drag-hint">拖动下方时间轴 <span aria-hidden="true">↔</span></span></div>
+        <div className="mx-court-bottom"><p>交互示意 · 非真实视频测量</p></div>
       </div>
 
       <div className="mx-controls-panel">
-        <div className="mx-phase-tabs" role="group" aria-label="选择观察阶段">{phases.map((item, index) => <button type="button" key={item.name} aria-pressed={stage === index} onClick={() => seek(item.position)}><span>{item.number}</span>{item.name}</button>)}</div>
+        <div className="mx-phase-tabs" role="group" aria-label="选择观察阶段">{phases.map((item, index) => <button type="button" key={item.name} aria-pressed={stage === index} onClick={() => seek(item.position)}>{item.name}</button>)}</div>
         <div className="mx-phase-copy" key={phase.name}>
-          <span className="mx-detail-label"><i />{phase.detail}</span>
           <h3>{phase.cue}</h3>
           <p>{phase.description}</p>
         </div>
         <div className="mx-scrubber">
-          <div className="mx-scrubber-label"><label htmlFor={`${identifier}-scrubber`}>掌握你的回看节奏</label><span>{Math.round(progress).toString().padStart(2, "0")} <span>/ 100</span></span></div>
+          <div className="mx-scrubber-label"><label htmlFor={`${identifier}-scrubber`}>拖动回看</label><span>{Math.round(progress)}%</span></div>
           <input id={`${identifier}-scrubber`} className="mx-range" type="range" min="0" max="100" step="1" value={progress} onChange={(event) => seek(Number(event.target.value))} aria-label="拖动动作回看示意进度" aria-valuetext={`${Math.round(progress)}%，${phase.name}阶段`} style={{ "--mx-progress": `${progress}%` } as CSSProperties} />
-          <div className="mx-range-labels" aria-hidden="true"><span>准备</span><span>挥拍</span><span>恢复</span></div>
           <div className="mx-playback-controls">
             <button className="mx-step" type="button" onClick={() => seek(progress - 5)} aria-label="示意后退 5%" disabled={progress <= 0}><ControlIcon kind="previous" /></button>
             <button className="mx-play" type="button" onClick={togglePlayback} disabled={reduceMotion} aria-label={playing ? "暂停动作示意" : "播放动作示意"}><ControlIcon kind={playing ? "pause" : "play"} /><span>{playing ? "暂停示意" : "播放示意"}</span></button>
             <button className="mx-step" type="button" onClick={() => seek(progress + 5)} aria-label="示意前进 5%" disabled={progress >= 100}><ControlIcon kind="next" /></button>
           </div>
-          <p className="mx-control-help">{reduceMotion ? "已遵循减少动态效果设置，可手动拖动体验。" : "也可以用键盘方向键，逐步探索。"}</p>
+          {reduceMotion && <p className="mx-control-help">已开启减少动态效果，可手动拖动体验。</p>}
         </div>
       </div>
     </div>
-    <p className="mx-footnote">这里展示回看的交互方式。上传训练视频后，你将看到属于自己的训练片段与分析结果。</p>
   </section>;
 }

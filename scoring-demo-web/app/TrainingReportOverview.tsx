@@ -19,7 +19,7 @@ export default function TrainingReportOverview({ result, motion, pending, title,
       {(!result || pending) && <p className="report-status-copy"><strong>{title}</strong>{description}</p>}
     </section>
     <section className="report-focus" aria-labelledby="report-focus-title">
-      <div className="report-section-heading"><h2 id="report-focus-title">这次先关注</h2><span>复盘重点</span></div>
+      <div className="report-section-heading"><h2 id="report-focus-title">这次先关注</h2></div>
       {focus.length ? focus.map((item, index) => <article key={item.id} className="report-focus-item"><span className="focus-index" aria-hidden="true">0{index + 1}</span><div><small>{item.label}</small><h3>{item.title}</h3><p>{item.detail}</p>{item.moment && <button type="button" onClick={() => replayMoment(item.moment!, result?.job_id)}>回看片段 <span aria-hidden="true">↗</span></button>}</div></article>) : <p className="report-status-copy">{pending ? "完成后会在这里显示有依据的复核重点与补录建议。" : "上传一段训练视频，从步伐与转体开始复盘。"}</p>}
     </section>
   </aside>;
