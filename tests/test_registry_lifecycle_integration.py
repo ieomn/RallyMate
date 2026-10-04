@@ -40,7 +40,7 @@ class RegistryLifecycleIntegrationTests(unittest.TestCase):
         authority = settings.resolved_scoring_registry_authority
         self.assertEqual(authority.role, "runtime_feasibility")
         self.assertEqual(authority.lifecycle, "current")
-        self.assertEqual(authority.embedded_version, "pose-wave-2026-08-22.17")
+        self.assertEqual(authority.embedded_version, "pose-wave-2026-10-01.2")
         self.assertEqual(
             settings.resolved_scoring_feasibility_registry,
             ROOT / "metric-feasibility-pose-wave-v2.json",

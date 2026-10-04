@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="上传一个或多个网球视频，查看网球动作表现参考分和训练建议。">
+  <meta name="description" content="上传一个或多个网球视频，查看候选动作的逐项测量与证据。">
   <title>RallyMate 网球动作分析</title>
   <link rel="stylesheet" href="/assets/user-demo.css?v=1.2.0">
 </head>
@@ -24,8 +24,8 @@
     <section class="intro" aria-labelledby="page-title">
       <div>
         <p class="eyebrow">网球动作分析 Demo · v1.2</p>
-        <h1 id="page-title">上传视频，获得动作表现参考与训练建议</h1>
-        <p class="intro-copy">系统会识别准备、启动和制动动作，结合视频证据给出 Beta 动作表现参考分、单项判断和下一步训练重点。</p>
+        <h1 id="page-title">上传视频，查看步伐测量与复核建议</h1>
+        <p class="intro-copy">查看准备、启动和制动候选片段，以及测量证据参考分；技术评分待教练标定。</p>
       </div>
       <div class="truth-badge">
         <strong>真实视频</strong>
@@ -95,7 +95,7 @@
 
         <div id="empty-state" class="empty-state">
           <div class="court-lines" aria-hidden="true"><span></span></div>
-          <p>完成后，这里会优先显示动作表现参考分、单项视频证据和训练建议。</p>
+          <p>完成后查看证据参考分与候选片段，按需展开逐项测量。</p>
         </div>
 
         <div id="progress-state" class="progress-state" hidden>
@@ -116,10 +116,10 @@
           <div class="score-row">
             <div class="score-ring" id="score-ring">
               <span id="score-value">—</span>
-              <small id="score-unit">/ 100</small>
+              <small id="score-unit">项有测量</small>
             </div>
             <div>
-              <p class="eyebrow" id="score-label">动作表现参考分（Beta）</p>
+              <p class="eyebrow" id="score-label">实测指标</p>
               <h3 id="result-headline">分析完成</h3>
               <p id="score-meaning"></p>
             </div>
@@ -137,7 +137,7 @@
           <div class="analysis-quality" id="analysis-quality">
             <div>
               <span>分析完成度</span>
-              <strong><span id="analysis-quality-value">—</span> / 100</strong>
+              <strong><span id="analysis-quality-value">待复核</span></strong>
             </div>
             <p id="analysis-quality-meaning"></p>
           </div>
@@ -165,8 +165,8 @@
 
   <footer>
     <span>RallyMate · 当前覆盖 FS01 / FS02 / FS09</span>
-    <span>动作表现参考分为 Beta 反馈，不替代现场教练判断</span>
+    <span>候选测量不合成为技术总分，动作类型需回放复核</span>
   </footer>
-  <script src="/assets/user-demo.js?v=1.2.0" defer></script>
+  <script src="/assets/user-demo.js?v=1.4.0" defer></script>
 </body>
 </html>

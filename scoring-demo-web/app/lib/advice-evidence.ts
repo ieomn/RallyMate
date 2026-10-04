@@ -80,10 +80,10 @@ export function adviceEvidenceFromPayload(technique: string, jobId: string, raw:
     const phases = unique(observed.flatMap(row => array(row.phase_statuses).map(record).filter(phase => phase.status === "measured" && phase.evidence_source === "explicit_phase_record").map(phase => PHASES[String(phase.phase)]).filter(Boolean)));
     return {
       ...common, status: "observed", reasonCode: "family_events_observed",
-      explanation: `当前可解释已识别的${technique}事件；只有明确记录的阶段可作阶段说明，不能据此推断完整动作质量。`,
-      availableFacts: unique(observed.map(row => `已关联动作事件：${trustedText(row.name_zh, 80)}。`)).slice(0, 6),
+      explanation: `当前可复核${technique}的候选事件；只有明确记录的阶段可作阶段说明，不能据此推断动作类型准确或完整动作质量。`,
+      availableFacts: unique(observed.map(row => `已关联候选事件：${trustedText(row.name_zh, 80)}（待回放复核）。`)).slice(0, 6),
       observedPhases: phases,
-      limitations: ["识别到动作事件不等于确认球拍触球，也不自动说明动作正确、稳定或得分。", "未提供明确证据的阶段与动作原因暂不评价。"],
+      limitations: ["候选事件尚待复核，不等于确认球拍触球；动作类型与离地落地也待核实，不说明技术正确、稳定或得分。", "未提供明确证据的阶段与动作原因暂不评价。"],
       nextSteps: ["结合回放复核已记录的动作事件，只比较有证据支持的部分。"],
     };
   }

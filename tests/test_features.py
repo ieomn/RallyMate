@@ -111,7 +111,7 @@ class FeatureLibraryTests(unittest.TestCase):
         stability = by_name["stability_duration_ms"]
         self.assertEqual(
             stability.feature_version,
-            "0.2.0-provisional-envelope-evidence",
+            "0.4.0-isotropic-contiguous-envelope-evidence",
         )
         self.assertEqual(
             set(stability.raw_value),
@@ -152,7 +152,7 @@ class FeatureLibraryTests(unittest.TestCase):
         self.assertEqual(coco.reason, "required_keypoints_unavailable")
         self.assertTrue(fine_foot.valid)
         self.assertEqual(fine_foot.unit, "deg")
-        self.assertEqual(fine_foot.feature_version, "0.2.0-fine-foot-diagnostic")
+        self.assertEqual(fine_foot.feature_version, "0.3.0-isotropic-fine-foot-diagnostic")
 
     def test_halpe26_and_wholebody133_records_share_registered_fine_foot_feature(self) -> None:
         event = EventInterval("event-1", "FS01", 0, 240)
@@ -176,7 +176,7 @@ class FeatureLibraryTests(unittest.TestCase):
                 }
                 records.append(
                     {
-                        "frame": {
+                        "frame": {"width": 1000, "height": 1000,
                             "processed_index": index,
                             "index": 100 + index,
                             "timestamp_ms": index * 40,
@@ -205,12 +205,12 @@ class FeatureLibraryTests(unittest.TestCase):
                 ["left_ankle_shank_foot_angle_deg"],
             )[0]
             self.assertTrue(result.valid, topology)
-            self.assertEqual(result.feature_version, "0.2.0-fine-foot-diagnostic")
+            self.assertEqual(result.feature_version, "0.3.0-isotropic-fine-foot-diagnostic")
 
     def test_out_of_frame_point_is_missing_even_when_confidence_is_high(self) -> None:
         records = [
             {
-                "frame": {"processed_index": 0, "index": 930, "timestamp_ms": 31000},
+                "frame": {"width": 1000, "height": 1000,"processed_index": 0, "index": 930, "timestamp_ms": 31000},
                 "poses": [
                     {
                         "person_track_id": 90,

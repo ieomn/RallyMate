@@ -414,7 +414,7 @@ class OutputValidationTests(unittest.TestCase):
                 **run_kwargs,
                 scoring_reference_context_path=context_path,
             )
-            self.assertEqual(second["summary"]["loop_version"], "minimum-scoring-loop-v0.7.0")
+            self.assertEqual(second["summary"]["loop_version"], "minimum-scoring-loop-v0.8.0")
             self.assertEqual(
                 validate_run_artifacts(destination)["scoring_artifacts_status"],
                 "passed",

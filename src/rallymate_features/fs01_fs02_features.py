@@ -11,9 +11,10 @@ from rallymate_features.geometry import angle_three_points_deg
 from rallymate_features.kinematics import irregular_derivative
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.smoothing import smooth_series
+from rallymate_features.temporal import longest_contiguous_duration
 
 
-FS01_FS02_FEATURE_VERSION = "fs01-fs02-pose-proxies-v0.5.0"
+FS01_FS02_FEATURE_VERSION = "fs01-fs02-pose-proxies-v0.7.0"
 ANKLE_FALLBACK_CONFIDENCE_MULTIPLIER = 0.65
 FS01_FS02_MAX_TEMPORAL_GAP_MS = 160
 _NORMALIZED_COORDINATE_NUMERICAL_ZERO = 1e-12
@@ -961,28 +962,10 @@ def _longest_true_run(
     indexes: np.ndarray,
     mask: np.ndarray,
 ) -> tuple[int | None, tuple[int, ...]]:
-    indexes = np.asarray(indexes, dtype=np.int64)
-    if indexes.size == 0:
-        return None, ()
-    local = np.asarray(mask, dtype=bool)[indexes]
-    longest: tuple[int, int] | None = None
-    start: int | None = None
-    for position, active in enumerate(np.append(local, False)):
-        if active and start is None:
-            start = position
-        elif not active and start is not None:
-            end = position - 1
-            if longest is None or end - start > longest[1] - longest[0]:
-                longest = (start, end)
-            start = None
-    if longest is None:
-        return None, ()
-    first = int(indexes[longest[0]])
-    last = int(indexes[longest[1]])
-    local_dt = np.diff(np.asarray(timestamp_ms, dtype=np.int64)[indexes])
-    median_dt = int(np.median(local_dt)) if local_dt.size else 0
-    duration = int(timestamp_ms[last] - timestamp_ms[first] + median_dt)
-    return max(duration, 0), (first, last)
+    duration, evidence, _ = longest_contiguous_duration(
+        timestamp_ms, indexes, mask, max_gap_ms=FS01_FS02_MAX_TEMPORAL_GAP_MS
+    )
+    return duration, evidence
 
 
 def _peak_index(values: np.ndarray, indexes: np.ndarray) -> tuple[int | None, float | None]:

@@ -11,11 +11,13 @@ except ModuleNotFoundError:  # Runtime selection does not depend on jsonschema.
     Draft202012Validator = None
 
 from rallymate_tracking.primary_player import (
+    KEYPOINT_CONFIDENCE_MIN,
     diagnose_primary_timeline,
     primary_timeline_algorithm_version,
     registry_required_primary_player_version,
     select_primary_player_timeline,
 )
+from rallymate_features.coordinates import point_series, pose_sequence_from_records
 from rallymate_vision.pose.metadata import keypoint_schema
 
 
@@ -70,6 +72,55 @@ def _record(index: int, players: list[tuple[int, list[float], bool]]) -> dict:
 
 
 class PrimaryPlayerTests(unittest.TestCase):
+    def test_selection_threshold_preserves_020_boundary_without_lowering_measurement_gate(self) -> None:
+        self.assertEqual(KEYPOINT_CONFIDENCE_MIN, 0.20)
+        for confidence, expected_valid_fraction in [(0.19, 0.0), (0.20, 1.0), (0.24, 1.0), (0.25, 1.0)]:
+            with self.subTest(confidence=confidence):
+                records = [_record(index, [(1, [30, 15, 100, 115], True)]) for index in range(4)]
+                for record in records:
+                    for point in record["poses"][0]["keypoints"]:
+                        point["confidence"] = confidence
+                result = select_primary_player_timeline(records)
+                self.assertEqual(result["timeline"][0]["keypoint_valid_fraction"], expected_valid_fraction)
+                diagnostics = diagnose_primary_timeline(records, result["timeline"])
+                self.assertEqual(diagnostics["keypoint_valid_fraction"], expected_valid_fraction)
+                sequence = pose_sequence_from_records(records, result["timeline"])
+                _, measurable = point_series(sequence, "left_ankle")
+                self.assertEqual(measurable.tolist(), [confidence >= 0.25] * 4)
+
+    def test_low_confidence_primary_stays_stable_during_brief_background_detection(self) -> None:
+        records = []
+        for index in range(12):
+            players = [(1, [30 + index, 15, 100 + index, 115], True)]
+            if index in (5, 6):
+                players.append((2, [2, 2, 195, 118], True))
+            record = _record(index, players)
+            for point in record["poses"][0]["keypoints"]:
+                point["confidence"] = 0.22
+            records.append(record)
+        result = select_primary_player_timeline(records)
+        self.assertEqual([item["source_track_id"] for item in result["timeline"]], [1] * 12)
+        self.assertEqual([item["primary_player_id"] for item in result["timeline"]], [1] * 12)
+
+    def test_nonfinite_or_out_of_frame_points_are_not_primary_pose_evidence(self) -> None:
+        for field, value in [
+            ("x_normalized", float("nan")),
+            ("y_normalized", float("inf")),
+            ("x_normalized", -0.1),
+            ("y_normalized", 1.1),
+            ("confidence", float("inf")),
+            ("confidence", 1.1),
+            ("confidence", None),
+        ]:
+            with self.subTest(field=field, value=value):
+                records = [_record(0, [(1, [30, 15, 100, 115], True)])]
+                point = next(point for point in records[0]["poses"][0]["keypoints"] if point["name"] == "left_ankle")
+                point[field] = value
+                result = select_primary_player_timeline(records)
+                self.assertEqual(result["timeline"][0]["keypoint_valid_fraction"], 0.875)
+                diagnostics = diagnose_primary_timeline(records, result["timeline"])
+                self.assertEqual(diagnostics["keypoint_valid_fraction"], 0.875)
+
     def test_timeline_version_binding_rejects_legacy_or_mixed_artifacts(self) -> None:
         timeline = select_primary_player_timeline(
             [_record(index, [(1, [30, 15, 100, 115], True)]) for index in range(2)]

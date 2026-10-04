@@ -2,6 +2,7 @@ import type { TrajectoryPoint, TrajectoryPreviewResponse } from "./api-types";
 
 export type TrajectoryEdge = { from: TrajectoryPoint; to: TrajectoryPoint; source: "observed" | "interpolated"; pathIndex: number };
 export type TrajectoryDisplayMode = "segment" | "tail" | "overview";
+export const TRAJECTORY_HOLD_MS = 600;
 
 /** Limit each independent path to the recent past; never draw future detections. */
 export function trajectoryWindow(paths: TrajectoryPoint[][], atMs: number, tailMs = 750): TrajectoryPoint[][] {
@@ -9,19 +10,31 @@ export function trajectoryWindow(paths: TrajectoryPoint[][], atMs: number, tailM
 }
 
 /** Conservative display filter only; the source inference evidence stays intact. */
-export function visibleTrajectoryPaths(paths: TrajectoryPoint[][], atMs: number, options: { showInterpolated?: boolean; minimumConfidence?: number; tailMs?: number; mode?: TrajectoryDisplayMode; trustedSegments?: boolean } = {}): TrajectoryPoint[][] {
-  const { showInterpolated = true, minimumConfidence = 0.6, tailMs = 750, mode = "segment", trustedSegments = false } = options;
-  const candidates: TrajectoryPoint[][] = [];
-  for (const path of trajectoryWindow(paths, atMs, mode === "tail" ? tailMs : Infinity)) {
+export function visibleTrajectoryPaths(paths: TrajectoryPoint[][], atMs: number, options: { showInterpolated?: boolean; minimumConfidence?: number; tailMs?: number; mode?: TrajectoryDisplayMode; trustedSegments?: boolean; holdMs?: number; sampledPathEndMs?: Array<number | undefined> } = {}): TrajectoryPoint[][] {
+  const { showInterpolated = true, tailMs = 750, mode = "segment", trustedSegments = false, holdMs = TRAJECTORY_HOLD_MS } = options;
+  // The backend validates reconstructed geometry. That does not validate a
+  // missing/invalid detector score. Use its existing 0.15 evidence floor for
+  // reconstruction; do not apply the legacy 0.6 cutoff to tiny-ball detections.
+  const minimumConfidence = options.minimumConfidence ?? (trustedSegments ? 0.15 : 0.6);
+  const candidates: Array<{ points: TrajectoryPoint[]; supportEndMs: number }> = [];
+  for (const [pathIndex, path] of trajectoryWindow(paths, atMs, mode === "tail" ? tailMs : Infinity).entries()) {
     let run: TrajectoryPoint[] = [];
     const finish = () => {
-      if (run.length >= 2 && run.some(point => Math.hypot(point.x - run[0].x, point.y - run[0].y) >= 0.008)) candidates.push(run);
+      if (run.length >= 2 && run.some(point => Math.hypot(point.x - run[0].x, point.y - run[0].y) >= 0.008)) {
+        const sampledEnd = options.sampledPathEndMs?.[pathIndex];
+        // Full-source segments bridge at most 600 ms. Point downsampling must
+        // not make their still-observed interval appear expired between samples.
+        const supportEndMs = trustedSegments && mode === "segment" && run.at(-1) === path.at(-1) && typeof sampledEnd === "number" && Number.isFinite(sampledEnd)
+          ? Math.min(atMs, sampledEnd) : run[run.length - 1].timestamp_ms;
+        candidates.push({ points: run, supportEndMs });
+      }
       run = [];
     };
     for (const point of path) {
       const valid = [point.x, point.y, point.timestamp_ms].every(value => typeof value === "number" && Number.isFinite(value))
         && point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1
-        && (trustedSegments || (point.confidence ?? 0) >= minimumConfidence)
+        && typeof point.confidence === "number" && Number.isFinite(point.confidence) && point.confidence <= 1
+        && point.confidence >= minimumConfidence * (trustedSegments && point.source === "interpolated" ? 0.85 : 1)
         && (point.source !== "interpolated" || showInterpolated);
       if (!valid) { finish(); continue; }
       const previous = run.at(-1);
@@ -30,12 +43,20 @@ export function visibleTrajectoryPaths(paths: TrajectoryPoint[][], atMs: number,
     }
     finish();
   }
-  // Keep the completed path until the next flight starts. Short tail remains an
-  // optional view; a detector miss must not erase the entire flight every 150ms.
+  // Briefly hold missed observations, then clear stale history. Simultaneous
+  // candidates remain separate: recency alone cannot identify the active ball.
   return candidates
-    .filter(path => mode !== "tail" || atMs - path[path.length - 1].timestamp_ms <= tailMs)
-    .sort((a, b) => b[b.length - 1].timestamp_ms - a[a.length - 1].timestamp_ms || (b[b.length - 1].confidence ?? 0) - (a[a.length - 1].confidence ?? 0))
-    .slice(0, mode === "overview" ? 12 : 1);
+    .filter(({ supportEndMs }) => mode === "overview" || atMs - supportEndMs <= (mode === "tail" ? tailMs : holdMs))
+    .sort((a, b) => b.supportEndMs - a.supportEndMs || b.points[b.points.length - 1].timestamp_ms - a.points[a.points.length - 1].timestamp_ms)
+    .slice(0, 12).map(candidate => candidate.points);
+}
+
+/** A display strength, never a probability of correctness or a technique score. */
+export function trajectoryDisplayOpacity(points: TrajectoryPoint[], medianConfidence?: number | null) {
+  const scores = points.filter(point => point.source !== "interpolated").map(point => point.confidence).filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1).sort((a, b) => a - b);
+  const confidence = typeof medianConfidence === "number" && Number.isFinite(medianConfidence)
+    ? medianConfidence : scores.length ? (scores[Math.floor((scores.length - 1) / 2)] + scores[Math.floor(scores.length / 2)]) / 2 : 0;
+  return Math.max(0.2, Math.min(0.9, 0.2 + 0.7 * confidence));
 }
 
 export function trajectoryAvailability(trajectory: TrajectoryPreviewResponse | null, pending = false, error?: string | null) {
@@ -47,7 +68,7 @@ export function trajectoryAvailability(trajectory: TrajectoryPreviewResponse | n
   }
   if (trajectory.source.is_partial) return { state: "pending", title: "视频分析中", description: "已返回部分观测。球路随播放展开，短缺口用虚线区分。" };
   if (["unsupported", "not_available"].includes(trajectory.status) || reconstruction?.status === "not_available") return { state: "unsupported", title: "本次未提供球路分析", description: "当前结果不支持球路重建；视频可继续正常回放。" };
-  if (reconstruction?.segments.length) return { state: "ready", title: "球路分析已完成", description: "默认保留当前球路的完整已播放轨迹；虚线表示短缺口插值，长缺口分段显示。不叠加人体骨架。" };
+  if (reconstruction?.segments.length) return { state: "ready", title: "球路观测已完成", description: "显示最近 0.6 秒仍有观测的独立候选，过时轨迹自动隐藏。虚线为短缺口插值，浅色表示较低检测置信度；尚未确认唯一比赛用球。" };
   if (!reconstruction && trajectory.ball.observed.length) return { state: "legacy", title: "仅有基础球观测", description: "本次结果没有分段重建；回放仅显示通过筛选的短时球路，不叠加人体骨架。" };
   return { state: "not_observed", title: "未获得可靠球路", description: "本次视频未形成可用的球轨迹；检测点数量不代表击球次数。" };
 }

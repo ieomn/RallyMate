@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
+from dataclasses import replace
 from typing import Any, Callable
 
 import numpy as np
@@ -36,9 +38,10 @@ from rallymate_features.fs09_features import (
 )
 from rallymate_features.schemas import EventInterval, FeatureResult, PoseSequence
 from rallymate_features.smoothing import smooth_series
+from rallymate_features.temporal import longest_contiguous_duration
 
 
-FEATURE_LIBRARY_VERSION = "rallymate-features-v0.1.0"
+FEATURE_LIBRARY_VERSION = "rallymate-features-v0.3.0"
 MIN_VALID_FRACTION = 0.50
 SCORING_FEATURE_NAMES = (
     "hip_center_y_body",
@@ -69,88 +72,89 @@ _SCALE_NORMALIZED_FEATURES = {
 }
 _SERIES_CACHE: dict[int, tuple[PoseSequence, dict[str, tuple[np.ndarray, np.ndarray]]]] = {}
 _BODY_SCALE_CACHE: dict[int, tuple[PoseSequence, np.ndarray]] = {}
+_CAMERA_WINDOW_CACHE: dict[int, tuple[PoseSequence, dict[tuple[int, int], PoseSequence]]] = {}
 
 
 FEATURE_DEFINITIONS = {
     "hip_center_y_body": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "body",
         "aggregation": "median",
         "required_joints": ["left_hip", "right_hip", "left_ankle", "right_ankle"],
         "definition": "vertical distance from ankle-support midpoint to hip center divided by event median body scale",
     },
     "body_center_speed_body_s": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "body/s",
         "aggregation": "peak",
         "required_joints": ["left_shoulder", "right_shoulder", "left_hip", "right_hip"],
         "definition": "image-plane body-center speed divided by event median body scale using timestamp_ms",
     },
     "left_knee_flexion_deg": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "deg",
         "aggregation": "peak",
         "required_joints": ["left_hip", "left_knee", "left_ankle"],
         "definition": "180 degrees minus internal hip-knee-ankle angle",
     },
     "right_knee_flexion_deg": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "deg",
         "aggregation": "peak",
         "required_joints": ["right_hip", "right_knee", "right_ankle"],
         "definition": "180 degrees minus internal hip-knee-ankle angle",
     },
     "torso_lean_deg": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "deg",
         "aggregation": "peak_absolute_signed",
         "required_joints": ["left_shoulder", "right_shoulder", "left_hip", "right_hip"],
         "definition": "signed torso angle from image vertical; image-plane feature only",
     },
     "stance_width_body": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "body",
         "aggregation": "median",
         "required_joints": ["left_ankle", "right_ankle"],
         "definition": "ankle distance divided by event median body scale",
     },
     "hip_center_relative_to_ankle_support": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "ratio",
         "aggregation": "peak_deviation_from_mid_support",
         "required_joints": ["left_hip", "right_hip", "left_ankle", "right_ankle"],
         "definition": "projection of hip center on left-to-right ankle axis; 0 left ankle, 1 right ankle",
     },
     "body_center_deceleration_body_s2": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "body/s2",
         "aggregation": "peak_positive",
         "required_joints": ["left_shoulder", "right_shoulder", "left_hip", "right_hip"],
         "definition": "negative derivative of smoothed normalized body-center speed using timestamp_ms",
     },
     "stability_duration_ms": {
-        "version": "0.2.0-provisional-envelope-evidence",
+        "version": "0.4.0-isotropic-contiguous-envelope-evidence",
         "unit": "ms",
         "aggregation": "longest_contiguous_stable_run",
         "required_joints": ["left_shoulder", "right_shoulder", "left_hip", "right_hip"],
         "definition": "longest run below event-adaptive speed and shoulder-hip angular-velocity envelopes",
     },
     "shoulder_hip_angular_velocity": {
-        "version": "1.0.0",
+        "version": "1.1.0-isotropic",
         "unit": "deg/s",
         "aggregation": "peak_absolute_signed",
         "required_joints": ["left_shoulder", "right_shoulder", "left_hip", "right_hip"],
         "definition": "timestamp derivative of unwrapped shoulder-axis minus hip-axis angle",
     },
     "left_ankle_shank_foot_angle_deg": {
-        "version": "0.2.0-fine-foot-diagnostic",
+        "version": "0.3.0-isotropic-fine-foot-diagnostic",
         "unit": "deg",
         "aggregation": "median",
         "required_joints": ["left_knee", "left_ankle", "left_big_toe", "left_small_toe"],
         "definition": "2D angle knee-ankle-forefoot-center from a registered fine-foot topology; diagnostic, not a calibrated dorsiflexion grade",
     },
     "right_ankle_shank_foot_angle_deg": {
-        "version": "0.2.0-fine-foot-diagnostic",
+        "version": "0.3.0-isotropic-fine-foot-diagnostic",
         "unit": "deg",
         "aggregation": "median",
         "required_joints": ["right_knee", "right_ankle", "right_big_toe", "right_small_toe"],
@@ -602,9 +606,14 @@ def clear_feature_cache(sequence: PoseSequence | None = None) -> None:
     if sequence is None:
         _SERIES_CACHE.clear()
         _BODY_SCALE_CACHE.clear()
+        _CAMERA_WINDOW_CACHE.clear()
     else:
         _SERIES_CACHE.pop(id(sequence), None)
         _BODY_SCALE_CACHE.pop(id(sequence), None)
+        cached = _CAMERA_WINDOW_CACHE.pop(id(sequence), None)
+        if cached is not None and cached[0] is sequence:
+            for window in cached[1].values():
+                clear_feature_cache(window)
     clear_fs01_fs02_feature_cache(sequence)
     clear_fs09_feature_cache(sequence)
 
@@ -662,34 +671,18 @@ def stability_duration_from_series(
     stable = joint_valid & (speed_values <= speed_limit) & (
         angular_values <= angular_limit
     )
-    median_dt = int(np.median(np.diff(timestamps))) if timestamps.size > 1 else 0
-    longest_start = longest_end = None
-    start = None
-    for position, is_stable in enumerate(np.append(stable, False)):
-        if is_stable and start is None:
-            start = position
-        if not is_stable and start is not None:
-            end = position - 1
-            if longest_start is None or end - start > longest_end - longest_start:
-                longest_start, longest_end = start, end
-            start = None
-    if longest_start is None:
-        duration = 0
-        longest = None
-    else:
-        duration = int(
-            timestamps[longest_end] - timestamps[longest_start] + median_dt
-        )
-        longest = [int(longest_start), int(longest_end)]
-    return duration, stable, {
+    duration, evidence, timing_diagnostics = longest_contiguous_duration(
+        timestamps, np.arange(timestamps.size, dtype=np.int64), stable
+    )
+    return duration or 0, stable, {
+        **timing_diagnostics,
         "reason": "computed_provisional_event_adaptive_envelope",
         "valid_sample_count": valid_count,
         "sample_count": int(timestamps.size),
         "valid_fraction": valid_fraction,
         "speed_limit_body_s": speed_limit,
         "angular_velocity_limit_deg_s": angular_limit,
-        "median_dt_ms": median_dt,
-        "longest_run_local_indexes": longest,
+        "longest_run_local_indexes": list(evidence) if evidence else None,
     }
 
 
@@ -731,6 +724,7 @@ def _stability_feature(
             smoothed_value=None,
             provenance={
                 "library_version": FEATURE_LIBRARY_VERSION,
+                "coordinate_metadata": sequence.coordinate_metadata,
                 "event_id": event.event_id,
                 "envelope_status": "provisional_event_adaptive_not_scoring_threshold",
                 "envelope_diagnostics": envelope,
@@ -783,6 +777,7 @@ def _stability_feature(
         },
         provenance={
             "library_version": FEATURE_LIBRARY_VERSION,
+            "coordinate_metadata": sequence.coordinate_metadata,
             "event_id": event.event_id,
             "aggregation": definition["aggregation"],
             "envelope_status": "provisional_event_adaptive_not_scoring_threshold",
@@ -857,6 +852,7 @@ def _fs09_event_summary_feature(
         },
         provenance={
             "library_version": FEATURE_LIBRARY_VERSION,
+            "coordinate_metadata": sequence.coordinate_metadata,
             "fs09_feature_version": FS09_FEATURE_VERSION,
             "event_id": event.event_id,
             "event_code": event.event_code,
@@ -952,6 +948,7 @@ def _fs01_fs02_event_summary_feature(
         },
         provenance={
             "library_version": FEATURE_LIBRARY_VERSION,
+            "coordinate_metadata": sequence.coordinate_metadata,
             "fs01_fs02_feature_version": FS01_FS02_FEATURE_VERSION,
             "event_id": event.event_id,
             "event_code": event.event_code,
@@ -1037,7 +1034,7 @@ def _fs01_fs02_event_summary_feature(
     )
 
 
-def compute_feature(
+def _compute_feature(
     sequence: PoseSequence,
     event: EventInterval,
     feature_name: str,
@@ -1049,6 +1046,7 @@ def compute_feature(
     scale = _event_scale(sequence, indexes) if indexes.size else None
     provenance = {
         "library_version": FEATURE_LIBRARY_VERSION,
+        "coordinate_metadata": sequence.coordinate_metadata,
         "event_id": event.event_id,
         "event_code": event.event_code,
         "person_track_id": event.person_track_id,
@@ -1136,10 +1134,115 @@ def compute_feature(
     )
 
 
+def _camera_window_for_event(sequence: PoseSequence, event: EventInterval) -> PoseSequence | None:
+    """Keep all smoothing, derivatives and reference estimation inside one view.
+
+    Event detection and manual-event measurement share this guard. Masking a
+    camera cut with NaN is insufficient because short-gap interpolation can
+    join the two coordinate frames again. An event crossing a rejected frame
+    is unavailable in full, rather than being silently shortened.
+    """
+    statuses = sequence.camera_motion_status
+    epochs = sequence.camera_reference_epochs
+    if statuses is None and epochs is None:
+        return sequence
+    if statuses is None:
+        statuses = ("unavailable",) * len(sequence.timestamp_ms)
+    allowed = np.asarray([status in {"reference", "stationary", "compensated"} for status in statuses])
+    if allowed.all() and (epochs is None or len(set(epochs)) <= 1):
+        return sequence
+    times = sequence.timestamp_ms
+    first = int(np.searchsorted(times, event.start_ms, side="right") - 1)
+    last = int(np.searchsorted(times, event.end_ms, side="left"))
+    if first < 0 or last >= times.size or not allowed[first:last + 1].all():
+        return None
+    epoch = epochs[first] if epochs is not None else None
+    if epochs is not None and any(value != epoch for value in epochs[first:last + 1]):
+        return None
+    while first > 0 and allowed[first - 1] and (epochs is None or epochs[first - 1] == epoch):
+        first -= 1
+    while last + 1 < times.size and allowed[last + 1] and (epochs is None or epochs[last + 1] == epoch):
+        last += 1
+    cached = _CAMERA_WINDOW_CACHE.get(id(sequence))
+    if cached is None or cached[0] is not sequence:
+        cached = (sequence, {})
+        _CAMERA_WINDOW_CACHE[id(sequence)] = cached
+    key = first, last
+    if key in cached[1]:
+        return cached[1][key]
+    window = slice(first, last + 1)
+    source_frames = sequence.source_frames[window]
+    dimensions = sequence.frame_dimensions_px[window] if sequence.frame_dimensions_px is not None else None
+    metadata = {**sequence.coordinate_metadata,
+                "analysis_window": {"start_ms": int(times[first]), "end_ms": int(times[last]),
+                                    "first_source_frame": int(source_frames[0]),
+                                    "last_source_frame": int(source_frames[-1]),
+                                    "sample_count": len(source_frames),
+                                    "reference_epoch": epoch,
+                                    "reason": "continuous_camera_reference_window"},
+                "point_source_counts_scope": "original_source_sequence",
+                "rejected_point_counts_scope": "original_source_sequence",
+                "camera_motion_verification": {"status": "observed",
+                                               "status_counts": dict(Counter(statuses[window])),
+                                               "verified_fraction": 1.0}}
+    if dimensions is not None:
+        counts = Counter(tuple(int(value) for value in size) for size in dimensions
+                         if np.isfinite(size).all() and np.all(size > 0))
+        metadata["frame_dimensions"] = [{"width": size[0], "height": size[1], "frame_count": count}
+                                        for size, count in sorted(counts.items())]
+        metadata["invalid_dimensions_source_frames"] = [int(frame) for frame, size in zip(source_frames, dimensions)
+                                                         if not np.isfinite(size).all() or np.any(size <= 0)]
+    compensation = metadata.get("camera_compensation")
+    if isinstance(compensation, dict):
+        frame_set = set(int(value) for value in source_frames)
+        metadata["camera_compensation"] = {
+            **compensation,
+            "applied_source_frames": [value for value in compensation.get("applied_source_frames", []) if value in frame_set],
+            "reference_epochs": [epoch] if epoch is not None else [],
+        }
+    part = replace(sequence, timestamp_ms=times[window], source_frames=source_frames,
+                   keypoints_xy={name: values[window] for name, values in sequence.keypoints_xy.items()},
+                   confidence={name: values[window] for name, values in sequence.confidence.items()},
+                   frame_dimensions_px=dimensions, coordinate_metadata=metadata,
+                   camera_motion_status=statuses[window],
+                   frame_transforms_to_reference=(sequence.frame_transforms_to_reference[window]
+                                                  if sequence.frame_transforms_to_reference is not None else None),
+                   camera_reference_epochs=epochs[window] if epochs is not None else None)
+    cached[1][key] = part
+    return part
+
+
+def _camera_blocked_feature(sequence: PoseSequence, event: EventInterval, name: str) -> FeatureResult:
+    if name not in FEATURE_DEFINITIONS:
+        raise ValueError(f"unknown feature: {name}")
+    definition = FEATURE_DEFINITIONS[name]
+    return FeatureResult(
+        feature_name=name, feature_version=definition["version"], value=None,
+        unit=definition["unit"], confidence=0.0, valid=False,
+        reason="event_crosses_unverified_camera_window", source_frames=[],
+        raw_value=None, smoothed_value=None,
+        provenance={"library_version": FEATURE_LIBRARY_VERSION,
+                    "coordinate_metadata": sequence.coordinate_metadata,
+                    "event_id": event.event_id, "event_code": event.event_code,
+                    "person_track_id": event.person_track_id,
+                    "camera_gate": "whole_event_requires_one_continuous_fixed_camera_window"},
+    )
+
+
+def compute_feature(sequence: PoseSequence, event: EventInterval, feature_name: str) -> FeatureResult:
+    window = _camera_window_for_event(sequence, event)
+    if window is None:
+        return _camera_blocked_feature(sequence, event, feature_name)
+    return _compute_feature(window, event, feature_name)
+
+
 def compute_event_features(
     sequence: PoseSequence,
     event: EventInterval,
     feature_names: list[str] | tuple[str, ...] | None = None,
 ) -> list[FeatureResult]:
     names = feature_names or SCORING_FEATURE_NAMES
-    return [compute_feature(sequence, event, name) for name in names]
+    window = _camera_window_for_event(sequence, event)
+    if window is None:
+        return [_camera_blocked_feature(sequence, event, name) for name in names]
+    return [_compute_feature(window, event, name) for name in names]

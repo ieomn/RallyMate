@@ -12,10 +12,12 @@ import math
 import statistics
 from typing import Any
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v1.0.1"
+from .rotation_analysis import analyze_rotation
+
+ANALYSIS_VERSION = "stroke-motion-analysis-v1.2.0"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
-    "速度以躯干长度/秒表示；肩线变化和肘角为画面二维测量，不是实际球速、三维转体角或技术评分。",
+    "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
     "动作片段不等于确认击球；未确认球拍触球，底线场区位置也未校准。",
     "运动峰值是平滑后的二维手腕运动参考时刻，不是触球时刻；阶段边界仍需人工复核。",
 ]
@@ -122,7 +124,8 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
     samples = [sample for sample in all_samples if candidate["start_ms"] - 650 <= sample.time <= candidate["end_ms"] + 900]
     segments: list[list[Any]] = [[]]
     for sample in samples:
-        valid = all(f"{side}_{joint}" in sample.points for joint in ("wrist", "elbow"))
+        valid = (sample.track == candidate["person_track_id"]
+                 and all(f"{side}_{joint}" in sample.points for joint in ("wrist", "elbow")))
         prev = segments[-1][-1] if segments[-1] else None
         continuous = prev is None or (0 < sample.time - prev.time <= 160 and sample.selection_epoch == prev.selection_epoch
                                       and _distance(sample.center, prev.center) / sample.scale < 0.8
@@ -200,21 +203,13 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
     elbow_angles = [_angle(sample.points[f"{side}_shoulder"], sample.points[f"{side}_elbow"], sample.points[f"{side}_wrist"]) for sample in samples]
     valid_elbows = [angle for angle in elbow_angles if angle is not None]
     filtered_elbows = [statistics.median(valid_elbows[max(0, i - 1):i + 2]) for i in range(len(valid_elbows))]
-    shoulder_angles = [math.degrees(math.atan2(sample.points["right_shoulder"][1] - sample.points["left_shoulder"][1],
-                                             sample.points["right_shoulder"][0] - sample.points["left_shoulder"][0]))
-                       for sample in samples if _distance(sample.points["right_shoulder"], sample.points["left_shoulder"]) >= 0.3]
-    unwrapped = [0.0]
-    for a, b in zip(shoulder_angles, shoulder_angles[1:]):
-        # A shoulder *line* is undirected: facing through side-on can reverse
-        # endpoint order by 180 degrees without a 180-degree in-plane turn.
-        unwrapped.append(unwrapped[-1] + (b - a + 90) % 180 - 90)
+    rotation_analysis = analyze_rotation(samples)
     metric_notes = []
     elbow_range = round(max(filtered_elbows) - min(filtered_elbows), 1) if len(valid_elbows) >= len(samples) * 0.8 else None
-    shoulder_range = round(max(unwrapped) - min(unwrapped), 1) if len(shoulder_angles) >= len(samples) * 0.8 else None
     if elbow_range is None:
         metric_notes.append("肘部存在明显投影缩短或遮挡，未输出肘角变化。")
-    if shoulder_range is None:
-        metric_notes.append("肩线较多帧呈侧向缩短，未输出画面肩线变化。")
+    if rotation_analysis["status"] != "measured_2d":
+        metric_notes.append("部分肩髋轴缺少足够连续的二维观测；投影缩短、缺测和轴跳变不跨段补全。")
     candidate_samples = [sample for sample in samples if candidate["start_ms"] <= sample.time <= candidate["end_ms"]]
     return {
         "episode_id": candidate["candidate_id"], "family": candidate["family"], "person_track_id": candidate["person_track_id"],
@@ -227,7 +222,8 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "metrics": {"duration_ms": samples[-1].time - samples[0].time,
                     "peak_wrist_speed_torso_per_s": round(max(analyzed_speed), 3),
                     "wrist_path_torso": round(sum(_distance(a, b) for a, b in zip(wrists, wrists[1:])), 3),
-                    "elbow_extension_deg": elbow_range, "shoulder_line_change_deg": shoulder_range},
+                    "elbow_extension_deg": elbow_range, **rotation_analysis["metrics"]},
+        "rotation_analysis": rotation_analysis,
         "metric_notes_zh": metric_notes + ([] if preparation_complete and follow_complete else ["连续画面尚未覆盖完整准备或随挥，缺失阶段不作补全。"]),
         "evidence": {"pose_samples": len(samples), "racket_associated_frames": candidate["evidence"]["racket_associated_frames"],
                      "hand_evidence": dict(hand_evidence), "phase_method": "smoothed_wrist_speed_with_observed_slowdown",
@@ -243,12 +239,16 @@ def _incoming_ball_context(episode: Mapping[str, Any], serve: Mapping[str, Any],
     server = min(tracks.get(server_track, []), key=lambda sample: abs(sample.time - serve["peak_ms"]), default=None)
     if receiver is None or server is None:
         return None
+    camera_epoch = getattr(receiver, "camera_reference_epoch", None)
+    if camera_epoch != getattr(server, "camera_reference_epoch", None):
+        return None
     separation = _distance(server.center, receiver.center)
     if separation < max(server.scale, receiver.scale) * 4:
         return None
     by_track: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for ball in balls:
-        if serve["peak_ms"] - 100 <= ball["time"] <= episode["peak_ms"] + 100:
+        if (ball.get("camera_reference_epoch") == camera_epoch
+                and serve["peak_ms"] - 100 <= ball["time"] <= episode["peak_ms"] + 100):
             by_track[ball["track"]].append(ball)
     for observations in by_track.values():
         observations.sort(key=lambda item: item["time"])

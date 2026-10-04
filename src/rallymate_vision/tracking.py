@@ -11,6 +11,7 @@ class _Track:
     class_name: str
     bbox_px: list[float]
     missed: int = 0
+    last_timestamp_ms: int | None = None
 
 
 class SimpleMultiClassTracker:
@@ -20,8 +21,12 @@ class SimpleMultiClassTracker:
     behind a class so ByteTrack/BoT-SORT can replace it without changing output.
     """
 
-    def __init__(self, max_missed: int = 8) -> None:
+    def __init__(self, max_missed: int = 8, *, ball_max_gap_ms: int = 300) -> None:
+        if isinstance(ball_max_gap_ms, bool) or not isinstance(ball_max_gap_ms, int) or ball_max_gap_ms <= 0:
+            raise ValueError("ball_max_gap_ms must be a positive integer")
         self.max_missed = max_missed
+        self.ball_max_gap_ms = ball_max_gap_ms
+        self._last_timestamp_ms: int | None = None
         self.max_missed_by_class = {
             "player": max(30, max_missed),
             "racket": max(12, max_missed),
@@ -33,12 +38,28 @@ class SimpleMultiClassTracker:
     def _miss_limit(self, class_name: str) -> int:
         return self.max_missed_by_class.get(class_name, self.max_missed)
 
+    def _active(self, track: _Track, timestamp_ms: int | None) -> bool:
+        # Source-video time makes the ball's identity lifetime independent of
+        # input FPS and frame stride. Legacy callers retain the frame fallback.
+        if track.class_name == "ball" and timestamp_ms is not None and track.last_timestamp_ms is not None:
+            return 0 <= timestamp_ms - track.last_timestamp_ms <= self.ball_max_gap_ms
+        return track.missed <= self._miss_limit(track.class_name)
+
     def update(
         self,
         detections: list[dict],
         frame_width: int,
         frame_height: int,
+        *,
+        timestamp_ms: int | None = None,
     ) -> list[dict]:
+        if timestamp_ms is not None:
+            if isinstance(timestamp_ms, bool) or not isinstance(timestamp_ms, int) or timestamp_ms < 0:
+                raise ValueError("timestamp_ms must be a nonnegative integer")
+            if self._last_timestamp_ms is not None and timestamp_ms < self._last_timestamp_ms:
+                # A seek/new source cannot inherit identities from its future.
+                self._tracks = []
+            self._last_timestamp_ms = timestamp_ms
         assigned_track_ids: set[int] = set()
         ordered = sorted(
             enumerate(detections),
@@ -54,7 +75,7 @@ class SimpleMultiClassTracker:
                 if (
                     track.class_name != class_name
                     or track.track_id in assigned_track_ids
-                    or track.missed > self._miss_limit(track.class_name)
+                    or not self._active(track, timestamp_ms)
                 ):
                     continue
                 iou = box_iou(track.bbox_px, detection["bbox_px"])
@@ -82,6 +103,7 @@ class SimpleMultiClassTracker:
                 self._next_id += 1
                 self._tracks.append(selected)
 
+            selected.last_timestamp_ms = timestamp_ms
             assigned_track_ids.add(selected.track_id)
             detection["track_id"] = selected.track_id
 
@@ -91,6 +113,6 @@ class SimpleMultiClassTracker:
         self._tracks = [
             track
             for track in self._tracks
-            if track.missed <= self._miss_limit(track.class_name)
+            if self._active(track, timestamp_ms)
         ]
         return detections

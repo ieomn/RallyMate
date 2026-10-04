@@ -145,7 +145,7 @@ def _fixture_records() -> tuple[list[dict], list[dict], list[dict]]:
         truth = _coordinates(t, corrected=True)
         frames.append(
             {
-                "frame": {
+                "frame": {"width": 1000, "height": 1000,
                     "index": index,
                     "processed_index": index,
                     "timestamp_ms": int(timestamp),
@@ -331,7 +331,7 @@ class FS01FS02TruthEvaluationTests(unittest.TestCase):
 
         self.assertEqual(report["status"], "evaluated")
         self.assertEqual(
-            report["inputs"]["registry_version"], "pose-wave-2026-08-22.17"
+            report["inputs"]["registry_version"], "pose-wave-2026-10-01.2"
         )
         self.assertEqual(len(report["inputs"]["sha256"]["registry"]), 64)
         event_metrics = report["event_evaluation"]
@@ -427,6 +427,9 @@ class FS01FS02TruthEvaluationTests(unittest.TestCase):
             source_frames=model.source_frames.copy(),
             keypoints_xy=keypoints,
             confidence=confidence,
+            frame_dimensions_px=model.frame_dimensions_px,
+            coordinate_metadata=model.coordinate_metadata,
+            camera_motion_status=model.camera_motion_status,
         )
         corrected = apply_keypoint_corrections(sparse_model, annotations)
         result = evaluate_feature_errors(

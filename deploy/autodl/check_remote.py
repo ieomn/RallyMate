@@ -18,7 +18,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = ROOT / ".codex_tmp" / "autodl"
 HOST = "connect.cqa1.seetacloud.com"
-PORT = 29196
+PORT = 26691
 MAX_REMOTE_BYTES = 2 * 1024 * 1024
 ALLOWED_ROOTS = {"src", "scoring-demo-web", "deploy/autodl", "tests"}
 CODE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".toml", ".yaml", ".yml", ".sh", ".ps1", ".css", ".html", ".md", ".txt", ".conf", ".ini"}

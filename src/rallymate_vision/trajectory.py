@@ -42,6 +42,9 @@ MAX_OBSERVATION_POINTS = 500_000
 # physics. A failed gate creates a new segment rather than inventing continuity.
 MAX_RECONSTRUCTION_GAP_MS = 250
 MAX_SUPPORTED_BRIDGE_GAP_MS = 600
+MAX_CROSS_ID_BRIDGE_GAP_MS = 300
+MIN_BRIDGE_DIRECTION_COSINE = 0.4
+MIN_CROSS_ID_BRIDGE_DIRECTION_COSINE = 0.7
 MAX_BRIDGE_CANDIDATES = 64
 MAX_GAP_INTERPOLATION_POINTS = 18
 MAX_RECONSTRUCTION_SPEED = 3.0
@@ -468,9 +471,12 @@ def _velocity(points: list[dict[str, Any]]) -> dict[str, float | int | None] | N
 def _constant_velocity_preview(
     points: list[dict[str, Any]], horizon_ms: int
 ) -> tuple[str, str | None, list[dict[str, Any]], dict[str, Any] | None]:
-    velocity = _velocity(points)
+    has_identity = all(point.get("track_id") is not None for point in points)
+    velocity = _velocity(points) if has_identity else None
     if horizon_ms <= 0:
         return "not_requested", "prediction_horizon_ms_is_zero", [], velocity
+    if not has_identity:
+        return "not_available", "ball_track_identity_unavailable", [], None
     if len(points) < 2:
         return "not_available", "at_least_two_observed_points_required", [], velocity
     if velocity is None:
@@ -588,7 +594,10 @@ def _endpoint_velocity(
 
 
 def _supported_bridge(
-    left: list[dict[str, Any]], right: list[dict[str, Any]]
+    left: list[dict[str, Any]],
+    right: list[dict[str, Any]],
+    *,
+    cross_id: bool = False,
 ) -> dict[str, Any] | None:
     """Require compatible motion on *both* sides before reconnecting fragments.
 
@@ -598,7 +607,8 @@ def _supported_bridge(
     """
     a, b = left[-1], right[0]
     gap = _segment_gap_ms(a, b)
-    if not 0 < gap <= MAX_SUPPORTED_BRIDGE_GAP_MS:
+    gap_limit = MAX_CROSS_ID_BRIDGE_GAP_MS if cross_id else MAX_SUPPORTED_BRIDGE_GAP_MS
+    if not 0 < gap <= gap_limit:
         return None
     before = _endpoint_velocity(left, leading=False)
     after = _endpoint_velocity(right, leading=True)
@@ -615,8 +625,9 @@ def _supported_bridge(
     # Consistent lateral progress is required even when a curved flight has
     # different vertical tangents on either end. No extrapolated endpoint is
     # ever exposed or used as a contact observation.
+    direction_min = MIN_CROSS_ID_BRIDGE_DIRECTION_COSINE if cross_id else MIN_BRIDGE_DIRECTION_COSINE
     for velocity, speed in zip((before, after), speeds):
-        if sum(velocity[k] * chord[k] for k in (0, 1)) / (speed * distance) < 0.4:
+        if sum(velocity[k] * chord[k] for k in (0, 1)) / (speed * distance) < direction_min:
             return None
     if sum(before[k] * after[k] for k in (0, 1)) / (speeds[0] * speeds[1]) < 0.0:
         return None
@@ -656,10 +667,11 @@ def _stitch_fragments(
             # attractive endpoint must not silently switch to the other ball.
             if left_id != right_id and not track_frames[left_id].isdisjoint(track_frames[right_id]):
                 continue
-            bridge = _supported_bridge(left, right)
+            cross = left_id != right_id
+            bridge = _supported_bridge(left, right, cross_id=cross)
             if bridge is None:
                 continue
-            cost = float(bridge["cost"]) + (0.15 if left_id != right_id else 0.0)
+            cost = float(bridge["cost"]) + (0.4 if cross else 0.0)
             outgoing[left_index].append((cost, right_index, bridge))
             incoming[right_index].append((cost, left_index, bridge))
 
@@ -687,15 +699,32 @@ def _stitch_fragments(
         if start_index in has_previous:
             continue
         segment: dict[str, Any] = {"_track_ids": [], "_observed": [], "_bridges": {}}
+        segment_track_keys: set[Any] = set()
         index = start_index
         while True:
             track_id, points = fragments[index]
-            segment["_observed"].extend(points)
+            segment_track_keys.add(track_id)
+            for point in points:
+                tagged = dict(point)
+                # Keep the original detection identity; an internal grouping
+                # key such as "untracked" is never a public ball identity.
+                tagged["track"] = point["track_id"]
+                segment["_observed"].append(tagged)
             if isinstance(track_id, int) and track_id not in segment["_track_ids"]:
                 segment["_track_ids"].append(track_id)
             if index not in next_fragment:
                 break
             next_index, bridge = next_fragment[index]
+            next_track_id = fragments[next_index][0]
+            if any(
+                prior_id != next_track_id
+                and not track_frames[prior_id].isdisjoint(track_frames[next_track_id])
+                for prior_id in segment_track_keys
+            ):
+                # Pairwise matches can otherwise form A -> B -> C even when
+                # A and C were observed together and cannot be the same ball.
+                has_previous.discard(next_index)
+                break
             segment["_bridges"][(int(points[-1]["timestamp_ms"]), starts[next_index])] = bridge
             index = next_index
         segments.append(segment)
@@ -744,6 +773,12 @@ def _build_reconstruction(
     fragments: list[tuple[Any, list[dict[str, Any]]]] = []
     rejected = 0
     for track_id, raw_points in tracks.items():
+        if not isinstance(track_id, int):
+            # Missing IDs supply positions only, not association evidence.
+            # Preserve even simultaneous detections instead of deduplicating
+            # or joining unrelated balls inside a shared "untracked" bucket.
+            fragments.extend((track_id, [point]) for point in raw_points)
+            continue
         points, removed = _clean_track_points(raw_points)
         rejected += removed
         if not points:
@@ -816,6 +851,18 @@ def _build_reconstruction(
             "max_bridged_gap_ms": max((item["end_ms"] - item["start_ms"] for item in interpolation_intervals), default=0),
             "interpolation_intervals": interpolation_intervals,
             "points": points,
+            "display_quality": {
+                # Keep these summaries independent of point downsampling.
+                # Detector confidence controls presentation strength only; it
+                # is neither calibrated trajectory accuracy nor a coach score.
+                "semantics": "display_support_not_accuracy_or_technical_score",
+                "detector_confidence": _confidence_summary(observed),
+                "observed_point_fraction": _round(len(observed) / max(1, len(points)), 4),
+                "tracked_observation_fraction": _round(
+                    sum(point.get("track_id") is not None for point in observed) / max(1, len(observed)), 4
+                ),
+                "active_ball_identity": "unconfirmed",
+            },
             "analysis": {
                 "duration_ms": duration,
                 "displacement_normalized": _round(displacement),
@@ -869,9 +916,11 @@ def _build_reconstruction(
         },
         "limitations_zh": [
             "仅基于检测中心与时间门控重建，不代表真实网球物理轨迹。",
-            "250–600毫秒缺口仅在双端运动方向与速度一致、身份无竞争时平滑连接；更长漏检保持断开。",
+            "同一ID的250–600毫秒缺口仅在双端运动一致时平滑连接；跨ID连接还须满足不超过300毫秒、更严格的方向一致性与整段身份无竞争。",
+            "缺少跟踪ID的球观测仅保留独立点，不据此推定同一球或连接轨迹。",
             "插值区间单独标注，即使返回点因数量上限而采样，也不会把补线当作真实观测。",
             "插值点仅用于前端连线展示，评分不会把插值点当作击球证据。",
+            "检测置信度仅用于区分展示强弱，不代表准确率；多个候选分别显示，尚未确认唯一比赛用球。",
             "未生成米制速度、落点、旋转或击球事件。",
         ],
     }

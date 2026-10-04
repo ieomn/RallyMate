@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrajectoryPoint, TrajectoryPreviewResponse } from "./lib/api-types";
-import { timestampForVideoTime, trajectoryAvailability, trajectoryEdges, trajectoryStrokes, videoTimeForTimestamp, visibleTrajectoryPaths, type TrajectoryDisplayMode } from "./lib/trajectory-viewer";
+import { timestampForVideoTime, trajectoryAvailability, trajectoryDisplayOpacity, trajectoryEdges, trajectoryStrokes, videoTimeForTimestamp, visibleTrajectoryPaths, type TrajectoryDisplayMode } from "./lib/trajectory-viewer";
 
 type BallTrajectoryViewerProps = {
   trajectory: TrajectoryPreviewResponse | null;
@@ -121,7 +121,12 @@ export default function BallTrajectoryViewer({
     return reconstruction ? (segment ? [segment] : available).map(item => item.points) : [fallbackObserved];
   }, [reconstruction, segments, segment, movingOnly, fallbackObserved]);
   const trustedSegments = Boolean(reconstruction && /^1\.[1-9]\d*\./.test(reconstruction.version));
-  const renderedPoints = showOverlay ? visibleTrajectoryPaths(paths, atMs, { showInterpolated, mode: displayMode, trustedSegments }) : [];
+  const sampledPathEndMs = paths.map(path => {
+    const item = pointSegments.get(path[0]);
+    // Only source-wide evidence can certify freshness between sampled points.
+    return item?.sampling?.is_sampled && (item.display_quality?.detector_confidence.min ?? 0) >= .15 ? item.end_ms : undefined;
+  });
+  const renderedPoints = showOverlay ? visibleTrajectoryPaths(paths, atMs, { showInterpolated, mode: displayMode, trustedSegments, sampledPathEndMs }) : [];
   const observed = renderedPoints.flat().filter((point) => pointSource(point) === "observed");
   const interpolated = renderedPoints.flat().filter((point) => pointSource(point) === "interpolated");
   const intervalsByPath = renderedPoints.map(path => {
@@ -130,8 +135,12 @@ export default function BallTrajectoryViewer({
   });
   const edges = trajectoryEdges(renderedPoints, atMs, trustedSegments ? Infinity : 250, intervalsByPath).filter(edge => showInterpolated || edge.source !== "interpolated");
   const strokes = trajectoryStrokes(edges);
-  const lastObservedMs = renderedPoints.flat().reduce((latest, point) => Math.max(latest, point.timestamp_ms), -Infinity);
-  const holdingCompletedFlight = showOverlay && displayMode === "segment" && edges.length > 0 && atMs - lastObservedMs > 600;
+  const lastObservedMs = renderedPoints.reduce((latest, path) => {
+    const item = pointSegments.get(path[0]);
+    const sampleSupported = item?.sampling?.is_sampled && (item.display_quality?.detector_confidence.min ?? 0) >= .15;
+    return Math.max(latest, sampleSupported ? Math.min(atMs, item.end_ms) : path[path.length - 1].timestamp_ms);
+  }, -Infinity);
+  const holdingCompletedFlight = showOverlay && displayMode === "segment" && edges.length > 0 && atMs - lastObservedMs > 250;
   const activeRange = showOverlay && segment ? { start: segment.start_ms, end: segment.end_ms } : range;
   const progress = activeRange.end <= activeRange.start ? 0 : clamp((atMs - activeRange.start) / (activeRange.end - activeRange.start));
   const hasData = segments.length > 0 || fallbackObserved.length > 0;
@@ -159,18 +168,19 @@ export default function BallTrajectoryViewer({
           onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
         /> : <div className="ball-trajectory-empty"><strong>{error ? "回放暂不可用" : pending ? "视频分析中" : "当前结果没有回放视频"}</strong><span>{hasData ? "拖动时间轴可查看短时球路观测" : availability.description}</span></div>}
         {showOverlay && <svg className="ball-trajectory-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={displayMode === "tail" ? "球路短尾迹" : "已播放的完整球路"}>
-          {strokes.map((stroke, index) => <polyline key={`stroke-${stroke.points[0].timestamp_ms}-${index}`} points={stroke.points.map(point => `${point.x * 100},${point.y * 100}`).join(" ")} fill="none" stroke={stroke.source === "interpolated" ? "#93b4d5" : "#d8ff66"} strokeOpacity={holdingCompletedFlight ? ".55" : ".9"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={stroke.source === "interpolated" ? "4 4" : undefined} vectorEffect="non-scaling-stroke" />)}
+          {strokes.map((stroke, index) => <polyline key={`stroke-${stroke.points[0].timestamp_ms}-${index}`} points={stroke.points.map(point => `${point.x * 100},${point.y * 100}`).join(" ")} fill="none" stroke={stroke.source === "interpolated" ? "#93b4d5" : "#d8ff66"} strokeOpacity={trajectoryDisplayOpacity(renderedPoints[stroke.pathIndex], pointSegments.get(stroke.points[0])?.display_quality?.detector_confidence.median) * (holdingCompletedFlight ? .75 : 1)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={stroke.source === "interpolated" ? "4 4" : undefined} vectorEffect="non-scaling-stroke" />)}
           {showPoints && observed.map((point, index) => <circle key={`o-${point.timestamp_ms}-${index}`} cx={point.x * 100} cy={point.y * 100} r="0.25" fill="#b6d0a9" />)}
           {showPoints && interpolated.map((point, index) => <circle key={`i-${point.timestamp_ms}-${index}`} cx={point.x * 100} cy={point.y * 100} r="0.2" fill="#93b4d5" />)}
         </svg>}
-        {holdingCompletedFlight && <span className="trajectory-held-label">上一段完整球路</span>}
+        {holdingCompletedFlight && <span className="trajectory-held-label">最近球路观测 · 最多保留 0.6 秒</span>}
       </div>
       <div className="ball-trajectory-controls">
         <button type="button" onClick={togglePlayback} disabled={!canPlayVideo} aria-label={playing ? "暂停视频" : "播放视频"}>{playing ? "暂停" : "播放"}</button>
         <input type="range" min="0" max="1" step="0.001" value={progress} onChange={(event) => seek(Number(event.target.value))} aria-label="球轨迹时间轴" />
         <span>{`${(atMs / 1000).toFixed(2)}s`}</span>
       </div>
-      <div className="trajectory-view-modes" aria-label="球路显示方式">{([["segment", "当前完整球路"], ["tail", "短尾迹"], ["overview", "球路概览"]] as const).map(([mode, label]) => <button type="button" key={mode} aria-pressed={displayMode === mode} onClick={() => { setDisplayMode(mode); setSelectedSegment(null); }}>{label}</button>)}</div>
+      <div className="trajectory-view-modes" aria-label="球路显示方式">{([["segment", "当前候选球路"], ["tail", "短尾迹"], ["overview", "球路概览"]] as const).map(([mode, label]) => <button type="button" key={mode} aria-pressed={displayMode === mode} onClick={() => { setDisplayMode(mode); setSelectedSegment(null); }}>{label}</button>)}</div>
+      {showOverlay && renderedPoints.length > 1 && displayMode !== "overview" && <p className="ball-trajectory-analysis">当前显示 {renderedPoints.length} 条候选，尚未确认唯一比赛用球；片段之间不连线。</p>}
       <details className="ball-trajectory-options">
         <summary>轨迹显示设置 · {showOverlay ? "球路已开启" : "球路已隐藏"}</summary>
         <div className="ball-trajectory-options-body">
@@ -188,7 +198,7 @@ export default function BallTrajectoryViewer({
         {trajectory?.source.is_partial && <button type="button" onClick={() => { setFollowLatest(true); setSelectedSegment(null); }}>{following ? "跟随最新观测中" : "跟随最新观测"}</button>}
       </div>}
       {showOverlay && segment && <p className="ball-trajectory-analysis">片段时长 {((segment.end_ms - segment.start_ms) / 1000).toFixed(2)}s · 画面内平均速度 {segment.analysis?.mean_speed_normalized_per_s?.toFixed(3) ?? "—"} 坐标/秒（非实际球速）</p>}
-      {showOverlay && <div className="ball-trajectory-legend"><span><i className="observed" />球路观测</span>{showInterpolated && <span><i className="interpolated" />短缺口插值</span>}<span>{displayMode === "tail" ? "当前帧前 0.75 秒" : displayMode === "overview" ? "已播放的最近 12 段 · 片段间不连线" : "保留最近一段完整历史 · 不显示未来球路"}</span></div>}
+      {showOverlay && <div className="ball-trajectory-legend"><span><i className="observed" />球路观测 · 浅色为较低检测置信度</span>{showInterpolated && <span><i className="interpolated" />短缺口插值</span>}<span>{displayMode === "tail" ? "当前帧前 0.75 秒" : displayMode === "overview" ? "已播放的最近 12 段 · 片段间不连线" : "缺少新观测 0.6 秒后自动隐藏 · 不显示未来球路"}</span></div>}
       {showOverlay && edges.length === 0 && <p className="ball-trajectory-analysis">当前时刻没有通过筛选的连续球路。</p>}
       </details>
       <p className="ball-trajectory-limitations">{isLive ? availability.description : "演示路径不代表模型识别结果。"}</p>

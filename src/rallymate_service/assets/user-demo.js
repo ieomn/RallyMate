@@ -237,11 +237,14 @@
     ? value
     : {};
 
-  const scoreOrNull = (value) => {
-    if (value === null || value === undefined || value === "") return null;
-    const number = Number(value);
-    if (!Number.isFinite(number)) return null;
-    return Math.max(0, Math.min(100, Math.round(number)));
+  const hasMeasurement = (value) => {
+    const item = asObject(value);
+    return item.available !== false && (Number.isSafeInteger(item.measured_instance_count) && item.measured_instance_count > 0
+      || Array.isArray(item.representative_measurements) && item.representative_measurements.some(measurement => Number.isFinite(measurement?.median_value)));
+  };
+  const evidenceReferenceScore = (value, hasEvidence) => {
+    const item = asObject(value), score = item.score_0_to_100;
+    return hasEvidence && item.available !== false && item.score_semantics === "measurement_evidence_quality" && typeof score === "number" && Number.isFinite(score) && score >= 0 && score <= 100 ? score : null;
   };
 
   const zhText = (source, keys, fallback = "") => {
@@ -289,8 +292,8 @@
   const renderIndicatorEvaluation = (evaluation) => {
     const item = asObject(evaluation);
     const id = indicatorId(item);
-    const score = scoreOrNull(item.score_0_to_100);
-    const available = item.available !== false && score !== null;
+    const available = hasMeasurement(item);
+    const referenceScore = evidenceReferenceScore(item, available);
     const card = document.createElement("article");
     card.className = `indicator-evaluation${available ? "" : " is-unavailable"}`;
 
@@ -303,20 +306,16 @@
     );
     heading.append(
       createText("div", "", label),
-      createText("span", "indicator-score", available ? `${score} / 100` : "暂无法评价"),
+      createText("span", "indicator-score", referenceScore === null ? available ? "有可复核测量" : "测量不足" : `${referenceScore.toFixed(1)} / 100 · 证据参考分`),
     );
     card.append(heading);
 
     if (available) {
-      const level = zhText(item, ["level_zh", "rating_zh"]);
+      const level = "技术评分待教练标定";
       if (level) card.append(createText("p", "indicator-level", level));
     }
-    const summary = zhText(
-      item,
-      ["summary_zh", "assessment_zh"],
-      available ? "已根据当前视频形成单项参考判断。" : "当前视频证据不足，暂时无法形成可靠的单项判断。",
-    );
-    appendEvaluationDetail(card, "表现判断：", summary);
+    const summary = "候选动作待复核，逐项查看实际测量与缺失原因。";
+    appendEvaluationDetail(card, "测量说明：", summary);
     appendEvaluationDetail(
       card,
       "视频证据：",
@@ -324,7 +323,7 @@
     );
     appendEvaluationDetail(
       card,
-      "训练建议：",
+      "复核建议：",
       zhText(item, ["suggestion_zh", "training_advice_zh", "advice_zh", "priority_zh", "recommendation_zh"]),
     );
     const measuredCount = Number.isInteger(item.measured_instance_count) && item.measured_instance_count >= 0
@@ -349,13 +348,14 @@
     // action.formation_assessment remains diagnostic context and is never used as performance;
     // action.summary_zh is only a safe legacy narrative fallback.
     const assessment = asObject(action.performance_assessment);
-    const actionScore = scoreOrNull(assessment.score_0_to_100);
-    const actionAvailable = assessment.available !== false && actionScore !== null;
+    const measuredCount = (Array.isArray(action.indicator_evaluations) ? action.indicator_evaluations : []).filter(hasMeasurement).length;
+    const actionAvailable = measuredCount > 0;
+    const referenceScore = evidenceReferenceScore(assessment, actionAvailable);
     const header = document.createElement("header");
     const titleWrap = document.createElement("div");
     titleWrap.append(
       createText("span", "action-code", action.event_code),
-      createText("h4", "", action.name_zh || "动作表现"),
+      createText("h4", "", `${action.name_zh || "动作"} · 候选待复核`),
     );
     const statusWrap = document.createElement("div");
     statusWrap.className = "action-status-wrap";
@@ -364,10 +364,10 @@
         "span",
         `performance-badge${actionAvailable ? "" : " is-unavailable"}`,
         actionAvailable
-          ? zhText(assessment, ["level_zh", "label_zh"], "已形成参考评价")
+          ? "有可复核测量"
           : "暂无法评价",
       ),
-      createText("span", "performance-score", actionAvailable ? `${actionScore}/100` : "—"),
+      createText("span", "performance-score", referenceScore === null ? `${measuredCount} 项可测` : `${referenceScore.toFixed(1)} / 100 · 证据参考分`),
     );
     header.append(titleWrap, statusWrap);
     const detectedSegments = Number.isInteger(action.detected_segments) && action.detected_segments >= 0
@@ -378,19 +378,11 @@
       createText(
         "p",
         "action-summary",
-        zhText(
-          assessment,
-          ["summary_zh", "assessment_zh"],
-          zhText(
-            action,
-            ["summary_zh"],
-            actionAvailable ? "已形成动作表现参考判断。" : "当前视频证据不足，暂时无法评价这个动作。",
-          ),
-        ),
+        "候选片段需回放复核，技术评分待教练标定。",
       ),
     );
     if (detectedSegments !== null) {
-      article.append(createText("span", "count-pill", `${detectedSegments} 个动作片段`));
+      article.append(createText("span", "count-pill", `${detectedSegments} 个候选片段`));
     }
     appendEvaluationDetail(
       article,
@@ -407,9 +399,9 @@
       ...(Array.isArray(action.indicator_evaluations) ? action.indicator_evaluations : []),
       ...(Array.isArray(globalEvaluations) ? globalEvaluations : []),
     ], action.event_code);
-    const indicatorSection = document.createElement("section");
+    const indicatorSection = document.createElement("details");
     indicatorSection.className = "indicator-section";
-    indicatorSection.append(createText("h5", "", "单项表现、证据与建议"));
+    indicatorSection.append(createText("summary", "", "查看逐项测量与评分依据"));
     if (actionEvaluations.length) {
       const grid = document.createElement("div");
       grid.className = "indicator-grid";
@@ -506,22 +498,20 @@
     article.id = cardId;
     article.className = "batch-result-card";
     const evaluation = asObject(result.training_evaluation);
-    const score = scoreOrNull(evaluation.score_0_to_100);
-    const evaluationAvailable = evaluation.available !== false && score !== null;
+    const measuredCount = (Array.isArray(evaluation.indicator_evaluations) ? evaluation.indicator_evaluations : []).filter(hasMeasurement).length;
+    const evaluationAvailable = measuredCount > 0;
+    const referenceScore = evidenceReferenceScore(evaluation, evaluationAvailable);
     const title = job.original_filename || `第 ${context?.index || batchResults.children.length + 1} 个视频`;
     const top = document.createElement("div");
     top.className = "batch-result-top";
     top.append(
       createText("strong", "batch-result-name", title),
-      createText("span", "batch-result-score", evaluationAvailable ? `${score}/100` : "暂无法评价"),
+      createText("span", "batch-result-score", referenceScore === null ? `${measuredCount} 项可测` : `${referenceScore.toFixed(1)} / 100 · 证据参考分`),
     );
     const actionText = (Array.isArray(result.actions) ? result.actions : [])
       .filter((action) => supportedActionCodes.has(action.event_code))
       .map((action) => {
-        const assessment = asObject(action.performance_assessment);
-        const actionScore = scoreOrNull(assessment.score_0_to_100);
-        const available = assessment.available !== false && actionScore !== null;
-        return `${action.name_zh || "动作"}：${available ? zhText(assessment, ["level_zh"], `${actionScore}/100`) : "暂无法评价"}`;
+        return `${action.name_zh || "动作"}：${action.detected_segments || 0} 个候选片段待复核`;
       })
       .join(" · ");
     const button = createText("button", "secondary compact", "查看详细结果");
@@ -555,38 +545,22 @@
     const prefix = batchPrefix(context);
     stateText.textContent = `${prefix}分析完成`;
     const evaluation = asObject(result.training_evaluation);
-    const score = scoreOrNull(evaluation.score_0_to_100);
-    const evaluationAvailable = evaluation.available !== false && score !== null;
-    scoreLabel.textContent = zhText(evaluation, ["label_zh"], "动作表现参考分（Beta）");
-    scoreValue.textContent = evaluationAvailable ? String(score) : "—";
-    scoreUnit.textContent = evaluationAvailable ? "/ 100" : "暂无法评价";
+    const measuredCount = (Array.isArray(evaluation.indicator_evaluations) ? evaluation.indicator_evaluations : []).filter(hasMeasurement).length;
+    const evaluationAvailable = measuredCount > 0;
+    const referenceScore = evidenceReferenceScore(evaluation, evaluationAvailable);
+    scoreLabel.textContent = referenceScore === null ? "实测指标" : "测量证据参考分（Beta）";
+    scoreValue.textContent = referenceScore === null ? String(measuredCount) : referenceScore.toFixed(1);
+    scoreUnit.textContent = referenceScore === null ? "项有测量" : "/ 100 · 非技术评分";
     scoreRing.classList.toggle("is-unavailable", !evaluationAvailable);
-    scoreRing.style.setProperty("--score-angle", `${evaluationAvailable ? score * 3.6 : 0}deg`);
-    resultHeadline.textContent = evaluationAvailable
-      ? zhText(evaluation, ["level_zh"], "已形成动作表现参考")
-      : "暂无法评价";
-    scoreMeaning.textContent = zhText(
-      evaluation,
-      ["summary_zh"],
-      evaluationAvailable
-        ? "已根据当前视频形成动作表现参考。"
-        : "当前视频证据不足，建议补拍能看清完整身体和动作过程的视频。",
-    );
-
-    const strengths = zhList(evaluation.strengths_zh);
-    const priorities = zhList(evaluation.priorities_zh);
-    renderInsightList(strengthsPanel, strengthsList, strengths);
-    renderInsightList(prioritiesPanel, prioritiesList, priorities);
-    trainingInsights.hidden = strengths.length === 0 && priorities.length === 0;
-
-    const analysisQuality = asObject(result.analysis_quality || result.display_score);
-    const qualityScore = scoreOrNull(analysisQuality.value_0_to_100);
-    analysisQualityValue.textContent = qualityScore === null ? "—" : String(qualityScore);
-    analysisQualityMeaning.textContent = zhText(
-      analysisQuality,
-      ["meaning_zh"],
-      "表示本次视频中可用于分析的动作信息完整程度，不代表技术水平。",
-    );
+    scoreRing.style.setProperty("--score-angle", `${referenceScore === null ? 0 : referenceScore * 3.6}deg`);
+    resultHeadline.textContent = "分析已完成 · 技术评分待教练标定";
+    const historyWarning = asObject(result.measurement_contract).contract_version !== "isotropic-frame-long-edge-v1.1.0" ? "历史测量使用旧坐标算法，请重新分析视频；旧数值保留供复核，不能与新结果比较。" : "";
+    scoreMeaning.textContent = [historyWarning, ...zhList(result.measurement_warnings_zh), "测量证据参考分反映证据完整程度；高分不代表动作正确或技术水平更高，技术评分待教练标定。"].filter(Boolean).join(" ");
+    renderInsightList(strengthsPanel, strengthsList, []);
+    renderInsightList(prioritiesPanel, prioritiesList, []);
+    trainingInsights.hidden = true;
+    analysisQualityValue.textContent = "待复核";
+    analysisQualityMeaning.textContent = "当前提供候选动作的测量证据，不能代替教练技术评价。";
     const actions = (Array.isArray(result.actions) ? result.actions : [])
       .filter((action) => supportedActionCodes.has(action.event_code));
     const allowedGlobalEvaluations = allowedIndicatorEvaluations([
@@ -595,12 +569,8 @@
         ? action.indicator_evaluations
         : []),
     ]);
-    const evaluatedCount = allowedGlobalEvaluations.filter((item) => scoreOrNull(item.score_0_to_100) !== null).length;
-    const meaning = zhText(
-      evaluation,
-      ["meaning_zh"],
-      "Beta 参考分基于当前视频证据，用于辅助训练复盘，不替代现场教练判断。",
-    );
+    const evaluatedCount = allowedGlobalEvaluations.filter((item) => item.available !== false && Number(item.measured_instance_count) > 0).length;
+    const meaning = "证据参考分综合覆盖、置信度和重复性，缺少人工真值标定时不提供技术分。";
     trainingNote.textContent = `${meaning} 本次展示 ${evaluatedCount}/${supportedIndicatorIds.size} 个可评价单项。`;
 
     actionCards.replaceChildren(...actions.map((action) => renderAction(action, allowedGlobalEvaluations)));

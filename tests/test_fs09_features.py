@@ -178,15 +178,15 @@ class FS09PureFunctionTests(unittest.TestCase):
         )
 
     def test_double_support_proxy_uses_timestamp_duration(self) -> None:
-        timestamps = np.asarray([0, 70, 180, 330, 530, 780], dtype=np.int64)
+        timestamps = np.asarray([0, 70, 180, 330, 450, 580], dtype=np.int64)
         left = np.asarray([1.2, 1.0, 0.6, 0.2, 0.1, 0.1])
         right = np.asarray([1.0, 0.9, 0.7, 0.25, 0.1, 0.1])
         duration, evidence, mask, diagnostics = double_support_low_motion_proxy(
             timestamps, left, right, np.arange(timestamps.size)
         )
         self.assertEqual(evidence, (3, 5))
-        # 780 - 330 + median([70,110,150,200,250]) = 600 ms.
-        self.assertEqual(duration, 600)
+        # 580 - 330 + median([70,110,150,120,130]) = 370 ms.
+        self.assertEqual(duration, 370)
         self.assertTrue(mask[3:].all())
         self.assertEqual(diagnostics["contact_status"], "not_observed_from_pose")
         self.assertIn("not_scoring_threshold", diagnostics["envelope_status"])

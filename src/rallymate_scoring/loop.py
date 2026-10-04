@@ -20,6 +20,7 @@ from rallymate_features import (
     pose_sequence_from_records,
 )
 from rallymate_features.event_features import FEATURE_DEFINITIONS
+from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION
 from rallymate_features.fs01_fs02_features import FS01_FS02_FEATURE_VERSION
 from rallymate_features.fs09_features import FS09_FEATURE_VERSION
 from rallymate_scoring.feasibility import (
@@ -55,7 +56,7 @@ from rallymate_tracking import (
 )
 
 
-SCORING_LOOP_VERSION = "minimum-scoring-loop-v0.7.0"
+SCORING_LOOP_VERSION = "minimum-scoring-loop-v0.8.0"
 EVENT_CONTRACT_VERSION = "events.1.0.0"
 PRIMARY_PLAYER_VERSION = PRIMARY_PLAYER_ALGORITHM_VERSION
 SUPPLEMENTAL_FINE_FOOT_SEMANTICS = (
@@ -161,6 +162,7 @@ def _model_versions(
         "event": EVENT_DETECTOR_VERSION,
         "phase_contract": PHASE_CANDIDATE_VERSION,
         "feature": FEATURE_LIBRARY_VERSION,
+        "coordinate_contract": COORDINATE_CONTRACT_VERSION,
         "feature_contract": {
             item["indicator_id"]: _implemented_feature_contract(item)
             for item in indicators
@@ -644,6 +646,7 @@ def run_minimum_scoring_loop(
     summary = {
         "schema_version": "1.0.0",
         "loop_version": SCORING_LOOP_VERSION,
+        "coordinate_contract": sequence.coordinate_metadata,
         "video_id": canonical_video_id,
         "status": loop_status,
         "scope": registry["scope"],

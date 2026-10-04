@@ -1,4 +1,5 @@
 "use client";
+import { evidenceReferenceScore, measurementCounts, measurementResultFromSummary, normalizeMeasurementResult } from "./lib/measurement-evidence";
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -287,7 +288,7 @@ function DemoEvidencePanel({
     <section className="evidence-preview" id="evidence" aria-labelledby="evidence-title">
       <div className="evidence-heading">
         <div><span className="card-kicker">{isLive ? "EVIDENCE PREVIEW · LIVE API" : "EVIDENCE PREVIEW · DEMO / MOCK"}</span><h2 id="evidence-title">把评分还原到可核验的画面</h2><p>{isLive ? "球路随视频展开，保留当前一段完整轨迹。短缺口以虚线区分，不叠加人体骨架；可定位回放动作阶段。" : "以下是离线占位视觉，用于展示真实服务返回后会落位的数据结构。不会冒充模型预测或球员成绩。"}</p></div>
-        <span className="demo-badge">{isLive ? "LIVE OBSERVATION" : "DEMO DATA"}</span>{isLive && evidence.result?.training_evaluation && <div className="live-score-badge"><small>动作表现参考分</small><strong>{String(evidence.result.training_evaluation.score_0_to_100 ?? "待确认")}</strong></div>}
+        <span className="demo-badge">{isLive ? "LIVE OBSERVATION" : "DEMO DATA"}</span>{isLive && evidence.result?.training_evaluation && <div className="live-score-badge"><small>{evidenceReferenceScore(normalizeMeasurementResult(evidence.result).training_evaluation) === null ? "实测指标 · 技术分待标定" : "测量证据参考分（Beta）"}</small><strong>{evidenceReferenceScore(normalizeMeasurementResult(evidence.result).training_evaluation) ?? `${measurementCounts(evidence.result).measured} 项`}</strong></div>}
       </div>
       <div className="evidence-grid">
         <article className="frame-card">
@@ -333,7 +334,7 @@ function DemoEvidencePanel({
           <div className="frame-toolbar"><span>专项观测</span><span>数据来源</span></div>
           <div className="signal-row"><span className="signal-icon">R</span><div><strong>球拍识别</strong><small>{isLive ? `${racket?.geometry_status ?? "bbox_only"} · ${racket?.association_status === "unassociated" ? "未关联主球员" : "无关键点"}` : "racket.keypoint_geometry"}</small></div><b>{isLive ? confidenceLabel(racketConfidence) : "0.79"}</b></div>
           <div className="signal-row"><span className="signal-icon grip">G</span><div><strong>握拍状态</strong><small>仅作候选状态，不下技术结论</small></div><b>待确认</b></div>
-          <div className="signal-row"><span className="signal-icon court">C</span><div><strong>{isLive ? "技术证据" : "场地标定"}</strong><small>{isLive ? `${observedTechniques.length} 项动作已观测` : "court.calibration · demo"}</small></div><b>{isLive ? (assessment?.overall_evidence_score_0_to_100 === null || assessment?.overall_evidence_score_0_to_100 === undefined ? "待确认" : `${assessment.overall_evidence_score_0_to_100}`) : "0.91"}</b></div>
+          <div className="signal-row"><span className="signal-icon court">C</span><div><strong>{isLive ? "技术证据" : "场地标定"}</strong><small>{isLive ? `${observedTechniques.length} 项动作已观测` : "court.calibration · demo"}</small></div><b>{isLive ? "待复核" : "0.91"}</b></div>
           <p className="signal-note">{isLive ? `场地覆盖 ${coveragePercent(courtCoverage)}；球拍当前只承诺通用 bbox 观测，触球与握拍仍需专项模型。` : "接入真实 API 后，这些卡片会由 artifact / feature 字段驱动；缺失字段保持“待确认”。"}</p>
         </article>
       </div>
@@ -509,7 +510,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
     : selectedScenario.mode === "real"
       ? selectedScenario
       : PENDING_SCENARIO;
-  const showLegacy = scoreContext === "demo" || (importedSummary !== null && uploadState === "idle");
+  const showLegacy = scoreContext === "demo";
   const report = buildScoreReport(cards, scenario);
   const domainResult = report.domains[domain];
   const eventResults = report.results.filter((item) => item.card.eventCode === eventCode);
@@ -723,19 +724,15 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
       if (!isStage1Summary(summary)) {
         throw new Error("该 JSON 不是可识别的分析文件：请提供 Stage 1 summary、模型技术评价（techniques）或本站导出的报告。");
       }
+      const importedResult = measurementResultFromSummary(summary);
       setImportedSummary(summary);
       const nextScenario = scenarioFromStage1Summary(summary);
       setImportedScenario(nextScenario);
       setScenarioId(nextScenario.id);
-      setJob(null);
-      setUploadState("idle");
+      setJob(importedResult.job_id ? { id: importedResult.job_id, status: "completed", summary } : null);
+      setUploadState("complete");
       setVideoFile(null);
-      setEvidence({
-        mode: "live",
-        trajectory: null,
-        assessment: null,
-        error: "已导入 summary；该文件不包含轨迹与技术增强接口结果。上传视频后可获取实时观测。",
-      });
+      setEvidence({ mode: "live", jobId: importedResult.job_id, result: importedResult, trajectory: null, assessment: null, error: null });
       setScoreContext("live");
       setImportState({ status: "success", fileName: file.name });
     } catch (error) {
@@ -780,7 +777,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
         <div className="hero-copy">
           <div className="eyebrow"><span>MOTION ANALYSIS WORKSPACE</span><i /></div>
           <h1>让每一分，<br /><em>都能追溯到证据。</em></h1>
-          <p>把视频动作识别、可核验的证据和动作表现参考分整理在同一个工作台里。</p>
+          <p>查看动作片段、实际测量与证据参考分；技术评分待教练标定。</p>
           <div className="hero-actions">
             <a className="primary-button" href="#upload">上传视频 <span>↘</span></a>
             <button className="ghost-button" onClick={() => fileInput.current?.click()} aria-describedby="import-status" disabled={importState.status === "reading"}>
@@ -829,7 +826,7 @@ export default function ScoreLab({ cards, registryVersion, sources }: { cards: M
 
       <DemoEvidencePanel key={evidence.jobId ?? evidence.mode} evidence={evidence} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} error={uploadError || evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} />
 
-      {!showLegacy && <LiveResults status={job?.status} error={uploadError || evidence.error} result={evidence.result ?? null} assessment={evidence.assessment} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} trajectory={evidence.trajectory} summary={job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null} /> }
+      {!showLegacy && <LiveResults status={job?.status} error={uploadError || evidence.error} result={evidence.result ?? null} assessment={evidence.assessment} catalog={techniqueCatalog} pending={uploadState === "processing" || uploadState === "uploading"} trajectory={evidence.trajectory} summary={importedSummary ?? (job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null)} /> }
 
       {showLegacy && <>
 

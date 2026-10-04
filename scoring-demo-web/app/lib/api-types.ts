@@ -154,6 +154,7 @@ export interface JobProgress extends JobSubmission {
 }
 
 export interface DemoResultResponse {
+  footwork_review?: FootworkReview;
   action_recognition?: { motion_analysis?: MotionAnalysis; [key: string]: unknown };
   training_evaluation?: TrainingEvaluation;
   actions?: ActionEvaluation[];
@@ -198,10 +199,38 @@ export interface MotionEpisode {
   phase_timing_status?: "estimated_from_2d_motion" | string;
   candidate_peak_ms?: number;
   phases: Array<{ phase: string; label_zh: string; start_ms: number | null; end_ms: number | null; status: string }>;
-  metrics: { duration_ms?: number | null; peak_wrist_speed_torso_per_s?: number | null; wrist_path_torso?: number | null; elbow_extension_deg?: number | null; shoulder_line_change_deg?: number | null };
+  metrics: { duration_ms?: number | null; peak_wrist_speed_torso_per_s?: number | null; wrist_path_torso?: number | null; elbow_extension_deg?: number | null; shoulder_line_change_deg?: number | null; hip_line_change_deg?: number | null; shoulder_hip_separation_max_deg?: number | null; shoulder_hip_separation_change_deg?: number | null; peak_shoulder_angular_speed_deg_s?: number | null; peak_hip_angular_speed_deg_s?: number | null };
+  rotation_analysis?: RotationAnalysis;
   evidence?: { pose_samples?: number; racket_associated_frames?: number; [key: string]: unknown };
   limitations_zh: string[];
   metric_notes_zh?: string[];
+}
+
+export interface RotationAnalysis {
+  status: "measured_2d" | "partial" | "unavailable";
+  is_3d_rotation: false;
+  is_formal_coach_score: false;
+  score: null;
+  score_status: "calibration_required" | "insufficient_evidence";
+  metric_evidence: Record<string, { status: string; coverage_fraction: number; valid_samples?: number; total_samples?: number; start_ms?: number | null; end_ms?: number | null; reason_zh?: string }>;
+  limitations_zh?: string[];
+}
+
+export interface FootworkReview {
+  schema_version: string;
+  status: "available" | "unavailable";
+  reason_zh?: string;
+  limitations_zh?: string[];
+  episode_count?: number;
+  returned_episode_count?: number;
+  is_truncated?: boolean;
+  episodes: Array<{
+    event_id: string; event_code: string; name_zh: string; person_track_id: number;
+    start_ms: number; end_ms: number;
+    indicators: Array<{ indicator_id: string; name_zh: string; feature_status: string; scoring_status: string;
+      features: Array<{ feature_name: string; name_zh?: string; value: number | null; unit: string | null; confidence: number | null }>;
+    }>;
+  }>;
 }
 
 export interface MotionFamily {
@@ -222,6 +251,12 @@ export interface MotionAnalysis {
 }
 
 export interface IndicatorEvaluation {
+  technical_grade?: null;
+  formal_grade?: null;
+  available?: boolean;
+  technical_score_0_to_100?: number | null;
+  component_weights?: Record<string, number>;
+  effective_component_weights?: Record<string, number>;
   indicator_id: string;
   event_code?: string;
   name_zh: string;
@@ -234,6 +269,11 @@ export interface IndicatorEvaluation {
   measured_instance_count?: number;
   total_instance_count?: number;
   limitations_zh?: string[];
+  score_semantics?: string;
+  technical_score_status?: string;
+  components?: Record<string, number | null>;
+  repeatability_status?: string;
+  representative_measurements?: Array<{ feature_name: string; label_zh: string; median_value: number; unit_zh: string; sample_count: number; typical_range?: [number, number] }>;
 }
 export interface ActionEvaluation {
   family?: string;
@@ -242,9 +282,21 @@ export interface ActionEvaluation {
   detected_segments: number;
   summary_zh?: string;
   indicator_evaluations?: IndicatorEvaluation[];
-  performance_assessment?: { score_0_to_100: number | null; level_zh?: string };
+  performance_assessment?: { score_0_to_100: number | null; level_zh?: string; score_semantics?: string; technical_score_0_to_100?: null; technical_grade?: null; formal_grade?: null };
 }
 export interface TrainingEvaluation {
+  technical_grade?: null;
+  formal_grade?: null;
+  available?: boolean;
+  evaluated_indicator_count?: number;
+  total_indicator_count?: number;
+  technical_score_0_to_100?: number | null;
+  component_weights?: Record<string, number>;
+  action_evaluations?: unknown;
+  label_zh?: string;
+  meaning_zh?: string;
+  score_semantics?: string;
+  technical_score_status?: string;
   score_0_to_100: number | null;
   level_zh: string;
   summary_zh: string;
@@ -288,6 +340,13 @@ export interface BallReconstructionSegment {
   interpolation_intervals?: Array<{ start_ms: number; end_ms: number; method: string }>;
   interpolation_intervals_complete?: boolean;
   sampling?: { method: string; is_sampled: boolean; original_point_count: number; returned_point_count: number };
+  display_quality?: {
+    semantics: "display_support_not_accuracy_or_technical_score";
+    detector_confidence: { mean: number | null; median: number | null; min: number | null; max: number | null };
+    observed_point_fraction: number;
+    tracked_observation_fraction: number;
+    active_ball_identity: "unconfirmed";
+  };
 }
 
 export interface BallTrajectoryReconstruction {

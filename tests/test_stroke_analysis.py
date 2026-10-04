@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from copy import deepcopy
 import math
+import json
 import unittest
 
 from rallymate_scoring.stroke_candidates import detect_stroke_candidates, _sample, _associate_rackets
 from rallymate_scoring.stroke_analysis import ANALYSIS_VERSION, _episode, _classification, racket_hand_evidence, build_motion_analysis
+from rallymate_scoring.rotation_analysis import analyze_rotation
 
 
 def make_frame(index, *, right=(0.9, 0.55), left=(-0.9, 0.55), track=1, offset=0):
@@ -63,6 +65,153 @@ def motion(frames, timeline=None):
     return detect_stroke_candidates(frames, primary_timeline=timeline)["motion_analysis"]
 
 
+def rotation_samples(times=None, *, shoulder_speed=40, hip_speed=20):
+    """Known independent image-plane axes, angles in deg and speed in deg/s."""
+    times = times if times is not None else list(range(0, 1001, 50))
+    result = []
+    for index, time in enumerate(times):
+        frame = make_frame(index)
+        frame["frame"]["timestamp_ms"] = time
+        for point in frame["poses"][0]["keypoints"]:
+            joint = "shoulder" if "shoulder" in point["name"] else "hip" if "hip" in point["name"] else None
+            if joint is None:
+                continue
+            angle = math.radians((15 + shoulder_speed * time / 1000) if joint == "shoulder" else (5 + hip_speed * time / 1000))
+            sign = -1 if point["name"].startswith("left") else 1
+            radius = 30 if joint == "shoulder" else 25
+            point["x_px"] = 300 + sign * radius * math.cos(angle)
+            point["y_px"] = (250 if joint == "shoulder" else 350) + sign * radius * math.sin(angle)
+        result.append(_sample(frame["poses"][0], frame["frame"]))
+    return result
+
+
+class RotationAnalysisTests(unittest.TestCase):
+    def test_known_independent_axes_use_real_timestamps_and_keep_score_unavailable(self):
+        samples = rotation_samples([0, 40, 105, 155, 220, 260, 325, 400, 450, 510, 580])
+        result = analyze_rotation(samples)
+        self.assertEqual(result["status"], "measured_2d")
+        self.assertEqual(result["metrics"], {
+            "shoulder_line_change_deg": 23.2, "hip_line_change_deg": 11.6,
+            "shoulder_hip_separation_change_deg": 11.6, "shoulder_hip_separation_max_deg": 21.6,
+            "peak_shoulder_angular_speed_deg_s": 40.0, "peak_hip_angular_speed_deg_s": 20.0,
+        })
+        self.assertIsNone(result["score"])
+        self.assertEqual(result["score_status"], "calibration_required")
+        self.assertFalse(result["is_formal_coach_score"])
+        self.assertFalse(result["is_3d_rotation"])
+        self.assertEqual(result["series"][2]["timestamp_ms"], 105)
+        self.assertEqual(result["series"][2]["shoulder_angular_velocity_deg_s"], 40)
+        self.assertEqual(result["series"][2]["separation_angular_velocity_deg_s"], 20)
+        self.assertIsNone(result["series"][0]["shoulder_angular_velocity_deg_s"])
+        evidence = result["metric_evidence"]["hip_line_change_deg"]
+        self.assertEqual((evidence["coverage_fraction"], evidence["start_ms"], evidence["end_ms"]), (1, 0, 580))
+        json.dumps(result, allow_nan=False)
+
+    def test_static_axes_are_observed_zero_motion_and_not_missing_measurements(self):
+        result = analyze_rotation(rotation_samples(shoulder_speed=0, hip_speed=0))
+        self.assertEqual(result["status"], "measured_2d")
+        self.assertEqual(result["metrics"]["shoulder_line_change_deg"], 0)
+        self.assertEqual(result["metrics"]["peak_hip_angular_speed_deg_s"], 0)
+        self.assertEqual(result["metrics"]["shoulder_hip_separation_max_deg"], 10)
+
+    def test_independent_endpoint_flip_and_crossing_angle_wrap_do_not_make_spikes(self):
+        samples = rotation_samples(shoulder_speed=100, hip_speed=80)
+        expected = analyze_rotation(samples)["metrics"]
+        for sample in samples[10:]:
+            sample.points["left_shoulder"], sample.points["right_shoulder"] = sample.points["right_shoulder"], sample.points["left_shoulder"]
+        result = analyze_rotation(samples)
+        self.assertEqual(result["metrics"], expected)
+        self.assertEqual(result["metrics"]["shoulder_line_change_deg"], 100)
+        self.assertEqual(result["metrics"]["peak_shoulder_angular_speed_deg_s"], 100)
+
+    def test_one_foreshortened_axis_does_not_invalidate_other_axis_or_fabricate_separation(self):
+        samples = rotation_samples()
+        for sample in samples:
+            for side in ("left", "right"):
+                x, y = sample.points[f"{side}_shoulder"]
+                sample.points[f"{side}_shoulder"] = (x * 0.1, y * 0.1)
+        result = analyze_rotation(samples)
+        self.assertEqual(result["status"], "partial")
+        self.assertIsNone(result["metrics"]["shoulder_line_change_deg"])
+        self.assertIsNone(result["metrics"]["shoulder_hip_separation_max_deg"])
+        self.assertEqual(result["metrics"]["hip_line_change_deg"], 20)
+        self.assertTrue(all(row["shoulder_line_angle_deg"] is None for row in result["series"]))
+
+    def test_short_missing_axis_in_middle_is_never_stitched_into_a_full_rotation(self):
+        samples = rotation_samples()
+        del samples[10].points["left_shoulder"]
+        result = analyze_rotation(samples)
+        self.assertIsNone(result["metrics"]["shoulder_line_change_deg"])
+        self.assertEqual(result["metrics"]["hip_line_change_deg"], 20)
+        evidence = result["metric_evidence"]["shoulder_line_change_deg"]
+        self.assertEqual(evidence["segment_count"], 2)
+        self.assertEqual(evidence["valid_samples"], 20)
+        self.assertEqual(evidence["total_samples"], 21)
+        self.assertIsNone(evidence["start_ms"])
+
+    def test_missing_torso_sample_and_frame_index_hole_split_despite_short_timestamp_gap(self):
+        for mode in ("missing_sample", "frame_index"):
+            samples = rotation_samples()
+            if mode == "missing_sample":
+                del samples[10]
+            else:
+                for sample in samples[10:]:
+                    sample.frame_index += 1
+            result = analyze_rotation(samples)
+            self.assertEqual(result["status"], "unavailable", mode)
+            self.assertEqual(result["score_status"], "insufficient_evidence")
+            self.assertEqual(result["quality"]["temporal_break_count"], 1)
+            self.assertTrue(all(value is None for value in result["metrics"].values()))
+
+    def test_identity_change_timestamp_reversal_and_scale_jump_cannot_be_bridged(self):
+        for mode in ("track", "selection_epoch", "timestamp", "scale"):
+            samples = rotation_samples()
+            if mode == "track":
+                samples[10].track = 2
+            elif mode == "selection_epoch":
+                samples[10].selection_epoch = 1
+            elif mode == "timestamp":
+                samples[10].time = samples[9].time
+            else:
+                samples[10].scale *= 2
+            result = analyze_rotation(samples)
+            self.assertEqual(result["status"], "unavailable", mode)
+            self.assertGreaterEqual(result["quality"]["temporal_break_count"], 1)
+
+    def test_equal_shoulder_and_hip_pose_spike_does_not_cancel_into_valid_separation(self):
+        samples = rotation_samples(shoulder_speed=0, hip_speed=0)
+        for joint, center_y in (("shoulder", 0), ("hip", 1)):
+            for side in ("left", "right"):
+                x, y = samples[10].points[f"{side}_{joint}"]
+                samples[10].points[f"{side}_{joint}"] = (-(y - center_y), center_y + x)
+        result = analyze_rotation(samples)
+        self.assertEqual(result["status"], "unavailable")
+        self.assertIsNone(result["metrics"]["shoulder_hip_separation_change_deg"])
+
+    def test_mirror_preserves_magnitudes_and_reverses_signed_series(self):
+        samples = rotation_samples()
+        normal = analyze_rotation(samples)
+        for sample in samples:
+            sample.points = {name: (-x, y) for name, (x, y) in sample.points.items()}
+        mirrored_result = analyze_rotation(samples)
+        self.assertEqual(normal["metrics"], mirrored_result["metrics"])
+        self.assertEqual(normal["series"][5]["shoulder_hip_separation_deg"],
+                         -mirrored_result["series"][5]["shoulder_hip_separation_deg"])
+
+    def test_empty_short_and_nonfinite_evidence_preserve_null_not_zero(self):
+        for samples in ([], rotation_samples([0, 10, 20, 30, 40, 50, 60]), rotation_samples()[:4]):
+            result = analyze_rotation(samples)
+            self.assertEqual(result["status"], "unavailable")
+            self.assertTrue(all(value is None for value in result["metrics"].values()))
+            json.dumps(result, allow_nan=False)
+        samples = rotation_samples()
+        for sample in samples:
+            sample.points["left_shoulder"] = (float("nan"), 0)
+        result = analyze_rotation(samples)
+        self.assertIsNone(result["metrics"]["shoulder_line_change_deg"])
+        json.dumps(result, allow_nan=False)
+
+
 class StrokeMotionAnalysisTests(unittest.TestCase):
     def test_forehand_is_measured_with_ordered_phases_and_no_contact_or_score(self):
         result = motion(swing())
@@ -81,6 +230,10 @@ class StrokeMotionAnalysisTests(unittest.TestCase):
             self.assertLess(phase["start_ms"], phase["end_ms"])
         self.assertEqual(episode["phases"][0]["start_ms"], episode["start_ms"])
         self.assertEqual(episode["phases"][-1]["end_ms"], episode["end_ms"])
+        self.assertEqual(episode["rotation_analysis"]["status"], "measured_2d")
+        self.assertIsNone(episode["rotation_analysis"]["score"])
+        for key, value in episode["rotation_analysis"]["metrics"].items():
+            self.assertEqual(episode["metrics"][key], value)
 
     def test_image_mirroring_and_left_handed_player_do_not_invert_forehand_label(self):
         for frames in (mirrored(swing()), mirrored(swing(), swap_anatomy=True)):
@@ -195,6 +348,18 @@ class StrokeMotionAnalysisTests(unittest.TestCase):
         frames = swing()
         timeline = [{"processed_index": i, "source_track_id": 1 if i != 28 else 2, "selection_status": "selected"} for i in range(len(frames))]
         self.assertEqual(motion(frames, timeline)["families"]["baseline"]["episodes"], [])
+
+    def test_low_confidence_torso_frame_does_not_become_a_continuous_rotation_measurement(self):
+        frames = swing()
+        for point in frames[28]["poses"][0]["keypoints"]:
+            if point["name"] == "left_shoulder":
+                point["confidence"] = 0.1
+        episode = motion(frames)["families"]["baseline"]["episodes"][0]
+        rotation = episode["rotation_analysis"]
+        self.assertEqual(rotation["status"], "unavailable")
+        self.assertEqual(rotation["quality"]["temporal_break_count"], 1)
+        self.assertEqual(rotation["score_status"], "insufficient_evidence")
+        self.assertTrue(all(value is None for value in rotation["metrics"].values()))
 
     def test_gap_and_pose_spike_do_not_create_measured_episodes(self):
         frames = [make_frame(i) for i in range(60)]

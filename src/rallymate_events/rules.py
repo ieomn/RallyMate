@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -12,7 +13,7 @@ from rallymate_features.schemas import PoseSequence
 from rallymate_features.smoothing import smooth_series
 
 
-EVENT_DETECTOR_VERSION = "pose-motion-bout-v0.4.1"
+EVENT_DETECTOR_VERSION = "pose-motion-bout-v0.5.0"
 PHASE_CANDIDATE_VERSION = "pose-event-phase-proxies-v0.3.0"
 
 PHASE_RIGHT_CENSORED_PEAK_PREFIX = "phase_proxy_right_censored_peak:"
@@ -29,6 +30,7 @@ MOTION_BOUT_MIN_DIRECTION_COHERENCE = 0.80
 MOTION_BOUT_ENDPOINT_FRACTION = 0.20
 EVENT_KINEMATIC_MIN_COVERAGE = 0.75
 PHASE_RIGHT_BOUNDARY_CONFIRMATION_MAX_GAP_MS = 160
+ACTIVITY_THRESHOLD_RADIUS_MS = 1500
 
 PHASE_DEFINITIONS = {
     "takeoff_proxy_ms": (
@@ -798,6 +800,51 @@ def _make_event(
     return record
 
 
+def _local_activity_thresholds(timestamps: np.ndarray, values: np.ndarray, valid: np.ndarray) -> np.ndarray:
+    """Bound segmentation context in time; remote clip padding cannot set it.
+
+    Time weights keep dense/high-FPS portions from dominating percentiles.
+    These are motion candidate thresholds, never technique scoring targets.
+    """
+    times = np.asarray(timestamps, dtype=np.float64)
+    output = np.full(times.shape, np.nan)
+    for i, timestamp in enumerate(times):
+        left = np.searchsorted(times, timestamp - ACTIVITY_THRESHOLD_RADIUS_MS, side="left")
+        right = np.searchsorted(times, timestamp + ACTIVITY_THRESHOLD_RADIUS_MS, side="right")
+        indexes = np.arange(left, right)
+        if len(indexes) < 2:
+            continue
+        t = times[indexes]
+        # Capped temporal support prevents an observation next to a long gap
+        # from representing the entire missing interval.
+        weights = np.minimum(160, np.diff(np.r_[t[0] - (t[1] - t[0]), t]))
+        keep = valid[indexes] & np.isfinite(values[indexes]) & (weights > 0)
+        v, w = values[indexes][keep], weights[keep]
+        if len(v) < 4:
+            continue
+        order = np.argsort(v)
+        v, w = v[order], w[order]
+        cdf = (np.cumsum(w) - 0.5 * w) / np.sum(w)
+        q20, q80 = np.interp([0.2, 0.8], cdf, v)
+        output[i] = q20 + 0.45 * max(q80 - q20, 1e-6)
+    return output
+
+
+def _offset_phase_indexes(value: Any, offset: int) -> None:
+    """Keep phase diagnostics in full-sequence coordinates after a split."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in {"active_run_start_ms_index", "active_run_end_ms_index", "fallback_anchor_ms_index"} and isinstance(item, int):
+                value[key] = item + offset
+            elif key == "right_boundary_confirmation_indexes" and isinstance(item, list):
+                value[key] = [index + offset for index in item]
+            else:
+                _offset_phase_indexes(item, offset)
+    elif isinstance(value, list):
+        for item in value:
+            _offset_phase_indexes(item, offset)
+
+
 def detect_pose_events(
     sequence: PoseSequence,
     *,
@@ -811,6 +858,59 @@ def detect_pose_events(
     timestamps = sequence.timestamp_ms
     if timestamps.size < 8:
         return []
+    camera_status = sequence.camera_motion_status
+    camera_allowed = (np.asarray([status in {"stationary", "reference", "compensated"} for status in camera_status])
+                      if camera_status is not None else np.ones(timestamps.size, dtype=bool))
+    if not camera_allowed.any():
+        return []
+    camera_epochs = sequence.camera_reference_epochs
+    epoch_breaks = (camera_epochs is not None and any(a != b for a, b in zip(camera_epochs, camera_epochs[1:])))
+    if not camera_allowed.all() or epoch_breaks:
+        # Split BEFORE smoothing/derivatives. Merely masking a camera interval
+        # would let the short-gap interpolator bridge a pan/cut and invent a
+        # large body velocity in the next otherwise stable window.
+        events = []
+        windows = []
+        run_start = None
+        for i in range(len(camera_allowed) + 1):
+            valid = i < len(camera_allowed) and camera_allowed[i]
+            reset = i > 0 and i < len(camera_allowed) and camera_epochs is not None and camera_epochs[i] != camera_epochs[i - 1]
+            if run_start is not None and (not valid or reset):
+                windows.append((run_start, i - 1))
+                run_start = None
+            if valid and run_start is None:
+                run_start = i
+        for start, end in windows:
+            if end - start + 1 < 8:
+                continue
+            window = slice(start, end + 1)
+            part = replace(sequence, timestamp_ms=sequence.timestamp_ms[window],
+                           source_frames=sequence.source_frames[window],
+                           keypoints_xy={name: values[window] for name, values in sequence.keypoints_xy.items()},
+                           confidence={name: values[window] for name, values in sequence.confidence.items()},
+                           frame_dimensions_px=(sequence.frame_dimensions_px[window]
+                                                if sequence.frame_dimensions_px is not None else None),
+                           frame_transforms_to_reference=(sequence.frame_transforms_to_reference[window]
+                                                          if sequence.frame_transforms_to_reference is not None else None),
+                           camera_reference_epochs=(sequence.camera_reference_epochs[window]
+                                                    if sequence.camera_reference_epochs is not None else None),
+                           camera_motion_status=(sequence.camera_motion_status[window]
+                                                 if sequence.camera_motion_status is not None else None))
+            result = detect_pose_events(part, source_id=f"{source_id}|camera-window:{int(part.source_frames[0])}",
+                                        video_id=video_id)
+            for event in result:
+                provenance = event["provenance"]
+                provenance["source_id"] = source_id
+                provenance["camera_window"] = {"start_ms": int(part.timestamp_ms[0]),
+                                                "end_ms": int(part.timestamp_ms[-1]),
+                                                "status": "compensated_or_fixed_camera_supported"}
+                for key in ("event_kinematic_coverage", "event_motion_reference"):
+                    provenance[key]["start_index"] += start
+                    provenance[key]["end_index"] += start
+                _offset_phase_indexes(provenance.get("phase_candidates"), start)
+                validate_event_record(event)
+            events.extend(result)
+        return sorted(events, key=lambda item: (item["start_ms"], item["event_code"]))
     (
         center,
         center_valid,
@@ -822,22 +922,25 @@ def detect_pose_events(
     scale_candidates = scale_values[np.isfinite(scale_values) & (scale_values > 1e-6)]
     if scale_candidates.size == 0:
         return []
-    scale = float(np.median(scale_candidates))
+    scale_smoothed = smooth_series(timestamps, scale_values, max_gap_ms=200, radius_ms=120)
+    center = center.copy()
+    center[~camera_allowed] = np.nan
     center_smoothed = smooth_series(
         timestamps, center, max_gap_ms=200, radius_ms=120
     )
-    motion_speed = speed(timestamps, center_smoothed) / scale
+    center_smoothed[~camera_allowed] = np.nan
+    motion_speed = speed(timestamps, center_smoothed) / scale_smoothed
     motion_speed = smooth_series(
         timestamps, motion_speed, max_gap_ms=200, radius_ms=120
     )
-    valid = np.isfinite(motion_speed) & center_valid & scale_valid
+    valid = np.isfinite(motion_speed) & center_valid & scale_valid & camera_allowed
     speed_values = motion_speed[valid]
     if speed_values.size < 8:
         return []
-    q20, q80 = np.percentile(speed_values, [20, 80])
-    active_threshold = float(q20 + 0.45 * max(q80 - q20, 1e-6))
-    active = valid & (motion_speed >= active_threshold)
+    activity_thresholds = _local_activity_thresholds(timestamps, motion_speed, valid)
+    active = valid & (motion_speed >= activity_thresholds)
     active = _close_short_gaps(active, timestamps, max_gap_ms=240)
+    active &= camera_allowed
     candidate_bouts = [
         (start, end)
         for start, end in _runs(active)
@@ -851,18 +954,17 @@ def detect_pose_events(
     # to force an event into every clip.
     if not candidate_bouts:
         return []
-    center_body = center_smoothed / scale
     bouts: list[tuple[int, int, dict[str, Any]]] = []
     for start, end in candidate_bouts:
-        diagnostics = _motion_bout_diagnostics(center_body, start, end)
+        bout_scale = float(np.nanmedian(scale_values[start:end + 1]))
+        diagnostics = _motion_bout_diagnostics(center_smoothed / bout_scale, start, end)
         if diagnostics["candidate_accepted"]:
             bouts.append((start, end, diagnostics))
     if not bouts:
         return []
     acceleration = scalar_acceleration(timestamps, motion_speed)
     hips, hip_valid = hip_center(sequence)
-    phase_signals = _phase_signals(sequence, scale=scale)
-    center_velocity = irregular_derivative(timestamps, center_smoothed) / scale
+    center_velocity = irregular_derivative(timestamps, center_smoothed) / scale_smoothed[:, None]
     heading_change_deg = np.full(timestamps.size, np.nan, dtype=np.float64)
     for index in range(1, timestamps.size):
         previous = center_velocity[index - 1]
@@ -871,7 +973,7 @@ def detect_pose_events(
             continue
         previous_norm = float(np.linalg.norm(previous))
         current_norm = float(np.linalg.norm(current))
-        if previous_norm < active_threshold or current_norm < active_threshold:
+        if previous_norm < activity_thresholds[index - 1] or current_norm < activity_thresholds[index]:
             continue
         cross = float(previous[0] * current[1] - previous[1] * current[0])
         dot = float(np.dot(previous, current))
@@ -880,6 +982,7 @@ def detect_pose_events(
     uncertainty = max(2 * median_dt, 40)
     events = []
     for bout_index, (onset, active_end, bout_diagnostics) in enumerate(bouts):
+        active_threshold = float(np.nanmedian(activity_thresholds[onset:active_end + 1]))
         next_onset = bouts[bout_index + 1][0] if bout_index + 1 < len(bouts) else len(timestamps) - 1
         previous_end = bouts[bout_index - 1][1] if bout_index else 0
         pre_candidates = np.flatnonzero(
@@ -889,6 +992,10 @@ def detect_pose_events(
         pre_start = int(pre_candidates[0]) if pre_candidates.size else max(0, onset - 1)
         if pre_start == onset:
             pre_start = max(0, onset - 1)
+        blocked_before = np.flatnonzero(~camera_allowed[pre_start:onset])
+        if blocked_before.size:
+            pre_start += int(blocked_before[-1]) + 1
+        pre_candidates = np.arange(pre_start, onset + 1)
         active_slice = np.arange(onset, active_end + 1)
         peak = int(active_slice[np.nanargmax(motion_speed[active_slice])])
         post_end_time = min(
@@ -898,6 +1005,11 @@ def detect_pose_events(
         )
         post_end = int(np.searchsorted(timestamps, post_end_time, side="right") - 1)
         post_end = max(post_end, min(len(timestamps) - 1, active_end + 1))
+        blocked_after = np.flatnonzero(~camera_allowed[active_end + 1:post_end + 1])
+        if blocked_after.size:
+            post_end = active_end + int(blocked_after[0])
+        phase_scale = float(np.nanmedian(scale_values[pre_start:post_end + 1]))
+        phase_signals = _phase_signals(sequence, scale=phase_scale)
         fs09_start = min(peak, post_end - 1)
         pre_hip = hips[pre_start : onset + 1, 1]
         pre_valid = hip_valid[pre_start : onset + 1] & np.isfinite(pre_hip)
@@ -1159,8 +1271,9 @@ def detect_pose_events(
         restabilization = int(stable_candidates[0]) if stable_candidates.size else None
         bout_peak = float(np.nanmax(motion_speed[active_slice]))
         thresholds = {
-            "speed_q20_body_s": round(float(q20), 8),
-            "speed_q80_body_s": round(float(q80), 8),
+            "local_threshold_radius_ms": float(ACTIVITY_THRESHOLD_RADIUS_MS),
+            "local_threshold_min_body_s": round(float(np.nanmin(activity_thresholds[onset:active_end + 1])), 8),
+            "local_threshold_max_body_s": round(float(np.nanmax(activity_thresholds[onset:active_end + 1])), 8),
             "active_speed_body_s": round(active_threshold, 8),
             "gap_close_ms": 240.0,
             "minimum_bout_ms": 240.0,
@@ -1180,6 +1293,8 @@ def detect_pose_events(
             ],
         }
         common_flags = ["provisional_rule_baseline", "event_ground_truth_missing"]
+        if camera_status is None:
+            common_flags.append("camera_motion_unverified")
         if bout_peak <= active_threshold * 1.15:
             common_flags.append("low_motion_prominence")
         event_specs = {

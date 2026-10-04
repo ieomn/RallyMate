@@ -10,6 +10,7 @@ from rallymate_evaluation.ground_truth import (
     validate_keypoint_annotation,
 )
 from rallymate_features.schemas import PoseSequence
+from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION
 
 
 def _sequence(knee_x: float) -> PoseSequence:
@@ -44,6 +45,8 @@ def _sequence(knee_x: float) -> PoseSequence:
             for name, (x, y) in base.items()
         },
         confidence={name: np.full(timestamps.size, 0.9) for name in names},
+        frame_dimensions_px=np.full((timestamps.size, 2), 1000),
+        coordinate_metadata={"contract_version": COORDINATE_CONTRACT_VERSION},
     )
 
 
@@ -85,6 +88,8 @@ def _direction_sequence(dx_per_second: float, dy_per_second: float) -> PoseSeque
             for name, (x, y) in base.items()
         },
         confidence={name: np.full(timestamps.size, 0.9) for name in names},
+        frame_dimensions_px=np.full((timestamps.size, 2), 1000),
+        coordinate_metadata={"contract_version": COORDINATE_CONTRACT_VERSION},
     )
 
 

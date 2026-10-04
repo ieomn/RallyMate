@@ -11,10 +11,11 @@ EVENT_LOCAL_COVERAGE_DETECTOR_VERSIONS = frozenset(
         "pose-motion-bout-v0.3.1",
         "pose-motion-bout-v0.4.0",
         "pose-motion-bout-v0.4.1",
+        "pose-motion-bout-v0.5.0",
     }
 )
 EVENT_MOTION_REFERENCE_DETECTOR_VERSIONS = frozenset(
-    {"pose-motion-bout-v0.4.0", "pose-motion-bout-v0.4.1"}
+    {"pose-motion-bout-v0.4.0", "pose-motion-bout-v0.4.1", "pose-motion-bout-v0.5.0"}
 )
 EVENT_LOCAL_COVERAGE_SCOPE = "emitted_event_interval_inclusive"
 EVENT_LOCAL_COVERAGE_SEMANTICS = (

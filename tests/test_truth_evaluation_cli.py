@@ -113,6 +113,10 @@ class TruthEvaluationCliTests(unittest.TestCase):
                 frames.append(
                     {
                         "frame": {
+                            # Explicit square source geometry preserves this
+                            # synthetic fixture's normalized coordinate scale.
+                            "width": 1000,
+                            "height": 1000,
                             "index": index,
                             "processed_index": index,
                             "timestamp_ms": timestamp,

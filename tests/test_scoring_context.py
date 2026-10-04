@@ -293,6 +293,8 @@ class ScoringContextTests(unittest.TestCase):
                 frame_records.append(
                     {
                         "frame": {
+                            "width": 1000,
+                            "height": 1000,
                             "processed_index": index,
                             "index": index,
                             "timestamp_ms": index * 40,

@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 
 from rallymate_features.schemas import PoseSequence
+from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION, validated_camera_transform
 
 
 def validate_keypoint_annotation(record: dict[str, Any]) -> None:
@@ -122,10 +123,22 @@ def apply_keypoint_corrections(
                 keypoints[name] = np.full((sequence.timestamp_ms.size, 2), np.nan)
                 confidence[name] = np.full(sequence.timestamp_ms.size, np.nan)
             if joint["visible"]:
-                keypoints[name][index] = [
+                if (sequence.coordinate_metadata.get("contract_version") != COORDINATE_CONTRACT_VERSION
+                        or sequence.frame_dimensions_px is None):
+                    raise ValueError("normalized keypoint truth requires explicit source dimensions and coordinate contract")
+                dimensions = np.asarray(sequence.frame_dimensions_px[index], dtype=np.float64)
+                if not np.isfinite(dimensions).all() or np.any(dimensions <= 0):
+                    raise ValueError("normalized keypoint truth requires valid source frame dimensions")
+                point_px = np.asarray([
                     float(joint["x_normalized"]),
                     float(joint["y_normalized"]),
-                ]
+                ]) * dimensions
+                transform = (sequence.frame_transforms_to_reference[index]
+                             if sequence.frame_transforms_to_reference is not None else np.eye(2, 3))
+                transform = validated_camera_transform({"compensation_valid": True, "matrix_to_reference": transform})
+                if transform is None:
+                    raise ValueError("manual keypoint truth requires a valid camera reference transform")
+                keypoints[name][index] = (transform @ np.r_[point_px, 1.0]) / max(dimensions)
                 confidence[name][index] = 1.0
             else:
                 keypoints[name][index] = [math.nan, math.nan]
@@ -136,4 +149,10 @@ def apply_keypoint_corrections(
         keypoints_xy=keypoints,
         confidence=confidence,
         primary_player_id=sequence.primary_player_id,
+        frame_dimensions_px=(sequence.frame_dimensions_px.copy() if sequence.frame_dimensions_px is not None else None),
+        coordinate_metadata={**sequence.coordinate_metadata, "observation_source": "manual_annotation_only"},
+        camera_motion_status=sequence.camera_motion_status,
+        frame_transforms_to_reference=(sequence.frame_transforms_to_reference.copy()
+                                       if sequence.frame_transforms_to_reference is not None else None),
+        camera_reference_epochs=sequence.camera_reference_epochs,
     )

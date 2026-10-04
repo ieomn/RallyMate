@@ -7,11 +7,13 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from rallymate_service.training_evaluation import build_training_evaluation
+from rallymate_service.training_evaluation import (
+    SCORE_SEMANTICS, build_training_evaluation, validated_training_records,
+)
 from rallymate_scoring.technique_assessment import build_technique_assessment
 
-USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.2.0"
-FORMATION_SCORE_VERSION = "recognizable-motion-information-v1.0.0"
+USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.4.0"
+FORMATION_SCORE_VERSION = "recognizable-motion-information-v1.2.0"
 
 _FORMATION_SCORE_WEIGHTS = {
     "recognizable_outline": 0.30,
@@ -25,7 +27,6 @@ _ANALYSIS_QUALITY_WEIGHTS = {
     "measured_unique_indicator_ratio": 0.45,
     "mean_action_measurement_coverage": 0.25,
 }
-
 
 class UserDemoResultError(ValueError):
     """Raised when a completed run cannot be represented as a user demo result."""
@@ -321,6 +322,7 @@ def _bounded_percent(numerator: int, denominator: int) -> int:
 
 def _formation_assessment(
     *,
+    measurement_available: bool,
     detected_segments: int,
     measured_indicator_count: int,
     expected_indicator_count: int,
@@ -338,39 +340,32 @@ def _formation_assessment(
             amplitude_count, expected_amplitude_count
         ),
     }
-    score = round(
-        components["recognizable_outline_percent"]
-        * _FORMATION_SCORE_WEIGHTS["recognizable_outline"]
-        + components["measured_indicator_ratio_percent"]
-        * _FORMATION_SCORE_WEIGHTS["measured_indicator_ratio"]
-        + components["measurement_coverage_percent"]
-        * _FORMATION_SCORE_WEIGHTS["measurement_coverage"]
-        + components["amplitude_type_coverage_percent"]
-        * _FORMATION_SCORE_WEIGHTS["amplitude_type_coverage"]
+    score = (
+        max(0, min(100, round(sum(
+            components[f"{name}_percent"] * weight
+            for name, weight in _FORMATION_SCORE_WEIGHTS.items()
+        ))))
+        if measurement_available and measured_indicator_count > 0 else None
     )
-    score = max(0, min(100, score))
-
     if detected_segments == 0:
         status = "not_observed"
-        label_zh = "未形成可识别轮廓"
-        explanation_zh = "当前视频里没有形成可展示的这一类动作轮廓。"
-    elif score >= 85:
+        label_zh = "未提供候选片段"
+    elif measured_indicator_count == expected_indicator_count and amplitude_count == expected_amplitude_count:
         status = "well_formed_information"
-        label_zh = "轮廓与幅度信息较成型"
-        explanation_zh = "动作轮廓、可测指标和幅度信息在当前视频中较完整。"
-    elif score >= 60:
+        label_zh = "候选片段有可复核测量"
+    elif measured_indicator_count:
         status = "partially_formed_information"
-        label_zh = "轮廓已形成，幅度信息待补充"
-        explanation_zh = "已经找到动作轮廓，但仍有部分幅度或指标信息不完整。"
+        label_zh = "候选片段部分可测"
     else:
         status = "limited_information"
-        label_zh = "仅形成少量可识别信息"
-        explanation_zh = "只找到少量动作轮廓或幅度信息，暂不适合做完整展示。"
+        label_zh = "候选片段待复核，测量不足"
+    explanation_zh = f"{detected_segments} 个候选片段；{measured_indicator_count}/{expected_indicator_count} 项有测量。"
 
     return {
         "status": status,
         "label_zh": label_zh,
         "reference_score_0_to_100": score,
+        "score_semantics": SCORE_SEMANTICS,
         "meaning_zh": (
             "只描述当前视频中可识别的动作轮廓与幅度信息成型程度，"
             "不评价动作好坏。"
@@ -399,11 +394,34 @@ def build_user_demo_result(
     records = [record for record in indicator_feature_records if isinstance(record, Mapping)]
     loop = summary.get("minimum_scoring_loop")
     loop = loop if isinstance(loop, Mapping) else {}
+    coordinate_contract = loop.get("coordinate_contract")
+    coordinate_contract = dict(coordinate_contract) if isinstance(coordinate_contract, Mapping) else {}
+    measurement_update_required = coordinate_contract.get("contract_version") != "isotropic-frame-long-edge-v1.1.0"
+    processing = summary.get("processing")
+    processing = processing if isinstance(processing, Mapping) else {}
+    camera_motion = processing.get("camera_motion")
+    camera_motion = camera_motion if isinstance(camera_motion, Mapping) else {}
+    camera_counts = camera_motion.get("status_counts")
+    camera_counts = camera_counts if isinstance(camera_counts, Mapping) else {}
+    source_timing = processing.get("source_timing")
+    source_timing = source_timing if isinstance(source_timing, Mapping) else {}
+    measurement_warnings = []
+    if measurement_update_required:
+        measurement_warnings.append("历史测量使用旧坐标算法，请重新分析视频；旧数值保留供复核，不能与新结果比较。")
+    if _nonnegative_int(camera_counts.get("moving")):
+        moving_frames = _nonnegative_int(camera_counts.get("moving"))
+        compensated_frames = min(moving_frames, _nonnegative_int(camera_motion.get("compensated_frames")))
+        measurement_warnings.append(f"背景运动 {moving_frames} 帧，其中 {compensated_frames} 帧完成画面运动校正；未获可靠校正的区间不用于移动表现。这是二维画面校正，不是三维校正。")
+    if _nonnegative_int(camera_counts.get("unavailable")):
+        measurement_warnings.append("部分区间无法核实相机是否固定；这些区间不用于固定机位的位移候选分析。")
+    if _nonnegative_int(source_timing.get("fallback_timestamp_frames")):
+        measurement_warnings.append("部分帧的真实时间无法确认；相关速度与时序测量需重新采集证据。")
     event_counts = loop.get("event_counts")
     event_counts = event_counts if isinstance(event_counts, Mapping) else {}
     validity = loop.get("indicator_feature_validity")
     validity = validity if isinstance(validity, Mapping) else {}
     training_evaluation = build_training_evaluation(records)
+    validated_records, _ = validated_training_records(records)
     action_training_evaluations = training_evaluation.get("action_evaluations")
     action_training_evaluations = (
         action_training_evaluations
@@ -411,15 +429,14 @@ def build_user_demo_result(
         else {}
     )
     actions: list[dict[str, Any]] = []
-    measured_indicator_ids: set[str] = set()
-    for record in records:
-        indicator_id = record.get("indicator_id")
-        if (
-            isinstance(indicator_id, str)
-            and indicator_id in _REGISTERED_DEMO_INDICATOR_IDS
-            and _is_measured_record(record)
-        ):
-            measured_indicator_ids.add(indicator_id)
+    # Use the same validated observations as the main reference score. A bare
+    # "measured" status, conflicting duplicate or wrong event family must not
+    # inflate the compatibility information-completeness scores.
+    measured_indicator_ids = {
+        item["indicator_id"] for item in training_evaluation["indicator_evaluations"]
+        if item.get("available") is True
+        and item["indicator_id"] in _REGISTERED_DEMO_INDICATOR_IDS
+    }
 
     for spec in _ACTION_SPECS:
         event_code = spec["event_code"]
@@ -459,18 +476,19 @@ def build_user_demo_result(
             summary_zh = "本次没有识别到这一类动作；这不等于动作一定不存在。"
         elif len(indicator_ids) == expected_indicator_count:
             status = "measured"
-            summary_zh = "已找到动作片段，并形成可查看的动作幅度测量。"
+            summary_zh = "已找到候选片段及可复核的幅度测量；动作类型仍待人工复核。"
         else:
             status = "partially_measured"
-            summary_zh = "已找到部分动作证据，但仍有指标无法稳定测量。"
+            summary_zh = "已找到部分候选证据，但仍有指标无法稳定测量；动作类型待复核。"
 
         amplitudes = _friendly_amplitudes(
-            records,
+            validated_records,
             event_code,
             expected_indicator_ids,
             spec["features"],
         )
         formation_assessment = _formation_assessment(
+            measurement_available=action_training_evaluations.get(event_code, {}).get("available") is True,
             detected_segments=detected_segments,
             measured_indicator_count=len(indicator_ids),
             expected_indicator_count=expected_indicator_count,
@@ -498,7 +516,7 @@ def build_user_demo_result(
         actions.append(
             {
                 "event_code": event_code,
-                "name_zh": spec["name_zh"],
+                "name_zh": spec["name_zh"] + "（候选）",
                 "status": status,
                 "detected_segments": detected_segments,
                 "registered_indicator_count": expected_indicator_count,
@@ -520,40 +538,23 @@ def build_user_demo_result(
     mean_measurement_coverage = sum(
         action["measurement_coverage_percent"] for action in actions
     ) / (100 * len(actions))
-    analysis_completion_score = round(
-        100
-        * (
-            0.30 * observed_action_ratio
-            + 0.45 * indicator_ratio
-            + 0.25 * mean_measurement_coverage
-        )
+    completion_label = "分析已完成；查看逐项测量与缺失原因"
+    analysis_completion_score = (
+        max(0, min(100, round(100 * (
+            _ANALYSIS_QUALITY_WEIGHTS["observed_action_family_ratio"] * observed_action_ratio
+            + _ANALYSIS_QUALITY_WEIGHTS["measured_unique_indicator_ratio"] * indicator_ratio
+            + _ANALYSIS_QUALITY_WEIGHTS["mean_action_measurement_coverage"] * mean_measurement_coverage
+        ))))
+        if training_evaluation.get("available") is True else None
     )
-    analysis_completion_score = max(0, min(100, analysis_completion_score))
-
     action_reference_scores = {
-        action["event_code"]: action["formation_assessment"][
-            "reference_score_0_to_100"
-        ]
+        action["event_code"]: action["formation_assessment"]["reference_score_0_to_100"]
         for action in actions
     }
-    final_demo_score_value = round(
-        sum(action_reference_scores.values()) / len(action_reference_scores)
+    available_reference_scores = [score for score in action_reference_scores.values() if score is not None]
+    final_demo_score_value = (
+        round(statistics.fmean(available_reference_scores)) if available_reference_scores else None
     )
-    final_demo_score_value = max(0, min(100, final_demo_score_value))
-
-    if final_demo_score_value >= 85:
-        formation_headline = "动作轮廓与幅度信息较成型"
-    elif final_demo_score_value >= 60:
-        formation_headline = "动作轮廓已形成，部分幅度信息待补充"
-    else:
-        formation_headline = "当前动作轮廓与幅度信息不足"
-
-    if analysis_completion_score >= 85:
-        completion_label = "本次识别材料较完整"
-    elif analysis_completion_score >= 60:
-        completion_label = "本次识别材料基本可用"
-    else:
-        completion_label = "本次识别材料不足"
 
     runtime = summary.get("runtime")
     runtime = runtime if isinstance(runtime, Mapping) else {}
@@ -566,7 +567,7 @@ def build_user_demo_result(
         if cuda_available and device_used.casefold() not in {"", "cpu", "none"}
         else "CPU"
     )
-    training_score = training_evaluation.get("score_0_to_100")
+    training_available = training_evaluation.get("available")
     training_headline = training_evaluation.get("level_zh")
     technique_assessment = build_technique_assessment(
         summary,
@@ -582,10 +583,13 @@ def build_user_demo_result(
         "result_kind": "real_video_training_feedback_preview",
         "job_id": job_id,
         "status": "ready",
+        "measurement_contract": coordinate_contract,
+        "measurement_update_required": measurement_update_required,
+        "measurement_warnings_zh": measurement_warnings,
         "headline_zh": (
-            f"{training_headline} · 已生成 13 项训练评价"
-            if training_score is not None
-            else formation_headline
+            f"{training_headline} · 已生成步伐测量证据评价"
+            if training_available
+            else "分析已完成，测量证据不足"
         ),
         "training_evaluation": training_evaluation,
         "technique_assessment": technique_assessment,
@@ -597,6 +601,7 @@ def build_user_demo_result(
         "final_demo_score": {
             "label_zh": "动作信息成型参考分",
             "value_0_to_100": final_demo_score_value,
+            "score_semantics": SCORE_SEMANTICS,
             "meaning_zh": (
                 "只表示当前视频中可识别的动作轮廓与幅度信息成型程度，"
                 "不是技术水平、教练评分、识别准确率或正式 A～E。"
@@ -605,8 +610,10 @@ def build_user_demo_result(
                 "recognizable_motion_outline_and_amplitude_information_formation_only"
             ),
             "score_version": FORMATION_SCORE_VERSION,
-            "aggregation": "unweighted_mean_of_three_action_reference_scores",
+            "aggregation": "unweighted_mean_of_available_action_reference_scores",
             "action_reference_scores": action_reference_scores,
+            "evaluated_action_count": len(available_reference_scores),
+            "total_action_count": len(actions),
             "action_component_weights": dict(_FORMATION_SCORE_WEIGHTS),
             "is_formal_technique_score": False,
             "is_coach_score": False,
@@ -615,6 +622,7 @@ def build_user_demo_result(
         "analysis_quality": {
             "label_zh": "分析完成度",
             "value_0_to_100": analysis_completion_score,
+            "score_semantics": SCORE_SEMANTICS,
             "headline_zh": completion_label,
             "meaning_zh": (
                 "只表示本次视频中动作片段与可测特征的完整程度，"
@@ -637,6 +645,7 @@ def build_user_demo_result(
         "display_score": {
             "label_zh": "分析完成度",
             "value_0_to_100": analysis_completion_score,
+            "score_semantics": SCORE_SEMANTICS,
             "meaning_zh": (
                 "只表示本次视频中动作片段与可测特征的完整程度，"
                 "不是球员技术水平、教练评分或正式 A～E。"
@@ -650,8 +659,8 @@ def build_user_demo_result(
             "grade": None,
             "status": "calibration_required",
             "message_zh": (
-                "正式教练标定分与 A～E 等级尚未启用；上方 Beta 动作表现分和自然语言建议"
-                "可直接用于本次训练复盘。"
+                "正式教练标定分与 A～E 等级尚未启用；逐项测量与证据"
+                "可用于本次视频复核，不能据此判定技术优劣。"
             ),
         },
         "actions": actions,

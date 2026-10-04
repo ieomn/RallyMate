@@ -105,7 +105,7 @@ class IndicatorRequirementsTests(unittest.TestCase):
             )
         )
         self.assertEqual(
-            "pose-wave-indicator-requirements-2026-08-22.17",
+            "pose-wave-indicator-requirements-2026-10-01.2",
             module.DEFAULT_REQUIREMENTS_VERSION,
         )
         self.assertEqual(checked_in, generated)

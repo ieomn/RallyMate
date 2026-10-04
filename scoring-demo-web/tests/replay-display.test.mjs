@@ -20,6 +20,8 @@ const { default: Viewer } = await import(compiledUrl(new URL("../app/BallTraject
 const { default: LiveResults, TechniqueFamilyChip } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
 const { default: Summary } = await import(compiledUrl(new URL("../app/BallTrajectorySummary.tsx", import.meta.url)));
 const { default: MotionPanel } = await import(compiledUrl(new URL("../app/MotionAnalysisPanel.tsx", import.meta.url)));
+const { default: RotationPanel } = await import(compiledUrl(new URL("../app/RotationAnalysisPanel.tsx", import.meta.url)));
+const { motionAnalysisOf, ROTATION_METRICS } = await import(compiledUrl(new URL("../app/lib/motion-analysis.ts", import.meta.url)));
 const catalog = JSON.parse(fs.readFileSync(new URL("../app/data/technique-catalog.json", import.meta.url), "utf8"));
 const assessmentRows = family => catalog.techniques.filter(item => item.family === family).map(item => ({
   technique_id: item.id, family, name_zh: item.name_zh, status: "not_observed", observed: false,
@@ -39,7 +41,7 @@ test("video replay enables the reliable ball tail without points or skeleton ove
   assert.match(html, /显示识别点/);
   assert.match(html, /<input type="checkbox"\s*\/>显示识别点/);
   assert.match(html, /<input type="checkbox" checked=""\s*\/>显示短缺口插值/);
-  assert.match(html, /aria-pressed="true">当前完整球路/);
+  assert.match(html, /aria-pressed="true">当前候选球路/);
 });
 
 test("default replay draws only the current reliable ball path", () => {
@@ -47,6 +49,21 @@ test("default replay draws only the current reliable ball path", () => {
   const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 840 }));
   assert.equal((html.match(/<polyline /g) ?? []).length, 1);
   assert.doesNotMatch(html, /<circle|30,40|player-skeleton|pose-overlay/);
+});
+
+test("replay keeps multiple current candidates separate and clears old paths", () => {
+  const segments = [.1, .6].map((x, index) => ({
+    segment_id: index + 1, track_ids: [index + 1], start_ms: 800, end_ms: 900,
+    observed_count: 2, interpolated_count: 0, analysis: { motion_status: "moving" },
+    points: [{ timestamp_ms: 800, x, y: .4, confidence: .3, source: "observed" }, { timestamp_ms: 900, x: x + .1, y: .4, confidence: .3, source: "observed" }],
+  }));
+  const trajectory = { status: "ready", source: { start_timestamp_ms: 0, end_timestamp_ms: 2000 }, ball: { observed: [], reconstruction: { version: "1.1.0", segments } } };
+  const active = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 1000 }));
+  assert.equal((active.match(/<polyline /g) ?? []).length, 2);
+  assert.match(active, /尚未确认唯一比赛用球/);
+  assert.match(active, /浅色为较低检测置信度/);
+  const expired = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 1501 }));
+  assert.doesNotMatch(expired, /<polyline /);
 });
 
 test("completed unsupported hit analysis has no invented hit count card or waiting message", () => {
@@ -112,7 +129,8 @@ test("a truly observed technique keeps its ready status even when other types ar
   }));
   assert.match(html, /status-pill status-ready">证据就绪<\/span>/);
   assert.match(html, /最新动作定义 · 证据就绪/);
-  assert.match(html, /85\.0%/);
+  assert.doesNotMatch(html, /85\.0%/);
+  assert.match(html, /待标定/);
   assert.equal((html.match(/status-pill status-not_observed">未分类<\/span>/g) ?? []).length, 4);
 });
 
@@ -124,7 +142,8 @@ test("preview family chips show recognition limits without candidate counts", ()
   }
   const measured = renderToStaticMarkup(createElement(TechniqueFamilyChip, { family: "baseline", label: "底线", total: 5, summary: { observed_count: 2, total_count: 5, recognition_status: "observed", evidence_score_0_to_100: 80 } }));
   assert.match(measured, /2 \/ 5/);
-  assert.match(measured, /就绪度 80/);
+  assert.doesNotMatch(measured, /就绪度 80/);
+  assert.match(measured, /查看逐项证据/);
 });
 
 const motionEpisode = { episode_id: "motion-1", family: "baseline", start_ms: 1000, peak_ms: 1800, end_ms: 2400, contact_confirmed: false, classification: { label: "forehand", label_zh: "正手挥拍", status: "rule_inferred", reason_zh: "持拍手明确，手腕由持拍侧向身体另一侧运动。" }, phases: [{ phase: "preparation", label_zh: "准备", start_ms: 1000, end_ms: 1500 }, { phase: "acceleration", label_zh: "加速", start_ms: 1500, end_ms: 1800 }, { phase: "follow_through", label_zh: "随挥", start_ms: 1800, end_ms: 2400 }], metrics: { peak_wrist_speed_torso_per_s: 3.25, wrist_path_torso: 2.3, elbow_extension_deg: 54.26, shoulder_line_change_deg: null }, limitations_zh: ["尚未经过专项标注集准确率验证。"] };
@@ -160,4 +179,83 @@ test("partial motion disables missing follow-through and labels available stages
   assert.match(html, /1\.00–1\.50s · 估计/);
   assert.match(html, /肩线投影缩短/);
   assert.doesNotMatch(html, /0\.00–0\.00s/);
+});
+
+function rotationEpisode(status = "measured_2d") {
+  const row = structuredClone(motionEpisode);
+  row.metrics = { ...row.metrics, ...Object.fromEntries(ROTATION_METRICS.map(({ key }, i) => [key, i * 12])) };
+  row.rotation_analysis = {
+    status, is_3d_rotation: false, is_formal_coach_score: false, score: null,
+    score_status: status === "unavailable" ? "insufficient_evidence" : "calibration_required",
+    metric_evidence: Object.fromEntries(ROTATION_METRICS.map(({ key }) => [key, {
+      status: "measured", coverage_fraction: 1, time_coverage_fraction: .86,
+      valid_samples: 24, total_samples: 24, continuous_samples: 24,
+      start_ms: 1100, end_ms: 2300, reason_zh: "肩髋线连续观测可复核。",
+    }])),
+  };
+  return row;
+}
+
+function parsedRotationEpisode(row) {
+  return motionAnalysisOf({ action_recognition: { motion_analysis: {
+    schema_version: "1.0.0", contact_confirmed: false, families: { baseline: { episodes: [row] } },
+  } } }).families.baseline.episodes[0];
+}
+
+test("rotation cards show measured angles and speeds once, with no technical grade or contact claim", () => {
+  const row = parsedRotationEpisode(rotationEpisode());
+  const html = renderToStaticMarkup(createElement(MotionPanel, { familyLabel: "底线", data: { episodes: [row] }, pending: false }));
+  assert.match(html, /二维转体观察/);
+  assert.match(html, /连续测量可用/);
+  assert.match(html, /技术评分：待教练标定/);
+  assert.match(html, /不能据此判断真实三维转体幅度或动力链先后/);
+  assert.match(html, /画面内肩线变化<\/span><strong>0\.00<\/strong>/);
+  assert.match(html, /髋线峰值角速度<\/span><strong>60\.00<\/strong>/);
+  assert.match(html, /°\/秒/);
+  assert.equal((html.match(/画面内肩线变化/g) ?? []).length, 1);
+  assert.equal((html.match(/复核测量区间/g) ?? []).length, 6);
+  assert.doesNotMatch(html, /0 \/ 100|转体合格|骨盆领先/);
+});
+
+test("partial rotation cards suppress weak axes and only offer replay for observed windows", () => {
+  const row = rotationEpisode("partial");
+  for (const key of ["hip_line_change_deg", "shoulder_hip_separation_max_deg", "peak_hip_angular_speed_deg_s"]) {
+    row.metrics[key] = 9876;
+    row.rotation_analysis.metric_evidence[key] = { status: "unavailable", coverage_fraction: .25, start_ms: null, end_ms: null, reason_zh: "轴投影缩短，连续证据不足。" };
+  }
+  const parsed = parsedRotationEpisode(row);
+  const html = renderToStaticMarkup(createElement(RotationPanel, { episode: parsed, seek() {} }));
+  assert.match(html, /部分指标可测/);
+  assert.match(html, /轴投影缩短，连续证据不足/);
+  assert.match(html, /有效采样 25%/);
+  assert.equal((html.match(/复核测量区间/g) ?? []).length, 3);
+  assert.equal((html.match(/<strong>—<\/strong>/g) ?? []).length, 3);
+  assert.doesNotMatch(html, /9876|0 \/ 100/);
+});
+
+test("unavailable rotation cards keep missing values and offer no fabricated replay target", () => {
+  const row = parsedRotationEpisode(rotationEpisode("unavailable"));
+  const html = renderToStaticMarkup(createElement(RotationPanel, { episode: row, seek() {} }));
+  assert.match(html, /测量证据不足/);
+  assert.match(html, /技术评分：证据不足/);
+  assert.equal((html.match(/<strong>—<\/strong>/g) ?? []).length, 6);
+  assert.doesNotMatch(html, /<button|0\.00|待教练标定|\/ 100/);
+});
+
+test("rotation review buttons seek to their validated measurement window start", () => {
+  const row = parsedRotationEpisode(rotationEpisode());
+  const sought = [];
+  const rendered = RotationPanel({ episode: row, seek: timestamp => sought.push(timestamp) });
+  const buttons = [];
+  const visit = node => {
+    if (Array.isArray(node)) { node.forEach(visit); return; }
+    if (!node || typeof node !== "object") return;
+    if (node.type === "button") buttons.push(node);
+    visit(node.props?.children);
+  };
+  visit(rendered);
+  assert.equal(buttons.length, 6);
+  for (const button of buttons) button.props.onClick();
+  assert.deepEqual(sought, [1100, 1100, 1100, 1100, 1100, 1100]);
+  assert.equal(RotationPanel({ episode: structuredClone(motionEpisode), seek() {} }), null);
 });

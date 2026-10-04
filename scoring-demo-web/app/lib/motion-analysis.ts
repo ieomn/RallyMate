@@ -1,4 +1,4 @@
-import type { DemoResultResponse, MotionAnalysis, MotionEpisode, MotionFamily, TechniqueAssessmentResponse } from "./api-types";
+import type { DemoResultResponse, MotionAnalysis, MotionEpisode, MotionFamily, RotationAnalysis, TechniqueAssessmentResponse } from "./api-types";
 
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -30,7 +30,13 @@ export function motionAnalysisOf(result: DemoResultResponse | null, assessment?:
         if (finite(phase.start_ms) && finite(phase.end_ms) && phase.start_ms >= typed.start_ms && phase.end_ms <= typed.end_ms && phase.end_ms > phase.start_ms) phases.push({ ...phase, status: "measured" });
       }
       const evidence = record(typed.evidence);
-      episodes.push({ ...typed, classification: { ...typed.classification, reason_zh: typeof classification.reason_zh === "string" ? classification.reason_zh : "类型由运动规则推断，需结合回放复核。" }, analysis_status: typed.analysis_status === "partial" || phases.some(phase => phase.status === "unavailable") ? "partial" : typed.analysis_status === "complete" ? "complete" : undefined, phases, metrics: record(typed.metrics), evidence: { pose_samples: finite(evidence.pose_samples) ? evidence.pose_samples : undefined, racket_associated_frames: finite(evidence.racket_associated_frames) ? evidence.racket_associated_frames : undefined }, limitations_zh: strings(typed.limitations_zh), metric_notes_zh: strings(typed.metric_notes_zh) });
+      episodes.push({ ...typed, classification: { ...typed.classification, reason_zh: typeof classification.reason_zh === "string" ? classification.reason_zh : "类型由运动规则推断，需结合回放复核。" }, analysis_status: typed.analysis_status === "partial" || phases.some(phase => phase.status === "unavailable") ? "partial" : typed.analysis_status === "complete" ? "complete" : undefined, phases, metrics: { ...record(typed.metrics) }, evidence: { pose_samples: finite(evidence.pose_samples) ? evidence.pose_samples : undefined, racket_associated_frames: finite(evidence.racket_associated_frames) ? evidence.racket_associated_frames : undefined }, limitations_zh: strings(typed.limitations_zh), metric_notes_zh: strings(typed.metric_notes_zh) });
+      const parsed = episodes[episodes.length - 1];
+      parsed.rotation_analysis = rotationAnalysisOf(episode.rotation_analysis, parsed);
+      if (episode.rotation_analysis !== undefined && !parsed.rotation_analysis) for (const { key } of ROTATION_METRICS) parsed.metrics[key] = null;
+      if (parsed.rotation_analysis) for (const { key } of ROTATION_METRICS) {
+        if (parsed.rotation_analysis.metric_evidence[key].status !== "measured") parsed.metrics[key] = null;
+      }
     }
     episodes.sort((a, b) => a.start_ms - b.start_ms);
     families[family] = { status: episodes.length ? "analyzed" : "insufficient_evidence", reason_zh: typeof data.reason_zh === "string" ? data.reason_zh : "当前视频没有满足分析条件的连续运动证据。", episodes, summary: data.summary as MotionFamily["summary"] };
@@ -44,6 +50,34 @@ export const MOTION_METRICS = [
   { key: "elbow_extension_deg", label: "肘角变化幅度", unit: "°" },
   { key: "shoulder_line_change_deg", label: "画面内肩线变化", unit: "°" },
 ] as const;
+
+export const ROTATION_METRICS = [
+  { key: "shoulder_line_change_deg", label: "画面内肩线变化", unit: "°" },
+  { key: "hip_line_change_deg", label: "画面内髋线变化", unit: "°" },
+  { key: "shoulder_hip_separation_max_deg", label: "肩髋线最大夹角", unit: "°" },
+  { key: "shoulder_hip_separation_change_deg", label: "肩髋线夹角变化", unit: "°" },
+  { key: "peak_shoulder_angular_speed_deg_s", label: "肩线峰值角速度", unit: "°/秒" },
+  { key: "peak_hip_angular_speed_deg_s", label: "髋线峰值角速度", unit: "°/秒" },
+] as const;
+
+export function rotationAnalysisOf(value: unknown, episode: MotionEpisode): RotationAnalysis | undefined {
+  const raw = record(value);
+  if (raw.is_3d_rotation !== false || raw.is_formal_coach_score !== false || raw.score !== null || !["measured_2d", "partial", "unavailable"].includes(String(raw.status))) return undefined;
+  const metric_evidence: RotationAnalysis["metric_evidence"] = {};
+  for (const { key } of ROTATION_METRICS) {
+    const item = record(record(raw.metric_evidence)[key]);
+    const coverage = finite(item.coverage_fraction) && item.coverage_fraction >= 0 && item.coverage_fraction <= 1 ? item.coverage_fraction : 0;
+    const measured = raw.status !== "unavailable" && item.status === "measured" && coverage >= 0.8 && finite(episode.metrics[key]) && Number(episode.metrics[key]) >= 0
+      && finite(item.time_coverage_fraction) && item.time_coverage_fraction >= 0.8 && item.time_coverage_fraction <= 1
+      && Number.isSafeInteger(item.continuous_samples) && Number(item.continuous_samples) >= 7
+      && Number.isSafeInteger(item.total_samples) && Number.isSafeInteger(item.valid_samples)
+      && Number(item.continuous_samples) <= Number(item.valid_samples) && Number(item.valid_samples) <= Number(item.total_samples)
+      && finite(item.start_ms) && finite(item.end_ms) && item.start_ms >= episode.start_ms && item.end_ms <= episode.end_ms && item.end_ms - item.start_ms >= 200;
+    metric_evidence[key] = { status: measured ? "measured" : "unavailable", coverage_fraction: coverage, start_ms: measured ? Number(item.start_ms) : null, end_ms: measured ? Number(item.end_ms) : null, reason_zh: typeof item.reason_zh === "string" ? item.reason_zh : "缺少连续可测证据。" };
+  }
+  const count = Object.values(metric_evidence).filter(item => item.status === "measured").length;
+  return { status: count === ROTATION_METRICS.length ? "measured_2d" : count ? "partial" : "unavailable", is_3d_rotation: false, is_formal_coach_score: false, score: null, score_status: count ? "calibration_required" : "insufficient_evidence", metric_evidence, limitations_zh: strings(raw.limitations_zh) };
+}
 
 export function motionMetricText(value: unknown): string {
   return finite(value) && value >= 0 ? value.toFixed(2) : "—";

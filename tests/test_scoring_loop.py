@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 
 from rallymate_scoring.loop import run_minimum_scoring_loop
+from rallymate_scoring.loop import _implemented_feature_contract
+from rallymate_scoring.feasibility import load_feasibility_registry
 from rallymate_scoring.scoring_loop_report import (
     build_scoring_loop_report_html,
     write_scoring_loop_report,
@@ -23,6 +25,21 @@ def _point(index: int, name: str, x: float, y: float) -> dict:
 
 
 class ScoringLoopTests(unittest.TestCase):
+    def test_previous_feature_contract_cannot_silently_bind_isotropic_geometry(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        registry = load_feasibility_registry(root / "metric-feasibility-pose-wave-v2.json")
+        for indicator in registry["indicators"]:
+            current = _implemented_feature_contract(indicator)
+            old = {
+                "rallymate-features-v0.3.0": "rallymate-features-v0.2.0",
+                "fs01-fs02-pose-proxies-v0.7.0": "fs01-fs02-pose-proxies-v0.6.0",
+                "fs09-pose-proxies-v0.4.0": "fs09-pose-proxies-v0.3.0",
+            }[current]
+            indicator["versions"]["feature_contract"] = old
+            with self.subTest(indicator=indicator["indicator_id"]):
+                with self.assertRaisesRegex(ValueError, "do not realize registry contract"):
+                    _implemented_feature_contract(indicator)
+
     def test_static_pose_produces_valid_no_event_unavailable_bundle(self) -> None:
         root = Path(__file__).resolve().parents[1]
         names = [
@@ -45,7 +62,7 @@ class ScoringLoopTests(unittest.TestCase):
             timeline_records = []
             for index in range(16):
                 frame_records.append({
-                    "frame": {
+                    "frame": {"width": 1000, "height": 1000,
                         "processed_index": index,
                         "index": index,
                         "timestamp_ms": index * 40,
@@ -63,6 +80,7 @@ class ScoringLoopTests(unittest.TestCase):
                     "source_track_id": 10,
                     "primary_player_id": 1,
                     "selection_status": "selected",
+                    "selection_algorithm_version": "primary-player-v0.3.0",
                     "keypoint_valid_fraction": 1.0,
                 })
             frames.write_text(
@@ -77,7 +95,7 @@ class ScoringLoopTests(unittest.TestCase):
                 frames_path=frames,
                 primary_timeline_path=timeline,
                 output_dir=output,
-                feasibility_registry_path=root / "metric-feasibility.json",
+                feasibility_registry_path=root / "metric-feasibility-pose-wave-v2.json",
                 source_id="static-no-event",
                 pose_model={"backend": "test", "runtime": "cpu"},
             )
@@ -119,7 +137,7 @@ class ScoringLoopTests(unittest.TestCase):
                     (0.42 + shift, 0.92), (0.58 + shift, 0.92),
                 ]
                 frame_records.append({
-                    "frame": {"processed_index": index, "index": index, "timestamp_ms": index * 40},
+                    "frame": {"width": 1000, "height": 1000,"processed_index": index, "index": index, "timestamp_ms": index * 40},
                     "poses": [{"person_track_id": 10, "keypoints": [
                         _point(i, name, coords[i][0], coords[i][1]) for i, name in enumerate(names)
                     ]}],
@@ -129,6 +147,7 @@ class ScoringLoopTests(unittest.TestCase):
                     "source_track_id": 10,
                     "primary_player_id": 1,
                     "selection_status": "selected",
+                    "selection_algorithm_version": "primary-player-v0.3.0",
                     "keypoint_valid_fraction": 1.0,
                 })
             frames.write_text("".join(json.dumps(item) + "\n" for item in frame_records), encoding="utf-8")
@@ -137,7 +156,7 @@ class ScoringLoopTests(unittest.TestCase):
                 frames_path=frames,
                 primary_timeline_path=timeline,
                 output_dir=output,
-                feasibility_registry_path=root / "metric-feasibility.json",
+                feasibility_registry_path=root / "metric-feasibility-pose-wave-v2.json",
                 source_id="test-video",
                 pose_model={
                     "backend": "test",
@@ -209,6 +228,8 @@ class ScoringLoopTests(unittest.TestCase):
             self.assertIn("calibration_required", report_text)
             self.assertIn("总等级：<code>未设计</code>", report_text)
             self.assertIn("truth missing", report_text)
+            self.assertIn("独立目标方向上下文", report_text)
+            self.assertIn("上下文标量未进行时序平滑", report_text)
             self.assertNotIn("contract field missing", report_text)
 
     def test_report_renders_event_level_grade_without_aggregate_grade(self) -> None:

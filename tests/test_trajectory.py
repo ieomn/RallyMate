@@ -19,7 +19,7 @@ def _frame(
     *,
     ball_x: float | None = None,
     racket_x: float | None = None,
-    ball_track: int = 3,
+    ball_track: int | None = 3,
     racket_track: int = 7,
 ) -> dict:
     detections = []
@@ -257,7 +257,7 @@ class TrajectoryPreviewTests(unittest.TestCase):
         self.assertEqual(reconstruction["summary"]["observed_count"], 402)
 
     def test_two_sided_motion_bridges_medium_gap_without_changing_observations(self) -> None:
-        rows = [_frame(i, ball_x=0.1 + i * 0.04, ball_track=1 if i < 4 else 2)
+        rows = [_frame(i, ball_x=0.1 + i * 0.04, ball_track=1)
                 for i in [0, 1, 2, 7, 8, 9]]
         with tempfile.TemporaryDirectory() as directory:
             result = build_trajectory_preview(self._write(Path(directory), rows))
@@ -266,7 +266,7 @@ class TrajectoryPreviewTests(unittest.TestCase):
         self.assertEqual(reconstruction["summary"]["segment_count"], 1)
         self.assertEqual(reconstruction["summary"]["extended_bridge_count"], 1)
         segment = reconstruction["segments"][0]
-        self.assertEqual(segment["track_ids"], [1, 2])
+        self.assertEqual(segment["track_ids"], [1])
         self.assertEqual(segment["interpolation_intervals"], [
             {"start_ms": 200, "end_ms": 700, "method": "bounded_hermite"}
         ])
@@ -279,6 +279,67 @@ class TrajectoryPreviewTests(unittest.TestCase):
         self.assertTrue(all(0.18 < p["x"] < 0.38 for p in interpolated))
         self.assertEqual(reconstruction["summary"]["observed_count"], 6)
 
+    def test_cross_id_bridge_uses_stricter_gap_limit(self) -> None:
+        for right_start, expected_segments in [(5, 1), (6, 2), (7, 2)]:
+            with self.subTest(gap_ms=(right_start - 2) * 100), tempfile.TemporaryDirectory() as directory:
+                rows = [_frame(i, ball_x=.1 + i * .04, ball_track=1) for i in [0, 1, 2]]
+                rows.extend(_frame(i, ball_x=.1 + i * .04, ball_track=2)
+                            for i in range(right_start, right_start + 3))
+                reconstruction = build_trajectory_preview(self._write(Path(directory), rows))["ball"]["reconstruction"]
+                self.assertEqual(reconstruction["summary"]["segment_count"], expected_segments)
+                if expected_segments == 1:
+                    segment = reconstruction["segments"][0]
+                    self.assertEqual(segment["track_ids"], [1, 2])
+                    self.assertEqual(segment["max_bridged_gap_ms"], 300)
+                    observed = [p for p in segment["points"] if p["source"] == "observed"]
+                    self.assertEqual([p["track_id"] for p in observed], [1, 1, 1, 2, 2, 2])
+                    self.assertEqual([p["track"] for p in observed], [p["track_id"] for p in observed])
+                else:
+                    self.assertEqual(reconstruction["summary"]["interpolated_count"], 0)
+
+    def test_cross_id_bridge_requires_stricter_direction_agreement(self) -> None:
+        for cross_id in [False, True]:
+            with self.subTest(cross_id=cross_id), tempfile.TemporaryDirectory() as directory:
+                coordinates = [(0, .19, .189), (1, .2, .2), (4, .23, .2), (5, .24, .211)]
+                rows = []
+                for index, x, y in coordinates:
+                    row = _frame(index, ball_x=x, ball_track=2 if cross_id and index >= 4 else 1)
+                    row["detections"][0]["center_normalized"][1] = y
+                    rows.append(row)
+                reconstruction = build_trajectory_preview(self._write(Path(directory), rows))["ball"]["reconstruction"]
+                self.assertEqual(reconstruction["summary"]["segment_count"], 2 if cross_id else 1)
+
+    def test_untracked_detections_never_create_associated_motion(self) -> None:
+        rows = [_frame(i, ball_x=.1 + i * .04, ball_track=None) for i in [0, 1, 2, 7, 8, 9]]
+        rows[0]["detections"].extend(_frame(0, ball_x=.8, ball_track=None)["detections"])
+        for horizon_ms in [0, 400]:
+            with self.subTest(horizon_ms=horizon_ms), tempfile.TemporaryDirectory() as directory:
+                ball = build_trajectory_preview(self._write(Path(directory), rows),
+                                                prediction_horizon_ms=horizon_ms)["ball"]
+                reconstruction = ball["reconstruction"]
+                self.assertEqual(reconstruction["summary"]["segment_count"], 7)
+                self.assertEqual(reconstruction["summary"]["observed_count"], 7)
+                self.assertEqual(reconstruction["summary"]["rejected_observation_count"], 0)
+                self.assertEqual(reconstruction["summary"]["interpolated_count"], 0)
+                self.assertTrue(all(segment["track_ids"] == [] for segment in reconstruction["segments"]))
+                self.assertTrue(all(segment["points"][0]["track"] is None for segment in reconstruction["segments"]))
+                self.assertEqual(ball["predicted"], [])
+                self.assertIsNone(ball["velocity"])
+                if horizon_ms:
+                    self.assertEqual(ball["prediction_reason"], "ball_track_identity_unavailable")
+
+    def test_transitive_stitching_cannot_join_simultaneously_observed_ids(self) -> None:
+        rows = [_frame(i, ball_x=.1 + i * .04, ball_track=1) for i in [0, 1, 2]]
+        rows[0]["detections"].extend(_frame(0, ball_x=.8, ball_track=3)["detections"])
+        rows.extend(_frame(i, ball_x=.1 + i * .04, ball_track=2) for i in [4, 5, 6])
+        rows.extend(_frame(i, ball_x=.1 + i * .04, ball_track=3) for i in [8, 9, 10])
+        with tempfile.TemporaryDirectory() as directory:
+            reconstruction = build_trajectory_preview(self._write(Path(directory), rows))["ball"]["reconstruction"]
+        self.assertEqual(reconstruction["summary"]["segment_count"], 3)
+        self.assertEqual(reconstruction["summary"]["observed_count"], 10)
+        self.assertTrue(any(segment["track_ids"] == [1, 2] for segment in reconstruction["segments"]))
+        self.assertFalse(any({1, 3} <= set(segment["track_ids"]) for segment in reconstruction["segments"]))
+
     def test_unsupported_gaps_remain_disconnected(self) -> None:
         cases = {
             "long_gap": [(0, .1), (1, .14), (2, .18), (9, .46), (10, .50)],
@@ -289,14 +350,14 @@ class TrajectoryPreviewTests(unittest.TestCase):
         }
         for name, coordinates in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
-                rows = [_frame(i, ball_x=x, ball_track=1 if i < 3 else 2) for i, x in coordinates]
+                rows = [_frame(i, ball_x=x, ball_track=1) for i, x in coordinates]
                 reconstruction = build_trajectory_preview(self._write(Path(directory), rows))["ball"]["reconstruction"]
                 self.assertEqual(reconstruction["summary"]["segment_count"], 2)
                 self.assertEqual(reconstruction["summary"]["extended_bridge_count"], 0)
 
     def test_competing_ball_fragments_are_not_arbitrarily_joined(self) -> None:
         rows = [_frame(i, ball_x=.1 + i * .04, ball_track=1) for i in [0, 1, 2]]
-        for i in [7, 8, 9]:
+        for i in [5, 6, 7]:
             row = _frame(i, ball_x=.1 + i * .04, ball_track=2)
             row["detections"].extend(_frame(i, ball_x=.105 + i * .04, ball_track=3)["detections"])
             rows.append(row)
@@ -308,7 +369,7 @@ class TrajectoryPreviewTests(unittest.TestCase):
     def test_simultaneously_observed_ids_cannot_be_stitched_later(self) -> None:
         rows = [_frame(i, ball_x=.1 + i * .04, ball_track=1) for i in [0, 1, 2]]
         rows[0]["detections"].extend(_frame(0, ball_x=.8, ball_track=2)["detections"])
-        rows.extend(_frame(i, ball_x=.1 + i * .04, ball_track=2) for i in [7, 8, 9])
+        rows.extend(_frame(i, ball_x=.1 + i * .04, ball_track=2) for i in [5, 6, 7])
         with tempfile.TemporaryDirectory() as directory:
             reconstruction = build_trajectory_preview(self._write(Path(directory), rows))["ball"]["reconstruction"]
         self.assertEqual(reconstruction["summary"]["segment_count"], 3)
@@ -341,6 +402,31 @@ class TrajectoryPreviewTests(unittest.TestCase):
         self.assertEqual(len(segment["interpolation_intervals"]), 4)
         self.assertEqual(segment["bridged_gap_count"], 9)
         self.assertLessEqual(len(segment["points"]), 4)
+
+    def test_display_quality_is_source_based_without_claiming_active_ball_or_accuracy(self) -> None:
+        rows = [_frame(i, ball_x=.1 + i * .0005, ball_track=1) for i in range(600) if i != 302]
+        for row in rows:
+            row["detections"][0]["confidence"] = .2
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(Path(directory), rows)
+            full = build_trajectory_preview(path)["ball"]["reconstruction"]["segments"][0]
+            sampled = build_trajectory_preview(path, sample_limit=1)["ball"]["reconstruction"]["segments"][0]
+        self.assertTrue(sampled["sampling"]["is_sampled"])
+        self.assertEqual(full["display_quality"], sampled["display_quality"])
+        quality = sampled["display_quality"]
+        self.assertEqual(quality["semantics"], "display_support_not_accuracy_or_technical_score")
+        self.assertEqual(quality["active_ball_identity"], "unconfirmed")
+        self.assertEqual(quality["detector_confidence"]["median"], .2)
+        self.assertEqual(quality["tracked_observation_fraction"], 1)
+        self.assertAlmostEqual(quality["observed_point_fraction"], 599 / 600, places=4)
+        self.assertEqual(full["observed_count"], 599, "low confidence observations remain reviewable evidence")
+
+    def test_untracked_display_quality_does_not_promote_positions_to_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            result = build_trajectory_preview(self._write(Path(directory), [_frame(0, ball_x=.1, ball_track=None)]))
+        quality = result["ball"]["reconstruction"]["segments"][0]["display_quality"]
+        self.assertEqual(quality["tracked_observation_fraction"], 0)
+        self.assertEqual(quality["active_ball_identity"], "unconfirmed")
 
 
 if __name__ == "__main__":

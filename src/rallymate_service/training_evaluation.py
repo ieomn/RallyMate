@@ -8,7 +8,8 @@ from importlib.resources import files
 from typing import Any
 
 
-TRAINING_EVALUATION_VERSION = "rallymate-training-evaluation-beta-v1.0.0"
+TRAINING_EVALUATION_VERSION = "rallymate-training-evaluation-beta-v1.3.0"
+SCORE_SEMANTICS = "measurement_evidence_quality"
 
 _SCORE_WEIGHTS = {
     "measured_instance_ratio": 0.30,
@@ -17,6 +18,52 @@ _SCORE_WEIGHTS = {
     "repeatability": 0.25,
     "scoring_evidence_ratio": 0.10,
 }
+
+
+def _technical_score_contract() -> dict[str, Any]:
+    # This evaluator never consumes a coach-calibrated scoring artifact.
+    return {
+        "score_semantics": SCORE_SEMANTICS,
+        "technical_score_0_to_100": None,
+        "technical_score_status": "calibration_required",
+        "technical_grade": None,
+    }
+
+
+def _reference_score(
+    components: Mapping[str, float | None], *, available: bool,
+) -> tuple[int | None, dict[str, float]]:
+    """Summarize measurement evidence, never technical correctness.
+
+    Missing repeatability/confidence cannot be imputed as a middling score.
+    Expose the effective weights so a single observation's reference score is
+    not mistaken for one that includes independently repeated observations.
+    """
+    if not available:
+        return None, {}
+    weights = {
+        name: weight for name, weight in _SCORE_WEIGHTS.items()
+        if _finite(components.get(f"{name}_percent")) is not None
+    }
+    total_weight = sum(weights.values())
+    if not total_weight:
+        return None, {}
+    effective = {name: weight / total_weight for name, weight in weights.items()}
+    score = round(sum(
+        float(components[f"{name}_percent"]) * weight
+        for name, weight in effective.items()
+    ))
+    return max(0, min(100, score)), effective
+
+
+def _reference_level(score: int | None) -> str:
+    if score is None:
+        return "测量证据不足"
+    if score >= 85:
+        return "测量证据较完整"
+    if score >= 60:
+        return "测量证据部分可用"
+    return "测量证据有限"
 
 _INDICATOR_FEATURES: dict[str, tuple[str, tuple[str, ...]]] = {
     "FS01-M02": (
@@ -245,19 +292,42 @@ def _is_measured(record: Mapping[str, Any]) -> bool:
     )
 
 
+def _event_identity(record: Mapping[str, Any]) -> tuple[str, int, str, str] | None:
+    video_id = record.get("video_id")
+    person_id = record.get("person_track_id")
+    event_id = record.get("event_id")
+    indicator_id = record.get("indicator_id")
+    if (
+        isinstance(video_id, str) and video_id.strip()
+        and isinstance(person_id, int) and not isinstance(person_id, bool)
+        and isinstance(event_id, str) and event_id.strip()
+        and isinstance(indicator_id, str) and indicator_id in _INDICATOR_FEATURES
+    ):
+        return video_id, person_id, event_id, indicator_id
+    return None
+
+
 def _valid_feature_map(record: Mapping[str, Any]) -> dict[str, tuple[float, float | None, str | None]]:
     raw_features = record.get("features")
-    if not isinstance(raw_features, list):
-        raw_features = record.get("scoring_features")
+    scoring_features = record.get("scoring_features")
+    # FS02 direction alignment is an independently sourced scoring-context
+    # feature. It is absent from the pose measurement list, even when supplied.
+    # Keep measurement values authoritative and add only scoring-only names.
+    features = [
+        *(raw_features if isinstance(raw_features, list) else []),
+        *(scoring_features if isinstance(scoring_features, list) else []),
+    ]
     result: dict[str, tuple[float, float | None, str | None]] = {}
-    if not isinstance(raw_features, list):
-        return result
-    for feature in raw_features:
-        if not isinstance(feature, Mapping) or feature.get("valid") is not True:
+    seen: set[str] = set()
+    for feature in features:
+        if not isinstance(feature, Mapping):
             continue
         name = feature.get("feature_name")
+        if not isinstance(name, str) or name in seen:
+            continue
+        seen.add(name)
         value = _finite(feature.get("value"))
-        if not isinstance(name, str) or value is None or name in result:
+        if value is None or feature.get("valid") is not True:
             continue
         result[name] = (
             value,
@@ -281,10 +351,8 @@ def _load_metric_cards() -> dict[str, Mapping[str, Any]]:
 
 
 def _repeatability_for_feature(name: str, values: list[float]) -> float | None:
-    if not values:
+    if len(values) < 2:
         return None
-    if len(values) == 1:
-        return 50.0
     if name.endswith("_code"):
         counts: dict[float, int] = {}
         for value in values:
@@ -320,18 +388,6 @@ def _display_value(value: float, unit: str | None) -> tuple[float, str]:
     return round(value, 1), unit_zh
 
 
-def _level(score: int | None) -> str:
-    if score is None:
-        return "暂无法评价"
-    if score >= 85:
-        return "表现较稳定"
-    if score >= 70:
-        return "表现基本稳定"
-    if score >= 55:
-        return "已有动作基础，稳定性待提高"
-    return "建议优先改善"
-
-
 def _friendly_limitations(indicator_id: str, records: list[Mapping[str, Any]]) -> list[str]:
     tokens: set[str] = set()
     for record in records:
@@ -350,9 +406,9 @@ def _friendly_limitations(indicator_id: str, records: list[Mapping[str, Any]]) -
     if "target_direction" in joined:
         messages.append("已测到身体移动方向，但没有可靠的目标或来球方向，因此不判断方向是否正确。")
     if "jump" in joined:
-        messages.append("部分片段的骨架连续性需要复核，已降低本项参考分。")
+        messages.append("部分片段的骨架连续性需要复核，不能据此判断技术优劣。")
     if "swap" in joined or "side" in joined and "unverified" in joined:
-        messages.append("部分片段的左右侧识别不够稳定，已降低本项参考分。")
+        messages.append("部分片段的左右侧识别不够稳定，相关测量需要复核。")
     if "coverage" in joined or "track" in joined and "low" in joined:
         messages.append("部分片段的球员轨迹或身体关键点覆盖不足。")
     if "phase" in joined or "event_boundary" in joined:
@@ -374,15 +430,27 @@ def _representative_measurements(
             continue
         values = [value for value, _ in entries]
         unit = next((unit for _, unit in entries if unit), None)
-        median_value, unit_zh = _display_value(statistics.median(values), unit)
+        angular = name.endswith("_direction_deg")
+        if angular:
+            sine = statistics.fmean(math.sin(math.radians(value)) for value in values)
+            cosine = statistics.fmean(math.cos(math.radians(value)) for value in values)
+            # Opposing directions have no unique typical direction. Linear
+            # medians would also turn 179/-179 degrees into the opposite way.
+            if math.hypot(sine, cosine) <= 1e-9:
+                continue
+            center = math.degrees(math.atan2(sine, cosine))
+        else:
+            center = statistics.median(values)
+        median_value, unit_zh = _display_value(center, unit)
         item: dict[str, Any] = {
             "feature_name": name,
             "label_zh": _FEATURE_LABELS.get(name, name),
             "median_value": median_value,
             "unit_zh": unit_zh,
             "sample_count": len(values),
+            "aggregation": "circular_mean" if angular else "median",
         }
-        if len(values) >= 2:
+        if len(values) >= 2 and not angular:
             quartiles = statistics.quantiles(sorted(values), n=4, method="inclusive")
             low, _ = _display_value(quartiles[0], unit)
             high, _ = _display_value(quartiles[2], unit)
@@ -402,65 +470,67 @@ def _indicator_evaluation(
     values_by_name: dict[str, list[tuple[float, str | None]]] = {
         name: [] for name in required_features
     }
+    independent_values: dict[str, list[float]] = {name: [] for name in required_features}
     confidences: list[float] = []
     valid_slots = 0
     scoring_allowed = 0
     for record in records:
         gate = record.get("quality_gate")
-        if isinstance(gate, Mapping) and gate.get("scoring_allowed") is True:
-            scoring_allowed += 1
         if not _is_measured(record):
             continue
         feature_map = _valid_feature_map(record)
+        if (
+            isinstance(gate, Mapping)
+            and gate.get("scoring_allowed") is True
+            and all(name in feature_map for name in required_features)
+        ):
+            scoring_allowed += 1
         for name in required_features:
             feature = feature_map.get(name)
             if feature is None:
                 continue
             value, confidence, unit = feature
             values_by_name[name].append((value, unit))
+            if _event_identity(record) is not None:
+                independent_values[name].append(value)
             valid_slots += 1
             if confidence is not None:
                 confidences.append(confidence)
 
     measured_ratio = _percent(len(measured_records), total)
     feature_coverage = _percent(valid_slots, total * len(required_features))
-    median_confidence = round(statistics.median(confidences) * 100) if confidences else 0
-    median_confidence = max(0, min(100, median_confidence))
+    median_confidence = (
+        max(0, min(100, round(statistics.median(confidences) * 100)))
+        if confidences else None
+    )
     feature_repeatabilities = [
         value
-        for name, entries in values_by_name.items()
-        if (value := _repeatability_for_feature(name, [item[0] for item in entries]))
+        for name, entries in independent_values.items()
+        if (value := _repeatability_for_feature(name, entries))
         is not None
     ]
     repeatability = (
         round(statistics.median(feature_repeatabilities))
         if feature_repeatabilities
-        else 0
+        else None
+    )
+    repeatability_sample_count = max((len(values) for values in independent_values.values()), default=0)
+    unidentified_count = sum(_event_identity(record) is None for record in measured_records)
+    repeatability_status = (
+        "available" if repeatability is not None
+        else "independent_event_identity_required" if unidentified_count
+        else "insufficient_samples"
     )
     evidence_ratio = _percent(scoring_allowed, total)
     components = {
         "measured_instance_ratio_percent": measured_ratio,
         "required_feature_coverage_percent": feature_coverage,
         "median_feature_confidence_percent": median_confidence,
-        "repeatability_percent": max(0, min(100, repeatability)),
+        "repeatability_percent": repeatability,
         "scoring_evidence_ratio_percent": evidence_ratio,
     }
-    if not measured_records or valid_slots == 0:
-        score: int | None = None
-    else:
-        score = round(
-            components["measured_instance_ratio_percent"]
-            * _SCORE_WEIGHTS["measured_instance_ratio"]
-            + components["required_feature_coverage_percent"]
-            * _SCORE_WEIGHTS["required_feature_coverage"]
-            + components["median_feature_confidence_percent"]
-            * _SCORE_WEIGHTS["median_feature_confidence"]
-            + components["repeatability_percent"]
-            * _SCORE_WEIGHTS["repeatability"]
-            + components["scoring_evidence_ratio_percent"]
-            * _SCORE_WEIGHTS["scoring_evidence_ratio"]
-        )
-        score = max(0, min(100, score))
+    available = bool(measured_records and valid_slots)
+    score, effective_weights = _reference_score(components, available=available)
 
     name_zh = str(card.get("name") or indicator_id)
     representative = _representative_measurements(indicator_id, values_by_name)
@@ -471,49 +541,31 @@ def _indicator_evaluation(
         )
     else:
         evidence_text = "当前没有形成稳定的可读测量"
-    level_zh = _level(score)
-    if score is None:
-        summary_zh = f"{name_zh}暂时无法形成可靠评价。"
-        observation_zh = (
-            "这不代表动作做得差，而是当前片段的关键身体点或动作阶段不足以支撑评价。"
-        )
-        training_focus = str(
-            card.get("improvementFeedback") or "保持动作连贯，并让全身和双脚持续可见。"
-        )
-        suggestion_zh = (
-            "建议补拍完整动作过程；训练时可重点检查："
-            f"{training_focus}"
-        )
-    else:
-        summary_zh = f"{name_zh}：{score}/100，{level_zh}。"
-        observation_zh = (
-            f"本次共找到 {total} 个相关片段，其中 {len(measured_records)} 个可测；"
-            f"{evidence_text}。跨片段重复性为 {components['repeatability_percent']}%。"
-        )
-        if score >= 80:
-            training_target = str(
-                card.get("positiveFeedback") or "动作节奏连贯且重复稳定。"
-            )
-            suggestion_zh = (
-                "本次可测动作的重复性较好，可继续保持；训练目标可对照："
-                f"{training_target}"
-            )
-        else:
-            training_focus = str(
-                card.get("improvementFeedback") or "优先练习动作节奏与重复稳定性。"
-            )
-            suggestion_zh = (
-                "本项在当前视频中的稳定性或证据质量仍可提高；训练时重点检查："
-                f"{training_focus}"
-            )
+    level_zh = _reference_level(score)
+    score_text = f"测量证据参考分 {score}/100；" if score is not None else ""
+    summary_zh = f"{name_zh}：{score_text}{len(measured_records)}/{total} 个候选片段可测；不代表技术水平。"
+    repeatability_text = (
+        f"跨候选片段测量重复性为 {repeatability}%，不代表技术正确性，也不作为跨视频比较。"
+        if repeatability is not None
+        else "独立可测片段不足，暂不描述跨片段重复性。"
+    )
+    observation_zh = f"{evidence_text}。{repeatability_text}"
+    suggestion_zh = (
+        "结合回放复核候选动作、测量值和阶段；技术是否正确仍需教练标准或人工复核。"
+        if available else "补拍完整动作过程，保持全身和双脚持续可见；缺少测量不代表动作做得差。"
+    )
 
     return {
         "evaluation_version": TRAINING_EVALUATION_VERSION,
+        **_technical_score_contract(),
         "indicator_id": indicator_id,
         "event_code": event_code,
         "name_zh": name_zh,
+        "label_zh": "测量证据参考分（Beta）",
         "definition_zh": str(card.get("definition") or ""),
         "score_0_to_100": score,
+        "available": available,
+        "measurement_status": "measured" if available else "unavailable",
         "level_zh": level_zh,
         "summary_zh": summary_zh,
         "observation_zh": observation_zh,
@@ -522,6 +574,9 @@ def _indicator_evaluation(
         "total_instance_count": total,
         "components": components,
         "component_weights": dict(_SCORE_WEIGHTS),
+        "effective_component_weights": effective_weights,
+        "repeatability_status": repeatability_status,
+        "repeatability_sample_count": repeatability_sample_count,
         "representative_measurements": representative,
         "limitations_zh": _friendly_limitations(indicator_id, records),
         "formal_grade": None,
@@ -529,94 +584,94 @@ def _indicator_evaluation(
     }
 
 
-def _aggregate_level(score: int | None) -> str:
-    return _level(score)
+def validated_training_records(
+    indicator_feature_records: Iterable[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], dict[str, int]]:
+    """Share event validation with compatibility information assessments."""
+    records = [record for record in indicator_feature_records if isinstance(record, Mapping)]
+    grouped: dict[tuple[Any, ...], list[Mapping[str, Any]]] = {}
+    validation = {"duplicate_record_count": 0, "conflicting_record_count": 0, "event_code_mismatch_record_count": 0, "unidentified_record_count": 0}
+    for record in records:
+        indicator_id = record.get("indicator_id")
+        if not isinstance(indicator_id, str) or indicator_id not in _INDICATOR_FEATURES:
+            continue
+        if record.get("event_code") != _INDICATOR_FEATURES[indicator_id][0]:
+            validation["event_code_mismatch_record_count"] += 1
+            continue
+        identity = _event_identity(record)
+        if identity is None:
+            validation["unidentified_record_count"] += 1
+        # Unidentified legacy observations can only stand as one singleton per
+        # indicator. Conflicting unscoped observations cannot establish events.
+        key = identity if identity is not None else ("unidentified", indicator_id)
+        grouped.setdefault(key, []).append(record)
+    validated = []
+    for group in grouped.values():
+        first = group[0]
+        if any(record != first for record in group[1:]):
+            validation["conflicting_record_count"] += len(group)
+            continue
+        validation["duplicate_record_count"] += len(group) - 1
+        validated.append(first)
+    return validated, validation
 
 
 def build_training_evaluation(
     indicator_feature_records: Iterable[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Build a deterministic, user-readable Beta training evaluation.
-
-    The score combines measurement coverage, feature confidence, repeated-action
-    stability and scoring-evidence quality.  It intentionally remains separate
-    from the formal calibration/grade pipeline.
-    """
-
-    records = [record for record in indicator_feature_records if isinstance(record, Mapping)]
+    """Build an evidence reference score, never a technical quality grade."""
+    validated, validation = validated_training_records(indicator_feature_records)
     by_indicator: dict[str, list[Mapping[str, Any]]] = {
         indicator_id: [] for indicator_id in _INDICATOR_FEATURES
     }
-    for record in records:
-        indicator_id = record.get("indicator_id")
-        if isinstance(indicator_id, str) and indicator_id in by_indicator:
-            by_indicator[indicator_id].append(record)
+    for record in validated:
+        by_indicator[str(record["indicator_id"])].append(record)
 
     cards = _load_metric_cards()
     evaluations = [
         _indicator_evaluation(indicator_id, by_indicator[indicator_id], cards.get(indicator_id, {}))
         for indicator_id in _INDICATOR_FEATURES
     ]
-    scored = [item for item in evaluations if item["score_0_to_100"] is not None]
-    overall_score = (
-        round(statistics.fmean(item["score_0_to_100"] for item in scored))
-        if scored
-        else None
-    )
-
+    measured = [item for item in evaluations if item["available"]]
+    scores = [item["score_0_to_100"] for item in measured if item["score_0_to_100"] is not None]
+    overall_score = round(statistics.fmean(scores)) if scores else None
     action_evaluations: dict[str, dict[str, Any]] = {}
     for event_code in ("FS01", "FS02", "FS09"):
         items = [item for item in evaluations if item["event_code"] == event_code]
+        measured_count = sum(item["available"] for item in items)
         item_scores = [item["score_0_to_100"] for item in items if item["score_0_to_100"] is not None]
         action_score = round(statistics.fmean(item_scores)) if item_scores else None
+        score_text = f"测量证据参考分 {action_score}/100；" if action_score is not None else ""
         action_evaluations[event_code] = {
+            **_technical_score_contract(),
+            "label_zh": "测量证据参考分（Beta）",
             "score_0_to_100": action_score,
-            "level_zh": _aggregate_level(action_score),
-            "summary_zh": (
-                f"{len(item_scores)}/{len(items)} 项形成评价，动作表现参考分为 {action_score}/100。"
-                if action_score is not None
-                else "本类动作暂时没有形成可靠评价；这不代表动作做得差。"
-            ),
-            "evaluated_indicator_count": len(item_scores),
+            "available": measured_count > 0,
+            "level_zh": _reference_level(action_score),
+            "summary_zh": f"{score_text}{measured_count}/{len(items)} 项有测量；不代表技术水平。",
+            "aggregation": "unweighted_mean_of_available_indicator_reference_scores",
+            "evaluated_indicator_count": measured_count,
             "total_indicator_count": len(items),
             "indicator_evaluations": items,
         }
-
-    ranked = sorted(
-        scored,
-        key=lambda item: (-int(item["score_0_to_100"]), str(item["indicator_id"])),
-    )
-    strengths = [
-        f"{item['name_zh']}：{item['score_0_to_100']}/100，{item['level_zh']}。"
-        for item in ranked[:3]
-    ]
-    priorities = [
-        f"{item['name_zh']}：{item['suggestion_zh']}"
-        for item in sorted(
-            scored,
-            key=lambda item: (int(item["score_0_to_100"]), str(item["indicator_id"])),
-        )[:3]
-    ]
-
     return {
         "evaluation_version": TRAINING_EVALUATION_VERSION,
-        "available": overall_score is not None,
-        "label_zh": "动作表现参考分（Beta）",
+        **_technical_score_contract(),
+        "input_validation": validation,
+        "available": bool(measured),
+        "label_zh": "测量证据参考分（Beta）",
         "score_0_to_100": overall_score,
-        "level_zh": _aggregate_level(overall_score),
+        "level_zh": _reference_level(overall_score),
         "summary_zh": (
-            f"当前 13 项中有 {len(scored)} 项形成评价，整体参考分为 {overall_score}/100。"
-            if overall_score is not None
-            else "当前视频没有形成足够动作证据，暂时无法生成动作表现评价。"
+            f"测量证据参考分 {overall_score}/100；当前 {len(evaluations)} 项中有 {len(measured)} 项有测量，不代表技术水平。"
+            if overall_score is not None else "当前视频缺少可用测量，暂不提供参考分；缺少证据不代表动作做得差。"
         ),
-        "meaning_zh": (
-            "根据本视频中重复动作的可测比例、特征覆盖、骨架置信信息、跨片段重复性和评分证据质量生成，"
-            "用于训练复盘；它不是经过教练标定的正式技术分或 A～E 等级。"
-        ),
-        "evaluated_indicator_count": len(scored),
+        "meaning_zh": "按可测比例、特征覆盖、置信度、跨片段重复性和评分证据比例生成参考分；缺失分量不补分，其余权重归一化。总分只平均有测量的指标，不代表技术正确性，不用于跨视频技术水平比较。技术分和 A～E 等级仍待教练标定。",
+        "aggregation": "unweighted_mean_of_available_indicator_reference_scores",
+        "evaluated_indicator_count": len(measured),
         "total_indicator_count": len(evaluations),
-        "strengths_zh": strengths,
-        "priorities_zh": priorities,
+        "strengths_zh": [],
+        "priorities_zh": [],
         "action_evaluations": action_evaluations,
         "indicator_evaluations": evaluations,
         "component_weights": dict(_SCORE_WEIGHTS),

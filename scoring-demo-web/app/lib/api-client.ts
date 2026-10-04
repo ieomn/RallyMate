@@ -1,3 +1,4 @@
+import { normalizeMeasurementResult } from "./measurement-evidence";
 import { uploadResumable } from "./resumable-upload";
 import type {
   DemoResultResponse,
@@ -168,7 +169,7 @@ export function createApiClient(
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}`, signal),
     getDemoResult: (jobId, options = {}) =>
-      get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal),
+      get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal).then(normalizeMeasurementResult),
     getTrajectory: (jobId, options = {}) => {
       const endpoint = options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/trajectory`;
       const query = new URLSearchParams();

@@ -305,6 +305,18 @@
           "additionalProperties": false
         },
         "points": {"type": "array", "items": {"$ref": "#/$defs/reconstructionPoint"}},
+        "display_quality": {
+          "type": "object",
+          "required": ["semantics", "detector_confidence", "observed_point_fraction", "tracked_observation_fraction", "active_ball_identity"],
+          "properties": {
+            "semantics": {"const": "display_support_not_accuracy_or_technical_score"},
+            "detector_confidence": {"$ref": "#/$defs/confidence"},
+            "observed_point_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "tracked_observation_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "active_ball_identity": {"const": "unconfirmed"}
+          },
+          "additionalProperties": false
+        },
         "analysis": {"$ref": "#/$defs/reconstructionAnalysis"}
       },
       "additionalProperties": true

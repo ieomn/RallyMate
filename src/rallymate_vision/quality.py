@@ -64,7 +64,8 @@ def analyze_frame(frame: np.ndarray) -> dict:
 
 def metadata_warnings(metadata: VideoMetadata) -> list[str]:
     warnings: list[str] = []
-    if metadata.width < 1280 or metadata.height < 720:
+    short_edge, long_edge = sorted((metadata.width, metadata.height))
+    if long_edge < 1280 or short_edge < 720:
         warnings.append("resolution_below_720p")
     if metadata.fps < 24:
         warnings.append("frame_rate_below_24fps")

@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from rallymate_features import FEATURE_LIBRARY_VERSION
 from rallymate_scoring.loop import run_minimum_scoring_loop
 from rallymate_scoring.quality_policy import (
     QUALITY_POLICY_VERSION,
@@ -63,6 +64,8 @@ def _write_pose_fixture(frames: Path, timeline: Path) -> None:
         frame_records.append(
             {
                 "frame": {
+                    "width": 1000,
+                    "height": 1000,
                     "processed_index": index,
                     "index": index,
                     "timestamp_ms": index * 40,
@@ -94,6 +97,17 @@ def _write_pose_fixture(frames: Path, timeline: Path) -> None:
         "".join(json.dumps(item) + "\n" for item in timeline_records),
         encoding="utf-8",
     )
+
+
+def _write_current_fixture_registry(path: Path) -> Path:
+    # These synthetic six-indicator policy tests use current base geometry;
+    # they are not a replay of the historical registry's v0.1 measurements.
+    registry = json.loads((ROOT / "metric-feasibility.json").read_text(encoding="utf-8"))
+    registry["registry_version"] = f"quality-policy-fixture-{FEATURE_LIBRARY_VERSION}"
+    for indicator in registry["indicators"]:
+        indicator["versions"]["feature_contract"] = FEATURE_LIBRARY_VERSION
+    path.write_text(json.dumps(registry), encoding="utf-8")
+    return path
 
 
 class IndicatorEventQualityPolicyTests(unittest.TestCase):
@@ -635,7 +649,7 @@ class IndicatorEventQualityPolicyTests(unittest.TestCase):
                     frames_path=frames,
                     primary_timeline_path=timeline,
                     output_dir=output,
-                    feasibility_registry_path=ROOT / "metric-feasibility.json",
+                    feasibility_registry_path=_write_current_fixture_registry(output / "fixture-registry.json"),
                     source_id="quality-test-video",
                     pose_model={"backend": "test", "runtime": "cpu", "profile": "unit"},
                 )
@@ -679,7 +693,7 @@ class IndicatorEventQualityPolicyTests(unittest.TestCase):
                     frames_path=frames,
                     primary_timeline_path=timeline,
                     output_dir=output,
-                    feasibility_registry_path=ROOT / "metric-feasibility.json",
+                    feasibility_registry_path=_write_current_fixture_registry(output / "fixture-registry.json"),
                     source_id="sparse-pose-quality-test-video",
                     pose_model={"backend": "test", "runtime": "cpu", "profile": "unit"},
                 )

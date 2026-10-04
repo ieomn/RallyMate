@@ -31,10 +31,10 @@ SCHEMA_PATH = ROOT / "contracts" / "registry-lifecycle.schema.json"
 
 KNOWN_RAW_SHA256 = {
     "roles.runtime_feasibility": (
-        "e6b7c3a05da08a7bc96821de3662113111653e10ec46d20a037578ad3f6e3305"
+        "dc5f3622d70f22ad5da8e933dcd38e7d8c4c57fd5255941fa521704984feac0e"
     ),
     "roles.current_scoring_requirements": (
-        "552c4aeeff4bc68fb3fdf82e6a6e5a31ea978edbb5c87e0b8bf967d4b4f2fb95"
+        "d76216d543abc147be4451aa915eb43e0cae61d710277b717d1944716c8bbf04"
     ),
     "non_runtime_artifacts.historical_feasibility": (
         "5f7952c6d9514856ad979e27a556cfa2d80b188eaeffd8333a25f32aacf5dfcc"
@@ -158,7 +158,7 @@ class RegistryLifecycleTests(unittest.TestCase):
         ]
         planning = resolved["non_runtime_artifacts.measurement_plans"]
         self.assertEqual(runtime.lifecycle, "current")
-        self.assertEqual(runtime.embedded_version, "pose-wave-2026-08-22.17")
+        self.assertEqual(runtime.embedded_version, "pose-wave-2026-10-01.2")
         self.assertEqual(
             runtime.source_registry_version,
             historical.embedded_version,

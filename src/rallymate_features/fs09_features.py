@@ -20,9 +20,10 @@ from rallymate_features.geometry import (
 from rallymate_features.kinematics import irregular_derivative, speed
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.smoothing import smooth_series
+from rallymate_features.temporal import longest_contiguous_duration
 
 
-FS09_FEATURE_VERSION = "fs09-pose-proxies-v0.2.0"
+FS09_FEATURE_VERSION = "fs09-pose-proxies-v0.4.0"
 
 # Several event summary features reuse the same full-video kinematic series.
 # Cache them by sequence identity and body scale so an event loop does not
@@ -417,27 +418,8 @@ def _longest_true_run(
     indexes: np.ndarray,
     mask: np.ndarray,
 ) -> tuple[int, tuple[int, ...]]:
-    if indexes.size == 0:
-        return 0, ()
-    local = np.asarray(mask, dtype=bool)[indexes]
-    longest: tuple[int, int] | None = None
-    start: int | None = None
-    for position, active in enumerate(np.append(local, False)):
-        if active and start is None:
-            start = position
-        elif not active and start is not None:
-            end = position - 1
-            if longest is None or end - start > longest[1] - longest[0]:
-                longest = (start, end)
-            start = None
-    if longest is None:
-        return 0, ()
-    first = int(indexes[longest[0]])
-    last = int(indexes[longest[1]])
-    local_timestamps = np.asarray(timestamp_ms, dtype=np.int64)[indexes]
-    median_dt = int(np.median(np.diff(local_timestamps))) if indexes.size > 1 else 0
-    duration = int(timestamp_ms[last] - timestamp_ms[first] + median_dt)
-    return max(duration, 0), (first, last)
+    duration, evidence, _ = longest_contiguous_duration(timestamp_ms, indexes, mask)
+    return duration or 0, evidence
 
 
 def double_support_low_motion_proxy(
@@ -467,8 +449,9 @@ def double_support_low_motion_proxy(
         (left_ankle_speed[valid_indexes] <= left_envelope)
         & (right_ankle_speed[valid_indexes] <= right_envelope)
     )
-    duration, evidence = _longest_true_run(timestamp_ms, indexes, mask)
-    return duration, evidence, mask, {
+    duration, evidence, timing_diagnostics = longest_contiguous_duration(timestamp_ms, indexes, mask)
+    return duration or 0, evidence, mask, {
+        **timing_diagnostics,
         "valid_samples": int(valid_indexes.size),
         "left_event_median_envelope_body_s": left_envelope,
         "right_event_median_envelope_body_s": right_envelope,

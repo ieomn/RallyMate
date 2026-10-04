@@ -42,6 +42,7 @@ from rallymate_scoring.technique_assessment import (
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase
+from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.user_demo import (
     UserDemoResultError,
     build_user_demo_result,
@@ -1039,11 +1040,12 @@ def create_app(
         # scores or forcing a re-upload.  Non-empty artifacts remain strictly
         # validated by ``load_indicator_feature_records`` below.
         records: list[dict[str, Any]] = []
+        summary = summary_with_actions(job)
         try:
             if indicator_features_path.is_file() and indicator_features_path.stat().st_size > 0:
                 records = load_indicator_feature_records(indicator_features_path)
             result = build_user_demo_result(
-                summary_with_actions(job),
+                summary,
                 records,
                 technique_registry_path=service_settings.resolved_technique_registry,
             )
@@ -1066,6 +1068,13 @@ def create_app(
         result["artifact_urls"] = public_job["artifact_urls"]
         result["trajectory_url"] = public_job["trajectory_url"]
         result["technique_assessment_url"] = public_job["technique_assessment_url"]
+        loop_summary = summary.get("minimum_scoring_loop")
+        review_video_id = loop_summary.get("video_id") if isinstance(loop_summary, dict) else None
+        result["footwork_review"] = load_footwork_review(
+            Path(job["output_dir"]) / "events.jsonl",
+            records,
+            video_id=review_video_id or job_id,
+        )
         return result
 
     @app.get("/v1/jobs/{job_id}/trajectory")

@@ -13,7 +13,7 @@ from rallymate_vision.utils import box_iou, safe_float
 
 
 PRIMARY_PLAYER_ALGORITHM_VERSION = "primary-player-v0.3.0"
-KEYPOINT_CONFIDENCE_MIN = 0.25
+KEYPOINT_CONFIDENCE_MIN = 0.20
 # This is only a floating-point equality tolerance for detecting tied selector
 # scores.  It is not an identity-confidence or scoring-grade threshold.
 SELECTION_SCORE_TIE_ABS_TOL = 1e-9
@@ -62,7 +62,7 @@ def primary_timeline_algorithm_version(
     ]
     if declared and len(declared) != len(timeline):
         raise ValueError(
-            "primary-player timeline mixes declared and undeclared algorithm versions"
+            "primary-player timeline mixes declared and undeclared algorithm versions" #注意重新修改报错提醒
         )
     versions = set(declared)
     if len(versions) > 1:
@@ -103,15 +103,24 @@ def registry_required_primary_player_version(
 def _pose_points(pose: dict | None) -> dict[str, tuple[float, float, float]]:
     if pose is None:
         return {}
-    return {
-        point["name"]: (
-            float(point["x_normalized"]),
-            float(point["y_normalized"]),
-            float(point["confidence"]),
-        )
-        for point in pose.get("keypoints", [])
-        if isinstance(point.get("name"), str) and point.get("in_frame") is not False
-    }
+    points: dict[str, tuple[float, float, float]] = {}
+    for point in pose.get("keypoints", []):
+        name = point.get("name")
+        if not isinstance(name, str) or point.get("in_frame") is False:
+            continue
+        try:
+            values = (
+                float(point["x_normalized"]),
+                float(point["y_normalized"]),
+                float(point["confidence"]),
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+        # Invalid coordinates must not become pose evidence just because the
+        # confidence exceeds the permissive primary-player selection threshold.
+        if all(math.isfinite(value) and 0.0 <= value <= 1.0 for value in values):
+            points[name] = values
+    return points
 
 
 def _valid_fraction(pose: dict | None) -> float:

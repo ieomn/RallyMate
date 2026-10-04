@@ -18,6 +18,7 @@ coverage/
 
 # Local tooling scratch space and downloaded runtime environments.
 .codex_tmp/
+.claude/
 runtime/**
 !runtime/
 !runtime/rtmpose/

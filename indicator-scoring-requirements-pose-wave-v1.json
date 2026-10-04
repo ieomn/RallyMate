@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0.0",
   "artifact_scope": "indicator_scoring_requirements",
-  "requirements_version": "pose-wave-indicator-requirements-2026-08-22.17",
+  "requirements_version": "pose-wave-indicator-requirements-2026-10-01.2",
   "source": {
     "kind": "versioned_registry_and_manual_truth_contract",
-    "registry_version": "pose-wave-2026-08-22.17",
-    "registry_content_sha256": "683dc285bffcd705c5386dcb0bcbc8882bf739cdba75f40fdce1507c1b5f67ac",
+    "registry_version": "pose-wave-2026-10-01.2",
+    "registry_content_sha256": "013ebb92b90ddce24f98c1b7f89dbc0afec76bf92cbd88ebd745bd59ca64d4e6",
     "semantic_contract_version": "scoring-truth-pack-v0.3.0",
     "semantic_contract_sha256": "1cce0993e207c64a54c21c816dbc32b3b66c054dc694a31f3c27759a999a601e",
     "canonicalization": "rallymate-canonical-json-v1"
@@ -24,7 +24,7 @@
         "preload_ms"
       ],
       "required_semantic_keys": [],
-      "registry_indicator_sha256": "3bb1a217a003bce21e8f5f20f94f0ddc75a2622298958b57d901a5016773b478"
+      "registry_indicator_sha256": "594114eb45209dfb83a2ddb67224774f2866bf2ca0b91df627358e68d349c2e9"
     },
     {
       "indicator_id": "FS01-M03",
@@ -40,7 +40,7 @@
       "required_semantic_keys": [
         "bilateral_foot_contact_state"
       ],
-      "registry_indicator_sha256": "d64faef763722106b20ffc6694a153b7f6b84b9b02b5f7dfa1d9dbcfb7628458"
+      "registry_indicator_sha256": "d321e91f9d7086f03e9347a904379203cbcc8777d0852c29edbd501a851fc6cf"
     },
     {
       "indicator_id": "FS01-M04",
@@ -57,7 +57,7 @@
         "post_landing_stable_interval",
         "right_foot_contact_or_settle"
       ],
-      "registry_indicator_sha256": "b8c0cb1ab33a2cbcd7a3d14656f268305c09197fce94cd81331c4d3241e52f89"
+      "registry_indicator_sha256": "f5a3ff7a58981c125e0d46f95a1773939669f7dbeeb6e9902843472817982a39"
     },
     {
       "indicator_id": "FS01-M05",
@@ -72,7 +72,7 @@
         "redistribution_ms"
       ],
       "required_semantic_keys": [],
-      "registry_indicator_sha256": "b5542cc8ab2a8a2d7e7583b9a9074ab2ce5ab1a5e984e07da8d7f781f18d258e"
+      "registry_indicator_sha256": "70c8b24d35a36650e7348173b493ee5c86b9e029af29f11a2454d3161e46ddf6"
     },
     {
       "indicator_id": "FS02-M02",
@@ -89,7 +89,7 @@
       "required_semantic_keys": [
         "target_direction"
       ],
-      "registry_indicator_sha256": "528b18cdc7fa17e10d2a767a9242f838c828a2ebc6a59d1a555a719756b90236"
+      "registry_indicator_sha256": "80af9d453697594edf2a7cbc60c5a82aeb7911d20c1664fba60b6718cd226ccc"
     },
     {
       "indicator_id": "FS02-M03",
@@ -107,7 +107,7 @@
       "required_semantic_keys": [
         "support_side"
       ],
-      "registry_indicator_sha256": "84dcde2dd50b5c71498ad554588bebce8b53225eaf2d7703adfcdf78d99eb5f7"
+      "registry_indicator_sha256": "707ecbb5f0649cb96d7a47742ce70c3f21fb5e6b2b8212cde5657b9c6a20906b"
     },
     {
       "indicator_id": "FS02-M04",
@@ -125,7 +125,7 @@
         "launch_foot_contact_state",
         "launch_side"
       ],
-      "registry_indicator_sha256": "dcdaa37761f45167841ceffa3c254a51d300ded8f38ca26eecece76123c52010"
+      "registry_indicator_sha256": "9b744eb6d080ded911790c54cab6fd12882031886f91db84bdd259c90a1ae043"
     },
     {
       "indicator_id": "FS02-M05",
@@ -145,7 +145,7 @@
         "launch_side",
         "post_step_direction_interval"
       ],
-      "registry_indicator_sha256": "1ad600d254c95e38fa55a3d2a2dbd7f492970008683a8571262254846d9412fa"
+      "registry_indicator_sha256": "490c8b86d5f14b156d9713e94474b5c13b2f4d9ba4bccf33a0dee23c0a04acc4"
     },
     {
       "indicator_id": "FS09-M01",
@@ -161,7 +161,7 @@
         "camera_motion_audit",
         "inertia_direction"
       ],
-      "registry_indicator_sha256": "92d6a2afcebbf94c7d2275f07e84885c2d2f134bd0b9af2d7a217cc985a9e90a"
+      "registry_indicator_sha256": "3ce4062ff75d10e8b9532c969b683225257c8b66730f3517a815309469c967ba"
     },
     {
       "indicator_id": "FS09-M02",
@@ -182,7 +182,7 @@
         "braking_foot_touchdown",
         "braking_side"
       ],
-      "registry_indicator_sha256": "3838083165dbc979fa528ae9f6b4f6a05a5771139cb1c180c7742643cb85dcbb"
+      "registry_indicator_sha256": "e802fa2566dc5dcf92178f2f1335b2426b761de9a6e17bd2ec7bc8eb18887462"
     },
     {
       "indicator_id": "FS09-M03",
@@ -199,7 +199,7 @@
         "peak_speed_ms"
       ],
       "required_semantic_keys": [],
-      "registry_indicator_sha256": "56f2d885df94fe9372f2df2a0a420dd632a1274fe264dc9e5b008fb5c8e1ae75"
+      "registry_indicator_sha256": "554d1d42506ea3890cab9e39e1d532c08e6f53301f183b3c3f7496e57cf8fd74"
     },
     {
       "indicator_id": "FS09-M04",
@@ -219,7 +219,7 @@
       "required_semantic_keys": [
         "stable_interval"
       ],
-      "registry_indicator_sha256": "da8056fd53a73eb9b79b62a96af1d9fbd2c865f4b3d4f863e5533c741f410924"
+      "registry_indicator_sha256": "4f674e54d95284c40ed99b189679644dee5a0c9f709128d389020996149b1d62"
     },
     {
       "indicator_id": "FS09-M05",
@@ -237,7 +237,7 @@
       "required_semantic_keys": [
         "stable_control_interval"
       ],
-      "registry_indicator_sha256": "9617543625184e26e499fb59a14c98013b9cd390f3b7b092c3fc2b259f53ed65"
+      "registry_indicator_sha256": "a2b3464bdd6d09bd4ba7ad3039e7dcea6317c1283edd385bf3fce12682df0346"
     }
   ]
 }

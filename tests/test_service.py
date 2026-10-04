@@ -189,7 +189,7 @@ class ServiceTests(unittest.TestCase):
                 self.assertEqual(demo_payload["schema_version"], "1.2.0")
                 self.assertEqual(
                     demo_payload["training_evaluation"]["evaluation_version"],
-                    "rallymate-training-evaluation-beta-v1.0.0",
+                    "rallymate-training-evaluation-beta-v1.3.0",
                 )
                 self.assertEqual(
                     demo_payload["training_evaluation"]["total_indicator_count"], 13
@@ -205,8 +205,11 @@ class ServiceTests(unittest.TestCase):
                     )
                 )
                 self.assertEqual(
-                    demo_payload["final_demo_score"]["value_0_to_100"], 82
+                    demo_payload["final_demo_score"]["value_0_to_100"], 49
                 )
+                self.assertEqual(demo_payload["training_evaluation"]["score_0_to_100"], 58)
+                self.assertEqual(demo_payload["training_evaluation"]["score_semantics"], "measurement_evidence_quality")
+                self.assertIsNone(demo_payload["training_evaluation"]["technical_score_0_to_100"])
                 self.assertEqual(
                     demo_payload["final_demo_score"]["semantics"],
                     "recognizable_motion_outline_and_amplitude_information_formation_only",
@@ -221,10 +224,10 @@ class ServiceTests(unittest.TestCase):
                     demo_payload["final_demo_score"]["is_recognition_accuracy"]
                 )
                 self.assertEqual(
-                    demo_payload["analysis_quality"]["value_0_to_100"], 100
+                    demo_payload["analysis_quality"]["value_0_to_100"], 36
                 )
                 self.assertEqual(demo_payload["display_score"]["label_zh"], "分析完成度")
-                self.assertEqual(demo_payload["display_score"]["value_0_to_100"], 100)
+                self.assertEqual(demo_payload["display_score"]["value_0_to_100"], 36)
                 self.assertFalse(
                     demo_payload["display_score"]["is_formal_technique_score"]
                 )
@@ -237,7 +240,7 @@ class ServiceTests(unittest.TestCase):
                 )
                 self.assertTrue(
                     all(
-                        action["status"] == "measured"
+                        action["status"] == "partially_measured"
                         for action in demo_payload["actions"]
                     )
                 )
@@ -247,9 +250,9 @@ class ServiceTests(unittest.TestCase):
                         for action in demo_payload["actions"]
                     ],
                     [
-                        "well_formed_information",
                         "partially_formed_information",
-                        "partially_formed_information",
+                        "limited_information",
+                        "limited_information",
                     ],
                 )
                 self.assertTrue(
@@ -353,7 +356,7 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(payload["status"], "ready")
             self.assertIsNone(payload["training_evaluation"]["score_0_to_100"])
             self.assertFalse(payload["training_evaluation"]["available"])
-            self.assertEqual(payload["analysis_quality"]["value_0_to_100"], 0)
+            self.assertEqual(payload["analysis_quality"]["value_0_to_100"], None)
             self.assertFalse(payload["formal_scoring"]["available"])
             self.assertIsNone(payload["formal_scoring"]["grade"])
 

@@ -291,11 +291,15 @@ def _feature_table(
         raw_summary = (
             _payload_summary(feature["raw_value"])
             if "raw_value" in feature
+            else "独立目标方向上下文；无逐帧原始序列"
+            if kind == "scoring-context"
             else "contract field missing"
         )
         smoothed_summary = (
             _payload_summary(feature["smoothed_value"])
             if "smoothed_value" in feature
+            else "上下文标量未进行时序平滑"
+            if kind == "scoring-context"
             else "contract field missing"
         )
         rows.append(

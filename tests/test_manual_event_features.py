@@ -89,7 +89,7 @@ class ManualEventFeaturesTests(unittest.TestCase):
             }
             frame_records.append(
                 {
-                    "frame": {
+                    "frame": {"width": 1000, "height": 1000,
                         "processed_index": index,
                         "index": 100 + index,
                         "timestamp_ms": timestamp,
@@ -216,7 +216,7 @@ class ManualEventFeaturesTests(unittest.TestCase):
             self.assertFalse(result["summary"]["safety"]["any_non_null_grade"])
             self.assertEqual(
                 result["summary"]["registry_version"],
-                "pose-wave-2026-08-22.17",
+                "pose-wave-2026-10-01.2",
             )
             self.assertTrue(result["features"])
             self.assertTrue(all("raw_value" in item and "smoothed_value" in item for item in result["features"]))

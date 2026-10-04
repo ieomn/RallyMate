@@ -3,9 +3,16 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
 
-const source = fs.readFileSync(new URL("../app/lib/report-export.ts", import.meta.url), "utf8");
-const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { getReportExportGate, buildPracticeReport, renderReportMarkdown, renderReportHtml, buildReportBackup, reportDownloadName } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+function compiledUrl(fileUrl) {
+  const source = fs.readFileSync(fileUrl, "utf8");
+  let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+  js = js.replace(/from "([^"]+)"/g, (_match, name) => {
+    const url = name.startsWith(".") ? compiledUrl(new URL(`${name}.ts`, fileUrl)) : import.meta.resolve(name);
+    return `from ${JSON.stringify(url)}`;
+  });
+  return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
+}
+const { getReportExportGate, buildPracticeReport, renderReportMarkdown, renderReportHtml, buildReportBackup, reportDownloadName } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
 
 function completed() {
   return {
@@ -50,10 +57,11 @@ test("a completed task exports readable observations, actual video metadata, can
   assert.match(md, /1\\\.2–2\\\.5 秒/);
   assert.match(md, /关联球拍帧数：7/);
   assert.match(md, /身体平衡/);
-  assert.match(md, /71 \/ 100/);
+  assert.doesNotMatch(md, /71 \/ 100/);
+  assert.match(md, /技术评分待教练标定/);
   assert.match(md, /未确认触球/);
   assert.match(md, /不代表真实落点/);
-  assert.match(md, /不是动作得分/);
+  assert.match(md, /高分不代表动作正确/);
   assert.equal(reportDownloadName(report, "html"), "rallymate-analysis-job-12345678.html");
   assert.doesNotMatch(md, /live-pending|\/root\/|frames\.jsonl/);
 });
@@ -113,7 +121,7 @@ test("a serve recognition candidate takes precedence over legacy not_observed wi
   const row = report.sections.find(section => section.title === "技术证据覆盖").rows[0];
   assert.equal(row[0], "发球");
   assert.equal(row[2], "候选（未确认触球）");
-  assert.equal(row[3], "未提供");
+  assert.equal(row[3], "待教练标定");
   assert.match(renderReportMarkdown(report), /发球 \| 发球 \| 候选（未确认触球）/);
   assert.match(renderReportHtml(report), /<td>候选（未确认触球）<\/td>/);
 });
@@ -128,7 +136,7 @@ test("HTML is self-contained, printable and treats imported strings as text, nev
   assert.match(html, /Content-Security-Policy/);
   assert.match(html, /script-src 'none'/);
   assert.match(html, /@media print/);
-  assert.match(html, /&lt;script/);
+  assert.match(html, /&lt;svg/);
   assert.doesNotMatch(html, /<script\b|<img\b|<svg\b|<iframe\b|<link\b|https:\/\/evil/i);
   assert.doesNotMatch(renderReportMarkdown(report), /(?<!\\)\[偷取\]\(|<svg\b|<script\b/);
 });
@@ -146,7 +154,7 @@ test("readable reports and compatible JSON backup omit server paths, credentials
   assert.doesNotMatch(combined, /DO_NOT_EXPORT|KEY_VALUE|BEARER_VALUE|\/root\/|C:\\\\Users|127\.0\.0\.1|frames_path|video_path|artifact_urls/);
   assert.equal(backup.schemaVersion, "rallymate-practice-report/1");
   assert.equal(backup.jobId, "job-12345678");
-  assert.equal(backup.result.training_evaluation.indicator_evaluations[0].score_0_to_100, 71);
+  assert.equal(backup.result.training_evaluation.indicator_evaluations[0].score_0_to_100, null);
   assert.equal(backup.assessment.techniques[0].name_zh, "发球");
   assert.equal(backup.summary.action_recognition.candidates[0].contact_confirmed, false);
   assert.equal(backup.trajectory.source.frame_count, 300);
@@ -162,4 +170,111 @@ test("offline demo export is explicitly labelled and cannot stand in for a live 
   assert.match(reportDownloadName(report, "md"), /^rallymate-demo-/);
   assert.equal(getReportExportGate({ ...input, mode: "live", uploadState: "complete" }).allowed, false);
   assert.equal(getReportExportGate({ ...input, demoReport: { ...demo, scenario: { ...demo.scenario, id: "live-pending" } } }).allowed, false);
+});
+
+const rotationValues = {
+  shoulder_line_change_deg: 0, hip_line_change_deg: 18, shoulder_hip_separation_max_deg: 24,
+  shoulder_hip_separation_change_deg: 12, peak_shoulder_angular_speed_deg_s: 140, peak_hip_angular_speed_deg_s: 90,
+};
+
+function rotationReportInput() {
+  const input = completed();
+  const episode = {
+    episode_id: "rotation-one", family: "baseline", contact_confirmed: false,
+    start_ms: 1000, peak_ms: 1600, end_ms: 2200,
+    classification: { label_zh: "正手挥拍", status: "rule_inferred", reason_zh: "二维动作规则参考。" },
+    phases: [], metrics: { ...rotationValues }, limitations_zh: ["不能由二维画面判定动力链先后。"],
+    rotation_analysis: {
+      schema_version: "1.0.0", status: "measured_2d", is_3d_rotation: false,
+      is_formal_coach_score: false, score: null, score_status: "calibration_required",
+      metric_evidence: Object.fromEntries(Object.keys(rotationValues).map(key => [key, {
+        status: "measured", coverage_fraction: 1, time_coverage_fraction: 1,
+        valid_samples: 25, total_samples: 25, continuous_samples: 25,
+        start_ms: 1000, end_ms: 2200, reason_zh: "连续二维轴观测可复核。",
+      }])),
+    },
+  };
+  input.evidence.result.action_recognition = { motion_analysis: {
+    schema_version: "1.0.0", contact_confirmed: false,
+    families: { baseline: { status: "analyzed", reason_zh: "已测得二维肩髋轴。", episodes: [episode] } },
+  } };
+  return { input, episode };
+}
+
+function exportedRotationMetrics(input) {
+  return buildPracticeReport(input).sections.find(section => section.title === "底线运动分析").rows[0][3];
+}
+
+test("rotation report preserves observed zero, angle units, evidence coverage and a null technical score", () => {
+  const { input } = rotationReportInput();
+  const report = buildPracticeReport(input);
+  const metrics = exportedRotationMetrics(input);
+  assert.match(metrics, /画面内肩线变化（度）：0（有效采样 100%）/);
+  assert.match(metrics, /画面内髋线变化（度）：18/);
+  assert.match(metrics, /肩髋线最大夹角（度）：24/);
+  assert.match(metrics, /肩髋线夹角变化（度）：12/);
+  assert.match(metrics, /肩线峰值角速度（度\/秒）：140/);
+  assert.match(metrics, /髋线峰值角速度（度\/秒）：90/);
+  assert.match(renderReportHtml(report), /不作为技术评分/);
+  assert.match(renderReportMarkdown(report), /不能由二维画面判定动力链先后/);
+  const backup = buildReportBackup(input);
+  const saved = backup.result.action_recognition.motion_analysis.families.baseline.episodes[0];
+  assert.equal(saved.rotation_analysis.score, null);
+  assert.equal(saved.rotation_analysis.is_formal_coach_score, false);
+  assert.equal(saved.rotation_analysis.is_3d_rotation, false);
+  assert.deepEqual(saved.metrics, rotationValues);
+});
+
+test("partial and unavailable rotation exports hide unsupported values without replacing them with zero", () => {
+  for (const status of ["partial", "unavailable"]) {
+    const { input, episode } = rotationReportInput();
+    episode.rotation_analysis.status = status;
+    episode.rotation_analysis.metric_evidence.hip_line_change_deg.status = "unavailable";
+    const metrics = exportedRotationMetrics(input);
+    assert.match(metrics, /画面内髋线变化（度）：未提供/);
+    assert.doesNotMatch(metrics, /画面内髋线变化（度）：(?:18|0)/);
+    if (status === "partial") assert.match(metrics, /肩线峰值角速度（度\/秒）：140/);
+    else {
+      assert.match(metrics, /肩线峰值角速度（度\/秒）：未提供/);
+      assert.match(metrics, /画面内肩线变化（度）：未提供/);
+    }
+  }
+});
+
+test("rotation export applies the same strict coverage and replay-window gates as the screen", () => {
+  const invalid = [
+    { coverage_fraction: .79 }, { coverage_fraction: 1.01 }, { coverage_fraction: "0.9" },
+    { coverage_fraction: NaN }, { coverage_fraction: Infinity }, { coverage_fraction: null },
+    { time_coverage_fraction: .79 }, { time_coverage_fraction: "0.9" },
+    { continuous_samples: 6 }, { continuous_samples: 26, total_samples: 25 },
+    { start_ms: 999 }, { end_ms: 2201 }, { start_ms: "1000" },
+    { start_ms: 1000, end_ms: 1001 }, { end_ms: null },
+  ];
+  for (const patch of invalid) {
+    const { input, episode } = rotationReportInput();
+    Object.assign(episode.rotation_analysis.metric_evidence.hip_line_change_deg, patch);
+    const metrics = exportedRotationMetrics(input);
+    assert.match(metrics, /画面内髋线变化（度）：未提供/, JSON.stringify(patch));
+    assert.doesNotMatch(metrics, /画面内髋线变化（度）：18/);
+  }
+});
+
+test("rotation export rejects numeric scores and 3D or formal claims while preserving legacy shoulder data", () => {
+  for (const patch of [{ score: 88 }, { is_formal_coach_score: true }, { is_3d_rotation: true }, { status: "scored" }]) {
+    const { input, episode } = rotationReportInput();
+    Object.assign(episode.rotation_analysis, patch);
+    const metrics = exportedRotationMetrics(input);
+    assert.match(metrics, /画面内肩线变化（度）：未提供/);
+    assert.match(metrics, /画面内髋线变化（度）：未提供/);
+    assert.doesNotMatch(metrics, /：88|：140/);
+  }
+  for (const invalid of [null, false, "", {}]) {
+    const { input, episode } = rotationReportInput();
+    episode.rotation_analysis = invalid;
+    assert.match(exportedRotationMetrics(input), /画面内肩线变化（度）：未提供/, JSON.stringify(invalid));
+  }
+  const { input, episode } = rotationReportInput();
+  delete episode.rotation_analysis;
+  assert.match(exportedRotationMetrics(input), /画面内肩线变化（度）：0/);
+  assert.match(exportedRotationMetrics(input), /画面内髋线变化（度）：未提供/);
 });

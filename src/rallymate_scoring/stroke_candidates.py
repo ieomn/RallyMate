@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import math
@@ -19,7 +19,7 @@ import statistics
 from typing import Any
 
 
-DETECTOR_VERSION = "pose-racket-stroke-candidates-v1.1.0"
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v1.2.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_POSE_GAP_MS = 160
 LIMITATIONS = [
@@ -39,6 +39,10 @@ class Sample:
     points: dict[str, tuple[float, float]]
     racket_sides: set[str]
     selection_epoch: int = 0
+    raw_wrists_px: dict[str, tuple[float, float]] = field(default_factory=dict)
+    raw_scale: float | None = None
+    camera_reference_epoch: int | None = None
+    camera_compensated: bool = False
 
 
 def _number(value: Any) -> float | None:
@@ -65,6 +69,10 @@ def _midpoint(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, fl
 
 
 def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
+    if frame.get("timestamp_source") == "fps_fallback":
+        return None
+    if frame.get("camera_motion_status") in {"moving", "unavailable"}:
+        return None
     track, timestamp = pose.get("person_track_id"), frame.get("timestamp_ms")
     if not isinstance(track, int) or isinstance(track, bool) or _number(timestamp) is None:
         return None
@@ -78,9 +86,26 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
     scale = max(_distance(center, hips), _distance(raw["left_shoulder"], raw["right_shoulder"]) * 0.75)
     if scale < 12:
         return None
+    raw_wrists = {side: raw[f"{side}_wrist"] for side in ("left", "right") if f"{side}_wrist" in raw}
+    raw_scale = scale
+    camera = frame.get("camera_motion")
+    if isinstance(camera, Mapping) and camera.get("compensation_valid") is True:
+        from rallymate_features.coordinates import validated_camera_transform
+        transform = validated_camera_transform(camera)
+        if transform is None:
+            return None
+        raw = {name: (float(transform[0, 0] * x + transform[0, 1] * y + transform[0, 2]),
+                      float(transform[1, 0] * x + transform[1, 1] * y + transform[1, 2]))
+               for name, (x, y) in raw.items()}
+        center = _midpoint(raw["left_shoulder"], raw["right_shoulder"])
+        hips = _midpoint(raw["left_hip"], raw["right_hip"])
+        scale = max(_distance(center, hips), _distance(raw["left_shoulder"], raw["right_shoulder"]) * 0.75)
     points = {name: ((point[0] - center[0]) / scale, (point[1] - center[1]) / scale)
               for name, point in raw.items()}
-    return Sample(int(timestamp), int(frame.get("index", 0)), track, center, scale, points, set())
+    return Sample(int(timestamp), int(frame.get("index", 0)), track, center, scale, points, set(),
+                  raw_wrists_px=raw_wrists, raw_scale=raw_scale,
+                  camera_reference_epoch=camera.get("reference_epoch") if isinstance(camera, Mapping) else None,
+                  camera_compensated=isinstance(camera, Mapping) and camera.get("compensation_valid") is True)
 
 
 def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, Any]]) -> None:
@@ -100,9 +125,9 @@ def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, 
                 wrist = sample.points.get(f"{side}_wrist")
                 if wrist is None:
                     continue
-                x = wrist[0] * sample.scale + sample.center[0]
-                y = wrist[1] * sample.scale + sample.center[1]
-                distance = math.hypot(max(box[0] - x, 0, x - box[2]), max(box[1] - y, 0, y - box[3])) / sample.scale
+                x, y = sample.raw_wrists_px.get(side, (wrist[0] * sample.scale + sample.center[0],
+                                                       wrist[1] * sample.scale + sample.center[1]))
+                distance = math.hypot(max(box[0] - x, 0, x - box[2]), max(box[1] - y, 0, y - box[3])) / (sample.raw_scale or sample.scale)
                 choices.append((distance, sample, side))
         choices.sort(key=lambda value: value[0])
         if not choices or choices[0][0] > 0.35:
@@ -297,20 +322,44 @@ def detect_stroke_candidates(
     ball_observations = []
     seen: set[tuple[int, int]] = set()
     frame_count = 0
-    selection_epoch, previous_selected = 0, None
+    selection_epoch, previous_selected, previous_camera_epoch = 0, None, None
     for record in frames:
         if not isinstance(record, Mapping) or not isinstance(record.get("frame"), Mapping):
             continue
         frame = record["frame"]
+        camera = record.get("camera_motion")
+        camera_transform = None
+        if isinstance(camera, Mapping):
+            from rallymate_features.coordinates import validated_camera_transform
+            camera_status = camera.get("status", "unavailable")
+            camera_epoch = camera.get("reference_epoch")
+            camera_transform = validated_camera_transform(camera)
+            declared_compensation = "compensation_valid" in camera or "matrix_to_reference" in camera
+            if declared_compensation and (camera_transform is None
+                    or isinstance(camera_epoch, bool) or not isinstance(camera_epoch, int) or camera_epoch < 0
+                    or camera_status not in {"reference", "stationary", "moving"}):
+                camera_status = "unavailable"
+            elif camera_status == "moving" and camera_transform is not None:
+                camera_status = "compensated"
+            if camera_status not in {"reference", "stationary", "compensated", "moving", "unavailable"}:
+                camera_status = "unavailable"
+            frame = {**frame, "camera_motion_status": camera_status, "camera_motion": camera}
+            if previous_camera_epoch is not None and camera_epoch != previous_camera_epoch:
+                selection_epoch += 1
+            previous_camera_epoch = camera_epoch
         frame_count += 1
         current_selected = selected.get(frame.get("processed_index")) if selected is not None else None
         if selected is not None and current_selected != previous_selected:
             selection_epoch += 1
         previous_selected = current_selected
+        if frame.get("timestamp_source") == "fps_fallback" or frame.get("camera_motion_status") in {"moving", "unavailable"}:
+            # A skipped sample must still split later motion/rotation windows.
+            selection_epoch += 1
         samples = [sample for pose in record.get("poses", []) if isinstance(pose, Mapping)
                    and (sample := _sample(pose, frame)) is not None]
         _associate_rackets(samples, record.get("detections", []))
         for sample in samples:
+            sample.selection_epoch = selection_epoch
             key = sample.track, sample.time
             if key in seen:
                 continue
@@ -320,6 +369,8 @@ def detect_stroke_candidates(
                 sample.selection_epoch = selection_epoch
                 by_track[sample.track].append(sample)
         for detection in record.get("detections", []):
+            if frame.get("timestamp_source") == "fps_fallback" or frame.get("camera_motion_status") in {"moving", "unavailable"}:
+                continue
             if not isinstance(detection, Mapping) or detection.get("class_name") != "ball":
                 continue
             track, confidence = detection.get("track_id"), _number(detection.get("confidence"))
@@ -327,7 +378,12 @@ def detect_stroke_candidates(
             if (isinstance(track, int) and not isinstance(track, bool) and confidence is not None and confidence >= 0.45
                     and timestamp is not None and isinstance(box, (list, tuple)) and len(box) == 4
                     and all(_number(v) is not None for v in box) and box[2] > box[0] and box[3] > box[1]):
-                ball_observations.append({"track": track, "time": int(timestamp), "point": ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)})
+                x, y = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+                if camera_transform is not None:
+                    x, y = (float(camera_transform[0, 0] * x + camera_transform[0, 1] * y + camera_transform[0, 2]),
+                            float(camera_transform[1, 0] * x + camera_transform[1, 1] * y + camera_transform[1, 2]))
+                ball_observations.append({"track": track, "time": int(timestamp), "point": (x, y),
+                                          "camera_reference_epoch": camera.get("reference_epoch") if isinstance(camera, Mapping) else None})
     accepted = _detect_tracks(by_track)
     # Need the opponent's full tracked serve as context, not the primary filter.
     context_serves = [candidate for candidate in _detect_tracks(all_tracks) if candidate["family"] == "serve"] if selected is not None else []

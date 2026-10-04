@@ -8,6 +8,50 @@ from rallymate_vision.utils import box_iou
 
 
 class TrackingTests(unittest.TestCase):
+    @staticmethod
+    def _ball(x: float = 50, scale: float = 1) -> dict:
+        return {"class_name": "ball", "bbox_px": [value * scale for value in [x - 5, 45, x + 5, 55]], "confidence": .8}
+
+    def test_ball_identity_expires_by_source_time_at_different_fps(self) -> None:
+        for fps in [15, 30, 60, 120]:
+            with self.subTest(fps=fps):
+                tracker = SimpleMultiClassTracker()
+                first = tracker.update([self._ball()], 640, 480, timestamp_ms=0)[0]["track_id"]
+                for index in range(1, round(fps * .3)):
+                    tracker.update([], 640, 480, timestamp_ms=round(index * 1000 / fps))
+                at_boundary = tracker.update([self._ball(52)], 640, 480, timestamp_ms=300)[0]["track_id"]
+                self.assertEqual(first, at_boundary, "same 300 ms evidence gap must retain identity at every FPS")
+                expired = tracker.update([self._ball(54)], 640, 480, timestamp_ms=601)[0]["track_id"]
+                self.assertNotEqual(first, expired, "no empty update calls are required to expire a stale track")
+
+    def test_ball_tracking_gate_is_invariant_to_uniform_resolution_scale(self) -> None:
+        sequences = []
+        for scale in [.5, 1, 2]:
+            tracker = SimpleMultiClassTracker()
+            sequences.append([tracker.update([self._ball(x, scale)], int(640 * scale), int(480 * scale), timestamp_ms=time)[0]["track_id"]
+                              for time, x in [(0, 50), (100, 80), (200, 400), (600, 401)]])
+        self.assertEqual(sequences[0], sequences[1])
+        self.assertEqual(sequences[1], sequences[2])
+        self.assertEqual(sequences[0][0], sequences[0][1])
+        self.assertNotEqual(sequences[0][1], sequences[0][2])
+
+    def test_simultaneous_balls_keep_separate_ids_and_timestamp_rewind_clears_tracks(self) -> None:
+        tracker = SimpleMultiClassTracker()
+        initial = tracker.update([self._ball(50), self._ball(300)], 640, 480, timestamp_ms=1000)
+        self.assertEqual(len({item["track_id"] for item in initial}), 2)
+        after_seek = tracker.update([self._ball(50)], 640, 480, timestamp_ms=0)
+        self.assertNotIn(after_seek[0]["track_id"], {item["track_id"] for item in initial})
+
+    def test_timestamp_input_is_validated_without_changing_player_gap_policy(self) -> None:
+        tracker = SimpleMultiClassTracker()
+        for invalid in [True, -1, 1.5]:
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                tracker.update([], 640, 480, timestamp_ms=invalid)
+        player = {"class_name": "player", "bbox_px": [100, 100, 300, 500], "confidence": .9}
+        first = tracker.update([dict(player)], 640, 480, timestamp_ms=0)[0]["track_id"]
+        resumed = tracker.update([dict(player)], 640, 480, timestamp_ms=2000)[0]["track_id"]
+        self.assertEqual(first, resumed)
+
     def test_iou(self) -> None:
         self.assertAlmostEqual(box_iou([0, 0, 10, 10], [0, 0, 10, 10]), 1.0)
         self.assertEqual(box_iou([0, 0, 2, 2], [3, 3, 4, 4]), 0.0)

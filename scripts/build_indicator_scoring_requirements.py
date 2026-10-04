@@ -16,7 +16,7 @@ from rallymate_scoring.indicator_requirements import (
 
 
 DEFAULT_REQUIREMENTS_VERSION = (
-    "pose-wave-indicator-requirements-2026-08-22.17"
+    "pose-wave-indicator-requirements-2026-10-01.2"
 )
 
 

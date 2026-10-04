@@ -54,6 +54,9 @@ from rallymate_vision.quality import (
 )
 from rallymate_vision.render import annotate_frame
 from rallymate_vision.tracking import SimpleMultiClassTracker
+from rallymate_vision.timebase import SourceVideoClock
+from rallymate_vision.camera_motion import CameraMotionGuard
+from rallymate_vision.source_replay import export_source_replay
 from rallymate_vision.utils import relative_or_absolute, resolve_device, safe_float
 from rallymate_vision.validation import (
     validate_frame_observation,
@@ -593,7 +596,15 @@ def run_pipeline(
             "message": "模型已就绪，开始逐帧推理",
         }
     )
-    capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    # Decode from the beginning so clip boundaries use presentation time even
+    # for variable-frame-rate files. Frame-index/FPS seeking is only an estimate.
+    clock = SourceVideoClock(metadata.fps)
+    camera_guard = CameraMotionGuard()
+    first_processed_source_frame = None
+    last_processed_timestamp_ms = None
+    last_processed_source_frame = None
+    camera_status_counts: Counter[str] = Counter()
+    camera_compensated_frames = 0
 
     output_fps = metadata.fps / request.processing.frame_stride
     writer = None
@@ -609,7 +620,7 @@ def run_pipeline(
             raise RuntimeError("could not initialize annotated MP4 writer")
 
     processed = 0
-    source_frame_index = start_frame
+    source_frame_index = 0
     class_counts: Counter[str] = Counter()
     frames_with_class: Counter[str] = Counter()
     pose_frame_count = 0
@@ -619,14 +630,25 @@ def run_pipeline(
     court_status_counts: Counter[str] = Counter()
 
     with frames_path.open("w", encoding="utf-8", newline="\n") as frames_file:
-        while source_frame_index < end_frame:
+        while source_frame_index < metadata.frame_count:
             ok, frame = capture.read()
             if not ok:
                 break
-            if (source_frame_index - start_frame) % request.processing.frame_stride != 0:
+            timestamp_ms, timestamp_source = clock.resolve(
+                source_frame_index, float(capture.get(cv2.CAP_PROP_POS_MSEC))
+            )
+            if request.processing.end_ms is not None and timestamp_ms >= request.processing.end_ms:
+                break
+            if timestamp_ms < request.processing.start_ms:
                 source_frame_index += 1
                 continue
-            timestamp_ms = int(source_frame_index / metadata.fps * 1000)
+            if first_processed_source_frame is None:
+                first_processed_source_frame = source_frame_index
+            if (source_frame_index - first_processed_source_frame) % request.processing.frame_stride != 0:
+                source_frame_index += 1
+                continue
+            last_processed_timestamp_ms = timestamp_ms
+            last_processed_source_frame = source_frame_index
 
             quality = analyze_frame(frame)
             quality_samples.append(quality)
@@ -635,7 +657,7 @@ def run_pipeline(
             detections = perception.detect(frame)
             timings["detection_seconds"] += time.perf_counter() - stage_started
             detections = tracker.update(
-                detections, metadata.width, metadata.height
+                detections, metadata.width, metadata.height, timestamp_ms=timestamp_ms
             )
 
             players = [
@@ -645,6 +667,17 @@ def run_pipeline(
             ]
             if players:
                 person_frame_count += 1
+            camera_motion = camera_guard.update(
+                frame, [player["bbox_px"] for player in players], timestamp_ms
+            )
+            if timestamp_source != "decoder_pts":
+                camera_motion.update(status="unavailable", fixed_camera_supported=False,
+                                     compensation_valid=False, matrix_to_reference=None,
+                                     reason="source_timestamp_unverified")
+                camera_guard.reset_reference()
+            camera_status_counts[camera_motion["status"]] += 1
+            camera_compensated_frames += int(camera_motion["status"] == "moving"
+                                             and camera_motion.get("compensation_valid") is True)
             stage_started = time.perf_counter()
             poses = perception.estimate_poses(
                 frame, players, request.processing.max_players
@@ -673,11 +706,13 @@ def run_pipeline(
                     "index": source_frame_index,
                     "processed_index": processed,
                     "timestamp_ms": timestamp_ms,
+                    "timestamp_source": timestamp_source,
                     "width": metadata.width,
                     "height": metadata.height,
                     "coordinate_origin": "top_left",
                 },
                 "quality": quality,
+                "camera_motion": camera_motion,
                 "detections": detections,
                 "poses": poses,
                 "court": court,
@@ -745,9 +780,18 @@ def run_pipeline(
     }
     if writer is not None:
         writer.release()
-        annotated_video_compatibility = _transcode_annotated_video_for_browser(
-            video_path
+        annotated_video_compatibility = export_source_replay(
+            request.video_path, video_path, ffmpeg=_find_ffmpeg_executable(),
+            first_frame=first_processed_source_frame or 0,
+            last_frame=last_processed_source_frame or 0,
+            stride=request.processing.frame_stride,
         )
+        if not annotated_video_compatibility["timing_preserved"]:
+            annotated_video_compatibility = {
+                **_transcode_annotated_video_for_browser(video_path),
+                "timing_preserved": False,
+                "timing_warning": "constant_fps_fallback_replay_may_not_match_source_timing",
+            }
     if processed == 0:
         raise RuntimeError("no frames were processed; check start/end/stride settings")
 
@@ -1026,8 +1070,13 @@ def run_pipeline(
         },
         "processing": {
             "processed_frames": processed,
-            "source_start_frame": start_frame,
+            "source_start_frame": first_processed_source_frame,
             "source_end_frame_exclusive": source_frame_index,
+            "last_processed_timestamp_ms": last_processed_timestamp_ms,
+            "source_timing": clock.summary(),
+            "camera_motion": {"status_counts": dict(camera_status_counts),
+                              "compensated_frames": camera_compensated_frames,
+                              "semantics": "background_image_plane_similarity_not_metric_or_3d"},
             "frame_stride": request.processing.frame_stride,
             "elapsed_seconds": safe_float(elapsed, 3),
             "effective_processed_fps": safe_float(processed / elapsed, 3),

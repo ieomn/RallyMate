@@ -139,7 +139,7 @@ test("valid provider IDs return only server-authored explanations and no raw sco
   }, async () => {
     const app = await route(); const body = await (await app.POST(request({ ...input, jobId }))).json();
     assert.equal(body.source, "mimo"); assert.equal(body.providerStatus, "ready");
-    assert.match(body.advice.summary, /已关联动作事件：回位/);
+    assert.match(body.advice.summary, /已关联候选事件：回位/);
     assert.ok(body.evidence.limitations.some(text => text.includes("不等于确认球拍触球")));
   });
 });

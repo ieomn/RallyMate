@@ -12,6 +12,31 @@ from rallymate_service.user_demo import (
 
 
 class UserDemoResultTests(unittest.TestCase):
+    def test_history_contract_warns_without_overwriting_measurement_values(self) -> None:
+        summary = self._summary()
+        old = build_user_demo_result(summary, [])
+        self.assertTrue(old["measurement_update_required"])
+        self.assertTrue(any("旧坐标算法" in warning for warning in old["measurement_warnings_zh"]))
+        summary["minimum_scoring_loop"]["coordinate_contract"] = {"contract_version": "isotropic-frame-long-edge-v1.1.0"}
+        summary["processing"] = {"camera_motion": {"status_counts": {"reference": 1, "stationary": 9}}, "source_timing": {"fallback_timestamp_frames": 0}}
+        current = build_user_demo_result(summary, [])
+        self.assertFalse(current["measurement_update_required"])
+        self.assertEqual(current["measurement_warnings_zh"], [])
+        summary["minimum_scoring_loop"]["coordinate_contract"] = {"contract_version": "isotropic-frame-long-edge-v1.0.0"}
+        self.assertTrue(build_user_demo_result(summary, [])["measurement_update_required"])
+
+    def test_camera_and_source_time_warnings_describe_excluded_intervals(self) -> None:
+        summary = self._summary()
+        summary["minimum_scoring_loop"]["coordinate_contract"] = {"contract_version": "isotropic-frame-long-edge-v1.1.0"}
+        summary["processing"] = {"camera_motion": {"status_counts": {"moving": 3, "unavailable": 2, "reference": 1}, "compensated_frames": 2}, "source_timing": {"fallback_timestamp_frames": 4}}
+        result = build_user_demo_result(summary, [])
+        warnings = " ".join(result["measurement_warnings_zh"])
+        self.assertIn("背景运动 3 帧，其中 2 帧完成画面运动校正", warnings)
+        self.assertIn("不是三维校正", warnings)
+        self.assertIn("无法核实相机", warnings)
+        self.assertIn("真实时间无法确认", warnings)
+        self.assertFalse(result["measurement_update_required"])
+
     def _summary(self, *, status: str = "completed") -> dict:
         return {
             "status": status,
@@ -77,12 +102,12 @@ class UserDemoResultTests(unittest.TestCase):
 
         self.assertEqual(result["schema_version"], "1.2.0")
         self.assertEqual(
-            result["result_version"], "rallymate-user-demo-result-v1.2.0"
+            result["result_version"], "rallymate-user-demo-result-v1.4.0"
         )
         self.assertEqual(result["hit_statistics"]["status"], "unsupported")
         self.assertIsNone(result["hit_statistics"]["total_count"])
         self.assertEqual(result["trajectory_analysis"]["status"], "unavailable")
-        self.assertEqual(result["final_demo_score"]["value_0_to_100"], 42)
+        self.assertEqual(result["final_demo_score"]["value_0_to_100"], 54)
         self.assertEqual(
             result["final_demo_score"]["semantics"],
             "recognizable_motion_outline_and_amplitude_information_formation_only",
@@ -91,18 +116,17 @@ class UserDemoResultTests(unittest.TestCase):
         self.assertFalse(result["final_demo_score"]["is_coach_score"])
         self.assertFalse(result["final_demo_score"]["is_recognition_accuracy"])
 
-        # Analysis quality: 30% * 2/3 observed actions + 45% * 6/13 measured
-        # indicators + 25% * mean(50%, 25%, 0%) coverage = 47 after rounding.
-        self.assertEqual(result["analysis_quality"]["value_0_to_100"], 47)
+        # Compatibility scores describe information coverage, not athlete quality.
+        self.assertEqual(result["analysis_quality"]["value_0_to_100"], 30)
         self.assertEqual(
             result["analysis_quality"]["components"],
             {
                 "observed_action_family_ratio_percent": 67,
-                "measured_unique_indicator_ratio_percent": 46,
+                "measured_unique_indicator_ratio_percent": 8,
                 "mean_action_measurement_coverage_percent": 25,
             },
         )
-        self.assertEqual(result["display_score"]["value_0_to_100"], 47)
+        self.assertEqual(result["display_score"]["value_0_to_100"], 30)
         self.assertEqual(result["display_score"]["label_zh"], "分析完成度")
         self.assertEqual(
             result["display_score"]["compatibility_alias_for"], "analysis_quality"
@@ -112,7 +136,7 @@ class UserDemoResultTests(unittest.TestCase):
         self.assertIsNone(result["formal_scoring"]["grade"])
         self.assertEqual(
             result["training_evaluation"]["label_zh"],
-            "动作表现参考分（Beta）",
+            "测量证据参考分（Beta）",
         )
         self.assertEqual(result["training_evaluation"]["total_indicator_count"], 13)
         self.assertEqual(
@@ -122,7 +146,7 @@ class UserDemoResultTests(unittest.TestCase):
         self.assertTrue(result["safety"]["measurement_completion_is_not_accuracy"])
         self.assertEqual(
             [action["status"] for action in result["actions"]],
-            ["measured", "partially_measured", "not_observed"],
+            ["partially_measured", "partially_measured", "not_observed"],
         )
         self.assertEqual(
             [
@@ -140,8 +164,13 @@ class UserDemoResultTests(unittest.TestCase):
                 action["formation_assessment"]["reference_score_0_to_100"]
                 for action in result["actions"]
             ],
-            [77, 50, 0],
+            [54, None, None],
         )
+        for action in result["actions"]:
+            self.assertEqual(action["performance_assessment"]["score_semantics"], "measurement_evidence_quality")
+            self.assertIsNone(action["performance_assessment"]["technical_score_0_to_100"])
+        self.assertEqual(result["final_demo_score"]["evaluated_action_count"], 1)
+        self.assertEqual(result["final_demo_score"]["total_action_count"], 3)
         self.assertTrue(all(action["summary_zh"] for action in result["actions"]))
         self.assertEqual(
             result["actions"][0]["amplitudes"][0]["median_value"], 15.0
@@ -274,22 +303,36 @@ class UserDemoResultTests(unittest.TestCase):
                 "stance_width_body",
             ),
             "FS02": (
+                "body_center_speed_body_s",
                 "first_step_displacement_body",
                 "launch_foot_speed_peak_body_s",
                 "launch_foot_motion_duration_ms",
             ),
             "FS09": (
+                "hip_center_speed_body_s",
                 "hip_center_speed_drop_body_s",
                 "left_knee_flexion_change_deg",
                 "stability_duration_ms",
             ),
         }
         records = []
+        measured_feature_by_indicator = {
+            "FS01-M02": "stance_width_body", "FS01-M03": "bilateral_foot_rise_min_body",
+            "FS01-M04": "post_slowdown_stance_width_body", "FS01-M05": "body_center_speed_body_s",
+            "FS02-M02": "body_center_speed_body_s", "FS02-M03": "launch_direction_deg",
+            "FS02-M04": "launch_foot_speed_peak_body_s", "FS02-M05": "first_step_displacement_body",
+            "FS09-M01": "hip_center_speed_body_s", "FS09-M02": "left_ankle_speed_body_s",
+            "FS09-M03": "hip_center_speed_drop_body_s", "FS09-M04": "stability_duration_ms",
+            "FS09-M05": "stability_duration_ms",
+        }
         for event_code, metric_codes in indicator_ids.items():
             for index, metric_code in enumerate(metric_codes):
-                features = []
+                features = [{
+                    "feature_name": measured_feature_by_indicator[f"{event_code}-{metric_code}"],
+                    "value": 1.0, "valid": True,
+                }]
                 if index == 0:
-                    features = [
+                    features += [
                         {"feature_name": name, "value": 1.0, "valid": True}
                         for name in feature_names[event_code]
                     ]
@@ -313,6 +356,44 @@ class UserDemoResultTests(unittest.TestCase):
         )
         self.assertFalse(result["formal_scoring"]["available"])
         self.assertIsNone(result["formal_scoring"]["grade"])
+
+    def test_measured_status_without_valid_features_never_creates_reference_scores(self) -> None:
+        records = [self._record("FS01-M02", "FS01"), self._record("FS02-M02", "FS02")]
+        result = build_user_demo_result(self._summary(), records)
+        self.assertFalse(result["training_evaluation"]["available"])
+        self.assertIsNone(result["training_evaluation"]["score_0_to_100"])
+        for key in ("final_demo_score", "analysis_quality", "display_score"):
+            self.assertIsNone(result[key]["value_0_to_100"])
+        for action in result["actions"]:
+            self.assertIsNone(action["formation_assessment"]["reference_score_0_to_100"])
+
+    def test_invalid_records_cannot_inflate_compatibility_scores_in_a_mixed_report(self) -> None:
+        valid = {
+            **self._record("FS01-M03", "FS01", features=[{
+                "feature_name": "bilateral_foot_rise_min_body", "value": 0.12, "valid": True,
+            }]),
+            "video_id": "video", "person_track_id": 1,
+        }
+        wrong_family = self._record("FS01-M02", "FS02", features=[{
+            "feature_name": "stance_width_body", "value": 0.8, "valid": True,
+        }])
+        conflicting = {
+            **self._record("FS01-M02", "FS01", features=[{
+                "feature_name": "stance_width_body", "value": 0.4, "valid": True,
+            }]),
+            "video_id": "video", "person_track_id": 1,
+        }
+        conflict_copy = {**conflicting, "features": [{
+            "feature_name": "stance_width_body", "value": 0.8, "valid": True,
+        }]}
+        baseline = build_user_demo_result(self._summary(), [valid])
+        mixed = build_user_demo_result(self._summary(), [
+            valid, wrong_family, conflicting, conflict_copy, self._record("FS02-M02", "FS02"),
+        ])
+        for key in ("final_demo_score", "analysis_quality", "display_score"):
+            self.assertEqual(mixed[key], baseline[key])
+        self.assertEqual(mixed["actions"][0]["amplitudes"], baseline["actions"][0]["amplitudes"])
+        self.assertEqual(mixed["actions"][0]["measured_indicator_count"], 1)
 
     def test_unknown_indicator_ids_cannot_inflate_demo_scores_or_amplitudes(self) -> None:
         summary = self._summary()
@@ -346,9 +427,9 @@ class UserDemoResultTests(unittest.TestCase):
         self.assertEqual(first_action["amplitudes"], [])
         self.assertEqual(
             first_action["formation_assessment"]["reference_score_0_to_100"],
-            30,
+            None,
         )
-        self.assertEqual(result["final_demo_score"]["value_0_to_100"], 10)
+        self.assertIsNone(result["final_demo_score"]["value_0_to_100"])
         self.assertEqual(
             result["analysis_quality"]["components"][
                 "measured_unique_indicator_ratio_percent"
@@ -379,7 +460,7 @@ class UserDemoResultTests(unittest.TestCase):
         self.assertIn("action.performance_assessment", javascript)
         self.assertIn("action.indicator_evaluations", javascript)
         self.assertIn('new URLSearchParams(window.location.search).get("job_id")', javascript)
-        self.assertIn('/assets/user-demo.js?v=1.2.0', html)
+        self.assertIn('/assets/user-demo.js?v=1.4.0', html)
         self.assertNotIn('scoring-loop-report.html', javascript)
         self.assertNotIn('analysis-report.html', javascript)
         self.assertIn("restoreSavedBatch", javascript)
