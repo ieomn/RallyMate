@@ -188,7 +188,7 @@ test("summary import with zero footwork keeps rotation measurements and exports 
   assert.equal(backup.result.action_recognition.motion_analysis.families.serve.episodes[0].metrics.wrist_path_torso, 1.75);
   assert.equal(backup.result.measurement_update_required, true);
   const screenSource = fs.readFileSync(new URL("../app/ScoreLab.tsx", import.meta.url), "utf8");
-  assert.match(screenSource, /const showLegacy = scoreContext === "demo";/);
+  assert.match(screenSource, /<LiveResults\b[^>]*result=\{evidence\.result\s*\?\?\s*null\}/);
   assert.match(screenSource, /const importedResult = measurementResultFromSummary\(summary\)/);
 });
 

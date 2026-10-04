@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./product-workspace.css";
+import "./product-report.css";
+import "./product-analysis.css";
 
 export const metadata: Metadata = {
-  title: "RallyMate · 训练报告",
-  description: "回看网球训练视频，查看测量证据参考分、步伐与转体的复核重点。",
+  title: "RallyMate · 网球训练空间",
+  description: "记录每一次练习。上传网球视频，回看关键动作，让下一次训练更有方向。",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 

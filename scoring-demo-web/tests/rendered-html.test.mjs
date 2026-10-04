@@ -6,20 +6,21 @@ async function worker() { const url = new URL(workerUrl); url.searchParams.set("
 const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
 const ctx = { waitUntil() {}, passThroughOnException() {} };
 
-test("renders the public training journal with upload first and the offline sample folded", async () => {
+test("renders the public workspace overview with usable navigation and an honest empty history", async () => {
   const app = await worker();
   const response = await app.fetch(new Request("https://app.example.com/", { headers: { accept: "text/html" } }), env, ctx);
   assert.equal(response.status, 200); assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   assert.equal(response.headers.get("www-authenticate"), null);
   const html = await response.text();
-  assert.match(html, /YOUR PRACTICE, IN FOCUS/);
-  assert.match(html, /每次练习，都看见一点进步/); assert.match(html, /分析新视频/); assert.match(html, /最近报告/); assert.match(html, /导入报告/);
-  assert.match(html, /<details class="report-disclosure offline-demo"><summary>/);
-  assert.match(html, /<details class="report-disclosure report-system" id="system"><summary>/);
-  assert.doesNotMatch(html, /hero-system-map|保留 COCO17 基线/);
+  assert.match(html, /RallyMate/);
+  assert.match(html, /aria-label="主导航"/); assert.match(html, /aria-label="移动主导航"/);
+  for (const label of ["训练总览", "训练记录", "视频分析", "拍摄指南"]) assert.match(html, new RegExp(label));
+  assert.match(html, /id="workspace-content"/);
+  assert.match(html, /开始新一次分析/); assert.match(html, /最近的训练/);
+  assert.match(html, /第一份训练记录，从这里开始/); assert.match(html, /上传训练视频/);
+  assert.doesNotMatch(html, /offline-demo|result-row active|score-ring|综合分|技术评分\s*[:：]?\s*\d/);
   assert.doesNotMatch(html, /analysis_context_unavailable/);
   assert.doesNotMatch(html, /没有匹配的指标/);
-  assert.match(html, /result-row active/);
 });
 
 test("catalog API exposes the five practice categories", async () => {

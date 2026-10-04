@@ -16,7 +16,7 @@ function compiledUrl(fileUrl) {
   return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
 }
 
-const { default: Viewer } = await import(compiledUrl(new URL("../app/BallTrajectoryViewer.tsx", import.meta.url)));
+const { default: Viewer, formatReplayTime, setReplayRate, toggleReplayFullscreen } = await import(compiledUrl(new URL("../app/BallTrajectoryViewer.tsx", import.meta.url)));
 const { default: LiveResults, TechniqueFamilyChip } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
 const { default: Summary } = await import(compiledUrl(new URL("../app/BallTrajectorySummary.tsx", import.meta.url)));
 const { default: MotionPanel } = await import(compiledUrl(new URL("../app/MotionAnalysisPanel.tsx", import.meta.url)));
@@ -30,23 +30,23 @@ const assessmentRows = family => catalog.techniques.filter(item => item.family =
   phase_statuses: item.phases.map(phase => ({ phase, status: "not_observed" })),
 }));
 
-test("video replay enables the reliable ball tail without points or skeleton overlays", () => {
+test("video replay starts clean with independent overlay tools folded away", () => {
   const trajectory = { status: "ready", source: { start_timestamp_ms: 0, end_timestamp_ms: 1000 }, ball: { observed: [{ timestamp_ms: 800, x: .1, y: .4, confidence: .9 }, { timestamp_ms: 840, x: .2, y: .4, confidence: .9 }] } };
   const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4" }));
   assert.match(html, /<video/);
-  assert.match(html, /data-overlay="on"/);
-  assert.match(html, /<svg/);
-  assert.doesNotMatch(html, /<circle|<polyline|player-skeleton|pose-overlay/);
-  assert.match(html, /轨迹显示设置/);
+  assert.match(html, /data-overlay="off"/);
+  assert.doesNotMatch(html, /ball-trajectory-overlay|pose-skeleton-overlay|<circle|<polyline/);
+  assert.match(html, /<details class="ball-trajectory-options"><summary><span>分析工具/);
   assert.match(html, /显示识别点/);
-  assert.match(html, /<input type="checkbox"\s*\/>显示识别点/);
-  assert.match(html, /<input type="checkbox" checked=""\s*\/>显示短缺口插值/);
-  assert.match(html, /aria-pressed="true">当前候选球路/);
+  assert.match(html, /<input type="checkbox" disabled=""\s*\/>显示识别点/);
+  assert.match(html, /<input type="checkbox" disabled="" checked=""\s*\/>显示短缺口插值/);
+  assert.ok(html.indexOf("<details") < html.indexOf("回放显示设置"));
+  assert.doesNotMatch(html, /<details[^>]*open=/);
 });
 
-test("default replay draws only the current reliable ball path", () => {
+test("enabling ball replay draws only the current reliable ball path", () => {
   const trajectory = { status: "ready", source: { start_timestamp_ms: 0, end_timestamp_ms: 1000 }, ball: { observed: [{ timestamp_ms: 800, x: .1, y: .4, confidence: .9 }, { timestamp_ms: 840, x: .2, y: .4, confidence: .9 }, { timestamp_ms: 900, x: .3, y: .4, confidence: .9 }] } };
-  const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 840 }));
+  const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 840, initialOverlays: { ball: true } }));
   assert.equal((html.match(/<polyline /g) ?? []).length, 1);
   assert.doesNotMatch(html, /<circle|30,40|player-skeleton|pose-overlay/);
 });
@@ -58,12 +58,43 @@ test("replay keeps multiple current candidates separate and clears old paths", (
     points: [{ timestamp_ms: 800, x, y: .4, confidence: .3, source: "observed" }, { timestamp_ms: 900, x: x + .1, y: .4, confidence: .3, source: "observed" }],
   }));
   const trajectory = { status: "ready", source: { start_timestamp_ms: 0, end_timestamp_ms: 2000 }, ball: { observed: [], reconstruction: { version: "1.1.0", segments } } };
-  const active = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 1000 }));
+  const active = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 1000, initialOverlays: { ball: true } }));
   assert.equal((active.match(/<polyline /g) ?? []).length, 2);
   assert.match(active, /尚未确认唯一比赛用球/);
   assert.match(active, /浅色为较低检测置信度/);
-  const expired = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 1501 }));
+  const expired = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 1501, initialOverlays: { ball: true } }));
   assert.doesNotMatch(expired, /<polyline /);
+});
+
+test("player exposes native keyboard controls and a video-relative clock without guessing duration", () => {
+  const html = renderToStaticMarkup(createElement(Viewer, { trajectory: null, videoSrc: "/video.mp4", videoTimeOriginMs: 45000 }));
+  assert.match(html, /aria-label="视频回放时间轴"/);
+  assert.match(html, /aria-valuetext="00:00，总时长 —:—"/);
+  assert.match(html, /aria-label="回放倍速"/);
+  for (const rate of [.5, .75, 1, 1.5, 2]) assert.ok(html.includes(`value="${rate}"`));
+  assert.match(html, /aria-label="全屏回放"/);
+  assert.match(html, /aria-label="播放视频"/);
+  assert.deepEqual([0, 48000, 59999, 60000, 3661000, -1, NaN].map(formatReplayTime), ["00:00", "00:48", "00:59", "01:00", "1:01:01", "00:00", "00:00"]);
+});
+
+test("playback rate changes the actual media element only for supported speeds", () => {
+  const video = { playbackRate: 1 };
+  for (const rate of [.5, .75, 1, 1.5, 2]) { assert.equal(setReplayRate(video, rate), true); assert.equal(video.playbackRate, rate); }
+  for (const rate of [0, -1, NaN, 10]) { assert.equal(setReplayRate(video, rate), false); assert.equal(video.playbackRate, 2); }
+  assert.equal(setReplayRate(null, 1), false);
+});
+
+test("fullscreen enters and exits the actual player and propagates unsupported or rejected requests", async () => {
+  const calls = [];
+  const element = { requestFullscreen: async () => calls.push("enter") };
+  const owner = { fullscreenEnabled: true, fullscreenElement: null, exitFullscreen: async () => calls.push("exit") };
+  await toggleReplayFullscreen(element, owner);
+  owner.fullscreenElement = element;
+  await toggleReplayFullscreen(element, owner);
+  assert.deepEqual(calls, ["enter", "exit"]);
+  await assert.rejects(toggleReplayFullscreen(element, { ...owner, fullscreenEnabled: false }));
+  await assert.rejects(toggleReplayFullscreen(null, owner));
+  await assert.rejects(toggleReplayFullscreen({ requestFullscreen: async () => { throw new Error("denied"); } }, owner), /denied/);
 });
 
 test("completed unsupported hit analysis has no invented hit count card or waiting message", () => {

@@ -66,11 +66,19 @@ test("report overview and timeline remain visible while calculations and process
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
   assert.match(html, /这次先关注/);
   assert.match(html, /训练时间线/);
+  assert.match(html, /class="report-timeline" id="timeline"/);
   assert.match(html, /先回看启动/);
   assert.match(html, /<details class="report-disclosure" id="rules"><summary>/);
   assert.match(html, /<details class="report-layer-details"><summary>/);
   assert.match(html, /查看局部连续测量/);
   assert.doesNotMatch(html, /<details[^>]*open=/);
+});
+
+test("an empty report still provides a real timeline navigation destination and an honest empty state", () => {
+  const html = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, catalog: null, pending: false, trajectory: null }));
+  assert.match(html, /class="report-timeline" id="timeline"/);
+  assert.match(html, /暂无可定位片段/);
+  assert.match(html, /已提供的测量仍可在测量详情中查看/);
 });
 
 test("readable export and JSON preserve new report context and independent measurements", () => {

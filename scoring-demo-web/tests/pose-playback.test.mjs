@@ -82,16 +82,20 @@ test("portrait and landscape skeletons use source aspect ratios and never draw b
   }
 });
 
-test("viewer defaults skeleton and ball controls to visible and retains old-job video without pose", () => {
+test("viewer starts without overlays and retains optional skeleton controls inside analysis tools", () => {
   const withPose = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/video.mp4", trajectory: null, posePreview: payload(), jobId: "pose-job-123", poseTimingPreserved: true }));
-  assert.match(withPose, /data-pose="on"/);
-  assert.match(withPose, /<svg class="pose-skeleton-overlay"/);
-  assert.match(withPose, /<input type="checkbox" checked=""\/>人体骨架/);
-  assert.match(withPose, /<input type="checkbox" disabled="" checked=""\/>球路/);
-  assert.ok(withPose.indexOf("回放显示设置") < withPose.indexOf("<details"));
+  assert.match(withPose, /data-pose="off"/);
+  assert.doesNotMatch(withPose, /<svg class="pose-skeleton-overlay"/);
+  assert.match(withPose, /<input type="checkbox"\/>人体骨架/);
+  assert.match(withPose, /<input type="checkbox" disabled=""\/>球路/);
+  assert.ok(withPose.indexOf("回放显示设置") > withPose.indexOf("<details"));
+  const enabled = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/video.mp4", trajectory: null, posePreview: payload(), jobId: "pose-job-123", poseTimingPreserved: true, initialOverlays: { pose: true } }));
+  assert.match(enabled, /data-pose="on"/);
+  assert.match(enabled, /<svg class="pose-skeleton-overlay"/);
   const legacy = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/video.mp4", trajectory: null, poseTimingPreserved: true }));
   assert.match(legacy, /<video/);
-  assert.match(legacy, /当前时刻暂无可靠人体姿态/);
+  assert.match(legacy, /此报告未提供人体骨架，视频仍可回放/);
+  assert.match(legacy, /<input type="checkbox" disabled=""\/>人体骨架/);
   assert.doesNotMatch(legacy, /<svg class="pose-skeleton-overlay"/);
 });
 
@@ -102,10 +106,10 @@ test("source-timed skeletons pause for unknown or constant-rate replays but allo
     assert.equal(poseReplayTimingAllowed(false, result), false);
     assert.equal(poseReplayTimingAllowed(true, result), true);
   }
-  const html = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/annotated.mp4", trajectory: null, posePreview: payload(), jobId: "pose-job-123", poseTimingPreserved: poseReplayTimingAllowed(false, manifest(false)) }));
+  const html = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/annotated.mp4", trajectory: null, posePreview: payload(), jobId: "pose-job-123", poseTimingPreserved: poseReplayTimingAllowed(false, manifest(false)), initialOverlays: { pose: true } }));
   assert.match(html, /<video/);
   assert.match(html, /data-pose="paused"/);
-  assert.match(html, /data-overlay="on"/);
+  assert.match(html, /data-overlay="off"/);
   assert.match(html, /回放时间对应尚未确认，人体骨架已暂停/);
   assert.match(html, /<input type="checkbox" disabled=""\/>人体骨架/);
   assert.doesNotMatch(html, /<svg class="pose-skeleton-overlay"/);

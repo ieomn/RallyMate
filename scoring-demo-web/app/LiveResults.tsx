@@ -112,7 +112,7 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
   return <div className="live-results" aria-live="polite" data-status={presentation.state}>
     <div className={`report-primary ${replay ? "" : "without-replay"}`}>{replay}<TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} /></div>
     <ActionTimeline result={result} motion={motionAnalysis} />
-    <details className="report-disclosure" id="rules"><summary>步伐、转体与动作测量 <span>展开查看分项、阶段与测量依据</span></summary>
+    <details className="report-disclosure" id="rules"><summary>测量详情 <span>步伐、转体与动作阶段</span></summary>
     {result && measurementWarnings(result).map(warning => <p className="measurement-warning" role="note" key={warning}>{warning}</p>)}
     <p className="report-detail-status">{presentation.title} · {presentation.description}</p>
     {analysisReport && <details className="report-layer-details"><summary>查看识别过程与指标适用性</summary><ol>{analysisReport.layers.map(layer => <li key={layer.id}><strong>{layer.label_zh}</strong><span>{({ available: "可用", partial: "部分可用", unavailable: "未提供", unknown: "未确认" } as Record<string, string>)[layer.status] ?? "未确认"}</span><p>{layer.reason_zh}</p></li>)}</ol></details>}
