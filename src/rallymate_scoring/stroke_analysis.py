@@ -13,16 +13,17 @@ import statistics
 from typing import Any
 
 from .rotation_analysis import analyze_rotation
+from .temporal_recognition import (LABELS, RuleTemporalBackend, TemporalRecognitionBackend,
+                                   _classification, build_temporal_window, samples_are_continuous,
+                                   validate_recognition, wrist_kinematics)
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v1.2.0"
+ANALYSIS_VERSION = "stroke-motion-analysis-v2.0.0"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
     "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
     "动作片段不等于确认击球；未确认球拍触球，底线场区位置也未校准。",
     "运动峰值是平滑后的二维手腕运动参考时刻，不是触球时刻；阶段边界仍需人工复核。",
 ]
-LABELS = {"forehand": "正手挥拍", "backhand": "单手反手挥拍", "two_handed_backhand": "双手反手挥拍",
-          "unclassified": "挥拍（类型待确认）", "serve_motion": "发球动作", "return_motion": "接发动作"}
 
 
 def _distance(a: tuple[float, float], b: tuple[float, float]) -> float:
@@ -52,72 +53,9 @@ def _angle(a: tuple[float, float], b: tuple[float, float], c: tuple[float, float
     return math.degrees(math.acos(max(-1, min(1, (u[0] * v[0] + u[1] * v[1]) / lengths))))
 
 
-def _axis(sample: Any) -> tuple[float, float] | None:
-    left, right = sample.points["left_shoulder"], sample.points["right_shoulder"]
-    dx, dy = right[0] - left[0], right[1] - left[1]
-    span = math.hypot(dx, dy)
-    if span < 0.3:
-        return None
-    hip_left, hip_right = sample.points["left_hip"], sample.points["right_hip"]
-    hx, hy = hip_right[0] - hip_left[0], hip_right[1] - hip_left[1]
-    hip_span = math.hypot(hx, hy)
-    if hip_span < 0.18 or (dx * hx + dy * hy) / span / hip_span < 0.65:
-        return None
-    return dx / span, dy / span
 
-
-def _classification(samples: list[Any], side: str, hand_evidence: Mapping[str, Any], family: str) -> dict[str, Any]:
-    if family == "serve":
-        return {"label": "serve_motion", "label_zh": LABELS["serve_motion"], "status": "rule_inferred",
-                "reason_zh": "已测得抛球侧手臂先抬起、持拍臂过顶及随后随挥的顺序；未确认触球。"}
-    def unknown(reason: str) -> dict[str, Any]:
-        return {"label": "unclassified", "label_zh": LABELS["unclassified"], "status": "unclassified", "reason_zh": reason}
-    if len(samples) < 5:
-        return unknown("完整的类型判定时间窗未被连续观测覆盖，保留运动测量。")
-    if hand_evidence.get("hand") != side:
-        return unknown("持拍手的独立球拍关联不足，保留挥拍测量，暂不判断正反手。")
-    axes = [_axis(sample) for sample in samples]
-    if sum(axis is not None for axis in axes) < len(samples) * 0.85:
-        return unknown("身体侧轴过于侧向或肩髋方向不一致，正反手暂不可区分。")
-    valid_axes = [axis for axis in axes if axis is not None]
-    ref = valid_axes[0]
-    if any(axis[0] * ref[0] + axis[1] * ref[1] < 0.65 for axis in valid_axes):
-        return unknown("肩部侧轴在动作中变化较大，二维画面不足以稳定区分正反手。")
-    sign = 1 if side == "right" else -1
-    projections = [sign * (sample.points[f"{side}_wrist"][0] * axis[0] + sample.points[f"{side}_wrist"][1] * axis[1])
-                   for sample, axis in zip(samples, axes) if axis is not None]
-    edge = max(2, len(projections) // 4)
-    before, after = statistics.median(projections[:edge]), statistics.median(projections[-edge:])
-    other = "left" if side == "right" else "right"
-    wrist_pairs = [(sample.points[f"{side}_wrist"], sample.points.get(f"{other}_wrist")) for sample in samples]
-    distances = [_distance(a, b) for a, b in wrist_pairs if b is not None]
-    if len(distances) < len(samples) * 0.85:
-        return unknown("另一侧手腕覆盖不足，不能判断单手或双手挥拍。")
-    coupled = sum(distance < 0.45 for distance in distances) / len(distances)
-    separated = sum(distance > 0.6 for distance in distances) / len(distances)
-    # Require a directionally coherent sweep, not a one-frame body-side crossing.
-    if before > 0.3 and after < before - 0.65 and after < 0.1 and separated >= 0.6:
-        label, reason = "forehand", "持拍手明确；手腕由持拍侧向身体另一侧运动，另一手保持分离。"
-    elif before < -0.3 and after > before + 0.65 and after > -0.1:
-        # Nearby wrists alone are insufficient: both must travel together.
-        paired = [(a, b) for a, b in wrist_pairs if b is not None]
-        delta_a = (paired[-1][0][0] - paired[0][0][0], paired[-1][0][1] - paired[0][0][1])
-        delta_b = (paired[-1][1][0] - paired[0][1][0], paired[-1][1][1] - paired[0][1][1])
-        length_a, length_b = math.hypot(*delta_a), math.hypot(*delta_b)
-        common_direction = ((delta_a[0] * delta_b[0] + delta_a[1] * delta_b[1]) / length_a / length_b
-                            if min(length_a, length_b) > 0.01 else -1)
-        if coupled >= 0.7 and length_b >= length_a * 0.5 and common_direction >= 0.7:
-            label, reason = "two_handed_backhand", "持拍手明确；双腕持续靠近并由非持拍侧向持拍侧运动。"
-        elif separated >= 0.7:
-            label, reason = "backhand", "持拍手明确；手腕由非持拍侧向持拍侧运动，双腕保持分离。"
-        else:
-            return unknown("反手方向有支持，但双腕关系不足以区分单手与双手。")
-    else:
-        return unknown("挥拍时序可测，身体侧向位移或双腕关系尚不足以可靠区分类型。")
-    return {"label": label, "label_zh": LABELS[label], "status": "rule_inferred", "reason_zh": reason}
-
-
-def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence: Mapping[str, Any]) -> dict[str, Any] | None:
+def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence: Mapping[str, Any] | None = None, *,
+             temporal_backend: TemporalRecognitionBackend | None = None) -> dict[str, Any] | None:
     side = candidate["racket_hand_candidate"]
     # Context expands preparation/follow-through, but never crosses a missing
     # wrist, identity break, implausible pose jump, or >160 ms observation gap.
@@ -125,11 +63,9 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
     segments: list[list[Any]] = [[]]
     for sample in samples:
         valid = (sample.track == candidate["person_track_id"]
-                 and all(f"{side}_{joint}" in sample.points for joint in ("wrist", "elbow")))
+                 and f"{side}_wrist" in sample.points)
         prev = segments[-1][-1] if segments[-1] else None
-        continuous = prev is None or (0 < sample.time - prev.time <= 160 and sample.selection_epoch == prev.selection_epoch
-                                      and _distance(sample.center, prev.center) / sample.scale < 0.8
-                                      and 0.65 < sample.scale / prev.scale < 1.55)
+        continuous = prev is None or samples_are_continuous(prev, sample)
         if not valid or not continuous:
             segments.append([])
         if valid:
@@ -138,86 +74,74 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
                     and segment[-1].time >= candidate["end_ms"]), [])
     if len(samples) < 7:
         return None
-    wrists = []
-    for i in range(len(samples)):
-        # Five samples and a wider central difference suppress left/right pose
-        # jitter that previously moved the motion peak into racket recovery.
-        nearby = [s.points[f"{side}_wrist"] for s in samples[max(0, i - 2):i + 3]]
-        wrists.append((statistics.median(p[0] for p in nearby), statistics.median(p[1] for p in nearby)))
-    speed = [0.0] * len(samples)
-    for i in range(1, len(samples) - 1):
-        before, after = max(0, i - 2), min(len(samples) - 1, i + 2)
-        speed[i] = _distance(wrists[before], wrists[after]) * 1000 / (samples[after].time - samples[before].time)
-    if candidate["family"] == "serve":
-        # The already ordered overhead-extension pivot is distinct from the
-        # fastest wrist motion and is visually validated for serve sequences.
-        pivot = min(range(len(samples)), key=lambda i: abs(samples[i].time - candidate["peak_ms"]))
-    else:
-        search = [i for i in range(2, len(samples) - 2)
-                  if candidate["start_ms"] - 250 <= samples[i].time <= candidate["end_ms"] + 400]
-        if not search:
-            return None
-        pivot = max(search, key=lambda i: speed[i])
-    if pivot < 2 or pivot >= len(samples) - 1:
+    # Hand ownership is scoped to this continuous local context. A distant
+    # idle section, identity reuse or the other end of the video cannot vote.
+    hand_evidence = {**racket_hand_evidence(samples), "scope": "continuous_episode_context",
+                     "start_ms": samples[0].time, "end_ms": samples[-1].time}
+    window = build_temporal_window(samples)
+    backend = temporal_backend or RuleTemporalBackend()
+    requested_backend = dict(backend.metadata())
+    fallback_reason = None
+    try:
+        prediction = backend.recognize(window, candidate, hand_evidence)
+        if prediction is not None:
+            validate_recognition(prediction, window)
+    except (ValueError, TypeError, KeyError, RuntimeError, OSError):
+        if type(backend) is RuleTemporalBackend:
+            raise
+        prediction = None
+        fallback_reason = "backend_failed_or_invalid_output"
+    if prediction is None and type(backend) is not RuleTemporalBackend:
+        # A unavailable model adapter must not erase independently observable
+        # motion. Report the actual fallback source, never pretend the model ran.
+        fallback_reason = fallback_reason or "backend_unavailable"
+        backend = RuleTemporalBackend()
+        prediction = backend.recognize(window, candidate, hand_evidence)
+    if prediction is None:
         return None
-    acceleration_window = [i for i in range(1, pivot + 1) if samples[pivot].time - samples[i].time <= 650]
-    acceleration_peak = max(acceleration_window, key=lambda i: speed[i])
-    acceleration_start = acceleration_peak
-    while acceleration_start > 1 and speed[acceleration_start - 1] > speed[acceleration_peak] * 0.35:
-        acceleration_start -= 1
-    acceleration_start = min(acceleration_start, pivot - 1)
-    preparation_start = min(range(acceleration_start + 1), key=lambda i: abs(samples[i].time - (samples[acceleration_start].time - 250)))
-    if candidate["family"] == "serve":
-        # Keep the earlier opposite-arm lift in the serve preparation instead
-        # of cropping the episode to only its last acceleration burst.
-        toss_context_start = min(range(acceleration_start + 1), key=lambda i: abs(samples[i].time - (candidate["start_ms"] - 200)))
-        preparation_start = min(preparation_start, toss_context_start)
-    preparation_complete = samples[acceleration_start].time - samples[preparation_start].time >= 100
-    # End only after observed slowdown persists for >=100 ms; a clipped input
-    # or interrupted identity must not invent a completed follow-through.
-    quiet_start = None
-    follow_end = len(samples) - 1
-    follow_complete = False
-    for i in range(pivot + 1, len(samples) - 1):
-        if samples[i].time - samples[pivot].time < 120:
-            continue
-        if speed[i] <= speed[acceleration_peak] * 0.35:
-            if quiet_start is None:
-                quiet_start = i
-            if samples[i].time - samples[quiet_start].time >= 100:
-                follow_end, follow_complete = i, True
-                break
-        else:
-            quiet_start = None
-    phases = [
-        {"phase": "preparation", "label_zh": "准备", "start_ms": samples[preparation_start].time if preparation_complete else None,
-         "end_ms": samples[acceleration_start].time if preparation_complete else None, "status": "measured" if preparation_complete else "unavailable"},
-        {"phase": "acceleration", "label_zh": "加速挥拍", "start_ms": samples[acceleration_start].time, "end_ms": samples[pivot].time, "status": "measured"},
-        {"phase": "follow_through", "label_zh": "随挥", "start_ms": samples[pivot].time if follow_complete else None,
-         "end_ms": samples[follow_end].time if follow_complete else None, "status": "measured" if follow_complete else "unavailable"},
-    ]
-    motion_peak_ms = samples[pivot].time
+    validate_recognition(prediction, window)
+    wrists, speed = wrist_kinematics(samples, side)
+    preparation_start = next(i for i, sample in enumerate(samples) if sample.time == prediction["start_ms"])
+    follow_end = next(i for i, sample in enumerate(samples) if sample.time == prediction["end_ms"])
+    phases = prediction["phases"]
+    preparation_complete = phases[0]["status"] == "measured"
+    follow_complete = phases[-1]["status"] == "measured"
+    motion_peak_ms = prediction["peak_ms"]
     analyzed_speed = speed[preparation_start:follow_end + 1]
     wrists = wrists[preparation_start:follow_end + 1]
     samples = samples[preparation_start:follow_end + 1]
-    elbow_angles = [_angle(sample.points[f"{side}_shoulder"], sample.points[f"{side}_elbow"], sample.points[f"{side}_wrist"]) for sample in samples]
-    valid_elbows = [angle for angle in elbow_angles if angle is not None]
+    elbow_angles = [_angle(sample.points[f"{side}_shoulder"], sample.points[f"{side}_elbow"], sample.points[f"{side}_wrist"])
+                    if all(f"{side}_{joint}" in sample.points for joint in ("shoulder", "elbow", "wrist")) else None
+                    for sample in samples]
+    elbow_segments: list[list[float]] = [[]]
+    for angle in elbow_angles:
+        if angle is None:
+            if elbow_segments[-1]:
+                elbow_segments.append([])
+        else:
+            elbow_segments[-1].append(angle)
+    valid_elbows = max(elbow_segments, key=len)
     filtered_elbows = [statistics.median(valid_elbows[max(0, i - 1):i + 2]) for i in range(len(valid_elbows))]
-    rotation_analysis = analyze_rotation(samples)
+    rotation_analysis = analyze_rotation(samples, phases=phases)
     metric_notes = []
     elbow_range = round(max(filtered_elbows) - min(filtered_elbows), 1) if len(valid_elbows) >= len(samples) * 0.8 else None
     if elbow_range is None:
         metric_notes.append("肘部存在明显投影缩短或遮挡，未输出肘角变化。")
     if rotation_analysis["status"] != "measured_2d":
         metric_notes.append("部分肩髋轴缺少足够连续的二维观测；投影缩短、缺测和轴跳变不跨段补全。")
-    candidate_samples = [sample for sample in samples if candidate["start_ms"] <= sample.time <= candidate["end_ms"]]
     return {
         "episode_id": candidate["candidate_id"], "family": candidate["family"], "person_track_id": candidate["person_track_id"],
         "start_ms": samples[0].time, "peak_ms": motion_peak_ms, "end_ms": samples[-1].time,
-        "candidate_peak_ms": candidate["peak_ms"], "phase_timing_status": "estimated_from_2d_motion",
+        "candidate_peak_ms": candidate["peak_ms"], "phase_timing_status": prediction["phase_timing_status"],
         "analysis_status": "complete" if preparation_complete and follow_complete else "partial",
-        "classification": _classification(candidate_samples, side, hand_evidence, candidate["family"]),
-        "method": "rule_based", "contact_confirmed": False, "racket_hand": side,
+        "classification": prediction["classification"],
+        "temporal_recognition": {"schema_version": "1.0.0", "backend": dict(backend.metadata()),
+                                 "requested_backend": requested_backend, "fallback_reason": fallback_reason,
+                                 "input_summary": window.summary(), "anchor_is_contact": False,
+                                 "classification_status": prediction["classification"]["status"],
+                                 "phase_timing_status": prediction["phase_timing_status"]},
+        "method": "rule_based" if backend.metadata().get("kind") == "deterministic_rules" else "temporal_backend",
+        "contact_confirmed": False, "racket_hand": side,
         "phases": phases,
         "metrics": {"duration_ms": samples[-1].time - samples[0].time,
                     "peak_wrist_speed_torso_per_s": round(max(analyzed_speed), 3),
@@ -226,7 +150,7 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "rotation_analysis": rotation_analysis,
         "metric_notes_zh": metric_notes + ([] if preparation_complete and follow_complete else ["连续画面尚未覆盖完整准备或随挥，缺失阶段不作补全。"]),
         "evidence": {"pose_samples": len(samples), "racket_associated_frames": candidate["evidence"]["racket_associated_frames"],
-                     "hand_evidence": dict(hand_evidence), "phase_method": "smoothed_wrist_speed_with_observed_slowdown",
+                     "hand_evidence": dict(hand_evidence), "phase_method": prediction["phase_method"],
                      "court_location_confirmed": False}, "limitations_zh": LIMITATIONS,
     }
 
@@ -280,12 +204,13 @@ def _incoming_ball_context(episode: Mapping[str, Any], serve: Mapping[str, Any],
 def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapping[int, list[Any]], *,
                           all_tracks: Mapping[int, list[Any]] | None = None,
                           context_serves: list[dict[str, Any]] | None = None,
-                          ball_observations: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+                          ball_observations: list[dict[str, Any]] | None = None,
+                          temporal_backend: TemporalRecognitionBackend | None = None) -> dict[str, Any]:
     families = {family: {"status": "insufficient_evidence", "reason_zh": "", "episodes": [], "summary": {}}
                 for family in ("baseline", "serve", "return")}
-    hands = {track: racket_hand_evidence(samples) for track, samples in primary_tracks.items()}
+    backend = temporal_backend or RuleTemporalBackend()
     for candidate in candidates:
-        episode = _episode(candidate, primary_tracks.get(candidate["person_track_id"], []), hands.get(candidate["person_track_id"], {}))
+        episode = _episode(candidate, primary_tracks.get(candidate["person_track_id"], []), temporal_backend=backend)
         if episode is not None:
             episodes = families[episode["family"]]["episodes"]
             duplicate = next((i for i, other in enumerate(episodes)
@@ -325,6 +250,6 @@ def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapp
             value["reason_zh"] = "缺少可连续关联的对手发球、来球轨迹与主球员挥拍证据，暂不能判断接发；不代表没有接发。"
         else:
             value["reason_zh"] = "当前视频未获得足够连续的" + ("发球时序" if family == "serve" else "持拍挥拍") + "证据，暂不能测量；不代表没有该动作。"
-    return {"schema_version": "1.0.0", "analysis_version": ANALYSIS_VERSION,
+    return {"schema_version": "1.1.0", "analysis_version": ANALYSIS_VERSION, "temporal_backend": dict(backend.metadata()),
             "method": "rule_based_pose_racket_temporal", "status": "available" if any(f["episodes"] for f in families.values()) else "insufficient_evidence",
             "contact_confirmed": False, "families": families, "limitations_zh": LIMITATIONS}

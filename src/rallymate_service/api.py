@@ -43,6 +43,7 @@ from rallymate_scoring.technique_assessment import (
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase
 from rallymate_service.footwork_review import load_footwork_review
+from rallymate_service.analysis_report import build_analysis_report
 from rallymate_service.user_demo import (
     UserDemoResultError,
     build_user_demo_result,
@@ -1075,6 +1076,7 @@ def create_app(
             records,
             video_id=review_video_id or job_id,
         )
+        result["analysis_report"] = build_analysis_report(result, summary=summary)
         return result
 
     @app.get("/v1/jobs/{job_id}/trajectory")

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RallyMate · 动作识别工作台",
-  description: "上传网球动作视频，查看动作候选、逐项测量与证据回放。",
+  title: "RallyMate · 训练报告",
+  description: "回看网球训练视频，查看测量证据参考分、步伐与转体的复核重点。",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 

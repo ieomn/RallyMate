@@ -11,8 +11,9 @@ from rallymate_service.training_evaluation import (
     SCORE_SEMANTICS, build_training_evaluation, validated_training_records,
 )
 from rallymate_scoring.technique_assessment import build_technique_assessment
+from rallymate_service.analysis_report import build_analysis_report
 
-USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.4.0"
+USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.5.0"
 FORMATION_SCORE_VERSION = "recognizable-motion-information-v1.2.0"
 
 _FORMATION_SCORE_WEIGHTS = {
@@ -577,7 +578,7 @@ def build_user_demo_result(
     action_recognition = technique_assessment["action_recognition"]
     hit_statistics, trajectory_analysis = _post_analysis_capabilities(summary, action_recognition)
 
-    return {
+    result = {
         "schema_version": "1.2.0",
         "result_version": USER_DEMO_RESULT_VERSION,
         "result_kind": "real_video_training_feedback_preview",
@@ -712,3 +713,5 @@ def build_user_demo_result(
             "training_evaluation_is_formal_coach_score": False,
         },
     }
+    result["analysis_report"] = build_analysis_report(result, summary=summary)
+    return result

@@ -18,8 +18,9 @@ from pathlib import Path
 import statistics
 from typing import Any
 
+from .temporal_recognition import TemporalRecognitionBackend, samples_are_continuous
 
-DETECTOR_VERSION = "pose-racket-stroke-candidates-v1.2.0"
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.0.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_POSE_GAP_MS = 160
 LIMITATIONS = [
@@ -43,6 +44,10 @@ class Sample:
     raw_scale: float | None = None
     camera_reference_epoch: int | None = None
     camera_compensated: bool = False
+    point_confidences: dict[str, float] = field(default_factory=dict)
+    timestamp_source: str | None = None
+    normalization_basis: str = "full_torso"
+    reference_points: dict[str, tuple[float, float]] = field(default_factory=dict)
 
 
 def _number(value: Any) -> float | None:
@@ -68,6 +73,23 @@ def _midpoint(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, fl
     return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
 
 
+def _normalization(points: Mapping[str, tuple[float, float]], side: str | None = None) -> tuple[tuple[float, float], float, str] | None:
+    torso = ("left_shoulder", "right_shoulder", "left_hip", "right_hip")
+    if side is None and all(name in points for name in torso):
+        center = _midpoint(points["left_shoulder"], points["right_shoulder"])
+        hips = _midpoint(points["left_hip"], points["right_hip"])
+        scale = max(_distance(center, hips), _distance(points["left_shoulder"], points["right_shoulder"]) * 0.75)
+        return (center, scale, "full_torso") if scale >= 12 else None
+    sides = (side,) if side else ("left", "right")
+    for candidate_side in sides:
+        shoulder, hip = (points.get(f"{candidate_side}_{joint}") for joint in ("shoulder", "hip"))
+        if shoulder is not None and hip is not None:
+            scale = _distance(shoulder, hip)
+            if scale >= 12:
+                return shoulder, scale, f"{candidate_side}_shoulder_{candidate_side}_torso"
+    return None
+
+
 def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
     if frame.get("timestamp_source") == "fps_fallback":
         return None
@@ -78,14 +100,10 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
         return None
     raw = {item.get("name"): point for item in pose.get("keypoints", [])
            if isinstance(item, Mapping) and (point := _point(item)) is not None}
-    torso = ("left_shoulder", "right_shoulder", "left_hip", "right_hip")
-    if any(name not in raw for name in torso):
+    normalization = _normalization(raw)
+    if normalization is None:
         return None
-    center = _midpoint(raw["left_shoulder"], raw["right_shoulder"])
-    hips = _midpoint(raw["left_hip"], raw["right_hip"])
-    scale = max(_distance(center, hips), _distance(raw["left_shoulder"], raw["right_shoulder"]) * 0.75)
-    if scale < 12:
-        return None
+    center, scale, basis = normalization
     raw_wrists = {side: raw[f"{side}_wrist"] for side in ("left", "right") if f"{side}_wrist" in raw}
     raw_scale = scale
     camera = frame.get("camera_motion")
@@ -97,15 +115,58 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
         raw = {name: (float(transform[0, 0] * x + transform[0, 1] * y + transform[0, 2]),
                       float(transform[1, 0] * x + transform[1, 1] * y + transform[1, 2]))
                for name, (x, y) in raw.items()}
-        center = _midpoint(raw["left_shoulder"], raw["right_shoulder"])
-        hips = _midpoint(raw["left_hip"], raw["right_hip"])
-        scale = max(_distance(center, hips), _distance(raw["left_shoulder"], raw["right_shoulder"]) * 0.75)
+        normalization = _normalization(raw)
+        if normalization is None:
+            return None
+        center, scale, basis = normalization
     points = {name: ((point[0] - center[0]) / scale, (point[1] - center[1]) / scale)
               for name, point in raw.items()}
     return Sample(int(timestamp), int(frame.get("index", 0)), track, center, scale, points, set(),
                   raw_wrists_px=raw_wrists, raw_scale=raw_scale,
                   camera_reference_epoch=camera.get("reference_epoch") if isinstance(camera, Mapping) else None,
-                  camera_compensated=isinstance(camera, Mapping) and camera.get("compensation_valid") is True)
+                  camera_compensated=isinstance(camera, Mapping) and camera.get("compensation_valid") is True,
+                  point_confidences={item["name"]: float(item["confidence"]) for item in pose.get("keypoints", [])
+                                     if isinstance(item, Mapping) and item.get("name") in raw},
+                  timestamp_source=frame.get("timestamp_source"), normalization_basis=basis,
+                  reference_points=raw)
+
+
+def _stabilize_partial_torso_windows(by_track: Mapping[int, list[Sample]]) -> None:
+    """Choose one genuinely observed normalization pair for a partial window.
+
+    Reusing the same observed shoulder/hip pair throughout a continuous window
+    prevents a missing contralateral point from moving the origin mid-swing.
+    No joint is reconstructed. Fully observed windows retain the original
+    bilateral scale. Without a common pair, basis changes remain hard breaks.
+    """
+    for samples in by_track.values():
+        windows: list[list[Sample]] = []
+        current: list[Sample] = []
+        for sample in samples:
+            previous = current[-1] if current else None
+            continuous = previous is None or (
+                0 < sample.time - previous.time <= MAX_POSE_GAP_MS
+                and sample.selection_epoch == previous.selection_epoch
+                and sample.camera_reference_epoch == previous.camera_reference_epoch
+                and _distance(sample.center, previous.center) / sample.scale < 0.8
+                and 0.65 < sample.scale / previous.scale < 1.55)
+            if not continuous and current:
+                windows.append(current)
+                current = []
+            current.append(sample)
+        if current:
+            windows.append(current)
+        for window in windows:
+            if all(sample.normalization_basis == "full_torso" for sample in window):
+                continue
+            side = next((side for side in ("left", "right")
+                         if all(_normalization(sample.reference_points, side) is not None for sample in window)), None)
+            if side is None:
+                continue
+            for sample in window:
+                sample.center, sample.scale, sample.normalization_basis = _normalization(sample.reference_points, side)
+                sample.points = {name: ((x - sample.center[0]) / sample.scale, (y - sample.center[1]) / sample.scale)
+                                 for name, (x, y) in sample.reference_points.items()}
 
 
 def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, Any]]) -> None:
@@ -153,11 +214,8 @@ def _smooth_segment(segment: list[Sample], side: str) -> list[tuple[float, float
 def _segments(samples: list[Sample], side: str) -> Iterable[list[Sample]]:
     segment: list[Sample] = []
     for sample in samples:
-        valid = f"{side}_wrist" in sample.points and f"{side}_elbow" in sample.points
-        continuous = not segment or (0 < sample.time - segment[-1].time <= MAX_POSE_GAP_MS
-                                    and sample.selection_epoch == segment[-1].selection_epoch
-                                    and _distance(sample.center, segment[-1].center) / sample.scale < 0.8
-                                    and 0.65 < sample.scale / segment[-1].scale < 1.55)
+        valid = f"{side}_wrist" in sample.points
+        continuous = not segment or samples_are_continuous(segment[-1], sample, max_gap_ms=MAX_POSE_GAP_MS)
         if not valid or not continuous:
             if len(segment) >= 7:
                 yield segment
@@ -262,26 +320,12 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
 
 
 def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]:
-    from .stroke_analysis import racket_hand_evidence
-
     candidates = []
     for samples in by_track.values():
-        samples.sort(key=lambda sample: sample.time)
-        separated_hand = racket_hand_evidence(samples)["hand"]
-        hand_votes = Counter(side for sample in samples for side in sample.racket_sides)
-        dominant = hand_votes.most_common(1)
-        # A box briefly near the free hand is not evidence that this hand is
-        # swinging the racket. Use repeated within-track associations when one
-        # anatomical side has clear support. This does not classify handedness.
-        supported_sides = ("left", "right")
-        if separated_hand is not None:
-            supported_sides = (separated_hand,)
-        elif dominant and dominant[0][1] >= 10:
-            side, votes = dominant[0]
-            other = "left" if side == "right" else "right"
-            if votes >= max(1, hand_votes[other]) * 2:
-                supported_sides = (side,)
-        for side in supported_sides:
+        # Both hands can produce reviewable candidates using local racket
+        # support. A track-wide vote cannot veto an observed later motion.
+        # Keep source order so a timestamp reset cannot be silently reordered.
+        for side in ("left", "right"):
             for segment in _segments(samples, side):
                 candidates.extend(_detect_segment(segment, side))
     # Suppress duplicate peaks and both-hand detections of the same motion.
@@ -304,6 +348,7 @@ def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]
 def detect_stroke_candidates(
     frames: Iterable[Mapping[str, Any]], *,
     primary_timeline: Iterable[Mapping[str, Any]] | None = None,
+    temporal_backend: TemporalRecognitionBackend | None = None,
 ) -> dict[str, Any]:
     """Read tracked motion and measurements without claiming confirmed contact.
 
@@ -384,6 +429,9 @@ def detect_stroke_candidates(
                             float(camera_transform[1, 0] * x + camera_transform[1, 1] * y + camera_transform[1, 2]))
                 ball_observations.append({"track": track, "time": int(timestamp), "point": (x, y),
                                           "camera_reference_epoch": camera.get("reference_epoch") if isinstance(camera, Mapping) else None})
+    # The dictionaries share Sample instances: normalize once before either
+    # primary detection or opponent-context detection uses their geometry.
+    _stabilize_partial_torso_windows(all_tracks)
     accepted = _detect_tracks(by_track)
     # Need the opponent's full tracked serve as context, not the primary filter.
     context_serves = [candidate for candidate in _detect_tracks(all_tracks) if candidate["family"] == "serve"] if selected is not None else []
@@ -396,7 +444,8 @@ def detect_stroke_candidates(
         "candidate_count": len(accepted), "by_family": {"baseline": counts["baseline"], "serve": counts["serve"]},
         "confirmed_contact_count": None, "candidates": accepted,
         "motion_analysis": build_motion_analysis(accepted, by_track, all_tracks=all_tracks,
-                                                  context_serves=context_serves, ball_observations=ball_observations),
+                                                  context_serves=context_serves, ball_observations=ball_observations,
+                                                  temporal_backend=temporal_backend),
         "diagnostics": {"frame_count": frame_count, "valid_pose_samples": valid_samples, "track_count": len(by_track)},
         "count_semantics": "reviewable_motion_candidates_not_hits_or_confirmed_ball_racket_contacts",
         "limitations_zh": LIMITATIONS,

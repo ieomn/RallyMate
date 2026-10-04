@@ -154,6 +154,7 @@ export interface JobProgress extends JobSubmission {
 }
 
 export interface DemoResultResponse {
+  analysis_report?: AnalysisReport;
   footwork_review?: FootworkReview;
   action_recognition?: { motion_analysis?: MotionAnalysis; [key: string]: unknown };
   training_evaluation?: TrainingEvaluation;
@@ -185,6 +186,25 @@ export interface DemoResultResponse {
   [key: string]: unknown;
 }
 
+export interface AnalysisReport {
+  version: "training-report-v1.0.0";
+  headline_zh: string;
+  score_semantics: "measurement_evidence_quality";
+  reference_score_0_to_100: number | null;
+  technical_score_0_to_100: null;
+  recommendation_semantics: "evidence_linked_review_and_capture_not_technical_error_diagnosis";
+  focus_areas: Array<{ id: string; title_zh: string; summary_zh: string; basis_zh: string; kind: "review" | "capture"; status: "available" | "partial" | "unavailable"; start_ms: number | null; end_ms: number | null; metric_ids: string[]; is_technical_error_diagnosis: false }>;
+  layers: Array<{ id: string; label_zh: string; status: string; reason_zh: string; source: string }>;
+  measurement_summary: { measured_indicator_count: number; footwork_measured_feature_instances: number; footwork_missing_feature_instances: number; rotation_measured_metric_instances: number; rotation_local_window_count: number; scope: "returned_replay_episodes"; is_truncated: boolean };
+}
+
+export interface IndependentFootworkMeasurement {
+  feature_name: string; name_zh: string; value: number | null; unit: string | null; confidence: number | null;
+  status: "measured" | "unavailable"; reason_codes: string[]; reason_zh: string; review_hint_zh: string;
+  window: { start_ms: number; end_ms: number; scope: "event_interval" };
+  feature_version: string | null; required_joints: string[]; view_semantics: "image_plane_proxy" | "independent_target_context";
+}
+
 export interface MotionEpisode {
   episode_id: string;
   family: "baseline" | "serve" | "return";
@@ -207,6 +227,8 @@ export interface MotionEpisode {
 }
 
 export interface RotationAnalysis {
+  local_windows?: RotationWindow[];
+  phase_measurements?: RotationWindow[];
   status: "measured_2d" | "partial" | "unavailable";
   is_3d_rotation: false;
   is_formal_coach_score: false;
@@ -214,6 +236,11 @@ export interface RotationAnalysis {
   score_status: "calibration_required" | "insufficient_evidence";
   metric_evidence: Record<string, { status: string; coverage_fraction: number; valid_samples?: number; total_samples?: number; start_ms?: number | null; end_ms?: number | null; reason_zh?: string }>;
   limitations_zh?: string[];
+}
+
+export interface RotationWindow {
+  window_id?: string; axis?: string; phase?: string; label_zh?: string; status?: string;
+  start_ms: number; end_ms: number; metrics: MotionEpisode["metrics"]; metric_evidence: RotationAnalysis["metric_evidence"];
 }
 
 export interface FootworkReview {
@@ -228,6 +255,7 @@ export interface FootworkReview {
     event_id: string; event_code: string; name_zh: string; person_track_id: number;
     start_ms: number; end_ms: number;
     indicators: Array<{ indicator_id: string; name_zh: string; feature_status: string; scoring_status: string;
+      measurements?: IndependentFootworkMeasurement[]; measurement_status?: "measured" | "partial" | "unavailable";
       features: Array<{ feature_name: string; name_zh?: string; value: number | null; unit: string | null; confidence: number | null }>;
     }>;
   }>;

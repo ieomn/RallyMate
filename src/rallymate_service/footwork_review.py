@@ -24,6 +24,7 @@ MAX_EVENT_FILE_BYTES = 16 * 1024 * 1024
 MAX_EVENTS = 5000
 MAX_INDICATOR_RECORDS = MAX_EVENTS * 13
 MAX_RETURNED_EPISODES = 300
+REVIEW_VERSION = "footwork-independent-measurements-v1.1.0"
 _EVENT_NAMES = {
     "FS01": "准备与分腿垫步",
     "FS02": "第一步启动",
@@ -38,6 +39,7 @@ _REASON_LABELS = {
     "no_valid_event_intervals": "没有与本次视频身份匹配且时间区间有效的步伐事件，暂不能定位回放。",
 }
 _EXTRA_FEATURE_LABELS = {
+    "shoulder_hip_angular_velocity": "肩髋相对投影角速度",
     "hip_center_y_body": "髋中心相对脚踝高度",
     "hip_center_relative_to_ankle_support": "髋中心相对支撑区域位置",
     "hip_center_vertical_velocity_body_s": "髋中心上移速度",
@@ -60,7 +62,8 @@ _EXTRA_FEATURE_LABELS = {
 
 def _empty(reason: str) -> dict[str, Any]:
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
+        "review_version": REVIEW_VERSION,
         "status": "unavailable",
         "reason": reason,
         "reason_zh": _REASON_LABELS.get(reason, "步伐逐段复核暂不可用。"),
@@ -68,6 +71,8 @@ def _empty(reason: str) -> dict[str, Any]:
         "episode_count": 0,
         "returned_episode_count": 0,
         "is_truncated": False,
+        "measurement_summary": {"measured_feature_count": 0, "unavailable_feature_count": 0,
+                                "partial_indicator_count": 0, "measured_indicator_count": 0},
         "limitations_zh": [
             "步伐事件是视频运动代理片段，不代表真实脚步数、击球次数或正式技术等级。",
             "身体尺度归一化数值不是米制距离；脚部运动代理不等于实际离地、触地或受力。",
@@ -117,9 +122,10 @@ def _unique_by_key(rows: Iterable[Mapping[str, Any]], key: str) -> tuple[dict[st
     return selected, len(conflicts)
 
 
-def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, Any]]:
+def _feature_candidates(record: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     raw_features = record.get("features")
-    candidates = list(raw_features) if isinstance(raw_features, list) else []
+    candidates = [item for item in raw_features if isinstance(item, Mapping)
+                  and item.get("feature_name") != "target_direction_alignment_error_deg"] if isinstance(raw_features, list) else []
     scoring_features = record.get("scoring_features")
     gate = record.get("quality_gate")
     # Independent target-direction evidence is present only in the scoring
@@ -129,6 +135,11 @@ def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, An
             and record.get("scoring_feature_status") == "measured"
             and (not isinstance(gate, Mapping) or gate.get("scoring_allowed") is True)):
         candidates.extend(scoring_features)
+    return [item for item in candidates if isinstance(item, Mapping)]
+
+
+def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, Any]]:
+    candidates = _feature_candidates(record)
     allowed = _INDICATOR_FEATURES[indicator_id][1]
     selected, _ = _unique_by_key(
         (item for item in candidates if isinstance(item, Mapping)), "feature_name"
@@ -152,6 +163,89 @@ def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, An
             "value": value,
             "unit": unit,
             "confidence": confidence,
+        })
+    return result
+
+
+def _reason_text(code: str) -> tuple[str, str]:
+    if code in {"feature_record_missing", "required_feature_missing"}:
+        return "该项没有独立测量记录。", "回放所列区间，确认所需关节可见；重新分析后查看该项证据。"
+    if code in {"conflicting_feature_records", "invalid_feature_payload", "record_status_invalid"}:
+        return "该项记录无效或互相冲突，未采用数值。", "重新分析当前视频；不要使用冲突记录推断动作质量。"
+    if "camera" in code:
+        return "该区间的相机补偿未通过验证。", "使用固定机位，或选择相机补偿连续有效的区间再比较。"
+    if "phase" in code or "restabilization" in code or "event_edge" in code:
+        return "该项所需的阶段边界或稳定区间证据不足。", "保留启动前和动作结束后的画面，复核对应阶段是否完整。"
+    if "track" in code or "id_switch" in code or "identity" in code:
+        return "该项所在区间的主体连续性未通过验证。", "按时间窗确认始终跟踪同一名球员，再复核测量。"
+    if "direction" in code or "target" in code:
+        return "该项所需的独立目标方向未确认。", "先标定目标方向；画面内移动方向不能直接当作战术选择是否正确。"
+    if "body_scale" in code:
+        return "身体尺度基准不足，不能可靠地归一化距离。", "保留躯干与下肢的完整画面，避免严重透视缩短。"
+    if "sample" in code or "fraction" in code or "joint" in code or "confidence" in code:
+        return "该项所需的有效关键点或连续样本不足。", "让所需关节在区间内持续可见；其他已测项仍可单独复核。"
+    if code == "measurement_gate_blocked":
+        return "该项未通过原始测量质量门槛。", "复核本区间的主体、关键点和阶段证据后再分析。"
+    return "该项未满足独立测量条件。", "结合该项原因和时间窗复核；缺测不能解释为动作错误。"
+
+
+def _measurements(record: Mapping[str, Any], indicator_id: str, event: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Expose valid sibling features without changing aggregate/scoring gates.
+
+    ``feature_status`` historically means *all* required functions were valid.
+    A missing knee must not suppress an independently valid ankle distance.
+    A measurement hard gate, conflicting duplicate or bad numeric payload
+    still invalidates the feature; the aggregate score path remains unchanged.
+    """
+    candidates = _feature_candidates(record)
+    selected, _ = _unique_by_key(candidates, "feature_name")
+    present = {_identity(item.get("feature_name")) for item in candidates}
+    raw_gate = record.get("quality_gate")
+    gate = raw_gate if isinstance(raw_gate, Mapping) else {}
+    gate_allowed = raw_gate is None or (isinstance(raw_gate, Mapping) and gate.get("measurement_allowed") is True)
+    result = []
+    for name in _INDICATOR_FEATURES[indicator_id][1]:
+        feature = selected.get(name)
+        definition = FEATURE_DEFINITIONS.get(name, {})
+        expected_unit = "deg" if name == "target_direction_alignment_error_deg" else definition.get("unit")
+        reasons = []
+        if not gate_allowed:
+            flags = gate.get("hard_fail_flags")
+            if isinstance(flags, list):
+                reasons.extend(flag for flag in flags if _identity(flag))
+            if not reasons:
+                reasons.append("measurement_gate_blocked")
+        if record.get("feature_status") not in {"measured", "unavailable"}:
+            reasons.append("record_status_invalid")
+        if feature is None:
+            reasons.append("conflicting_feature_records" if name in present else "feature_record_missing")
+        else:
+            if feature.get("valid") is not True:
+                reasons.append(_identity(feature.get("reason")) or "required_feature_missing")
+            elif (not _finite(feature.get("value")) or not _finite(feature.get("confidence"))
+                    or not 0 <= feature["confidence"] <= 1 or feature.get("unit") != expected_unit):
+                reasons.append("invalid_feature_payload")
+        if name == "target_direction_alignment_error_deg" and feature is None:
+            reasons.append("target_direction_not_observed")
+        measured = not reasons
+        reason_zh, hint = _reason_text(reasons[0]) if reasons else (
+            "该特征通过自身测量检查，可独立查看；数值不表示动作好坏。", None,
+        )
+        source_frames = feature.get("source_frames", []) if feature else []
+        source_frames = sorted(set(value for value in source_frames if _integer(value))) if isinstance(source_frames, list) else []
+        result.append({
+            "feature_name": name, "name_zh": _EXTRA_FEATURE_LABELS.get(name, _FEATURE_LABELS.get(name, name)),
+            "value": feature["value"] if measured else None, "unit": expected_unit,
+            "confidence": feature["confidence"] if measured else None,
+            "status": "measured" if measured else "unavailable", "reason_codes": list(dict.fromkeys(reasons)),
+            "reason_zh": reason_zh, "review_hint_zh": hint,
+            "window": {"start_ms": event["start_ms"], "end_ms": event["end_ms"], "scope": "event_interval"},
+            "source_frames": source_frames,
+            "feature_version": _identity(feature.get("feature_version")) if feature else None,
+            "review_version": REVIEW_VERSION, "required_joints": list(definition.get("required_joints", [])),
+            "view_semantics": "independent_target_context" if name == "target_direction_alignment_error_deg" else "image_plane_proxy",
+            "view_label_required": False,
+            "aggregate_feature_status": record.get("feature_status"),
         })
     return result
 
@@ -219,12 +313,19 @@ def build_footwork_review(
             scoring_status = status if isinstance(status, str) and status in {"scored", "calibration_required", "unavailable"} else "unavailable"
             if not measured or not features or gate.get("scoring_allowed") is False:
                 scoring_status = "unavailable"
+            measurements = _measurements(record, indicator_id, event)
+            measured_count = sum(item["status"] == "measured" for item in measurements)
+            measurement_status = "measured" if measured_count == len(measurements) else "partial" if measured_count else "unavailable"
             indicators.append({
                 "indicator_id": indicator_id,
                 "name_zh": str(cards.get(indicator_id, {}).get("name") or indicator_id),
                 "feature_status": "measured" if measured and features else "unavailable",
                 "scoring_status": scoring_status,
                 "features": features,
+                "measurements": measurements,
+                "measurement_status": measurement_status,
+                "measured_feature_count": measured_count,
+                "expected_feature_count": len(measurements),
             })
         episodes.append({
             "event_id": event_id,
@@ -238,6 +339,7 @@ def build_footwork_review(
         })
     episodes.sort(key=lambda event: (event["start_ms"], event["end_ms"], event["event_id"]))
     result = _empty("no_valid_event_intervals")
+    all_indicators = [item for episode in episodes for item in episode["indicators"]]
     result.update({
         "status": "available" if episodes else "unavailable",
         "reason": None if episodes else "no_valid_event_intervals",
@@ -248,6 +350,13 @@ def build_footwork_review(
         "is_truncated": len(episodes) > MAX_RETURNED_EPISODES,
         "rejected_event_count": rejected_events,
         "rejected_indicator_count": rejected_records,
+        "measurement_summary": {
+            "measured_feature_count": sum(item["measured_feature_count"] for item in all_indicators),
+            "unavailable_feature_count": sum(item["expected_feature_count"] - item["measured_feature_count"] for item in all_indicators),
+            "partial_indicator_count": sum(item["measurement_status"] == "partial" for item in all_indicators),
+            "measured_indicator_count": sum(item["measurement_status"] == "measured" for item in all_indicators),
+            "scope": "all_bound_episodes_including_truncated",
+        },
     })
     return result
 

@@ -47,7 +47,7 @@ test("action candidates preserve time intervals without turning swings into cont
 });
 
 test("terminal analysis states never retain pending recognition messages", () => {
-  for (const status of ["failed", "cancelled", "unsupported", "succeeded"]) {
+  for (const status of ["failed", "cancelled", "unsupported"]) {
     const state = analysisPresentation({ result: null, pending: true, status, error: status === "failed" ? "worker stopped" : null });
     assert.notEqual(state.state, "pending");
     assert.doesNotMatch(state.emptyTitle, /等待|进行中/);
@@ -55,6 +55,20 @@ test("terminal analysis states never retain pending recognition messages", () =>
   assert.equal(analysisPresentation({ result: null, pending: true, status: "queued" }).title, "视频已进入分析队列");
   assert.equal(analysisPresentation({ result: { status: "ready" }, pending: false }).state, "complete");
   assert.equal(analysisPresentation({ result: null, pending: false }).state, "idle");
+});
+
+test("completed jobs stay in report-reading state until fetch finishes and retain real failure semantics", () => {
+  for (const status of ["completed", "succeeded"]) {
+    const reading = analysisPresentation({ result: null, pending: true, status });
+    assert.equal(reading.state, "pending");
+    assert.match(reading.title, /正在读取训练报告/);
+    assert.doesNotMatch(reading.description, /暂不可用|重新读取/);
+    assert.equal(analysisPresentation({ result: { status: "ready" }, pending: false, status }).state, "complete");
+    assert.equal(analysisPresentation({ result: null, pending: false, status }).state, "unavailable");
+    const failed = analysisPresentation({ result: null, pending: false, status, error: "读取报告失败，可继续读取结果" });
+    assert.equal(failed.state, "error");
+    assert.match(failed.description, /读取报告失败/);
+  }
 });
 
 test("stats never infer a hit count from detections or action segments", () => {

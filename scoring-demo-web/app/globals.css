@@ -514,3 +514,241 @@ footer .brand small { color: rgba(255,255,255,.35); }
 .measurement-overview{min-width:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;background:var(--surface,#f4f7f5);border-radius:16px}.measurement-overview strong{font-size:36px;line-height:1.2}.measurement-overview small,.measurement-overview p{font-size:12px;color:var(--muted,#67736d)}
 
 .measurement-warning{padding:14px 18px;border:1px solid #e0bb75;border-radius:10px;background:#fff8e8;color:#715117;font-size:14px;line-height:1.65}
+
+/* Training journal: replay and next steps lead; evidence opens on demand. */
+.practice-app { --paper:#f4f6f2; --paper-2:#e9eee7; --white:#fff; --ink:#193329; --ink-2:#284b3a; --muted:#6d7c72; --line:#dfe6dd; --lime:#d4ed83; --lime-deep:#6d8933; background:var(--paper); }
+.practice-app .topbar { height:76px; background:#fff; padding:0 max(24px,calc((100vw - 1320px)/2)); border-color:var(--line); position:relative; overflow:visible; }
+.practice-app .brand-mark { border-radius:12px; transform:none; width:42px; height:42px; color:#e2f4a6; background:#234936; font-size:14px; }
+.practice-app .brand strong { font-size:20px; letter-spacing:-.8px; }
+.practice-app .brand small { font-size:7px; letter-spacing:1.5px; }
+.practice-app .topnav { gap:28px; color:var(--muted); }
+.report-top-actions { display:flex; align-items:center; gap:20px; flex-shrink:0; }
+.report-top-actions .primary-button { width:auto; white-space:nowrap; flex-shrink:0; }
+.practice-app .primary-button { background:#244d38; color:#fff; border-color:#244d38; border-radius:9px; min-height:40px; padding:0 18px; font-weight:600; }
+.practice-app .primary-button:hover { background:#34634a; transform:none; }
+.practice-app .ghost-button { border-color:#cbd6c9; border-radius:8px; color:#365943; min-height:40px; font-weight:500; font-size:12px; }
+.practice-content { max-width:1320px; padding:0 24px; margin:auto; }
+.report-title { padding:34px 0 24px; display:flex; justify-content:space-between; align-items:center; gap:20px; scroll-margin-top:20px; }
+.report-title .card-kicker { font-size:9px; color:#82907b; letter-spacing:1.8px; }
+.report-title h1 { margin:9px 0 8px; font-size:clamp(26px,3.2vw,38px); line-height:1.35; font-weight:650; letter-spacing:-1.2px; }
+.report-title p { font-size:13px; color:var(--muted); margin:0; overflow-wrap:anywhere; }
+.has-report .report-title { padding:19px 0 18px; }
+.has-report .report-title h1 { font-size:30px; margin:6px 0; }
+.has-report .report-title .card-kicker { font-size:8px; }
+.has-report .report-upload:not([open]) { display:none; }
+.report-import { white-space:nowrap; color:#43634a; font-size:12px; cursor:pointer; padding:8px 0; border:0; background:none; }
+.report-history { position:relative; z-index:10; }
+.report-history > summary { cursor:pointer; font-size:12px; list-style:none; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.report-history-menu { position:absolute; top:34px; right:0; width:300px; max-height:400px; overflow:auto; border:1px solid var(--line); box-shadow:0 16px 40px #183a2520; border-radius:12px; background:white; padding:16px; }
+.report-history-menu > strong { font-size:11px; color:var(--muted); }
+.report-history-menu button { display:flex; justify-content:space-between; width:100%; text-align:left; gap:12px; padding:14px 0; border:0; border-bottom:1px solid var(--line); background:none; cursor:pointer; }
+.report-history-menu button span { font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.report-history-menu small { white-space:nowrap; color:var(--muted); font-size:10px; }
+.report-history-menu p { font-size:12px; line-height:1.7; color:var(--muted); }
+.report-upload { border:1px solid var(--line); border-radius:12px; background:#fff; margin:0 0 22px; overflow:hidden; }
+.report-upload > summary { display:flex; align-items:center; gap:18px; cursor:pointer; padding:15px 20px; font-size:13px; font-weight:600; list-style:none; }
+.report-upload > summary::after { content:"＋"; margin-left:auto; font-size:18px; color:#68805f; }
+.report-upload[open] > summary::after { content:"−"; }
+.report-upload > summary > span { font-size:11px; font-weight:400; color:var(--muted); }
+.practice-app .upload-section { margin:0; padding:24px 32px 32px; gap:48px; max-width:none; grid-template-columns:.85fr 1.15fr; }
+.practice-app .upload-copy h2 { font:650 30px/1.5 var(--sans); margin:12px 0; letter-spacing:-1px; }
+.practice-app .upload-copy p { font-size:13px; max-width:380px; line-height:1.9; }
+.capture-tips { display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:#68815d; margin-top:24px; }
+.practice-app .upload-card { background:#f8faf5; border:1px solid var(--line); border-radius:12px; padding:18px; }
+.practice-app .dropzone { border:1px dashed #b8c6ad; border-radius:8px; min-height:146px; background:#fff; }
+.practice-app .upload-icon { background:#edf4e5; color:#5c7941; border-radius:12px; width:38px; height:38px; font-size:23px; }
+.practice-app .dropzone strong { max-width:100%; overflow-wrap:anywhere; font-size:13px; }
+.practice-app .upload-footnote { font-size:10px; line-height:1.7; color:var(--muted); }
+.practice-app .upload-submit { margin-top:12px; }
+.practice-app .progress-block { color:var(--ink); }
+.report-primary { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(330px,1fr); gap:24px; align-items:start; }
+.report-primary.without-replay { grid-template-columns:1fr; }
+.report-primary > * { min-width:0; }
+.report-replay { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; scroll-margin-top:20px; }
+.report-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+.report-section-heading h2 { margin:5px 0 0; font-size:17px; font-weight:650; letter-spacing:-.35px; }
+.report-section-heading > span { color:var(--muted); font-size:10px; white-space:nowrap; }
+.report-replay > .report-section-heading { padding:20px 22px 18px; }
+.report-replay .ball-trajectory-stage { aspect-ratio:16/10; max-height:480px; margin-inline:auto; background:#112c22; }
+.report-replay .ball-trajectory-viewer { color:#e0e8dc; }
+.report-replay .ball-trajectory-controls { padding:13px 16px; }
+.report-replay .ball-trajectory-options { margin:0; }
+.report-replay .ball-trajectory-options summary { padding:11px 16px; font-size:10px; }
+.report-replay .ball-trajectory-limitations { font-size:10px; padding-bottom:12px; margin-bottom:0; }
+.report-replay .trajectory-view-modes { margin:0; padding:12px 14px; gap:6px; }
+.report-replay .trajectory-view-modes button { font-size:10px; padding:7px 9px; }
+.report-replay .replay-caption { color:var(--muted); font-size:11px; margin:15px 20px; line-height:1.7; }
+.report-replay-details { margin:0 20px 16px; border-top:1px solid var(--line); }
+.report-replay-details > summary { cursor:pointer; font-size:11px; padding-top:13px; color:#627557; }
+.report-replay-details > div { padding:16px; background:#173126; color:white; margin-top:12px; border-radius:8px; }
+.training-overview { display:flex; flex-direction:column; gap:20px; min-width:0; scroll-margin-top:20px; }
+.report-score { background:#eaf0e0; border:1px solid #dce5ce; padding:23px 24px 18px; border-radius:14px; }
+.report-score-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:11px; color:#617350; }
+.report-state { font-size:10px; background:#dce8cc; border-radius:14px; padding:4px 9px; }
+.report-score h2 { margin:20px 0 5px; font-size:14px; font-weight:600; }
+.has-report .report-score { padding:18px 22px 16px; }
+.has-report .report-score h2 { margin-top:13px; }
+.has-report .report-score-number strong { font-size:58px; }
+.has-report .report-score-meaning { margin:9px 0 14px; }
+.has-report .report-score-footer { padding-top:11px; }
+.has-report .training-overview { gap:16px; }
+.has-report .report-focus { padding-top:16px; }
+.has-report .report-focus-item { margin-top:15px; padding-bottom:13px; }
+.has-report .report-focus-item + .report-focus-item { padding-top:14px; margin-top:0; }
+.report-score-number { display:flex; align-items:baseline; gap:10px; }
+.report-score-number strong { color:#2a4d33; font-size:66px; letter-spacing:-3px; font-weight:650; line-height:1.1; font-variant-numeric:tabular-nums; }
+.report-score-number span { color:#71835e; font-size:14px; }
+.report-score-meaning { font-size:11px; color:#61724f; line-height:1.7; margin:12px 0 19px; }
+.report-score-footer { border-top:1px solid #cfdbbf; padding-top:14px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:10px; color:#59704c; }
+.report-focus { background:#fff; border:1px solid var(--line); padding:20px 22px 4px; border-radius:14px; }
+.report-focus .report-section-heading h2 { font-size:16px; }
+.report-focus-item { display:flex; gap:13px; margin-top:20px; padding-bottom:17px; }
+.report-focus-item + .report-focus-item { border-top:1px solid var(--line); padding-top:18px; margin-top:0; }
+.focus-index { display:grid; place-items:center; flex:0 0 28px; height:28px; background:#eef2e8; color:#6c8056; border-radius:7px; font:600 11px var(--mono); }
+.report-focus-item small { font-size:9px; color:#809074; }
+.report-focus-item h3 { margin:5px 0 7px; font-size:13px; font-weight:650; }
+.report-focus-item p { margin:0; line-height:1.8; font-size:11px; color:var(--muted); }
+.report-focus-item button { border:0; background:none; color:#456c41; font-size:11px; font-weight:600; padding:10px 0 0; cursor:pointer; }
+.report-focus-item button span { margin-left:8px; }
+.report-status-copy { margin:16px 0; font-size:12px; color:var(--muted); line-height:1.8; }
+.report-status-copy > strong { display:block; color:var(--ink); }
+.report-timeline { border:1px solid var(--line); background:#fff; border-radius:14px; padding:22px; margin:24px 0; }
+.timeline-filter { display:flex; gap:4px; background:#f0f3ed; padding:4px; border-radius:8px; }
+.timeline-filter button { border:0; background:none; color:#7d8a70; font-size:11px; padding:7px 11px; border-radius:6px; cursor:pointer; }
+.timeline-filter button[aria-pressed="true"] { background:#fff; color:#345833; box-shadow:0 1px 4px #2039150d; }
+.timeline-disclosure { font-size:10px; color:var(--muted); line-height:1.8; margin:12px 0 16px; }
+.timeline-moments { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+.timeline-moment { text-align:left; position:relative; padding:13px 12px; display:flex; flex-direction:column; gap:7px; border:1px solid #e5eadd; border-top:3px solid #a9bd83; border-radius:8px; background:#fbfcf9; cursor:pointer; min-width:0; }
+.timeline-moment.rotation { border-top-color:#a1b9bd; }
+.timeline-moment[aria-pressed="true"],.timeline-moment:hover { background:#edf4df; border-color:#a5b685; }
+.timeline-moment small { font-size:9px; color:#7d8d70; font-variant-numeric:tabular-nums; }
+.timeline-moment strong { font-size:11px; overflow-wrap:anywhere; font-weight:600; }
+.timeline-moment span { font-size:8px; color:#8a9582; line-height:1.5; }
+.timeline-moment b { position:absolute; top:10px; right:8px; color:#789065; font-size:11px; font-weight:400; }
+.timeline-pagination { display:flex; justify-content:flex-end; align-items:center; gap:16px; margin-top:14px; font-size:10px; color:var(--muted); }
+.timeline-pagination button { background:none; border:1px solid var(--line); border-radius:6px; padding:7px 10px; cursor:pointer; }
+.timeline-pagination button:disabled { opacity:.35; cursor:default; }
+.report-disclosure { border:1px solid var(--line); background:white; border-radius:12px; margin:18px 0; overflow:hidden; scroll-margin-top:20px; }
+.report-disclosure > summary { display:flex; gap:20px; padding:21px 22px; align-items:center; font-size:14px; font-weight:600; cursor:pointer; list-style:none; }
+.report-disclosure > summary > span { margin-left:auto; font-weight:400; color:var(--muted); font-size:11px; }
+.report-disclosure > summary::after { content:"＋"; color:#759067; font-size:19px; font-weight:400; }
+.report-disclosure[open] > summary::after { content:"−"; }
+.report-disclosure[open] > summary { border-bottom:1px solid var(--line); }
+.report-disclosure > .measurement-warning,.report-detail-status { margin:18px 22px; font-size:12px; line-height:1.8; }
+.report-detail-status { color:var(--muted); }
+.practice-app .live-stats { margin:20px 22px; border-radius:10px; background:#f5f7f1; color:var(--ink); border-color:var(--line); padding:18px; }
+.practice-app .live-stats-head h2 { font-size:16px; }
+.practice-app .live-stats-grid article { background:white; border:1px solid var(--line); border-radius:8px; min-height:0; }
+.practice-app .live-stats-grid article :is(span,small) { color:var(--muted); }
+.practice-app .live-stats-grid article strong { color:#557143; font-size:24px; }
+.practice-app .stats-disclosure,.practice-app .live-stats-details > summary { color:var(--muted); font-size:11px; }
+.practice-app .score-overview { padding:0 22px 18px; }
+.practice-app .module-cards { border:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.practice-app .module-card { border:1px solid var(--line); padding:16px; border-radius:9px; min-height:0; background:#fff; }
+.practice-app .module-head span { background:none; color:#47643a; padding:0; }
+.practice-app .module-head i { font-size:9px; }
+.practice-app .module-card > strong { font:600 22px var(--sans); margin:13px 0; }
+.practice-app .module-card p { margin-bottom:0; font-size:10px; }
+.practice-app .workbench { padding:24px 22px; background:#1d3329; }
+.practice-app .workbench-head { margin-bottom:22px; }
+.practice-app .workbench h2 { font:600 22px/1.4 var(--sans); letter-spacing:0; }
+.practice-app .section-number { display:none; }
+.practice-app .event-rail { gap:8px; }
+.practice-app .event-rail button { border-radius:7px; padding:12px; min-width:105px; }
+.practice-app .event-rail strong { font-size:12px; }
+.practice-app .motion-analysis-panel { padding:22px; background:#fff; border-radius:10px; }
+.practice-app .motion-analysis-heading h3 { font-size:18px; }
+.practice-app .motion-episode-heading strong { font-size:21px; }
+.practice-app .motion-metrics strong { font-size:24px; }
+.practice-app .report-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:10px 0 16px; margin:18px 0; justify-content:flex-start; }
+.practice-app .report-actions > div { flex:1; min-width:200px; }
+.practice-app .report-actions strong { font-size:13px; }
+.practice-app .report-actions p { font-size:10px; color:var(--muted); margin:6px 0; }
+.practice-app .report-actions summary { font-size:11px; cursor:pointer; }
+.practice-app .report-actions > details { flex-basis:100%; text-align:right; }
+.practice-app .coach-section { padding:24px; }
+.practice-app .coach-section h2 { font-size:20px; }
+.practice-app .coach-section .logic-heading p { font-size:12px; }
+.practice-app .coach-layout { margin-top:18px; }
+.practice-app .coach-form,.practice-app .coach-result { border-radius:9px; padding:22px; }
+.report-system-copy { padding:16px 24px 24px; }
+.report-system-copy h3 { font-size:14px; margin:12px 0 8px; }
+.report-system-copy p { font-size:12px; color:var(--muted); line-height:1.9; }
+.report-independent-counts { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; color:#758362; font-size:10px; }
+.report-independent-counts small { width:100%; font-size:9px; }
+.report-layer-details { margin:18px 22px; font-size:12px; }
+.report-layer-details > summary { cursor:pointer; color:#57734a; }
+.report-layer-details ol { list-style:none; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+.report-layer-details li { border:1px solid var(--line); padding:14px; border-radius:8px; }
+.report-layer-details li > span { color:#7b895f; float:right; font-size:10px; }
+.report-layer-details li p { font-size:11px; line-height:1.8; color:var(--muted); }
+.independent-measurements { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; margin:12px 0; }
+.independent-measurements > div { padding:14px; background:#f3f6ee; border-radius:8px; display:flex; flex-direction:column; gap:7px; }
+.independent-measurements strong { font-size:20px; color:#34523b; }
+.independent-measurements small,.independent-measurements details { color:var(--muted); font-size:11px; line-height:1.7; }
+.independent-measurements summary { cursor:pointer; margin-top:5px; }
+.rotation-window-details { margin:15px 0; border-top:1px solid #dfe6d8; padding-top:15px; font-size:12px; }
+.rotation-window-details > summary { cursor:pointer; color:#526c46; }
+.rotation-window-details > p { color:var(--muted); font-size:11px; line-height:1.8; }
+.rotation-window-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+.rotation-window-grid article { padding:15px; background:#f4f7ef; border-radius:8px; }
+.rotation-window-grid h4 { font-size:13px; margin:0 0 12px; }
+.rotation-window-grid p { color:var(--muted); font-size:11px; display:flex; justify-content:space-between; gap:10px; }
+.rotation-window-grid strong { color:#425e37; white-space:nowrap; }
+.practice-app footer { max-width:1320px; margin:30px auto 0; padding:28px 24px; border-top:1px solid var(--line); color:var(--muted); }
+.practice-app footer p,.practice-app footer > span { font-size:10px; }
+.practice-app footer .brand { transform:scale(.8); transform-origin:left; }
+@media(max-width:1080px) {
+  .practice-app .topnav { display:none; }
+  .report-primary { grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr); gap:16px; }
+  .report-focus,.report-score { padding-left:18px; padding-right:18px; }
+  .timeline-moments { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+  .practice-app .topbar { height:67px; padding:0 16px; gap:12px; }
+  .practice-app .brand strong { font-size:17px; }
+  .practice-app .brand small { display:none; }
+  .practice-app .brand-mark { width:34px; height:34px; border-radius:9px; }
+  .report-top-actions { gap:12px; }
+  .report-top-actions .primary-button { font-size:11px; min-height:35px; padding:0 12px; }
+  .report-history > summary { font-size:10px; }
+  .report-history-menu { right:-92px; width:280px; }
+  .practice-content { padding:0 16px; }
+  .report-title { padding:25px 0 20px; align-items:flex-start; gap:12px; }
+  .report-title h1 { font-size:27px; letter-spacing:-.7px; }
+  .report-title p { font-size:11px; line-height:1.7; }
+  .report-title .card-kicker { font-size:7px; }
+  .report-import { font-size:10px; }
+  .report-upload > summary { padding:14px 16px; font-size:12px; gap:10px; }
+  .report-upload > summary > span { font-size:9px; }
+  .practice-app .upload-section { padding:12px 16px 20px; grid-template-columns:1fr; gap:18px; }
+  .practice-app .upload-copy h2 { font-size:23px; }
+  .practice-app .upload-copy p { font-size:12px; }
+  .capture-tips { margin-top:12px; font-size:10px; }
+  .report-primary { grid-template-columns:1fr; }
+  .training-overview { gap:16px; }
+  .report-replay > .report-section-heading { padding:16px; }
+  .report-replay .ball-trajectory-stage { aspect-ratio:16/10; max-height:65vh; }
+  .report-score { padding:20px; }
+  .report-score-number strong { font-size:59px; }
+  .report-score h2 { margin-top:14px; }
+  .report-focus-item p { font-size:12px; }
+  .report-timeline { padding:17px; margin:18px 0; }
+  .report-timeline .report-section-heading { align-items:flex-start; flex-direction:column; gap:12px; }
+  .timeline-moments { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .timeline-moment { padding:13px 10px; }
+  .timeline-moment strong { font-size:12px; }
+  .report-disclosure > summary { padding:18px 16px; gap:12px; font-size:12px; flex-wrap:wrap; }
+  .report-disclosure > summary > span { font-size:9px; margin-left:0; flex:1; }
+  .practice-app .workbench { padding:20px 14px; }
+  .practice-app .live-stats { margin:16px 14px; padding:14px; }
+  .practice-app .live-stats-grid { grid-template-columns:1fr 1fr; }
+  .practice-app .score-overview { padding:0 14px 16px; }
+  .practice-app .module-cards { grid-template-columns:1fr; }
+  .practice-app .motion-analysis-panel { padding:16px 12px; }
+  .practice-app .motion-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .practice-app .coach-section { padding:18px 14px; }
+  .practice-app .report-actions .ghost-button { flex:1; font-size:10px; padding:0 12px; }
+  .practice-app footer { padding:22px 16px; margin-top:20px; }
+  .practice-app footer > p { display:none; }
+}

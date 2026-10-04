@@ -187,6 +187,11 @@ class ServiceTests(unittest.TestCase):
                 demo_payload = demo_result.json()
                 self.assertEqual(demo_payload["job_id"], job_id)
                 self.assertEqual(demo_payload["schema_version"], "1.2.0")
+                self.assertEqual(demo_payload["analysis_report"]["version"], "training-report-v1.0.0")
+                self.assertEqual(demo_payload["analysis_report"]["reference_score_0_to_100"],
+                                 demo_payload["training_evaluation"]["score_0_to_100"])
+                self.assertIsNone(demo_payload["analysis_report"]["technical_score_0_to_100"])
+                self.assertTrue(demo_payload["analysis_report"]["focus_areas"])
                 self.assertEqual(
                     demo_payload["training_evaluation"]["evaluation_version"],
                     "rallymate-training-evaluation-beta-v1.3.0",
@@ -356,6 +361,8 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(payload["status"], "ready")
             self.assertIsNone(payload["training_evaluation"]["score_0_to_100"])
             self.assertFalse(payload["training_evaluation"]["available"])
+            self.assertIsNone(payload["analysis_report"]["reference_score_0_to_100"])
+            self.assertEqual(payload["analysis_report"]["focus_areas"][0]["kind"], "capture")
             self.assertEqual(payload["analysis_quality"]["value_0_to_100"], None)
             self.assertFalse(payload["formal_scoring"]["available"])
             self.assertIsNone(payload["formal_scoring"]["grade"])

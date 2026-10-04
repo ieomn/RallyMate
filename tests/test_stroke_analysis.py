@@ -251,7 +251,10 @@ class StrokeMotionAnalysisTests(unittest.TestCase):
         self.assertEqual(len(episodes), 1)
         self.assertEqual(episodes[0]["classification"]["label"], "serve_motion")
         self.assertFalse(episodes[0]["contact_confirmed"])
-        self.assertGreater(episodes[0]["metrics"]["elbow_extension_deg"], 0)
+        # This synthetic serve passes through an arm-projection collapse.
+        # Separate visible elbow runs must not be stitched into a full range.
+        self.assertIsNone(episodes[0]["metrics"]["elbow_extension_deg"])
+        self.assertGreater(episodes[0]["metrics"]["wrist_path_torso"], 0)
 
     def test_analysis_peak_is_reestimated_independently_of_a_late_candidate_peak(self):
         frames = swing()
@@ -349,17 +352,21 @@ class StrokeMotionAnalysisTests(unittest.TestCase):
         timeline = [{"processed_index": i, "source_track_id": 1 if i != 28 else 2, "selection_status": "selected"} for i in range(len(frames))]
         self.assertEqual(motion(frames, timeline)["families"]["baseline"]["episodes"], [])
 
-    def test_low_confidence_torso_frame_does_not_become_a_continuous_rotation_measurement(self):
+    def test_low_confidence_shoulder_keeps_independent_hip_without_stitching_shoulder(self):
         frames = swing()
         for point in frames[28]["poses"][0]["keypoints"]:
             if point["name"] == "left_shoulder":
                 point["confidence"] = 0.1
         episode = motion(frames)["families"]["baseline"]["episodes"][0]
         rotation = episode["rotation_analysis"]
-        self.assertEqual(rotation["status"], "unavailable")
-        self.assertEqual(rotation["quality"]["temporal_break_count"], 1)
-        self.assertEqual(rotation["score_status"], "insufficient_evidence")
-        self.assertTrue(all(value is None for value in rotation["metrics"].values()))
+        self.assertEqual(rotation["status"], "partial")
+        self.assertEqual(rotation["quality"]["temporal_break_count"], 0)
+        self.assertIsNone(rotation["metrics"]["shoulder_line_change_deg"])
+        self.assertIsNone(rotation["metrics"]["shoulder_hip_separation_change_deg"])
+        self.assertEqual(rotation["metrics"]["hip_line_change_deg"], 0)
+        self.assertEqual(rotation["metric_evidence"]["shoulder_line_change_deg"]["segment_count"], 2)
+        self.assertEqual(episode["temporal_recognition"]["input_summary"]["normalization_basis"], "right_shoulder_right_torso")
+        self.assertIsNone(rotation["score"])
 
     def test_gap_and_pose_spike_do_not_create_measured_episodes(self):
         frames = [make_frame(i) for i in range(60)]

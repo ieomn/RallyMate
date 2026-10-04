@@ -6,14 +6,17 @@ async function worker() { const url = new URL(workerUrl); url.searchParams.set("
 const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
 const ctx = { waitUntil() {}, passThroughOnException() {} };
 
-test("renders the public motion analysis workspace without a login", async () => {
+test("renders the public training journal with upload first and the offline sample folded", async () => {
   const app = await worker();
   const response = await app.fetch(new Request("https://app.example.com/", { headers: { accept: "text/html" } }), env, ctx);
   assert.equal(response.status, 200); assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   assert.equal(response.headers.get("www-authenticate"), null);
   const html = await response.text();
-  assert.match(html, /MOTION ANALYSIS/);
-  assert.match(html, /上传一段击球视频/); assert.match(html, /证据回放/); assert.match(html, /逐项评分与证据回放/); assert.match(html, /基于这次练习，问一个下一步/);
+  assert.match(html, /YOUR PRACTICE, IN FOCUS/);
+  assert.match(html, /每次练习，都看见一点进步/); assert.match(html, /分析新视频/); assert.match(html, /最近报告/); assert.match(html, /导入报告/);
+  assert.match(html, /<details class="report-disclosure offline-demo"><summary>/);
+  assert.match(html, /<details class="report-disclosure report-system" id="system"><summary>/);
+  assert.doesNotMatch(html, /hero-system-map|保留 COCO17 基线/);
   assert.doesNotMatch(html, /analysis_context_unavailable/);
   assert.doesNotMatch(html, /没有匹配的指标/);
   assert.match(html, /result-row active/);

@@ -1,4 +1,4 @@
-import type { DemoResultResponse, MotionAnalysis, MotionEpisode, MotionFamily, RotationAnalysis, TechniqueAssessmentResponse } from "./api-types";
+import type { DemoResultResponse, MotionAnalysis, MotionEpisode, MotionFamily, RotationAnalysis, RotationWindow, TechniqueAssessmentResponse } from "./api-types";
 
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -8,7 +8,7 @@ const strings = (value: unknown): string[] => Array.isArray(value) ? value.filte
 export function motionAnalysisOf(result: DemoResultResponse | null, assessment?: TechniqueAssessmentResponse | null, summary?: Record<string, unknown> | null): MotionAnalysis | null {
   const recognition = record(result?.action_recognition ?? assessment?.action_recognition ?? summary?.action_recognition);
   const raw = record(recognition.motion_analysis);
-  if (raw.schema_version !== "1.0.0" || raw.contact_confirmed !== false || !raw.families) return null;
+  if (!["1.0.0", "1.1.0"].includes(String(raw.schema_version)) || raw.contact_confirmed !== false || !raw.families) return null;
   const families: MotionAnalysis["families"] = {};
   for (const family of ["baseline", "serve", "return"] as const) {
     const data = record(record(raw.families)[family]);
@@ -41,7 +41,7 @@ export function motionAnalysisOf(result: DemoResultResponse | null, assessment?:
     episodes.sort((a, b) => a.start_ms - b.start_ms);
     families[family] = { status: episodes.length ? "analyzed" : "insufficient_evidence", reason_zh: typeof data.reason_zh === "string" ? data.reason_zh : "当前视频没有满足分析条件的连续运动证据。", episodes, summary: data.summary as MotionFamily["summary"] };
   }
-  return { schema_version: "1.0.0", analysis_version: String(raw.analysis_version ?? ""), method: String(raw.method ?? ""), status: Object.values(families).some(family => family.episodes.length) ? "available" : "insufficient_evidence", contact_confirmed: false, families, limitations_zh: strings(raw.limitations_zh) };
+  return { schema_version: String(raw.schema_version), analysis_version: String(raw.analysis_version ?? ""), method: String(raw.method ?? ""), status: Object.values(families).some(family => family.episodes.length) ? "available" : "insufficient_evidence", contact_confirmed: false, families, limitations_zh: strings(raw.limitations_zh) };
 }
 
 export const MOTION_METRICS = [
@@ -76,7 +76,27 @@ export function rotationAnalysisOf(value: unknown, episode: MotionEpisode): Rota
     metric_evidence[key] = { status: measured ? "measured" : "unavailable", coverage_fraction: coverage, start_ms: measured ? Number(item.start_ms) : null, end_ms: measured ? Number(item.end_ms) : null, reason_zh: typeof item.reason_zh === "string" ? item.reason_zh : "缺少连续可测证据。" };
   }
   const count = Object.values(metric_evidence).filter(item => item.status === "measured").length;
-  return { status: count === ROTATION_METRICS.length ? "measured_2d" : count ? "partial" : "unavailable", is_3d_rotation: false, is_formal_coach_score: false, score: null, score_status: count ? "calibration_required" : "insufficient_evidence", metric_evidence, limitations_zh: strings(raw.limitations_zh) };
+  return { status: count === ROTATION_METRICS.length ? "measured_2d" : count ? "partial" : "unavailable", is_3d_rotation: false, is_formal_coach_score: false, score: null, score_status: count ? "calibration_required" : "insufficient_evidence", metric_evidence, limitations_zh: strings(raw.limitations_zh), local_windows: rotationWindowsOf(raw.local_windows, episode, "continuous_local_window"), phase_measurements: rotationWindowsOf(raw.phase_measurements, episode, "motion_phase") };
+}
+
+/** A reliable local interval remains useful even if whole-episode coverage fails. */
+function rotationWindowsOf(value: unknown, episode: MotionEpisode, scope: "continuous_local_window" | "motion_phase"): RotationWindow[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap(row => {
+    const raw = record(row);
+    if (!finite(raw.start_ms) || !finite(raw.end_ms) || raw.start_ms < episode.start_ms || raw.end_ms > episode.end_ms || raw.end_ms - raw.start_ms < 200) return [];
+    const metrics: MotionEpisode["metrics"] = {}, evidence: RotationAnalysis["metric_evidence"] = {};
+    for (const { key } of ROTATION_METRICS) {
+      const item = record(record(raw.metric_evidence)[key]), number = record(raw.metrics)[key];
+      if (item.status !== "measured" || item.scope !== scope || item.source_version !== "image-plane-rotation-v1.1.0" || item.view_semantics !== "image_plane_proxy" || item.is_3d_rotation !== false || !finite(number) || number < 0 || item.value !== number) continue;
+      if (!finite(item.start_ms) || !finite(item.end_ms) || item.start_ms < raw.start_ms || item.end_ms > raw.end_ms || item.end_ms - item.start_ms < 200 || !Number.isSafeInteger(item.continuous_samples) || Number(item.continuous_samples) < 7) continue;
+      if (!finite(item.coverage_fraction) || item.coverage_fraction < .8 || item.coverage_fraction > 1 || !finite(item.time_coverage_fraction) || item.time_coverage_fraction < .8 || item.time_coverage_fraction > 1) continue;
+      metrics[key] = number;
+      evidence[key] = { status: "measured", coverage_fraction: item.coverage_fraction, start_ms: item.start_ms, end_ms: item.end_ms, reason_zh: typeof item.reason_zh === "string" ? item.reason_zh : "连续二维观测可复核。" };
+    }
+    if (!Object.keys(metrics).length) return [];
+    return [{ window_id: typeof raw.window_id === "string" ? raw.window_id : undefined, axis: typeof raw.axis === "string" ? raw.axis : undefined, phase: typeof raw.phase === "string" ? raw.phase : undefined, label_zh: typeof raw.label_zh === "string" ? raw.label_zh : undefined, status: "measured_2d", start_ms: raw.start_ms, end_ms: raw.end_ms, metrics, metric_evidence: evidence }];
+  });
 }
 
 export function motionMetricText(value: unknown): string {
