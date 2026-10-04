@@ -5,7 +5,7 @@ const reply = (error: string, status: number) => Response.json({ error }, { stat
 export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<Response> {
   const url = new URL(request.url);
   const id = "[a-zA-Z0-9_-]{8,80}";
-  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|technique-assessment|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg)))?))$`);
+  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|pose-preview|technique-assessment|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg)))?))$`);
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
   const uploadWrite = new RegExp(`^/v1/uploads/${id}/(?:complete|chunks/[0-9]{1,6})$`);
   const uploadAllowed = (request.method === "GET" && uploadRead.test(url.pathname)) ||

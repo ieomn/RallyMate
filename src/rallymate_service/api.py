@@ -50,6 +50,7 @@ from rallymate_service.user_demo import (
     load_indicator_feature_records,
 )
 from rallymate_vision.quality import probe_video
+from rallymate_vision.pose_playback import PosePlaybackError, build_pose_playback
 from rallymate_vision.trajectory import (
     TrajectoryExtractionError,
     build_trajectory_preview,
@@ -307,6 +308,10 @@ def _public_job(
             if job.get("status") == "running" else None
         )
         public["technique_assessment_url"] = None
+    public["pose_preview_url"] = (
+        _public_url(f"/v1/jobs/{job['id']}/pose-preview", public_base_url)
+        if job.get("status") in {"running", "succeeded"} else None
+    )
     return public
 
 
@@ -362,6 +367,8 @@ def create_app(
     # A progressing job or a transition to succeeded always invalidates it.
     trajectory_cache: OrderedDict[tuple, dict] = OrderedDict()
     trajectory_cache_lock = Lock()
+    pose_cache: OrderedDict[tuple, dict] = OrderedDict()
+    pose_cache_lock = Lock()
     action_cache: OrderedDict[tuple, dict] = OrderedDict()
     action_cache_lock = Lock()
 
@@ -1154,6 +1161,49 @@ def create_app(
                     "message": _public_error_detail(str(exc), service_settings),
                 },
             ) from exc
+
+    @app.get("/v1/jobs/{job_id}/pose-preview")
+    def get_pose_preview(
+        job_id: str,
+        response: Response,
+        start_ms: int = Query(0, ge=0, description="Start of the source-video playback window."),
+        duration_ms: int = Query(10_000, ge=1, le=10_000),
+        sample_limit: int = Query(600, ge=1, le=600),
+        _: None = Depends(authorize),
+    ) -> dict:
+        """Read a bounded skeleton window without rerunning pose inference."""
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] not in {"running", "succeeded"}:
+            raise HTTPException(409, "pose playback requires a running or succeeded job")
+        frames_path = Path(job["output_dir"]) / "frames.jsonl"
+        primary_path = Path(job["output_dir"]) / "primary-player.jsonl"
+        if not frames_path.is_file():
+            raise HTTPException(409, {"code": "pose_playback_requires_frames_artifact", "required_artifact": "frames.jsonl"})
+        try:
+            def signature(path: Path) -> tuple:
+                stat = path.stat() if path.is_file() else None
+                return (str(path), stat.st_mtime_ns, stat.st_size) if stat else (str(path), None, None)
+            cache_key = (signature(frames_path), signature(primary_path), job["status"], start_ms, duration_ms, sample_limit)
+            with pose_cache_lock:
+                payload = pose_cache.get(cache_key)
+                if payload is None:
+                    payload = build_pose_playback(
+                        frames_path, primary_timeline_path=primary_path,
+                        start_ms=start_ms, duration_ms=duration_ms, sample_limit=sample_limit,
+                        allow_partial=job["status"] == "running",
+                    )
+                    payload["job_id"] = job_id
+                    pose_cache[cache_key] = payload
+                    while len(pose_cache) > 16:
+                        pose_cache.popitem(last=False)
+                pose_cache.move_to_end(cache_key)
+            response.headers["Cache-Control"] = "no-store"
+            return payload
+        except (PosePlaybackError, OSError) as exc:
+            raise HTTPException(422, {"code": "pose_playback_artifact_invalid",
+                                      "message": "Pose playback source could not be verified."}) from exc
 
     @app.get("/v1/jobs/{job_id}/technique-assessment")
     def get_technique_assessment(

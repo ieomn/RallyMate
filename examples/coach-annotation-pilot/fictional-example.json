@@ -1,0 +1,108 @@
+{
+  "template_version": "coach-annotation-pilot-supplement-v1.0.0",
+  "record_kind": "fictional_example",
+  "contains_real_annotations": false,
+  "warning": "所有编号、动作、时间和观察均为虚构演示；没有对应真实视频或教练提交。",
+  "use_restrictions": {
+    "exclude_from_training": true,
+    "exclude_from_validation": true,
+    "exclude_from_accuracy_and_calibration": true
+  },
+  "compatibility": {"direct_runtime_or_legacy_compiler_import": false},
+  "batch": {
+    "batch_id": "FICTIONAL-PILOT",
+    "protocol_version": "fictional-example-only",
+    "purpose": "format_demonstration_only",
+    "annotator_id": "FICTIONAL-COACH-A",
+    "role": "A",
+    "independent_submission": null,
+    "system_outputs_hidden": null,
+    "other_annotator_answers_hidden": null,
+    "revision": "example-1"
+  },
+  "source": {
+    "video_id": "FICTIONAL-VIDEO-NOT-A-REAL-SOURCE",
+    "original_filename": null,
+    "sha256": null,
+    "player_id": "FICTIONAL-PLAYER-001",
+    "session_id": "FICTIONAL-SESSION-001",
+    "split_group_id": "FICTIONAL-GROUP-001",
+    "target_player_description": "虚构示例：近端蓝衣球员",
+    "source_duration_ms": 20000,
+    "timebase": "original_video_timestamp_ms",
+    "coach_worksheet_time_unit": "original_video_seconds",
+    "clip_offset_ms": 10000,
+    "time_mapping_status": "illustrative_not_source_bound",
+    "source_frame_timestamp_map_reference": null
+  },
+  "review": {
+    "status": "fictional_example_only",
+    "reviewed_intervals_ms": [[10000, 16000]],
+    "full_video_review_completed": false,
+    "camera_or_identity_breaks": []
+  },
+  "events": [
+    {
+      "event_id": "FICTIONAL-A-001",
+      "source_player_id": "FICTIONAL-PLAYER-001",
+      "interval": {
+        "status": "observed",
+        "start_ms": 11200,
+        "end_ms": 14800,
+        "start_uncertainty_ms": 100,
+        "end_uncertainty_ms": 150,
+        "reason": "虚构：动作边界不是单帧可唯一确定。"
+      },
+      "completeness": "complete",
+      "action_label": {"value": "forehand", "status": "observed", "reason": "虚构：动作类别可辨认。"},
+      "racket_hand": {"value": "right", "status": "observed", "reason": "虚构：本次动作前后持拍手可见。"},
+      "backhand_style": {"value": null, "status": "not_applicable", "reason": "本例为虚构正手。"},
+      "return_of_serve": {"value": null, "status": "uncertain", "reason": "虚构：上游来球情境没有出现在片段中。"},
+      "camera_view": {"value": "oblique_rear", "status": "observed", "reason": "虚构机位类别，不是相机标定结果。"},
+      "phases": [
+        {"phase_name": "preparation", "status": "observed", "start_ms": 11200, "end_ms": 11600, "start_uncertainty_ms": 100, "end_uncertainty_ms": 80, "reason": "虚构人工阶段。"},
+        {"phase_name": "backswing", "status": "observed", "start_ms": 11600, "end_ms": 12100, "start_uncertainty_ms": 80, "end_uncertainty_ms": 80, "reason": "虚构人工阶段。"},
+        {"phase_name": "forward_swing", "status": "unobservable", "start_ms": null, "end_ms": null, "start_uncertainty_ms": null, "end_uncertainty_ms": null, "reason": "虚构：关键区间持拍臂与球拍被遮挡，无法完整确定边界。"},
+        {"phase_name": "follow_through", "status": "observed", "start_ms": 12700, "end_ms": 13400, "start_uncertainty_ms": 120, "end_uncertainty_ms": 100, "reason": "虚构：仅标可清楚观察的随挥区间；开始不是确认触球时刻。"},
+        {"phase_name": "recovery", "status": "observed", "start_ms": 13400, "end_ms": 14800, "start_uncertainty_ms": 100, "end_uncertainty_ms": 150, "reason": "虚构人工阶段。"}
+      ],
+      "contact": {
+        "status": "unobservable",
+        "timestamp_ms": null,
+        "uncertainty_ms": null,
+        "possible_interval_ms": null,
+        "reason": "虚构：球拍与球的接触不可见；不使用候选中心代替。"
+      },
+      "footwork_observations": [
+        {
+          "label": "recovery_step",
+          "status": "observed",
+          "start_ms": 13400,
+          "end_ms": 14800,
+          "foot_side": "left",
+          "observed_motion": "虚构：左脚向下一准备位置移动。",
+          "ground_contact_timestamp_ms": null,
+          "ground_contact_status": "unobservable",
+          "reason": "虚构：移动可见，但脚底接触的精确瞬间不可见。"
+        }
+      ],
+      "visibility_intervals": [
+        {"body_part": "right_wrist", "start_ms": 12100, "end_ms": 12600, "visibility": "occluded", "reason": "虚构：被躯干遮挡。"},
+        {"body_part": "left_hip", "start_ms": 12100, "end_ms": 12600, "visibility": "visible", "reason": "虚构：手腕遮挡时，左髋仍可观察。"}
+      ],
+      "technical_observations": [
+        {
+          "start_ms": 12100,
+          "end_ms": 12600,
+          "topic": "racket_arm_path",
+          "observability": "unobservable",
+          "visual_observation": "虚构：持拍侧手腕在关键区间被躯干遮挡。",
+          "coach_interpretation": null,
+          "reason": "不能据此评定持拍臂路径好坏。"
+        }
+      ],
+      "technical_grade": null,
+      "adjudication": {"status": "not_performed", "reviewer_id": null, "reason": "纯虚构格式演示，没有真实独立提交或裁决。"}
+    }
+  ]
+}

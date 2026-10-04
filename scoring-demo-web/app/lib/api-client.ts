@@ -13,6 +13,7 @@ import type {
   TechniqueAssessmentResponse,
   TechniqueCatalogResponse,
   TrajectoryPreviewResponse,
+  PosePreviewResponse,
 } from "./api-types";
 import { RallyMateApiError } from "./api-types";
 
@@ -87,6 +88,7 @@ export interface RallyMateApiClient {
   submitVideo(file: File | Blob, options?: SubmitVideoOptions): Promise<JobSubmission>;
   getJob(jobId: string, signal?: AbortSignal): Promise<JobProgress>;
   getDemoResult(jobId: string, options?: { endpoint?: string | null; signal?: AbortSignal }): Promise<DemoResultResponse>;
+  getPosePreview(jobId: string, options?: { startMs?: number; durationMs?: number; sampleLimit?: number; signal?: AbortSignal }): Promise<PosePreviewResponse>;
   getTrajectory(
     jobId: string,
     options?: {
@@ -170,6 +172,11 @@ export function createApiClient(
     getJob: (jobId, signal) => get<JobProgress>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}`, signal),
     getDemoResult: (jobId, options = {}) =>
       get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal).then(normalizeMeasurementResult),
+    getPosePreview: (jobId, options = {}) => {
+      const bounded = (value: number | undefined, fallback: number, max: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(0, Math.floor(value))) : fallback;
+      const query = new URLSearchParams({ start_ms: String(bounded(options.startMs, 0, Number.MAX_SAFE_INTEGER)), duration_ms: String(Math.max(1, bounded(options.durationMs, 10000, 10000))), sample_limit: String(Math.max(1, bounded(options.sampleLimit, 600, 600))) });
+      return get<PosePreviewResponse>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/pose-preview?${query}`, options.signal);
+    },
     getTrajectory: (jobId, options = {}) => {
       const endpoint = options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/trajectory`;
       const query = new URLSearchParams();

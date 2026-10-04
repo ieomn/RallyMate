@@ -154,6 +154,10 @@ export interface JobProgress extends JobSubmission {
 }
 
 export interface DemoResultResponse {
+  runtime?: {
+    annotated_video_compatibility?: { timing_preserved?: boolean; timebase?: string; timing_warning?: string; [key: string]: unknown } | null;
+    [key: string]: unknown;
+  };
   analysis_report?: AnalysisReport;
   footwork_review?: FootworkReview;
   action_recognition?: { motion_analysis?: MotionAnalysis; [key: string]: unknown };
@@ -344,6 +348,42 @@ export interface TrajectoryPoint {
   bbox?: [number, number, number, number];
   /** Whether this point comes from detector evidence or short-gap interpolation. */
   source?: "observed" | "interpolated" | string;
+}
+
+export interface PosePreviewFrame {
+  frame_index: number;
+  timestamp_ms: number;
+  valid_until_ms: number;
+  person_track_id: number | null;
+  selection_epoch: number;
+  selection_status: "selected" | "single_visible_person" | "unavailable";
+  width?: number | null;
+  height?: number | null;
+  keypoints: Array<{ name: string; x: number; y: number; confidence: number }>;
+}
+
+export interface PosePreviewResponse {
+  schema_version: "1.0.0";
+  result_kind: "observed_pose_playback";
+  job_id: string;
+  status?: string;
+  reason_zh?: string;
+  coordinate_space: "normalized_frame_0_1";
+  joint_schema: "halpe26_named";
+  min_keypoint_confidence?: number;
+  skeleton_edges: Array<[string, string]>;
+  source: {
+    requested_start_ms: number;
+    requested_end_ms: number;
+    width?: number | null;
+    height?: number | null;
+    returned_frames: number;
+    is_sampled: boolean;
+    is_partial: boolean;
+    timestamp_semantics: "source_frame_timestamp_ms";
+    selection_source?: string;
+  };
+  frames: PosePreviewFrame[];
 }
 
 export interface BallReconstructionAnalysis {

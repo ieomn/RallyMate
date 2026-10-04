@@ -17,6 +17,7 @@ import { createApiClient, RallyMateApiError, type JobProgress } from "./lib/api-
 import { watchAnalysis } from "./lib/analysis-session";
 import LiveResults from "./LiveResults";
 import { recentReports, type RecentReport } from "./lib/training-report";
+import { poseReplayTimingAllowed } from "./lib/pose-playback";
 import ReportExportActions from "./ReportExportActions";
 import type { UploadProgress } from "./lib/resumable-upload";
 import BallTrajectoryViewer from "./BallTrajectoryViewer";
@@ -173,6 +174,8 @@ function extractTechniqueAssessment(value: unknown): TechniqueAssessmentResponse
 }
 
 function ReplayPanel({ evidence, localVideoSrc, pending = false, error }: { evidence: LiveEvidence; localVideoSrc?: string | null; pending?: boolean; error?: string | null }) {
+  const replayApi = useMemo(() => createApiClient(), []);
+  const loadPoseWindow = useCallback((startMs: number, signal: AbortSignal) => replayApi.getPosePreview(evidence.jobId!, { startMs, durationMs: 10000, sampleLimit: 600, signal }), [replayApi, evidence.jobId]);
   const trajectory = evidence.trajectory;
   const mediaBase = evidence.jobId ? `/v1/jobs/${encodeURIComponent(evidence.jobId)}/artifacts` : "";
   const usingLocalVideo = !evidence.result?.artifact_urls?.["annotated.mp4"] && Boolean(localVideoSrc);
@@ -182,12 +185,14 @@ function ReplayPanel({ evidence, localVideoSrc, pending = false, error }: { evid
   return <section className="report-replay" id="evidence" aria-labelledby="evidence-title">
     <div className="report-section-heading"><div><span className="card-kicker">SESSION REPLAY</span><h2 id="evidence-title">回到这一拍</h2></div><span>训练回放</span></div>
     <BallTrajectoryViewer key={selectedVideoSrc ?? "coordinates"} trajectory={trajectory} pending={pending} error={error}
+      jobId={evidence.jobId} loadPoseWindow={evidence.jobId && !pending ? loadPoseWindow : undefined}
+      poseTimingPreserved={poseReplayTimingAllowed(usingLocalVideo, evidence.result)}
       videoSrc={videoFailed !== selectedVideoSrc ? selectedVideoSrc : null}
       poster={evidence.result?.artifact_urls?.["preview.jpg"] ? `${mediaBase}/preview.jpg` : null}
       embeddedPoints={embeddedPoints.map((point, index) => ({ ...point, timestamp_ms: point.timestamp_ms ?? index }))}
       videoTimeOriginMs={usingLocalVideo ? 0 : (trajectory?.source.start_timestamp_ms ?? 0)}
       onVideoError={() => setVideoFailed(selectedVideoSrc ?? "unknown")} />
-    <p className="replay-caption">通过下方时间线回看片段。球路随画面显示，人体骨架默认隐藏。</p>
+    <p className="replay-caption">通过下方时间线回看片段。人体骨架与球路随画面同步，可分别开启或隐藏。</p>
     <details className="report-replay-details"><summary>球路观测与回放说明</summary><BallTrajectorySummary trajectory={trajectory} pending={pending} error={error} />
       {evidence.error && <p className="upload-error" role="status">部分增强证据暂不可用：{evidence.error}</p>}
     </details>

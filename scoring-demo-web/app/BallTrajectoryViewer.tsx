@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TrajectoryPoint, TrajectoryPreviewResponse } from "./lib/api-types";
+import type { PosePreviewResponse, TrajectoryPoint, TrajectoryPreviewResponse } from "./lib/api-types";
 import { timestampForVideoTime, trajectoryAvailability, trajectoryDisplayOpacity, trajectoryEdges, trajectoryStrokes, videoTimeForTimestamp, visibleTrajectoryPaths, type TrajectoryDisplayMode } from "./lib/trajectory-viewer";
+import { poseFrameAt } from "./lib/pose-playback";
+import { usePosePlayback, type PoseWindowLoader } from "./lib/use-pose-playback";
+import PoseSkeletonOverlay from "./PoseSkeletonOverlay";
 
 type BallTrajectoryViewerProps = {
   trajectory: TrajectoryPreviewResponse | null;
@@ -16,6 +19,11 @@ type BallTrajectoryViewerProps = {
   videoTimeOriginMs?: number;
   pending?: boolean;
   error?: string | null;
+  jobId?: string;
+  posePreview?: PosePreviewResponse | null;
+  loadPoseWindow?: PoseWindowLoader;
+  /** Original source video, or generated replay with timing_preserved === true. */
+  poseTimingPreserved?: boolean;
 };
 
 function clamp(value: number, minimum = 0, maximum = 1) {
@@ -39,6 +47,10 @@ export default function BallTrajectoryViewer({
   videoTimeOriginMs = 0,
   pending = false,
   error,
+  jobId,
+  posePreview,
+  loadPoseWindow,
+  poseTimingPreserved = false,
 }: BallTrajectoryViewerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -48,7 +60,9 @@ export default function BallTrajectoryViewer({
   const [durationMs, setDurationMs] = useState(0);
   const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
   const [playing, setPlaying] = useState(false);
+  const [seeking, setSeeking] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [showPose, setShowPose] = useState(true);
   const [showInterpolated, setShowInterpolated] = useState(true);
   const [displayMode, setDisplayMode] = useState<TrajectoryDisplayMode>("segment");
   const [showPoints, setShowPoints] = useState(false);
@@ -75,6 +89,10 @@ export default function BallTrajectoryViewer({
   const following = Boolean(trajectory?.source.is_partial && followLatest);
   const latestMs = trajectory?.source.end_timestamp_ms ?? range.end;
   const atMs = following ? latestMs : currentMs ?? (videoSrc ? videoTimeOriginMs : range.end);
+  const pose = usePosePlayback({ atMs, jobId: jobId ?? trajectory?.job_id, loadWindow: loadPoseWindow, initialPreview: posePreview, enabled: showPose && poseTimingPreserved });
+  const poseFrame = poseFrameAt(pose.preview, atMs);
+  const aspectRatio = trajectory?.source.width && trajectory?.source.height ? trajectory.source.width / trajectory.source.height : videoAspectRatio;
+  const replayJobId = jobId ?? trajectory?.job_id ?? pose.preview?.job_id;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -98,8 +116,8 @@ export default function BallTrajectoryViewer({
 
   useEffect(() => {
     const onSeek = (event: Event) => {
-      const { timestampMs, jobId } = (event as CustomEvent<{ timestampMs: number; jobId?: string }>).detail ?? {};
-      if (!Number.isFinite(timestampMs) || jobId && trajectory?.job_id && jobId !== trajectory.job_id) return;
+      const { timestampMs, jobId: seekJobId } = (event as CustomEvent<{ timestampMs: number; jobId?: string }>).detail ?? {};
+      if (!Number.isFinite(timestampMs) || seekJobId && replayJobId && seekJobId !== replayJobId) return;
       const video = videoRef.current;
       setFollowLatest(false);
       setSelectedSegment(null);
@@ -113,7 +131,7 @@ export default function BallTrajectoryViewer({
     };
     window.addEventListener("rallymate:seek-video", onSeek);
     return () => window.removeEventListener("rallymate:seek-video", onSeek);
-  }, [trajectory?.job_id, videoTimeOriginMs]);
+  }, [replayJobId, videoTimeOriginMs]);
 
   const canPlayVideo = Boolean(videoSrc);
   const paths = useMemo(() => {
@@ -160,13 +178,15 @@ export default function BallTrajectoryViewer({
   }
 
   return (
-    <div className="ball-trajectory-viewer" data-status={availability.state} data-overlay={showOverlay ? "on" : "off"}>
-      <div className="ball-trajectory-stage" style={{ aspectRatio: trajectory?.source.width && trajectory?.source.height ? trajectory.source.width / trajectory.source.height : videoAspectRatio }}>
+    <div className="ball-trajectory-viewer" data-status={availability.state} data-overlay={showOverlay ? "on" : "off"} data-pose={poseTimingPreserved ? showPose ? "on" : "off" : "paused"}>
+      <div className="ball-trajectory-stage" style={{ aspectRatio }}>
         {canPlayVideo ? <video ref={videoRef} className="ball-trajectory-video" src={videoSrc ?? undefined} poster={poster ?? undefined} playsInline muted preload="metadata" onError={onVideoError} aria-label="当前视频回放"
           onLoadedMetadata={event => { const video = event.currentTarget; setDurationMs(Number.isFinite(video.duration) ? video.duration * 1000 : 0); if (video.videoWidth > 0 && video.videoHeight > 0) setVideoAspectRatio(video.videoWidth / video.videoHeight); if (pendingSeekRef.current !== null) { video.currentTime = videoTimeForTimestamp(pendingSeekRef.current, videoTimeOriginMs); pendingSeekRef.current = null; } else if (following) video.currentTime = videoTimeForTimestamp(latestMs, videoTimeOriginMs); setCurrentMs(timestampForVideoTime(video.currentTime, videoTimeOriginMs)); }}
           onTimeUpdate={event => setCurrentMs(timestampForVideoTime(event.currentTarget.currentTime, videoTimeOriginMs))}
+          onSeeking={() => setSeeking(true)} onSeeked={event => { setSeeking(false); setCurrentMs(timestampForVideoTime(event.currentTarget.currentTime, videoTimeOriginMs)); }}
           onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
         /> : <div className="ball-trajectory-empty"><strong>{error ? "回放暂不可用" : pending ? "视频分析中" : "当前结果没有回放视频"}</strong><span>{hasData ? "拖动时间轴可查看短时球路观测" : availability.description}</span></div>}
+        {poseTimingPreserved && showPose && canPlayVideo && !seeking && poseFrame && pose.preview && <PoseSkeletonOverlay frame={poseFrame} preview={pose.preview} aspectRatio={aspectRatio} />}
         {showOverlay && <svg className="ball-trajectory-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={displayMode === "tail" ? "球路短尾迹" : "已播放的完整球路"}>
           {strokes.map((stroke, index) => <polyline key={`stroke-${stroke.points[0].timestamp_ms}-${index}`} points={stroke.points.map(point => `${point.x * 100},${point.y * 100}`).join(" ")} fill="none" stroke={stroke.source === "interpolated" ? "#93b4d5" : "#d8ff66"} strokeOpacity={trajectoryDisplayOpacity(renderedPoints[stroke.pathIndex], pointSegments.get(stroke.points[0])?.display_quality?.detector_confidence.median) * (holdingCompletedFlight ? .75 : 1)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={stroke.source === "interpolated" ? "4 4" : undefined} vectorEffect="non-scaling-stroke" />)}
           {showPoints && observed.map((point, index) => <circle key={`o-${point.timestamp_ms}-${index}`} cx={point.x * 100} cy={point.y * 100} r="0.25" fill="#b6d0a9" />)}
@@ -179,12 +199,12 @@ export default function BallTrajectoryViewer({
         <input type="range" min="0" max="1" step="0.001" value={progress} onChange={(event) => seek(Number(event.target.value))} aria-label="球轨迹时间轴" />
         <span>{`${(atMs / 1000).toFixed(2)}s`}</span>
       </div>
+      <div className="replay-overlay-switches" aria-label="回放显示设置"><label><input type="checkbox" checked={showPose && poseTimingPreserved} disabled={!poseTimingPreserved} onChange={event => setShowPose(event.target.checked)} />人体骨架</label><label><input type="checkbox" checked={showOverlay} disabled={!hasData} onChange={event => setShowOverlay(event.target.checked)} />球路</label><span role="status">{!poseTimingPreserved ? "回放时间对应尚未确认，人体骨架已暂停。" : !showPose ? "人体骨架已隐藏" : seeking ? "正在定位画面…" : pose.pending ? "正在读取人体骨架…" : pose.error ? "人体骨架暂时无法读取，视频仍可回放。" : poseFrame ? "骨架随回放同步" : pending ? "人体姿态识别中" : "当前时刻暂无可靠人体姿态"}</span></div>
       <div className="trajectory-view-modes" aria-label="球路显示方式">{([["segment", "当前候选球路"], ["tail", "短尾迹"], ["overview", "球路概览"]] as const).map(([mode, label]) => <button type="button" key={mode} aria-pressed={displayMode === mode} onClick={() => { setDisplayMode(mode); setSelectedSegment(null); }}>{label}</button>)}</div>
       {showOverlay && renderedPoints.length > 1 && displayMode !== "overview" && <p className="ball-trajectory-analysis">当前显示 {renderedPoints.length} 条候选，尚未确认唯一比赛用球；片段之间不连线。</p>}
       <details className="ball-trajectory-options">
         <summary>轨迹显示设置 · {showOverlay ? "球路已开启" : "球路已隐藏"}</summary>
         <div className="ball-trajectory-options-body">
-          <label><input type="checkbox" checked={showOverlay} disabled={!hasData} onChange={event => setShowOverlay(event.target.checked)} />显示球路</label>
           <label><input type="checkbox" checked={showPoints} disabled={!showOverlay} onChange={event => setShowPoints(event.target.checked)} />显示识别点</label>
           <label><input type="checkbox" checked={showInterpolated} disabled={!showOverlay} onChange={event => setShowInterpolated(event.target.checked)} />显示短缺口插值</label>
         </div>
