@@ -46,6 +46,7 @@ from rallymate_scoring.scoring_context import (
     resolve_target_direction_context,
 )
 from rallymate_scoring.scoring import score_indicator
+from rallymate_scoring.source_assessment import write_source_aligned_assessment
 from rallymate_scoring.runtime_profile_binding import (
     bind_production_calibrations_for_runtime,
 )
@@ -601,6 +602,12 @@ def run_minimum_scoring_loop(
     _write_jsonl(output_dir / "features.jsonl", feature_records)
     _write_jsonl(output_dir / "indicator-features.jsonl", indicator_records)
     _write_jsonl(output_dir / "scores.jsonl", score_records)
+    source_assessment_artifact = write_source_aligned_assessment(
+        output_dir, sequence, events, video_id=canonical_video_id,
+        video_sha256=provenance.get("video_sha256"),
+        frames_sha256=provenance.get("frames_sha256"), frames_path=frames_path,
+        primary_timeline_path=primary_timeline_path, primary_timeline=timeline,
+    )
 
     # Truth interfaces are executable, but absent truth must never appear as a
     # perfect evaluation. A separate evaluator can replace this artifact after
@@ -802,6 +809,7 @@ def run_minimum_scoring_loop(
         "model_versions": versions,
         "provenance": provenance,
         "artifacts": {
+            "source_aligned_measurements_json": source_assessment_artifact["path"],
             "events_jsonl": "events.jsonl",
             "features_jsonl": "features.jsonl",
             "indicator_features_jsonl": "indicator-features.jsonl",
@@ -809,6 +817,7 @@ def run_minimum_scoring_loop(
             "event_feature_errors_json": "event-feature-errors.json",
         },
         "artifact_sha256": {
+            "source_aligned_measurements_json": source_assessment_artifact["sha256"],
             "events_jsonl": _sha256(output_dir / "events.jsonl"),
             "features_jsonl": _sha256(output_dir / "features.jsonl"),
             "indicator_features_jsonl": _sha256(

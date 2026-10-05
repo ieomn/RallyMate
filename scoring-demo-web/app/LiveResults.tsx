@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import TrainingReportOverview from "./TrainingReportOverview";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
 import RuleReviewPanel from "./RuleReviewPanel";
+import TechnicalReviewPanel from "./TechnicalReviewPanel";
 import scoringReference from "./data/scoring-reference.json";
 import type { RuleReviewCatalog } from "./lib/rule-review";
 import ActionTimeline from "./ActionTimeline";
@@ -116,7 +117,7 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
 
   return <div className="live-results" aria-live="polite" data-status={presentation.state}>
     <div className={`report-primary ${replay ? "" : "without-replay"}`}>{replay}<TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} /></div>
-    {result && !pending && <><ScoreExplanationPanel result={result} onInspectRule={id => { setRequestedRule(previous => ({ id, request: previous.request + 1 })); document.getElementById("rule-review")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }} /><RuleReviewPanel key={requestedRule.request} result={result} catalog={scoringReference as RuleReviewCatalog} initialIndicatorId={requestedRule.id} /></>}
+    {result && !pending && <><TechnicalReviewPanel key={result.job_id ?? "unbound-report"} result={result} catalog={scoringReference as RuleReviewCatalog} /><details className="report-disclosure" id="evidence-reference-details"><summary>证据参考分与完整原文核验</summary><ScoreExplanationPanel result={result} onInspectRule={id => { setRequestedRule(previous => ({ id, request: previous.request + 1 })); document.getElementById("rule-review")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }} /><RuleReviewPanel key={requestedRule.request} result={result} catalog={scoringReference as RuleReviewCatalog} initialIndicatorId={requestedRule.id} /></details></>}
     <ActionTimeline result={result} motion={motionAnalysis} />
     <details className="report-disclosure" id="rules"><summary>测量详情 <span>步伐、转体与动作阶段</span></summary>
     {result && measurementWarnings(result).map(warning => <p className="measurement-warning" role="note" key={warning}>{warning}</p>)}

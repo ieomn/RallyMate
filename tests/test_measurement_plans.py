@@ -9,6 +9,9 @@ from rallymate_scoring.feasibility import (
     load_feasibility_registry,
 )
 from rallymate_scoring.measurement_plans import build_measurement_plan_registry, classify_clause
+from rallymate_scoring.indicator_requirements import canonical_sha256, required_phase_keys
+from rallymate_events.rules import EVENT_DETECTOR_VERSION, PHASE_CANDIDATE_VERSION
+from rallymate_features.event_features import FEATURE_LIBRARY_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -114,6 +117,32 @@ class MeasurementPlanTests(unittest.TestCase):
             self.assertIsNone(plan["output_policy"]["threshold_version"])
             self.assertIn(plan["output_policy"]["when_valid_features"], {"calibration_required"})
             self.assertEqual("unavailable", plan["output_policy"]["when_invalid_or_missing"])
+
+    def test_runtime_contract_is_bound_to_actual_registry_and_implementations(self) -> None:
+        self.assertEqual(canonical_sha256(self.feasibility), self.registry["source_feasibility_registry_sha256"])
+        for indicator in self.feasibility["indicators"]:
+            plan = self.by_id[indicator["indicator_id"]]
+            self.assertEqual(EVENT_DETECTOR_VERSION, plan["event_localization"]["event_model_version"])
+            self.assertEqual(PHASE_CANDIDATE_VERSION, plan["event_localization"]["phase_contract_version"])
+            self.assertEqual(FEATURE_LIBRARY_VERSION, plan["versions"]["feature_library"])
+            binding = plan["runtime_binding"]
+            self.assertEqual(canonical_sha256(indicator), binding["registry_indicator_sha256"])
+            self.assertEqual(indicator["required_features"], binding["required_feature_names"])
+            self.assertEqual(required_phase_keys(indicator), binding["required_phase_keys"])
+            self.assertFalse(binding["source_clause_equivalence_verified"])
+
+    def test_source_visibility_gate_is_not_a_feature_or_grade_threshold(self) -> None:
+        gates = [p["source_contract"]["joint_visibility_gate"] for p in self.registry["plans"]]
+        self.assertEqual(282, sum(g["threshold_ratio"] == 0.7 for g in gates))
+        for gate in gates:
+            self.assertTrue(gate["not_technical_grade_cutoff"])
+            self.assertEqual("strictly_less_than", gate["comparison"])
+            self.assertEqual("indicator_required_joints_within_event_window", gate["scope"])
+
+    def test_f2_never_erases_a_partial_source_clause_gap(self) -> None:
+        plan = self.by_id["FS01-M04"]
+        self.assertEqual("implemented_f2_calibration_required", plan["runtime_status"])
+        self.assertIn("feature_implementation_required", plan["current_blockers"])
 
     def test_known_source_clauses_map_to_required_observation_families(self) -> None:
         self.assertIn("pose.body_center_kinematics", classify_clause("髋中心二维速度矢量"))

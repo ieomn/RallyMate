@@ -713,5 +713,13 @@ def build_user_demo_result(
             "training_evaluation_is_formal_coach_score": False,
         },
     }
+    input_metadata = summary.get("input")
+    video_metadata = input_metadata.get("video") if isinstance(input_metadata, Mapping) else None
+    if isinstance(video_metadata, Mapping):
+        # Needed by replay/backup range checks; never copy input paths, source
+        # IPs or upload metadata into the public result.
+        result["input"] = {"video": {key: video_metadata[key]
+            for key in ("duration_ms", "width", "height", "fps", "frame_count")
+            if _finite_number(video_metadata.get(key)) is not None and video_metadata[key] > 0}}
     result["analysis_report"] = build_analysis_report(result, summary=summary)
     return result

@@ -5,6 +5,7 @@ import { footworkEpisodes } from "./footwork-review";
 import { analysisReportOf, reportFocus } from "./training-report";
 import { motionAnalysisOf, ROTATION_METRICS } from "./motion-analysis";
 import { scoreExplanationOf } from "./score-explanation";
+import { sourceAssessmentForExport, sourceReviewWindows } from "./technical-review";
 
 export type ReportExportInput = {
   mode: "demo" | "live" | "live-pending";
@@ -221,6 +222,13 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     ]) });
   } else sections.push({ title: "分数解释", paragraphs: [explanationState.status === "missing" ? "这份历史报告尚未保存分数构成，不补造扣分明细。" : "分数构成未通过一致性校验，暂不展示扣分明细。"] });
   sections.push({ title: "原文核验范围", paragraphs: ["依据 scoring-reference-20261004：7 份 Word、298 项评分指标及 24 类动作视觉定义。原文没有完整百分制换算、权重与扣分公式。", "当前仅 13 项步伐指标有相关二维测量，尚不能完整等价执行原文技术判据；没有正式 A～E 技术等级。", "GS01-M10-04 含相邻章节标题，GS02-M01-01 与 GS02-M01-02 名称与定义存在错配；相关原文保留待核实。", "看不清、未识别或缺少关联证据不记作 0 分或 E 级。"] });
+  const sourceRows = ["FS01-M02", "FS01-M04", "FS01-M05", "FS09-M05"].flatMap(id => sourceReviewWindows(input.evidence.result ?? null, id).flatMap(window => window.measurements.map(measurement => [
+    id, text(measurement.label_zh), measurement.status === "measured" ? `${numberText(measurement.value)} ${text(measurement.unit)}` : "未测得",
+    measurement.measurement_window ? interval(measurement.measurement_window) : "未提供计算时段",
+    window.visibility.valid_frame_ratio === null ? "未提供同窗统计" : `${percent(window.visibility.valid_frame_ratio)}（${window.visibility.valid_frame_count}/${window.visibility.total_frame_count} 帧）`,
+    text(measurement.reason_zh), window.limitations_zh.map(note => text(note)).join("；"),
+  ])));
+  if (sourceRows.length) sections.push({ title: "与原文对应的实际测量", paragraphs: ["以下是保存的二维测量与计算时段，不是自动 A～E 等级。关键点可见性只针对各指标对应时段；还需核对球、场地和原文的其他要求。", "人工等级与技术要点核验记录通过页面“导出评审”单独导出，包含评审人、依据和修订历史。"], columns: ["指标", "测量", "结果", "计算时段", "所需关键点有效帧", "说明", "限制"], rows: sourceRows });
   const focus = reportFocus(input.evidence.result ?? null, parsedMotion);
   if (focus.length) sections.push({ title: "这次先关注", paragraphs: ["以下为证据关联的复核与拍摄建议，不是技术错误诊断。"], columns: ["重点", "建议", "回放区间"], rows: focus.map(item => [text(item.title), text(item.detail), item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
   const analysisReport = analysisReportOf(result.analysis_report);
@@ -359,7 +367,7 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   };
   return scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
     assessment: selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"]),
     summary: selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"]),
     trajectory: input.evidence.trajectory ? selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]) : null,

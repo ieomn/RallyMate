@@ -5,13 +5,14 @@ const reply = (error: string, status: number) => Response.json({ error }, { stat
 export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<Response> {
   const url = new URL(request.url);
   const id = "[a-zA-Z0-9_-]{8,80}";
-  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|pose-preview|technique-assessment|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg)))?))$`);
+  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|pose-preview|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg)))?))$`);
+  const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/technical-review$`).test(url.pathname);
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
   const uploadWrite = new RegExp(`^/v1/uploads/${id}/(?:complete|chunks/[0-9]{1,6})$`);
   const uploadAllowed = (request.method === "GET" && uploadRead.test(url.pathname)) ||
     (request.method === "POST" && (url.pathname === "/v1/uploads" || (uploadWrite.test(url.pathname) && url.pathname.endsWith("/complete")))) ||
     (request.method === "PUT" && uploadWrite.test(url.pathname) && /\/chunks\/[0-9]+$/.test(url.pathname));
-  if (!uploadAllowed && !(request.method === "GET" && readPath.test(url.pathname)) && !(request.method === "POST" && url.pathname === "/v1/jobs")) return reply("route_not_allowed", 404);
+  if (!uploadAllowed && !reviewWrite && !(request.method === "GET" && readPath.test(url.pathname)) && !(request.method === "POST" && url.pathname === "/v1/jobs")) return reply("route_not_allowed", 404);
   const browserOrigin = request.headers.get("origin");
   const tunnelOrigin = env.RALLYMATE_LOCAL_TUNNEL === "1" ? `https://${url.host}` : null;
   if (["POST", "PUT"].includes(request.method) && (request.headers.get("sec-fetch-site") === "cross-site" || (browserOrigin && browserOrigin !== url.origin && browserOrigin !== tunnelOrigin))) return reply("origin_not_allowed", 403);

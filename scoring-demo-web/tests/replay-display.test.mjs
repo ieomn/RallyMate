@@ -7,7 +7,7 @@ import ts from "typescript";
 
 function compiledUrl(fileUrl) {
   const source = fs.readFileSync(fileUrl, "utf8");
-  let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  let js = ts.transpileModule(source, { fileName: fileUrl.pathname, compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {

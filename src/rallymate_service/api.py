@@ -42,8 +42,15 @@ from rallymate_scoring.technique_assessment import (
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase
+from rallymate_service.technical_review import (
+    MAX_BODY_BYTES,
+    TechnicalReviewError,
+    TechnicalReviewStore,
+    parse_review_input,
+)
 from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.analysis_report import build_analysis_report
+from rallymate_service.source_assessment import load_source_aligned_assessment
 from rallymate_service.user_demo import (
     UserDemoResultError,
     build_user_demo_result,
@@ -83,6 +90,7 @@ ALLOWED_ARTIFACTS = {
     "calculation-readiness.json",
     "indicator-measurement-portfolio.json",
     "scoring-cycle-measurement.json",
+    "source-aligned-measurements.json",
 }
 INLINE_PREVIEW_ARTIFACTS = {
     "annotated.mp4",
@@ -363,6 +371,7 @@ def create_app(
     service_settings.validate_license(check_registry_authority=False)
     service_settings.ensure_directories()
     db = database or JobDatabase(service_settings.database_path)
+    technical_reviews = TechnicalReviewStore(service_settings.data_root / "technical-reviews.sqlite3")
     # Cache bounded previews only while the underlying frame snapshot matches.
     # A progressing job or a transition to succeeded always invalidates it.
     trajectory_cache: OrderedDict[tuple, dict] = OrderedDict()
@@ -399,6 +408,7 @@ def create_app(
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         db.initialize()
+        technical_reviews.initialize()
         yield
 
     app = FastAPI(
@@ -418,6 +428,7 @@ def create_app(
     )
     app.state.settings = service_settings
     app.state.database = db
+    app.state.technical_reviews = technical_reviews
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -1033,6 +1044,47 @@ def create_app(
             redact_summary=_should_redact_public(service_settings),
         )
 
+    def technical_review_job(job_id: str) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        return job
+
+    @app.get("/v1/jobs/{job_id}/technical-review")
+    def get_technical_review(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        response.headers["Cache-Control"] = "no-store"
+        try:
+            return technical_reviews.get(technical_review_job(job_id))
+        except TechnicalReviewError as exc:
+            raise HTTPException(exc.status, exc.detail()) from exc
+
+    @app.post("/v1/jobs/{job_id}/technical-review")
+    async def save_technical_review(job_id: str, request: Request, response: Response,
+                                    _: None = Depends(authorize)) -> dict:
+        response.headers["Cache-Control"] = "no-store"
+        try:
+            body = bytearray()
+            async for chunk in request.stream():
+                body.extend(chunk)
+                if len(body) > MAX_BODY_BYTES:
+                    raise TechnicalReviewError("review_too_large", "评审内容过长。", 413)
+            submission = parse_review_input(bytes(body))
+            job = await run_in_threadpool(technical_review_job, job_id)
+            return await run_in_threadpool(technical_reviews.save, job, submission)
+        except TechnicalReviewError as exc:
+            raise HTTPException(exc.status, exc.detail()) from exc
+
+    @app.get("/v1/jobs/{job_id}/technical-review/export")
+    def export_technical_review(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        response.headers["Cache-Control"] = "no-store"
+        try:
+            result = technical_reviews.get(technical_review_job(job_id), export=True)
+            # Keep this filename independent of client-supplied paths and IDs.
+            response.headers["Content-Disposition"] = 'attachment; filename="technical-reviews.json"'
+            return result
+        except TechnicalReviewError as exc:
+            raise HTTPException(exc.status, exc.detail()) from exc
+
     @app.get("/v1/jobs/{job_id}/demo-result")
     def get_demo_result(job_id: str, _: None = Depends(authorize)) -> dict:
         job = db.get_job(job_id)
@@ -1082,6 +1134,14 @@ def create_app(
             Path(job["output_dir"]) / "events.jsonl",
             records,
             video_id=review_video_id or job_id,
+        )
+        loop_provenance = (loop_summary or {}).get("provenance", {})
+        result["source_aligned_assessment"] = load_source_aligned_assessment(
+            Path(job["output_dir"]),
+            video_id=review_video_id or job_id,
+            duration_ms=summary.get("input", {}).get("video", {}).get("duration_ms"),
+            video_sha256=loop_provenance.get("video_sha256"),
+            frames_sha256=loop_provenance.get("frames_sha256"),
         )
         result["analysis_report"] = build_analysis_report(result, summary=summary)
         return result

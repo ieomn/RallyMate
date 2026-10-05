@@ -1,5 +1,6 @@
 import { normalizeMeasurementResult } from "./measurement-evidence";
 import { uploadResumable } from "./resumable-upload";
+import { parseTechnicalReview, type TechnicalReviewInput, type TechnicalReviewLedger } from "./technical-review";
 import type {
   DemoResultResponse,
   JobProgress,
@@ -87,6 +88,9 @@ export interface RallyMateApiClient {
   scorecard(request: ScorecardRequest, signal?: AbortSignal): Promise<ScorecardResponse>;
   submitVideo(file: File | Blob, options?: SubmitVideoOptions): Promise<JobSubmission>;
   getJob(jobId: string, signal?: AbortSignal): Promise<JobProgress>;
+  getTechnicalReview(jobId: string, signal?: AbortSignal): Promise<TechnicalReviewLedger>;
+  saveTechnicalReview(jobId: string, review: TechnicalReviewInput, signal?: AbortSignal): Promise<TechnicalReviewLedger>;
+  exportTechnicalReview(jobId: string, signal?: AbortSignal): Promise<Record<string, unknown>>;
   getDemoResult(jobId: string, options?: { endpoint?: string | null; signal?: AbortSignal }): Promise<DemoResultResponse>;
   getPosePreview(jobId: string, options?: { startMs?: number; durationMs?: number; sampleLimit?: number; signal?: AbortSignal }): Promise<PosePreviewResponse>;
   getTrajectory(
@@ -153,7 +157,7 @@ export function createApiClient(
     return payload as T;
   }
 
-  const get = <T>(path: string, signal?: AbortSignal) =>
+  const get = <T,>(path: string, signal?: AbortSignal) =>
     fetchImpl(urlFor(path), { method: "GET", cache: "no-store", headers: { "X-Request-ID": requestId() }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }).then((response) => parseResponse<T>(response));
 
   return {
@@ -170,6 +174,12 @@ export function createApiClient(
       }).then((response) => parseResponse<ScorecardResponse>(response)),
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}`, signal),
+    getTechnicalReview: (jobId, signal) => get<unknown>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review`, signal).then(value => parseTechnicalReview(value, jobId)),
+    saveTechnicalReview: (jobId, review, signal) => fetchImpl(urlFor(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review`), {
+      method: "POST", headers: { "content-type": "application/json", "X-Request-ID": requestId() }, body: JSON.stringify(review),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+    }).then(parseResponse<unknown>).then(value => parseTechnicalReview(value, jobId)),
+    exportTechnicalReview: (jobId, signal) => get<Record<string, unknown>>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review/export`, signal),
     getDemoResult: (jobId, options = {}) =>
       get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal).then(normalizeMeasurementResult),
     getPosePreview: (jobId, options = {}) => {
