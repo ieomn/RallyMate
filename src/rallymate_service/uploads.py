@@ -13,7 +13,9 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
+# Preserve the legacy wire size as the API's maximum accepted chunk size.
 CHUNK_BYTES = 4 * 1024 * 1024
+DEFAULT_CHUNK_BYTES = 128 * 1024
 SESSION_TTL_SECONDS = 24 * 60 * 60
 
 
@@ -77,7 +79,7 @@ class UploadStore:
     def public(data: dict) -> dict:
         return {
             "upload_id": data["upload_id"], "size": data["size"],
-            "chunk_size": CHUNK_BYTES, "chunk_count": data["chunk_count"],
+            "chunk_size": data.get("chunk_size", CHUNK_BYTES), "chunk_count": data["chunk_count"],
             "received_chunks": sorted(int(i) for i in data["chunks"]),
             "chunk_sha256": {index: item["sha256"] for index, item in data["chunks"].items()},
             "received_bytes": sum(item["size"] for item in data["chunks"].values()),
@@ -96,6 +98,11 @@ class UploadStore:
                     data = self.read(directory)
                     if (data["filename"], data["size"], data["options"]) != (filename, size, options):
                         raise HTTPException(409, "上传会话与所选文件不一致")
+                    if not data["chunks"] and not data.get("job_id") and data.get("chunk_size", CHUNK_BYTES) > DEFAULT_CHUNK_BYTES:
+                        # The browser retries create with a new UUID on 410. Do
+                        # not rewrite this manifest: an old in-flight PUT can
+                        # still complete against its original chunk protocol.
+                        raise HTTPException(410, "上传分块方式已更新，请重新建立上传会话")
                     return self.public(data)
                 # Parts + assembled input + durable queue input coexist briefly.
                 reserved = 0
@@ -110,7 +117,8 @@ class UploadStore:
                 if shutil.disk_usage(self.root).free < 3 * (size + reserved) + 512 * 1024 * 1024:
                     raise HTTPException(507, "云端可用空间不足，请稍后重试")
                 data = {"upload_id": upload_id, "filename": filename, "size": size,
-                        "chunk_count": math.ceil(size / CHUNK_BYTES), "options": options,
+                        "chunk_size": DEFAULT_CHUNK_BYTES,
+                        "chunk_count": math.ceil(size / DEFAULT_CHUNK_BYTES), "options": options,
                         "chunks": {}, "job_id": None}
                 self.save(directory, data)
                 return self.public(data)
@@ -128,7 +136,8 @@ class UploadStore:
             data = self.read(directory)
             if not 0 <= index < data["chunk_count"]:
                 raise HTTPException(422, "无效的分块序号")
-            expected = min(CHUNK_BYTES, data["size"] - index * CHUNK_BYTES)
+            chunk_size = data.get("chunk_size", CHUNK_BYTES)
+            expected = min(chunk_size, data["size"] - index * chunk_size)
             if len(content) != expected:
                 raise HTTPException(422, "分块长度不正确")
             prior = data["chunks"].get(str(index))

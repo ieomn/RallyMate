@@ -65,7 +65,20 @@ npm run dev
 
 默认网页为 `http://localhost:3000`，API 为 `http://127.0.0.1:8000`。网页通过同源代理上传，不需要把 API 密钥放入浏览器。`GET /health/ready` 检查分析服务是否就绪。Windows 的 service 依赖包含 ffmpeg wheel；Linux 镜像安装系统 ffmpeg，生成 H.264 回放。
 
-如果需要让 Cloudflare 只暴露一个完整入口，可运行 `scripts\run_full_service.ps1`：新版网页监听 `8000`，分析 API/Worker 保持在本机 `8001`，并可用 `-StartCloudflare` 自动启动快速隧道。网站无需账号或密码；该脚本会读取 `scoring-demo-web\.dev.vars` 中的服务端配置，不要把其中的 API 密钥提交到 Git。
+Windows 上已经配置好 RTMPose 环境、模型和 `scoring-demo-web\.dev.vars` 后，在项目根目录执行下列命令。它会从 `.dev.vars` 读取内部 API 密钥，启动一个 API/Worker 和网页，均只监听本机；已有服务占用端口时会停止启动，避免重复 GPU worker。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_local.ps1 -FrontendPort 8003 -ApiPort 8001
+# 前端源码变更后需重新构建，在上面的命令末尾增加 -Build。
+# 另一个终端：将同一个网页入口用于朋友预览，保持该终端打开。
+cloudflared tunnel --url http://127.0.0.1:8003
+```
+
+网页访问无需账号，内部 API 密钥仅供服务端使用。不要把 `.dev.vars` 提交到 Git。启动成功只说明进程已启动，仍需检查健康状态并实测上传、分析与回放。
+
+更新代码后，暂停提交新任务；如果改动了前端，先在项目根目录执行 `npm.cmd --prefix scoring-demo-web run build`，构建成功后再重启。执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\restart_preview_service.ps1` 可重新加载默认 `8003/8001` 服务，该脚本不会自动构建。脚本检查端口进程和队列，忙碌时拒绝重启，并保留现有 Cloudflare 进程及地址。若只有网页未启动、API 仍在运行，可执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_preview_web.ps1`，并保持该终端打开。两者均支持 `-FrontendPort` 与 `-ApiPort` 参数。
+
+以上相对路径命令必须在项目根目录运行；从其他目录操作时，将 `-File` 后面的路径换成脚本的绝对路径并加双引号。
 
 运行期间可在另一个 PowerShell 窗口执行 `powershell -ExecutionPolicy Bypass -File .\scripts\full_service_status.ps1` 查看端口、进程和健康状态；执行 `powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1` 查看 API/Worker、网页和 Cloudflare 的实时日志。日志位于 `.codex_tmp\full-service\`，按 `Ctrl+C` 只会停止查看，不会停止服务。
 
