@@ -40,7 +40,8 @@ function Read-InternalApiKey {
 function Get-LocalHealth([int]$Port, [switch]$Readiness, [string]$ApiKey = "") {
     $response = $null
     $reader = $null
-    $path = if ($Readiness) { "/health/ready" } else { "/" }
+    # The public root redirects to /welcome; probe the landing page directly.
+    $path = if ($Readiness) { "/health/ready" } else { "/welcome" }
     $result = [ordered]@{ Status = "DOWN"; HttpStatus = $null }
     if ($Readiness) { $result["Reasons"] = @() }
     try {

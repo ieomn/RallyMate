@@ -228,7 +228,7 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     window.visibility.valid_frame_ratio === null ? "未提供同窗统计" : `${percent(window.visibility.valid_frame_ratio)}（${window.visibility.valid_frame_count}/${window.visibility.total_frame_count} 帧）`,
     text(measurement.reason_zh), window.limitations_zh.map(note => text(note)).join("；"),
   ])));
-  if (sourceRows.length) sections.push({ title: "与原文对应的实际测量", paragraphs: ["以下是保存的二维测量与计算时段，不是自动 A～E 等级。关键点可见性只针对各指标对应时段；还需核对球、场地和原文的其他要求。", "人工等级与技术要点核验记录通过页面“导出评审”单独导出，包含评审人、依据和修订历史。"], columns: ["指标", "测量", "结果", "计算时段", "所需关键点有效帧", "说明", "限制"], rows: sourceRows });
+  if (sourceRows.length) sections.push({ title: "与原文对应的实际测量", paragraphs: ["以下是保存的二维测量与计算时段，不是自动 A～E 等级。关键点可见性只针对各指标对应时段；还需核对球、场地和原文的其他要求。"], columns: ["指标", "测量", "结果", "计算时段", "所需关键点有效帧", "说明", "限制"], rows: sourceRows });
   const focus = reportFocus(input.evidence.result ?? null, parsedMotion);
   if (focus.length) sections.push({ title: "这次先关注", paragraphs: ["以下为证据关联的复核与拍摄建议，不是技术错误诊断。"], columns: ["重点", "建议", "回放区间"], rows: focus.map(item => [text(item.title), text(item.detail), item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
   const analysisReport = analysisReportOf(result.analysis_report);

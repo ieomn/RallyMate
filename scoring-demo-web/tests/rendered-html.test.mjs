@@ -8,7 +8,7 @@ const ctx = { waitUntil() {}, passThroughOnException() {} };
 
 test("renders the public workspace overview with usable navigation and an honest empty history", async () => {
   const app = await worker();
-  const response = await app.fetch(new Request("https://app.example.com/", { headers: { accept: "text/html" } }), env, ctx);
+  const response = await app.fetch(new Request("https://app.example.com/?view=overview", { headers: { accept: "text/html" } }), env, ctx);
   assert.equal(response.status, 200); assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   assert.equal(response.headers.get("www-authenticate"), null);
   const html = await response.text();
@@ -72,7 +72,10 @@ test("public uploads need no browser login and retain server-side API authentica
 test("Node production entry supports missing Cloudflare bindings", async () => {
   const app = await worker();
   const response = await app.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), undefined, ctx);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 307);
+  assert.equal(response.headers.get("location"), "/welcome");
+  const landing = await app.fetch(new Request("http://localhost/welcome", { headers: { accept: "text/html" } }), undefined, ctx);
+  assert.equal(landing.status, 200);
   const missing = await app.fetch(new Request("http://localhost/v1/meta"), undefined, ctx);
   assert.equal(missing.status, 503);
 });

@@ -21,7 +21,7 @@ const { parseTechnicalReview, technicalReviewError, sourceReviewWindows, sourceR
 const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { proxyAnalysis } = await import(compiledUrl(new URL("../worker/gateway.ts", import.meta.url)));
 const { buildReportBackup, buildPracticeReport } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
-const { default: Panel } = await import(compiledUrl(new URL("../app/TechnicalReviewPanel.tsx", import.meta.url)));
+const { default: Panel } = await import(compiledUrl(new URL("../app/SourceMeasurementPanel.tsx", import.meta.url)));
 const catalog = JSON.parse(fs.readFileSync(new URL("../app/data/scoring-reference.json", import.meta.url), "utf8"));
 const jobId = "job-human-review-123";
 const sha = "a".repeat(64), contextSha = "b".repeat(64), referenceSha = "c".repeat(64);
@@ -162,16 +162,14 @@ test("API normalization and portable backup keep validated source measurements, 
   assert.equal(buildReportBackup(input).result.source_aligned_assessment, undefined);
 });
 
-test("technical review initial UI shows source grades without inventing an assessed grade", () => {
+test("source measurements retain evidence and replay without manual grading controls", () => {
   const html = renderToStaticMarkup(createElement(Panel, { result: sourceResult(), catalog }));
-  assert.match(html, /A～E 指标 · 298 项/);
-  assert.match(html, /技术要点 · 246 项/);
+  assert.match(html, /与原文对应的实际测量/);
   assert.match(html, /髋部下降幅度/);
   assert.match(html, /跨事件测量区间/);
-  assert.match(html, /原文没有百分制换算/);
-  assert.match(html, /身份（自行声明）/);
-  assert.doesNotMatch(html, /技术得分|自动技术等级：|已认证教练/);
-  assert.match(html, /disabled=""[^>]*>保存这条评审/);
+  assert.match(html, /回看/);
+  assert.match(html, /70%/);
+  assert.doesNotMatch(html, /按原文评审|选择人工技术等级|身份（自行声明）|保存这条评审|导出评审|录入技术评审|人工等级|<textarea/);
 });
 
 test("API client binds read, idempotent write and export to the same job", async () => {
