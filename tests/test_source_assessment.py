@@ -66,6 +66,24 @@ class SourceAssessmentTests(unittest.TestCase):
         self.assertEqual("unavailable", measurement["status"])
         self.assertIsNone(measurement["value"])
 
+    def test_identity_failures_keep_null_and_explain_the_reason_in_chinese(self):
+        for reason, expected in (("measurement_window_subject_continuity_unverified", "人物轨迹不一致"),
+                                 ("confirmed_subject_identity_switch", "已确认的人物身份切换"),
+                                 ("source_event_measurement_quality_hard_fail", "未满足测量所需的证据条件"),
+                                 ("source_event_quality_evidence_invalid", "质量依据记录不完整")):
+            with self.subTest(reason=reason):
+                artifact, events = fixture()
+                artifact["records"][0]["indicators"][0]["source_measurements"][0].update(
+                    value=None, valid=False, status="unavailable", reason=reason)
+                report = project_source_assessment(artifact, events, video_id="video", duration_ms=100)
+                measurement = report["indicators"][0]["windows"][0]["measurements"][0]
+                self.assertEqual(measurement["status"], "unavailable")
+                self.assertIsNone(measurement["value"])
+                self.assertIn(expected, measurement["reason_zh"])
+                if reason == "source_event_measurement_quality_hard_fail":
+                    self.assertNotIn("身份切换", measurement["reason_zh"])
+                self.assertIsNone(report["technical_score_0_to_100"])
+
     def test_simultaneous_observed_successor_keeps_zero_without_imputing_missing(self):
         artifact, events = fixture()
         item = artifact["records"][0]["indicators"][0]

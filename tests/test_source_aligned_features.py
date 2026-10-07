@@ -170,6 +170,135 @@ class SourceAlignedFeatureTests(unittest.TestCase):
         self.assertEqual(row["reason"], "between_event_subject_continuity_unverified")
         self.assertIsNone(row["value"])
 
+    def test_confirmed_identity_switch_blocks_every_source_measurement(self):
+        for evidence in ("confirmed_id_switch_present", "confirmed_id_switch_detected", "count_only"):
+            with self.subTest(evidence=evidence):
+                sequence, events, timeline = fixture()
+                if evidence == "count_only":
+                    events[0]["track_diagnostics"]["confirmed_id_switch_count"] = 1
+                else:
+                    events[0]["quality_flags"].append(evidence)
+                context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+                result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+                self.assertEqual(result["version"], "source-aligned-fs-measurements-v1.1.0")
+                for item in result["indicators"]:
+                    for row in item["source_measurements"]:
+                        self.assertEqual(row["reason"], "confirmed_subject_identity_switch")
+                        self.assertEqual(row["status"], "unavailable")
+                        self.assertIsNone(row["value"])
+                        self.assertTrue(row["evidence"]["source_event_quality_gate"]["hard_fail_flags"])
+
+    def test_nonidentity_hard_failure_keeps_its_evidence_without_claiming_identity_switch(self):
+        sequence, events, timeline = fixture()
+        events[2]["quality_flags"].append("restabilization_not_observed")
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        result = compute_source_aligned_features(sequence, events[2], events=events, context=context)
+        row = feature(result, "FS09-M05", "stable_control_body_speed_std_body_s")
+        self.assertEqual(row["reason"], "source_event_measurement_quality_hard_fail")
+        self.assertEqual(row["evidence"]["source_event_quality_gate"]["hard_fail_flags"], ["restabilization_not_observed"])
+        self.assertIsNone(row["value"])
+
+    def test_malformed_quality_flags_make_measurements_unavailable_without_aborting(self):
+        for flags in (["required_phase_missing:bad"], ["phase_proxy_right_censored_peak:bad"], [None], None, "not-a-list"):
+            with self.subTest(flags=flags):
+                sequence, events, timeline = fixture()
+                events[0]["quality_flags"] = flags
+                context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+                result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+                row = feature(result, "FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio")
+                self.assertEqual(row["reason"], "source_event_quality_evidence_invalid")
+                self.assertIsNone(row["value"])
+
+    def test_pose_candidate_flags_do_not_become_confirmed_measurement_failures(self):
+        sequence, events, timeline = fixture()
+        events[0]["quality_flags"] = ["keypoint_jump_candidates_present", "left_right_swap_candidates_present",
+                                      "unconfirmed_id_switch", "confirmed_id_switch_candidate"]
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+        self.assertTrue(all(row["status"] == "measured" for item in result["indicators"] for row in item["source_measurements"]))
+
+    def test_confirmed_switch_count_must_be_unknown_or_nonnegative_integer(self):
+        for count in (None, 0, -1, "1", 1.0, True):
+            with self.subTest(count=count):
+                sequence, events, timeline = fixture()
+                events[0]["track_diagnostics"]["confirmed_id_switch_count"] = count
+                context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+                result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+                row = feature(result, "FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio")
+                if count is None or type(count) is int and count == 0:
+                    self.assertEqual(row["status"], "measured")
+                else:
+                    self.assertEqual(row["reason"], "source_event_quality_evidence_invalid")
+                    self.assertIsNone(row["value"])
+
+    def test_source_track_ids_require_nonnegative_integers_even_when_timeline_matches(self):
+        for track in (None, -1, True, 1.0, "1", 0):
+            with self.subTest(track=track):
+                sequence, events, timeline = fixture()
+                events[0]["track_diagnostics"]["source_track_ids"] = [track]
+                for row in timeline:
+                    row["source_track_id"] = track
+                context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+                result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+                row = feature(result, "FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio")
+                self.assertEqual(row["status"], "measured" if type(track) is int and track == 0 else "unavailable")
+
+    def test_supplied_identity_timeline_is_checked_for_each_local_measurement_window(self):
+        for key, value in (("source_track_id", 9), ("selection_status", "unselected"),
+                           ("primary_player_id", 2), ("identity_ambiguous", True),
+                           ("timestamp_ms", 601), ("source_track_id", True)):
+            with self.subTest(key=key, value=value):
+                sequence, events, timeline = fixture()
+                timeline[15][key] = value  # 600 ms: inside post-landing, after preload.
+                context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+                result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+                for code, name in (("FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio"),
+                                   ("FS01-M05", "post_landing_body_speed_std_body_s")):
+                    row = feature(result, code, name)
+                    self.assertEqual(row["reason"], "measurement_window_subject_continuity_unverified")
+                    self.assertIsNone(row["value"])
+                self.assertEqual(feature(result, "FS01-M02", "preload_hip_height_drop_body")["status"], "measured")
+
+    def test_missing_empty_or_conflicting_timeline_rows_never_fall_back_to_event_summary(self):
+        for mutation in ("missing", "empty", "conflicting_duplicates"):
+            with self.subTest(mutation=mutation):
+                sequence, events, timeline = fixture()
+                if mutation == "missing":
+                    del timeline[15]
+                elif mutation == "empty":
+                    timeline = []
+                else:
+                    timeline.extend([{**timeline[15], "source_track_id": 7}, dict(timeline[15])])
+                context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+                result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+                row = feature(result, "FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio")
+                self.assertEqual(row["reason"], "measurement_window_subject_continuity_unverified")
+                self.assertIsNone(row["value"])
+
+    def test_identical_duplicate_timeline_rows_remain_compatible(self):
+        sequence, events, timeline = fixture()
+        timeline.append(dict(timeline[15]))
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+        self.assertEqual(feature(result, "FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio")["status"], "measured")
+
+    def test_identity_discontinuity_cannot_select_a_preload_turn(self):
+        sequence, events, timeline = fixture()
+        timeline[3]["source_track_id"] = 7  # 120 ms: inside the descent support.
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
+        rows = indicator(result, "FS01-M02")["source_measurements"]
+        self.assertTrue(all(row["value"] is None for row in rows))
+        self.assertEqual(rows[0]["reason"], "measurement_window_subject_continuity_unverified")
+        self.assertEqual(feature(result, "FS01-M04", "post_slowdown_ankle_width_to_hip_width_ratio")["status"], "measured")
+
+    def test_absent_timeline_preserves_legacy_event_diagnostic_measurements(self):
+        sequence, events, _ = fixture()
+        result = compute_source_aligned_features(sequence, events[0], events=events)
+        self.assertTrue(all(row["status"] == "measured" for item in result["indicators"] for row in item["source_measurements"]))
+        stop = compute_source_aligned_features(sequence, events[2], events=events)
+        self.assertIsNone(feature(stop, "FS09-M05", "stable_control_proxy_to_next_fs10_or_fs02_ms")["value"])
+
     def test_conflicting_timeline_rows_and_successor_tracks_do_not_claim_verified_identity(self):
         for conflict in ("timeline", "successor"):
             with self.subTest(conflict=conflict):

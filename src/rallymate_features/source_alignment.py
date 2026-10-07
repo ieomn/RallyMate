@@ -16,9 +16,10 @@ from rallymate_features.coordinates import body_scale
 from rallymate_features.geometry import angle_three_points_deg
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.validity import DEFAULT_KEYPOINT_CONFIDENCE_MIN
+from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 
 
-VERSION = "source-aligned-fs-measurements-v1.0.0"
+VERSION = "source-aligned-fs-measurements-v1.1.0"
 SOURCE_PHASE_VERSION = "source-preload-turning-point-v1.0.0"
 JOINTS = ("left_shoulder", "right_shoulder", "left_hip", "right_hip",
           "left_knee", "right_knee", "left_ankle", "right_ankle")
@@ -98,6 +99,32 @@ class SourceAlignedContext:
             return "camera_reference_discontinuity"
         return None
 
+    def subject_window_reason(self, indexes: np.ndarray, event: Mapping) -> str | None:
+        """Verify every supplied identity observation in this actual window.
+
+        Legacy callers without a timeline retain the existing event diagnostic
+        contract. A supplied, empty or conflicting timeline is never treated as
+        absent, and valid event summaries cannot override its frame evidence.
+        """
+        if self.primary_timeline is None:
+            return None
+        tracks = _mapping(event.get("track_diagnostics")).get("source_track_ids")
+        if (not isinstance(tracks, list) or len(tracks) != 1
+                or not isinstance(tracks[0], int) or isinstance(tracks[0], bool) or tracks[0] < 0):
+            return "measurement_window_subject_continuity_unverified"
+        for index in indexes:
+            row = self.identity_rows.get(int(self.sequence.source_frames[index]), {})
+            if (row.get("selection_status") != "selected" or row.get("identity_ambiguous") is not False
+                    or not isinstance(row.get("primary_player_id"), int) or isinstance(row.get("primary_player_id"), bool)
+                    or row["primary_player_id"] < 0
+                    or row.get("primary_player_id") != event.get("person_track_id")
+                    or not isinstance(row.get("source_track_id"), int) or isinstance(row.get("source_track_id"), bool)
+                    or row.get("source_track_id") != tracks[0]
+                    or isinstance(row.get("timestamp_ms"), bool)
+                    or row.get("timestamp_ms") != float(self.sequence.timestamp_ms[index])):
+                return "measurement_window_subject_continuity_unverified"
+        return None
+
 
 _CACHE: dict[tuple[int, int, int], SourceAlignedContext] = {}
 
@@ -148,11 +175,40 @@ def clear_source_aligned_feature_cache(sequence: PoseSequence | None = None) -> 
             del _CACHE[key]
 
 
+def _event_quality_gate(event: Mapping) -> dict | None:
+    diagnostics = _mapping(event.get("track_diagnostics"))
+    flags = event.get("quality_flags", [])
+    if not isinstance(flags, list) or any(not isinstance(flag, str) or not flag for flag in flags):
+        return None
+    flags = list(flags)
+    confirmed = diagnostics.get("confirmed_id_switch_count")
+    if confirmed is not None and (not isinstance(confirmed, int) or isinstance(confirmed, bool) or confirmed < 0):
+        return None
+    if isinstance(confirmed, int) and not isinstance(confirmed, bool) and confirmed > 0:
+        flags.append("confirmed_id_switch_present")
+    # Reuse the established public policy: candidate jump/swap/identity flags
+    # are not confirmed measurement failures. Confirmed switches are.
+    indicator = "FS09-M05" if event.get("event_code") == "FS09" else "FS01-M02"
+    try:
+        return evaluate_indicator_event_quality(indicator, flags)
+    except ValueError:
+        return None
+
+
 def _identity_reason(context: SourceAlignedContext, event: Mapping) -> str | None:
     identity = event_identity(event)
-    if identity is None or identity[1] != context.sequence.primary_player_id:
+    if identity is None or identity[1] < 0 or identity[1] != context.sequence.primary_player_id:
         return "subject_or_video_identity_unverified"
     diagnostics = _mapping(event.get("track_diagnostics"))
+    gate = _event_quality_gate(event)
+    if gate is None:
+        return "source_event_quality_evidence_invalid"
+    if gate["hard_fail"]:
+        # The shared policy has already classified these as confirmed failures;
+        # this chooses an explanation, never upgrades candidate flags.
+        if any("id_switch" in flag.lower() for flag in gate["hard_fail_flags"]):
+            return "confirmed_subject_identity_switch"
+        return "source_event_measurement_quality_hard_fail"
     if diagnostics.get("primary_identity_ambiguous") is not False:
         return "subject_identity_continuity_unverified"
     if diagnostics.get("source_track_switch_candidate_count") != 0:
@@ -167,26 +223,36 @@ def _phase(event: Mapping, name: str) -> tuple[float | None, str | None]:
     if value is None or not event["start_ms"] <= value <= event["end_ms"]:
         return None, "phase_not_observed_or_outside_event:" + name
     flags = event.get("quality_flags", [])
+    if not isinstance(flags, list) or any(not isinstance(flag, str) or not flag for flag in flags):
+        return None, "source_event_quality_evidence_invalid"
     if any(isinstance(flag, str) and flag.endswith(":" + name) and ("censored" in flag or "low_sample_peak" in flag) for flag in flags):
         return None, "phase_is_censored_peak_not_confirmed_slowdown:" + name
     return value, None
 
 
-def _row(context: SourceAlignedContext, *, indicator: str, name: str, label: str, unit: str,
+def _row(context: SourceAlignedContext, *, event: Mapping, indicator: str, name: str, label: str, unit: str,
          definition: str, start: float, end: float, required: tuple[str, ...], reason: str | None,
          value: float | None = None, indexes: np.ndarray | None = None, evidence: dict | None = None,
          minimum_samples: int = 2) -> dict:
     indexes = context.indexes(start, end) if indexes is None else indexes
     coverage = context.coverage(indexes, (required,))
     reason = reason or context.window_reason(indexes, start, end, minimum_samples=minimum_samples)
+    reason = reason or context.subject_window_reason(indexes, event)
     reason = reason or (None if coverage["passes"] else "required_joint_coverage_below_70_percent")
     valid = bool(reason is None and value is not None and np.isfinite(value))
+    evidence = dict(evidence or {})
+    gate = _event_quality_gate(event)
+    if gate is not None and gate["hard_fail"]:
+        evidence["source_event_quality_gate"] = {
+            "policy_version": gate["policy_version"], "hard_fail_flags": gate["hard_fail_flags"],
+            "semantics": "existing_measurement_evidence_gate_not_technical_fault_penalty",
+        }
     return {"feature_name": name, "name_zh": label, "unit": unit,
             "status": "measured" if valid else "unavailable", "valid": valid,
             "value": float(value) if valid else None, "reason": "observed_measurement" if valid else reason or "measurement_not_observed",
             "source_frames": [int(frame) for frame in context.sequence.source_frames[indexes]],
             "window_ms": {"start_ms": start, "end_ms": end}, "definition": definition,
-            "coverage": coverage, "source_ref": SOURCE_LOCATORS[indicator][0], "evidence": evidence or {},
+            "coverage": coverage, "source_ref": SOURCE_LOCATORS[indicator][0], "evidence": evidence,
             "value_semantics": "observed_image_plane_quantity_not_technique_grade",
             "zero_semantics": "measured_zero_is_not_missing_and_does_not_assign_E_grade"}
 
@@ -242,7 +308,8 @@ def locate_source_preload(context: SourceAlignedContext, event: Mapping) -> dict
     if reason is not None:
         return {**result, "repair_reason": reason}
     indexes = context.indexes(event["start_ms"], takeoff)
-    reason = _identity_reason(context, event) or context.window_reason(indexes, event["start_ms"], takeoff)
+    reason = (_identity_reason(context, event) or context.window_reason(indexes, event["start_ms"], takeoff)
+              or context.subject_window_reason(indexes, event))
     if reason is not None:
         return {**result, "repair_reason": reason}
     if indexes.size < 5:
@@ -319,7 +386,7 @@ def _preload(context: SourceAlignedContext, event: Mapping, reason: str | None) 
          "median absolute change in adjacent observed image-plane body-center interval speeds divided by interval-midpoint time difference; not a calibrated continuity score"),
     ]
     values[definitions[-1][0]] = speed["rate"]
-    return [_row(context, indicator=indicator, name=name, label=label, unit=unit, definition=definition,
+    return [_row(context, event=event, indicator=indicator, name=name, label=label, unit=unit, definition=definition,
                  start=start, end=end, required=required, reason=reason, value=values.get(name), indexes=indexes,
                  evidence={"phase_key": "preload_ms", "phase_semantics": "unvalidated_pose_candidate_not_ground_truth",
                            "source_phase": phase, "body_scale": scale, **({"speed_continuity_observations": speed} if name == definitions[-1][0] else {})})
@@ -337,7 +404,7 @@ def _post_slowdown_ratio(context: SourceAlignedContext, event: Mapping, reason: 
     valid = np.isfinite(hip_width) & np.isfinite(ankle_width) & (hip_width > 1e-6)
     ratios = ankle_width[valid] / hip_width[valid]
     invalid_denominator = bool(not indexes.size or int(valid.sum()) * 10 < indexes.size * 7)
-    return [_row(context, indicator="FS01-M04", name="post_slowdown_ankle_width_to_hip_width_ratio",
+    return [_row(context, event=event, indicator="FS01-M04", name="post_slowdown_ankle_width_to_hip_width_ratio",
                  label="减速后踝距与髋宽之比", unit="ratio", start=start, end=end, required=HIPS + ANKLES,
                  reason=reason or phase_error or ("hip_width_observability_below_70_percent_or_degenerate" if invalid_denominator else None),
                  value=float(np.median(ratios)) if ratios.size else None, indexes=indexes,
@@ -379,15 +446,8 @@ def _transition(context: SourceAlignedContext, event: Mapping, indicator: str, r
     association["event_boundary_gap_ms"] = successor["start_ms"] - event["end_ms"] if successor else None
     identity_error = None
     if successor and context.primary_timeline is not None:
-        expected_track = _mapping(event.get("track_diagnostics")).get("source_track_ids", [])
-        for index in indexes:
-            row = context.identity_rows.get(int(context.sequence.source_frames[index]), {})
-            if (row.get("selection_status") != "selected" or row.get("identity_ambiguous") is not False
-                    or row.get("primary_player_id") != event["person_track_id"]
-                    or len(expected_track) != 1 or row.get("source_track_id") != expected_track[0]
-                    or row.get("timestamp_ms") != int(context.sequence.timestamp_ms[index])):
-                identity_error = "between_event_subject_continuity_unverified"
-                break
+        if context.subject_window_reason(indexes, event):
+            identity_error = "between_event_subject_continuity_unverified"
     elif successor and successor["start_ms"] > event["end_ms"]:
         identity_error = "between_event_subject_continuity_unverified"
     subject_error = reason or (_identity_reason(context, successor) if successor else association["reason"])
@@ -401,7 +461,7 @@ def _transition(context: SourceAlignedContext, event: Mapping, indicator: str, r
                       or context.sequence.timestamp_ms[indexes[-1]] != end):
         link_reason = link_reason or "exact_phase_endpoint_observation_missing"
     name = "landing_proxy_to_next_fs02_ms" if is_split else "stable_control_proxy_to_next_fs10_or_fs02_ms"
-    row = _row(context, indicator=indicator, name=name, label="落地候选到后续启动间隔" if is_split else "稳定候选到后续事件间隔",
+    row = _row(context, event=event, indicator=indicator, name=name, label="落地候选到后续启动间隔" if is_split else "稳定候选到后续事件间隔",
                unit="ms", start=start, end=end, required=JOINTS, reason=link_reason,
                value=end - start if successor and anchor is not None else None, indexes=indexes,
                minimum_samples=minimum_samples,
@@ -411,7 +471,7 @@ def _transition(context: SourceAlignedContext, event: Mapping, indicator: str, r
     speed_end = min(end, event["end_ms"])
     speed_indexes = context.indexes(start, speed_end)
     speed = _speed_summary(context, speed_indexes, _scale(context, speed_indexes))
-    stability = _row(context, indicator=indicator,
+    stability = _row(context, event=event, indicator=indicator,
         name="post_landing_body_speed_std_body_s" if is_split else "stable_control_body_speed_std_body_s",
         label="落地候选后速度波动" if is_split else "稳定候选后速度波动", unit="body/s", start=start, end=speed_end,
         required=JOINTS[:4], reason=reason or phase_error, value=speed["std"], indexes=speed_indexes,
