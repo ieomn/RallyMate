@@ -157,8 +157,28 @@ export function createApiClient(
     return payload as T;
   }
 
-  const get = <T,>(path: string, signal?: AbortSignal) =>
-    fetchImpl(urlFor(path), { method: "GET", cache: "no-store", headers: { "X-Request-ID": requestId() }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }).then((response) => parseResponse<T>(response));
+  const reportPath = (jobId: string, suffix = "") => {
+    const boundary = resolvedConfig.jobsPath.search(/[?#]/);
+    const path = boundary < 0 ? resolvedConfig.jobsPath : resolvedConfig.jobsPath.slice(0, boundary);
+    const tail = boundary < 0 ? "" : resolvedConfig.jobsPath.slice(boundary);
+    return `${trimSlashes(path)}/${encodeURIComponent(jobId)}${suffix}${tail}`;
+  };
+
+  const get = <T,>(path: string, signal?: AbortSignal, reportContract?: "current") => {
+    // Validate and rewrite analyzer URLs before adding the representation query.
+    // Other reads keep their existing contract and query string unchanged.
+    let url = urlFor(path);
+    if (reportContract) {
+      const fragmentIndex = url.indexOf("#");
+      const fragment = fragmentIndex < 0 ? "" : url.slice(fragmentIndex);
+      const endpoint = fragmentIndex < 0 ? url : url.slice(0, fragmentIndex);
+      const queryIndex = endpoint.indexOf("?");
+      const query = new URLSearchParams(queryIndex < 0 ? "" : endpoint.slice(queryIndex + 1));
+      query.set("report_contract", reportContract);
+      url = `${queryIndex < 0 ? endpoint : endpoint.slice(0, queryIndex)}?${query}${fragment}`;
+    }
+    return fetchImpl(url, { method: "GET", cache: "no-store", headers: { "X-Request-ID": requestId() }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) }).then((response) => parseResponse<T>(response));
+  };
 
   return {
     config: resolvedConfig,
@@ -173,7 +193,7 @@ export function createApiClient(
         signal,
       }).then((response) => parseResponse<ScorecardResponse>(response)),
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
-    getJob: (jobId, signal) => get<JobProgress>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}`, signal),
+    getJob: (jobId, signal) => get<JobProgress>(reportPath(jobId), signal, "current"),
     getTechnicalReview: (jobId, signal) => get<unknown>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review`, signal).then(value => parseTechnicalReview(value, jobId)),
     saveTechnicalReview: (jobId, review, signal) => fetchImpl(urlFor(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review`), {
       method: "POST", headers: { "content-type": "application/json", "X-Request-ID": requestId() }, body: JSON.stringify(review),
@@ -181,7 +201,7 @@ export function createApiClient(
     }).then(parseResponse<unknown>).then(value => parseTechnicalReview(value, jobId)),
     exportTechnicalReview: (jobId, signal) => get<Record<string, unknown>>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review/export`, signal),
     getDemoResult: (jobId, options = {}) =>
-      get<DemoResultResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/demo-result`, options.signal).then(normalizeMeasurementResult),
+      get<DemoResultResponse>(options.endpoint || reportPath(jobId, "/demo-result"), options.signal, "current").then(normalizeMeasurementResult),
     getPosePreview: (jobId, options = {}) => {
       const bounded = (value: number | undefined, fallback: number, max: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(0, Math.floor(value))) : fallback;
       const query = new URLSearchParams({ start_ms: String(bounded(options.startMs, 0, Number.MAX_SAFE_INTEGER)), duration_ms: String(Math.max(1, bounded(options.durationMs, 10000, 10000))), sample_limit: String(Math.max(1, bounded(options.sampleLimit, 600, 600))) });
@@ -196,7 +216,7 @@ export function createApiClient(
       return get<TrajectoryPreviewResponse>(suffix ? `${endpoint}${endpoint.includes("?") ? "&" : "?"}${suffix}` : endpoint, options.signal);
     },
     getTechniqueAssessment: (jobId, options = {}) =>
-      get<TechniqueAssessmentResponse>(options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technique-assessment`, options.signal),
+      get<TechniqueAssessmentResponse>(options.endpoint || reportPath(jobId, "/technique-assessment"), options.signal, "current"),
   };
 }
 
