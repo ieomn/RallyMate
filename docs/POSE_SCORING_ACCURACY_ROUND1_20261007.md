@@ -61,7 +61,7 @@ $py = "$PWD\runtime\rtmpose\.venv\Scripts\python.exe"
 - 开始时冻结的 43 份来源/试标/诊断文件摘要全部保持不变；两个已发布注册表继续匹配原始权威 SHA，没有改写旧来源哈希。
 - 已先完成构建，再通过 `scripts/restart_preview_service.ps1` 检查空闲并重启 8001/8003。健康状态为 ready，网页 HTTP 200，仅有一个服务 worker，原 Cloudflare 进程继续运行。对 12 个旧任务执行只读 GET，来源测量返回内容摘要与重启前完全一致；本轮没有新上传、整段推理或人工标签写入。修复用于后续新生成的来源测量。
 
-功能提交为 `677d7d1`（连续导数候选）、`71c36c2`（人物连续性门禁）、`e521e6a`（受控 intake）。首个提交已推送；随后 GitHub SSH 多次返回 `Internal Server Error`，普通和非 thin pack 推送均未成功；HTTPS 回退因本机无可用凭据而停止，没有修改 remote 或配置。后续提交完整保存在当前本地分支，须在远端恢复后执行 `git push origin codex/pose-scoring-accuracy`。核对远端 main 仍为 `024d240`。
+功能提交为 `677d7d1`（连续导数候选）、`71c36c2`（人物连续性门禁）、`e521e6a`（受控 intake），初版诊断记录为 `0e02267`。中间 GitHub SSH 曾多次返回 `Internal Server Error`；没有修改 remote、认证配置或历史。最终普通推送恢复成功，已核对远端开发分支包含上述全部提交，main 仍为 `024d240`。
 
 ## 必须由真人补充的证据
 
