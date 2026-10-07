@@ -25,7 +25,7 @@ from fastapi import (
 )
 from starlette.concurrency import run_in_threadpool
 from rallymate_service.uploads import CHUNK_BYTES, UploadStore
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from rallymate_scoring.granularity import static_model_capability
@@ -50,6 +50,11 @@ from rallymate_service.technical_review import (
 )
 from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.analysis_report import build_analysis_report
+from rallymate_service.report_compatibility import (
+    DEFAULT_REPORT_CONTRACT,
+    ReportContract,
+    project_report,
+)
 from rallymate_service.source_assessment import load_source_aligned_assessment
 from rallymate_service.user_demo import (
     UserDemoResultError,
@@ -260,6 +265,7 @@ def _public_job(
     public_base_url: str | None = None,
     *,
     redact_summary: bool = False,
+    report_contract: ReportContract = DEFAULT_REPORT_CONTRACT,
 ) -> dict:
     public = {
         key: job.get(key)
@@ -320,7 +326,7 @@ def _public_job(
         _public_url(f"/v1/jobs/{job['id']}/pose-preview", public_base_url)
         if job.get("status") in {"running", "succeeded"} else None
     )
-    return public
+    return project_report(public, report_contract)
 
 
 def _safe_filename(value: str | None) -> str:
@@ -754,6 +760,7 @@ def create_app(
             le=100,
             description="Maximum number of recent jobs to return (bounded for public use).",
         ),
+        report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
         _: None = Depends(authorize),
     ) -> dict:
         jobs = db.list_jobs(limit=limit)
@@ -763,6 +770,7 @@ def create_app(
                     job,
                     service_settings.public_base_url,
                     redact_summary=_should_redact_public(service_settings),
+                    report_contract=report_contract,
                 )
                 for job in jobs
             ],
@@ -1033,7 +1041,8 @@ def create_app(
         return uploads.complete(upload_id, enqueue, existing)
 
     @app.get("/v1/jobs/{job_id}")
-    def get_job(job_id: str, _: None = Depends(authorize)) -> dict:
+    def get_job(job_id: str, report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
+                _: None = Depends(authorize)) -> dict:
         job = db.get_job(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
@@ -1042,6 +1051,7 @@ def create_app(
             job,
             service_settings.public_base_url,
             redact_summary=_should_redact_public(service_settings),
+            report_contract=report_contract,
         )
 
     def technical_review_job(job_id: str) -> dict:
@@ -1086,7 +1096,8 @@ def create_app(
             raise HTTPException(exc.status, exc.detail()) from exc
 
     @app.get("/v1/jobs/{job_id}/demo-result")
-    def get_demo_result(job_id: str, _: None = Depends(authorize)) -> dict:
+    def get_demo_result(job_id: str, report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
+                        _: None = Depends(authorize)) -> dict:
         job = db.get_job(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
@@ -1144,7 +1155,7 @@ def create_app(
             frames_sha256=loop_provenance.get("frames_sha256"),
         )
         result["analysis_report"] = build_analysis_report(result, summary=summary)
-        return result
+        return project_report(result, report_contract)
 
     @app.get("/v1/jobs/{job_id}/trajectory")
     def get_trajectory(
@@ -1268,6 +1279,7 @@ def create_app(
     @app.get("/v1/jobs/{job_id}/technique-assessment")
     def get_technique_assessment(
         job_id: str,
+        report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
         _: None = Depends(authorize),
     ) -> dict:
         """Return the evidence-gated qualitative assessment for a completed job."""
@@ -1313,14 +1325,15 @@ def create_app(
         result["trajectory_url"] = _public_url(
             f"/v1/jobs/{job_id}/trajectory", service_settings.public_base_url
         )
-        return result
+        return project_report(result, report_contract)
 
     @app.get("/v1/jobs/{job_id}/artifacts/{artifact_name}")
     def get_artifact(
         job_id: str,
         artifact_name: str,
+        report_contract: ReportContract = Query("current"),
         _: None = Depends(authorize),
-    ) -> FileResponse:
+    ) -> Response:
         if artifact_name not in ALLOWED_ARTIFACTS:
             raise HTTPException(404, "artifact not found")
         job = db.get_job(job_id)
@@ -1331,6 +1344,19 @@ def create_app(
         artifact = Path(job["output_dir"]) / artifact_name
         if not artifact.exists():
             raise HTTPException(404, "artifact not found")
+        # Artifact downloads stay byte-for-byte native by default. An explicit
+        # legacy view supports old offline summary importers without rewriting
+        # provenance-bound files or presenting a projection as a raw artifact.
+        if artifact_name == "summary.json" and report_contract == "legacy-v1":
+            try:
+                summary = json.loads(artifact.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                raise HTTPException(422, "summary artifact is invalid") from exc
+            return JSONResponse(project_report(summary, report_contract), headers={
+                "Cache-Control": "private, no-store",
+                "X-RallyMate-Report-Contract": report_contract,
+                "Content-Disposition": f'attachment; filename="{job_id}-summary-legacy-v1.json"',
+            })
         return FileResponse(
             artifact,
             filename=f"{job_id}-{artifact_name}",

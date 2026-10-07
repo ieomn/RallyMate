@@ -54,3 +54,8 @@
 *.whl binary
 *.pdf binary
 *.docx binary
+
+# These published registries are bound by raw-byte SHA-256 in registry-lifecycle.json.
+# Preserve their original CRLF bytes on every platform; normalization breaks validation.
+/metric-feasibility-pose-wave-v2.json -text whitespace=cr-at-eol
+/indicator-scoring-requirements-pose-wave-v1.json -text whitespace=cr-at-eol

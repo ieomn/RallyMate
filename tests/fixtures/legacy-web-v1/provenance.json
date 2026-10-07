@@ -1,0 +1,16 @@
+{
+  "source_commit": "60457524bcd828ad0a9063c5e4af0c67089f18ad",
+  "purpose": "Unmodified original web client parsers for the legacy report API compatibility regression. Type-only imports are stripped at execution; no runtime frontend dependency.",
+  "files": [
+    {
+      "file": "footwork-review.ts",
+      "source_path": "scoring-demo-web/app/lib/footwork-review.ts",
+      "sha256": "54db26c2c50d6d6c84ee2deef7282e6da532a6d58c67e5394b009c369490b5ba"
+    },
+    {
+      "file": "motion-analysis.ts",
+      "source_path": "scoring-demo-web/app/lib/motion-analysis.ts",
+      "sha256": "c9cafb36019e9414505dda6a4ed8ed5cb9985a6310f49bd4d34fcab75f361c9f"
+    }
+  ]
+}
