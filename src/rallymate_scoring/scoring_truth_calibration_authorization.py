@@ -7,9 +7,9 @@ workflow to begin.  It does not, by itself, authorize later CSV/JSONL bytes as
 coach ground truth.  This module defines the second, content-bound contract that
 downstream calibration code requires.
 
-There is intentionally no public constructor for a production verification
-object yet.  A future authorized-intake verifier must validate the A/B/C
-revision chain and issue the process-local object through ``_issue_verified``.
+The public verifier in ``scoring_truth_authorized_intake`` replays the A/B/C
+revision chain and raw truth exports against a separately trusted acceptance
+ledger before issuing a process-local object through ``_issue_verified``.
 Persisted JSON, a self-consistent hash, or a copied release record can never
 recreate the runtime verification token.
 """
@@ -18,7 +18,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
 import json
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
+import unicodedata
 
 
 CALIBRATION_AUTHORIZATION_BINDING_VERSION = (
@@ -167,7 +168,7 @@ def validate_scoring_truth_calibration_authorization_binding(
                 f"revision_lineage.{field} is required"
             )
         if field != "revision_id":
-            identities.append(value)
+            identities.append(unicodedata.normalize("NFKC", value.strip()).casefold())
     if status == VERIFIED_STATUS:
         if len(set(identities)) != 3 or revision.get("roles_distinct") is not True:
             raise ScoringTruthCalibrationAuthorizationError(
@@ -225,6 +226,7 @@ class VerifiedScoringTruthCalibrationAuthorization:
 
     _token: object
     _binding: dict[str, Any]
+    _assert_sources_current: Callable[[], None] | None = None
 
     def __reduce__(self) -> Any:  # pragma: no cover - defensive serialization guard
         raise TypeError("verified calibration truth authority is process-local")
@@ -236,12 +238,14 @@ class VerifiedScoringTruthCalibrationAuthorization:
 
 def _issue_verified_scoring_truth_calibration_authorization(
     binding: Mapping[str, Any],
+    *,
+    assert_sources_current: Callable[[], None] | None = None,
 ) -> VerifiedScoringTruthCalibrationAuthorization:
     """Verifier-only issuance hook; a persisted binding cannot call this implicitly."""
 
     validate_scoring_truth_calibration_authorization_binding(binding)
     return VerifiedScoringTruthCalibrationAuthorization(
-        _VERIFICATION_TOKEN, deepcopy(dict(binding))
+        _VERIFICATION_TOKEN, deepcopy(dict(binding)), assert_sources_current
     )
 
 
@@ -255,6 +259,8 @@ def require_verified_scoring_truth_calibration_authorization(
         raise ScoringTruthCalibrationAuthorizationError(
             "a same-process verified authorized-intake object is required"
         )
+    if value._assert_sources_current is not None:
+        value._assert_sources_current()
     binding = value.binding
     validate_scoring_truth_calibration_authorization_binding(binding)
     return binding

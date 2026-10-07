@@ -1953,6 +1953,11 @@ def compile_calibration_dataset(
         manifest = _replace_path_prefix(manifest, str(staging), str(final_output))
         _write_json(staging / "manifest.json", manifest)
         _assert_frozen_inputs_unchanged(frozen_inputs)
+        if verified_truth_authorization is not None:
+            if require_verified_scoring_truth_calibration_authorization(
+                verified_truth_authorization
+            ) != truth_authorization:
+                raise ValueError("verified truth authorization changed before commit")
         for source in verified_feature_sources or []:
             try:
                 assert_indicator_feature_source_metadata_unchanged(source)

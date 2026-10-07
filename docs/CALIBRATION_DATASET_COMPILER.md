@@ -34,8 +34,10 @@ M92 进一步要求每个 indicator-features JSONL 都有一个独立、不可�
 与 feature 文件一一对应的 `verified_indicator_feature_sources`，两者互不替代。
 
 M90 放行记录只代表“可以开始事件/阶段标注”：它不是身份认证、时间证明、人工标签认证，
-也不等于标定、晋级或生产允许。当前仓库还没有可签发真实 `calibration_input` 的 intake verifier，
-所以真实编译路径有意保持关闭；这保证 M89 技术交接和任何私有 intake 都不会被误当成标定数据。
+也不等于标定、晋级或生产允许。现已实现受控 API intake verifier，见
+`docs/SCORING_TRUTH_AUTHORIZED_INTAKE.md`：完整重放 M93 与五 CSV intake，并要求独立运维配置
+pin 的双人接受 ledger。当前没有真实标签或该接受 ledger，真实编译仍关闭；M89 技术交接和
+私有 intake 自身始终不能授权标定。
 
 ## 数据流
 
@@ -84,7 +86,8 @@ M90 放行记录只代表“可以开始事件/阶段标注”：它不是身份
 输出目录已存在时命令会拒绝覆盖。所有文件先写入同卷临时目录，全部成功后才原子改名，失败不会留下半成品数据集。
 所有授权绑定输入均只读取一次；严格 JSON/JSONL 解析和 SHA-256 来自同一字节快照，并在原子改名前再次逐字节比较源文件，避免 parse/hash 重开和提交前替换竞态。
 
-当前 CLI 仍不能自行签发真实 truth authorization 或 feature-source verifier。受控集成代码须先调用
+当前 CLI 仍不能自行签发真实 truth authorization 或 feature-source verifier。受控集成代码须先通过
+`verify_scoring_truth_calibration_intake(...)` 验证真实人工输入（完整前提见上述文档），并独立调用
 `verify_indicator_feature_source_metadata(scoring_summary_path=..., indicator_features_path=...,
 run_bundle_ledger=...)`，再把返回对象按 `indicator_feature_paths` 的顺序传给
 `compile_calibration_dataset(..., verified_indicator_feature_sources=[...])`。verifier 拒绝 symlink、重复 JSON

@@ -5,8 +5,11 @@
 M90 新增了不可序列化的同进程 truth-authorization 门禁：真实 prepared dataset 即使携带完整且自洽的
 `truth_authorization` JSON，也必须同时向 Python API 传入 authorized-intake verifier 刚签发的运行时对象，并逐字段匹配完整 binding。复制 JSON 或仅复制 `binding_sha256` 会被拒绝。候选保存完整 binding，且 prepared provenance 另存 binding SHA-256。
 
-当前仓库还没有生产 authorized-intake verifier，因此文件型 `scripts/fit_calibration_candidate.py`
-无法从磁盘 JSON 恢复这项权限，真实输入会 fail closed 且不写候选。下面的命令只说明未来 verifier 接入后的文件参数形态，不表示当前可执行生产拟合。显式 synthetic scope 仍只供内存单元测试使用。
+现已实现受控 API authorized-intake verifier，见 `docs/SCORING_TRUTH_AUTHORIZED_INTAKE.md`。
+它要求完整 M93/原始 CSV 重放以及独立运维配置 pin 的双人接受 ledger；当前没有真实标签或
+该接受 ledger。文件型 `scripts/fit_calibration_candidate.py` 仍无法从磁盘 JSON 恢复权限，真实
+输入会 fail closed 且不写候选。下面仅列出文件参数形态；真实受控拟合须通过 Python API 传入
+新验证的运行对象。显式 synthetic scope 仍只供内存单元测试使用。
 
 如果教练只提供组内排序而没有 A～E 绝对锚点，必须使用独立的
 `docs/CALIBRATION_RANKING_ONLY.md` 路径。该路径只能拟合
@@ -88,7 +91,7 @@ quality gate、源 feature canonical SHA、run-bundle 来源 metadata 和目标�
 
 `examples/calibration-independent-test-protocol.template.json` 只提供协议字段结构；其中所有数值和来源哈希均为故意不能通过校验的占位符，必须在查看独立测试标签或结果前完成预注册。
 
-只有负责人完成可追溯的人工 decision，且指标已经通过独立流程逐级登记为 F4 后，才可进入 promotion。production 晋级还必须提供完整的 F0→F4 证据包；晋级器校验证据链、外部协议/人工来源、每段 canonical hash、最终 registry，以及实时 truth authorization，仅逐值复制候选参数；它不会修改注册表、切点、系数或验收门槛。当前 13 项均为 F2，没有 production maturity bundle，也没有 authorized-intake verifier，所以真实 production 晋级必然拒绝且不落文件。合成候选最多只能产生 `test_only` 资产，不能授权生产评分。
+只有负责人完成可追溯的人工 decision，且指标已经通过独立流程逐级登记为 F4 后，才可进入 promotion。production 晋级还必须提供完整的 F0→F4 证据包；晋级器校验证据链、外部协议/人工来源、每段 canonical hash、最终 registry，以及实时 truth authorization，仅逐值复制候选参数；它不会修改注册表、切点、系数或验收门槛。当前 13 项均为 F2，没有 production maturity bundle、真实标签或受控 intake 接受 ledger；即使 verifier 代码已实现，真实 production 晋级仍必然拒绝且不落文件。合成候选最多只能产生 `test_only` 资产，不能授权生产评分。
 
 人工决定结构可从 `examples/calibration-promotion-decision.template.json` 开始填写。production decision 必须复制 CLI 将要验证的同一份 maturity-evidence binding，并明确设置 `maturity_evidence_reviewed=true`。`COPY_FROM_*`/`REPLACE_WITH_*` 均为不可签发占位符；必须复制实际候选/报告/已为 F4 的注册表 lineage，并对外部签署记录计算 SHA-256，不能手工改写候选参数。
 
@@ -169,4 +172,4 @@ candidate、independent-test report、F3/F4、production asset、阈值或正式
 4. F4 条目只有在受控注册表来源、匹配的独立测试证据和上述批准凭证同时可信时才有发布效力。在任意本地副本中把 `feasibility_level` 改为 `F4` 不构成授权。
 5. 任一可信来源、权限、审批/签名或 lineage 校验失败时，停止晋级并隔离资产；生产评分保持 `calibration_required` 或 `unavailable`，不得以人工复制文件绕过门禁。
 
-M90 现验证由本地操作员复核的 release record，并把它绑定到事件/阶段标注计划的原始字节及完整 M89 技术 handoff。该记录只是启动标注工作流的本地操作门禁，不是数字签名或可信时间戳，不认证随后产生的人工 JSONL/CSV，也不授权标定、晋级或生产评分。authorized-intake verifier 尚未实现前，真实编译、拟合、晋级和账本创建保持关闭；hash 只证明所读字节的一致性，不证明操作员身份、外部批准或 F4 正确性。
+M90 现验证由本地操作员复核的 release record，并把它绑定到事件/阶段标注计划的原始字节及完整 M89 技术 handoff。该记录只是启动标注工作流的本地操作门禁，不是数字签名或可信时间戳，不认证随后产生的人工 JSONL/CSV，也不授权标定、晋级或生产评分。新 authorized-intake verifier 另外要求完整原始来源重放与外部双人接受 ledger；没有真实输入及独立可信配置时仍不能签发权限。hash 只证明所读字节的一致性，不证明操作员身份、外部批准或 F4 正确性。
