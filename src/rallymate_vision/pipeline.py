@@ -57,6 +57,7 @@ from rallymate_vision.tracking import SimpleMultiClassTracker
 from rallymate_vision.timebase import SourceVideoClock
 from rallymate_vision.camera_motion import CameraMotionGuard
 from rallymate_vision.source_replay import export_source_replay
+from rallymate_vision.progress import postprocess_progress
 from rallymate_vision.utils import relative_or_absolute, resolve_device, safe_float
 from rallymate_vision.validation import (
     validate_frame_observation,
@@ -756,7 +757,7 @@ def run_pipeline(
                     {
                         "phase": "inference",
                         "percent": safe_float(
-                            min(96.0, 3.0 + processed / planned_frames * 93.0),
+                            min(85.0, 3.0 + processed / planned_frames * 82.0),
                             1,
                         ),
                         "processed_frames": processed,
@@ -772,6 +773,25 @@ def run_pipeline(
                 break
 
     capture.release()
+    if processed == 0:
+        if writer is not None:
+            writer.release()
+        raise RuntimeError("no frames were processed; check start/end/stride settings")
+
+    def report_postprocessing(phase: str, **counts) -> None:
+        emit_progress(postprocess_progress(
+            phase, processed_frames=processed, total_frames=planned_frames, **counts,
+        ))
+
+    def report_scoring_progress(payload: dict) -> None:
+        report_postprocessing(
+            payload["phase"], completed=payload.get("completed"), total=payload.get("total"),
+        )
+
+    # Publish the last decoded frame and a new stage before lengthy CPU work.
+    # Previously every postprocessing step remained labelled 95% inference.
+    report_postprocessing("preparing_replay")
+    stage_started = time.perf_counter()
     annotated_video_compatibility: dict[str, str | int | None] = {
         "status": "disabled",
         "codec": None,
@@ -792,11 +812,11 @@ def run_pipeline(
                 "timing_preserved": False,
                 "timing_warning": "constant_fps_fallback_replay_may_not_match_source_timing",
             }
-    if processed == 0:
-        raise RuntimeError("no frames were processed; check start/end/stride settings")
+    timings["replay_export_seconds"] += time.perf_counter() - stage_started
 
     primary_timeline_path = request.output_dir / "primary-player.jsonl"
     primary_summary_path = request.output_dir / "primary-player-summary.json"
+    report_postprocessing("tracking_player")
     stage_started = time.perf_counter()
     primary_player = build_primary_player_artifacts(
         frames_path,
@@ -805,12 +825,14 @@ def run_pipeline(
     )
     timings["primary_player_seconds"] += time.perf_counter() - stage_started
 
+    report_postprocessing("recognizing_strokes")
     stage_started = time.perf_counter()
     # Keep reviewable swing/serve candidates separate from the FS scoring loop
     # and from confirmed ball-racket contacts. This also supports API backfills.
     action_recognition = recognize_strokes_from_artifacts(frames_path, primary_timeline_path)
     timings["action_recognition_seconds"] += time.perf_counter() - stage_started
 
+    report_postprocessing("detecting_events")
     stage_started = time.perf_counter()
     # Fail closed if an operator replaces the registry while inference is in
     # progress. The preflight snapshot remains the authorization source.
@@ -873,7 +895,9 @@ def run_pipeline(
         runtime_binding_registry=runtime_binding_registry,
         runtime_view_evidence=runtime_view_evidence,
         scoring_reference_context_path=scoring_reference_context_path,
+        progress_callback=report_scoring_progress,
     )
+    report_postprocessing("finalizing")
     _verify_scoring_registry_authority_unchanged(registry_authority)
     derived_scoring_sources = {
         "feasibility_registry": {
@@ -939,16 +963,6 @@ def run_pipeline(
     scoring_loop_report_path = request.output_dir / "scoring-loop-report.html"
     write_scoring_loop_report(scoring_loop, scoring_loop_report_path)
     timings["minimum_scoring_loop_seconds"] += time.perf_counter() - stage_started
-
-    emit_progress(
-        {
-            "phase": "finalizing",
-            "percent": 98,
-            "processed_frames": processed,
-            "total_frames": planned_frames,
-            "message": "正在汇总指标并校验输出产物",
-        }
-    )
 
     elapsed = time.perf_counter() - started_at
     quality_summary = aggregate_quality(quality_samples, metadata)
@@ -1175,16 +1189,11 @@ def run_pipeline(
     summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    stage_started = time.perf_counter()
     summary["validation"] = validate_run_artifacts(request.output_dir)
-    emit_progress(
-        {
-            "phase": "scoring_readiness",
-            "percent": 99,
-            "processed_frames": processed,
-            "total_frames": planned_frames,
-            "message": "正在逐项审计 GS/FS 评分颗粒度",
-        }
-    )
+    timings["artifact_validation_seconds"] += time.perf_counter() - stage_started
+    report_postprocessing("scoring_readiness")
+    stage_started = time.perf_counter()
     scoring_readiness_path = request.output_dir / "scoring-readiness.json"
     scoring_readiness = analyze_scoring_readiness(summary, frames_path)
     scoring_readiness_path.write_text(
@@ -1196,12 +1205,27 @@ def run_pipeline(
     summary["artifacts"]["scoring_readiness_json"] = relative_or_absolute(
         scoring_readiness_path, request.output_dir
     )
+    timings["report_validation_seconds"] += time.perf_counter() - stage_started
+    elapsed = time.perf_counter() - started_at
+    summary["processing"].update(
+        elapsed_seconds=safe_float(elapsed, 3),
+        effective_processed_fps=safe_float(processed / max(elapsed, 1e-6), 3),
+        stage_seconds={key: safe_float(value, 3) for key, value in timings.items()},
+    )
+    stage_started = time.perf_counter()
     analysis_report_path = request.output_dir / "analysis-report.html"
     write_analysis_report(summary, scoring_readiness, analysis_report_path)
     summary["artifacts"]["analysis_report_html"] = relative_or_absolute(
         analysis_report_path, request.output_dir
     )
     _verify_scoring_registry_authority_unchanged(registry_authority)
+    timings["report_export_seconds"] += time.perf_counter() - stage_started
+    elapsed = time.perf_counter() - started_at
+    summary["processing"].update(
+        elapsed_seconds=safe_float(elapsed, 3),
+        effective_processed_fps=safe_float(processed / max(elapsed, 1e-6), 3),
+        stage_seconds={key: safe_float(value, 3) for key, value in timings.items()},
+    )
     summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )

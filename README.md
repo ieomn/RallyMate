@@ -17,7 +17,7 @@ cd RallyMate
 
 ## 当前功能
 
-- 4 MiB 分块上传、SHA-256 校验、断点续传和幂等合并，排队与推理进度、刷新恢复任务。
+- 新上传会话使用 128 KiB 分块，兼容已有 4 MiB 会话；支持 SHA-256 校验、断点续传和幂等合并，排队与推理进度、刷新恢复任务。
 - 动作参考分、逐项测量、球与球拍观察，以及默认不显示骨架的 H.264 回放。
 - 球路按整段视频的全部跟踪记录重建，按时间分段分析方向与画面内速度；播放时将轨迹叠加到对应视频帧，短缺口插值单独标识。
 - 五类共 24 项最新动作定义：底线、发球、接发、网前、步伐。
@@ -26,6 +26,16 @@ cd RallyMate
 - 按所选动作核验视频证据，明确解释未识别和证据不足；MiMo 上游默认关闭。
 
 当前稳定测量链覆盖分腿垫步、第一步启动、制动相关的 13 项指标。24 项目录不等于 24 项都已具备可靠评分；未观测动作不补分，参考分与证据就绪度分开显示。
+
+### 后端迁移与开发分支
+
+`main` 同步了 `codex/scoring-report-rebuild` 在 `ed5481c` 的推理、时间窗测量、来源核验、技术评审 API、上传存储和服务端代理逻辑。原有网页客户端、页面、样式与宣传页保持不变；`scoring-demo-web/worker/gateway.ts` 属于服务端代理，是该目录中迁移的运行代码。新版前端与后续姿态准确度、可解释技术评分工作在 `codex/pose-scoring-accuracy` 继续。
+
+后端增加的能力包括：逐段独立脚步测量、二维运动与转体窗口、处理帧进度、姿态预览，以及 FS01-M02/M04/M05 和 FS09-M05 的独立原文测量。原有测量含义和已保存产物不会被新测量覆盖。分数解释说明的是测量证据参考分的构成，并不把证据完整度当作技术动作正确率。
+
+七份 Word 的来源审计位于 [评分规范索引](docs/scoring-reference-20261004/README.md)。`GET/POST /v1/jobs/{job_id}/technical-review` 与 `/export` 提供带来源绑定和修订历史的人工评审；这是服务端能力，主分支旧页面尚未接入新版评审界面。教练试标材料在 [操作指南](docs/教练视频标注操作指南_2026-10-04.md) 和 `examples/coach-annotation-pilot/`。没有充分证据或人工标定时保持无法评价，不自动生成 A～E 技术等级或百分制技术分。
+
+报告 API 默认提供旧客户端兼容表示；需要完整新测量结构的客户端应在任务、报告或技术分析 GET 请求上显式添加 `report_contract=current`。已保存的原始分析产物仍保留自身版本，兼容表示不会改写原始文件。两份已发布注册表保留原始文件字节，以便全新 Git 检出也能通过既有 SHA-256 校验。
 
 ### 球路与实时回放
 
@@ -55,7 +65,9 @@ npm run dev
 
 默认网页为 `http://localhost:3000`，API 为 `http://127.0.0.1:8000`。网页通过同源代理上传，不需要把 API 密钥放入浏览器。`GET /health/ready` 检查分析服务是否就绪。Windows 的 service 依赖包含 ffmpeg wheel；Linux 镜像安装系统 ffmpeg，生成 H.264 回放。
 
-如果需要让 Cloudflare 只暴露一个完整入口，可运行 `scripts\run_full_service.ps1`：新版网页监听 `8000`，分析 API/Worker 保持在本机 `8001`，并可用 `-StartCloudflare` 自动启动快速隧道。网站无需账号或密码；该脚本会读取 `scoring-demo-web\.dev.vars` 中的服务端配置，不要把其中的 API 密钥提交到 Git。
+已准备好本机环境、模型和 `.dev.vars` 时，从项目根目录运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_local.ps1 -FrontendPort 8003 -ApiPort 8001 -Build`。该入口先读取内部 API 密钥与本机路由配置，再启动 API/Worker 和网页，两个端口均监听本机；已有服务占用端口时拒绝重复启动。另开终端运行 `cloudflared tunnel --url http://127.0.0.1:8003`，并保持其运行。网站无需账号或密码；不要把 `.dev.vars` 中的 API 密钥提交到 Git。
+
+更新服务前暂停提交新任务；服务端网页代理有改动时先执行 `npm.cmd --prefix scoring-demo-web run build`，成功后再运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\restart_preview_service.ps1`。重启脚本会核验进程与空闲状态，沿用现有 Cloudflare 进程及地址，且不会自动构建。相对路径命令需在项目根目录执行；也可以给 `-File` 传加双引号的完整脚本路径。
 
 运行期间可在另一个 PowerShell 窗口执行 `powershell -ExecutionPolicy Bypass -File .\scripts\full_service_status.ps1` 查看端口、进程和健康状态；执行 `powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1` 查看 API/Worker、网页和 Cloudflare 的实时日志。日志位于 `.codex_tmp\full-service\`，按 `Ctrl+C` 只会停止查看，不会停止服务。
 

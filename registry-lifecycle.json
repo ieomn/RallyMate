@@ -32,9 +32,9 @@
       "kind": "metric_measurement_plans",
       "lifecycle": "planning_only",
       "relative_path": "metric-measurement-plans.json",
-      "file_sha256": "f22eb67ca23e927a8c7712221e8fee5cda16488a9133a65cb0c4eeb290132a08",
-      "embedded_version": "metric-measurement-plans-v0.2.0",
-      "source_registry_version": "pose-wave-2026-08-21.8"
+      "file_sha256": "53e1d1d6099c1691760c46aefbd0b40254d8fa4d48a2a74369d58a4edae1727b",
+      "embedded_version": "metric-measurement-plans-v0.3.0",
+      "source_registry_version": "pose-wave-2026-10-01.2"
     }
   }
 }

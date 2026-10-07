@@ -1,0 +1,102 @@
+{
+  "template_version": "coach-annotation-pilot-supplement-v1.0.0",
+  "record_kind": "blank_template",
+  "contains_real_annotations": false,
+  "compatibility": {
+    "purpose": "manual_engineering_handoff_after_independent_coach_worksheets",
+    "direct_runtime_or_legacy_compiler_import": false,
+    "note": "本格式是新增的人工交接模板；并非现有 events / coach-label / M93 submission 契约。"
+  },
+  "batch": {
+    "batch_id": null,
+    "protocol_version": null,
+    "purpose": "development_pilot",
+    "annotator_id": null,
+    "role": null,
+    "independent_submission": null,
+    "system_outputs_hidden": null,
+    "other_annotator_answers_hidden": null,
+    "revision": null
+  },
+  "source": {
+    "video_id": null,
+    "original_filename": null,
+    "sha256": null,
+    "player_id": null,
+    "session_id": null,
+    "split_group_id": null,
+    "target_player_description": null,
+    "source_duration_ms": null,
+    "timebase": "original_video_timestamp_ms",
+    "coach_worksheet_time_unit": "original_video_seconds",
+    "clip_offset_ms": null,
+    "time_mapping_status": "not_verified",
+    "source_frame_timestamp_map_reference": null
+  },
+  "review": {
+    "status": "not_started",
+    "reviewed_intervals_ms": [],
+    "full_video_review_completed": false,
+    "camera_or_identity_breaks": []
+  },
+  "events": [],
+  "event_record_template": {
+    "template_only_not_an_annotation": true,
+    "event_id": null,
+    "source_player_id": null,
+    "interval": {
+      "status": "not_annotated",
+      "start_ms": null,
+      "end_ms": null,
+      "start_uncertainty_ms": null,
+      "end_uncertainty_ms": null,
+      "reason": null
+    },
+    "completeness": "not_annotated",
+    "action_label": {
+      "value": null,
+      "original_worksheet_label": null,
+      "status": "not_annotated",
+      "allowed_values": ["forehand", "backhand", "serve", "volley", "overhead_smash", "slice", "other", "uncertain"],
+      "mapping_note": "保留表格原标签。单手反手和双手反手均归 backhand，并分别填写 backhand_style；截击、高压球、切削须保留独立类型。",
+      "reason": null
+    },
+    "racket_hand": {"value": null, "status": "not_annotated", "reason": null},
+    "backhand_style": {"value": null, "status": "not_annotated", "reason": null},
+    "return_of_serve": {"value": null, "status": "not_annotated", "reason": null},
+    "camera_view": {"value": null, "status": "not_annotated", "reason": null},
+    "phases": [],
+    "phase_record_template": {
+      "template_only_not_an_annotation": true,
+      "phase_name": null,
+      "status": "not_annotated",
+      "start_ms": null,
+      "end_ms": null,
+      "start_uncertainty_ms": null,
+      "end_uncertainty_ms": null,
+      "reason": null
+    },
+    "contact": {
+      "status": "not_annotated",
+      "timestamp_ms": null,
+      "uncertainty_ms": null,
+      "possible_interval_ms": null,
+      "reason": null
+    },
+    "footwork_observations": [],
+    "visibility_intervals": [],
+    "technical_observations": [],
+    "technical_grade": null,
+    "adjudication": {"status": "not_performed", "reviewer_id": null, "reason": null}
+  },
+  "field_notes": {
+    "events": "仅加入教练实际完成的人工记录；不要将 event_record_template 视为事件。",
+    "time": "工程人员把教练表格中的原视频秒转换为毫秒，并保留误差；未知用 null，不用 0。",
+    "status": "按字段区分 not_annotated / observed / uncertain / unobservable / truncated / not_applicable；不能把未知写成不存在。",
+    "phase_names": "采用本批协议的人工阶段名称；不是直接填充规则后端 preparation / acceleration / follow_through 的接口。",
+    "visibility_intervals": "每条记录部位、start_ms、end_ms、visibility 和 reason；只审计可见性时不虚构关节坐标。",
+    "technical_observations": "每条记录具体观察、时间窗、可观察性、理由；教练解释与画面事实分开。",
+    "technical_grade": "首批可不填；需要等级时须另有针对具体 indicator 的 rubric，不能把无法判断换成 E 或 0。",
+    "adjudication": "A/B 原件保留；独立提交后才复核。accepted 只能表示实际完成的裁决。"
+  }
+}

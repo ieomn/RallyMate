@@ -143,6 +143,79 @@ class FootworkReviewTests(unittest.TestCase):
         item = build_footwork_review([event()], [source])["episodes"][0]["indicators"][0]
         self.assertEqual(item["features"], [])
 
+    def test_valid_sibling_feature_survives_aggregate_unavailable_without_a_grade(self):
+        source = record(feature_status="unavailable", camera_view="unknown")
+        source["features"][0].update(feature_version="1.1.0-isotropic", source_frames=[4, 5, 6])
+        source["features"].append({
+            "feature_name": "left_knee_flexion_deg", "value": None, "unit": "deg",
+            "confidence": 0, "valid": False, "reason": "valid_fraction_below_quality_gate",
+        })
+        item = build_footwork_review([event()], [source])["episodes"][0]["indicators"][0]
+        self.assertEqual(item["feature_status"], "unavailable")
+        self.assertEqual(item["scoring_status"], "unavailable")
+        self.assertEqual(item["features"], [])
+        self.assertEqual(item["measurement_status"], "partial")
+        measurements = {row["feature_name"]: row for row in item["measurements"]}
+        stance = measurements["stance_width_body"]
+        self.assertEqual(stance["value"], .7)
+        self.assertEqual(stance["status"], "measured")
+        self.assertEqual(stance["unit"], "body")
+        self.assertEqual(stance["feature_version"], "1.1.0-isotropic")
+        self.assertEqual(stance["source_frames"], [4, 5, 6])
+        self.assertEqual(stance["window"], {"start_ms": 100, "end_ms": 500, "scope": "event_interval"})
+        self.assertEqual(stance["required_joints"], ["left_ankle", "right_ankle"])
+        self.assertFalse(stance["view_label_required"])
+        knee = measurements["left_knee_flexion_deg"]
+        self.assertIsNone(knee["value"])
+        self.assertEqual(knee["reason_codes"], ["valid_fraction_below_quality_gate"])
+        self.assertIn("关键点", knee["reason_zh"])
+        self.assertEqual((item["measured_feature_count"], item["expected_feature_count"]), (1, 5))
+
+    def test_hard_gate_blocks_even_individually_valid_features_with_specific_reason(self):
+        source = record(quality_gate={"measurement_allowed": False, "hard_fail_flags": ["confirmed_id_switch"]})
+        item = build_footwork_review([event()], [source])["episodes"][0]["indicators"][0]
+        self.assertEqual(item["measurement_status"], "unavailable")
+        self.assertTrue(all(row["value"] is None for row in item["measurements"]))
+        stance = next(row for row in item["measurements"] if row["feature_name"] == "stance_width_body")
+        self.assertEqual(stance["reason_codes"], ["confirmed_id_switch"])
+        self.assertIn("主体连续性", stance["reason_zh"])
+
+    def test_conflict_only_suppresses_its_feature_and_never_picks_first(self):
+        source = record(feature_status="unavailable")
+        source["features"].extend([
+            {**source["features"][0], "value": .9},
+            {"feature_name": "left_knee_flexion_deg", "value": 20, "unit": "deg", "confidence": .8, "valid": True},
+        ])
+        item = build_footwork_review([event()], [source])["episodes"][0]["indicators"][0]
+        measurements = {row["feature_name"]: row for row in item["measurements"]}
+        self.assertIsNone(measurements["stance_width_body"]["value"])
+        self.assertIn("conflicting_feature_records", measurements["stance_width_body"]["reason_codes"])
+        self.assertEqual(measurements["left_knee_flexion_deg"]["value"], 20)
+
+    def test_independent_measurements_still_reject_bad_numeric_payloads(self):
+        for changes in [{"value": float("nan")}, {"confidence": True}, {"unit": "m"},
+                        {"value": 10 ** 500}, {"confidence": 1.01}]:
+            with self.subTest(changes=list(changes)):
+                source = record(feature_status="unavailable")
+                source["features"][0].update(changes)
+                result = build_footwork_review([event()], [source])
+                item = result["episodes"][0]["indicators"][0]
+                self.assertEqual(item["measured_feature_count"], 0)
+                self.assertTrue(all(row["value"] is None for row in item["measurements"]))
+                json.dumps(result, allow_nan=False)
+
+    def test_unknown_view_does_not_erase_image_plane_features(self):
+        source = record(camera_view="unknown", quality_gate={
+            "measurement_allowed": True, "scoring_allowed": False,
+            "advisory_flags": ["camera_view_unknown"],
+        })
+        result = build_footwork_review([event()], [source])
+        item = result["episodes"][0]["indicators"][0]
+        self.assertEqual(item["measured_feature_count"], 1)
+        self.assertEqual(item["scoring_status"], "unavailable")
+        self.assertEqual(result["measurement_summary"]["partial_indicator_count"], 1)
+        self.assertEqual(result["measurement_summary"]["measured_feature_count"], 1)
+
     def test_independent_target_direction_feature_respects_scoring_quality(self):
         alignment = {
             "feature_name": "target_direction_alignment_error_deg", "value": 12.0,
@@ -163,6 +236,16 @@ class FootworkReviewTests(unittest.TestCase):
                 if values:
                     self.assertEqual(values[0]["value"], 12)
                     self.assertEqual(values[0]["unit"], "deg")
+
+    def test_target_direction_cannot_bypass_context_gate_through_measurement_features(self):
+        alignment = {"feature_name": "target_direction_alignment_error_deg", "value": 12,
+                     "unit": "deg", "confidence": .9, "valid": True}
+        source = record(event_code="FS02", indicator_id="FS02-M02", features=[alignment])
+        item = build_footwork_review([event(event_code="FS02")], [source])["episodes"][0]["indicators"][0]
+        self.assertEqual(item["features"], [])
+        target = next(row for row in item["measurements"] if row["feature_name"] == alignment["feature_name"])
+        self.assertIsNone(target["value"])
+        self.assertIn("target_direction_not_observed", target["reason_codes"])
 
     def test_scoring_and_measurement_feature_conflicts_remain_unavailable(self):
         source = record(scoring_feature_status="measured")

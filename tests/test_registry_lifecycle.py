@@ -40,7 +40,7 @@ KNOWN_RAW_SHA256 = {
         "5f7952c6d9514856ad979e27a556cfa2d80b188eaeffd8333a25f32aacf5dfcc"
     ),
     "non_runtime_artifacts.measurement_plans": (
-        "f22eb67ca23e927a8c7712221e8fee5cda16488a9133a65cb0c4eeb290132a08"
+        "53e1d1d6099c1691760c46aefbd0b40254d8fa4d48a2a74369d58a4edae1727b"
     ),
 }
 
@@ -171,7 +171,7 @@ class RegistryLifecycleTests(unittest.TestCase):
         self.assertEqual(historical.lifecycle, "historical")
         self.assertEqual(planning.lifecycle, "planning_only")
         self.assertEqual(
-            planning.source_registry_version, "pose-wave-2026-08-21.8"
+            planning.source_registry_version, runtime.embedded_version
         )
 
     def test_runtime_role_returns_same_validated_payload_as_low_level_loader(

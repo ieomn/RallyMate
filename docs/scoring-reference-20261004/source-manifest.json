@@ -1,0 +1,217 @@
+[
+  {
+    "source_id": "VIS-FS",
+    "stable_id": "VIS-FS@bbab99f52199",
+    "path": "步伐_精简视觉识别定义版.docx",
+    "filename": "步伐_精简视觉识别定义版.docx",
+    "sha256": "bbab99f521994420286820e60e8d8057729f0b53e7e0d0ce5ac5fd48bf8b47fe",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 140,
+        "tables": 10,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/header1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/footer1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  },
+  {
+    "source_id": "VIS-SV",
+    "stable_id": "VIS-SV@a8b822829947",
+    "path": "发球技术_精简视觉识别定义版.docx",
+    "filename": "发球技术_精简视觉识别定义版.docx",
+    "sha256": "a8b8228299471b23ae11b98ddefa691f677338195170b460fd298efea25f934d",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 59,
+        "tables": 6,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/header1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/footer1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  },
+  {
+    "source_id": "VIS-GS",
+    "stable_id": "VIS-GS@044d3643b0e9",
+    "path": "底线基础_五阶段完整简化版.docx",
+    "filename": "底线基础_五阶段完整简化版.docx",
+    "sha256": "044d3643b0e9889d6c6c0c1fed9cf58ecdc1b61f93e09f513b7d205678c04f61",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 294,
+        "tables": 30,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/header1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/footer1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  },
+  {
+    "source_id": "VIS-RT",
+    "stable_id": "VIS-RT@11ba48b880f2",
+    "path": "接发技术_精简视觉识别定义版.docx",
+    "filename": "接发技术_精简视觉识别定义版.docx",
+    "sha256": "11ba48b880f260aa08f207e826497d13d9a5ffa7d4b615cf10489031a8d7443c",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 68,
+        "tables": 1,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/header1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/footer1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  },
+  {
+    "source_id": "VIS-NET",
+    "stable_id": "VIS-NET@a7ddfe87a916",
+    "path": "网前进攻技术_正手截击_反手截击_高压_精简视觉识别版.docx",
+    "filename": "网前进攻技术_正手截击_反手截击_高压_精简视觉识别版.docx",
+    "sha256": "a7ddfe87a916301a2d0394cb0ec6e45d5a854c48f1198e64162e2a6d4c687388",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 165,
+        "tables": 17,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/header1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/footer1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  },
+  {
+    "source_id": "CARD-FS",
+    "stable_id": "CARD-FS@8b49a066398c",
+    "path": "FS步伐事件评分指标卡_第二版.docx",
+    "filename": "FS步伐事件评分指标卡_第二版.docx",
+    "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 1843,
+        "tables": 51,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/header1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      },
+      "word/footer1.xml": {
+        "paragraphs": 1,
+        "tables": 0,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  },
+  {
+    "source_id": "CARD-GS",
+    "stable_id": "CARD-GS@151f4a551806",
+    "path": "GS底线基础事件评分指标卡_正确版.docx",
+    "filename": "GS底线基础事件评分指标卡_正确版.docx",
+    "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+    "parts": {
+      "word/document.xml": {
+        "paragraphs": 11442,
+        "tables": 249,
+        "formulas": 0,
+        "drawings": 0,
+        "insertions": 0,
+        "deletions": 0
+      }
+    }
+  }
+]

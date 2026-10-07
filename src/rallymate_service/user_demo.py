@@ -11,8 +11,9 @@ from rallymate_service.training_evaluation import (
     SCORE_SEMANTICS, build_training_evaluation, validated_training_records,
 )
 from rallymate_scoring.technique_assessment import build_technique_assessment
+from rallymate_service.analysis_report import build_analysis_report
 
-USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.4.0"
+USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.5.0"
 FORMATION_SCORE_VERSION = "recognizable-motion-information-v1.2.0"
 
 _FORMATION_SCORE_WEIGHTS = {
@@ -577,7 +578,7 @@ def build_user_demo_result(
     action_recognition = technique_assessment["action_recognition"]
     hit_statistics, trajectory_analysis = _post_analysis_capabilities(summary, action_recognition)
 
-    return {
+    result = {
         "schema_version": "1.2.0",
         "result_version": USER_DEMO_RESULT_VERSION,
         "result_kind": "real_video_training_feedback_preview",
@@ -712,3 +713,13 @@ def build_user_demo_result(
             "training_evaluation_is_formal_coach_score": False,
         },
     }
+    input_metadata = summary.get("input")
+    video_metadata = input_metadata.get("video") if isinstance(input_metadata, Mapping) else None
+    if isinstance(video_metadata, Mapping):
+        # Needed by replay/backup range checks; never copy input paths, source
+        # IPs or upload metadata into the public result.
+        result["input"] = {"video": {key: video_metadata[key]
+            for key in ("duration_ms", "width", "height", "fps", "frame_count")
+            if _finite_number(video_metadata.get(key)) is not None and video_metadata[key] > 0}}
+    result["analysis_report"] = build_analysis_report(result, summary=summary)
+    return result

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,7 @@ from rallymate_scoring.scoring_context import (
     resolve_target_direction_context,
 )
 from rallymate_scoring.scoring import score_indicator
+from rallymate_scoring.source_assessment import write_source_aligned_assessment
 from rallymate_scoring.runtime_profile_binding import (
     bind_production_calibrations_for_runtime,
 )
@@ -85,10 +87,11 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
-    path.write_text(
-        "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records),
-        encoding="utf-8",
-    )
+    # Long videos can produce gigabytes of evidence. Keep only one serialized
+    # row in memory instead of joining the entire artifact before writing.
+    with path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def _sha256(path: Path) -> str:
@@ -193,6 +196,7 @@ def run_minimum_scoring_loop(
     runtime_binding_registry: dict[str, Any] | None = None,
     runtime_view_evidence: dict[str, Any] | None = None,
     scoring_reference_context_path: str | Path | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Run the fixed-camera, single-primary-player Pose-only maturity loop.
 
@@ -202,6 +206,11 @@ def run_minimum_scoring_loop(
     define an aggregate score or aggregate grade.
     """
 
+    def report_progress(phase: str, completed: int, total: int) -> None:
+        if progress_callback is not None:
+            progress_callback({"phase": phase, "completed": completed, "total": total})
+
+    report_progress("detecting_events", 0, 1)
     frames_path = Path(frames_path)
     primary_timeline_path = Path(primary_timeline_path)
     output_dir = Path(output_dir)
@@ -295,6 +304,7 @@ def run_minimum_scoring_loop(
     events = detect_pose_events(
         sequence, source_id=source_id, video_id=canonical_video_id
     )
+    report_progress("detecting_events", 1, 1)
     for event in events:
         diagnostics = diagnose_primary_timeline(
             records,
@@ -392,7 +402,8 @@ def run_minimum_scoring_loop(
 
     feature_records: list[dict[str, Any]] = []
     feature_lookup: dict[tuple[str, str], dict[str, Any]] = {}
-    for event in events:
+    report_progress("extracting_features", 0, len(events))
+    for event_index, event in enumerate(events):
         interval = EventInterval(
             event_id=event["event_id"],
             event_code=event["event_code"],
@@ -403,7 +414,7 @@ def run_minimum_scoring_loop(
         )
         names = sorted(required_by_event[event["event_code"]])
         for result in compute_event_features(sequence, interval, names):
-            payload = result.to_dict()
+            payload = result.to_dict(copy_evidence=False)
             payload.update(
                 {
                     "schema_version": "1.0.0",
@@ -422,12 +433,13 @@ def run_minimum_scoring_loop(
             )
             feature_records.append(payload)
             feature_lookup[(event["event_id"], result.feature_name)] = payload
-    _write_jsonl(output_dir / "features.jsonl", feature_records)
-
+        if event_index % max(1, len(events) // 100) == 0 or event_index + 1 == len(events):
+            report_progress("extracting_features", event_index + 1, len(events))
     indicator_records: list[dict[str, Any]] = []
     score_records: list[dict[str, Any]] = []
     resolved_scoring_contexts: list[dict[str, Any]] = []
-    for event in events:
+    report_progress("scoring", 0, len(events))
+    for event_index, event in enumerate(events):
         for indicator in indicators_by_event[event["event_code"]]:
             features = [
                 feature_lookup[(event["event_id"], name)]
@@ -584,8 +596,18 @@ def run_minimum_scoring_loop(
                 }
             )
             score_records.append({**score, **common})
+        if event_index % max(1, len(events) // 100) == 0 or event_index + 1 == len(events):
+            report_progress("scoring", event_index + 1, len(events))
+    report_progress("writing_results", 0, 1)
+    _write_jsonl(output_dir / "features.jsonl", feature_records)
     _write_jsonl(output_dir / "indicator-features.jsonl", indicator_records)
     _write_jsonl(output_dir / "scores.jsonl", score_records)
+    source_assessment_artifact = write_source_aligned_assessment(
+        output_dir, sequence, events, video_id=canonical_video_id,
+        video_sha256=provenance.get("video_sha256"),
+        frames_sha256=provenance.get("frames_sha256"), frames_path=frames_path,
+        primary_timeline_path=primary_timeline_path, primary_timeline=timeline,
+    )
 
     # Truth interfaces are executable, but absent truth must never appear as a
     # perfect evaluation. A separate evaluator can replace this artifact after
@@ -787,6 +809,7 @@ def run_minimum_scoring_loop(
         "model_versions": versions,
         "provenance": provenance,
         "artifacts": {
+            "source_aligned_measurements_json": source_assessment_artifact["path"],
             "events_jsonl": "events.jsonl",
             "features_jsonl": "features.jsonl",
             "indicator_features_jsonl": "indicator-features.jsonl",
@@ -794,6 +817,7 @@ def run_minimum_scoring_loop(
             "event_feature_errors_json": "event-feature-errors.json",
         },
         "artifact_sha256": {
+            "source_aligned_measurements_json": source_assessment_artifact["sha256"],
             "events_jsonl": _sha256(output_dir / "events.jsonl"),
             "features_jsonl": _sha256(output_dir / "features.jsonl"),
             "indicator_features_jsonl": _sha256(
@@ -809,6 +833,7 @@ def run_minimum_scoring_loop(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     clear_feature_cache(sequence)
+    report_progress("writing_results", 1, 1)
     return {
         "summary": summary,
         "events": events,

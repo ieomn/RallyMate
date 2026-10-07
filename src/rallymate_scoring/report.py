@@ -195,7 +195,7 @@ def build_analysis_report_html(
         [
             _metric("处理状态", "成功", f"任务 {job_id[:8]}"),
             _metric("处理帧数", f"{int(processing.get('processed_frames', 0)):,}", "frame_stride = 1"),
-            _metric("GPU 推理耗时", f"{_number(processing.get('elapsed_seconds'))} s", f"{_number(processing.get('effective_processed_fps'))} fps"),
+            _metric("分析用时", f"{_number(processing.get('elapsed_seconds'))} s", f"{_number(processing.get('effective_processed_fps'))} fps"),
             _metric(
                 "闭环指标已测量",
                 loop_display,

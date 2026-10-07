@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from typing import Any
 
 import numpy as np
@@ -77,7 +77,18 @@ class FeatureResult:
     smoothed_value: Any
     provenance: dict[str, Any]
 
-    def to_dict(self) -> dict[str, Any]:
-        payload = asdict(self)
+    def to_dict(self, *, copy_evidence: bool = True) -> dict[str, Any]:
+        """Export a mutable record, optionally sharing read-only evidence.
+
+        The scoring writer only annotates the top level and provenance. Its
+        immutable series/coordinate evidence can be shared until serialization
+        rather than duplicating the full-video camera manifest per feature.
+        General callers retain the original independent deep-copy contract.
+        """
+        payload = asdict(self) if copy_evidence else {
+            item.name: getattr(self, item.name) for item in fields(self)
+        }
+        if not copy_evidence:
+            payload["provenance"] = dict(self.provenance)
         payload["confidence"] = round(float(self.confidence), 6)
         return payload

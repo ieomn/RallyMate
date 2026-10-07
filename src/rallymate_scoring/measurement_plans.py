@@ -14,9 +14,12 @@ from rallymate_scoring.feasibility import (
     load_feasibility_registry,
     validate_feasibility_registry,
 )
+from rallymate_events.rules import EVENT_DETECTOR_VERSION, PHASE_CANDIDATE_VERSION
+from rallymate_features.event_features import FEATURE_LIBRARY_VERSION
+from rallymate_scoring.indicator_requirements import canonical_sha256, required_phase_keys
 
 
-MEASUREMENT_PLAN_VERSION = "metric-measurement-plans-v0.2.0"
+MEASUREMENT_PLAN_VERSION = "metric-measurement-plans-v0.3.0"
 DEFAULT_FEASIBILITY_REGISTRY = (
     Path(__file__).resolve().parents[2] / "metric-feasibility-pose-wave-v2.json"
 )
@@ -271,7 +274,8 @@ def _event_localization(
     implemented = event_code in current_event_codes
     return {
         "status": "candidate_rule_baseline" if implemented else "not_implemented",
-        "event_model_version": "pose-motion-bout-v0.1.0" if implemented else None,
+        "event_model_version": EVENT_DETECTOR_VERSION if implemented else None,
+        "phase_contract_version": PHASE_CANDIDATE_VERSION if implemented else None,
         "ground_truth_status": "ground_truth_required",
     }
 
@@ -284,6 +288,7 @@ def compile_measurement_plan(
     current_event_codes: set[str],
     next_pose_wave_indicator_ids: set[str],
     feasibility_registry_version: str,
+    runtime_indicator: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     requirements = []
     primitives: set[str] = set()
@@ -320,7 +325,9 @@ def compile_measurement_plan(
     indicator_id = str(card["id"])
     if indicator_id in current_f2_indicator_ids:
         runtime_status = "implemented_f2_calibration_required"
-        blockers.discard("feature_implementation_required")
+        # A registered F2 vector can be a partial proxy for a source clause.
+        # Never erase the clause-level implementation gap merely because
+        # a feature with the same indicator ID is measurable.
         blockers.add("feature_error_not_evaluated")
     elif any(dependency in dependencies for dependency in ("ball", "racket", "court")):
         runtime_status = "dependency_implementation_required"
@@ -340,6 +347,15 @@ def compile_measurement_plan(
             "required_points": card.get("requiredPoints"),
             "calculation": card.get("calculation"),
             "source_status": card.get("sourceStatus"),
+            "unavailable": card.get("unavailable"),
+            "joint_visibility_gate": {
+                "threshold_ratio": 0.7 if re.search(r"(?:低于|不足|小于|<)\s*70\s*%", str(card.get("unavailable", ""))) else None,
+                "comparison": "strictly_less_than",
+                "scope": "indicator_required_joints_within_event_window",
+                "not_technical_grade_cutoff": True,
+                "denominator_policy": "all_source_frames_in_reviewed_window_including_missing_observations",
+                "confidence_and_identity_policy_requires_versioned_observation_contract": True,
+            },
         },
         "event_localization": _event_localization(
             event_code,
@@ -356,11 +372,19 @@ def compile_measurement_plan(
             "grade": None,
             "threshold_version": None,
         },
+        "runtime_binding": {
+            "registry_indicator_sha256": canonical_sha256(runtime_indicator) if runtime_indicator else None,
+            "required_feature_names": list(runtime_indicator.get("required_features", [])) if runtime_indicator else [],
+            "required_phase_keys": required_phase_keys(runtime_indicator) if runtime_indicator else [],
+            "versions": dict(runtime_indicator.get("versions", {})) if runtime_indicator else {},
+            "source_clause_equivalence_verified": False,
+            "source_clause_review_required": True,
+        },
         "versions": {
             "measurement_plan": MEASUREMENT_PLAN_VERSION,
             "metric_registry": metric_registry_version,
             "feasibility_registry": feasibility_registry_version,
-            "feature_library": "rallymate-features-v0.1.0",
+            "feature_library": FEATURE_LIBRARY_VERSION,
             "event_contract": "events.1.0.0",
         },
     }
@@ -416,6 +440,7 @@ def build_measurement_plan_registry(
         current_event_codes=current_event_codes,
     )
     feasibility_version = str(feasibility["registry_version"])
+    runtime_by_id = {item["indicator_id"]: item for item in feasibility["indicators"]}
     plans = [
         compile_measurement_plan(
             card,
@@ -424,6 +449,7 @@ def build_measurement_plan_registry(
             current_event_codes=current_event_codes,
             next_pose_wave_indicator_ids=next_pose_wave_indicator_ids,
             feasibility_registry_version=feasibility_version,
+            runtime_indicator=runtime_by_id.get(str(card["id"])),
         )
         for card in cards
     ]
@@ -436,6 +462,9 @@ def build_measurement_plan_registry(
         "registry_version": MEASUREMENT_PLAN_VERSION,
         "source_metric_registry_version": metric_version,
         "source_feasibility_registry_version": feasibility_version,
+        "source_feasibility_registry_sha256": canonical_sha256(feasibility),
+        "source_metric_registry_sha256": canonical_sha256(metric_registry),
+        "hash_canonicalization": "rallymate-canonical-json-v1",
         "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
         "policy": {
             "valid_measurement_states": ["measured", "calibration_required", "unavailable"],
@@ -474,8 +503,8 @@ def write_measurement_plan_registry(
 ) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(
+    output.write_bytes(
+        (json.dumps(
             build_measurement_plan_registry(
                 generated_at=generated_at,
                 feasibility_registry=feasibility_registry,
@@ -483,7 +512,6 @@ def write_measurement_plan_registry(
             ensure_ascii=False,
             indent=2,
         )
-        + "\n",
-        encoding="utf-8",
+        + "\n").encode("utf-8"),
     )
     return output

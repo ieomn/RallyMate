@@ -1,0 +1,61 @@
+{
+  "reference_id": "scoring-reference-20261004",
+  "files": [
+    {
+      "path": "docs/scoring-reference-20261004/01-implementation-differences.md",
+      "bytes": 49276,
+      "sha256": "3af8a2675dd40cd098415de8ac43324b5c9e657096d299183c91ca1288875951"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/02-fs-audit.md",
+      "bytes": 88759,
+      "sha256": "37b6c2efa6c1d93c6e2ec73aa87dac00bccb2685fb3f76518d27924d808f9aa7"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/03-gs-audit.md",
+      "bytes": 714043,
+      "sha256": "2a5b1e05f018f6e4a32710a61615b873f3422ee59ca6f1526aade002b04b214f"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/04-visual-audit.md",
+      "bytes": 56520,
+      "sha256": "87153cc3e9e4aba49c5b0f1d831e9aa3a53bfb3e41745ca725d1d2cb0783b5a5"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/05-indicator-index.md",
+      "bytes": 41698,
+      "sha256": "a6abded4bda5793b072a1fa07735f5165f8604cad39af950ccc0c62110e8ca33"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/implementation-manifest.json",
+      "bytes": 2720,
+      "sha256": "af4364bf0897845acf3ccafa1736a4b1c1e83d33a84ed9ee62d3e304fc5adf86"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/README.md",
+      "bytes": 12355,
+      "sha256": "dc7b7f10729c3eec3d748c016e2ad760eba2f7b4fd0cc3de403c25aa3c0183c3"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/source-manifest.json",
+      "bytes": 5584,
+      "sha256": "d187d63f42c99b1e6a7007df9c118c9551ef66a0b781eda603f0a0d6079d15dd"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/validation.json",
+      "bytes": 1985,
+      "sha256": "d8ceed2479ee5a6f33ba126483d8f460e2ce233d7c6af04070b9b99e1cc801eb"
+    },
+    {
+      "path": "contracts/scoring-reference-20261004.json",
+      "bytes": 9574727,
+      "sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812"
+    },
+    {
+      "path": "docs/scoring-reference-20261004/video-validation.md",
+      "bytes": 10541,
+      "sha256": "3550110c2d249e47d137930f882995136beeb446d4867c0e28a7c026ff6b553e"
+    }
+  ],
+  "post_handoff_note": "私人绝对路径已脱敏；源Word字节、原文和定位未改。此清单对应可分享交接文件。"
+}

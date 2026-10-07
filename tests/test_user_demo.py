@@ -102,7 +102,7 @@ class UserDemoResultTests(unittest.TestCase):
 
         self.assertEqual(result["schema_version"], "1.2.0")
         self.assertEqual(
-            result["result_version"], "rallymate-user-demo-result-v1.4.0"
+            result["result_version"], "rallymate-user-demo-result-v1.5.0"
         )
         self.assertEqual(result["hit_statistics"]["status"], "unsupported")
         self.assertIsNone(result["hit_statistics"]["total_count"])
