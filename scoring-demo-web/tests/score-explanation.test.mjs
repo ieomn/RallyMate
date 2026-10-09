@@ -61,7 +61,7 @@ function resultOf(items, score) {
   } };
 }
 const valid = () => resultOf([indicator("FS01-M02", 76), indicator("FS02-M01", 100, [100, 100, 100, 100, 100], [.3, .2, .15, .25, .1]), indicator("FS09-M01", null)], 88);
-const textOf = result => renderToStaticMarkup(createElement(Panel, { result, onInspectRule() {} })).replace(/<[^>]*>/g, "");
+const textOf = result => renderToStaticMarkup(createElement(Panel, { result })).replace(/<[^>]*>/g, "");
 
 test("readable exports explain the score and backup preserves only verified nested reference scores", () => {
   const result = valid();
@@ -188,9 +188,9 @@ test("legacy and entirely unavailable reports stay honest instead of acquiring a
   assert.match(textOf(unavailable), /不会被记为 0 分/);
   assert.match(textOf(unavailable), /1 项未纳入总分/);
   assert.doesNotMatch(textOf(unavailable), /各分量差额|\/ 100/);
-  const html = renderToStaticMarkup(createElement(Panel, { result: valid(), onInspectRule() {} }));
-  assert.match(html, /id="score-explanation"/); assert.match(html, /核对原文规则/);
-  assert.match(html, /正式技术评分仍待教练标定/); assert.match(html, /不按零分参与平均/);
+  const html = renderToStaticMarkup(createElement(Panel, { result: valid() }));
+  assert.match(html, /id="score-explanation"/); assert.doesNotMatch(html, /核对原文规则|原文核验|标注|评审/);
+  assert.match(html, /分数高低不代表技术水平/); assert.match(html, /不按零分参与平均/);
   assert.equal((html.match(/aria-pressed=/g) ?? []).length, 5);
 });
 

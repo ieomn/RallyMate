@@ -4,6 +4,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { recentReports, type RecentReport } from "./lib/training-report";
+import { annotationHref } from "./lib/annotation-navigation";
 import { AnimatedDisclosure } from "./AnimatedDisclosure";
 
 export type WorkspaceView = "overview" | "sessions" | "analysis" | "guide";
@@ -61,9 +62,9 @@ function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: R
   return <main ref={contentRef} id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>;
 }
 
-export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, busy = false }: {
+export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, annotationJobId, busy = false }: {
   view: WorkspaceView; onNavigate: (view: WorkspaceView) => void; onNewAnalysis: () => void;
-  children: ReactNode; currentName?: string; busy?: boolean;
+  children: ReactNode; currentName?: string; annotationJobId?: string; busy?: boolean;
 }) {
   const title = navigation.find(item => item.view === view)?.label ?? "训练总览";
   return <div className="product-app">
@@ -73,7 +74,7 @@ export function ProductShell({ view, onNavigate, onNewAnalysis, children, curren
       <nav className="pw-desktop-nav" aria-label="主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} /><span>{item.label}</span>{item.view === "analysis" && busy && <i className="pw-busy-dot" aria-label="分析进行中" />}</button>)}</nav>
     </aside>
     <div className="pw-workspace">
-      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></header>
+      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><a className="pw-button pw-annotation-link" href={annotationHref(annotationJobId)} target="_blank" rel="noopener noreferrer" aria-label="标注工作台（新标签页打开）"><ProductIcon name="frame" size={17} /><span>标注工作台</span></a><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
       <WorkspaceSurface view={view}>{children}</WorkspaceSurface>
     </div>
     <nav className="pw-mobile-nav" aria-label="移动主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} size={21} /><span>{item.label}</span></button>)}</nav>

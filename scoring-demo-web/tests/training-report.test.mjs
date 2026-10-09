@@ -74,6 +74,7 @@ test("report overview and timeline remain visible while calculations and process
   assert.match(html, /<details class="report-layer-details"><summary>/);
   assert.match(html, /查看局部连续测量/);
   assert.doesNotMatch(html, /<details[^>]*open=/);
+  assert.doesNotMatch(html, /id="(?:technical-review|rule-review|source-measurements)"|按原文评审|全部原文指标|导出评审|录入技术评审/);
 });
 
 test("an empty report still provides a real timeline navigation destination and an honest empty state", () => {

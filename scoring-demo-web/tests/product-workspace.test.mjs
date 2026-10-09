@@ -103,7 +103,8 @@ test("desktop and mobile navigation call all four destinations and expose the cu
 test("every workspace view can return to the public homepage, including while analysis is busy", () => {
   for (const view of ["overview", "sessions", "analysis", "guide"]) {
     for (const busy of [false, true]) {
-      const shell = ProductShell({ view, busy, onNavigate: noop, onNewAnalysis: noop, children: "报告内容" });
+      const annotationJobId = view === "analysis" ? "job-one-12345678" : undefined;
+      const shell = ProductShell({ view, busy, annotationJobId, onNavigate: noop, onNewAnalysis: noop, children: "报告内容" });
       const nodes = elements(shell);
       const brand = nodes.find(node => node.props.className === "pw-brand");
       const returnHome = nodes.find(node => node.props.className === "pw-home-link");
@@ -118,6 +119,10 @@ test("every workspace view can return to the public homepage, including while an
       assert.match(textOf(renderToStaticMarkup(returnHome)), /返回首页/);
       const topbar = nodes.find(node => node.type === "header");
       assert.ok(elements(topbar).includes(returnHome), "return link is in the header, outside the desktop-only sidebar");
+      const annotationLink = elements(topbar).find(node => node.props.className?.includes("pw-annotation-link"));
+      assert.equal(annotationLink.props.href, annotationJobId ? `/annotate?job=${annotationJobId}` : "/annotate");
+      assert.equal(annotationLink.props.target, "_blank", "annotation opens separately without interrupting an analysis");
+      assert.equal(annotationLink.props.rel, "noopener noreferrer");
       const overview = nodes.filter(node => node.type === "button" && elements(node).some(child => child.type === "span" && child.props.children === "训练总览"));
       assert.equal(overview.length, 2, "returning to the homepage does not remove desktop or mobile overview navigation");
     }

@@ -76,6 +76,12 @@ test("Node production entry supports missing Cloudflare bindings", async () => {
   assert.equal(response.headers.get("location"), "/welcome");
   const landing = await app.fetch(new Request("http://localhost/welcome", { headers: { accept: "text/html" } }), undefined, ctx);
   assert.equal(landing.status, 200);
+  const annotation = await app.fetch(new Request("http://localhost/annotate", { headers: { accept: "text/html" } }), undefined, ctx);
+  assert.equal(annotation.status, 200);
+  const annotationHtml = await annotation.text();
+  assert.match(annotationHtml, /标注工作台/);
+  assert.match(annotationHtml, /任务编号或本站报告链接/);
+  assert.doesNotMatch(annotationHtml, /id="workspace-content"|选择或拖入视频文件/);
   const missing = await app.fetch(new Request("http://localhost/v1/meta"), undefined, ctx);
   assert.equal(missing.status, 503);
 });

@@ -157,7 +157,9 @@ test("API normalization and portable backup keep validated source measurements, 
   const restored = JSON.parse(JSON.stringify(buildReportBackup(input))).result;
   assert.equal(sourceReviewWindows(restored, "FS01-M02")[0].measurements[0].measurement_window.end_ms, 4000);
   assert.equal(sourceReviewWindows(restored, "FS01-M02")[0].visibility.valid_frame_ratio, .7);
-  assert.ok(buildPracticeReport(input).sections.find(section => section.title === "与原文对应的实际测量").rows.length);
+  const readable = buildPracticeReport(input);
+  assert.ok(readable.sections.find(section => section.title === "测量与对应视频时段").rows.length);
+  assert.ok(readable.sections.every(section => !/原文|标注|评审/.test(section.title)));
   normalized.source_aligned_assessment.technical_grade = "A";
   assert.equal(buildReportBackup(input).result.source_aligned_assessment, undefined);
 });

@@ -1,0 +1,35 @@
+.annotation-workspace { --product-border:#303b39; --product-panel:#151d1a; --product-text:#f2f5f1; --product-muted:#a4b2a9; --product-accent:#d8fc75; color:var(--product-text); max-width:1280px; min-height:100vh; margin:auto; padding:24px 36px 72px; font-size:16px; line-height:1.6; }
+.annotation-workspace * { box-sizing:border-box; }
+.annotation-workspace a { color:inherit; text-decoration:none; }
+.annotation-workspace a:hover { color:var(--product-accent); }
+.annotation-header { display:flex; justify-content:space-between; align-items:center; gap:16px; padding-bottom:24px; border-bottom:1px solid var(--product-border); }
+.annotation-brand { font-size:24px; font-weight:700; letter-spacing:-.04em; }
+.annotation-return { font-size:14px; }
+.annotation-intro { margin:36px 0 26px; }
+.annotation-intro p { margin:0 0 7px; color:var(--product-accent); font-size:13px; letter-spacing:.08em; }
+.annotation-intro h1 { margin:0 0 12px; font-size:36px; font-weight:600; letter-spacing:-.04em; }
+.annotation-intro>span { color:var(--product-muted); }
+.annotation-selector,.annotation-replay,.annotation-reference { padding:24px; border:1px solid var(--product-border); border-radius:16px; background:var(--product-panel); }
+.annotation-selector h2,.annotation-replay h2 { margin:0 0 18px; font-size:20px; }
+.annotation-selector label { display:grid; gap:8px; font-size:14px; }
+.annotation-input-row { display:flex; gap:12px; margin-top:8px; }
+.annotation-selector input,.annotation-selector select { width:100%; min-width:0; padding:11px 12px; border:1px solid var(--product-border); border-radius:8px; color:var(--product-text); background:#0e1511; font:inherit; color-scheme:dark; }
+.annotation-workspace button { font:inherit; cursor:pointer; }
+.annotation-input-row button,.annotation-message button { min-height:44px; border:0; border-radius:8px; padding:10px 18px; color:#152014; background:var(--product-accent); white-space:nowrap; }
+.annotation-input-row button:hover,.annotation-message button:hover { background:#e5ffab; }
+.annotation-recents { margin-top:18px; max-width:580px; }
+.annotation-hint { color:var(--product-muted); font-size:14px; margin:18px 0 0; }
+.annotation-message { margin:18px 0 0; padding:12px 14px; border-radius:8px; background:#ffffff08; overflow-wrap:anywhere; }
+.annotation-message p { margin:0 0 12px; }
+.annotation-error { color:#f1baa2; }
+.annotation-replay { margin-top:24px; scroll-margin-top:24px; }
+.annotation-video-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+.annotation-video-heading h2 { margin:0 0 5px; overflow-wrap:anywhere; }
+.annotation-video-heading p { margin:0; font-size:13px; color:var(--product-muted); overflow-wrap:anywhere; }
+.annotation-video-heading a { white-space:nowrap; font-size:14px; }
+.annotation-replay video { display:block; width:100%; max-height:480px; background:#080c09; border-radius:10px; }
+.annotation-reference { padding:0 24px; }
+.annotation-reference>summary { padding:20px 0; cursor:pointer; font-size:17px; }
+.annotation-reference .rule-review { margin-top:0; }
+.annotation-workspace a:focus-visible,.annotation-workspace button:focus-visible,.annotation-workspace input:focus-visible,.annotation-workspace select:focus-visible,.annotation-reference>summary:focus-visible { outline:2px solid var(--product-accent); outline-offset:3px; }
+@media(max-width:650px) { .annotation-workspace { padding:18px 16px 48px; } .annotation-intro h1 { font-size:30px; } .annotation-selector,.annotation-replay { padding:20px 16px; } .annotation-input-row { flex-direction:column; } .annotation-video-heading { align-items:flex-start; flex-direction:column; } .annotation-reference { padding:0 16px; } }

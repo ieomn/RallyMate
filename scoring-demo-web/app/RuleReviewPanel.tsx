@@ -5,6 +5,7 @@ import type { DemoResultResponse } from "./lib/api-types";
 import { footworkFeatureText } from "./lib/footwork-review";
 import { replayMoment } from "./lib/training-report";
 import { reviewRuleResult, ruleReviewContext, type RuleReviewCatalog } from "./lib/rule-review";
+import "./rule-review.css";
 
 const PAGE_SIZE = 8;
 const time = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, "0")}.${Math.floor(ms / 100) % 10}`;

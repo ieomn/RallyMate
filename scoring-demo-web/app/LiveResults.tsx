@@ -3,13 +3,9 @@
 import { useState, type ReactNode } from "react";
 import TrainingReportOverview from "./TrainingReportOverview";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
-import RuleReviewPanel from "./RuleReviewPanel";
-import SourceMeasurementPanel from "./SourceMeasurementPanel";
-import scoringReference from "./data/scoring-reference.json";
-import type { RuleReviewCatalog } from "./lib/rule-review";
 import ActionTimeline from "./ActionTimeline";
 import { analysisReportOf } from "./lib/training-report";
-import type { DemoResultResponse, MotionFamily, TechniqueAssessmentItem, TechniqueAssessmentResponse, TechniqueCatalogResponse, TrajectoryPreviewResponse } from "./lib/api-types";
+import type { DemoResultResponse, MotionFamily, TechniqueAssessmentItem, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./lib/api-types";
 import { analysisPresentation, summarizeActionCandidates, summarizeLiveStats } from "./lib/live-stats";
 import { motionAnalysisOf } from "./lib/motion-analysis";
 import MotionAnalysisPanel from "./MotionAnalysisPanel";
@@ -85,12 +81,11 @@ function LiveStats({ result, trajectory, summary }: { result: DemoResultResponse
   </section>;
 }
 
-export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay }: { result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; catalog: TechniqueCatalogResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode }) {
+export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay }: { result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode }) {
   result = result ? normalizeMeasurementResult(result) : null;
   const [chosenFamily, setFamily] = useState("");
   const [selected, setSelected] = useState("");
   const [query, setQuery] = useState("");
-  const [requestedRule, setRequestedRule] = useState({ id: "", request: 0 });
   const candidateSummary = summarizeActionCandidates(result, assessment);
   const motionAnalysis = motionAnalysisOf(result, assessment, summary);
   const firstMotionFamily = Object.entries(motionAnalysis?.families ?? {}).find(([, data]) => data.episodes.length)?.[0];
@@ -117,7 +112,7 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
 
   return <div className="live-results" aria-live="polite" data-status={presentation.state}>
     <div className={`report-primary ${replay ? "" : "without-replay"}`}>{replay}<TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} /></div>
-    {result && !pending && <><SourceMeasurementPanel key={result.job_id ?? "unbound-report"} result={result} catalog={scoringReference as RuleReviewCatalog} /><details className="report-disclosure" id="evidence-reference-details"><summary>证据参考分与完整原文核验</summary><ScoreExplanationPanel result={result} onInspectRule={id => { setRequestedRule(previous => ({ id, request: previous.request + 1 })); document.getElementById("rule-review")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }} /><RuleReviewPanel key={requestedRule.request} result={result} catalog={scoringReference as RuleReviewCatalog} initialIndicatorId={requestedRule.id} /></details></>}
+    {result && !pending && <details className="report-disclosure" id="evidence-reference-details"><summary>了解本次参考分 <span>分数构成与视频依据</span></summary><ScoreExplanationPanel result={result} /></details>}
     <ActionTimeline result={result} motion={motionAnalysis} />
     <details className="report-disclosure" id="rules"><summary>测量详情 <span>步伐、转体与动作阶段</span></summary>
     {result && measurementWarnings(result).map(warning => <p className="measurement-warning" role="note" key={warning}>{warning}</p>)}
