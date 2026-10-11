@@ -44,13 +44,17 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
   const id = "[a-zA-Z0-9_-]{8,80}";
   const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|pose-preview|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg)))?))$`);
   const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/technical-review$`).test(url.pathname);
+  const replayList = new RegExp(`^/v1/jobs/${id}/motion-replays$`).test(url.pathname);
+  const replayRead = new RegExp(`^/v1/motion-replays/${id}(?:/media/(?:reference\\.mp4|first\\.png|middle\\.png|last\\.png|generated\\.mp4|trajectory\\.json|manifest\\.json))?$`).test(url.pathname);
+  const replayWrite = request.method === "POST" && (replayList || new RegExp(`^/v1/motion-replays/${id}/retry$`).test(url.pathname));
+  const replayAllowed = replayWrite || (request.method === "GET" && (replayList || replayRead));
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
   const uploadWrite = new RegExp(`^/v1/uploads/${id}/(?:complete|chunks/[0-9]{1,6})$`);
   const chunkWrite = request.method === "PUT" && uploadWrite.test(url.pathname) && /\/chunks\/[0-9]+$/.test(url.pathname);
   const uploadAllowed = (request.method === "GET" && uploadRead.test(url.pathname)) ||
     (request.method === "POST" && (url.pathname === "/v1/uploads" || (uploadWrite.test(url.pathname) && url.pathname.endsWith("/complete")))) ||
     chunkWrite;
-  if (!uploadAllowed && !reviewWrite && !(request.method === "GET" && readPath.test(url.pathname)) && !(request.method === "POST" && url.pathname === "/v1/jobs")) return reply("route_not_allowed", 404);
+  if (!uploadAllowed && !reviewWrite && !replayAllowed && !(request.method === "GET" && readPath.test(url.pathname)) && !(request.method === "POST" && url.pathname === "/v1/jobs")) return reply("route_not_allowed", 404);
   const browserOrigin = request.headers.get("origin");
   const tunnelOrigin = env.RALLYMATE_LOCAL_TUNNEL === "1" ? `https://${url.host}` : null;
   if (["POST", "PUT"].includes(request.method) && (request.headers.get("sec-fetch-site") === "cross-site" || (browserOrigin && browserOrigin !== url.origin && browserOrigin !== tunnelOrigin))) return reply("origin_not_allowed", 403);
@@ -64,7 +68,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     if (!isLoopback(url.hostname) && !localTunnel && (base.protocol !== "https:" || isLoopback(base.hostname))) throw new Error();
   } catch { return reply("invalid_analysis_origin", 503); }
   const headers = new Headers();
-  for (const name of ["content-type", "accept", "range", "if-range", "x-request-id", "x-chunk-sha256"]) { const value = request.headers.get(name); if (value) headers.set(name, value); }
+  for (const name of ["content-type", "accept", "range", "if-range", "x-request-id", "x-chunk-sha256", "idempotency-key"]) { const value = request.headers.get(name); if (value) headers.set(name, value); }
   if (env.RALLYMATE_API_KEY) headers.set("authorization", `Bearer ${env.RALLYMATE_API_KEY}`);
   // The chunk deadline covers both receiving and forwarding, and finishes before
   // the browser's 90-second attempt deadline so its existing retry can continue.

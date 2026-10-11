@@ -126,6 +126,8 @@ class ServiceSettings:
     max_video_duration_seconds: int = 30 * 60
     lease_seconds: int = 60 * 60
     max_attempts: int = 2
+    motion_replay_enabled: bool = False
+    motion_replay_auto_generate: bool = False
 
     @property
     def uploads_dir(self) -> Path:
@@ -388,6 +390,18 @@ def _int_env(name: str, default: int, minimum: int = 1) -> int:
     return value
 
 
+def _bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ServiceConfigError(f"{name} must be true or false")
+
+
 def load_settings() -> ServiceSettings:
     workspace = Path(__file__).resolve().parents[2]
     data_root = Path(
@@ -518,6 +532,8 @@ def load_settings() -> ServiceSettings:
         ),
         lease_seconds=_int_env("RALLYMATE_JOB_LEASE_SECONDS", 60 * 60),
         max_attempts=_int_env("RALLYMATE_MAX_ATTEMPTS", 2),
+        motion_replay_enabled=_bool_env("RALLYMATE_MOTION_REPLAY_ENABLED", True),
+        motion_replay_auto_generate=_bool_env("RALLYMATE_MOTION_REPLAY_AUTO_GENERATE", True),
     )
     settings.validate_license()
     settings.ensure_directories()

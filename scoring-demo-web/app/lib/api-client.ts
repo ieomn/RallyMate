@@ -1,6 +1,7 @@
 import { normalizeMeasurementResult } from "./measurement-evidence";
 import { uploadResumable } from "./resumable-upload";
 import { parseTechnicalReview, type TechnicalReviewInput, type TechnicalReviewLedger } from "./technical-review";
+import { parseMotionReplay, parseMotionReplayList, type MotionReplayRequest, type MotionReplayTask } from "./motion-replay";
 import type {
   DemoResultResponse,
   JobProgress,
@@ -91,6 +92,10 @@ export interface RallyMateApiClient {
   getTechnicalReview(jobId: string, signal?: AbortSignal): Promise<TechnicalReviewLedger>;
   saveTechnicalReview(jobId: string, review: TechnicalReviewInput, signal?: AbortSignal): Promise<TechnicalReviewLedger>;
   exportTechnicalReview(jobId: string, signal?: AbortSignal): Promise<Record<string, unknown>>;
+  listMotionReplays(jobId: string, signal?: AbortSignal): Promise<{ items: MotionReplayTask[] }>;
+  createMotionReplay(jobId: string, request?: MotionReplayRequest, signal?: AbortSignal): Promise<MotionReplayTask>;
+  getMotionReplay(id: string, signal?: AbortSignal): Promise<MotionReplayTask>;
+  retryMotionReplay(id: string, signal?: AbortSignal): Promise<MotionReplayTask>;
   getDemoResult(jobId: string, options?: { endpoint?: string | null; signal?: AbortSignal }): Promise<DemoResultResponse>;
   getPosePreview(jobId: string, options?: { startMs?: number; durationMs?: number; sampleLimit?: number; signal?: AbortSignal }): Promise<PosePreviewResponse>;
   getTrajectory(
@@ -200,6 +205,16 @@ export function createApiClient(
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
     }).then(parseResponse<unknown>).then(value => parseTechnicalReview(value, jobId)),
     exportTechnicalReview: (jobId, signal) => get<Record<string, unknown>>(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/technical-review/export`, signal),
+    listMotionReplays: (jobId, signal) => get<unknown>(reportPath(jobId, "/motion-replays"), signal).then(value => parseMotionReplayList(value, jobId)),
+    createMotionReplay: (jobId, request = {}, signal) => fetchImpl(urlFor(reportPath(jobId, "/motion-replays")), {
+      method: "POST", headers: { "content-type": "application/json", "X-Request-ID": requestId(), "Idempotency-Key": requestId() },
+      body: JSON.stringify(request), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+    }).then(parseResponse<unknown>).then(value => parseMotionReplay(value, jobId)),
+    getMotionReplay: (id, signal) => get<unknown>(`/v1/motion-replays/${encodeURIComponent(id)}`, signal).then(value => parseMotionReplay(value, undefined, id)),
+    retryMotionReplay: (id, signal) => fetchImpl(urlFor(`/v1/motion-replays/${encodeURIComponent(id)}/retry`), {
+      method: "POST", headers: { "content-type": "application/json", "X-Request-ID": requestId() }, body: "{}",
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+    }).then(parseResponse<unknown>).then(value => parseMotionReplay(value, undefined, id)),
     getDemoResult: (jobId, options = {}) =>
       get<DemoResultResponse>(options.endpoint || reportPath(jobId, "/demo-result"), options.signal, "current").then(normalizeMeasurementResult),
     getPosePreview: (jobId, options = {}) => {

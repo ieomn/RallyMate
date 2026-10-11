@@ -42,6 +42,8 @@ from rallymate_scoring.technique_assessment import (
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase
+from rallymate_service.motion_replay_runtime import MotionReplayRuntime
+from rallymate_service.motion_replay_api import build_motion_replay_router
 from rallymate_service.technical_review import (
     MAX_BODY_BYTES,
     TechnicalReviewError,
@@ -411,11 +413,17 @@ def create_app(
             summary["action_recognition"] = action_cache[key]
         return summary
 
+    motion_replays = MotionReplayRuntime(service_settings, db, summary_loader=summary_with_actions)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         db.initialize()
         technical_reviews.initialize()
-        yield
+        motion_replays.start()
+        try:
+            yield
+        finally:
+            await asyncio.to_thread(motion_replays.stop)
 
     app = FastAPI(
         title="RallyMate Vision API",
@@ -435,6 +443,7 @@ def create_app(
     app.state.settings = service_settings
     app.state.database = db
     app.state.technical_reviews = technical_reviews
+    app.state.motion_replays = motion_replays
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -452,7 +461,7 @@ def create_app(
         allow_origins=list(service_settings.cors_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256", "Idempotency-Key"],
         expose_headers=["X-Request-ID"],
     )
     def authorize(
@@ -482,6 +491,11 @@ def create_app(
                 "missing or invalid bearer token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+    app.include_router(build_motion_replay_router(
+        jobs=db, store=motion_replays.store, settings=motion_replays.settings,
+        authorize=authorize, summary_loader=summary_with_actions,
+    ))
 
     @app.get("/health/live")
     def liveness() -> dict:
@@ -516,6 +530,12 @@ def create_app(
             },
             "capabilities": {
                 "async_video_jobs": True,
+                "motion_replay": {
+                    "enabled": motion_replays.settings.enabled,
+                    "provider_configured": motion_replays.credential_available(),
+                    "automatic_new_jobs": motion_replays.settings.enabled and motion_replays.auto_generate and motion_replays.credential_available(),
+                    "endpoint_template": "/v1/jobs/{job_id}/motion-replays",
+                },
                 "resumable_uploads": {"chunk_bytes": CHUNK_BYTES, "parallel_chunks": 2, "expires_after_hours": 24},
                 "trajectory_preview": True,
                 "racket_bbox_observability": True,
