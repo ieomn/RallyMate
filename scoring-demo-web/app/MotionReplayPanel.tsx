@@ -17,7 +17,7 @@ export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRet
     <div className="motion-replay-task-meta"><span>原视频 {motionReplayInterval(task)}</span><span className={`motion-replay-status${active ? " is-active" : ""}`} role="status">{motionReplayStatusText(task)}</span></div>
     <MotionReplayComparison duration={task.source_window.duration_ms / 1000} sourceStart={task.source_window.start_ms / 1000} sources={[
       { id: "original", title: "原视频", label: "同一动作片段", src: original, caption: "真实拍摄画面，作为动作与时序的对照依据。", placeholder: "原视频片段暂不可用" },
-      { id: "reference", title: "你的轨迹白模", label: "来自原视频关键点", src: reference, poster: mediaUrl(task.media.first_frame), caption: "二维关键点经固定等比缩放，重点对照姿态与发生时间；受遮挡和定位误差影响，不代表真实三维动作。", placeholder: task.generation_status === "queued" ? "等待制作轨迹白模" : task.generation_status === "rendering" ? "正在整理你的动作" : "轨迹白模暂不可用", placeholderDetail: "保留个人动作的二维位置与时间关系。" },
+      { id: "reference", title: "你的轨迹白模", label: "来自原视频关键点", src: reference, poster: mediaUrl(task.media.first_frame), caption: "二维关键点经固定等比缩放；短暂缺点会作展示衔接，不参与评分。重点对照姿态与发生时间，不代表真实三维动作。", placeholder: task.generation_status === "queued" ? "等待制作轨迹白模" : task.generation_status === "rendering" ? "正在整理你的动作" : "轨迹白模暂不可用", placeholderDetail: "保留个人动作的二维位置与时间关系。" },
       { id: "generated", title: "MiniMax 动作回放", label: qualityLabel, src: generated, caption: "AI 可能改变动作细节。不将生成画面作为测量或技术评分依据。", placeholder: unknown ? "正在核对提交结果" : task.generation_status === "failed" ? "生成暂未完成" : active ? "个人动作视频正在后台制作" : "生成视频暂不可用", placeholderDetail: unknown ? "为避免重复生成，请先刷新状态；当前不能直接重试。" : active ? "原视频与轨迹白模可先对照，完成后会在这里显示。" : "已有轨迹白模仍可继续回放。" },
     ]} />
     {task.error && <p className="motion-replay-error" role="status">{task.error.message}</p>}

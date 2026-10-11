@@ -123,6 +123,7 @@ export default function BallTrajectoryViewer({
   const atMs = following ? latestMs : currentMs ?? (videoSrc ? videoTimeOriginMs : range.end);
   const pose = usePosePlayback({ atMs, jobId: jobId ?? trajectory?.job_id, loadWindow: loadPoseWindow, initialPreview: posePreview, enabled: showPose && poseTimingPreserved });
   const poseFrame = poseFrameAt(pose.preview, atMs);
+  const poseHasShortGap = Boolean(poseFrame?.keypoints.some(point => point.source === "interpolated"));
   const aspectRatio = trajectory?.source.width && trajectory?.source.height ? trajectory.source.width / trajectory.source.height : videoAspectRatio;
   const replayJobId = jobId ?? trajectory?.job_id ?? pose.preview?.job_id;
 
@@ -240,6 +241,7 @@ export default function BallTrajectoryViewer({
           onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
         /> : <div className="ball-trajectory-empty"><strong>{error ? "回放暂不可用" : pending ? "视频分析中" : "当前结果没有回放视频"}</strong><span>{hasData ? "拖动时间轴可查看短时球路观测" : availability.description}</span></div>}
         {poseTimingPreserved && showPose && canPlayVideo && !seeking && poseFrame && pose.preview && <PoseSkeletonOverlay frame={poseFrame} preview={pose.preview} aspectRatio={aspectRatio} />}
+        {poseTimingPreserved && showPose && !seeking && poseHasShortGap && <span className="trajectory-held-label">短暂缺点已平滑衔接</span>}
         {showOverlay && <svg className="ball-trajectory-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={displayMode === "tail" ? "球路短尾迹" : "已播放的完整球路"}>
           {strokes.map((stroke, index) => <polyline key={`stroke-${stroke.points[0].timestamp_ms}-${index}`} points={stroke.points.map(point => `${point.x * 100},${point.y * 100}`).join(" ")} fill="none" stroke={stroke.source === "interpolated" ? "#93b4d5" : "#d8ff66"} strokeOpacity={trajectoryDisplayOpacity(renderedPoints[stroke.pathIndex], pointSegments.get(stroke.points[0])?.display_quality?.detector_confidence.median) * (holdingCompletedFlight ? .75 : 1)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={stroke.source === "interpolated" ? "4 4" : undefined} vectorEffect="non-scaling-stroke" />)}
           {showPoints && observed.map((point, index) => <circle key={`o-${point.timestamp_ms}-${index}`} cx={point.x * 100} cy={point.y * 100} r="0.25" fill="#b6d0a9" />)}

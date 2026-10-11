@@ -352,16 +352,40 @@ export interface TrajectoryPoint {
   source?: "observed" | "interpolated" | string;
 }
 
+export interface PoseDisplayAnchors {
+  before_timestamp_ms: number; after_timestamp_ms: number;
+  before_frame_index: number; after_frame_index: number;
+  before_processed_index: number; after_processed_index: number;
+  person_track_id: number; selection_epoch: number;
+  before_selection_epoch?: number; after_selection_epoch?: number;
+}
+
+export interface PoseIdentityRepair {
+  version: "short-target-dropout-v1.0.0";
+  method: "same_target_detection_dropout";
+  original_track_id: number | null; original_selection_epoch: number; target_track_id: number;
+  dropout_kind?: "pose_unavailable";
+  before_frame_index: number; after_frame_index: number;
+  before_timestamp_ms: number; after_timestamp_ms: number;
+  before_selection_epoch: number; after_selection_epoch: number;
+  primary_player_id: number;
+}
+
 export interface PosePreviewFrame {
   frame_index: number;
   timestamp_ms: number;
   valid_until_ms: number;
   person_track_id: number | null;
   selection_epoch: number;
-  selection_status: "selected" | "single_visible_person" | "unavailable";
+  selection_status: "selected" | "single_visible_person" | "unavailable" | "display_interpolated";
   width?: number | null;
   height?: number | null;
-  keypoints: Array<{ name: string; x: number; y: number; confidence: number }>;
+  keypoints: Array<{ name: string; x: number; y: number; confidence: number; source?: "observed" | "interpolated"; anchors?: PoseDisplayAnchors;
+    score_semantics?: "rtmpose_simcc_response_clipped_for_display"; raw_confidence?: number;
+  }>;
+  observed_person_track_id?: number | null;
+  observed_selection_epoch?: number;
+  identity_repair?: PoseIdentityRepair;
 }
 
 export interface PosePreviewResponse {
@@ -383,9 +407,20 @@ export interface PosePreviewResponse {
     is_sampled: boolean;
     is_partial: boolean;
     timestamp_semantics: "source_frame_timestamp_ms";
+    timestamp_rounding_tolerance_ms?: number;
     selection_source?: string;
   };
   frames: PosePreviewFrame[];
+  display_frames?: PosePreviewFrame[];
+  display_continuity?: {
+    version: "short-joint-gap-v1.0.0"; max_gap_ms: number;
+    interpolated_keypoints: number; affected_frames: number;
+    confidence_semantics: "minimum_anchor_confidence_not_model_estimate";
+    used_for_scoring: false;
+    response_score_recovered_keypoints?: number;
+    identity_repair_version?: "short-target-dropout-v1.0.0";
+    repaired_identity_frames?: number;
+  };
 }
 
 export interface BallReconstructionAnalysis {

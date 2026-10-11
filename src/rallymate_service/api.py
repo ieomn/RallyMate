@@ -1276,7 +1276,8 @@ def create_app(
             def signature(path: Path) -> tuple:
                 stat = path.stat() if path.is_file() else None
                 return (str(path), stat.st_mtime_ns, stat.st_size) if stat else (str(path), None, None)
-            cache_key = (signature(frames_path), signature(primary_path), job["status"], start_ms, duration_ms, sample_limit)
+            cache_key = (signature(frames_path), signature(primary_path), signature(frames_path.with_name("summary.json")),
+                         job["status"], start_ms, duration_ms, sample_limit)
             with pose_cache_lock:
                 payload = pose_cache.get(cache_key)
                 if payload is None:

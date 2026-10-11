@@ -7,7 +7,7 @@ from pathlib import Path
 
 from rallymate_vision.motion_replay import build_motion_replay
 from scripts.evaluate_motion_replay import compare_to_reference
-from tests.test_motion_replay import write_source
+from tests.test_motion_replay import rewrite, write_source
 
 
 class MotionReplayEvaluationTests(unittest.TestCase):
@@ -52,6 +52,36 @@ class MotionReplayEvaluationTests(unittest.TestCase):
             self.assertEqual(rejected["joint_coverage_fraction"], 0)
             self.assertIsNone(rejected["joint_error_body"]["mean"])
             self.assertGreater(rejected["aspect_mismatch_frame_count"], 0)
+
+    def test_short_gap_evaluation_uses_the_joints_encoded_in_reference_video(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            frames, primary, rows, _ = write_source(Path(temporary))
+            next(point for point in rows[25]["poses"][0]["keypoints"]
+                 if point["name"] == "right_wrist")["confidence"] = .1
+            rewrite(frames, rows)
+            trajectory = build_motion_replay(frames, primary_timeline_path=primary, duration_ms=2000)
+            self.assertTrue(any(point.get("source") == "interpolated"
+                                for frame in trajectory["display_frames"] for point in frame["keypoints"]))
+            width, height = trajectory["render"]["width"], trajectory["render"]["height"]
+            detected = {"frames": [{"timestamp_ms": frame["output_timestamp_ms"],
+                "timestamp_source": "decoder_pts", "width": width, "height": height,
+                "keypoints": [{"name": point["name"], "x": point["x_px"] / width,
+                    "y": point["y_px"] / height, "confidence": .9} for point in frame["keypoints"]]}
+                for frame in trajectory["display_frames"]]}
+            result = compare_to_reference(trajectory, detected)
+            self.assertEqual(result["reference_frame_source"], "display_frames")
+            self.assertEqual(result["expected_joint_observation_count"], 12 * 48)
+            self.assertEqual(result["matched_joint_observation_count"], 12 * 48)
+            self.assertAlmostEqual(result["joint_error_body"]["max"], 0, places=10)
+            self.assertEqual(trajectory["quality"]["missing_core_joint_frames"]["right_wrist"], 1)
+
+    def test_legacy_trajectory_without_display_frames_keeps_original_reference(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reference, detected = self.fixture(Path(temporary))
+            reference.pop("display_frames", None)
+            result = compare_to_reference(reference, detected)
+            self.assertEqual(result["reference_frame_source"], "frames")
+            self.assertAlmostEqual(result["joint_error_body"]["max"], 0, places=10)
 
 
 if __name__ == "__main__":

@@ -96,8 +96,10 @@ def enqueue_job_replay(*, jobs: JobDatabase, store: MotionReplayStore, settings:
             raise MotionReplayInputError("未找到连续可观测的 6 秒动作片段，可指定其他起始时间或补充清晰视频。", 409) from None
     if isinstance(start, bool) or not isinstance(start, int) or not 0 <= start <= 30 * 60 * 1000:
         raise MotionReplayInputError("start_ms 必须是有效的非负整数毫秒。")
+    from rallymate_vision.motion_replay import MOTION_REPLAY_VERSION
     request = {
         "version": REPLAY_VERSION, "prompt_version": PROMPT_VERSION, "prompt": PROMPT,
+        "renderer_version": MOTION_REPLAY_VERSION,
         "client_request": client_request,
         "frames_path": str(frames), "frames_sha256": sha256_path(frames),
         "primary_timeline_path": str(primary), "primary_timeline_sha256": sha256_path(primary),
@@ -131,7 +133,8 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
     url = f"{prefix}/v1/motion-replays/{row['id']}"
     request = row["request"]
     return {
-        "id": row["id"], "job_id": row["job_id"], "version": REPLAY_VERSION,
+        "id": row["id"], "job_id": row["job_id"], "version": request.get("version", REPLAY_VERSION),
+        "renderer_version": request.get("renderer_version"),
         "generation_status": row["generation_status"], "quality_status": row["quality_status"],
         "model": request["model"], "resolution": request["resolution"], "duration_seconds": request["duration_seconds"],
         "source_window": {"start_ms": request["start_ms"], "duration_ms": request["duration_ms"]},
@@ -149,10 +152,12 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
         "links": {"self": url, "retry": f"{url}/retry"},
         "semantics": {"original": "verified_uploaded_video_source_window", "original_playback_start_ms": 0,
                       "original_audio_included": False,
-                      "reference": "deterministic_replay_of_observed_2d_pose",
+                      "reference": "deterministic_replay_of_2d_pose_with_labeled_display_continuity"
+                      if (row.get("render_manifest") or {}).get("render", {}).get("display_continuity")
+                      else "deterministic_replay_of_observed_2d_pose",
                       "generated": "ai_visualization_pending_fidelity_review", "used_for_scoring": False,
                       "fidelity_verified": row["quality_status"] == "approved",
-                      "message_zh": "原始白模复现已观测的二维姿态；AI 视频仅作可视化，动作保真待复核，不参与评分。"},
+                      "message_zh": "白模按二维关键点回放，短暂缺点仅作展示衔接；AI 视频的动作保真待复核，二者均不参与评分。"},
     }
 
 
@@ -165,7 +170,7 @@ def _public_manifest(payload: dict, *, trajectory: bool = False) -> dict:
                       "timestamp_source", "observed_frame_count", "selection_source", "person_track_id"}
     result["source"] = {key: source[key] for key in source_allowed if key in source}
     if trajectory:
-        result.update({key: payload[key] for key in ("observations", "frames") if key in payload})
+        result.update({key: payload[key] for key in ("observations", "display_frames", "frames") if key in payload})
     result["generated_fidelity_status"] = "pending_review"
     return result
 

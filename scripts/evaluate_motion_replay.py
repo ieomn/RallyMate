@@ -95,7 +95,9 @@ def _stats(values: list[float]) -> dict[str, Any]:
 
 
 def _reference_at(trajectory: dict[str, Any], timestamp: float) -> dict[str, Any] | None:
-    frames = trajectory["frames"]
+    # Compare with the joints actually encoded into reference.mp4. Raw evidence
+    # is retained separately and can contain a short gap or a different person.
+    frames = trajectory.get("display_frames", trajectory["frames"])
     times = [row["output_timestamp_ms"] for row in frames]
     # SourceVideoClock rounds decoder PTS to integer milliseconds. Permit only
     # that half-millisecond quantization, never motion-dependent time fitting.
@@ -168,6 +170,7 @@ def compare_to_reference(trajectory: dict[str, Any], extracted: dict[str, Any]) 
         }
     return {
         "status": "unverified_pending_human_review", "approved": False,
+        "reference_frame_source": "display_frames" if "display_frames" in trajectory else "frames",
         "alignment": "fixed_isotropic_canvas_contain_no_pose_fit_no_DTW",
         "canvas_transforms_from_dimensions_only": canvas_transforms,
         "body_unit": "reference_median_shoulder_center_to_hip_center_image_plane_span",
@@ -202,7 +205,7 @@ def contact_sheet(trajectory, baseline_snapshots, generated_snapshots, output_pa
     for baseline, generated in zip(baseline_snapshots, generated_snapshots):
         row_tiles = []
         for title, snapshot, include_detector in (
-            ("Reference: original joints (green)", baseline, False),
+            ("Reference: encoded joints (green)", baseline, False),
             ("Reference: RTMPose (magenta)", baseline, True),
             ("Generated: desired / RTMPose", generated, True),
         ):

@@ -1,8 +1,9 @@
-"""Bounded, observed-only skeleton replay from existing frame artifacts.
+"""Bounded skeleton replay with separate raw and presentation-only frames.
 
 Coordinates remain in the original video frame. Camera stabilization and body
 normalization belong to measurement code, never to a video overlay. No boxes,
-missing joints, interpolated poses or inferred player identities are emitted.
+raw missing joints or inferred player identities are added to ``frames``.
+``display_frames`` records explicitly bounded, provenance-labelled repairs.
 """
 from __future__ import annotations
 
@@ -13,9 +14,11 @@ from pathlib import Path
 from typing import Any
 
 from rallymate_vision.pose.metadata import keypoint_schema
+from rallymate_vision.display_continuity import MAX_DISPLAY_GAP_MS, build_display_frames, display_statistics
+from rallymate_vision.display_score import load_display_score_policy, recover_rtmpose_display_points
 
 
-POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.0.0"
+POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.1.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_WINDOW_MS = 10_000
 MAX_SAMPLE_LIMIT = 600
@@ -164,6 +167,20 @@ def _select_pose(record: Mapping[str, Any], frame: Mapping[str, Any], primary: M
     return poses[0], "single_visible_person", None
 
 
+def _display_identity_evidence(record: Mapping[str, Any], primary: Mapping[str, Any] | None) -> dict:
+    detections = record.get("detections") if isinstance(record.get("detections"), list) else []
+    poses = record.get("poses") if isinstance(record.get("poses"), list) else []
+    return {
+        "primary_player_id": primary.get("primary_player_id") if primary and _integer(primary.get("primary_player_id"), 1) else None,
+        "identity_ambiguous": primary.get("identity_ambiguous") if primary else None,
+        "selected_source_track_id": primary.get("source_track_id") if primary else None,
+        "primary_selection_status": primary.get("selection_status") if primary else None,
+        "pose_track_ids": [item["person_track_id"] for item in poses if isinstance(item, Mapping) and _integer(item.get("person_track_id"), 1)],
+        "observed_track_ids": {item["track_id"] for item in detections if isinstance(item, Mapping) and item.get("class_name") == "player" and _integer(item.get("track_id"), 1)}
+                              | {item["person_track_id"] for item in poses if isinstance(item, Mapping) and _integer(item.get("person_track_id"), 1)},
+    }
+
+
 def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None = None,
                         start_ms: int = 0, duration_ms: int = MAX_WINDOW_MS,
                         sample_limit: int = MAX_SAMPLE_LIMIT, allow_partial: bool = False) -> dict[str, Any]:
@@ -175,6 +192,8 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     primary_rows = _primary_rows(primary_timeline_path, allow_partial=allow_partial) if has_primary else iter(())
     current_primary = next(primary_rows, None)
     frames, dimensions = [], set()
+    context, verified_indexes, recovered_points, identity_evidence = [], set(), {}, {}
+    score_policy = load_display_score_policy(frames_path)
     preceding, next_after_start = None, None
     previous_time, previous_index, previous_processed = None, -1, -1
     previous_track, epoch = None, 0
@@ -193,6 +212,8 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 frames[-1]["valid_until_ms"] = min(frames[-1]["valid_until_ms"], timestamp)
             if preceding is not None and not frames:
                 preceding["valid_until_ms"] = min(preceding["valid_until_ms"], timestamp)
+            if context:
+                context[-1]["valid_until_ms"] = min(context[-1]["valid_until_ms"], timestamp)
             while current_primary is not None and current_primary["processed_index"] < processed:
                 current_primary = next(primary_rows, None)
             primary = current_primary if current_primary is not None and current_primary["processed_index"] == processed else None
@@ -218,10 +239,23 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 "source_keypoint_format": pose.get("keypoint_format") if pose is not None and isinstance(pose.get("keypoint_format"), str) else None,
                 "keypoints": points, "reason_code": reason,
             }
+            if start_ms - MAX_DISPLAY_GAP_MS <= timestamp <= end_ms + MAX_DISPLAY_GAP_MS:
+                if len(context) >= MAX_WINDOW_FRAMES + MAX_SAMPLE_LIMIT:
+                    raise PosePlaybackError("pose display context exceeds the bounded frame limit")
+                context.append(observed)
+                if frame.get("timestamp_source") == "decoder_pts":
+                    verified_indexes.add(index)
+                    if pose is not None and valid_dimensions:
+                        recovered_points[index] = recover_rtmpose_display_points(
+                            pose, width, height, frame_job_id=record.get("job_id"), policy=score_policy)
+                identity_evidence[index] = _display_identity_evidence(record, primary)
             if timestamp >= start_ms and next_after_start is None:
                 next_after_start = observed
-            if timestamp >= end_ms:
+            previous_time, previous_index, previous_processed, previous_track = timestamp, index, processed, track
+            if timestamp > end_ms + MAX_DISPLAY_GAP_MS:
                 break
+            if timestamp >= end_ms:
+                continue
             if timestamp >= start_ms:
                 if len(frames) >= MAX_WINDOW_FRAMES:
                     raise PosePlaybackError("pose window exceeds the bounded frame limit")
@@ -230,7 +264,6 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 frames.append(observed)
             else:
                 preceding = observed
-            previous_time, previous_index, previous_processed, previous_track = timestamp, index, processed, track
     finally:
         close = getattr(primary_rows, "close", None)
         if close is not None:
@@ -252,6 +285,11 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     if display_count > sample_limit:
         indexes = {round(index * (display_count - 1) / (sample_limit - 1)) for index in range(sample_limit)} if sample_limit > 1 else {0}
         frames = [frame for index, frame in enumerate(frames) if index in indexes]
+    display_context, _ = build_display_frames(context, verified_frame_indexes=verified_indexes,
+                                               recovered_points=recovered_points, identity_evidence=identity_evidence)
+    requested_indexes = {frame["frame_index"] for frame in frames}
+    display_frames = [row for row in display_context if row["frame_index"] in requested_indexes]
+    display_continuity = display_statistics(display_frames)
     width, height = next(iter(dimensions)) if len(dimensions) == 1 else (None, None)
     return {
         "schema_version": "1.0.0", "version": POSE_PLAYBACK_VERSION, "result_kind": "observed_pose_playback",
@@ -259,12 +297,14 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
         "keypoint_names": list(JOINT_NAMES), "skeleton_edges": [edge[:] for edge in SKELETON_EDGES],
         "min_keypoint_confidence": MIN_KEYPOINT_CONFIDENCE, "interpolation": "none",
         "frames": frames,
+        "display_frames": display_frames, "display_continuity": display_continuity,
         "source": {"frames_path": "frames.jsonl", "primary_timeline_path": "primary-player.jsonl" if has_primary else None,
                    "requested_start_ms": start_ms, "requested_end_ms": end_ms, "width": width, "height": height,
                    "observed_frames_in_window": observed_count, "returned_frames": len(frames),
                    "includes_preceding_observation": bool(include_preceding),
                    "is_sampled": display_count > sample_limit, "is_partial": allow_partial,
                    "timestamp_semantics": "source_frame_timestamp_ms", "min_keypoint_confidence": MIN_KEYPOINT_CONFIDENCE,
+                   "timestamp_rounding_tolerance_ms": .5 if frames and all(row["frame_index"] in verified_indexes for row in frames) else 0,
                    "selection_source": "primary_player_timeline" if has_primary else "single_visible_person_only",
                    "max_display_age_ms": MAX_DISPLAY_AGE_MS},
     }

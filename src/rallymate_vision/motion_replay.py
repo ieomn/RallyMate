@@ -1,7 +1,7 @@
 """Deterministic, scene-free 2-D motion references from observed pose artifacts.
 
-The mannequin's surface is illustrative. Joint centers, identity and source time
-come from observations; this renderer never corrects technique or invents depth.
+The mannequin's surface is illustrative. Observed trajectories and labelled
+short-gap display repairs drive it; it never corrects technique or invents depth.
 """
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ from typing import Any
 
 import cv2
 import numpy as np
+from rallymate_vision.display_continuity import one_display_identity, iter_display_frames
+from rallymate_vision.display_score import load_display_score_policy, recover_rtmpose_display_points
 
 from rallymate_vision.pose_playback import (
     MAX_DISPLAY_AGE_MS,
@@ -29,11 +31,12 @@ from rallymate_vision.pose_playback import (
     _primary_rows,
     _rows,
     _select_pose,
+    _display_identity_evidence,
     MAX_ARTIFACT_BYTES,
 )
 
 
-MOTION_REPLAY_VERSION = "observed-white-mannequin-v1.0.0"
+MOTION_REPLAY_VERSION = "observed-white-mannequin-v1.1.0"
 CORE_JOINTS = tuple(f"{side}_{joint}" for side in ("left", "right")
                     for joint in ("shoulder", "elbow", "wrist", "hip", "knee", "ankle"))
 LIMBS = tuple((f"{side}_{a}", f"{side}_{b}") for side in ("left", "right")
@@ -79,6 +82,55 @@ def _verified_source_times(path: Path, indexes: set[int]) -> bool:
     return False
 
 
+def _selection_observations(frames_path: Path, primary_path: Path | None, scan_limit_ms: int):
+    """Stream the same raw/display inputs without retaining the whole artifact."""
+    primary_iterator = _primary_rows(primary_path, allow_partial=False) if primary_path else iter(())
+    current_primary = next(primary_iterator, None)
+    score_policy = load_display_score_policy(frames_path)
+    first_time, previous_time, previous_processed, previous_index, previous_track, epoch = None, None, -1, -1, None, 0
+    try:
+        for record in _rows(frames_path, allow_partial=False, maximum_bytes=MAX_ARTIFACT_BYTES):
+            frame = record.get("frame", {})
+            timestamp, processed, index = frame.get("timestamp_ms"), frame.get("processed_index"), frame.get("index")
+            if (not _number(timestamp) or timestamp < 0 or not isinstance(processed, int) or isinstance(processed, bool)
+                    or not isinstance(index, int) or isinstance(index, bool) or processed <= previous_processed or index <= previous_index
+                    or previous_time is not None and timestamp <= previous_time):
+                raise MotionReplayError("motion_replay_window_selection_source_invalid")
+            if first_time is None:
+                first_time = timestamp
+            if timestamp - first_time > scan_limit_ms:
+                break
+            while current_primary is not None and current_primary["processed_index"] < processed:
+                current_primary = next(primary_iterator, None)
+            primary = current_primary if current_primary and current_primary["processed_index"] == processed else None
+            pose, selection, reason = _select_pose(record, frame, primary, primary_path is not None)
+            width, height = frame.get("width"), frame.get("height")
+            valid = (isinstance(width, int) and not isinstance(width, bool) and 0 < width <= 65536
+                     and isinstance(height, int) and not isinstance(height, bool) and 0 < height <= 65536)
+            points = _keypoints(pose, width, height) if pose is not None and valid else []
+            verified = frame.get("timestamp_source") == "decoder_pts"
+            if not verified:
+                points, reason = [], "source_timestamp_unverified"
+            elif not valid:
+                points, reason = [], "source_dimensions_unavailable"
+            elif pose is not None and not points:
+                reason = "confident_in_frame_keypoints_unavailable"
+            track = pose["person_track_id"] if pose is not None else None
+            if track != previous_track or previous_time is not None and timestamp - previous_time > MAX_DISPLAY_AGE_MS or processed > previous_processed + 1:
+                epoch += 1
+            row = {"frame_index": index, "processed_index": processed, "timestamp_ms": timestamp,
+                   "valid_until_ms": timestamp + MAX_DISPLAY_AGE_MS, "person_track_id": track,
+                   "selection_epoch": epoch, "selection_status": selection, "width": width if valid else None,
+                   "height": height if valid else None, "keypoints": points, "reason_code": reason}
+            recovered = recover_rtmpose_display_points(pose, width, height, frame_job_id=record.get("job_id"), policy=score_policy) if pose is not None and valid and verified else []
+            yield row, verified, recovered, _display_identity_evidence(record, primary)
+            previous_time, previous_processed, previous_index, previous_track = timestamp, processed, index, track
+    finally:
+        close = getattr(primary_iterator, "close", None)
+        if close:
+            close()
+
+
 def select_motion_replay_window(
     frames_path: Path,
     primary_timeline_path: Path | None = None,
@@ -86,7 +138,7 @@ def select_motion_replay_window(
     *,
     scan_limit_ms: int = 180_000,
 ) -> dict[str, Any]:
-    """Select an active, fully observed continuous window using bounded memory.
+    """Select an active continuous display window using bounded source context.
 
     Candidate quality uses only existing 2-D observations. The returned motion
     extent is a selection diagnostic, never a calibrated technique measurement.
@@ -99,45 +151,26 @@ def select_motion_replay_window(
     primary_path = Path(primary_timeline_path) if primary_timeline_path is not None else None
     if primary_path is not None and not primary_path.is_file():
         raise MotionReplayError("motion_replay_primary_timeline_missing")
-    primary_iterator = _primary_rows(primary_path, allow_partial=False) if primary_path else iter(())
-    current_primary = next(primary_iterator, None)
     pending: deque[dict[str, Any]] = deque()
     previous = None
     best = None
-    first_time = None
+    observations = _selection_observations(Path(frames_path), primary_path, scan_limit_ms)
     try:
-        for record in _rows(Path(frames_path), allow_partial=False, maximum_bytes=MAX_ARTIFACT_BYTES):
-            frame = record.get("frame", {})
-            timestamp, processed = frame.get("timestamp_ms"), frame.get("processed_index")
-            if not _number(timestamp) or timestamp < 0 or not isinstance(processed, int):
-                pending.clear()
-                previous = None
-                continue
-            if first_time is None:
-                first_time = timestamp
-            if timestamp - first_time > scan_limit_ms:
-                break
-            while current_primary is not None and current_primary["processed_index"] < processed:
-                current_primary = next(primary_iterator, None)
-            primary = current_primary if current_primary and current_primary["processed_index"] == processed else None
-            pose, _, _ = _select_pose(record, frame, primary, primary_path is not None)
-            width, height = frame.get("width"), frame.get("height")
-            if (pose is None or frame.get("timestamp_source") != "decoder_pts"
-                    or not isinstance(width, int) or isinstance(width, bool) or width <= 0
-                    or not isinstance(height, int) or isinstance(height, bool) or height <= 0):
-                pending.clear()
-                previous = None
-                continue
+        for raw, display in iter_display_frames(observations):
+            timestamp, processed = display["timestamp_ms"], display["processed_index"]
+            width, height = display["width"], display["height"]
             points = {point["name"]: np.array([point["x"] * width, point["y"] * height])
-                      for point in _keypoints(pose, width, height)}
+                      for point in display["keypoints"]}
             if not all(name in points for name in CORE_JOINTS):
                 pending.clear()
                 previous = None
                 continue
-            identity = (pose["person_track_id"], width, height)
+            identity = (display["person_track_id"], width, height)
             if previous is not None and (identity != previous["identity"]
                     or not 0 < timestamp - previous["timestamp"] <= MAX_DISPLAY_AGE_MS
-                    or processed != previous["processed"] + 1):
+                    or processed != previous["processed"] + 1
+                    or display["frame_index"] != previous["display"]["frame_index"] + 1
+                    or not one_display_identity([previous["display"], display])):
                 pending.clear()
             torso = float(np.linalg.norm((points["left_shoulder"] + points["right_shoulder"]
                                           - points["left_hip"] - points["right_hip"]) / 2))
@@ -146,7 +179,8 @@ def select_motion_replay_window(
                 previous = None
                 continue
             current = {"timestamp": timestamp, "processed": processed, "identity": identity,
-                       "torso": torso, "points": points}
+                       "torso": torso, "points": points, "display": display,
+                       "raw_core_fraction": sum(any(point["name"] == name for point in raw["keypoints"]) for name in CORE_JOINTS) / len(CORE_JOINTS)}
             pending.append(current)
             previous = current
             if len(pending) > 1001:
@@ -164,15 +198,16 @@ def select_motion_replay_window(
                 extent = max(extents)
                 if extent >= .2 and (best is None or extent > best["motion_extent_body"]):
                     best = {"start_ms": start, "duration_ms": duration_ms,
-                            "person_track_id": identity[0], "core_joint_coverage_fraction": 1.0,
-                            "motion_extent_body": extent, "selection_method": "continuous_observed_active_window",
+                            "person_track_id": identity[0], "core_joint_coverage_fraction": float(np.mean([row["raw_core_fraction"] for row in window])),
+                            "display_core_joint_coverage_fraction": 1.0,
+                            "motion_extent_body": extent, "selection_method": "continuous_display_active_window",
                             "scanned_time_limit_ms": scan_limit_ms}
             while pending and pending[0]["timestamp"] < start + 1000:
                 pending.popleft()
     except (PosePlaybackError, OSError, ValueError, TypeError, KeyError) as exc:
         raise MotionReplayError("motion_replay_window_selection_source_invalid") from exc
     finally:
-        close = getattr(primary_iterator, "close", None)
+        close = getattr(observations, "close", None)
         if close is not None:
             close()
     if best is None:
@@ -193,7 +228,8 @@ def build_motion_replay(
     """Build a bounded trajectory and exact output-to-observation frame map.
 
     One uniform scale and translation fit the complete observed movement. No
-    per-frame recentering, smoothing, retiming or pose interpolation is applied.
+    per-frame recentering, smoothing or retiming is applied. Display-only short
+    joint gaps use the same explicit, bounded repairs as the skeleton overlay.
     Constant-rate output holds the latest still-valid observation for at most
     100 ms, preserving the original presentation timestamps in the frame map.
     """
@@ -216,19 +252,21 @@ def build_motion_replay(
     except (PosePlaybackError, OSError, ValueError) as exc:
         raise MotionReplayError("motion_replay_source_invalid") from exc
     observations = preview["frames"]
+    display_observations = preview["display_frames"]
     if not observations or preview["source"]["is_sampled"]:
         raise MotionReplayError("motion_replay_empty_or_sampled_source")
     if not _verified_source_times(frames_path, {row["frame_index"] for row in observations}):
         raise MotionReplayError("motion_replay_source_timestamp_unverified")
-    observed = [row for row in observations if row["keypoints"]]
-    identities = {(row["person_track_id"], row["selection_epoch"]) for row in observed}
-    if len(identities) != 1:
+    if not one_display_identity(display_observations):
         raise MotionReplayError("motion_replay_requires_one_continuous_identity")
+    display_track = next(row["person_track_id"] for row in display_observations if row["keypoints"])
     source_width, source_height = preview["source"]["width"], preview["source"]["height"]
     if not source_width or not source_height:
         raise MotionReplayError("motion_replay_source_dimensions_unavailable")
+    raw_core_fractions = [sum(any(point["name"] == name for point in row["keypoints"]) for name in CORE_JOINTS) / len(CORE_JOINTS)
+                          for row in observations]
     core_fractions, torso_lengths, all_points = [], [], []
-    for row in observations:
+    for row in display_observations:
         points = {p["name"]: np.array([p["x"] * source_width, p["y"] * source_height])
                   for p in row["keypoints"]}
         core_fractions.append(sum(name in points for name in CORE_JOINTS) / len(CORE_JOINTS))
@@ -255,14 +293,17 @@ def build_motion_replay(
     offset = np.array([width, height]) / 2 - (lower + upper) / 2 * scale
     frame_count = int(math.ceil(duration_ms * float(fps) / 1000 - 1e-9))
     timestamps = [row["timestamp_ms"] for row in observations]
-    frame_map, rendered_frames, projection_errors = [], [], []
+    frame_map, rendered_frames, display_rendered_frames, projection_errors = [], [], [], []
     for index in range(frame_count):
         output_ms = index * 1000 / float(fps)
         source_ms = start_ms + output_ms
-        selected = bisect.bisect_right(timestamps, source_ms + 1e-8) - 1
+        selected = bisect.bisect_right(timestamps, source_ms + .5 + 1e-8) - 1
         row = observations[selected] if selected >= 0 else None
+        display_row = display_observations[selected] if selected >= 0 else None
         if row is not None and (source_ms >= row["valid_until_ms"] or not row["keypoints"]):
             row = None
+        if display_row is not None and (source_ms >= display_row["valid_until_ms"] or not display_row["keypoints"]):
+            display_row = None
         points = []
         if row is not None:
             for point in row["keypoints"]:
@@ -277,11 +318,29 @@ def build_motion_replay(
                    "source_timestamp_ms": row["timestamp_ms"] if row else None,
                    "person_track_id": row["person_track_id"] if row else None,
                    "selection_epoch": row["selection_epoch"] if row else None,
-                   "observation_age_ms": round(source_ms - row["timestamp_ms"], 6) if row else None,
+                   "observation_age_ms": round(max(0, source_ms - row["timestamp_ms"]), 6) if row else None,
+                   "source_timestamp_offset_ms": round(row["timestamp_ms"] - source_ms, 6) if row else None,
                    "keypoint_count": len(points)}
         frame_map.append(mapping)
         rendered_frames.append({**mapping, "keypoints": points})
-    visible_fraction = sum(bool(row["keypoints"]) for row in rendered_frames) / frame_count
+        display_points = []
+        if display_row is not None:
+            for point in display_row["keypoints"]:
+                mapped = np.array([point["x"] * source_width, point["y"] * source_height]) * scale + offset
+                display_points.append({**point, "x_px": round(float(mapped[0]), 6), "y_px": round(float(mapped[1]), 6)})
+        display_mapping = {**mapping, "person_track_id": display_row["person_track_id"] if display_row else None,
+                           "selection_epoch": display_row["selection_epoch"] if display_row else None,
+                           "source_frame_index": display_row["frame_index"] if display_row else None,
+                           "source_timestamp_ms": display_row["timestamp_ms"] if display_row else None,
+                           "observation_age_ms": round(max(0, source_ms - display_row["timestamp_ms"]), 6) if display_row else None,
+                           "source_timestamp_offset_ms": round(display_row["timestamp_ms"] - source_ms, 6) if display_row else None,
+                           "keypoint_count": len(display_points)}
+        if display_row is not None:
+            for key in ("observed_person_track_id", "observed_selection_epoch", "identity_repair"):
+                if key in display_row:
+                    display_mapping[key] = display_row[key]
+        display_rendered_frames.append({**display_mapping, "keypoints": display_points})
+    visible_fraction = sum(bool(row["keypoints"]) for row in display_rendered_frames) / frame_count
     if visible_fraction < .95:
         raise MotionReplayError("motion_replay_insufficient_output_coverage")
     missing_joints = {name: sum(not any(p["name"] == name for p in row["keypoints"])
@@ -296,7 +355,7 @@ def build_motion_replay(
                    "width": source_width, "height": source_height,
                    "timestamp_source": "decoder_pts", "observed_frame_count": len(observations),
                    "selection_source": preview["source"]["selection_source"],
-                   "person_track_id": next(iter(identities))[0]},
+                   "person_track_id": display_track},
         "render": {"width": width, "height": height, "fps": float(fps),
                    "frame_count": frame_count, "encoded_duration_ms": frame_count * 1000 / float(fps),
                    "style": "white_capsule_mannequin_on_neutral_background",
@@ -305,21 +364,27 @@ def build_motion_replay(
                                  "scale": float(scale), "offset_x_px": float(offset[0]),
                                  "offset_y_px": float(offset[1])},
                    "body_scale_source_px": body_scale,
-                   "interpolation": "none", "smoothing": "none",
-                   "time_mapping": "latest_observation_within_original_validity_interval",
+                   "interpolation": "display_only_bounded_short_gaps", "smoothing": "none",
+                   "display_continuity": preview["display_continuity"],
+                   "time_mapping": "original_timestamps_with_half_millisecond_quantization_tolerance",
                    "max_display_age_ms": MAX_DISPLAY_AGE_MS,
+                   "timestamp_rounding_tolerance_ms": .5,
                    "min_keypoint_confidence": MIN_KEYPOINT_CONFIDENCE,
                    "is_3d_reconstruction": False},
         "quality": {"status": "usable_observed_reference",
-                    "core_joint_coverage_fraction": round(float(np.mean(core_fractions)), 6),
-                    "fully_observed_core_frame_fraction": round(sum(n == 1 for n in core_fractions) / len(core_fractions), 6),
+                    "core_joint_coverage_fraction": round(float(np.mean(raw_core_fractions)), 6),
+                    "raw_core_joint_coverage_fraction": round(float(np.mean(raw_core_fractions)), 6),
+                    "display_core_joint_coverage_fraction": round(float(np.mean(core_fractions)), 6),
+                    "fully_observed_core_frame_fraction": round(sum(n == 1 for n in raw_core_fractions) / len(raw_core_fractions), 6),
+                    "fully_displayed_core_frame_fraction": round(sum(n == 1 for n in core_fractions) / len(core_fractions), 6),
                     "visible_output_frame_fraction": round(visible_fraction, 6),
                     "missing_core_joint_frames": missing_joints,
                     "max_raster_rounding_error_px": round(max(projection_errors, default=0), 6),
                     "max_observation_age_ms": max(row["observation_age_ms"] or 0 for row in frame_map),
                     "source_accuracy_verified": False,
-                    "semantics": "faithful_to_observed_2d_estimates_not_verified_ground_truth"},
-        "observations": observations, "frames": rendered_frames, "frame_map": frame_map,
+                    "semantics": "observed_2d_estimates_with_explicit_display_only_repairs_not_verified_ground_truth"},
+        "observations": observations, "frames": rendered_frames, "display_frames": display_rendered_frames,
+        "display_observations": display_observations, "frame_map": frame_map,
     }
 
 
@@ -455,7 +520,7 @@ def export_perturbed_motion_replay(
         return offset_x_px * weight, offset_y_px * weight
 
     affected = []
-    for observation in trajectory["observations"]:
+    for observation in [*trajectory["observations"], *trajectory.get("display_observations", [])]:
         dx, dy = offset(observation["timestamp_ms"])
         for point in observation["keypoints"]:
             if point["name"] == joint:
@@ -463,7 +528,7 @@ def export_perturbed_motion_replay(
                 point["y"] += dy / scale / source["height"]
                 if not 0 <= point["x"] <= 1 or not 0 <= point["y"] <= 1:
                     raise MotionReplayError("motion_replay_perturbation_out_of_source_frame")
-    for frame in trajectory["frames"]:
+    for frame in [*trajectory["frames"], *trajectory.get("display_frames", [])]:
         if frame["source_timestamp_ms"] is None:
             continue
         dx, dy = offset(frame["source_timestamp_ms"])
@@ -476,8 +541,9 @@ def export_perturbed_motion_replay(
                 if not 0 <= point["x_px"] < trajectory["render"]["width"] or not 0 <= point["y_px"] < trajectory["render"]["height"]:
                     raise MotionReplayError("motion_replay_perturbation_out_of_output_frame")
                 if dx or dy:
-                    affected.append({"output_frame_index": frame["output_frame_index"],
-                                     "dx_px": dx, "dy_px": dy})
+                    if not any(item["output_frame_index"] == frame["output_frame_index"] for item in affected):
+                        affected.append({"output_frame_index": frame["output_frame_index"],
+                                         "dx_px": dx, "dy_px": dy})
     if not affected:
         raise MotionReplayError("motion_replay_perturbation_joint_unobserved")
     trajectory["result_kind"] = "synthetic_motion_reference_test"
@@ -500,9 +566,10 @@ def _export_motion_assets(trajectory: dict[str, Any], output_dir: Path, encoder:
     if existing:
         raise MotionReplayError("motion_replay_output_already_exists")
     render = trajectory["render"]
+    video_frames = trajectory.get("display_frames", trajectory["frames"])
     width, height, fps = render["width"], render["height"], render["fps"]
-    keyframes = {0: "first.png", len(trajectory["frames"]) // 2: "middle.png",
-                 len(trajectory["frames"]) - 1: "last.png"}
+    keyframes = {0: "first.png", len(video_frames) // 2: "middle.png",
+                 len(video_frames) - 1: "last.png"}
     with tempfile.TemporaryDirectory(prefix=".motion-replay-", dir=output_dir) as temporary:
         staging = Path(temporary)
         command = [encoder, "-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo",
@@ -515,7 +582,7 @@ def _export_motion_assets(trajectory: dict[str, Any], output_dir: Path, encoder:
                 process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
                                            stderr=error_stream)
                 assert process.stdin is not None
-                for index, frame in enumerate(trajectory["frames"]):
+                for index, frame in enumerate(video_frames):
                     pixels = render_motion_frame(frame, render)
                     process.stdin.write(pixels.tobytes())
                     if index in keyframes:
@@ -547,7 +614,8 @@ def _export_motion_assets(trajectory: dict[str, Any], output_dir: Path, encoder:
         finally:
             capture.release()
         (staging / "trajectory.json").write_text(json.dumps(trajectory, ensure_ascii=False, allow_nan=False), encoding="utf-8")
-        manifest = {key: value for key, value in trajectory.items() if key not in {"observations", "frames"}}
+        manifest = {key: value for key, value in trajectory.items()
+                    if key not in {"observations", "frames", "display_observations", "display_frames"}}
         manifest["artifacts"] = dict(ARTIFACTS)
         manifest["video"] = {"codec": "h264", "pixel_format": "yuv420p", "fps": encoded_fps,
                              "width": width, "height": height, "frame_count": count,

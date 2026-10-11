@@ -132,6 +132,18 @@ class MotionReplayServiceTests(unittest.TestCase):
             enqueue_job_replay(jobs=self.jobs, store=self.store, settings=self.settings, job_id="job-1",
                                payload={"start_ms": 1000}, idempotency_key="deployment")
 
+    def test_renderer_upgrade_creates_new_reference_without_duplicate_idempotent_submission(self):
+        original = self.enqueue(idempotency_key="before-renderer-upgrade")
+        with patch("rallymate_vision.motion_replay.MOTION_REPLAY_VERSION", "display-continuity-next"):
+            repeated = self.enqueue(idempotency_key="before-renderer-upgrade")
+            upgraded = self.enqueue(idempotency_key="after-renderer-upgrade")
+            duplicate = self.enqueue()
+        self.assertEqual(repeated["id"], original["id"])
+        self.assertNotEqual(upgraded["id"], original["id"])
+        self.assertEqual(duplicate["id"], upgraded["id"])
+        self.assertEqual(upgraded["request"]["renderer_version"], "display-continuity-next")
+        self.assertEqual(self.store.get(original["id"])["request"], original["request"])
+
     def test_deduplicated_window_keeps_each_idempotency_keys_distinct_client_request(self):
         explicit = self.enqueue(idempotency_key="explicit")
         with patch("rallymate_vision.motion_replay.select_motion_replay_window", return_value={"start_ms": 0}):

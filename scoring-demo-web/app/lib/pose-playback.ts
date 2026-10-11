@@ -1,4 +1,4 @@
-import type { PosePreviewFrame, PosePreviewResponse } from "./api-types";
+import type { PoseDisplayAnchors, PoseIdentityRepair, PosePreviewFrame, PosePreviewResponse } from "./api-types";
 
 export const POSE_WINDOW_MS = 10000;
 export const POSE_MAX_HOLD_MS = 100;
@@ -14,7 +14,7 @@ export function poseReplayTimingAllowed(isLocalOriginal: boolean, result: unknow
   return isLocalOriginal || object(object(object(result).runtime).annotated_video_compatibility).timing_preserved === true;
 }
 
-/** Observations only: malformed/missing frames remain empty so previous poses expire. */
+/** Raw observations remain intact; only bounded, explicitly marked display points can supplement them. */
 export function normalizePosePreview(value: unknown, jobId?: string): PosePreviewResponse | null {
   const raw = object(value), source = object(raw.source);
   if (raw.schema_version !== "1.0.0" || raw.result_kind !== "observed_pose_playback" || raw.coordinate_space !== "normalized_frame_0_1" || raw.joint_schema !== "halpe26_named" || typeof raw.job_id !== "string" || jobId && raw.job_id !== jobId || source.timestamp_semantics !== "source_frame_timestamp_ms" || !Array.isArray(raw.frames)) return null;
@@ -33,9 +33,10 @@ export function normalizePosePreview(value: unknown, jobId?: string): PosePrevie
     for (const value of selected && Array.isArray(row.keypoints) ? row.keypoints.slice(0, 26) : []) {
       const point = object(value);
       if (typeof point.name !== "string" || !JOINTS.has(point.name)) continue;
+      if (point.source !== undefined && point.source !== "observed") continue;
       if (points.has(point.name)) { duplicates.add(point.name); continue; }
       if (!finite(point.x) || point.x < 0 || point.x > 1 || !finite(point.y) || point.y < 0 || point.y > 1 || !finite(point.confidence) || point.confidence < minConfidence || point.confidence > 1) continue;
-      points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: point.confidence });
+      points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: point.confidence, source: "observed" });
     }
     for (const name of duplicates) points.delete(name);
     frames.push({ frame_index: Number.isSafeInteger(row.frame_index) ? Number(row.frame_index) : -1, timestamp_ms: row.timestamp_ms, valid_until_ms: validUntil, person_track_id: track, selection_epoch: epoch, selection_status: selected ? row.selection_status as "selected" | "single_visible_person" : "unavailable", width: positive(row.width), height: positive(row.height), keypoints: [...points.values()] });
@@ -51,15 +52,144 @@ export function normalizePosePreview(value: unknown, jobId?: string): PosePrevie
     if (!Array.isArray(pair) || pair.length !== 2 || !JOINTS.has(pair[0]) || !JOINTS.has(pair[1]) || pair[0] === pair[1]) continue;
     edges.set([...pair].sort().join("/"), [pair[0], pair[1]]);
   }
-  return { schema_version: "1.0.0", result_kind: "observed_pose_playback", job_id: raw.job_id, coordinate_space: "normalized_frame_0_1", joint_schema: "halpe26_named", min_keypoint_confidence: minConfidence, status: typeof raw.status === "string" ? raw.status : undefined, reason_zh: typeof raw.reason_zh === "string" ? raw.reason_zh : undefined, skeleton_edges: [...edges.values()], source: { requested_start_ms: source.requested_start_ms, requested_end_ms: source.requested_end_ms, width: positive(source.width), height: positive(source.height), returned_frames: frames.length, is_sampled: source.is_sampled === true, is_partial: source.is_partial === true, timestamp_semantics: "source_frame_timestamp_ms" }, frames };
+  const display = normalizeDisplayFrames(raw, frames, minConfidence);
+  const roundingTolerance = finite(source.timestamp_rounding_tolerance_ms) && source.timestamp_rounding_tolerance_ms >= 0 && source.timestamp_rounding_tolerance_ms <= .5 ? source.timestamp_rounding_tolerance_ms : 0;
+  return { schema_version: "1.0.0", result_kind: "observed_pose_playback", job_id: raw.job_id, coordinate_space: "normalized_frame_0_1", joint_schema: "halpe26_named", min_keypoint_confidence: minConfidence, status: typeof raw.status === "string" ? raw.status : undefined, reason_zh: typeof raw.reason_zh === "string" ? raw.reason_zh : undefined, skeleton_edges: [...edges.values()], source: { requested_start_ms: source.requested_start_ms, requested_end_ms: source.requested_end_ms, width: positive(source.width), height: positive(source.height), returned_frames: frames.length, is_sampled: source.is_sampled === true, is_partial: source.is_partial === true, timestamp_semantics: "source_frame_timestamp_ms", timestamp_rounding_tolerance_ms: roundingTolerance }, frames, ...display };
 }
 
-/** Binary search never borrows the next pose or joins observations in time. */
+function normalizeDisplayFrames(raw: Record<string, unknown>, frames: PosePreviewFrame[], minimumConfidence: number): Pick<PosePreviewResponse, "display_frames" | "display_continuity"> {
+  const continuity = object(raw.display_continuity);
+  const nonnegativeInteger = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
+  if (!Array.isArray(raw.display_frames) || continuity.version !== "short-joint-gap-v1.0.0" || continuity.used_for_scoring !== false
+    || continuity.confidence_semantics !== "minimum_anchor_confidence_not_model_estimate"
+    || !finite(continuity.max_gap_ms) || continuity.max_gap_ms <= 0 || continuity.max_gap_ms > 150
+    || !nonnegativeInteger(continuity.interpolated_keypoints) || !nonnegativeInteger(continuity.affected_frames)) return {};
+  const byTime = new Map<number, Record<string, unknown>>();
+  const duplicates = new Set<number>();
+  for (const value of raw.display_frames.slice(0, 600)) {
+    const row = object(value);
+    if (!finite(row.timestamp_ms)) continue;
+    if (byTime.has(row.timestamp_ms)) duplicates.add(row.timestamp_ms);
+    else byTime.set(row.timestamp_ms, row);
+  }
+  const boundRow = (frame: PosePreviewFrame) => {
+    const row = byTime.get(frame.timestamp_ms);
+    return row && !duplicates.has(frame.timestamp_ms) && row.frame_index === frame.frame_index && row.selection_epoch === frame.selection_epoch
+      && row.width === frame.width && row.height === frame.height && Array.isArray(row.keypoints) ? row : null;
+  };
+  // Recovery is limited to the documented SimCC response domain, never an
+  // arbitrary low-confidence point promoted to an observation by the browser.
+  const recovered = frames.map(frame => {
+    const row = boundRow(frame);
+    if (!row || frame.selection_status === "unavailable" || row.person_track_id !== frame.person_track_id || row.selection_status !== frame.selection_status) return frame;
+    const points = new Map(frame.keypoints.map(point => [point.name, point]));
+    const candidates = new Map<string, PosePreviewFrame["keypoints"][number]>();
+    const repeated = new Set<string>();
+    for (const value of (row.keypoints as unknown[]).slice(0, 26)) {
+      const point = object(value);
+      if (typeof point.name !== "string" || !JOINTS.has(point.name) || points.has(point.name)) continue;
+      if (candidates.has(point.name)) { repeated.add(point.name); continue; }
+      if (point.source !== "observed" || point.score_semantics !== "rtmpose_simcc_response_clipped_for_display" || point.confidence !== 1
+        || !finite(point.raw_confidence) || point.raw_confidence <= 1 || !finite(point.x) || point.x < 0 || point.x > 1 || !finite(point.y) || point.y < 0 || point.y > 1) continue;
+      candidates.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: 1, source: "observed", score_semantics: "rtmpose_simcc_response_clipped_for_display", raw_confidence: point.raw_confidence });
+    }
+    for (const [name, point] of candidates) if (!repeated.has(name)) points.set(name, point);
+    return { ...frame, keypoints: [...points.values()] };
+  });
+  const displayFrames = recovered.map(frame => {
+    const row = boundRow(frame);
+    if (!row) return frame;
+    const original = frames.find(candidate => candidate.timestamp_ms === frame.timestamp_ms)!;
+    const repairData = object(row.identity_repair);
+    const hasRepair = row.selection_status === "display_interpolated";
+    let repair: PoseIdentityRepair | undefined;
+    if (hasRepair) {
+      const before = repairData.before_timestamp_ms, after = repairData.after_timestamp_ms;
+      if (continuity.identity_repair_version !== "short-target-dropout-v1.0.0" || repairData.version !== "short-target-dropout-v1.0.0"
+        || repairData.method !== "same_target_detection_dropout" || repairData.original_track_id !== original.person_track_id
+        || repairData.original_selection_epoch !== original.selection_epoch || row.observed_person_track_id !== original.person_track_id
+        || row.observed_selection_epoch !== original.selection_epoch || !nonnegativeInteger(repairData.target_track_id) || repairData.target_track_id === 0
+        || row.person_track_id !== repairData.target_track_id || repairData.target_track_id === original.person_track_id
+        || (original.person_track_id === null && (repairData.dropout_kind !== "pose_unavailable" || original.selection_status !== "unavailable" || original.keypoints.length > 0))
+        || !finite(before) || !finite(after) || !(before >= 0 && before < frame.timestamp_ms && frame.timestamp_ms < after)
+        || after - before > Number(continuity.max_gap_ms) || !nonnegativeInteger(repairData.before_frame_index) || !nonnegativeInteger(repairData.after_frame_index)
+        || !(repairData.before_frame_index < frame.frame_index && frame.frame_index < repairData.after_frame_index)
+        || !nonnegativeInteger(repairData.before_selection_epoch) || !nonnegativeInteger(repairData.after_selection_epoch)
+        || !nonnegativeInteger(repairData.primary_player_id) || repairData.primary_player_id === 0) return frame;
+      repair = { version: "short-target-dropout-v1.0.0", method: "same_target_detection_dropout", original_track_id: original.person_track_id,
+        ...(repairData.dropout_kind === "pose_unavailable" ? { dropout_kind: "pose_unavailable" as const } : {}),
+        original_selection_epoch: original.selection_epoch, target_track_id: repairData.target_track_id,
+        before_frame_index: repairData.before_frame_index, after_frame_index: repairData.after_frame_index, before_timestamp_ms: before, after_timestamp_ms: after,
+        before_selection_epoch: repairData.before_selection_epoch, after_selection_epoch: repairData.after_selection_epoch, primary_player_id: repairData.primary_player_id };
+    } else if (frame.selection_status === "unavailable" || !frame.keypoints.length || row.person_track_id !== frame.person_track_id || row.selection_status !== frame.selection_status) return frame;
+    // A repaired target is constructed entirely from its own anchors. None of
+    // the transient background person's raw points enter this display frame.
+    const points = new Map((repair ? [] : frame.keypoints).map(point => [point.name, point]));
+    const repeated = new Set<string>();
+    const seen = new Set<string>();
+    for (const value of (row.keypoints as unknown[]).slice(0, 26)) {
+      const point = object(value), anchors = object(point.anchors);
+      if (typeof point.name !== "string" || !JOINTS.has(point.name)) continue;
+      if (seen.has(point.name)) repeated.add(point.name);
+      seen.add(point.name);
+      if (points.has(point.name) || point.source !== "interpolated") continue;
+      if (!finite(point.x) || point.x < 0 || point.x > 1 || !finite(point.y) || point.y < 0 || point.y > 1
+        || !finite(point.confidence) || point.confidence < minimumConfidence || point.confidence > 1) continue;
+      const before = anchors.before_timestamp_ms, after = anchors.after_timestamp_ms;
+      if (!finite(before) || !finite(after) || before < 0 || !(before < frame.timestamp_ms && frame.timestamp_ms < after)
+        || after - before > Number(continuity.max_gap_ms) || anchors.person_track_id !== (repair?.target_track_id ?? frame.person_track_id) || anchors.selection_epoch !== frame.selection_epoch
+        || !nonnegativeInteger(anchors.before_frame_index) || !nonnegativeInteger(anchors.after_frame_index)
+        || !(anchors.before_frame_index < frame.frame_index && frame.frame_index < anchors.after_frame_index)
+        || !nonnegativeInteger(anchors.before_processed_index) || !nonnegativeInteger(anchors.after_processed_index)
+        || anchors.after_processed_index - anchors.before_processed_index !== anchors.after_frame_index - anchors.before_frame_index) continue;
+      // A locally available anchor must still belong to this subject and contain
+      // this observed joint. At window edges the server provides bounded anchors.
+      const anchorFrames = recovered.filter(candidate => candidate.timestamp_ms >= before && candidate.timestamp_ms <= after);
+      if (repair) {
+        if (before !== repair.before_timestamp_ms || after !== repair.after_timestamp_ms || anchors.before_frame_index !== repair.before_frame_index || anchors.after_frame_index !== repair.after_frame_index
+          || anchors.before_selection_epoch !== repair.before_selection_epoch || anchors.after_selection_epoch !== repair.after_selection_epoch) continue;
+        const previous = anchorFrames.find(candidate => candidate.timestamp_ms === before), next = anchorFrames.find(candidate => candidate.timestamp_ms === after);
+        if (previous && (previous.person_track_id !== repair.target_track_id || previous.selection_epoch !== repair.before_selection_epoch || previous.frame_index !== repair.before_frame_index)
+          || next && (next.person_track_id !== repair.target_track_id || next.selection_epoch !== repair.after_selection_epoch || next.frame_index !== repair.after_frame_index)) continue;
+        const from = previous?.keypoints.find(endpoint => endpoint.name === point.name), to = next?.keypoints.find(endpoint => endpoint.name === point.name);
+        if (previous && !from || next && !to) continue;
+        if (from && to) {
+          const alpha = (frame.timestamp_ms - before) / (after - before);
+          if (Math.abs(point.x - (from.x + (to.x - from.x) * alpha)) > .00002 || Math.abs(point.y - (from.y + (to.y - from.y) * alpha)) > .00002) continue;
+        }
+      } else if (anchorFrames.some(candidate => candidate.person_track_id !== frame.person_track_id || candidate.selection_epoch !== frame.selection_epoch
+        || candidate.selection_status === "unavailable" || !candidate.keypoints.length
+        || ((candidate.timestamp_ms === before || candidate.timestamp_ms === after) && !candidate.keypoints.some(endpoint => endpoint.name === point.name)))) continue;
+      const parsedAnchors: PoseDisplayAnchors = {
+        before_timestamp_ms: before, after_timestamp_ms: after, before_frame_index: anchors.before_frame_index, after_frame_index: anchors.after_frame_index,
+        before_processed_index: anchors.before_processed_index, after_processed_index: anchors.after_processed_index,
+        person_track_id: Number(anchors.person_track_id), selection_epoch: Number(anchors.selection_epoch),
+        ...(repair ? { before_selection_epoch: repair.before_selection_epoch, after_selection_epoch: repair.after_selection_epoch } : {}),
+      };
+      points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: point.confidence, source: "interpolated", anchors: parsedAnchors });
+    }
+    for (const name of repeated) if (points.get(name)?.source === "interpolated") points.delete(name);
+    return { ...frame, keypoints: [...points.values()], ...(repair ? { person_track_id: repair.target_track_id, selection_status: "display_interpolated" as const,
+      observed_person_track_id: original.person_track_id, observed_selection_epoch: original.selection_epoch, identity_repair: repair } : {}) };
+  });
+  const interpolatedCount = displayFrames.reduce((count, frame) => count + frame.keypoints.filter(point => point.source === "interpolated").length, 0);
+  return { display_frames: displayFrames, display_continuity: {
+    version: "short-joint-gap-v1.0.0", max_gap_ms: continuity.max_gap_ms, interpolated_keypoints: interpolatedCount,
+    affected_frames: displayFrames.filter(frame => frame.keypoints.some(point => point.source === "interpolated")).length,
+    confidence_semantics: "minimum_anchor_confidence_not_model_estimate", used_for_scoring: false,
+    response_score_recovered_keypoints: recovered.reduce((count, frame) => count + frame.keypoints.filter(point => point.score_semantics === "rtmpose_simcc_response_clipped_for_display").length, 0),
+    ...(continuity.identity_repair_version === "short-target-dropout-v1.0.0" ? { identity_repair_version: "short-target-dropout-v1.0.0" as const, repaired_identity_frames: displayFrames.filter(frame => frame.identity_repair).length } : {}),
+  } };
+}
+
+/** Only explicitly declared integer-PTS rounding can advance lookup, by at most half a millisecond. */
 export function poseFrameAt(preview: PosePreviewResponse | null, timestampMs: number): PosePreviewFrame | null {
-  if (!preview || !Number.isFinite(timestampMs)) return null;
-  const frames = preview.frames;
+  if (!preview || !Number.isFinite(timestampMs) || timestampMs < 0) return null;
+  const frames = preview.display_frames ?? preview.frames;
+  const declared = preview.source.timestamp_rounding_tolerance_ms;
+  const rounding = finite(declared) && declared >= 0 && declared <= .5 ? declared : 0;
   let low = 0, high = frames.length - 1, found = -1;
-  while (low <= high) { const middle = (low + high) >>> 1; if (frames[middle].timestamp_ms <= timestampMs) { found = middle; low = middle + 1; } else high = middle - 1; }
+  while (low <= high) { const middle = (low + high) >>> 1; if (frames[middle].timestamp_ms <= timestampMs + rounding) { found = middle; low = middle + 1; } else high = middle - 1; }
   const frame = frames[found];
   return frame && timestampMs < frame.valid_until_ms && frame.selection_status !== "unavailable" && frame.keypoints.length ? frame : null;
 }

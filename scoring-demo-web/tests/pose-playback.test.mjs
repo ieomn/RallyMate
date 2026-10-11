@@ -134,3 +134,170 @@ test("gateway adds only the bounded pose-preview read endpoint without forwardin
     assert.equal(called, 1);
   } finally { globalThis.fetch = saved; }
 });
+
+function displayGap() {
+  const raw = payload([frame(0, { frame_index: 0, valid_until_ms: 40 }), frame(40, { frame_index: 1, valid_until_ms: 80, keypoints: [point("left_shoulder"), point("left_elbow")] }), frame(80, { frame_index: 2, valid_until_ms: 120 })]);
+  raw.display_continuity = { version: "short-joint-gap-v1.0.0", max_gap_ms: 150, interpolated_keypoints: 1, affected_frames: 1, confidence_semantics: "minimum_anchor_confidence_not_model_estimate", used_for_scoring: false };
+  raw.display_frames = structuredClone(raw.frames).map(row => ({ ...row, keypoints: row.keypoints.map(point => ({ ...point, source: "observed" })) }));
+  raw.display_frames[1].keypoints.push({ ...point("left_wrist"), source: "interpolated", anchors: { before_timestamp_ms: 0, after_timestamp_ms: 80, before_frame_index: 0, after_frame_index: 2, before_processed_index: 0, after_processed_index: 2, person_track_id: 8, selection_epoch: 1 } });
+  return raw;
+}
+
+test("bounded display-only points reconnect a joint without changing raw observations or frame lifetime", () => {
+  const raw = displayGap(), before = structuredClone(raw);
+  const parsed = normalizePosePreview(raw);
+  assert.equal(parsed.frames[1].keypoints.length, 2);
+  assert.equal(poseFrameAt(parsed, 40).keypoints.length, 3);
+  assert.equal(poseFrameAt(parsed, 40).keypoints.at(-1).source, "interpolated");
+  assert.equal(parsed.display_continuity.interpolated_keypoints, 1);
+  assert.equal(parsed.display_continuity.used_for_scoring, false);
+  assert.equal(poseFrameAt(parsed, 120), null);
+  assert.deepEqual(raw, before);
+  assert.equal(normalizePosePreview(parsed).display_continuity.interpolated_keypoints, 1);
+  const html = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/video.mp4", videoTimeOriginMs: 40, trajectory: null, posePreview: raw, jobId: "pose-job-123", poseTimingPreserved: true, initialOverlays: { pose: true } }));
+  assert.match(html, /短暂缺点已平滑衔接/);
+});
+
+test("display points with long gaps, foreign identity, missing anchors or promoted scoring are rejected", () => {
+  for (const mutate of [
+    raw => { raw.display_frames[1].keypoints.at(-1).anchors.after_timestamp_ms = 151; },
+    raw => { raw.display_frames[1].keypoints.at(-1).anchors.person_track_id = 9; },
+    raw => { raw.display_frames[1].keypoints.at(-1).anchors.selection_epoch = 2; },
+    raw => { raw.display_frames[1].keypoints.at(-1).anchors = undefined; },
+    raw => { raw.display_frames[1].keypoints.at(-1).source = "observed"; },
+    raw => { raw.display_continuity.used_for_scoring = true; },
+    raw => { raw.display_frames[1].person_track_id = 9; },
+    raw => { raw.frames[0].keypoints = [point("left_shoulder")]; },
+    raw => { raw.frames[1].keypoints = []; },
+    raw => { raw.display_frames[1].keypoints.push(structuredClone(raw.display_frames[1].keypoints.at(-1))); },
+  ]) {
+    const raw = displayGap(); mutate(raw);
+    const parsed = normalizePosePreview(raw);
+    assert.equal(poseFrameAt(parsed, 40)?.keypoints.some(point => point.name === "left_wrist") ?? false, false);
+    assert.equal(parsed.display_continuity?.interpolated_keypoints ?? 0, 0);
+  }
+});
+
+test("display supplements cannot bridge an intervening subject switch even if both endpoints match", () => {
+  const raw = displayGap();
+  raw.frames.splice(1, 0, frame(20, { frame_index: 1, valid_until_ms: 40, person_track_id: 9, selection_epoch: 2 }));
+  raw.frames[2].frame_index = 2; raw.frames[3].frame_index = 3;
+  raw.display_frames[1].frame_index = 2;
+  const anchors = raw.display_frames[1].keypoints.at(-1).anchors;
+  anchors.after_frame_index = 3; anchors.after_processed_index = 3;
+  const parsed = normalizePosePreview(raw);
+  assert.equal(poseFrameAt(parsed, 40).keypoints.some(point => point.name === "left_wrist"), false);
+});
+
+test("bounded server anchors can straddle a ten-second window without extending its observations", () => {
+  const raw = displayGap();
+  const target = raw.frames[1]; target.timestamp_ms = 10000; target.frame_index = 250; target.valid_until_ms = 10040;
+  const shown = raw.display_frames[1]; shown.timestamp_ms = 10000; shown.frame_index = 250; shown.valid_until_ms = 10040;
+  Object.assign(shown.keypoints.at(-1).anchors, { before_timestamp_ms: 9960, after_timestamp_ms: 10040, before_frame_index: 249, after_frame_index: 251, before_processed_index: 249, after_processed_index: 251 });
+  raw.source.requested_start_ms = 10000; raw.source.requested_end_ms = 20000;
+  raw.frames = [target]; raw.display_frames = [shown];
+  const parsed = normalizePosePreview(raw);
+  assert.equal(poseFrameAt(parsed, 10000).keypoints.at(-1).source, "interpolated");
+  assert.equal(poseFrameAt(parsed, 10040), null);
+});
+
+test("only explicit SimCC response provenance can restore a filtered observed joint", () => {
+  const raw = displayGap();
+  raw.display_frames[1].keypoints = [...raw.display_frames[1].keypoints.slice(0, 2), { ...point("left_wrist", .4, .5, 1), source: "observed", score_semantics: "rtmpose_simcc_response_clipped_for_display", raw_confidence: 1.15 }];
+  const parsed = normalizePosePreview(raw);
+  assert.equal(parsed.frames[1].keypoints.length, 2);
+  assert.equal(poseFrameAt(parsed, 40).keypoints.length, 3);
+  assert.equal(poseFrameAt(parsed, 40).keypoints.at(-1).source, "observed");
+  assert.equal(poseFrameAt(parsed, 40).keypoints.at(-1).raw_confidence, 1.15);
+  assert.equal(parsed.display_continuity.response_score_recovered_keypoints, 1);
+  for (const change of [{ score_semantics: "guessed" }, { raw_confidence: .9 }, { raw_confidence: Infinity }, { confidence: .9 }]) {
+    const invalid = structuredClone(raw); Object.assign(invalid.display_frames[1].keypoints.at(-1), change);
+    assert.equal(poseFrameAt(normalizePosePreview(invalid), 40).keypoints.length, 2);
+  }
+});
+
+function identityRepair() {
+  const raw = displayGap();
+  raw.frames[1] = frame(40, { frame_index: 1, valid_until_ms: 80, person_track_id: 9, selection_epoch: 2, keypoints: [point("left_shoulder", .9), point("left_elbow", .9), point("left_wrist", .9)] });
+  raw.frames[2].selection_epoch = 3;
+  raw.display_continuity.identity_repair_version = "short-target-dropout-v1.0.0";
+  raw.display_continuity.repaired_identity_frames = 1;
+  raw.display_frames[1] = { ...structuredClone(raw.frames[1]), person_track_id: 8, selection_status: "display_interpolated", observed_person_track_id: 9, observed_selection_epoch: 2,
+    identity_repair: { version: "short-target-dropout-v1.0.0", method: "same_target_detection_dropout", original_track_id: 9, original_selection_epoch: 2, target_track_id: 8, before_frame_index: 0, after_frame_index: 2, before_timestamp_ms: 0, after_timestamp_ms: 80, before_selection_epoch: 1, after_selection_epoch: 3, primary_player_id: 1 },
+    keypoints: raw.frames[0].keypoints.map(point => ({ ...point, source: "interpolated", anchors: { before_timestamp_ms: 0, after_timestamp_ms: 80, before_frame_index: 0, after_frame_index: 2, before_processed_index: 0, after_processed_index: 2, person_track_id: 8, selection_epoch: 2, before_selection_epoch: 1, after_selection_epoch: 3 } })) };
+  raw.display_frames[2].selection_epoch = 3;
+  return raw;
+}
+
+test("explicit brief target dropout uses only the target anchors and preserves the raw background observation", () => {
+  const raw = identityRepair(), parsed = normalizePosePreview(raw);
+  assert.equal(parsed.frames[1].person_track_id, 9);
+  assert.equal(parsed.frames[1].keypoints[0].x, .9);
+  const shown = poseFrameAt(parsed, 40);
+  assert.equal(shown.person_track_id, 8);
+  assert.equal(shown.selection_epoch, 2);
+  assert.equal(shown.selection_status, "display_interpolated");
+  assert.equal(shown.observed_person_track_id, 9);
+  assert.ok(shown.keypoints.every(point => point.source === "interpolated" && point.x !== .9));
+  assert.equal(parsed.display_continuity.repaired_identity_frames, 1);
+  assert.equal(normalizePosePreview(parsed).display_continuity.repaired_identity_frames, 1);
+  const incorrect = identityRepair(); incorrect.display_frames[1].keypoints[0].x = .9;
+  assert.equal(poseFrameAt(normalizePosePreview(incorrect), 40).keypoints.some(point => point.x === .9), false);
+});
+
+test("identity repair without its matching original observation and target anchors cannot switch subjects", () => {
+  for (const mutate of [
+    raw => { raw.display_continuity.identity_repair_version = "unknown"; },
+    raw => { raw.display_frames[1].identity_repair.original_track_id = 7; },
+    raw => { raw.display_frames[1].identity_repair.original_selection_epoch = 0; },
+    raw => { raw.display_frames[1].observed_person_track_id = 7; },
+    raw => { raw.display_frames[1].identity_repair.after_timestamp_ms = 151; },
+  ]) {
+    const raw = identityRepair(); mutate(raw);
+    assert.equal(poseFrameAt(normalizePosePreview(raw), 40).person_track_id, 9);
+  }
+  const wrongAnchor = identityRepair(); wrongAnchor.frames[2].person_track_id = 9;
+  assert.equal(poseFrameAt(normalizePosePreview(wrongAnchor), 40), null);
+});
+
+test("an explicitly annotated known-target dropout may display target anchors while its raw empty pose stays empty", () => {
+  const raw = identityRepair();
+  Object.assign(raw.frames[1], { person_track_id: null, selection_status: "unavailable", keypoints: [] });
+  raw.display_frames[1].observed_person_track_id = null;
+  Object.assign(raw.display_frames[1].identity_repair, { original_track_id: null, dropout_kind: "pose_unavailable" });
+  const parsed = normalizePosePreview(raw);
+  assert.equal(parsed.frames[1].keypoints.length, 0);
+  assert.equal(poseFrameAt(parsed, 40).person_track_id, 8);
+  assert.equal(poseFrameAt(parsed, 40).identity_repair.original_track_id, null);
+  assert.equal(poseFrameAt(normalizePosePreview(parsed), 40).identity_repair.dropout_kind, "pose_unavailable");
+  delete raw.display_frames[1].identity_repair.dropout_kind;
+  assert.equal(poseFrameAt(normalizePosePreview(raw), 40), null);
+});
+
+test("declared half-millisecond PTS rounding selects 144 distinct frames at 24fps without widening legacy lookup", () => {
+  const rows = Array.from({ length: 144 }, (_, index) => frame(Math.round(index * 1000 / 24), { frame_index: index, valid_until_ms: Math.round((index + 1) * 1000 / 24) }));
+  const raw = payload(rows), legacy = normalizePosePreview(raw);
+  assert.equal(poseFrameAt(legacy, 1000 / 24).frame_index, 0);
+  raw.source.timestamp_rounding_tolerance_ms = .5;
+  const parsed = normalizePosePreview(raw);
+  const selected = Array.from({ length: 144 }, (_, index) => poseFrameAt(parsed, index * 1000 / 24)?.frame_index);
+  assert.deepEqual(selected, Array.from({ length: 144 }, (_, index) => index));
+  assert.equal(poseFrameAt(parsed, -0.01), null);
+  assert.equal(poseFrameAt(parsed, 0).frame_index, 0);
+  assert.equal(poseFrameAt(parsed, 6000), null);
+  assert.equal(poseFrameAt(parsed, 4041.666666).frame_index, 97);
+  for (const invalid of [1, -1, Infinity, "0.5"]) {
+    raw.source.timestamp_rounding_tolerance_ms = invalid;
+    assert.equal(poseFrameAt(normalizePosePreview(raw), 1000 / 24).frame_index, 0);
+  }
+});
+
+test("PTS rounding cannot extend expired poses or borrow beyond the declared half millisecond", () => {
+  const raw = payload([frame(10, { valid_until_ms: 43 }), frame(330)]); raw.source.timestamp_rounding_tolerance_ms = .5;
+  const parsed = normalizePosePreview(raw);
+  assert.equal(poseFrameAt(parsed, 9.49), null);
+  assert.equal(poseFrameAt(parsed, 9.5).timestamp_ms, 10);
+  assert.equal(poseFrameAt(parsed, 43), null);
+  assert.equal(poseFrameAt(parsed, 329.49), null);
+  assert.equal(poseFrameAt(parsed, 329.5).timestamp_ms, 330);
+});
