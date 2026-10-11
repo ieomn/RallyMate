@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from rallymate_service.database import JobDatabase
 from rallymate_service.motion_replay_provider import PROMPT
+from rallymate_service.motion_replay_source import SOURCE_MEDIA_FILE, SourceVideoError, source_video_path
 from rallymate_service.motion_replay_store import (
     MEDIA_FILES, PROMPT_VERSION, REPLAY_VERSION, MotionReplaySettings,
     MotionReplayStore, ReplayConflict, sha256_path, timestamp_iso,
@@ -142,10 +143,13 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
         "error": ({"code": row["error_code"], "message": row["error_message"], "retryable": row["error_retryable"]}
                   if row["error_code"] else None),
         "retry_allowed": settings.enabled and MotionReplayStore.can_retry(row),
-        "media": {key: f"{url}/media/{filename}" if _media_path(row, settings, key) else None
-                  for key, filename in MEDIA_FILES.items()},
+        "media": {"original_video": f"{url}/media/{SOURCE_MEDIA_FILE}",
+                  **{key: f"{url}/media/{filename}" if _media_path(row, settings, key) else None
+                     for key, filename in MEDIA_FILES.items()}},
         "links": {"self": url, "retry": f"{url}/retry"},
-        "semantics": {"reference": "deterministic_replay_of_observed_2d_pose",
+        "semantics": {"original": "verified_uploaded_video_source_window", "original_playback_start_ms": 0,
+                      "original_audio_included": False,
+                      "reference": "deterministic_replay_of_observed_2d_pose",
                       "generated": "ai_visualization_pending_fidelity_review", "used_for_scoring": False,
                       "fidelity_verified": row["quality_status"] == "approved",
                       "message_zh": "原始白模复现已观测的二维姿态；AI 视频仅作可视化，动作保真待复核，不参与评分。"},
@@ -231,7 +235,13 @@ def build_motion_replay_router(*, jobs: JobDatabase, store: MotionReplayStore, s
     def replay_media(replay_id: str, artifact: str):
         row = get_row(replay_id)
         key = next((key for key, filename in MEDIA_FILES.items() if filename == artifact), None)
-        path = _media_path(row, settings, key) if key else None
+        if artifact == SOURCE_MEDIA_FILE:
+            try:
+                path = source_video_path(row, jobs.get_job(row["job_id"]), settings)
+            except SourceVideoError as exc:
+                raise HTTPException(409, str(exc)) from None
+        else:
+            path = _media_path(row, settings, key) if key else None
         if path is None:
             raise HTTPException(404, "该媒体尚未生成或不存在。")
         headers = {"Cache-Control": "private, max-age=0, must-revalidate", "X-Content-Type-Options": "nosniff"}

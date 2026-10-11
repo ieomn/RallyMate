@@ -2,16 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createApiClient } from "./lib/api-client";
+import MotionReplayComparison from "./MotionReplayComparison";
 import { motionReplayInterval, motionReplayIsActive, motionReplayPollDelay, motionReplayStatusText, type MotionReplayTask } from "./lib/motion-replay";
-
-function ReplayVideo({ src, poster, label }: { src: string; poster?: string; label: string }) {
-  const [failed, setFailed] = useState(false);
-  return failed ? <div className="motion-replay-placeholder" role="status"><strong>视频暂时无法播放</strong><p>任务记录已保留，可以重新加载视频。</p><button type="button" className="product-secondary" onClick={() => setFailed(false)}>重新加载视频</button></div>
-    : <video className="motion-replay-video" controls playsInline muted preload="metadata" src={src} poster={poster} aria-label={label} onError={() => setFailed(true)} />;
-}
 
 export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRetry }: { task: MotionReplayTask; mediaBase?: string; retrying?: boolean; onRetry?: () => void }) {
   const mediaUrl = (path: string | null) => path ? `${mediaBase.replace(/\/+$/, "")}${path}` : undefined;
+  const original = mediaUrl(task.media.original_video);
   const reference = mediaUrl(task.media.reference_video);
   const generated = task.generation_status === "completed" ? mediaUrl(task.media.generated_video) : undefined;
   const active = motionReplayIsActive(task);
@@ -19,18 +15,11 @@ export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRet
   const qualityLabel = task.quality_status === "approved" ? "AI 生成 · 已核验" : task.quality_status === "rejected" ? "AI 生成 · 未通过核验" : "AI 生成 · 动作待核验";
   return <article className="motion-replay-task" data-status={task.generation_status}>
     <div className="motion-replay-task-meta"><span>原视频 {motionReplayInterval(task)}</span><span className={`motion-replay-status${active ? " is-active" : ""}`} role="status">{motionReplayStatusText(task)}</span></div>
-    <div className="motion-replay-grid">
-      <section className="motion-replay-version" aria-label="轨迹白模回放">
-        <div className="motion-replay-version-heading"><h3>你的轨迹白模</h3><span>来自原视频关键点</span></div>
-        {reference ? <ReplayVideo key={reference} src={reference} poster={mediaUrl(task.media.first_frame)} label="根据原视频二维关键点渲染的白模回放" /> : <div className="motion-replay-placeholder"><span className="motion-replay-outline" aria-hidden="true">◯<br />╱│╲<br />╱ ╲</span><strong>{task.generation_status === "queued" ? "等待制作轨迹白模" : task.generation_status === "rendering" ? "正在整理你的动作" : "轨迹白模暂不可用"}</strong><p>保留个人动作的二维位置与时间关系。</p></div>}
-        <p className="motion-replay-caption">按测得的二维关键点渲染；受原视频遮挡与定位误差影响，不代表真实三维动作。</p>
-      </section>
-      <section className="motion-replay-version" aria-label="MiniMax 生成回放">
-        <div className="motion-replay-version-heading"><h3>MiniMax 动作回放</h3><span className="motion-replay-generated-label">{qualityLabel}</span></div>
-        {generated ? <ReplayVideo key={generated} src={generated} label="MiniMax 生成的个人动作展示视频" /> : <div className="motion-replay-placeholder"><span className="motion-replay-orbit" aria-hidden="true">✧</span><strong>{unknown ? "正在核对提交结果" : task.generation_status === "failed" ? "生成暂未完成" : active ? "个人动作视频正在后台制作" : "生成视频暂不可用"}</strong><p>{unknown ? "为避免重复生成，请先刷新状态；当前不能直接重试。" : active ? "轨迹白模准备好后即可先看，完成后会在这里显示。" : "已有轨迹白模仍可继续回放。"}</p></div>}
-        <p className="motion-replay-caption">AI 可能改变动作细节。请对照原视频与轨迹白模复核，不将生成画面作为测量或技术评分依据。</p>
-      </section>
-    </div>
+    <MotionReplayComparison duration={task.source_window.duration_ms / 1000} sourceStart={task.source_window.start_ms / 1000} sources={[
+      { id: "original", title: "原视频", label: "同一动作片段", src: original, caption: "真实拍摄画面，作为动作与时序的对照依据。", placeholder: "原视频片段暂不可用" },
+      { id: "reference", title: "你的轨迹白模", label: "来自原视频关键点", src: reference, poster: mediaUrl(task.media.first_frame), caption: "二维关键点经固定等比缩放，重点对照姿态与发生时间；受遮挡和定位误差影响，不代表真实三维动作。", placeholder: task.generation_status === "queued" ? "等待制作轨迹白模" : task.generation_status === "rendering" ? "正在整理你的动作" : "轨迹白模暂不可用", placeholderDetail: "保留个人动作的二维位置与时间关系。" },
+      { id: "generated", title: "MiniMax 动作回放", label: qualityLabel, src: generated, caption: "AI 可能改变动作细节。不将生成画面作为测量或技术评分依据。", placeholder: unknown ? "正在核对提交结果" : task.generation_status === "failed" ? "生成暂未完成" : active ? "个人动作视频正在后台制作" : "生成视频暂不可用", placeholderDetail: unknown ? "为避免重复生成，请先刷新状态；当前不能直接重试。" : active ? "原视频与轨迹白模可先对照，完成后会在这里显示。" : "已有轨迹白模仍可继续回放。" },
+    ]} />
     {task.error && <p className="motion-replay-error" role="status">{task.error.message}</p>}
     <div className="motion-replay-task-footer"><p>{active ? "任务已保存，可以离开页面，稍后回来查看。" : unknown ? "任务已保存，待服务确认提交结果。" : "回放记录保存在本次训练中，刷新后仍可查看。"}</p>{task.retry_allowed && !unknown && <button type="button" className="product-secondary" disabled={retrying || !onRetry} onClick={onRetry}>{retrying ? "正在重试…" : "重试生成"}</button>}</div>
   </article>;
@@ -107,7 +96,7 @@ function MotionReplaySession({ jobId }: { jobId: string }) {
   }
 
   return <section className="motion-replay-panel" id="motion-replay" aria-labelledby="motion-replay-title">
-    <div className="motion-replay-heading"><div><span className="motion-replay-eyebrow">PERSONAL MOTION</span><h2 id="motion-replay-title">纯净动作回放</h2><p>把这次动作单独留下来，先看轨迹白模，再看 AI 生成的个人展示。</p></div><button type="button" className="product-secondary" onClick={() => setRefresh(value => value + 1)} disabled={Boolean(mutation)}>刷新状态</button></div>
+    <div className="motion-replay-heading"><div><span className="motion-replay-eyebrow">PERSONAL MOTION</span><h2 id="motion-replay-title">纯净动作回放</h2><p>把原视频、轨迹白模和 AI 生成画面放在同一时间轴上，直接对照动作差异。</p></div><button type="button" className="product-secondary" onClick={() => setRefresh(value => value + 1)} disabled={Boolean(mutation)}>刷新状态</button></div>
     <form className="motion-replay-create" onSubmit={event => { event.preventDefault(); void mutate("create"); }}>
       <div><strong>选取一个 6 秒片段</strong><p>默认自动选择可用动作；也可以指定原视频起点。</p></div>
       <label>起点（秒，可选）<input type="number" min="0" step="0.1" placeholder="自动选取" value={startSeconds} onChange={event => setStartSeconds(event.target.value)} disabled={Boolean(mutation)} /></label>

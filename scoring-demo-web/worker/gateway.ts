@@ -45,7 +45,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
   const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|pose-preview|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg)))?))$`);
   const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/technical-review$`).test(url.pathname);
   const replayList = new RegExp(`^/v1/jobs/${id}/motion-replays$`).test(url.pathname);
-  const replayRead = new RegExp(`^/v1/motion-replays/${id}(?:/media/(?:reference\\.mp4|first\\.png|middle\\.png|last\\.png|generated\\.mp4|trajectory\\.json|manifest\\.json))?$`).test(url.pathname);
+  const replayRead = new RegExp(`^/v1/motion-replays/${id}(?:/media/(?:source\\.mp4|reference\\.mp4|first\\.png|middle\\.png|last\\.png|generated\\.mp4|trajectory\\.json|manifest\\.json))?$`).test(url.pathname);
   const replayWrite = request.method === "POST" && (replayList || new RegExp(`^/v1/motion-replays/${id}/retry$`).test(url.pathname));
   const replayAllowed = replayWrite || (request.method === "GET" && (replayList || replayRead));
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);

@@ -1,7 +1,7 @@
 export const MOTION_REPLAY_STATES = ["queued", "rendering", "submitting", "provider_processing", "downloading", "completed", "failed", "submit_unknown"] as const;
 export type MotionReplayStatus = typeof MOTION_REPLAY_STATES[number];
 export type MotionReplayRequest = { episode_id?: string; start_ms?: number; duration_ms?: number };
-export type MotionReplayMedia = "reference_video" | "first_frame" | "middle_frame" | "last_frame" | "generated_video" | "trajectory" | "manifest";
+export type MotionReplayMedia = "original_video" | "reference_video" | "first_frame" | "middle_frame" | "last_frame" | "generated_video" | "trajectory" | "manifest";
 export type MotionReplayTask = {
   id: string;
   job_id: string;
@@ -23,7 +23,7 @@ export type MotionReplayTask = {
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const idPattern = /^[a-zA-Z0-9_-]{8,80}$/;
-const mediaKeys: MotionReplayMedia[] = ["reference_video", "first_frame", "middle_frame", "last_frame", "generated_video", "trajectory", "manifest"];
+const mediaKeys: MotionReplayMedia[] = ["original_video", "reference_video", "first_frame", "middle_frame", "last_frame", "generated_video", "trajectory", "manifest"];
 
 /** Media always comes through our persisted replay endpoint, never a provider URL. */
 export function motionReplayMediaPath(value: unknown, taskId: string): string | null {
@@ -34,7 +34,7 @@ export function motionReplayMediaPath(value: unknown, taskId: string): string | 
     const prefix = `/v1/motion-replays/${taskId}/media/`;
     if (!url.pathname.startsWith(prefix)) return null;
     const artifact = url.pathname.slice(prefix.length);
-    return ["reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json"].includes(artifact) ? url.pathname : null;
+    return ["source.mp4", "reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json"].includes(artifact) ? url.pathname : null;
   } catch { return null; }
 }
 

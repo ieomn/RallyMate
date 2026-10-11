@@ -27,6 +27,7 @@ from rallymate_service.motion_replay_store import (
     MEDIA_FILES, LeaseLost, MotionReplaySettings, MotionReplayStore, ReplayConflict,
 )
 from rallymate_service.motion_replay_worker import _validate_output, process_motion_replay, run_motion_replay_worker
+from rallymate_service.motion_replay_source import source_video_path
 
 
 MP4 = b"\x00\x00\x00\x18ftypisom" + b"test-only-media"
@@ -438,6 +439,91 @@ class MotionReplayServiceTests(unittest.TestCase):
                          {"start_ms": 0, "episode_id": "x"}, {"prompt": "override"}):
                 self.assertEqual(client.post("/v1/jobs/job-1/motion-replays", json=body, headers=headers).status_code, 422)
             self.assertEqual(client.post("/v1/jobs/job-1/motion-replays", content=b"x" * 4097, headers=headers).status_code, 413)
+
+    def _original_video(self, row):
+        from rallymate_service.motion_replay_store import sha256_path
+        uploads = self.root / "uploads"
+        uploads.mkdir(exist_ok=True)
+        source = uploads / "job-1.mp4"
+        source.write_bytes(MP4)
+        summary = {"minimum_scoring_loop": {"provenance": {
+            "video_path": str(source), "video_sha256": sha256_path(source),
+            "frames_sha256": row["request"]["frames_sha256"]}}}
+        with self.jobs.connect() as connection:
+            connection.execute("UPDATE jobs SET video_path=?,summary_json=? WHERE id='job-1'",
+                               (str(source), json.dumps(summary)))
+            connection.commit()
+        return source
+
+    def test_original_media_is_authenticated_cached_source_window_and_does_not_mutate_replay(self):
+        row = enqueue_job_replay(jobs=self.jobs, store=self.store, settings=self.settings, job_id="job-1",
+                                 payload={"start_ms": 5400})
+        source = self._original_video(row)
+        def authorize(authorization: str | None = Header(None)):
+            if authorization != "Bearer test":
+                raise HTTPException(401)
+        app = FastAPI()
+        app.include_router(build_motion_replay_router(jobs=self.jobs, store=self.store,
+                                                      settings=self.settings, authorize=authorize))
+        headers = {"Authorization": "Bearer test"}
+        def export(original, target, start_ms, duration_ms):
+            self.assertEqual((original, start_ms, duration_ms), (source, 5400, 6000))
+            target.write_bytes(MP4)
+            return {"duration_ms": 6000}
+        with TestClient(app) as client, patch("rallymate_service.motion_replay_source._export_clip", side_effect=export) as exporter:
+            payload = client.get(f"/v1/motion-replays/{row['id']}", headers=headers).json()
+            url = payload["media"]["original_video"]
+            self.assertEqual(payload["semantics"]["original_playback_start_ms"], 0)
+            exporter.assert_not_called()
+            self.assertEqual(client.get(url).status_code, 401)
+            exporter.assert_not_called()
+            first = client.get(url, headers=headers)
+            self.assertEqual((first.status_code, first.content), (200, MP4))
+            self.assertEqual(first.headers["content-type"], "video/mp4")
+            ranged = client.get(url, headers={**headers, "Range": "bytes=0-6"})
+            self.assertEqual((ranged.status_code, ranged.content), (206, MP4[:7]))
+            self.assertEqual(exporter.call_count, 1)
+            self.assertEqual(self.store.get(row["id"]), row)
+            self.assertEqual(self.provider.submissions, 0)
+            source.write_bytes(b"changed-original")
+            denied = client.get(url, headers=headers)
+            self.assertEqual(denied.status_code, 409)
+            self.assertNotIn(str(self.root), denied.text)
+            self.assertEqual(exporter.call_count, 1)
+
+    def test_original_export_rejects_changed_source_and_never_substitutes_annotated_video(self):
+        from rallymate_service.motion_replay_source import SourceVideoError
+        row = self.enqueue()
+        source = self._original_video(row)
+        (self.source / "annotated.mp4").write_bytes(MP4)
+        def changed_export(original, target, *_):
+            target.write_bytes(MP4)
+            original.write_bytes(b"changed-during-export")
+            return {"duration_ms": 6000}
+        with patch("rallymate_service.motion_replay_source._export_clip", side_effect=changed_export):
+            with self.assertRaises(SourceVideoError):
+                source_video_path(row, self.jobs.get_job("job-1"), self.settings)
+        self.assertFalse((self.settings.output_root / row["id"] / "source-window" / "source.mp4").exists())
+        source.unlink()
+        with patch("rallymate_service.motion_replay_source._export_clip") as exporter:
+            with self.assertRaises(SourceVideoError):
+                source_video_path(row, self.jobs.get_job("job-1"), self.settings)
+            exporter.assert_not_called()
+
+    def test_original_export_rejects_path_escape_and_wrong_analysis_provenance(self):
+        from rallymate_service.motion_replay_source import SourceVideoError
+        row = self.enqueue()
+        source = self._original_video(row)
+        job = self.jobs.get_job("job-1")
+        outside = self.root / "job-1.mp4"
+        outside.write_bytes(MP4)
+        job["video_path"] = str(outside)
+        with self.assertRaises(SourceVideoError):
+            source_video_path(row, job, self.settings)
+        job["video_path"] = str(source)
+        job["summary"]["minimum_scoring_loop"]["provenance"]["frames_sha256"] = "0" * 64
+        with self.assertRaises(SourceVideoError):
+            source_video_path(row, job, self.settings)
 
     def test_actual_container_timing_is_recorded_without_retiming(self):
         class Capture:

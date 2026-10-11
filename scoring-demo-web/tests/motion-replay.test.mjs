@@ -113,6 +113,19 @@ test("completed generated video is visibly pending review and does not replace t
   assert.equal(renderToStaticMarkup(createElement(Panel, { jobId, enabled: false })), "");
 });
 
+test("original source clip joins the same elapsed-seconds controls without making old records invalid", () => {
+  const source = fixture(); source.generation_status = "completed";
+  source.media.original_video = media("source.mp4"); source.media.generated_video = media("generated.mp4");
+  const task = parseMotionReplay(source);
+  assert.equal(task.media.original_video, media("source.mp4"));
+  assert.equal(parseMotionReplay(fixture()).media.original_video, null);
+  const html = renderToStaticMarkup(createElement(MotionReplayCard, { task }));
+  assert.equal((html.match(/<video/g) ?? []).length, 3);
+  assert.match(html, /三视频共同时间轴/);
+  assert.match(html, /同步播放/);
+  assert.match(html, /不拉伸时长/);
+});
+
 test("client separates persistence reads from explicit create and retry writes", async () => {
   const requests = [];
   const client = createApiClient(configured, async (url, init) => {
@@ -140,7 +153,7 @@ test("gateway allows persisted replay endpoints and media ranges without opening
     return new Response("video", { status: 206, headers: { "content-type": "video/mp4", "content-range": "bytes 0-4/5", "accept-ranges": "bytes" } });
   });
   const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001" };
-  for (const [method, path] of [["GET", `/v1/jobs/${jobId}/motion-replays`], ["POST", `/v1/jobs/${jobId}/motion-replays`], ["GET", `/v1/motion-replays/${id}`], ["POST", `/v1/motion-replays/${id}/retry`], ...["reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json"].map(name => ["GET", media(name)])]) {
+  for (const [method, path] of [["GET", `/v1/jobs/${jobId}/motion-replays`], ["POST", `/v1/jobs/${jobId}/motion-replays`], ["GET", `/v1/motion-replays/${id}`], ["POST", `/v1/motion-replays/${id}/retry`], ...["source.mp4", "reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json"].map(name => ["GET", media(name)])]) {
     const response = await proxyAnalysis(new Request(`http://localhost${path}`, { method, headers: { range: "bytes=0-4", "Idempotency-Key": "creation-123" }, ...(method === "POST" ? { body: "{}" } : {}) }), env);
     assert.equal(response.status, 206, path);
     assert.equal(response.headers.get("content-range"), "bytes 0-4/5");
