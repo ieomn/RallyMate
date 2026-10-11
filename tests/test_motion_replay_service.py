@@ -24,7 +24,8 @@ from rallymate_service.motion_replay_provider import (
     LEGACY_PROMPT_V1, PROMPT, MiniMaxVideoProvider, ProviderError, _download_url, build_generation_payload, request_prompt,
 )
 from rallymate_service.motion_replay_store import (
-    MEDIA_FILES, LeaseLost, MotionReplaySettings, MotionReplayStore, ReplayConflict,
+    APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MEDIA_FILES,
+    LeaseLost, MotionReplaySettings, MotionReplayStore, ReplayConflict, sha256_path,
 )
 from rallymate_service.motion_replay_worker import _validate_output, process_motion_replay, run_motion_replay_worker
 from rallymate_service.motion_replay_source import source_video_path
@@ -34,19 +35,26 @@ MP4 = b"\x00\x00\x00\x18ftypisom" + b"test-only-media"
 
 
 def fake_renderer(frames, output, **kwargs):
+    from rallymate_vision.motion_replay import FULL_BODY_RENDERER_VERSION, MOTION_REPLAY_VERSION
     output.mkdir(parents=True, exist_ok=True)
     artifacts = {key: filename for key, filename in MEDIA_FILES.items() if key != "generated_video"}
-    manifest = {"schema_version": "1.0.0", "artifacts": artifacts,
+    manifest = {"schema_version": "1.0.0", "version": MOTION_REPLAY_VERSION, "artifacts": artifacts,
                 "source": {"frames_path": str(frames), "frames_sha256": "hash", "start_ms": kwargs["start_ms"]},
-                "quality": {"source_accuracy_verified": False}, "render": {"is_3d_reconstruction": False}}
+                "quality": {"source_accuracy_verified": False},
+                "render": {"is_3d_reconstruction": False, "style": kwargs.get("appearance_style"),
+                           "renderer_version": FULL_BODY_RENDERER_VERSION}}
     for filename in artifacts.values():
         (output / filename).write_bytes(json.dumps(manifest).encode() if filename.endswith(".json") else MP4)
+    manifest["artifact_checksums"] = {filename: sha256_path(output / filename)
+                                      for filename in artifacts.values() if filename != "manifest.json"}
+    (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     return manifest
 
 
 class FakeProvider:
     def __init__(self):
         self.submissions = 0
+        self.submit_kwargs = []
         self.queries = []
         self.submit_error = None
         self.query_error = None
@@ -55,6 +63,7 @@ class FakeProvider:
 
     def submit(self, reference, **kwargs):
         self.submissions += 1
+        self.submit_kwargs.append(kwargs)
         if self.submit_error:
             raise self.submit_error
         return "remote-123"
@@ -112,6 +121,79 @@ class MotionReplayServiceTests(unittest.TestCase):
         with self.assertRaises(ReplayConflict):
             enqueue_job_replay(jobs=self.jobs, store=self.store, settings=self.settings, job_id="job-1",
                                payload={"start_ms": 1000}, idempotency_key="one")
+
+    def test_new_generation_snapshots_surface_image_and_passes_verified_first_frame(self):
+        row = self.enqueue()
+        request = row["request"]
+        self.assertEqual(request["appearance_reference"], APPEARANCE_REFERENCE)
+        self.assertEqual(request["appearance_reference_version"], APPEARANCE_REFERENCE_VERSION)
+        self.assertEqual(request["appearance_style"], APPEARANCE_STYLE)
+        self.assertEqual(request["prompt_strategy"], "structured")
+        self.tick()
+        stored = self.store.get(row["id"])
+        self.assertEqual(stored["generation_status"], "provider_processing")
+        self.assertEqual(self.provider.submit_kwargs[0]["prompt"], request["prompt"])
+        self.assertEqual(self.provider.submit_kwargs[0]["reference_image"],
+                         self.settings.output_root / row["id"] / stored["artifacts"]["first_frame"])
+        self.assertEqual(public_motion_replay(stored, self.settings)["prompt_strategy"], "structured")
+
+    def test_legacy_generation_keeps_original_prompt_without_adding_image(self):
+        row = self.enqueue()
+        legacy_request = dict(row["request"])
+        for key in ("appearance_reference", "appearance_reference_version", "appearance_style", "surface_renderer_version", "prompt_strategy"):
+            legacy_request.pop(key)
+        legacy_request["prompt"] = "Original saved legacy instructions."
+        legacy_request["prompt_version"] = "white-mannequin-motion-v2"
+        with self.store.connect() as connection:
+            connection.execute("UPDATE motion_replays SET request_json=? WHERE id=?", (json.dumps(legacy_request), row["id"]))
+            connection.commit()
+        with patch("rallymate_service.motion_replay_worker._render", wraps=fake_renderer) as renderer:
+            process_motion_replay(self.store, self.settings, provider_factory=lambda: self.provider)
+        self.assertEqual(renderer.call_args.kwargs["appearance_style"], "legacy_capsule")
+        self.assertEqual(self.provider.submit_kwargs[0]["prompt"], legacy_request["prompt"])
+        self.assertNotIn("reference_image", self.provider.submit_kwargs[0])
+        stored = self.store.get(row["id"])
+        self.assertEqual(stored["request"], legacy_request)
+        self.assertEqual(public_motion_replay(stored, self.settings)["prompt_strategy"], "legacy")
+
+    def test_changed_appearance_reference_fails_before_any_provider_submission(self):
+        row = self.enqueue()
+        def unavailable_provider():
+            raise ProviderError("credentials_unavailable", "暂不可用", retryable=True)
+        process_motion_replay(self.store, self.settings, provider_factory=unavailable_provider, renderer=fake_renderer)
+        rendered = self.store.get(row["id"])
+        image = self.settings.output_root / row["id"] / rendered["artifacts"]["first_frame"]
+        image.write_bytes(b"replaced first frame")
+        self.store.retry(row["id"])
+        self.tick()
+        stored = self.store.get(row["id"])
+        self.assertEqual(stored["generation_status"], "failed")
+        self.assertEqual(stored["error_code"], "appearance_reference_changed")
+        self.assertEqual(self.provider.submissions, 0)
+
+    def test_reference_strategy_and_prompt_strategy_are_part_of_content_identity(self):
+        current = self.enqueue()
+        legacy = dict(current["request"])
+        for key in ("appearance_reference", "appearance_reference_version", "appearance_style", "surface_renderer_version"):
+            legacy.pop(key)
+        legacy_row = self.store.create("job-1", legacy)
+        enhanced = {**current["request"], "prompt_strategy": "context_ir", "prompt": "Reviewed enhanced prompt."}
+        enhanced_row = self.store.create("job-1", enhanced)
+        self.assertEqual(len({current["id"], legacy_row["id"], enhanced_row["id"]}), 3)
+        self.assertEqual(self.store.create("job-1", enhanced)["id"], enhanced_row["id"])
+        self.assertEqual(public_motion_replay(enhanced_row, self.settings)["prompt_strategy"], "context_ir")
+
+    def test_surface_renderer_version_invalidates_cache_and_never_submits_mismatched_render(self):
+        current = self.enqueue()
+        with patch("rallymate_vision.motion_replay.FULL_BODY_RENDERER_VERSION", "full-body-surface-next"):
+            upgraded = self.enqueue()
+            self.tick()  # Original queued snapshot must not silently use the new surface.
+        self.assertNotEqual(upgraded["id"], current["id"])
+        stored = self.store.get(current["id"])
+        self.assertEqual(stored["generation_status"], "failed")
+        self.assertEqual(stored["error_code"], "renderer_snapshot_mismatch")
+        self.assertFalse(stored["artifacts"])
+        self.assertEqual(self.provider.submissions, 0)
 
     def test_same_idempotency_key_survives_prompt_deployment_and_missing_source(self):
         row = self.enqueue(idempotency_key="deployment")

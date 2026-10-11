@@ -14,7 +14,10 @@ from typing import Any, Iterator
 
 
 REPLAY_VERSION = "motion-replay-v1"
-PROMPT_VERSION = "white-mannequin-motion-v2"
+PROMPT_VERSION = "white-mannequin-motion-v3"
+APPEARANCE_REFERENCE = "rendered_first_frame"
+APPEARANCE_REFERENCE_VERSION = "1"
+APPEARANCE_STYLE = "continuous_full_body_white_mannequin_2_5d"
 MAX_CONSECUTIVE_REMOTE_FAILURES = 3
 ACTIVE_STATUSES = ("queued", "rendering", "submitting", "provider_processing", "downloading")
 TERMINAL_STATUSES = ("completed", "failed", "submit_unknown")

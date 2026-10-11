@@ -7,6 +7,7 @@ export type MotionReplayTask = {
   job_id: string;
   generation_status: MotionReplayStatus;
   quality_status: "pending_review" | "approved" | "rejected";
+  prompt_strategy?: "structured" | "context_ir" | "legacy";
   model: string;
   resolution: string;
   duration_seconds: number;
@@ -53,6 +54,7 @@ export function parseMotionReplay(value: unknown, expectedJobId?: string, expect
   return {
     id: data.id, job_id: data.job_id, generation_status: data.generation_status as MotionReplayStatus,
     quality_status: data.quality_status as MotionReplayTask["quality_status"],
+    prompt_strategy: data.prompt_strategy === "structured" || data.prompt_strategy === "context_ir" ? data.prompt_strategy : "legacy",
     model: typeof data.model === "string" ? data.model : "MiniMax",
     resolution: typeof data.resolution === "string" ? data.resolution : "",
     duration_seconds: finite(data.duration_seconds) && data.duration_seconds > 0 ? data.duration_seconds : source.duration_ms / 1000,
@@ -75,6 +77,10 @@ export function parseMotionReplayList(value: unknown, jobId: string): { items: M
 
 export function motionReplayIsActive(task: MotionReplayTask): boolean {
   return ["queued", "rendering", "submitting", "provider_processing", "downloading"].includes(task.generation_status);
+}
+
+export function motionReplayPromptLabel(task: MotionReplayTask): string {
+  return task.prompt_strategy === "context_ir" ? "Context-IR 增强" : task.prompt_strategy === "structured" ? "结构化提示" : "旧版提示";
 }
 
 /** Auto-enqueue can follow analysis completion; empty reports get one bounded grace period. */

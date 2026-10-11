@@ -21,6 +21,10 @@ import cv2
 import numpy as np
 from rallymate_vision.display_continuity import one_display_identity, iter_display_frames
 from rallymate_vision.display_score import load_display_score_policy, recover_rtmpose_display_points
+from rallymate_vision.full_body_renderer import (
+    FULL_BODY_STYLE, FULL_BODY_RENDERER_VERSION, FULL_BODY_PADDING_TORSOS,
+    LEGACY_STYLE, render_full_body_frame,
+)
 
 from rallymate_vision.pose_playback import (
     MAX_DISPLAY_AGE_MS,
@@ -36,7 +40,7 @@ from rallymate_vision.pose_playback import (
 )
 
 
-MOTION_REPLAY_VERSION = "observed-white-mannequin-v1.1.0"
+MOTION_REPLAY_VERSION = "observed-white-mannequin-v2.0.0"
 CORE_JOINTS = tuple(f"{side}_{joint}" for side in ("left", "right")
                     for joint in ("shoulder", "elbow", "wrist", "hip", "knee", "ankle"))
 LIMBS = tuple((f"{side}_{a}", f"{side}_{b}") for side in ("left", "right")
@@ -224,6 +228,7 @@ def build_motion_replay(
     fps: float = 24,
     width: int = 1280,
     height: int = 720,
+    appearance_style: str = FULL_BODY_STYLE,
 ) -> dict[str, Any]:
     """Build a bounded trajectory and exact output-to-observation frame map.
 
@@ -237,6 +242,11 @@ def build_motion_replay(
             or not isinstance(duration_ms, int) or isinstance(duration_ms, bool)
             or not 2000 <= duration_ms <= 10_000):
         raise MotionReplayError("motion_replay_invalid_time_window")
+    if not isinstance(appearance_style, str):
+        raise MotionReplayError("motion_replay_invalid_appearance_style")
+    appearance_style = {"full_body_surface": FULL_BODY_STYLE, "legacy_capsule": LEGACY_STYLE}.get(appearance_style, appearance_style)
+    if appearance_style not in {FULL_BODY_STYLE, LEGACY_STYLE}:
+        raise MotionReplayError("motion_replay_invalid_appearance_style")
     if not _number(fps) or not 23.976 <= fps <= 60:
         raise MotionReplayError("motion_replay_fps_must_be_23.976_to_60")
     if any(not isinstance(n, int) or isinstance(n, bool) or n < 256 or n > 2048 or n % 2
@@ -284,7 +294,7 @@ def build_motion_replay(
     xy = np.asarray(all_points)
     lower, upper = xy.min(axis=0), xy.max(axis=0)
     # Padding includes the illustrative head and capsule radii, not new joints.
-    padding = max(body_scale * .25, 2.0)
+    padding = max(body_scale * (FULL_BODY_PADDING_TORSOS if appearance_style == FULL_BODY_STYLE else .25), 2.0)
     lower, upper = lower - padding, upper + padding
     extent = upper - lower
     if not np.isfinite(extent).all() or min(extent) <= 0:
@@ -358,7 +368,10 @@ def build_motion_replay(
                    "person_track_id": display_track},
         "render": {"width": width, "height": height, "fps": float(fps),
                    "frame_count": frame_count, "encoded_duration_ms": frame_count * 1000 / float(fps),
-                   "style": "white_capsule_mannequin_on_neutral_background",
+                   "style": appearance_style,
+                   "renderer_version": FULL_BODY_RENDERER_VERSION if appearance_style == FULL_BODY_STYLE else "legacy-capsules-v1.1.0",
+                   "surface_semantics": "generic_anatomical_skin_driven_by_2d_landmarks_not_recovered_body_shape" if appearance_style == FULL_BODY_STYLE else "illustrative_capsules",
+                   "depth_semantics": "fixed_artistic_layering_for_legibility_not_estimated_depth" if appearance_style == FULL_BODY_STYLE else "flat_2d_drawing",
                    "coordinate_space": "output_pixels", "source_coordinate_space": "normalized_frame_0_1",
                    "transform": {"type": "fixed_isotropic_scale_translation",
                                  "scale": float(scale), "offset_x_px": float(offset[0]),
@@ -389,6 +402,15 @@ def build_motion_replay(
 
 
 def render_motion_frame(frame: dict[str, Any], render: dict[str, Any]) -> np.ndarray:
+    """Dispatch by recorded style so old trajectories reproduce their surface."""
+    if render.get("style", LEGACY_STYLE) == FULL_BODY_STYLE:
+        return render_full_body_frame(frame, render)
+    if render.get("style", LEGACY_STYLE) != LEGACY_STYLE:
+        raise MotionReplayError("motion_replay_invalid_appearance_style")
+    return render_legacy_motion_frame(frame, render)
+
+
+def render_legacy_motion_frame(frame: dict[str, Any], render: dict[str, Any]) -> np.ndarray:
     """Draw an opaque mannequin, hiding any limb with a missing endpoint."""
     width, height = render["width"], render["height"]
     canvas = np.full((height, width, 3), (47, 43, 40), dtype=np.uint8)
@@ -468,6 +490,7 @@ def export_motion_replay(
     fps: float = 24,
     width: int = 1280,
     height: int = 720,
+    appearance_style: str = FULL_BODY_STYLE,
     ffmpeg_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Export H.264, three keyframes, source trajectory and an auditable manifest.
@@ -478,7 +501,7 @@ def export_motion_replay(
     encoder = _find_ffmpeg(ffmpeg_path)
     trajectory = build_motion_replay(frames_path, primary_timeline_path=primary_timeline_path,
                                      start_ms=start_ms, duration_ms=duration_ms, fps=fps,
-                                     width=width, height=height)
+                                     width=width, height=height, appearance_style=appearance_style)
     return _export_motion_assets(trajectory, output_dir, encoder)
 
 

@@ -17,7 +17,7 @@ function compiledUrl(file) {
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
   modules.set(file.href, url); return url;
 }
-const { parseMotionReplay, parseMotionReplayList, motionReplayIsActive, motionReplayMediaPath, motionReplayPollDelay } = await import(compiledUrl(new URL("../app/lib/motion-replay.ts", import.meta.url)));
+const { parseMotionReplay, parseMotionReplayList, motionReplayIsActive, motionReplayMediaPath, motionReplayPollDelay, motionReplayPromptLabel } = await import(compiledUrl(new URL("../app/lib/motion-replay.ts", import.meta.url)));
 const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { MotionReplayCard, default: Panel } = await import(compiledUrl(new URL("../app/MotionReplayPanel.tsx", import.meta.url)));
 const { proxyAnalysis } = await import(compiledUrl(new URL("../worker/gateway.ts", import.meta.url)));
@@ -40,6 +40,17 @@ test("persisted task contracts preserve ready white replay while generation is p
   assert.throws(() => parseMotionReplay(source, jobId, "other-task"), /不匹配/);
   assert.throws(() => parseMotionReplayList({ items: [source] }, "other-job"), /不匹配/);
   assert.throws(() => parseMotionReplay({ ...source, generation_status: "invented_status" }, jobId), /不匹配/);
+});
+
+test("prompt variants remain identifiable while historical records stay readable", () => {
+  for (const [strategy, expected] of [["structured", "结构化提示"], ["context_ir", "Context-IR 增强"], [undefined, "旧版提示"]]) {
+    const task = parseMotionReplay({ ...fixture(), prompt_strategy: strategy });
+    assert.equal(motionReplayPromptLabel(task), expected);
+    const html = renderToStaticMarkup(createElement(MotionReplayCard, { task }));
+    assert.ok(html.includes(expected));
+    assert.match(html, /不是真实体型或三维重建/);
+  }
+  assert.equal(parseMotionReplay({ ...fixture(), prompt_strategy: "unexpected" }).prompt_strategy, "legacy");
 });
 
 test("empty reports wait for delayed automatic enqueue for at most one minute", () => {

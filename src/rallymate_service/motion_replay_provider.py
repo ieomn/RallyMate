@@ -12,6 +12,7 @@ import json
 import os
 import re
 import socket
+import struct
 import time
 import urllib.error
 import urllib.parse
@@ -20,7 +21,23 @@ from pathlib import Path
 from typing import Any
 
 
-PROMPT = (
+PROMPT = """[OUTPUT]
+One complete, solid, faceless matte-white human mannequin replaying the supplied person's motion on a clean neutral grey background. Its body has a continuous, softly shaded human surface and natural, moderately full proportions.
+
+[REFERENCE RESPONSIBILITIES]
+Reference video 1 is the authority for motion: follow its joint positions, limb-length ratios, body location, left/right identity, direction, timing, pauses and original imperfections throughout the entire clip. It may be a simplified tracking proxy: its narrow rods, joint markers and flat surfaces are not the desired anatomy.
+If reference image 1 is supplied, use it only for the mannequin's body shape, surface, material and lighting. Do not copy its static pose or replace the video's movement with the image's pose. Without an image, use a neutral adult mannequin with natural body volume.
+
+[BODY SURFACE]
+Build a connected neck, rounded shoulders, rib cage, chest, abdomen, waist and pelvis. Give upper arms, forearms, thighs and calves realistic tapered volume, joined smoothly across the elbows, knees, shoulders and hips. Include simple solid palms and feet. Keep the same body shape and segment lengths across frames. No visible skeleton, wireframe, thin sticks, detached spheres, mechanical hinges or gaps between body parts. Use subtle light and shadow to make the rounded surface readable, with no anatomical markings or exaggerated muscles.
+
+[MOTION CONSTRAINTS]
+Replay only the supplied motion in its original order and at its original speed. Preserve the reference joint paths while adding surface volume around them. Do not correct posture, create extra actions, mirror the person, invent object interactions, change the action rhythm or smooth away intentional stops. Do not turn this personal motion replay into an idealized demonstration.
+
+[CAMERA AND PRESENTATION]
+One continuous fixed-camera shot, same body framing and movement space as the reference video, whole body visible when present in the reference. No camera movement, zoom, angle changes, cuts, overlays or text. Only the body surface, shading and clean background may be refined; the movement remains the supplied person's movement."""
+
+LEGACY_PROMPT_V2 = (
     "Use reference video 1 as the motion reference. Render one plain matte-white, "
     "faceless human mannequin on a clean neutral grey background, with a fixed camera. "
     "Preserve the reference person's visible body proportions, left/right limbs, "
@@ -41,6 +58,9 @@ LEGACY_PROMPT_V1 = (
     "This is a visual recreation of the supplied motion, not a coaching demonstration."
 )
 MAX_INPUT_BYTES = 40 * 1024 * 1024  # Base64 plus JSON remains below the 64 MB request cap.
+MAX_IMAGE_BYTES = 30 * 1024 * 1024
+MAX_GENERATION_PROMPT_CHARS = 7000  # Local bound; the official docs do not publish a character cap.
+MAX_CONTEXT_IR_PROMPT_CHARS = 32000  # Store IR output as opaque text; do not truncate or execute it.
 MAX_OUTPUT_BYTES = 64 * 1024 * 1024
 _TASK_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
@@ -63,7 +83,7 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 def request_prompt(request: dict) -> str:
     snapshot = request.get("prompt")
-    if isinstance(snapshot, str) and 1 <= len(snapshot) <= 7000:
+    if isinstance(snapshot, str) and snapshot.strip() and len(snapshot) <= MAX_GENERATION_PROMPT_CHARS:
         return snapshot
     # Explicit old-version compatibility; never silently rewrite a queued
     # request using whatever prompt the newly deployed worker happens to use.
@@ -72,12 +92,7 @@ def request_prompt(request: dict) -> str:
     raise ProviderError("prompt_snapshot_missing", "该生成任务缺少可追溯的提示版本，请创建新请求。")
 
 
-def build_generation_payload(reference_video: Path, *, model: str = "MiniMax-H3",
-                             resolution: str = "768P", duration: int = 6, prompt: str = PROMPT) -> dict:
-    if model != "MiniMax-H3" or resolution != "768P" or duration != 6:
-        raise ProviderError("unsupported_generation_config", "当前只支持 H3 / 768P / 6 秒。")
-    if not isinstance(prompt, str) or not 1 <= len(prompt) <= 7000:
-        raise ProviderError("invalid_generation_prompt", "生成请求的提示版本无效。")
+def _reference_video_content(reference_video: Path) -> dict:
     path = Path(reference_video)
     try:
         size = path.stat().st_size
@@ -91,15 +106,96 @@ def build_generation_payload(reference_video: Path, *, model: str = "MiniMax-H3"
         raise ProviderError("reference_video_invalid", "参考视频格式或大小不符合要求。")
     if data[4:8] != b"ftyp":
         raise ProviderError("reference_video_invalid", "参考视频必须是经过校验的 MP4。")
-    return {
-        "model": model,
-        "content": [
-            {"type": "text", "text": prompt},
-            {"type": "video_url", "video_url": {"url": "data:video/mp4;base64," + base64.b64encode(data).decode("ascii")},
-             "role": "reference_video"},
-        ],
-        "resolution": resolution, "duration": duration, "ratio": "16:9",
-    }
+    return {"type": "video_url", "video_url": {"url": "data:video/mp4;base64," + base64.b64encode(data).decode("ascii")},
+            "role": "reference_video"}
+
+
+def _image_dimensions(data: bytes, suffix: str) -> tuple[str, int, int]:
+    """Read image dimensions before decoding, bounding decompression allocation."""
+    if suffix == ".png" and data.startswith(b"\x89PNG\r\n\x1a\n") and data[12:16] == b"IHDR" and len(data) >= 24:
+        width, height = struct.unpack(">II", data[16:24])
+        return "image/png", width, height
+    if suffix in {".jpg", ".jpeg"} and data.startswith(b"\xff\xd8"):
+        cursor = 2
+        while cursor + 4 <= len(data):
+            if data[cursor] != 0xFF:
+                break
+            while cursor < len(data) and data[cursor] == 0xFF:
+                cursor += 1
+            if cursor >= len(data):
+                break
+            marker = data[cursor]
+            cursor += 1
+            if marker in {0xD8, 0x01} or 0xD0 <= marker <= 0xD7:
+                continue
+            if marker in {0xDA, 0xD9} or cursor + 2 > len(data):
+                break
+            length = int.from_bytes(data[cursor:cursor + 2], "big")
+            if length < 2 or cursor + length > len(data):
+                break
+            if marker in {0xC0, 0xC1, 0xC2} and length >= 8:
+                height, width = struct.unpack(">HH", data[cursor + 3:cursor + 7])
+                return "image/jpeg", width, height
+            cursor += length
+    raise ProviderError("reference_image_invalid", "人体外形参考图必须是有效 PNG 或 JPEG。")
+
+
+def _reference_image_content(reference_image: Path) -> dict:
+    path = Path(reference_image)
+    try:
+        size = path.stat().st_size
+        if path.suffix.lower() not in {".png", ".jpg", ".jpeg"} or not 24 <= size <= MAX_IMAGE_BYTES:
+            raise ProviderError("reference_image_invalid", "人体外形参考图格式或大小不符合要求。")
+        with path.open("rb") as stream:
+            data = stream.read(MAX_IMAGE_BYTES + 1)
+    except OSError:
+        raise ProviderError("reference_image_unavailable", "人体外形参考图暂不可读取，尚未提交服务商。") from None
+    if len(data) != size or len(data) > MAX_IMAGE_BYTES:
+        raise ProviderError("reference_image_invalid", "人体外形参考图格式或大小不符合要求。")
+    mime, width, height = _image_dimensions(data, path.suffix.lower())
+    if not (256 <= width <= 5760 and 256 <= height <= 5760 and .4 <= width / height <= 2.5):
+        raise ProviderError("reference_image_invalid", "人体外形参考图尺寸或宽高比不符合要求。")
+    if ((mime == "image/png" and not data.endswith(b"\x00\x00\x00\x00IEND\xaeB`\x82"))
+            or (mime == "image/jpeg" and not data.endswith(b"\xff\xd9"))):
+        raise ProviderError("reference_image_invalid", "人体外形参考图数据不完整。")
+    # Header validation alone must not allow truncated or corrupted input to be submitted.
+    import cv2
+    import numpy as np
+    try:
+        decoded = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
+    except cv2.error:
+        decoded = None
+    if decoded is None or decoded.shape[:2] != (height, width):
+        raise ProviderError("reference_image_invalid", "人体外形参考图无法完整解码。")
+    return {"type": "image_url", "image_url": {"url": "data:" + mime + ";base64," + base64.b64encode(data).decode("ascii")},
+            "role": "reference_image"}
+
+
+def _reference_content(reference_video: Path, prompt: str, reference_image: Path | None) -> list[dict]:
+    if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > MAX_GENERATION_PROMPT_CHARS:
+        raise ProviderError("invalid_generation_prompt", "生成请求的提示版本无效。")
+    content = [{"type": "text", "text": prompt}, _reference_video_content(reference_video)]
+    if reference_image is not None:
+        content.append(_reference_image_content(reference_image))
+    return content
+
+
+def build_generation_payload(reference_video: Path, *, model: str = "MiniMax-H3",
+                             resolution: str = "768P", duration: int = 6, prompt: str = PROMPT,
+                             reference_image: Path | None = None) -> dict:
+    if model != "MiniMax-H3" or resolution != "768P" or duration != 6:
+        raise ProviderError("unsupported_generation_config", "当前只支持 H3 / 768P / 6 秒。")
+    return {"model": model, "content": _reference_content(reference_video, prompt, reference_image),
+            "resolution": resolution, "duration": duration, "ratio": "16:9"}
+
+
+def build_context_ir_payload(reference_video: Path, *, model: str = "MiniMax-H3", duration: int = 6,
+                             prompt: str = PROMPT, reference_image: Path | None = None) -> dict:
+    if model != "MiniMax-H3" or duration != 6:
+        raise ProviderError("unsupported_context_ir_config", "当前提示词增强只支持 H3 / 6 秒。")
+    # Context-IR interprets the same references; resolution is not an accepted field.
+    return {"model": model, "content": _reference_content(reference_video, prompt, reference_image),
+            "duration": duration, "ratio": "16:9"}
 
 
 def _download_url(url: Any, *, allow_proxy_dns: bool = False) -> str:
@@ -184,25 +280,61 @@ class MiniMaxVideoProvider:
                                 submission_unknown=submitting) from None
 
     def submit(self, reference_video: Path, *, model: str = "MiniMax-H3",
-               resolution: str = "768P", duration: int = 6, prompt: str = PROMPT) -> str:
-        payload = build_generation_payload(reference_video, model=model, resolution=resolution, duration=duration, prompt=prompt)
+               resolution: str = "768P", duration: int = 6, prompt: str = PROMPT,
+               reference_image: Path | None = None) -> str:
+        payload = build_generation_payload(reference_video, model=model, resolution=resolution, duration=duration,
+                                           prompt=prompt, reference_image=reference_image)
         result = self._json_request("POST", "/v2/video_generation", payload)
+        return self._submitted_task_id(result)
+
+    @staticmethod
+    def _submitted_task_id(result: dict) -> str:
         task_id = result.get("task_id")
         if not isinstance(task_id, str) or not _TASK_ID.fullmatch(task_id):
             raise ProviderError("submission_outcome_unknown", "提交结果缺少可追踪任务编号，不会自动重复提交。",
                                 submission_unknown=True)
         return task_id
 
-    def query(self, task_id: str) -> dict:
+    def submit_context_ir(self, reference_video: Path, *, model: str = "MiniMax-H3", duration: int = 6,
+                          prompt: str = PROMPT, reference_image: Path | None = None) -> str:
+        payload = build_context_ir_payload(reference_video, model=model, duration=duration, prompt=prompt,
+                                           reference_image=reference_image)
+        result = self._json_request("POST", "/v2/h3_context_ir", payload)
+        return self._submitted_task_id(result)
+
+    def _query_task(self, task_id: str, *, task_type: str, require_type: bool = True) -> dict:
         if not isinstance(task_id, str) or not _TASK_ID.fullmatch(task_id):
             raise ProviderError("invalid_provider_task", "生成任务编号无效。")
         result = self._json_request("GET", "/v2/query/video_generation/" + task_id)
         task = result.get("task")
         if not isinstance(task, dict) or str(task.get("id")) != task_id:
             raise ProviderError("invalid_provider_response", "查询结果无法与当前任务对应。", retryable=True, automatic_retry=True)
-        status = task.get("status")
-        if status not in {"queued", "running", "succeeded", "failed", "cancelled"}:
+        actual_type = task.get("task_type")
+        if actual_type != task_type and (require_type or actual_type is not None):
+            raise ProviderError("invalid_provider_response", "查询结果的任务类型与请求不符。", retryable=True, automatic_retry=True)
+        if task.get("status") not in {"queued", "running", "succeeded", "failed", "cancelled"}:
             raise ProviderError("invalid_provider_response", "生成任务状态暂不可识别。", retryable=True, automatic_retry=True)
+        return task
+
+    def query_context_ir(self, task_id: str) -> dict:
+        task = self._query_task(task_id, task_type="h3_context_ir")
+        status = task["status"]
+        content = task.get("content")
+        prompt = content.get("prompt") if isinstance(content, dict) else None
+        if status == "succeeded":
+            if not isinstance(prompt, str) or not prompt.strip():
+                raise ProviderError("invalid_context_ir_response", "提示词增强任务尚未返回有效文本。",
+                                    retryable=True, automatic_retry=True)
+            if len(prompt) > MAX_CONTEXT_IR_PROMPT_CHARS:
+                raise ProviderError("context_ir_prompt_too_large", "增强提示词超过本地长度限制，未用于视频生成。")
+        # The structured response is still opaque model-produced text. Keep it
+        # unchanged for review; never parse it as executable code or auto-submit it.
+        return {"status": status, "prompt": prompt if status == "succeeded" else None}
+
+    def query(self, task_id: str) -> dict:
+        # Retain compatibility with historical generation responses without type.
+        task = self._query_task(task_id, task_type="generation", require_type=False)
+        status = task["status"]
         content = task.get("content")
         url = content.get("url") if isinstance(content, dict) else None
         if status == "succeeded" and (not isinstance(url, str) or not url):

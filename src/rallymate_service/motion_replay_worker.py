@@ -12,7 +12,8 @@ from typing import Callable
 
 from rallymate_service.motion_replay_provider import MiniMaxVideoProvider, ProviderError, request_prompt
 from rallymate_service.motion_replay_store import (
-    MAX_CONSECUTIVE_REMOTE_FAILURES, MEDIA_FILES, LeaseLost, MotionReplaySettings, MotionReplayStore, sha256_path,
+    APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MAX_CONSECUTIVE_REMOTE_FAILURES, MEDIA_FILES,
+    LeaseLost, MotionReplaySettings, MotionReplayStore, sha256_path,
 )
 
 
@@ -109,6 +110,40 @@ def _relative_artifacts(root: Path, render_dir: Path, manifest: dict) -> dict:
     return result
 
 
+def _verify_render_snapshot(request: dict, manifest: dict) -> None:
+    # Historical tasks retain their recorded video-only / capsule behavior.
+    if "appearance_style" not in request:
+        return
+    render = manifest.get("render", {}) if isinstance(manifest, dict) else None
+    if (not isinstance(render, dict) or manifest.get("version") != request.get("renderer_version")
+            or render.get("style") != request["appearance_style"]
+            or not isinstance(request.get("surface_renderer_version"), str)
+            or render.get("renderer_version") != request["surface_renderer_version"]):
+        raise ProviderError("renderer_snapshot_mismatch", "人体表面渲染版本已改变，请创建新请求；当前任务尚未提交生成。")
+
+
+def _appearance_reference(row: dict, root: Path, reference: Path) -> Path | None:
+    request = row["request"]
+    # Old snapshots intentionally keep their original video-only contract.
+    if "appearance_reference" not in request:
+        return None
+    if (request.get("appearance_reference") != APPEARANCE_REFERENCE
+            or request.get("appearance_reference_version") != APPEARANCE_REFERENCE_VERSION):
+        raise ProviderError("appearance_reference_unsupported", "该任务的人体外形参考版本不可用，请创建新请求。")
+    _verify_render_snapshot(request, row.get("render_manifest") or {})
+    relative = row["artifacts"].get("first_frame")
+    if not isinstance(relative, str):
+        raise ProviderError("appearance_reference_missing", "已导出的人体外形参考图缺失。")
+    path = (root / relative).resolve()
+    if (path.name != MEDIA_FILES["first_frame"] or not path.is_relative_to(root.resolve())
+            or path.parent != reference.resolve().parent or not path.is_file() or path.stat().st_size <= 0):
+        raise ProviderError("appearance_reference_missing", "已导出的人体外形参考图缺失。")
+    expected = (row.get("render_manifest") or {}).get("artifact_checksums", {}).get("first.png")
+    if not isinstance(expected, str) or sha256_path(path) != expected:
+        raise ProviderError("appearance_reference_changed", "人体外形参考图与导出记录不一致，请创建新请求。")
+    return path
+
+
 def _record_error(store: MotionReplayStore, row: dict, error: ProviderError, *, retry_stage: str,
                   settings: MotionReplaySettings) -> None:
     updates = {"error_code": error.code, "error_message": error.public_message,
@@ -161,12 +196,15 @@ def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettin
                 if not row["artifacts"]:
                     row = store.transition(row["id"], row["lease_token"], "rendering")
                     _verify_source(request)
+                    appearance_style = request.get("appearance_style", "legacy_capsule")
+                    if appearance_style not in {APPEARANCE_STYLE, "legacy_capsule"}:
+                        raise ProviderError("appearance_style_unsupported", "该任务的人体表面样式不可用，请创建新请求。")
                     render_dir = root / ("render-" + row["lease_token"])
                     try:
                         manifest = renderer(Path(request["frames_path"]), render_dir,
                                             primary_timeline_path=Path(request["primary_timeline_path"]),
                                             start_ms=request["start_ms"], duration_ms=request["duration_ms"],
-                                            fps=24, width=1280, height=720)
+                                            fps=24, width=1280, height=720, appearance_style=appearance_style)
                     except ProviderError:
                         raise
                     except Exception as exc:
@@ -174,6 +212,7 @@ def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettin
                         code = code if isinstance(code, str) and code.isidentifier() else "render_failed"
                         raise ProviderError(code, "参考白模生成未通过质量检查，请检查人体连续观测和片段长度。") from None
                     artifacts = _relative_artifacts(root, render_dir, manifest)
+                    _verify_render_snapshot(request, manifest)
                     # Recheck source after rendering to reject a concurrent artifact replacement.
                     _verify_source(request)
                     row = store.transition(row["id"], row["lease_token"], "queued",
@@ -183,11 +222,13 @@ def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettin
                 reference = root / row["artifacts"]["reference_video"]
                 if not reference.is_file():
                     raise ProviderError("reference_video_missing", "已导出的参考视频缺失。")
+                image = _appearance_reference(row, root, reference)
+                appearance_options = {"reference_image": image} if image is not None else {}
                 row = store.transition(row["id"], row["lease_token"], "submitting",
                                        provider_submitted_at=time.time(), poll_deadline_at=time.time() + settings.max_pending_seconds,
                                        error_code=None, error_message=None, error_retryable=False)
                 task_id = provider.submit(reference, model=request["model"], resolution=request["resolution"],
-                                          duration=request["duration_seconds"], prompt=prompt)
+                                          duration=request["duration_seconds"], prompt=prompt, **appearance_options)
                 history = [*row["provider_history"], task_id]
                 store.transition(row["id"], row["lease_token"], "provider_processing", release=True,
                                  delay=settings.poll_seconds, provider_task_id=task_id, provider_history=history,

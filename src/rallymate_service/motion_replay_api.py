@@ -13,7 +13,8 @@ from rallymate_service.database import JobDatabase
 from rallymate_service.motion_replay_provider import PROMPT
 from rallymate_service.motion_replay_source import SOURCE_MEDIA_FILE, SourceVideoError, source_video_path
 from rallymate_service.motion_replay_store import (
-    MEDIA_FILES, PROMPT_VERSION, REPLAY_VERSION, MotionReplaySettings,
+    APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MEDIA_FILES,
+    PROMPT_VERSION, REPLAY_VERSION, MotionReplaySettings,
     MotionReplayStore, ReplayConflict, sha256_path, timestamp_iso,
 )
 
@@ -96,10 +97,15 @@ def enqueue_job_replay(*, jobs: JobDatabase, store: MotionReplayStore, settings:
             raise MotionReplayInputError("未找到连续可观测的 6 秒动作片段，可指定其他起始时间或补充清晰视频。", 409) from None
     if isinstance(start, bool) or not isinstance(start, int) or not 0 <= start <= 30 * 60 * 1000:
         raise MotionReplayInputError("start_ms 必须是有效的非负整数毫秒。")
-    from rallymate_vision.motion_replay import MOTION_REPLAY_VERSION
+    from rallymate_vision.motion_replay import FULL_BODY_RENDERER_VERSION, MOTION_REPLAY_VERSION
     request = {
         "version": REPLAY_VERSION, "prompt_version": PROMPT_VERSION, "prompt": PROMPT,
+        "prompt_strategy": "structured",
         "renderer_version": MOTION_REPLAY_VERSION,
+        "surface_renderer_version": FULL_BODY_RENDERER_VERSION,
+        "appearance_style": APPEARANCE_STYLE,
+        "appearance_reference": APPEARANCE_REFERENCE,
+        "appearance_reference_version": APPEARANCE_REFERENCE_VERSION,
         "client_request": client_request,
         "frames_path": str(frames), "frames_sha256": sha256_path(frames),
         "primary_timeline_path": str(primary), "primary_timeline_sha256": sha256_path(primary),
@@ -135,6 +141,10 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
     return {
         "id": row["id"], "job_id": row["job_id"], "version": request.get("version", REPLAY_VERSION),
         "renderer_version": request.get("renderer_version"),
+        "surface_renderer_version": request.get("surface_renderer_version"),
+        "prompt_version": request.get("prompt_version"),
+        "prompt_strategy": request.get("prompt_strategy", "legacy"),
+        "appearance_reference": request.get("appearance_reference"),
         "generation_status": row["generation_status"], "quality_status": row["quality_status"],
         "model": request["model"], "resolution": request["resolution"], "duration_seconds": request["duration_seconds"],
         "source_window": {"start_ms": request["start_ms"], "duration_ms": request["duration_ms"]},
@@ -157,7 +167,7 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
                       else "deterministic_replay_of_observed_2d_pose",
                       "generated": "ai_visualization_pending_fidelity_review", "used_for_scoring": False,
                       "fidelity_verified": row["quality_status"] == "approved",
-                      "message_zh": "白模按二维关键点回放，短暂缺点仅作展示衔接；AI 视频的动作保真待复核，二者均不参与评分。"},
+                      "message_zh": "白模由二维轨迹驱动，体表厚度和光照仅作示意，不是真实体型或三维重建；AI 视频的动作保真待复核，二者均不参与评分。"},
     }
 
 
