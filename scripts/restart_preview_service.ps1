@@ -69,6 +69,18 @@ foreach ($processIdToStop in ($processesToStop | Select-Object -Unique)) {
     Stop-Process -Id $processIdToStop -ErrorAction Stop
     Wait-Process -Id $processIdToStop -Timeout 10 -ErrorAction SilentlyContinue
 }
+# Windows may retain the listener briefly after the owning process exits.
+# Check both ports again before the launcher refuses an apparently busy port.
+$portReleaseDeadline = (Get-Date).AddSeconds(30)
+do {
+    $remainingListeners = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+        Where-Object { $_.LocalPort -in @($FrontendPort, $ApiPort) })
+    if ($remainingListeners.Count -eq 0) { break }
+    if ((Get-Date) -ge $portReleaseDeadline) {
+        throw "The preview ports were not released. No replacement service was started."
+    }
+    Start-Sleep -Milliseconds 300
+} while ($true)
 & (Join-Path $PSScriptRoot "start_local.ps1") -FrontendPort $FrontendPort -ApiPort $ApiPort
 Write-Host "Preview processes launched; allow the API a few seconds to become ready. Keep the existing Cloudflare terminal open."
 Write-Host "Local preview: http://127.0.0.1:$FrontendPort"
