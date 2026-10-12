@@ -6,7 +6,7 @@ import { MotionReplaySynchronizer, type ReplaySyncSnapshot } from "./lib/motion-
 type ComparisonSource = { id: string; title: string; label: string; src?: string; poster?: string; caption: string; placeholder: string; placeholderDetail?: string };
 const statusLabels = { loading: "正在加载", ready: "", buffering: "正在缓冲", ended: "片段已结束 · 保留末帧", unavailable: "暂时无法播放，其余视频可继续" };
 
-export default function MotionReplayComparison({ sources, duration, sourceStart }: { sources: ComparisonSource[]; duration: number; sourceStart: number }) {
+export default function MotionReplayComparison({ sources, duration, sourceStart, active = true }: { sources: ComparisonSource[]; duration: number; sourceStart: number; active?: boolean }) {
   const videos = useRef<Record<string, HTMLVideoElement | null>>({});
   const controller = useRef<MotionReplaySynchronizer | null>(null);
   const [state, setState] = useState<ReplaySyncSnapshot>({ elapsed: 0, duration, playing: false, buffering: false, rate: 1, videos: {} });
@@ -26,6 +26,10 @@ export default function MotionReplayComparison({ sources, duration, sourceStart 
     frame = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(frame); sync.pause(); controller.current = null; };
   }, [sourceKey, duration]);
+
+  useEffect(() => {
+    if (!active) controller.current?.pause();
+  }, [active]);
 
   const hasVideo = sources.some(source => source.src);
   const seek = (seconds: number) => { controller.current?.seek(seconds); };

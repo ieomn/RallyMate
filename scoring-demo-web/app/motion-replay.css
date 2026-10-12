@@ -1,6 +1,14 @@
 .product-app .motion-replay-panel { margin:24px 0; padding:24px; border:1px solid var(--product-border); border-radius:14px; background:var(--product-panel); color:var(--product-text); }
+.product-app .report-primary:has(.report-replay[data-view="comparison"]) { grid-template-columns:1fr; }
+.product-app .report-replay .motion-replay-panel { margin:0; padding:20px; border:0; border-radius:0; }
+.product-app .report-replay > [hidden] { display:none; }
+.product-app .training-replay-tabs { display:flex; gap:8px; padding:0 20px 16px; border-bottom:1px solid var(--product-border); }
+.product-app .training-replay-tabs button { min-height:42px; padding:10px 16px; border:1px solid var(--product-border); border-radius:8px; background:transparent; color:var(--product-muted); font:500 14px/1.4 var(--sans); cursor:pointer; }
+.product-app .training-replay-tabs button[aria-selected="true"] { color:var(--product-accent); border-color:#d8fc7540; background:#d8fc7510; }
+.product-app .training-replay-tabs button:focus-visible { outline:2px solid var(--product-accent); outline-offset:3px; }
+@media (max-width:760px) { .product-app .training-replay-tabs { padding:0 16px 14px; } .product-app .training-replay-tabs button { flex:1; padding:10px 8px; } .product-app .report-replay .motion-replay-panel { padding:16px; } }
 .product-app .motion-replay-heading { display:flex; align-items:center; justify-content:space-between; gap:20px; }
-.product-app .motion-replay-heading h2 { margin:7px 0 8px; font:600 21px/1.4 var(--sans); letter-spacing:-.4px; }
+.product-app .motion-replay-heading h3 { margin:7px 0 8px; font:600 18px/1.4 var(--sans); letter-spacing:-.4px; }
 .product-app .motion-replay-eyebrow { color:var(--product-accent); font:500 11px/1.4 var(--sans); letter-spacing:.15em; }
 .product-app .motion-replay-heading p,.product-app .motion-replay-create p,.product-app .motion-replay-task-footer p { margin:0; font-size:13px; line-height:1.7; color:var(--product-muted); }
 .product-app .motion-replay-heading > button { flex-shrink:0; }

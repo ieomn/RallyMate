@@ -5,7 +5,7 @@ import { createApiClient } from "./lib/api-client";
 import MotionReplayComparison from "./MotionReplayComparison";
 import { motionReplayInterval, motionReplayIsActive, motionReplayModeLabel, motionReplayPollDelay, motionReplayPromptLabel, motionReplayStatusText, type MotionReplayGenerationMode, type MotionReplayTask } from "./lib/motion-replay";
 
-export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRetry }: { task: MotionReplayTask; mediaBase?: string; retrying?: boolean; onRetry?: () => void }) {
+export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRetry, playbackActive = true }: { task: MotionReplayTask; mediaBase?: string; retrying?: boolean; onRetry?: () => void; playbackActive?: boolean }) {
   const mediaUrl = (path: string | null) => path ? `${mediaBase.replace(/\/+$/, "")}${path}` : undefined;
   const original = mediaUrl(task.media.original_video);
   const motionSource = mediaUrl(task.media.motion_source_video);
@@ -17,7 +17,7 @@ export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRet
   const qualityLabel = reconstructing ? motionReplayModeLabel(task) : task.quality_status === "approved" ? "AI 生成 · 已核验" : task.quality_status === "rejected" ? "AI 生成 · 未通过核验" : "AI 生成 · 动作待核验";
   return <article className="motion-replay-task" data-status={task.generation_status}>
     <div className="motion-replay-task-meta"><span>原视频 {motionReplayInterval(task)} · {motionReplayModeLabel(task)} · {motionReplayPromptLabel(task)}</span><span className={`motion-replay-status${active ? " is-active" : ""}`} role="status">{motionReplayStatusText(task)}</span></div>
-    <MotionReplayComparison duration={task.source_window.duration_ms / 1000} sourceStart={task.source_window.start_ms / 1000} sources={[
+    <MotionReplayComparison active={playbackActive} duration={task.source_window.duration_ms / 1000} sourceStart={task.source_window.start_ms / 1000} sources={[
       { id: "original", title: "原视频", label: "同一动作片段", src: original, caption: "真实拍摄画面，作为动作与时序的对照依据。", placeholder: "原视频片段暂不可用" },
       { id: "reference", title: "你的轨迹白模", label: "来自原视频关键点", src: reference, poster: mediaUrl(task.media.first_frame), caption: reconstructing ? "原关键点白模供对照，可能保留手臂跳位或遮挡误判；人体表面为示意，并非纠错结果，不参与评分。" : "人体表面与厚度为示意，动作由二维轨迹驱动，不是真实体型或三维重建。短暂缺点仅作展示衔接，不参与评分。", placeholder: task.generation_status === "queued" ? "等待制作轨迹白模" : task.generation_status === "rendering" ? "正在整理你的动作" : "轨迹白模暂不可用", placeholderDetail: "保留个人动作的二维位置与时间关系。" },
       { id: "generated", title: reconstructing ? "MiniMax 原视频重建" : "MiniMax 动作回放", label: qualityLabel, src: generated, caption: reconstructing ? "依据原片重建朝向、遮挡和肢体关系，并尝试纠正关节点误判。结果仍需对照原片核验，不将生成画面作为测量或技术评分依据。" : "AI 可能改变动作细节。不将生成画面作为测量或技术评分依据。", placeholder: unknown ? "正在核对提交结果" : task.generation_status === "failed" ? "生成暂未完成" : active ? "个人动作视频正在后台制作" : "生成视频暂不可用", placeholderDetail: unknown ? "为避免重复生成，请先刷新状态；当前不能直接重试。" : active ? "原视频与轨迹白模可先对照，完成后会在这里显示。" : "已有轨迹白模仍可继续回放。" },
@@ -28,12 +28,12 @@ export function MotionReplayCard({ task, mediaBase = "", retrying = false, onRet
   </article>;
 }
 
-export default function MotionReplayPanel({ jobId, enabled }: { jobId?: string; enabled: boolean }) {
+export default function MotionReplayPanel({ jobId, enabled, active = true }: { jobId?: string; enabled: boolean; active?: boolean }) {
   // Changing jobs or disabling the feature destroys all request/form state.
-  return enabled && jobId ? <MotionReplaySession key={jobId} jobId={jobId} /> : null;
+  return enabled && jobId ? <MotionReplaySession key={jobId} jobId={jobId} active={active} /> : null;
 }
 
-function MotionReplaySession({ jobId }: { jobId: string }) {
+function MotionReplaySession({ jobId, active }: { jobId: string; active: boolean }) {
   const api = useMemo(() => createApiClient(), []);
   const [state, setState] = useState<{ jobId?: string; items: MotionReplayTask[]; loaded: boolean; error: string }>({ items: [], loaded: false, error: "" });
   const [selectedId, setSelectedId] = useState("");
@@ -100,7 +100,7 @@ function MotionReplaySession({ jobId }: { jobId: string }) {
   }
 
   return <section className="motion-replay-panel" id="motion-replay" aria-labelledby="motion-replay-title">
-    <div className="motion-replay-heading"><div><span className="motion-replay-eyebrow">PERSONAL MOTION</span><h2 id="motion-replay-title">纯净动作回放</h2><p>把原视频、轨迹白模和 AI 生成画面放在同一时间轴上，直接对照动作差异。</p></div><button type="button" className="product-secondary" onClick={() => setRefresh(value => value + 1)} disabled={Boolean(mutation)}>刷新状态</button></div>
+    <div className="motion-replay-heading"><div><h3 id="motion-replay-title">白模与 AI 对比</h3><p>把同一片段的原视频、轨迹白模和 AI 生成画面放在同一时间轴上，直接对照动作差异。</p></div><button type="button" className="product-secondary" onClick={() => setRefresh(value => value + 1)} disabled={Boolean(mutation)}>刷新状态</button></div>
     <form className="motion-replay-create" onSubmit={event => { event.preventDefault(); void mutate("create"); }}>
       <div><strong>选取一个 6 秒片段</strong><p>默认自动选择可用动作；也可以指定原视频起点。</p></div>
       <label className="motion-replay-mode">生成方式<select aria-label="生成方式" aria-describedby="motion-replay-mode-help" value={generationMode} onChange={event => setGenerationMode(event.target.value as MotionReplayGenerationMode)} disabled={Boolean(mutation)}><option value="trajectory_proxy">轨迹外观回放</option><option value="source_reconstruction">依据原视频重建（实验）</option></select></label>
@@ -110,6 +110,6 @@ function MotionReplaySession({ jobId }: { jobId: string }) {
     </form>
     {(actionError || (state.jobId === jobId && state.error)) && <p className="motion-replay-error" role="status">{actionError || state.error}</p>}
     {items.length > 1 && <label className="motion-replay-history">已保存的回放<select value={current?.id ?? ""} onChange={event => setSelectedId(event.target.value)}>{items.map((task, index) => <option value={task.id} key={task.id}>片段 {items.length - index} · {motionReplayInterval(task)} · {motionReplayModeLabel(task)} · {motionReplayPromptLabel(task)} · {motionReplayStatusText(task)}</option>)}</select></label>}
-    {current ? <MotionReplayCard key={current.id} task={current} mediaBase={api.config.baseUrl} retrying={Boolean(mutation)} onRetry={() => void mutate("retry")} /> : <div className="motion-replay-empty" role="status"><span aria-hidden="true">◯</span><p>{!loaded ? "正在读取已保存的回放…" : "创建后会在后台持续处理，刷新或离开页面不会丢失任务。"}</p></div>}
+    {current ? <MotionReplayCard key={current.id} task={current} mediaBase={api.config.baseUrl} retrying={Boolean(mutation)} onRetry={() => void mutate("retry")} playbackActive={active} /> : <div className="motion-replay-empty" role="status"><span aria-hidden="true">◯</span><p>{!loaded ? "正在读取已保存的回放…" : "创建后会在后台持续处理，刷新或离开页面不会丢失任务。"}</p></div>}
   </section>;
 }

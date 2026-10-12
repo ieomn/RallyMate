@@ -18,7 +18,7 @@ import ReportExportActions from "./ReportExportActions";
 import BallTrajectoryViewer from "./BallTrajectoryViewer";
 import BallTrajectorySummary from "./BallTrajectorySummary";
 import AdviceResult from "./AdviceResult";
-import MotionReplayPanel from "./MotionReplayPanel";
+import TrainingReplayPanel from "./TrainingReplayPanel";
 
 const SUPPORTED_VIDEO_EXTENSION = /\.(mp4|mov|m4v|avi|mkv)$/i;
 type ImportState = { status: "idle" } | { status: "reading"; fileName: string } | { status: "success"; fileName: string } | { status: "error"; message: string };
@@ -80,8 +80,7 @@ function ReplayPanel({ evidence, localVideoSrc, pending = false, error }: { evid
   const selectedVideoSrc = usingLocalVideo ? localVideoSrc : evidence.result?.artifact_urls?.["annotated.mp4"] ? `${mediaBase}/annotated.mp4` : null;
   const [videoFailed, setVideoFailed] = useState<string | null>(null);
   const embeddedPoints = evidence.result?.features?.ball?.trajectory?.points ?? [];
-  return <section className="report-replay" id="evidence" aria-labelledby="evidence-title">
-    <div className="report-section-heading"><div><h2 id="evidence-title">训练回放</h2></div><span>{selectedVideoSrc ? "原视频 · 同步回放" : "此报告未附视频"}</span></div>
+  return <>
     <BallTrajectoryViewer key={selectedVideoSrc ?? "coordinates"} trajectory={trajectory} pending={pending} error={error}
       jobId={evidence.jobId} loadPoseWindow={evidence.jobId && !pending ? loadPoseWindow : undefined}
       poseTimingPreserved={poseReplayTimingAllowed(usingLocalVideo, evidence.result)}
@@ -94,7 +93,7 @@ function ReplayPanel({ evidence, localVideoSrc, pending = false, error }: { evid
     <details className="report-replay-details"><summary>回放说明</summary><BallTrajectorySummary trajectory={trajectory} pending={pending} error={error} />
       {evidence.error && <p className="upload-error" role="status">部分增强证据暂不可用：{evidence.error}</p>}
     </details>
-  </section>;
+  </>;
 }
 
 export default function ScoreLab() {
@@ -366,9 +365,8 @@ export default function ScoreLab() {
         {uploadState === "processing" && <><p className="product-processing-meta"><span>{processing.count}</span><span aria-live="off">{processing.elapsed}</span></p>{processing.notice && <p className="product-processing-notice" role="status">{processing.notice}</p>}</>}
       </section>}
       {hasReport && uploadError && <section className="product-recovery" role="alert"><div><h2>这次分析暂时无法完成</h2><p>{uploadError}</p></div><button type="button" className="product-secondary" onClick={() => { if (evidence.jobId && !["failed", "cancelled"].includes(job?.status ?? "")) void monitorJob(evidence.jobId); else if (videoFile) void submitVideo(); else newAnalysis(); }}>{evidence.jobId && !["failed", "cancelled"].includes(job?.status ?? "") ? "继续读取结果" : videoFile ? "重试分析" : "选择新视频"}</button></section>}
-      {hasReport && !busy && <nav className="product-report-nav" aria-label="报告内容">{[["evidence", "回放与重点"], ...(showMotionReplay ? [["motion-replay", "纯净回放"]] : []), ["score-explanation", "分数解释"], ["timeline", "动作片段"], ["rules", "测量详情"], ["coach", "训练问答"], ["export", "导出报告"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
-      {hasReport && <LiveResults key={evidence.jobId ?? "pending"} status={job?.status} error={uploadError || evidence.error} result={evidence.result ?? null} assessment={evidence.assessment} pending={busy} trajectory={evidence.trajectory} summary={importedSummary ?? (job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null)} replay={<ReplayPanel key={evidence.jobId ?? evidence.mode} evidence={evidence} pending={busy} error={uploadError || evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} />} />}
-      {showMotionReplay && <MotionReplayPanel key={evidence.jobId} jobId={evidence.jobId} enabled />}
+      {hasReport && !busy && <nav className="product-report-nav" aria-label="报告内容">{[["evidence", "训练回放"], ["score-explanation", "分数解释"], ["timeline", "动作片段"], ["rules", "测量详情"], ["coach", "训练问答"], ["export", "导出报告"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
+      {hasReport && <LiveResults key={evidence.jobId ?? "pending"} status={job?.status} error={uploadError || evidence.error} result={evidence.result ?? null} assessment={evidence.assessment} pending={busy} trajectory={evidence.trajectory} summary={importedSummary ?? (job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null)} replay={<TrainingReplayPanel key={evidence.jobId ?? evidence.mode} jobId={evidence.jobId} allowComparison={showMotionReplay}><ReplayPanel evidence={evidence} pending={busy} error={uploadError || evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} /></TrainingReplayPanel>} />}
       {hasReport && !busy && <><details className="report-disclosure report-coach" id="coach"><summary>训练问答</summary><section className="coach-section"><div className="logic-heading"><div><h2>把问题，带回这次练习。</h2><p>结合当前视频中的可用证据解释动作；不能判断的部分会明确说明。</p></div></div><div className="coach-layout"><form className="coach-form" onSubmit={event => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="AI 练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><label>你的问题<span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={event => setAdviceNotes(event.target.value)} placeholder="例如：我应该重点回看哪一段脚步？" /></label><button className="primary-button" disabled={adviceLoading}>{adviceLoading ? "正在整理…" : "查看解释与建议"}<ProductIcon name="arrow-right" size={18} /></button>{adviceNotice && savedAdvice?.contextKey === currentAdviceKey && <p className="coach-status" role="status">{adviceNotice}</p>}</form><AdviceResult technique={adviceTechnique} response={currentAdvice} /></div></section></details>
       <div id="export"><ReportExportActions input={exportInput} /></div><details className="report-disclosure report-system" id="system"><summary>关于这份报告<span>测量范围与评分说明</span></summary><div className="report-system-copy"><h3>参考分如何理解</h3><p>测量证据参考分反映视频证据的完整程度，不代表技术水平。本报告暂不提供技术评分。</p><h3>动作与测量</h3><p>动作类型和阶段目前由画面中的运动变化估计。脚步片段不等于实际步数，挥拍区间不等于已确认触球；二维肩髋变化不代表真实三维转体角度。缺失证据不会补成测量结果。</p></div></details></>}
     </div>}
