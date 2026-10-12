@@ -26,7 +26,9 @@ MEDIA_FILES = {
     "middle_frame": "middle.png", "last_frame": "last.png",
     "generated_video": "generated.mp4", "trajectory": "trajectory.json",
     "manifest": "manifest.json",
+    "motion_source_video": "motion-source.mp4", "motion_source_manifest": "motion-source.json",
 }
+SOURCE_REFERENCE_FILES = {"motion_source_video": "reference.mp4", "motion_source_manifest": "manifest.json"}
 
 
 @dataclass(frozen=True)
@@ -161,6 +163,8 @@ class MotionReplayStore:
     def _same_client_request(stored_request: dict, client_request: dict) -> bool:
         if "client_request" in stored_request:
             return _json(stored_request["client_request"]) == _json(client_request)
+        if stored_request.get("generation_mode", "trajectory_proxy") != client_request.get("mode", "trajectory_proxy"):
+            return False
         # v1 records predate client-intent snapshots. They still retain the
         # selected window and episode. An automatic retry safely returns its
         # original operation instead of selecting/paying for another window.

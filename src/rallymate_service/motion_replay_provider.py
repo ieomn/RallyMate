@@ -1,7 +1,8 @@
 """MiniMax H3 reference-video adapter. Never logs credentials or data URIs.
 
-Official contract: /docs/api-reference/video-generation-v2-create.md and
-/docs/api-reference/video-generation-v2-query, checked 2026-10-11.
+Official contract: /docs/api-reference/video-generation-v2-create.md,
+/docs/api-reference/video-generation-v2-query and /docs/guides/video-generation,
+checked 2026-10-12.
 """
 from __future__ import annotations
 
@@ -37,6 +38,26 @@ Replay only the supplied motion in its original order and at its original speed.
 [CAMERA AND PRESENTATION]
 One continuous fixed-camera shot, same body framing and movement space as the reference video, whole body visible when present in the reference. No camera movement, zoom, angle changes, cuts, overlays or text. Only the body surface, shading and clean background may be refined; the movement remains the supplied person's movement."""
 
+# Experimental source-video reconstruction is deliberately opt-in. It must not
+# replace the proxy-driven production prompt or rewrite historical snapshots.
+RECONSTRUCTION_PROMPT_VERSION = "source-video-anatomical-reconstruction-v1"
+RECONSTRUCTION_PROMPT = """[TASK]
+Reconstruct the primary athlete in reference video 1 as one complete, solid, faceless matte-white human with a continuous, naturally full body surface on a neutral grey background. This is a faithful visual reconstruction of this person's own movement, not a coaching demonstration or a replacement performance.
+
+[SOURCE AUTHORITY]
+Reference video 1 is the original camera recording and the authority for subject identity, anatomical left and right, body proportions, movement, timing and interactions. Follow the same primary athlete throughout; never borrow a limb or action from another person in the scene. Determine left and right in the athlete's own anatomical frame, not by screen position; those identities remain stable when the person turns or limbs cross.
+If reference image 1 is supplied, use only its matte-white material, faceless presentation, rounded body volume and lighting style. Its pose, joint placement, limb connections and apparent proportions are not motion or anatomy evidence. Do not copy any distorted pose or disconnected geometry from that image. Without an image, use a neutral, complete white human surface.
+
+[ANATOMICAL RECONSTRUCTION]
+Use visible body contours, joint articulation, occlusion order and neighboring video frames to reconstruct connected shoulders, arms, hands, torso, pelvis, legs and feet. Repair reconstruction artifacts such as left/right limb swaps, a hand attached to the wrong arm, impossible reverse joints, disconnected segments, extra limbs and body-surface interpenetration when the original footage supports the correction. Resolve those artifacts from the real person in the video, not from a possibly erroneous skeleton or reference-image pose. Make the smallest supported correction to the reconstructed anatomy; do not change the person's actual technique, range of motion, asymmetry or habitual posture.
+Keep anatomically coherent segment proportions over time, while allowing natural changes in projected 2-D length caused by perspective, foreshortening, body rotation and bending. Never force equal on-screen limb lengths or treat a crossing silhouette or an unusual screen-space angle alone as proof of a broken joint. Preserve real front/back occlusion rather than forcing every limb in front of the torso. For a hidden body part, use the nearest visible temporal evidence conservatively; do not invent a new gesture or contact event.
+
+[PRESERVE THE PERFORMANCE]
+Match the original action order, body translation, foot placement, movement direction, event timing, speed and pauses. Preserve the observed dominant hand and which hand holds any equipment; never mirror or exchange them. Retain actual imperfections in the person's motion. Do not add preparatory actions, repeat an action, complete an unseen action, standardize the athletic technique or stretch the performance to fill extra time.
+
+[BODY AND VIEW]
+Show a smoothly joined neck, shoulders, chest, rib cage, abdomen, waist, pelvis, tapered arms and legs, simple solid palms and feet. No visible skeleton, rods, joint balls, mechanical hinges or gaps in the skin. One continuous fixed-camera view matching the original viewing direction and motion timing, with stable framing that keeps the athlete visible. Remove scene clutter and other people. No camera orbit, zoom, cuts, text or overlays. The result is an illustrative reconstruction, not a measurement or proof of hidden anatomy."""
+
 LEGACY_PROMPT_V2 = (
     "Use reference video 1 as the motion reference. Render one plain matte-white, "
     "faceless human mannequin on a clean neutral grey background, with a fixed camera. "
@@ -59,7 +80,7 @@ LEGACY_PROMPT_V1 = (
 )
 MAX_INPUT_BYTES = 40 * 1024 * 1024  # Base64 plus JSON remains below the 64 MB request cap.
 MAX_IMAGE_BYTES = 30 * 1024 * 1024
-MAX_GENERATION_PROMPT_CHARS = 7000  # Local bound; the official docs do not publish a character cap.
+MAX_GENERATION_PROMPT_CHARS = 7000  # Official Video Generation guide's input limit.
 MAX_CONTEXT_IR_PROMPT_CHARS = 32000  # Store IR output as opaque text; do not truncate or execute it.
 MAX_OUTPUT_BYTES = 64 * 1024 * 1024
 _TASK_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")

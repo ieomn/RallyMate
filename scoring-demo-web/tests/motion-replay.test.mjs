@@ -17,7 +17,7 @@ function compiledUrl(file) {
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
   modules.set(file.href, url); return url;
 }
-const { parseMotionReplay, parseMotionReplayList, motionReplayIsActive, motionReplayMediaPath, motionReplayPollDelay, motionReplayPromptLabel } = await import(compiledUrl(new URL("../app/lib/motion-replay.ts", import.meta.url)));
+const { parseMotionReplay, parseMotionReplayList, motionReplayIsActive, motionReplayMediaPath, motionReplayModeLabel, motionReplayPollDelay, motionReplayPromptLabel, motionReplayStatusText } = await import(compiledUrl(new URL("../app/lib/motion-replay.ts", import.meta.url)));
 const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { MotionReplayCard, default: Panel } = await import(compiledUrl(new URL("../app/MotionReplayPanel.tsx", import.meta.url)));
 const { proxyAnalysis } = await import(compiledUrl(new URL("../worker/gateway.ts", import.meta.url)));
@@ -51,6 +51,42 @@ test("prompt variants remain identifiable while historical records stay readable
     assert.match(html, /不是真实体型或三维重建/);
   }
   assert.equal(parseMotionReplay({ ...fixture(), prompt_strategy: "unexpected" }).prompt_strategy, "legacy");
+});
+
+test("source reconstruction is an explicit experiment while old tasks keep their mode", () => {
+  const historical = parseMotionReplay(fixture());
+  assert.equal(historical.generation_mode, "trajectory_proxy");
+  assert.equal(motionReplayModeLabel(historical), "轨迹外观回放");
+  const task = parseMotionReplay({ ...fixture(), generation_mode: "source_reconstruction" });
+  assert.equal(motionReplayModeLabel(task), "原视频重建 · 纠错待核验");
+  assert.equal(motionReplayStatusText({ ...task, generation_status: "rendering" }), "正在准备原片与对照白模");
+  const html = renderToStaticMarkup(createElement(MotionReplayCard, { task }));
+  assert.match(html, /MiniMax 原视频重建/);
+  assert.match(html, /原视频重建 · 纠错待核验/);
+  assert.match(html, /依据原片重建朝向、遮挡和肢体关系/);
+  assert.match(html, /手臂跳位或遮挡误判/);
+  assert.match(html, /不将生成画面作为测量或技术评分依据/);
+  assert.doesNotMatch(html, /物理正确|保证纠正|精准复现/);
+  const form = renderToStaticMarkup(createElement(Panel, { jobId, enabled: true }));
+  assert.match(form, /value="trajectory_proxy" selected=""/);
+  assert.match(form, /依据原视频重建（实验）/);
+  assert.match(form, /aria-describedby="motion-replay-mode-help"/);
+});
+
+test("the original RGB reference is independently inspectable without replacing the pose comparison", () => {
+  const source = fixture();
+  source.generation_mode = "source_reconstruction";
+  source.media.motion_source_video = media("motion-source.mp4");
+  source.media.motion_source_manifest = media("motion-source.json");
+  const task = parseMotionReplay(source);
+  assert.equal(task.media.motion_source_video, media("motion-source.mp4"));
+  assert.equal(task.media.motion_source_manifest, media("motion-source.json"));
+  assert.equal(parseMotionReplay(fixture()).media.motion_source_video, null);
+  const html = renderToStaticMarkup(createElement(MotionReplayCard, {task}));
+  assert.match(html, /查看模型参考画面/);
+  assert.match(html, /中间的关键点白模仅供对照/);
+  assert.match(html, /src="[^"]*reference\.mp4"/);
+  assert.match(html, /href="[^"]*motion-source\.mp4"/);
 });
 
 test("empty reports wait for delayed automatic enqueue for at most one minute", () => {
@@ -157,6 +193,23 @@ test("client separates persistence reads from explicit create and retry writes",
   assert.equal(requests[3].init.body, "{}");
 });
 
+test("experimental creation preserves mode and idempotency while retry uses its persisted snapshot", async () => {
+  const requests = [];
+  const client = createApiClient(configured, async (url, init) => {
+    requests.push({ url: String(url), init });
+    return Response.json({ ...fixture(), generation_mode: "source_reconstruction" });
+  });
+  const request = { mode: "source_reconstruction", start_ms: 2000, duration_ms: 6000 };
+  const created = await client.createMotionReplay(jobId, request);
+  const retried = await client.retryMotionReplay(id);
+  assert.deepEqual(JSON.parse(requests[0].init.body), request);
+  assert.ok(requests[0].init.headers["Idempotency-Key"]);
+  assert.equal(created.generation_mode, "source_reconstruction");
+  assert.equal(requests[1].url, `/v1/motion-replays/${id}/retry`);
+  assert.equal(requests[1].init.body, "{}");
+  assert.equal(retried.generation_mode, "source_reconstruction");
+});
+
 test("gateway allows persisted replay endpoints and media ranges without opening arbitrary artifacts", async t => {
   const forwarded = [];
   t.mock.method(globalThis, "fetch", async (url, init) => {
@@ -164,7 +217,7 @@ test("gateway allows persisted replay endpoints and media ranges without opening
     return new Response("video", { status: 206, headers: { "content-type": "video/mp4", "content-range": "bytes 0-4/5", "accept-ranges": "bytes" } });
   });
   const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001" };
-  for (const [method, path] of [["GET", `/v1/jobs/${jobId}/motion-replays`], ["POST", `/v1/jobs/${jobId}/motion-replays`], ["GET", `/v1/motion-replays/${id}`], ["POST", `/v1/motion-replays/${id}/retry`], ...["source.mp4", "reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json"].map(name => ["GET", media(name)])]) {
+  for (const [method, path] of [["GET", `/v1/jobs/${jobId}/motion-replays`], ["POST", `/v1/jobs/${jobId}/motion-replays`], ["GET", `/v1/motion-replays/${id}`], ["POST", `/v1/motion-replays/${id}/retry`], ...["source.mp4", "reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json", "motion-source.mp4", "motion-source.json"].map(name => ["GET", media(name)])]) {
     const response = await proxyAnalysis(new Request(`http://localhost${path}`, { method, headers: { range: "bytes=0-4", "Idempotency-Key": "creation-123" }, ...(method === "POST" ? { body: "{}" } : {}) }), env);
     assert.equal(response.status, 206, path);
     assert.equal(response.headers.get("content-range"), "bytes 0-4/5");

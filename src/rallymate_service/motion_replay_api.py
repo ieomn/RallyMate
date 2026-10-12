@@ -10,11 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from rallymate_service.database import JobDatabase
-from rallymate_service.motion_replay_provider import PROMPT
-from rallymate_service.motion_replay_source import SOURCE_MEDIA_FILE, SourceVideoError, source_video_path
+from rallymate_service.motion_replay_provider import PROMPT, RECONSTRUCTION_PROMPT, RECONSTRUCTION_PROMPT_VERSION
+from rallymate_service.motion_replay_source import SOURCE_MEDIA_FILE, SourceVideoError, _source_identity, _verify_original, source_video_path
 from rallymate_service.motion_replay_store import (
     APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MEDIA_FILES,
-    PROMPT_VERSION, REPLAY_VERSION, MotionReplaySettings,
+    PROMPT_VERSION, REPLAY_VERSION, SOURCE_REFERENCE_FILES, MotionReplaySettings,
     MotionReplayStore, ReplayConflict, sha256_path, timestamp_iso,
 )
 
@@ -45,8 +45,11 @@ def enqueue_job_replay(*, jobs: JobDatabase, store: MotionReplayStore, settings:
     if not settings.enabled:
         raise MotionReplayInputError("个人动作白模生成尚未启用。", 503)
     payload = {} if payload is None else payload
-    if not isinstance(payload, dict) or set(payload) - {"start_ms", "duration_ms", "episode_id"}:
-        raise MotionReplayInputError("只支持 episode_id、start_ms 和 duration_ms。")
+    if not isinstance(payload, dict) or set(payload) - {"start_ms", "duration_ms", "episode_id", "mode"}:
+        raise MotionReplayInputError("只支持 episode_id、start_ms、duration_ms 和 mode。")
+    mode = payload.get("mode", "trajectory_proxy")
+    if not isinstance(mode, str) or mode not in {"trajectory_proxy", "source_reconstruction"}:
+        raise MotionReplayInputError("mode 只支持 trajectory_proxy 或 source_reconstruction。")
     if idempotency_key is not None and not _KEY.fullmatch(idempotency_key):
         raise MotionReplayInputError("Idempotency-Key 必须是 1～128 位安全字符。")
     if "episode_id" in payload and "start_ms" in payload:
@@ -62,6 +65,8 @@ def enqueue_job_replay(*, jobs: JobDatabase, store: MotionReplayStore, settings:
         if isinstance(start, bool) or not isinstance(start, int) or not 0 <= start <= 30 * 60 * 1000:
             raise MotionReplayInputError("start_ms 必须是有效的非负整数毫秒。")
     client_request = {"duration_ms": duration}
+    if mode == "source_reconstruction":
+        client_request["mode"] = mode
     if "episode_id" in payload:
         client_request["episode_id"] = episode_id
     elif "start_ms" in payload:
@@ -113,6 +118,22 @@ def enqueue_job_replay(*, jobs: JobDatabase, store: MotionReplayStore, settings:
         "model": settings.model, "resolution": settings.resolution,
         "duration_seconds": settings.duration_seconds, "max_pending_seconds": settings.max_pending_seconds,
     }
+    if mode == "source_reconstruction":
+        from rallymate_vision.motion_reconstruction_reference import REFERENCE_VERSION
+        provenance_job = dict(job)
+        if summary_loader:
+            provenance_job["summary"] = summary_loader(job)
+        try:
+            original, identity = _source_identity({"id": "pending", "job_id": job_id, "request": request}, provenance_job, settings)
+            _verify_original(original, identity)
+        except SourceVideoError as exc:
+            raise MotionReplayInputError(str(exc), 409) from None
+        request.update({"generation_mode": mode, "motion_reference_mode": "source_video",
+                        "prompt": RECONSTRUCTION_PROMPT, "prompt_version": RECONSTRUCTION_PROMPT_VERSION,
+                        "original_video_path": str(original), "original_video_sha256": identity["source_video_sha256"],
+                        "reconstruction_reference_version": REFERENCE_VERSION,
+                        "source_crop_policy": {"horizontal_margin_px": 100, "vertical_margin_px": 80},
+                        "target_locator_strategy": "first_frame_crop_bbox_v1"})
     return store.create(job_id, request, max_attempts=settings.max_attempts, idempotency_key=idempotency_key)
 
 
@@ -129,7 +150,7 @@ def _media_path(row: dict, settings: MotionReplaySettings, key: str) -> Path | N
     if not root.is_relative_to(base):
         return None
     path = (root / relative).resolve()
-    if path.name != MEDIA_FILES[key] or not path.is_relative_to(root) or not path.is_file():
+    if path.name != SOURCE_REFERENCE_FILES.get(key, MEDIA_FILES[key]) or not path.is_relative_to(root) or not path.is_file():
         return None
     return path
 
@@ -138,6 +159,7 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
     prefix = (settings.public_base_url or "").rstrip("/")
     url = f"{prefix}/v1/motion-replays/{row['id']}"
     request = row["request"]
+    reconstruction = request.get("motion_reference_mode") == "source_video"
     return {
         "id": row["id"], "job_id": row["job_id"], "version": request.get("version", REPLAY_VERSION),
         "renderer_version": request.get("renderer_version"),
@@ -145,6 +167,8 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
         "prompt_version": request.get("prompt_version"),
         "prompt_strategy": request.get("prompt_strategy", "legacy"),
         "appearance_reference": request.get("appearance_reference"),
+        "generation_mode": request.get("generation_mode", "trajectory_proxy"),
+        "motion_reference_mode": request.get("motion_reference_mode", "pose_proxy"),
         "generation_status": row["generation_status"], "quality_status": row["quality_status"],
         "model": request["model"], "resolution": request["resolution"], "duration_seconds": request["duration_seconds"],
         "source_window": {"start_ms": request["start_ms"], "duration_ms": request["duration_ms"]},
@@ -165,19 +189,22 @@ def public_motion_replay(row: dict, settings: MotionReplaySettings) -> dict:
                       "reference": "deterministic_replay_of_2d_pose_with_labeled_display_continuity"
                       if (row.get("render_manifest") or {}).get("render", {}).get("display_continuity")
                       else "deterministic_replay_of_observed_2d_pose",
-                      "generated": "ai_visualization_pending_fidelity_review", "used_for_scoring": False,
+                      "generated": "source_video_reconstruction_pending_anatomy_and_fidelity_review" if reconstruction else "ai_visualization_pending_fidelity_review", "used_for_scoring": False,
+                      "motion_reference": "original_rgb_fixed_subject_crop" if reconstruction else "rendered_pose_proxy_video",
+                      "subject_identity_verified": False if reconstruction else None,
+                      "anatomical_correction_verified": False,
                       "fidelity_verified": row["quality_status"] == "approved",
-                      "message_zh": "白模由二维轨迹驱动，体表厚度和光照仅作示意，不是真实体型或三维重建；AI 视频的动作保真待复核，二者均不参与评分。"},
+                      "message_zh": "原片重建实验使用真实拍摄的人物裁切画面，白模仅作对照和外形参考。主体、解剖纠错和动作时序均待核验，结果不参与评分。" if reconstruction else "白模由二维轨迹驱动，体表厚度和光照仅作示意，不是真实体型或三维重建；AI 视频的动作保真待复核，二者均不参与评分。"},
     }
 
 
 def _public_manifest(payload: dict, *, trajectory: bool = False) -> dict:
     # Source paths, prompts, provider responses and arbitrary extension keys are never exposed.
-    allowed = {"schema_version", "version", "result_kind", "render", "quality", "video", "artifact_checksums", "frame_map"}
+    allowed = {"schema_version", "version", "result_kind", "render", "quality", "video", "artifact_checksums", "frame_map", "crop", "target_locator"}
     result = {key: payload[key] for key in allowed if key in payload}
     source = payload.get("source", {})
     source_allowed = {"frames_sha256", "primary_timeline_sha256", "start_ms", "duration_ms", "width", "height",
-                      "timestamp_source", "observed_frame_count", "selection_source", "person_track_id"}
+                      "timestamp_source", "observed_frame_count", "selection_source", "person_track_id", "sha256", "trajectory_sha256", "mapping_source"}
     result["source"] = {key: source[key] for key in source_allowed if key in source}
     if trajectory:
         result.update({key: payload[key] for key in ("observations", "display_frames", "frames") if key in payload})

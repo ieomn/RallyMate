@@ -1,12 +1,14 @@
 export const MOTION_REPLAY_STATES = ["queued", "rendering", "submitting", "provider_processing", "downloading", "completed", "failed", "submit_unknown"] as const;
 export type MotionReplayStatus = typeof MOTION_REPLAY_STATES[number];
-export type MotionReplayRequest = { episode_id?: string; start_ms?: number; duration_ms?: number };
-export type MotionReplayMedia = "original_video" | "reference_video" | "first_frame" | "middle_frame" | "last_frame" | "generated_video" | "trajectory" | "manifest";
+export type MotionReplayGenerationMode = "trajectory_proxy" | "source_reconstruction";
+export type MotionReplayRequest = { episode_id?: string; start_ms?: number; duration_ms?: number; mode?: MotionReplayGenerationMode };
+export type MotionReplayMedia = "original_video" | "reference_video" | "first_frame" | "middle_frame" | "last_frame" | "generated_video" | "trajectory" | "manifest" | "motion_source_video" | "motion_source_manifest";
 export type MotionReplayTask = {
   id: string;
   job_id: string;
   generation_status: MotionReplayStatus;
   quality_status: "pending_review" | "approved" | "rejected";
+  generation_mode?: MotionReplayGenerationMode;
   prompt_strategy?: "structured" | "context_ir" | "legacy";
   model: string;
   resolution: string;
@@ -24,7 +26,7 @@ export type MotionReplayTask = {
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const idPattern = /^[a-zA-Z0-9_-]{8,80}$/;
-const mediaKeys: MotionReplayMedia[] = ["original_video", "reference_video", "first_frame", "middle_frame", "last_frame", "generated_video", "trajectory", "manifest"];
+const mediaKeys: MotionReplayMedia[] = ["original_video", "reference_video", "first_frame", "middle_frame", "last_frame", "generated_video", "trajectory", "manifest", "motion_source_video", "motion_source_manifest"];
 
 /** Media always comes through our persisted replay endpoint, never a provider URL. */
 export function motionReplayMediaPath(value: unknown, taskId: string): string | null {
@@ -35,7 +37,7 @@ export function motionReplayMediaPath(value: unknown, taskId: string): string | 
     const prefix = `/v1/motion-replays/${taskId}/media/`;
     if (!url.pathname.startsWith(prefix)) return null;
     const artifact = url.pathname.slice(prefix.length);
-    return ["source.mp4", "reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json"].includes(artifact) ? url.pathname : null;
+    return ["source.mp4", "reference.mp4", "first.png", "middle.png", "last.png", "generated.mp4", "trajectory.json", "manifest.json", "motion-source.mp4", "motion-source.json"].includes(artifact) ? url.pathname : null;
   } catch { return null; }
 }
 
@@ -54,6 +56,7 @@ export function parseMotionReplay(value: unknown, expectedJobId?: string, expect
   return {
     id: data.id, job_id: data.job_id, generation_status: data.generation_status as MotionReplayStatus,
     quality_status: data.quality_status as MotionReplayTask["quality_status"],
+    generation_mode: data.generation_mode === "source_reconstruction" ? "source_reconstruction" : "trajectory_proxy",
     prompt_strategy: data.prompt_strategy === "structured" || data.prompt_strategy === "context_ir" ? data.prompt_strategy : "legacy",
     model: typeof data.model === "string" ? data.model : "MiniMax",
     resolution: typeof data.resolution === "string" ? data.resolution : "",
@@ -83,6 +86,12 @@ export function motionReplayPromptLabel(task: MotionReplayTask): string {
   return task.prompt_strategy === "context_ir" ? "Context-IR 增强" : task.prompt_strategy === "structured" ? "结构化提示" : "旧版提示";
 }
 
+export function motionReplayModeLabel(task: MotionReplayTask): string {
+  if (task.generation_mode !== "source_reconstruction") return "轨迹外观回放";
+  const quality = task.quality_status === "approved" ? "已核验" : task.quality_status === "rejected" ? "未通过核验" : "纠错待核验";
+  return `原视频重建 · ${quality}`;
+}
+
 /** Auto-enqueue can follow analysis completion; empty reports get one bounded grace period. */
 export function motionReplayPollDelay(items: MotionReplayTask[], elapsedMs: number, failures = 0): number | null {
   const delay = Math.min(30000, 5000 * 2 ** Math.min(failures, 3));
@@ -92,6 +101,7 @@ export function motionReplayPollDelay(items: MotionReplayTask[], elapsedMs: numb
 }
 
 export function motionReplayStatusText(task: MotionReplayTask): string {
+  if (task.generation_status === "rendering" && task.generation_mode === "source_reconstruction") return "正在准备原片与对照白模";
   return ({ queued: "已加入后台队列", rendering: "正在制作轨迹白模", submitting: "正在提交 AI 生成", provider_processing: "MiniMax 正在生成", downloading: "正在保存生成视频", completed: "生成完成", failed: "AI 回放暂未完成", submit_unknown: "提交结果待确认" })[task.generation_status];
 }
 

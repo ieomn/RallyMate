@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+import hashlib
+import math
 import os
 import socket
 import sqlite3
@@ -13,7 +15,7 @@ from typing import Callable
 from rallymate_service.motion_replay_provider import MiniMaxVideoProvider, ProviderError, request_prompt
 from rallymate_service.motion_replay_store import (
     APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MAX_CONSECUTIVE_REMOTE_FAILURES, MEDIA_FILES,
-    LeaseLost, MotionReplaySettings, MotionReplayStore, sha256_path,
+    SOURCE_REFERENCE_FILES, LeaseLost, MotionReplaySettings, MotionReplayStore, sha256_path,
 )
 
 
@@ -47,6 +49,11 @@ class _Heartbeat:
 def _render(*args, **kwargs):
     from rallymate_vision.motion_replay import export_motion_replay
     return export_motion_replay(*args, **kwargs)
+
+
+def _render_source(*args, **kwargs):
+    from rallymate_vision.motion_reconstruction_reference import export_motion_reconstruction_reference
+    return export_motion_reconstruction_reference(*args, **kwargs)
 
 
 def _validate_output(path: Path, duration_seconds: int) -> dict:
@@ -100,7 +107,7 @@ def _relative_artifacts(root: Path, render_dir: Path, manifest: dict) -> dict:
         raise ProviderError("render_output_invalid", "白模导出缺少必要产物。")
     result = {}
     for name, filename in MEDIA_FILES.items():
-        if name == "generated_video":
+        if name == "generated_video" or name in SOURCE_REFERENCE_FILES:
             continue
         # Renderer names are fixed; never follow a path supplied in a manifest.
         path = render_dir / filename
@@ -144,6 +151,111 @@ def _appearance_reference(row: dict, root: Path, reference: Path) -> Path | None
     return path
 
 
+def _source_video(request: dict, row: dict, settings: MotionReplaySettings) -> Path:
+    from rallymate_service.motion_replay_source import SourceVideoError, _verify_original
+    value = request.get("original_video_path")
+    if not isinstance(value, str):
+        raise ProviderError("original_video_missing", "当前任务缺少经过验证的原视频。")
+    path = Path(value).resolve()
+    if path.parent != (settings.data_root / "uploads").resolve() or path.stem != row["job_id"]:
+        raise ProviderError("original_video_invalid", "当前任务的原视频来源不可验证。")
+    try:
+        _verify_original(path, {"source_video_sha256": request.get("original_video_sha256")})
+    except (SourceVideoError, OSError):
+        raise ProviderError("source_evidence_changed", "已上传原视频已改变或缺失，请重新选择来源。") from None
+    return path
+
+
+def _source_submission_prompt(request: dict, manifest: dict) -> str:
+    locator = manifest.get("target_locator", {})
+    box = locator.get("bbox_xyxy") if isinstance(locator, dict) else None
+    if (not isinstance(box, list) or len(box) != 4
+            or any(isinstance(n, bool) or not isinstance(n, (float, int)) or not math.isfinite(n) or not 0 <= n <= 1 for n in box)
+            or box[0] >= box[2] or box[1] >= box[3]
+            or locator.get("strategy") != request.get("target_locator_strategy")
+            or locator.get("coordinate_space") != "normalized_reference_crop_0_1"):
+        raise ProviderError("reconstruction_target_unavailable", "原片重建实验缺少可追溯的主体定位，尚未提交生成。")
+    location = ", ".join(f"{value:.6f}" for value in box)
+    prompt = request_prompt(request) + (
+        "\n\n[TRACKED SUBJECT LOCATION]\n"
+        f"In the first frame of reference video 1, the tracked person's body occupies the normalized box "
+        f"[left, top, right, bottom] = [{location}], measured from the video's top-left corner. "
+        "Lock onto that person and follow the same person throughout the clip; other people are background. "
+        "This box selects identity only: it is not a pose target, segmentation mask or anatomical left/right rule. "
+        "Resolve anatomy and motion from that person's original RGB pixels and neighboring frames; "
+        "never borrow another person's limbs."
+    )
+    return request_prompt({"prompt": prompt})
+
+
+def _verified_trajectory_path(row: dict, root: Path) -> Path:
+    relative = row["artifacts"].get("trajectory")
+    if not isinstance(relative, str):
+        raise ProviderError("reconstruction_trajectory_changed", "原片参考所用轨迹缺失，尚未提交生成。")
+    path = (root / relative).resolve()
+    expected = (row.get("render_manifest") or {}).get("artifact_checksums", {}).get("trajectory.json")
+    if (not path.is_relative_to(root.resolve()) or path.name != "trajectory.json" or not path.is_file()
+            or not isinstance(expected, str) or sha256_path(path) != expected):
+        raise ProviderError("reconstruction_trajectory_changed", "原片参考所用轨迹与初次白模导出记录不一致，尚未提交生成。")
+    return path
+
+
+def _check_source_manifest(row: dict, root: Path, manifest: dict) -> str:
+    request = row["request"]
+    source = manifest.get("source", {}) if isinstance(manifest, dict) else {}
+    video = manifest.get("video", {}) if isinstance(manifest, dict) else {}
+    crop = manifest.get("crop", {}) if isinstance(manifest, dict) else {}
+    trajectory = _verified_trajectory_path(row, root)
+    if (not isinstance(manifest, dict) or not isinstance(source, dict) or not isinstance(video, dict)
+            or not isinstance(crop, dict) or manifest.get("version") != request.get("reconstruction_reference_version")
+            or manifest.get("result_kind") != "original_rgb_person_reference"
+            or source.get("sha256") != request.get("original_video_sha256")
+            or source.get("trajectory_sha256") != sha256_path(trajectory)
+            or source.get("start_ms") != request["start_ms"] or source.get("duration_ms") != request["duration_ms"]
+            or video.get("audio_included") is not False or video.get("geometric_resize") is not False
+            or video.get("visual_interpolation") is not False or video.get("overlays") is not False
+            or video.get("fps") != 24 or video.get("frame_count") != 144 or video.get("duration_ms") != 6000
+            or crop.get("mode") != "fixed_entire_window"
+            or crop.get("requested_horizontal_margin_px") != request["source_crop_policy"]["horizontal_margin_px"]
+            or crop.get("requested_vertical_margin_px") != request["source_crop_policy"]["vertical_margin_px"]):
+        raise ProviderError("reconstruction_reference_mismatch", "原片参考的版本、来源或时间映射与任务不一致，尚未提交生成。")
+    width, height = video.get("width"), video.get("height")
+    if (any(isinstance(value, bool) or not isinstance(value, int) or not 256 <= value <= 5760
+            or value % 2 for value in (width, height)) or not .4 <= width / height <= 2.5
+            or crop.get("width") != width or crop.get("height") != height):
+        raise ProviderError("reference_geometry_unsupported", "原片参考须为 256–5760 像素且宽高比在 0.4–2.5 之间；当前裁切不符合要求，尚未提交生成。")
+    locator = manifest.get("target_locator", {})
+    frame_map = manifest.get("frame_map", [])
+    if (not frame_map or locator.get("person_track_id") != source.get("person_track_id")
+            or locator.get("source_frame_index") != frame_map[0].get("source_frame_index")):
+        raise ProviderError("reconstruction_target_unavailable", "原片参考的主体定位与来源帧不一致。")
+    return _source_submission_prompt(request, manifest)
+
+
+def _source_reference(row: dict, root: Path, settings: MotionReplaySettings) -> tuple[Path, str]:
+    _verify_source(row["request"])
+    _source_video(row["request"], row, settings)
+    manifest = (row.get("render_manifest") or {}).get("motion_reference", {})
+    prompt = _check_source_manifest(row, root, manifest)
+    if (manifest.get("submission_prompt_snapshot") != prompt
+            or manifest.get("submission_prompt_sha256") != hashlib.sha256(prompt.encode("utf-8")).hexdigest()):
+        raise ProviderError("reconstruction_prompt_changed", "原片重建的主体提示快照不一致，尚未提交生成。")
+    paths = {}
+    for key, filename in SOURCE_REFERENCE_FILES.items():
+        relative = row["artifacts"].get(key)
+        if not isinstance(relative, str):
+            raise ProviderError("reconstruction_reference_missing", "已导出的原片参考缺失。")
+        path = (root / relative).resolve()
+        if not path.is_relative_to(root.resolve()) or path.name != filename or not path.is_file():
+            raise ProviderError("reconstruction_reference_missing", "已导出的原片参考缺失。")
+        paths[key] = path
+    if (paths["motion_source_video"].parent != paths["motion_source_manifest"].parent
+            or sha256_path(paths["motion_source_video"]) != manifest.get("artifact_checksums", {}).get("reference.mp4")
+            or sha256_path(paths["motion_source_manifest"]) != manifest.get("source_manifest_sha256")):
+        raise ProviderError("reconstruction_reference_changed", "原片参考与导出校验记录不一致，尚未提交生成。")
+    return paths["motion_source_video"], prompt
+
+
 def _record_error(store: MotionReplayStore, row: dict, error: ProviderError, *, retry_stage: str,
                   settings: MotionReplaySettings) -> None:
     updates = {"error_code": error.code, "error_message": error.public_message,
@@ -174,13 +286,15 @@ def _record_error(store: MotionReplayStore, row: dict, error: ProviderError, *, 
 
 def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettings,
                           provider_factory: Callable | None = None, renderer: Callable | None = None,
-                          worker_id: str | None = None, output_validator: Callable | None = None) -> bool:
+                          worker_id: str | None = None, output_validator: Callable | None = None,
+                          source_renderer: Callable | None = None) -> bool:
     if not settings.enabled:
         return False
     row = store.claim_next(worker_id or f"replay-{socket.gethostname()}-{os.getpid()}", settings.lease_seconds)
     if row is None:
         return False
     renderer, provider_factory = renderer or _render, provider_factory or MiniMaxVideoProvider
+    source_renderer = source_renderer or _render_source
     output_validator = output_validator or _validate_output
     root = settings.output_root / row["id"]
     root.mkdir(parents=True, exist_ok=True)
@@ -193,6 +307,9 @@ def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettin
                 if row["poll_deadline_at"] is not None and time.time() > row["poll_deadline_at"]:
                     raise ProviderError("provider_pending_timeout", "等待生成超过时限；可稍后继续查询同一任务。", retryable=True)
             if status in {"queued", "rendering"}:
+                reference_mode = request.get("motion_reference_mode", "pose_proxy")
+                if reference_mode not in {"pose_proxy", "source_video"}:
+                    raise ProviderError("motion_reference_mode_unsupported", "该任务的动作参考模式不可用。")
                 if not row["artifacts"]:
                     row = store.transition(row["id"], row["lease_token"], "rendering")
                     _verify_source(request)
@@ -217,6 +334,36 @@ def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettin
                     _verify_source(request)
                     row = store.transition(row["id"], row["lease_token"], "queued",
                                            artifacts=artifacts, render_manifest=manifest)
+                if reference_mode == "source_video" and not row["artifacts"].get("motion_source_video"):
+                    from rallymate_vision.motion_reconstruction_reference import REFERENCE_VERSION
+                    if request.get("reconstruction_reference_version") != REFERENCE_VERSION:
+                        raise ProviderError("reconstruction_version_changed", "原片参考导出版本已更新，请创建新请求。")
+                    original = _source_video(request, row, settings)
+                    _verify_source(request)
+                    trajectory = _verified_trajectory_path(row, root)
+                    source_dir = root / ("motion-source-" + row["lease_token"])
+                    row = store.transition(row["id"], row["lease_token"], "rendering")
+                    try:
+                        source_manifest = source_renderer(original, trajectory, source_dir,
+                                                          expected_source_sha256=request["original_video_sha256"],
+                                                          **request["source_crop_policy"])
+                    except Exception as exc:
+                        code = getattr(exc, "code", "reconstruction_reference_failed")
+                        if code in {"reference_timebase_mismatch", "reference_frame_mapping_changes_timing", "reference_source_timestamp_mismatch"}:
+                            raise ProviderError(code, "当前原片重建实验仅支持连续 24fps 来源；此视频的帧率或时间映射暂不受支持。") from None
+                        if code == "reference_geometry_unsupported":
+                            raise ProviderError(code, "原片无法在保留主体的同时满足参考尺寸 256–5760 像素及宽高比 0.4–2.5，尚未提交生成。") from None
+                        raise ProviderError("reconstruction_reference_failed", "原片人物参考未能导出；请检查主体定位、来源帧和裁切范围。") from None
+                    prompt = _check_source_manifest(row, root, source_manifest)
+                    source_artifacts = {key: (source_dir / filename).relative_to(root).as_posix()
+                                        for key, filename in SOURCE_REFERENCE_FILES.items()}
+                    source_manifest = {**source_manifest,
+                                       "source_manifest_sha256": sha256_path(source_dir / "manifest.json"),
+                                       "submission_prompt_snapshot": prompt,
+                                       "submission_prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest()}
+                    row = store.transition(row["id"], row["lease_token"], "queued",
+                                           artifacts={**row["artifacts"], **source_artifacts},
+                                           render_manifest={**row["render_manifest"], "motion_reference": source_manifest})
                 provider = provider_factory()  # Credentials are checked before the submitting marker.
                 prompt = request_prompt(request)
                 reference = root / row["artifacts"]["reference_video"]
@@ -224,6 +371,8 @@ def process_motion_replay(store: MotionReplayStore, settings: MotionReplaySettin
                     raise ProviderError("reference_video_missing", "已导出的参考视频缺失。")
                 image = _appearance_reference(row, root, reference)
                 appearance_options = {"reference_image": image} if image is not None else {}
+                if reference_mode == "source_video":
+                    reference, prompt = _source_reference(row, root, settings)
                 row = store.transition(row["id"], row["lease_token"], "submitting",
                                        provider_submitted_at=time.time(), poll_deadline_at=time.time() + settings.max_pending_seconds,
                                        error_code=None, error_message=None, error_retryable=False)

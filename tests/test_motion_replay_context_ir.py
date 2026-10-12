@@ -16,7 +16,8 @@ import numpy as np
 
 from rallymate_service.motion_replay_provider import (
     LEGACY_PROMPT_V1, LEGACY_PROMPT_V2, MAX_CONTEXT_IR_PROMPT_CHARS,
-    MAX_GENERATION_PROMPT_CHARS, PROMPT, MiniMaxVideoProvider, ProviderError,
+    MAX_GENERATION_PROMPT_CHARS, PROMPT, RECONSTRUCTION_PROMPT, RECONSTRUCTION_PROMPT_VERSION,
+    MiniMaxVideoProvider, ProviderError,
     build_context_ir_payload, build_generation_payload, request_prompt,
 )
 
@@ -84,6 +85,34 @@ class ContextIRProviderTests(unittest.TestCase):
         payload = build_generation_payload(self.video, prompt=LEGACY_PROMPT_V2)
         self.assertEqual(len(payload["content"]), 2)
         self.assertEqual(payload["content"][0]["text"], LEGACY_PROMPT_V2)
+
+    def test_reconstruction_prompt_is_opt_in_and_uses_source_video_with_style_image(self):
+        image = self.image()
+        experiment = build_generation_payload(self.video, reference_image=image, prompt=RECONSTRUCTION_PROMPT)
+        default = build_generation_payload(self.video, reference_image=image)
+        self.assertNotEqual(RECONSTRUCTION_PROMPT, PROMPT)
+        self.assertEqual(RECONSTRUCTION_PROMPT_VERSION, "source-video-anatomical-reconstruction-v1")
+        self.assertLessEqual(len(RECONSTRUCTION_PROMPT), MAX_GENERATION_PROMPT_CHARS)
+        self.assertEqual(default["content"][0]["text"], PROMPT)
+        self.assertEqual(experiment["content"][0]["text"], RECONSTRUCTION_PROMPT)
+        self.assertEqual(experiment["content"][1:], default["content"][1:])
+        self.assertEqual([item.get("role") for item in experiment["content"]], [None, "reference_video", "reference_image"])
+        self.assertEqual(request_prompt({"prompt_version": RECONSTRUCTION_PROMPT_VERSION,
+                                         "prompt": RECONSTRUCTION_PROMPT}), RECONSTRUCTION_PROMPT)
+        # Only documented multimedia fields are sent; prose is not a pose-control API.
+        self.assertEqual(set(experiment), {"model", "content", "resolution", "duration", "ratio"})
+
+    def test_reconstruction_prompt_distinguishes_artifact_repair_from_technique_and_projection(self):
+        self.assertIn("original camera recording", RECONSTRUCTION_PROMPT)
+        self.assertIn("left/right limb swaps", RECONSTRUCTION_PROMPT)
+        self.assertIn("not by screen position", RECONSTRUCTION_PROMPT)
+        self.assertIn("do not change the person's actual technique", RECONSTRUCTION_PROMPT)
+        self.assertIn("foreshortening", RECONSTRUCTION_PROMPT)
+        self.assertIn("Never force equal on-screen limb lengths", RECONSTRUCTION_PROMPT)
+        self.assertIn("not motion or anatomy evidence", RECONSTRUCTION_PROMPT)
+        context = build_context_ir_payload(self.video, prompt=RECONSTRUCTION_PROMPT)
+        self.assertEqual(context["content"][0]["text"], RECONSTRUCTION_PROMPT)
+        self.assertNotIn("resolution", context)
 
     def test_reference_image_dimensions_are_bounded_before_decoder_runs(self):
         image = self.image()

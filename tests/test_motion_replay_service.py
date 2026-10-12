@@ -18,13 +18,13 @@ from fastapi.testclient import TestClient
 
 from rallymate_service.database import JobDatabase
 from rallymate_service.motion_replay_api import (
-    build_motion_replay_router, enqueue_job_replay, public_motion_replay,
+    MotionReplayInputError, build_motion_replay_router, enqueue_job_replay, public_motion_replay,
 )
 from rallymate_service.motion_replay_provider import (
-    LEGACY_PROMPT_V1, PROMPT, MiniMaxVideoProvider, ProviderError, _download_url, build_generation_payload, request_prompt,
+    LEGACY_PROMPT_V1, PROMPT, RECONSTRUCTION_PROMPT, MiniMaxVideoProvider, ProviderError, _download_url, build_generation_payload, request_prompt,
 )
 from rallymate_service.motion_replay_store import (
-    APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MEDIA_FILES,
+    APPEARANCE_REFERENCE, APPEARANCE_REFERENCE_VERSION, APPEARANCE_STYLE, MEDIA_FILES, SOURCE_REFERENCE_FILES,
     LeaseLost, MotionReplaySettings, MotionReplayStore, ReplayConflict, sha256_path,
 )
 from rallymate_service.motion_replay_worker import _validate_output, process_motion_replay, run_motion_replay_worker
@@ -37,7 +37,7 @@ MP4 = b"\x00\x00\x00\x18ftypisom" + b"test-only-media"
 def fake_renderer(frames, output, **kwargs):
     from rallymate_vision.motion_replay import FULL_BODY_RENDERER_VERSION, MOTION_REPLAY_VERSION
     output.mkdir(parents=True, exist_ok=True)
-    artifacts = {key: filename for key, filename in MEDIA_FILES.items() if key != "generated_video"}
+    artifacts = {key: filename for key, filename in MEDIA_FILES.items() if key != "generated_video" and key not in SOURCE_REFERENCE_FILES}
     manifest = {"schema_version": "1.0.0", "version": MOTION_REPLAY_VERSION, "artifacts": artifacts,
                 "source": {"frames_path": str(frames), "frames_sha256": "hash", "start_ms": kwargs["start_ms"]},
                 "quality": {"source_accuracy_verified": False},
@@ -51,10 +51,32 @@ def fake_renderer(frames, output, **kwargs):
     return manifest
 
 
+def fake_source_renderer(source, trajectory, output, **kwargs):
+    from rallymate_vision.motion_reconstruction_reference import REFERENCE_VERSION
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "reference.mp4").write_bytes(MP4 + b"original-rgb-crop")
+    start = json.loads(trajectory.read_text(encoding="utf-8"))["source"]["start_ms"]
+    manifest = {"version": REFERENCE_VERSION, "result_kind": "original_rgb_person_reference",
+                "source": {"sha256": sha256_path(source), "trajectory_sha256": sha256_path(trajectory),
+                           "start_ms": start, "duration_ms": 6000, "person_track_id": 2},
+                "crop": {"mode": "fixed_entire_window", "requested_horizontal_margin_px": kwargs["horizontal_margin_px"],
+                         "requested_vertical_margin_px": kwargs["vertical_margin_px"], "width": 320, "height": 288},
+                "video": {"audio_included": False, "geometric_resize": False, "visual_interpolation": False,
+                          "overlays": False, "fps": 24, "frame_count": 144, "duration_ms": 6000, "width": 320, "height": 288},
+                "frame_map": [{"source_frame_index": index} for index in range(144)],
+                "target_locator": {"strategy": "first_frame_crop_bbox_v1", "source_frame_index": 0,
+                                   "person_track_id": 2, "coordinate_space": "normalized_reference_crop_0_1",
+                                   "bbox_xyxy": [.2, .2, .6, .8]},
+                "artifact_checksums": {"reference.mp4": sha256_path(output / "reference.mp4")}}
+    (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    return manifest
+
+
 class FakeProvider:
     def __init__(self):
         self.submissions = 0
         self.submit_kwargs = []
+        self.submitted_references = []
         self.queries = []
         self.submit_error = None
         self.query_error = None
@@ -64,6 +86,7 @@ class FakeProvider:
     def submit(self, reference, **kwargs):
         self.submissions += 1
         self.submit_kwargs.append(kwargs)
+        self.submitted_references.append(reference)
         if self.submit_error:
             raise self.submit_error
         return "remote-123"
@@ -104,12 +127,17 @@ class MotionReplayServiceTests(unittest.TestCase):
         return enqueue_job_replay(jobs=self.jobs, store=self.store, settings=self.settings,
                                   job_id="job-1", payload={"start_ms": 0}, **kwargs)
 
+    def enqueue_source(self, **kwargs):
+        return enqueue_job_replay(jobs=self.jobs, store=self.store, settings=self.settings,
+                                  job_id="job-1", payload={"start_ms": 0, "mode": "source_reconstruction"}, **kwargs)
+
     def tick(self):
         with self.store.connect() as connection:
             connection.execute("UPDATE motion_replays SET next_attempt_at=0")
             connection.commit()
         return process_motion_replay(self.store, self.settings, provider_factory=lambda: self.provider,
                                      renderer=fake_renderer,
+                                     source_renderer=fake_source_renderer,
                                      output_validator=lambda *_: {"duration_ms": 6583, "duration_difference_ms": 583,
                                                                    "timing_adjustment": "none", "fidelity_verified": False})
 
@@ -136,6 +164,190 @@ class MotionReplayServiceTests(unittest.TestCase):
         self.assertEqual(self.provider.submit_kwargs[0]["reference_image"],
                          self.settings.output_root / row["id"] / stored["artifacts"]["first_frame"])
         self.assertEqual(public_motion_replay(stored, self.settings)["prompt_strategy"], "structured")
+
+    def test_source_reconstruction_requires_provenance_and_submits_rgb_instead_of_pose_video(self):
+        with self.assertRaises(MotionReplayInputError) as error:
+            self.enqueue_source()
+        self.assertEqual(error.exception.status_code, 409)
+        source = self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        row = self.enqueue_source()
+        self.assertEqual(row["request"]["prompt"], RECONSTRUCTION_PROMPT)
+        self.assertEqual(row["request"]["motion_reference_mode"], "source_video")
+        self.assertEqual(row["request"]["original_video_sha256"], sha256_path(source))
+        self.tick()
+        stored = self.store.get(row["id"])
+        self.assertEqual(stored["generation_status"], "provider_processing")
+        root = self.settings.output_root / row["id"]
+        self.assertEqual(self.provider.submitted_references, [root / stored["artifacts"]["motion_source_video"]])
+        self.assertNotEqual(self.provider.submitted_references[0], root / stored["artifacts"]["reference_video"])
+        self.assertEqual(self.provider.submitted_references[0].read_bytes(), MP4 + b"original-rgb-crop")
+        self.assertEqual(self.provider.submit_kwargs[0]["reference_image"], root / stored["artifacts"]["first_frame"])
+        prompt = self.provider.submit_kwargs[0]["prompt"]
+        self.assertIn("[TRACKED SUBJECT LOCATION]", prompt)
+        self.assertIn("0.200000, 0.200000, 0.600000, 0.800000", prompt)
+        self.assertEqual(stored["render_manifest"]["motion_reference"]["submission_prompt_snapshot"], prompt)
+        public = public_motion_replay(stored, self.settings)
+        self.assertEqual(public["generation_mode"], "source_reconstruction")
+        self.assertTrue(public["media"]["motion_source_video"].endswith("/motion-source.mp4"))
+        self.assertFalse(public["semantics"]["anatomical_correction_verified"])
+        self.assertFalse(public["semantics"]["used_for_scoring"])
+
+    def test_default_mode_stays_deduplicated_and_does_not_reuse_source_mode_idempotency(self):
+        original = self.enqueue(idempotency_key="same-intent")
+        explicit = enqueue_job_replay(jobs=self.jobs, store=self.store, settings=self.settings, job_id="job-1",
+                                      payload={"start_ms": 0, "mode": "trajectory_proxy"})
+        self.assertEqual(original["id"], explicit["id"])
+        self.assertNotIn("motion_reference_mode", original["request"])
+        with self.assertRaises(ReplayConflict):
+            self.enqueue_source(idempotency_key="same-intent")
+        legacy = dict(original["request"]); legacy.pop("client_request")
+        with self.store.connect() as connection:
+            connection.execute("UPDATE motion_replays SET request_json=? WHERE id=?", (json.dumps(legacy), original["id"]))
+            connection.execute("UPDATE motion_replay_idempotency SET client_request_json=NULL")
+            connection.commit()
+        with self.assertRaises(ReplayConflict):
+            self.enqueue_source(idempotency_key="same-intent")
+
+    def test_changed_source_video_prevents_generation_and_unsupported_fps_has_specific_message(self):
+        source = self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        row = self.enqueue_source()
+        source.write_bytes(b"changed video")
+        self.tick()
+        self.assertEqual(self.store.get(row["id"])["error_code"], "source_evidence_changed")
+        self.assertEqual(self.provider.submissions, 0)
+        self._original_video(row)
+        fresh = self.enqueue_source(idempotency_key="new-fps-test")
+        # Reuse of content intentionally resolves to the previous failed task;
+        # a separate source hash is needed to model another upload in this unit test.
+        request = {**fresh["request"], "prompt_version": "fps-test-variant"}
+        another = self.store.create("job-1", request)
+        from rallymate_vision.motion_reconstruction_reference import ReconstructionReferenceError
+        with patch("rallymate_service.motion_replay_worker._render_source", side_effect=ReconstructionReferenceError("reference_timebase_mismatch")):
+            process_motion_replay(self.store, self.settings, provider_factory=lambda: self.provider, renderer=fake_renderer)
+        failure = self.store.get(another["id"])
+        self.assertEqual(failure["error_code"], "reference_timebase_mismatch")
+        self.assertIn("连续 24fps", failure["error_message"])
+        self.assertEqual(self.provider.submissions, 0)
+
+    def test_source_crop_tamper_fails_before_post_and_unknown_submission_is_not_repeated(self):
+        self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        row = self.enqueue_source()
+        def missing():
+            raise ProviderError("credentials_unavailable", "未配置", retryable=True)
+        process_motion_replay(self.store, self.settings, provider_factory=missing, renderer=fake_renderer,
+                              source_renderer=fake_source_renderer)
+        rendered = self.store.get(row["id"])
+        source_crop = self.settings.output_root / row["id"] / rendered["artifacts"]["motion_source_video"]
+        source_crop.write_bytes(MP4 + b"replaced")
+        self.store.retry(row["id"])
+        self.tick()
+        self.assertEqual(self.store.get(row["id"])["error_code"], "reconstruction_reference_changed")
+        self.assertEqual(self.provider.submissions, 0)
+        another = self.store.create("job-1", {**row["request"], "prompt_version": "unknown-post-variant"})
+        self.provider.submit_error = ProviderError("submission_outcome_unknown", "未确认", submission_unknown=True)
+        self.tick()
+        self.assertEqual(self.store.get(another["id"])["generation_status"], "submit_unknown")
+        self.assertFalse(self.tick())
+        self.assertEqual(self.provider.submissions, 1)
+
+    def test_source_reference_binds_trajectory_to_original_white_render_checksum(self):
+        self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        original = self.enqueue_source()
+        for phase in ("before_export", "during_export", "before_submit"):
+            with self.subTest(phase=phase):
+                row = original if phase == "before_export" else self.store.create(
+                    "job-1", {**original["request"], "prompt_version": "trajectory-check-" + phase})
+                def render(frames, output, **kwargs):
+                    manifest = fake_renderer(frames, output, **kwargs)
+                    if phase == "before_export":
+                        with (output / "trajectory.json").open("a", encoding="utf-8") as stream:
+                            stream.write("\n")
+                    return manifest
+                def render_source(source, trajectory, output, **kwargs):
+                    if phase == "during_export":
+                        # Exporter could hash this changed file consistently, but
+                        # it no longer matches the frozen white render evidence.
+                        with trajectory.open("a", encoding="utf-8") as stream:
+                            stream.write("\n")
+                    return fake_source_renderer(source, trajectory, output, **kwargs)
+                def provider():
+                    if phase == "before_submit":
+                        frozen = self.store.get(row["id"])
+                        path = self.settings.output_root / row["id"] / frozen["artifacts"]["trajectory"]
+                        with path.open("a", encoding="utf-8") as stream:
+                            stream.write("\n")
+                    return self.provider
+                with patch("rallymate_service.motion_replay_worker._render_source", wraps=render_source) as exporter:
+                    process_motion_replay(self.store, self.settings, provider_factory=provider, renderer=render)
+                failure = self.store.get(row["id"])
+                self.assertEqual(failure["error_code"], "reconstruction_trajectory_changed")
+                self.assertEqual(exporter.call_count, 0 if phase == "before_export" else 1)
+                self.assertEqual(self.provider.submissions, 0)
+
+    def test_source_reference_geometry_is_checked_before_paid_submit(self):
+        self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        original = self.enqueue_source()
+        for index, dimensions in enumerate(((1280, 270), (256, 1000), (5762, 3000), (320, None))):
+            with self.subTest(dimensions=dimensions):
+                row = original if index == 0 else self.store.create(
+                    "job-1", {**original["request"], "prompt_version": f"geometry-check-{index}"})
+                def render_source(*args, **kwargs):
+                    manifest = fake_source_renderer(*args, **kwargs)
+                    manifest["video"].update(width=dimensions[0], height=dimensions[1])
+                    manifest["crop"].update(width=dimensions[0], height=dimensions[1])
+                    return manifest
+                process_motion_replay(self.store, self.settings, provider_factory=lambda: self.provider,
+                                      renderer=fake_renderer, source_renderer=render_source)
+                self.assertEqual(self.store.get(row["id"])["error_code"], "reference_geometry_unsupported")
+                self.assertEqual(self.provider.submissions, 0)
+
+    def test_cached_source_reference_rejects_trajectory_path_outside_task_root(self):
+        self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        row = self.enqueue_source()
+        def missing():
+            raise ProviderError("credentials_unavailable", "未配置", retryable=True)
+        process_motion_replay(self.store, self.settings, provider_factory=missing, renderer=fake_renderer,
+                              source_renderer=fake_source_renderer)
+        rendered = self.store.get(row["id"])
+        trajectory = self.settings.output_root / row["id"] / rendered["artifacts"]["trajectory"]
+        outside = self.root / "trajectory.json"
+        outside.write_bytes(trajectory.read_bytes())
+        rendered["artifacts"]["trajectory"] = str(outside)
+        with self.store.connect() as connection:
+            connection.execute("UPDATE motion_replays SET artifacts_json=? WHERE id=?",
+                               (json.dumps(rendered["artifacts"]), row["id"]))
+            connection.commit()
+        self.store.retry(row["id"])
+        self.tick()
+        self.assertEqual(self.store.get(row["id"])["error_code"], "reconstruction_trajectory_changed")
+        self.assertEqual(self.provider.submissions, 0)
+
+    def test_source_mode_media_exposes_actual_input_and_redacts_private_prompt_snapshot(self):
+        self._original_video({"request": {"frames_sha256": sha256_path(self.source / "frames.jsonl")}})
+        def authorize(authorization: str | None = Header(None)):
+            if authorization != "Bearer test":
+                raise HTTPException(401)
+        app = FastAPI()
+        app.include_router(build_motion_replay_router(jobs=self.jobs, store=self.store,
+                                                      settings=self.settings, authorize=authorize))
+        headers = {"Authorization": "Bearer test", "Idempotency-Key": "source-mode"}
+        with TestClient(app) as client:
+            created = client.post("/v1/jobs/job-1/motion-replays", json={"start_ms": 0, "mode": "source_reconstruction"}, headers=headers)
+            self.assertEqual(created.status_code, 202, created.text)
+            self.assertIsNone(created.json()["media"]["motion_source_video"])
+            self.tick()
+            task = client.get(created.json()["links"]["self"], headers=headers).json()
+            video = task["media"]["motion_source_video"]
+            manifest_url = task["media"]["motion_source_manifest"]
+            self.assertEqual(client.get(video).status_code, 401)
+            self.assertEqual(client.get(manifest_url).status_code, 401)
+            self.assertEqual(client.get(video, headers=headers).content, MP4 + b"original-rgb-crop")
+            source_manifest = client.get(manifest_url, headers=headers)
+            self.assertEqual(source_manifest.status_code, 200)
+            self.assertEqual(source_manifest.json()["target_locator"]["bbox_xyxy"], [.2, .2, .6, .8])
+            self.assertNotIn("submission_prompt_snapshot", source_manifest.text)
+            self.assertNotIn("[TRACKED SUBJECT LOCATION]", source_manifest.text)
+            self.assertNotIn(str(self.root), source_manifest.text)
 
     def test_legacy_generation_keeps_original_prompt_without_adding_image(self):
         row = self.enqueue()
@@ -530,7 +742,7 @@ class MotionReplayServiceTests(unittest.TestCase):
                 connection.commit()
             self.assertEqual(client.get(f"/v1/motion-replays/{replay_id}/media/first.png", headers=headers).status_code, 404)
             for body in ({"start_ms": True}, {"start_ms": -1}, {"start_ms": 0, "duration_ms": 10000},
-                         {"start_ms": 0, "episode_id": "x"}, {"prompt": "override"}):
+                         {"start_ms": 0, "episode_id": "x"}, {"prompt": "override"}, {"mode": []}, {"mode": "wrong"}):
                 self.assertEqual(client.post("/v1/jobs/job-1/motion-replays", json=body, headers=headers).status_code, 422)
             self.assertEqual(client.post("/v1/jobs/job-1/motion-replays", content=b"x" * 4097, headers=headers).status_code, 413)
 
