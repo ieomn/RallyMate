@@ -5,6 +5,7 @@ import { CARD_RUN_LABELS, cardExecutionOf, cardReasonLabel, type CardCondition, 
 import { replayMoment } from "./lib/training-report";
 import { cycleFrameTime, cycleMotionSteps, type FootworkCycleEvidence } from "./lib/footwork-cycle-evidence";
 import ManualCardEvidence from "./ManualCardEvidence";
+import GsPreloadEvidence from "./GsPreloadEvidence";
 
 const metricLabels: Record<string, string> = {
   hip_drop_torso: "髋部下降", left_knee_flexion_change_deg: "左膝屈曲变化", right_knee_flexion_change_deg: "右膝屈曲变化",
@@ -122,6 +123,7 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
         {instance.source_stage && <p>阶段来源：{instance.source_stage.stage_code}，人工估计时间窗{instance.source_stage.binding.uncertainty_ms !== null ? `，边界不确定性 ±${format(instance.source_stage.binding.uncertainty_ms)} 毫秒` : ""}。这不是专家真值，也不代表系统已自动定位完整十阶段。</p>}
         {instance.foot_cycle && <CycleEvidence cycle={instance.foot_cycle} annotation={instance.source_cycle_annotation} />}
         <ManualCardEvidence instance={instance} />
+        <GsPreloadEvidence instance={instance} />
         {instance.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
         {instance.fallback && <p>已触发复核路径：{cardReasonLabel(instance.fallback.trigger)}{instance.fallback.selected ? `；候选片段 ${clock(instance.fallback.selected.start_ms)}–${clock(instance.fallback.selected.end_ms)}` : ""}。复核候选不能当作已确认动作。</p>}
         {instance.conditions.length > 0 && <details open><summary>逐条件计算依据</summary><dl>{instance.conditions.map(condition => <div key={condition.metric}><dt>{metricLabels[condition.metric] ?? condition.metric}</dt><dd>实测 {condition.value === null ? "— 缺测" : `${format(condition.value)} ${unitLabels[condition.unit] ?? condition.unit}`}；{thresholdLabel(condition)}；{condition.passed === null ? "未判定" : condition.passed ? "满足工程条件" : "未满足工程条件"}</dd></div>)}</dl></details>}

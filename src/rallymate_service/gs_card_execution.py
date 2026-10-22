@@ -554,6 +554,10 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             if racket_binding is not None:
                 result["source_annotation"]["racket_side_observation"] = deepcopy(racket_binding)
             if auxiliary is not None and rule["indicator_id"] == preload["indicator_id"]:
+                # Keep the manual stage bounds distinct from the first/last
+                # decoder samples, which can lie inside those requested bounds.
+                result["source_annotation"]["requested_window_ms"] = {
+                    "start_ms": annotation["start_ms"], "end_ms": annotation["end_ms"]}
                 result["auxiliary_evidence"] = auxiliary
             by_card[rule["indicator_id"]].append(result)
             instance_ids.append(rule["indicator_id"])

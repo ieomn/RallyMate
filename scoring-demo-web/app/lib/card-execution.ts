@@ -7,6 +7,7 @@ import footworkContract from "./footwork-cycle-display-contract";
 import fsWindowContract from "./fs-card-window-display-contract";
 import { footworkCycleOf, validFootworkCycle, footworkValuesAgree, type FootworkCycleEvidence } from "./footwork-cycle-evidence";
 import { evidenceObject, racketSideOf, validRacketSide, validFsWindow, type EvidenceObject, type RacketSideEvidence } from "./manual-card-evidence";
+import { validateGsPreload, type PreloadValidation } from "./gs-preload-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
@@ -89,6 +90,9 @@ export interface CardInstance {
   source_window_annotation: EvidenceObject | null;
   source_window_evidence: EvidenceObject | null;
   source_window_context: EvidenceObject | null;
+  auxiliary_evidence: EvidenceObject | null;
+  auxiliary_parent_context: EvidenceObject | null;
+  auxiliary_validation: PreloadValidation | null;
   limitations: string[];
   fallback: { trigger: string; strategy: string; selected: { start_ms: number; end_ms: number } | null } | null;
   threshold_basis: string; semantics: string; source: { document_id: string; document_sha256: string; table: string; rubric_sha256: string };
@@ -117,7 +121,10 @@ function computedPass(condition: CardCondition): boolean | null {
   return condition.operator === "gte" ? condition.value >= condition.threshold : condition.operator === "lte" ? condition.value <= condition.threshold : condition.operator === "eq" ? condition.value === condition.threshold : null;
 }
 function invalidate(instance: CardInstance, reason: string): CardInstance {
-  return { ...instance, status: "unavailable", proxy_grade: null, score: null, reason_codes: [...new Set([...instance.reason_codes, reason])], conditions: instance.conditions.map(c => ({ ...c, passed: null })) };
+  return withPreloadValidation({ ...instance, status: "unavailable", proxy_grade: null, score: null, reason_codes: [...new Set([...instance.reason_codes, reason])], conditions: instance.conditions.map(c => ({ ...c, passed: null })) });
+}
+function withPreloadValidation(instance: CardInstance): CardInstance {
+  return { ...instance, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context) };
 }
 function sourceStageOf(row: Obj, id: string): CardSourceStage | null {
   const normalized = obj(row.source_stage), annotation = obj(row.source_annotation);
@@ -170,6 +177,9 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const conditions = list(row.conditions, 30).map(conditionOf);
   const cycle = FOOTWORK_CARD_CONTRACTS[id] ? footworkCycleOf(row.foot_cycle ?? evidence) : null;
   const cycleValues = obj(row.cycle_measurements ?? row.measurements);
+  const auxiliary = row.auxiliary_evidence === undefined || row.auxiliary_evidence === null ? null : evidenceObject(row.auxiliary_evidence) ?? {};
+  const auxiliaryParent = auxiliary ? evidenceObject(row.auxiliary_parent_context ?? { action_id: row.action_id ?? "", window: row.window ?? {},
+    ...(obj(row.source_annotation).requested_window_ms !== undefined ? { requested_window_ms: obj(row.source_annotation).requested_window_ms } : {}) }) : null;
   const state = row.status === "proxy_scored" ? "proxy_scored" : row.status === "review_required" ? "review_required" : "unavailable";
   const result: CardInstance = { indicator_id: id, event_id: text(row.event_id), video_id: text(row.video_id), person_track_id: Number(row.person_track_id),
     rule_version: text(row.rule_version), measurement_version: text(row.measurement_version), status: state, original_grade: null, source_grade_supported: false,
@@ -183,10 +193,11 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
     source_window_annotation: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_annotation) : null,
     source_window_evidence: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_evidence) : null,
     source_window_context: FS_WINDOW_CONTRACTS[id] && row.source_window_annotation ? evidenceObject(row.source_window_context ?? row.window) : null,
+    auxiliary_evidence: auxiliary, auxiliary_parent_context: auxiliaryParent, auxiliary_validation: null,
     limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitations)].map(value => LIMITATION_LABELS[value] ?? value))],
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
-  if (state !== "proxy_scored") return { ...result, conditions: conditions.map(c => ({ ...c, passed: null })) };
+  if (state !== "proxy_scored") return withPreloadValidation({ ...result, conditions: conditions.map(c => ({ ...c, passed: null })) });
   const gsSpec = GS_CARD_CONTRACTS[id];
   const footworkSpec = FOOTWORK_CARD_CONTRACTS[id];
   const fsWindowSpec = FS_WINDOW_CONTRACTS[id];
@@ -218,7 +229,7 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
       || !/^CARD-(?:FS|GS)$/.test(result.source.document_id) || !/^[a-fA-F0-9]{64}$/.test(result.source.document_sha256) || !/^[a-fA-F0-9]{64}$/.test(result.source.rubric_sha256)) {
     return invalidate(result, "proxy_report_evidence_invalid_recompute_required");
   }
-  return { ...result, proxy_grade: grade, score: gradePoints[grade] };
+  return withPreloadValidation({ ...result, proxy_grade: grade, score: gradePoints[grade] });
 }
 
 export function cardExecutionOf(value: unknown): CardExecutionReport | null {

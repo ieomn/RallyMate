@@ -40,6 +40,29 @@ def target(report):
 
 
 class GSPreloadEvidenceTests(unittest.TestCase):
+    def test_requested_parent_bounds_are_preserved_only_for_auxiliary_target(self):
+        case = fixture(count=15)
+        stage = case["annotations"]["stages"][0]
+        stage.update(start_ms=15, end_ms=545)
+        for key, index in (("start_frame", 1), ("end_frame", 13)):
+            stage["local_preload_observation"][key] = {field: case["decoder_timeline"][index][field]
+                for field in ("frame_index", "pts", "time_base_num", "time_base_den")}
+        report = compute(case)
+        row = target(report)
+        self.assertEqual(row["source_annotation"]["requested_window_ms"], {"start_ms": 15, "end_ms": 545})
+        self.assertEqual(row["source_annotation"]["requested_window_ms"], row["auxiliary_evidence"]["source_annotation"]["stage_window_ms"])
+        self.assertEqual((row["window"]["start_ms"], row["window"]["end_ms"]), (40, 520))
+        self.assertEqual(row["auxiliary_evidence"]["status"], "measured_auxiliary")
+        self.assertIsNone(row["score"])
+        for card in report["cards"]:
+            for instance in card["instances"]:
+                if "auxiliary_evidence" not in instance:
+                    self.assertNotIn("requested_window_ms", instance["source_annotation"])
+        del stage["local_preload_observation"]
+        without = compute(case)
+        self.assertTrue(all("requested_window_ms" not in instance["source_annotation"]
+            for card in without["cards"] for instance in card["instances"]))
+
     def test_all_five_cards_stay_manual_and_only_target_card_gets_auxiliary_evidence(self):
         for code in ("GS01", "GS02", "GS03", "GS04", "GS05"):
             report = compute(fixture(code=code)); row = target(report)
