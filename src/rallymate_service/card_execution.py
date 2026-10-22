@@ -2,7 +2,8 @@
 
 The catalogue contains all 298 source cards. Five temporal card calculators run
 by default. Service-controlled annotation files optionally connect exact
-manual GS stages and FS03/FS04 windows through source-verified adapters.
+manual GS stages, FS03/FS04 cycles and remaining individual FS card windows
+through source-verified adapters.
 """
 from __future__ import annotations
 
@@ -254,7 +255,7 @@ def build_card_execution_from_records(records: list[dict[str, Any]], events: Seq
 def _input_signature(directory: Path) -> tuple:
     base = tuple((name, (stat := (directory / name).stat()).st_size, stat.st_mtime_ns)
                  for name in ("events.jsonl", "primary-player.jsonl", "frames.jsonl"))
-    annotation_names = ("gs-stage-annotations.json", "footwork-cycle-annotations.json")
+    annotation_names = ("gs-stage-annotations.json", "footwork-cycle-annotations.json", "fs-card-window-annotations.json")
     if not any((directory / name).exists() for name in annotation_names):
         return base + tuple((name, "absent") for name in annotation_names)
     # Optional manual inputs are content-bound, including the actual video. A
@@ -382,6 +383,49 @@ def _apply_optional_cycle_annotations(report: dict, directory: Path) -> None:
     report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
 
 
+def _apply_optional_fs_card_annotations(report: dict, directory: Path) -> None:
+    annotation_path = directory / "fs-card-window-annotations.json"
+    if not annotation_path.exists():
+        return
+    from .fs_card_windows import VERSION as FS_WINDOW_VERSION, _read_json, build_fs_card_window_report, supported_rules
+    expected = set(supported_rules())
+    try:
+        annotations = _read_json(annotation_path)
+        result = build_fs_card_window_report(directory, annotations)
+        if (result["source_run_id"] != report["source_run_id"] or result["rule_version"] != report["rule_version"]
+                or any(result["input"].get(key) is not True for key in
+                    ("service_eligible", "artifact_files_verified", "decoder_verified_from_original_video"))):
+            raise ValueError("fs_window_production_report_binding_mismatch")
+        replacements = {row["indicator_id"]: row for row in result["cards"]}
+        if set(replacements) != expected or len(result["cards"]) != len(expected):
+            raise ValueError("fs_window_production_card_inventory_mismatch")
+        report["cards"] = [replacements.get(row["indicator_id"], row) for row in report["cards"]]
+        report["input"]["observed_event_codes"] = sorted(set(report["input"]["observed_event_codes"]) |
+            {row["indicator_id"].split("-")[0] for row in annotations["windows"]})
+        report["input"]["fs_card_window_execution"] = {"status": "executed", "version": FS_WINDOW_VERSION, **result["input"]}
+        report["fs_card_windows"] = result["fs_card_windows"]
+        report["coverage"].update(fs_manual_card_window_count=result["coverage"]["annotated_window_count"],
+            fs_manual_window_executed_card_count=result["coverage"]["executed_card_count"])
+        report["limitations"].extend(result["limitations"])
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        reason = str(exc)
+        if not reason or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789_:" for character in reason):
+            reason = "fs_window_annotation_or_source_validation_failed"
+        for row in report["cards"]:
+            if row["indicator_id"] in expected:
+                row.update(run_status="unavailable", reason_codes=[reason], runtime_engine=None,
+                    instance_count=0, instance_status_counts={}, instances=[], original_grade=None, source_grade_supported=False)
+        report["input"]["fs_card_window_execution"] = {"status": "unavailable", "version": FS_WINDOW_VERSION, "reason_codes": [reason]}
+        report.pop("fs_card_windows", None)
+        report["coverage"].update(fs_manual_card_window_count=0, fs_manual_window_executed_card_count=0)
+    instances = [instance for row in report["cards"] for instance in row["instances"]]
+    report["summary"] = summarize_card_scores(instances, [row["indicator_id"] for row in report["cards"]])
+    report["observed_type_summary"] = summarize_card_scores(instances,
+        [row["indicator_id"] for row in report["cards"] if row["event_code"] in report["input"]["observed_event_codes"]])
+    report["coverage"]["computed_card_instance_count"] = len(instances)
+    report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
+
+
 @lru_cache(maxsize=2)
 def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
                    engine_version: str) -> dict:
@@ -394,6 +438,7 @@ def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
     report = build_card_execution_from_records(records, events, timeline, source_run_id=directory.name)
     _apply_optional_gs_annotations(report, directory)
     _apply_optional_cycle_annotations(report, directory)
+    _apply_optional_fs_card_annotations(report, directory)
     if _input_signature(directory) != signature:
         raise ValueError("card_input_changed_during_computation")
     report["input"]["catalogue_sha256"] = rule_digest
@@ -429,4 +474,8 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
             from .footwork_cycle_execution import VERSION as CYCLE_VERSION
             from rallymate_scoring.footwork_cycle_card_evidence import VERSION as CYCLE_MEASUREMENT_VERSION
             engine_version += ":" + ARTIFACT_VERSION + ":" + CYCLE_VERSION + ":" + CYCLE_MEASUREMENT_VERSION
+        if (directory / "fs-card-window-annotations.json").exists():
+            from .fs_card_windows import VERSION as FS_WINDOW_VERSION
+            from rallymate_scoring.card_kinematics import VERSION as KINEMATICS_VERSION
+            engine_version += ":" + FS_WINDOW_VERSION + ":" + KINEMATICS_VERSION
         return deepcopy(_cached_report(str(directory), signature, rule_digest, engine_version))
