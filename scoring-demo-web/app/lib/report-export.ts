@@ -218,12 +218,13 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     ], columns: ["评分卡", "状态", "实例数", "原因"], rows: cardExecution.cards.map(card => [
       `${card.indicator_id} ${text(card.name_zh)}`, CARD_RUN_LABELS[card.run_status], String(card.instance_count), card.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
     ]) });
-    sections.push({ title: "逐卡视频实例与条件", paragraphs: ["每个结果绑定一个视频事件和同一连续窗口；以下条件数值及通过状态已经校验。"], columns: ["评分卡 / 事件", "视频区间", "视觉代理结果", "同窗有效帧", "条件明细", "原因"], rows: cardExecution.cards.flatMap(card => card.instances.map(instance => [
+    sections.push({ title: "逐卡视频实例与条件", paragraphs: ["每个结果绑定一个视频事件和同一连续窗口；以下条件数值及通过状态已经校验。人工标注的击球阶段保留来源与时间不确定性，不代表专家真值或自动定位完整十阶段。"], columns: ["评分卡 / 事件", "视频区间", "视觉代理结果", "同窗有效帧", "条件明细", "原因", "阶段来源"], rows: cardExecution.cards.flatMap(card => card.instances.map(instance => [
       `${card.indicator_id} / ${text(instance.event_id)}`, instance.window ? interval(instance.window) : "未定位",
       instance.status === "proxy_scored" ? `${instance.proxy_grade} / ${instance.score}（视觉代理）` : CARD_RUN_LABELS[instance.status],
       `${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count}`,
       instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；"),
       instance.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
+      instance.source_stage ? `${text(instance.source_stage.stage_code)}；人工估计 ±${numberText(instance.source_stage.binding.uncertainty_ms)} 毫秒；${text(instance.source_stage.binding.source)}；${text(instance.source_stage.binding.version)}` : card.event_code.startsWith("GS") ? "未核验阶段来源" : "由动作检测器定位的候选窗口",
     ])) });
   }
   const parsedMotion = motionAnalysisOf(input.evidence.result ?? null, input.evidence.assessment, summary);

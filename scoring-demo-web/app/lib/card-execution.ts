@@ -1,7 +1,9 @@
 /** Strict reader for frame-recomputed card reports. Summary counts are derived.
- * Registry identities and the five wired temporal contracts are pinned below;
- * the contract parity test checks these against the backend catalogue.
+ * Temporal contracts and the generated GS reader contract are checked against
+ * the backend catalogue. A registered rule is never counted as an execution.
  */
+import gsContract from "./gs-card-display-contract";
+
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
 const MEASUREMENT_VERSION = "temporal-card-evidence-v1.0.0";
@@ -10,6 +12,8 @@ export const CARD_RUN_LABELS = { proxy_scored: "有视觉代理结果", review_r
 export type CardRunStatus = keyof typeof CARD_RUN_LABELS;
 type Obj = Record<string, unknown>;
 type ConditionSpec = [string, "gte" | "lte" | "between", number | [number, number], string];
+type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: string[]; conditions: ConditionSpec[]; source: CardInstance["source"] };
+const GS_CARD_CONTRACTS = gsContract.cards as unknown as Record<string, GsSpec>;
 export const TEMPORAL_CARD_CONDITIONS: Record<string, ConditionSpec[]> = {
   "FS01-M02": [["hip_drop_torso", "gte", .03, "torso"], ["left_knee_flexion_change_deg", "gte", 4, "deg"], ["right_knee_flexion_change_deg", "gte", 4, "deg"], ["joint_descent_fraction", "gte", .7, "fraction"], ["speed_step_variation_ratio", "lte", 1.5, "ratio"]],
   "FS01-M05": [["hip_inside_support_fraction", "gte", .8, "fraction"], ["body_speed_std_torso_s", "lte", .3, "torso/s"], ["successor_interval_ms", "between", [0, 500], "ms"]],
@@ -17,10 +21,8 @@ export const TEMPORAL_CARD_CONDITIONS: Record<string, ConditionSpec[]> = {
   "FS09-M04": [["hip_inside_support_fraction", "gte", .8, "fraction"], ["supported_low_motion_duration_ms", "gte", 120, "ms"], ["shoulder_hip_angular_speed_drop_deg_s", "gte", 5, "deg/s"]],
   "FS09-M05": [["body_speed_std_torso_s", "lte", .3, "torso/s"], ["supported_low_motion_duration_ms", "gte", 120, "ms"], ["successor_interval_ms", "between", [0, 500], "ms"]],
 };
-// The source register contains FS01--FS10, five cards each, and GS01--GS05.
-// GS membership is pinned to the actual 248 identifiers, not a permissive regex.
-const GS_CARD_IDS = "GS01-M01-01 GS01-M01-02 GS01-M01-03 GS01-M01-04 GS01-M01-05 GS01-M02-01 GS01-M02-02 GS01-M02-03 GS01-M02-04 GS01-M02-05 GS01-M03-01 GS01-M03-02 GS01-M03-03 GS01-M03-04 GS01-M03-05 GS01-M04-01 GS01-M04-02 GS01-M04-03 GS01-M04-04 GS01-M04-05 GS01-M04-06 GS01-M05-01 GS01-M05-02 GS01-M05-03 GS01-M05-04 GS01-M05-05 GS01-M05-06 GS01-M06-01 GS01-M06-02 GS01-M06-03 GS01-M06-04 GS01-M06-05 GS01-M07-01 GS01-M07-02 GS01-M07-03 GS01-M07-04 GS01-M07-05 GS01-M08-01 GS01-M08-02 GS01-M08-03 GS01-M08-04 GS01-M08-05 GS01-M09-01 GS01-M09-02 GS01-M09-03 GS01-M09-04 GS01-M09-05 GS01-M10-01 GS01-M10-02 GS01-M10-03 GS01-M10-04 GS02-M01-01 GS02-M01-02 GS02-M01-03 GS02-M01-04 GS02-M01-05 GS02-M02-01 GS02-M02-02 GS02-M02-03 GS02-M02-04 GS02-M02-05 GS02-M03-01 GS02-M03-02 GS02-M03-03 GS02-M03-04 GS02-M03-05 GS02-M04-01 GS02-M04-02 GS02-M04-03 GS02-M04-04 GS02-M04-05 GS02-M05-01 GS02-M05-02 GS02-M05-03 GS02-M05-04 GS02-M05-05 GS02-M06-01 GS02-M06-02 GS02-M06-03 GS02-M06-04 GS02-M06-05 GS02-M07-01 GS02-M07-02 GS02-M07-03 GS02-M07-04 GS02-M07-05 GS02-M08-01 GS02-M08-02 GS02-M08-03 GS02-M08-04 GS02-M08-05 GS02-M09-01 GS02-M09-02 GS02-M09-03 GS02-M09-04 GS02-M09-05 GS02-M10-01 GS02-M10-02 GS02-M10-03 GS02-M10-04 GS03-M01-01 GS03-M01-02 GS03-M01-03 GS03-M01-04 GS03-M02-01 GS03-M02-02 GS03-M02-03 GS03-M02-04 GS03-M02-05 GS03-M03-01 GS03-M03-02 GS03-M03-03 GS03-M03-04 GS03-M03-05 GS03-M04-01 GS03-M04-02 GS03-M04-03 GS03-M04-04 GS03-M04-05 GS03-M05-01 GS03-M05-02 GS03-M05-03 GS03-M05-04 GS03-M05-05 GS03-M06-01 GS03-M06-02 GS03-M06-03 GS03-M06-04 GS03-M06-05 GS03-M07-01 GS03-M07-02 GS03-M07-03 GS03-M07-04 GS03-M07-05 GS03-M08-01 GS03-M08-02 GS03-M08-03 GS03-M08-04 GS03-M08-05 GS03-M09-01 GS03-M09-02 GS03-M09-03 GS03-M09-04 GS03-M09-05 GS03-M10-01 GS03-M10-02 GS03-M10-03 GS03-M10-04 GS03-M10-05 GS04-M01-01 GS04-M01-02 GS04-M01-03 GS04-M01-04 GS04-M02-01 GS04-M02-02 GS04-M02-03 GS04-M02-04 GS04-M02-05 GS04-M03-01 GS04-M03-02 GS04-M03-03 GS04-M03-04 GS04-M03-05 GS04-M04-01 GS04-M04-02 GS04-M04-03 GS04-M04-04 GS04-M04-05 GS04-M05-01 GS04-M05-02 GS04-M05-03 GS04-M05-04 GS04-M05-05 GS04-M06-01 GS04-M06-02 GS04-M06-03 GS04-M06-04 GS04-M06-05 GS04-M07-01 GS04-M07-02 GS04-M07-03 GS04-M07-04 GS04-M07-05 GS04-M08-01 GS04-M08-02 GS04-M08-03 GS04-M08-04 GS04-M08-05 GS04-M09-01 GS04-M09-02 GS04-M09-03 GS04-M09-04 GS04-M09-05 GS04-M10-01 GS04-M10-02 GS04-M10-03 GS04-M10-04 GS04-M10-05 GS05-M01-01 GS05-M01-02 GS05-M01-03 GS05-M01-04 GS05-M01-05 GS05-M02-01 GS05-M02-02 GS05-M02-03 GS05-M02-04 GS05-M02-05 GS05-M03-01 GS05-M03-02 GS05-M03-03 GS05-M03-04 GS05-M03-05 GS05-M04-01 GS05-M04-02 GS05-M04-03 GS05-M04-04 GS05-M04-05 GS05-M05-01 GS05-M05-02 GS05-M05-03 GS05-M05-04 GS05-M05-05 GS05-M06-01 GS05-M06-02 GS05-M06-03 GS05-M06-04 GS05-M06-05 GS05-M07-01 GS05-M07-02 GS05-M07-03 GS05-M07-04 GS05-M07-05 GS05-M08-01 GS05-M08-02 GS05-M08-03 GS05-M08-04 GS05-M08-05 GS05-M09-01 GS05-M09-02 GS05-M09-03 GS05-M09-04 GS05-M09-05 GS05-M10-01 GS05-M10-02 GS05-M10-03 GS05-M10-04 GS05-M10-05";
-const CARD_IDS = new Set([...GS_CARD_IDS.split(" "), ...Array.from({ length: 10 }, (_, event) =>
+// GS membership comes from the 248 versioned source entries, not a permissive regex.
+const CARD_IDS = new Set([...Object.keys(GS_CARD_CONTRACTS), ...Array.from({ length: 10 }, (_, event) =>
   Array.from({ length: 5 }, (_, stage) => `FS${String(event + 1).padStart(2, "0")}-M${String(stage + 1).padStart(2, "0")}`)).flat()]);
 const obj = (value: unknown): Obj => value && typeof value === "object" && !Array.isArray(value) ? value as Obj : {};
 const text = (value: unknown, limit = 240) => typeof value === "string" ? value.slice(0, limit) : "";
@@ -31,11 +33,16 @@ const strings = (value: unknown) => [...new Set(list(value, 50).map(v => text(v)
 const gradePoints = { A: 100, B: 80, C: 60, D: 40, E: 20 } as const;
 type Grade = keyof typeof gradePoints;
 export interface CardCondition { key: string; metric: string; value: number | null; operator: string; threshold: number | [number, number] | null; unit: string; passed: boolean | null }
+export interface CardSourceStage {
+  stage_code: string; annotation_id: string; document_sha256: string; digest_kind: string;
+  binding: { method: string; version: string; source: string; uncertainty_ms: number | null; semantics: string };
+}
 export interface CardInstance {
   indicator_id: string; event_id: string; video_id: string; person_track_id: number; rule_version: string; measurement_version: string;
   status: "proxy_scored" | "review_required" | "unavailable"; original_grade: null; source_grade_supported: false; proxy_grade: Grade | null; score: number | null;
   window: { start_ms: number; end_ms: number } | null; reason_codes: string[]; conditions: CardCondition[];
-  quality: { total_frame_count: number; valid_frame_count: number; fraction: number | null; visibility_verified: false };
+  quality: { total_frame_count: number; valid_frame_count: number; fraction: number | null; visibility_verified: false; required_joint_names: string[] };
+  source_stage: CardSourceStage | null;
   fallback: { trigger: string; strategy: string; selected: { start_ms: number; end_ms: number } | null } | null;
   threshold_basis: string; semantics: string; source: { document_id: string; document_sha256: string; table: string; rubric_sha256: string };
 }
@@ -65,6 +72,32 @@ function computedPass(condition: CardCondition): boolean | null {
 function invalidate(instance: CardInstance, reason: string): CardInstance {
   return { ...instance, status: "unavailable", proxy_grade: null, score: null, reason_codes: [...new Set([...instance.reason_codes, reason])], conditions: instance.conditions.map(c => ({ ...c, passed: null })) };
 }
+function sourceStageOf(row: Obj, id: string): CardSourceStage | null {
+  const normalized = obj(row.source_stage), annotation = obj(row.source_annotation);
+  const source = Object.keys(normalized).length ? normalized : annotation;
+  if (!Object.keys(source).length) return null;
+  const binding = obj(source.binding);
+  const stage: CardSourceStage = { stage_code: text(source.stage_code ?? obj(row.window).stage_code),
+    annotation_id: text(source.annotation_id), document_sha256: text(source.document_sha256), digest_kind: text(source.digest_kind),
+    binding: { method: text(binding.method), version: text(binding.version), source: text(binding.source),
+      uncertainty_ms: number(binding.uncertainty_ms), semantics: text(binding.semantics) } };
+  if (!GS_CARD_CONTRACTS[id] || stage.stage_code !== GS_CARD_CONTRACTS[id].stage_code || stage.annotation_id !== row.event_id
+      || !/^[a-fA-F0-9]{64}$/.test(stage.document_sha256) || stage.digest_kind !== "canonical_json_sorted_utf8_v1"
+      || stage.binding.method !== "manual_anchor" || !stage.binding.version || !stage.binding.source
+      || stage.binding.uncertainty_ms === null || stage.binding.uncertainty_ms < 0
+      || stage.binding.semantics !== "reviewer_estimated_source_stage_not_expert_ground_truth") return null;
+  return stage;
+}
+function validGsEvidence(instance: CardInstance, contract: GsSpec): boolean {
+  const stage = instance.source_stage;
+  return !!stage && stage.stage_code === contract.stage_code && stage.annotation_id === instance.event_id
+    && /^[a-fA-F0-9]{64}$/.test(stage.document_sha256) && stage.digest_kind === "canonical_json_sorted_utf8_v1"
+    && stage.binding.method === "manual_anchor" && !!stage.binding.version && !!stage.binding.source
+    && stage.binding.uncertainty_ms !== null && stage.binding.uncertainty_ms >= 0
+    && stage.binding.semantics === "reviewer_estimated_source_stage_not_expert_ground_truth"
+    && Object.entries(contract.source).every(([key, value]) => instance.source[key as keyof CardInstance["source"]] === value)
+    && JSON.stringify([...instance.quality.required_joint_names].sort()) === JSON.stringify(contract.required_joint_names);
+}
 function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstance | null {
   const row = obj(value), evidence = obj(row.evidence), quality = obj(row.quality), source = obj(row.source);
   if (row.indicator_id !== id || !text(row.event_id) || !text(row.video_id) || integer(row.person_track_id) === null || sourceRunId && row.video_id !== sourceRunId) return null;
@@ -76,11 +109,13 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const result: CardInstance = { indicator_id: id, event_id: text(row.event_id), video_id: text(row.video_id), person_track_id: Number(row.person_track_id),
     rule_version: text(row.rule_version), measurement_version: text(row.measurement_version), status: state, original_grade: null, source_grade_supported: false,
     proxy_grade: null, score: null, window: windowOf(row.window ?? evidence.requested_window_ms), reason_codes: strings(row.reason_codes), conditions,
-    quality: { total_frame_count: total, valid_frame_count: valid <= total ? valid : 0, fraction: total > 0 && valid <= total ? valid / total : null, visibility_verified: false },
+    quality: { total_frame_count: total, valid_frame_count: valid <= total ? valid : 0, fraction: total > 0 && valid <= total ? valid / total : null, visibility_verified: false, required_joint_names: strings(quality.required_joint_names) },
+    source_stage: sourceStageOf(row, id),
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
   if (state !== "proxy_scored") return { ...result, conditions: conditions.map(c => ({ ...c, passed: null })) };
-  const specs = TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
+  const gsSpec = GS_CARD_CONTRACTS[id];
+  const specs = gsSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
   const expected = specs?.every(([metric, operator, threshold, unit]) => {
     const c = byMetric.get(metric);
     return c && c.operator === operator && c.unit === unit && JSON.stringify(c.threshold) === JSON.stringify(threshold) && c.passed !== null && c.passed === computedPass(c);
@@ -88,7 +123,8 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== MEASUREMENT_VERSION || row.proxy_grade !== grade || row.score !== gradePoints[grade]
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : MEASUREMENT_VERSION) || row.proxy_grade !== grade || row.score !== gradePoints[grade]
+      || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec))
       || total < 3 || valid > total || valid * 10 < total * 7 || result.reason_codes.length
       || row.semantics !== "engineering_visual_condition_completion_not_original_technical_grade"
       || !/^CARD-(?:FS|GS)$/.test(result.source.document_id) || !/^[a-fA-F0-9]{64}$/.test(result.source.document_sha256) || !/^[a-fA-F0-9]{64}$/.test(result.source.rubric_sha256)) {
@@ -107,6 +143,8 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
   for (const candidate of raw.cards) {
     const row = obj(candidate), id = text(row.indicator_id);
     if (!CARD_IDS.has(id) || row.event_code !== id.split("-")[0] || row.rule_version !== CARD_RULE_VERSION || !text(row.name_zh) || !["visual_proxy", "manual_review"].includes(text(row.rule_kind))) { rejected++; continue; }
+    const runtimeEngine = GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : MEASUREMENT_VERSION;
+    if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     const seenInstances = new Map<string, CardInstance>(), conflicting = new Set<string>();
     for (const value of list(row.instances, 5000)) {
       const instance = instanceOf(value, id, sourceRunId);
@@ -119,11 +157,11 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     conflicts += conflicting.size;
     const instances = [...seenInstances].map(([key, instance]) => conflicting.has(key) ? invalidate(instance, "conflicting_duplicate_event_instance") : instance)
       .map(instance => raw.status === "unavailable" ? invalidate(instance, "card_execution_report_unavailable") : instance)
-      .map(instance => instance.status === "proxy_scored" && (row.runtime_engine !== MEASUREMENT_VERSION || row.rule_kind !== "visual_proxy") ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
+      .map(instance => instance.status === "proxy_scored" && (row.runtime_engine !== runtimeEngine || row.rule_kind !== "visual_proxy") ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
     const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : row.rule_kind === "manual_review" || row.run_status === "review_required" ? "review_required" : "not_executed";
     const status: CardRunStatus = instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
     const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: text(row.rule_kind),
-      runtime_engine: row.runtime_engine === MEASUREMENT_VERSION ? MEASUREMENT_VERSION : null, run_status: status, reason_codes: strings(row.reason_codes), instances, instance_count: instances.length };
+      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, run_status: status, reason_codes: strings(row.reason_codes), instances, instance_count: instances.length };
     const prior = seenCards.get(id);
     if (prior) {
       if (JSON.stringify(prior) !== JSON.stringify(card)) { prior.run_status = "unavailable"; prior.reason_codes = [...new Set([...prior.reason_codes, "conflicting_duplicate_card"])]; prior.instances = prior.instances.map(i => invalidate(i, "conflicting_duplicate_card")); conflicts++; }
@@ -169,6 +207,15 @@ export const CARD_REASON_LABELS: Record<string, string> = {
   stable_reference_transform_unavailable: "相机参考坐标不可用，暂不计算身体位移",
   exact_window_endpoints_missing: "时间窗起点或终点没有实际观测",
   successor_endpoint_observation_missing: "后继动作边界缺少观测，无法计算衔接间隔",
+  gs_stage_annotation_missing: "本次尚未标注此击球阶段，未套用其他阶段的时间窗",
+  gs_technique_not_annotated_in_source_run: "本次没有此击球类型的来源标注",
+  required_observable_not_recoverable_from_pose: "人体姿态不能直接证明此项技术行为，需要人工复核",
+  stage_source_observations_missing: "所标注击球阶段缺少原始帧观测",
+  stage_primary_person_binding_unverified: "阶段标注的球员与逐帧选择不一致",
+  stage_identity_or_camera_epoch_changed: "击球阶段跨过人物选择或机位切换",
+  stage_window_truncated_by_source: "击球阶段时间窗超出可用原始片段",
+  source_decoder_window_inventory_incomplete: "击球阶段所需的原始帧不完整，未缩短窗口或跨过缺帧评分",
+  source_stage_binding_missing_or_mismatched: "击球阶段来源缺失或与评分卡不匹配",
 };
 const PHASE_LABELS: Record<string, string> = { takeoff_proxy_ms: "起跳候选", landing_proxy_ms: "落地候选", stable_control_onset_ms: "重新稳定候选", peak_speed_ms: "速度峰值", deceleration_peak_ms: "减速峰值" };
 export const cardReasonLabel = (code: string) => {
