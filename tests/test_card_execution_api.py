@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
 import rallymate_service.card_execution as execution
+from rallymate_scoring.card_scoring_policy import SCORING_POLICY_VERSION
 from rallymate_scoring.stroke_candidates import DETECTOR_VERSION
 from rallymate_scoring.stroke_analysis import ANALYSIS_VERSION
 
@@ -87,9 +88,11 @@ class CardExecutionApiTests(unittest.TestCase):
             self.assertEqual(result["cards"], expected["cards"])
             self.assertEqual(result["summary"], expected["summary"])
             self.assertEqual(len(result["cards"]), 298)
-            self.assertEqual(result["summary"]["status_counts"], {"proxy_scored": 3})
+            self.assertEqual(result["summary"]["status_counts"], {"scored": 3})
             self.assertEqual(result["source_run_id"], self.job_id)
-            self.assertIsNone(result["overall_score"])
+            self.assertAlmostEqual(result["overall_score"], 200 / 3)
+            self.assertEqual(result["scoring_policy_version"], SCORING_POLICY_VERSION)
+            self.assertTrue(all(row["status"] != "review_required" for card in result["cards"] for row in card["instances"]))
             self.assertEqual((output / "summary.json").read_bytes(), before)
             json.dumps(result, allow_nan=False)
 
@@ -122,7 +125,7 @@ class CardExecutionApiTests(unittest.TestCase):
             with patch.object(execution, "_read_records", wraps=execution._read_records) as read, TestClient(app) as client:
                 url = f"/v1/jobs/{self.job_id}/demo-result?report_contract=current"
                 first = client.get(url).json()["card_execution"]
-                self.assertIsNone(first["overall_score"])
+                self.assertAlmostEqual(first["overall_score"], 200 / 3)
                 self.assertEqual(read.call_count, 3)
                 events = deepcopy(self.fixture["events"])
                 for event in events:
@@ -132,7 +135,8 @@ class CardExecutionApiTests(unittest.TestCase):
                 repeated = client.get(url).json()["card_execution"]
                 self.assertEqual(read.call_count, 6)
             self.assertEqual(changed, repeated)
-            self.assertEqual(changed["summary"]["status_counts"], {"review_required": 3})
+            self.assertEqual(changed["summary"]["status_counts"], {"unavailable": 3})
+            self.assertIsNone(changed["overall_score"])
             self.assertTrue(all(row["score"] is None and row["original_grade"] is None
                 for card in changed["cards"] for row in card["instances"]))
 

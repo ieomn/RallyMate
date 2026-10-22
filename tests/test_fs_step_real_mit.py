@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 from rallymate_scoring.card_evaluation import evaluate_card_window
 from rallymate_scoring.card_rule_catalog import get_card_rule
+from rallymate_scoring.card_scoring_policy import SCORING_POLICY_VERSION
 from rallymate_scoring.step_motion_evidence import compute_step_motion_evidence
 from rallymate_service.fs_card_windows import build_fs_card_window_report, compute_fs_card_windows
 
@@ -59,7 +60,9 @@ class RealMitStepDevelopmentTests(unittest.TestCase):
 
     def test_real_endpoint_displacement_does_not_substitute_for_complete_cycle(self):
         actual = self.evaluate()
-        self.assertEqual(actual, self.case["numeric_core_expected"])
+        expected = {**deepcopy(self.case["numeric_core_expected"]),
+                    "scoring_policy_version": SCORING_POLICY_VERSION, "grade": None}
+        self.assertEqual(actual, expected)
         self.assertEqual(actual["status"], "unavailable")
         self.assertIsNone(actual["score"])
         self.assertIsNone(actual["conditions"][0]["value"])
@@ -78,17 +81,44 @@ class RealMitStepDevelopmentTests(unittest.TestCase):
         self.assertFalse(motion["contact_verified"])
         self.assertFalse(motion["technical_step_verified"])
 
-    def test_adapter_retains_original_quality_nulls_and_all_source_events(self):
+    def assert_current_unavailable_matches_frozen(self, actual):
+        """Explicit policy delta; the frozen trajectory and metrics stay exact."""
+        self.assertEqual(actual["scoring_policy_version"], SCORING_POLICY_VERSION)
+        self.assertIsNone(actual["grade"])
+        self.assertEqual(actual["advisory_flags"], ["keypoint_jump_candidates_present"])
+        self.assertEqual(actual["reason_codes"], ["required_condition_evidence_missing"])
+        stripped = deepcopy(actual)
+        for key in ("scoring_policy_version", "grade", "advisory_flags"):
+            del stripped[key]
+        # The current adapter keeps its continuity ledger separately from raw
+        # labels. This frozen detector-only window used derived epoch 1.
+        self.assertEqual(stripped["window"].pop("derived_selection_epoch"),
+                         self.case["window"]["selection_epoch"])
+        for source in stripped["source_window_evidence"]["source_frame_bindings"]:
+            self.assertEqual(source.pop("derived_selection_epoch"),
+                             self.case["window"]["selection_epoch"])
+        stripped["reason_codes"] = ["fs_window_original_quality_requires_review", "required_condition_evidence_missing"]
+        for quality in stripped["source_window_evidence"]["original_event_quality"]:
+            self.assertEqual(quality.pop("quality_policy_version"), "cycle-window-advisory-quality-v2")
+            self.assertEqual(quality.pop("blocking_flags"), [])
+            self.assertEqual(quality.pop("event_identity_diagnostics"), quality["source_track_diagnostics"])
+            self.assertTrue(set(quality.pop("advisory_flags")).issubset({"keypoint_jump_candidates_present"}))
+            self.assertTrue(set(quality.pop("unclassified_flags")).issubset(set(quality["raw_input_quality_flags"])))
+        self.assertEqual(stripped, self.case["expected"])
+
+    def test_adapter_retains_raw_quality_and_unavailable_cycle_after_policy_change(self):
         self.assertEqual(len(self.case["source_events"]), 33)
         # This is an explicit downstream contract test, not a full-video replay.
+        current_timeline = [dict(row, derived_selection_epoch=row["selection_epoch"])
+                            for row in self.case["timeline"]]
         with patch("rallymate_service.fs_card_windows._prepare_samples",
-                   return_value=({1: self.samples()}, self.case["timeline"])):
+                   return_value=({1: self.samples()}, current_timeline)):
             report = compute_fs_card_windows(self.case["records"], self.case["primary"],
                 self.case["source_events"], self.case["decoder_timeline"], self.fixture["annotation_document"],
                 source_job_id=self.fixture["visual_observation"]["source_run_id"])
         rows = [row for card in report["cards"] for row in card["instances"]]
-        self.assertEqual(rows, [self.case["expected"]])
-        self.assertIn("fs_window_original_quality_requires_review", rows[0]["reason_codes"])
+        self.assertEqual(len(rows), 1)
+        self.assert_current_unavailable_matches_frozen(rows[0])
         self.assertTrue(rows[0]["source_window_evidence"]["original_event_quality"])
         self.assertFalse(rows[0]["source_window_evidence"]["step_cycle_bound"])
         self.assertFalse(report["input"]["artifact_files_verified"])
@@ -192,7 +222,9 @@ class RealMitStepDevelopmentTests(unittest.TestCase):
                 shutil.copyfile(source / name, run / name)
             report = build_fs_card_window_report(run, self.fixture["annotation_document"], video_path=video)
         self.assertTrue(report["input"]["artifact_files_verified"])
-        self.assertEqual([r for card in report["cards"] for r in card["instances"]], [self.case["expected"]])
+        rows = [r for card in report["cards"] for r in card["instances"]]
+        self.assertEqual(len(rows), 1)
+        self.assert_current_unavailable_matches_frozen(rows[0])
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ import rallymate_service.card_execution as execution
 from rallymate_service.card_execution import build_card_execution_report, clear_card_execution_cache
 
 ROOT = Path(__file__).resolve().parents[1]
+ARTIFACT_ROOT = Path(os.environ.get("CARD_ARTIFACT_ROOT", ROOT))
 
 
 def sha(path):
@@ -111,7 +112,7 @@ class GSUnifiedServiceIntegrationTests(unittest.TestCase):
 
     @contextmanager
     def real_run(self, case):
-        original = ROOT / self.manifest[case["case_id"]]["run_dir"]
+        original = ARTIFACT_ROOT / self.manifest[case["case_id"]]["run_dir"]
         files = ("frames.jsonl", "events.jsonl", "primary-player.jsonl", "summary.json")
         if not all((original / name).is_file() for name in files):
             self.skipTest("integration_requires_original_local_source_artifacts:" + case["case_id"])
@@ -159,7 +160,7 @@ class GSUnifiedServiceIntegrationTests(unittest.TestCase):
                         self.assertIsNone(instance["original_grade"])
                 self.assertEqual(merged["coverage"]["computed_card_instance_count"], sum(card["instance_count"] for card in merged["cards"]))
                 self.assertEqual(merged["summary"]["channels"]["original"]["scored_cards"], 0)
-        self.assertEqual(counts, {"proxy_scored": 27, "review_required": 16, "unavailable": 17})
+        self.assertEqual(counts, {"scored": 27, "unavailable": 33})
 
     def test_invalid_gs_annotation_is_isolated_without_changing_fs(self):
         with self.real_run(self.fixture["cases"][0]) as (directory, annotations):

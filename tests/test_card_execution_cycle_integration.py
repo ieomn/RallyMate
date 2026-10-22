@@ -64,7 +64,7 @@ class CycleUnifiedContracts(unittest.TestCase):
         self.assertEqual(self.report["coverage"]["run_card_status_counts"], dict(Counter(row["run_status"] for row in self.report["cards"])))
         self.assertEqual(self.report["summary"], summarize_card_scores(instances, [row["indicator_id"] for row in self.report["cards"]]))
         self.assertEqual(self.report["summary"]["channels"]["original"]["scored_cards"], 0)
-        self.assertIsNone(self.report["overall_score"])
+        self.assertEqual(self.report["overall_score"], self.report["summary"]["channels"]["formal"]["score"])
 
     def test_failure_keeps_previously_computed_fs_and_gs_cards(self):
         self.annotate()

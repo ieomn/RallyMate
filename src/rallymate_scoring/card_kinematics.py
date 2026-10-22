@@ -13,6 +13,7 @@ import re
 import statistics
 
 VERSION = "card-kinematics-v1.0.0"
+MODEL_EPOCH_SEMANTICS = "detector_track_epoch_primary_selection_applied_downstream"
 TORSO = ("left_shoulder", "right_shoulder", "left_hip", "right_hip")
 HIPS = ("left_hip", "right_hip")
 ANKLES = ("left_ankle", "right_ankle")
@@ -163,6 +164,20 @@ def validate_window(samples, window, timeline):
         reasons.append("window_too_short")
     expected, observed = {r["frame_index"]: r["timestamp_ms"] for r in timeline}, {}
     source_rows = {r["frame_index"]: r for r in timeline}
+    if any("selection_epoch" in row and (not _integer(row["selection_epoch"])
+           or row["selection_epoch"] != window["selection_epoch"]) for row in timeline):
+        reasons.append("primary_source_epoch_changed")
+    derived_epochs = {row["derived_selection_epoch"] for row in timeline
+                      if _integer(row.get("derived_selection_epoch"))}
+    if (("derived_selection_epoch" in window or any("derived_selection_epoch" in row for row in timeline))
+            and (len(derived_epochs) != 1 or any(not _integer(row.get("derived_selection_epoch")) for row in timeline)
+                 or "derived_selection_epoch" in window and (not _integer(window["derived_selection_epoch"])
+                     or derived_epochs != {window["derived_selection_epoch"]}))):
+        reasons.append("primary_continuity_epoch_changed")
+    if any(row.get("rejected_model_person_track_id") == window["person_track_id"]
+           and row.get("selected_person_track_id") == window["person_track_id"] for row in timeline):
+        reasons.append("selected_model_observation_rejected")
+    model_epochs = set()
     for sample in samples:
         frame = _get(sample, "frame_index")
         if not _integer(frame) or frame not in expected or frame in observed:
@@ -183,11 +198,28 @@ def validate_window(samples, window, timeline):
                 or binding["video_sha256"].lower() != window["video_sha256"].lower()):
             reasons.append("video_identity_mismatch")
         if _get(sample, "observation_semantics") == "monocular_model_estimate":
+            expected_epoch = window["selection_epoch"]
+            epoch_semantics = _get(sample, "model_epoch_semantics")
+            source_epoch = _get(sample, "source_model_selection_epoch")
+            if (epoch_semantics is not None or source_epoch is not None
+                    or "model_epoch_semantics" in source_rows[frame]
+                    or "source_model_selection_epoch" in source_rows[frame]):
+                if (epoch_semantics != MODEL_EPOCH_SEMANTICS or not _integer(source_epoch)
+                        or source_rows[frame].get("model_epoch_semantics") != MODEL_EPOCH_SEMANTICS
+                        or not _integer(source_rows[frame].get("source_model_selection_epoch"))
+                        or source_rows[frame].get("source_model_selection_epoch") != source_epoch):
+                    reasons.append("model_source_epoch_binding_unverified")
+                else:
+                    expected_epoch = source_epoch
+            if isinstance(binding, Mapping) and _integer(binding.get("selection_epoch")):
+                model_epochs.add(binding["selection_epoch"])
             if (not isinstance(binding, Mapping) or not isinstance(binding.get("video_sha256"), str)
                     or len(binding["video_sha256"]) != 64
+                    or any(not _integer(binding.get(key)) for key in
+                           ("frame_index", "person_track_id", "selection_epoch", "camera_reference_epoch"))
                     or any(binding.get(key) != value for key, value in {
                         "frame_index": frame, "person_track_id": window["person_track_id"],
-                        "selection_epoch": window["selection_epoch"],
+                        "selection_epoch": expected_epoch,
                         "camera_reference_epoch": window.get("camera_reference_epoch")}.items())
                     or not _integer(binding.get("pts"))
                     or type(binding.get("time_base_num")) is not int or binding["time_base_num"] <= 0
@@ -195,6 +227,8 @@ def validate_window(samples, window, timeline):
                 reasons.append("model_source_binding_unverified")
             elif any(binding[key] != source_rows[frame][key] for key in ("pts", "time_base_num", "time_base_den")):
                 reasons.append("model_decoder_pts_mismatch")
+    if len(model_epochs) > 1:
+        reasons.append("model_source_epoch_changed")
     return sorted(set(reasons)), [observed.get(row["frame_index"]) for row in timeline]
 
 

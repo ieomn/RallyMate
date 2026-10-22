@@ -66,7 +66,7 @@ class GSPreloadEvidenceTests(unittest.TestCase):
     def test_all_five_cards_stay_manual_and_only_target_card_gets_auxiliary_evidence(self):
         for code in ("GS01", "GS02", "GS03", "GS04", "GS05"):
             report = compute(fixture(code=code)); row = target(report)
-            self.assertEqual(row["status"], "review_required")
+            self.assertEqual(row["status"], "unavailable")
             self.assertIsNone(row["score"]); self.assertIsNone(row["proxy_grade"])
             self.assertIsNone(row["original_grade"]); self.assertFalse(row["source_grade_supported"])
             self.assertEqual(row["conditions"], [])
@@ -188,7 +188,7 @@ class GSPreloadEvidenceTests(unittest.TestCase):
             if defect == "camera":
                 case["frame_records"][5]["camera_motion"]["reference_epoch"] = 9
             else:
-                case["primary_timeline"][5]["identity_ambiguous"] = True
+                case["primary_timeline"][5]["selection_status"] = "unavailable"
             aux = target(compute(case))["auxiliary_evidence"]
             self.assertEqual(aux["status"], "unavailable")
             self.assertIsNone(aux["joint_descent_fraction"])

@@ -47,7 +47,7 @@ class StepMotionEvidenceTests(unittest.TestCase):
                     self.assertEqual(raw["required_joint_names"], list(REQUIRED_JOINTS))
                     self.assertEqual(raw["endpoint_count"], 3)
                     self.assertEqual([p["duration_ms"] for p in raw["feet"]["right"]["phases"]], [80, 160, 120])
-                    self.assertEqual(row["status"], "proxy_scored")
+                    self.assertEqual(row["status"], "scored")
                     self.assertEqual(row["proxy_grade"], "A")
                     self.assertIsNone(row["original_grade"])
                     self.assertFalse(raw["contact_verified"])

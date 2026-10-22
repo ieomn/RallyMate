@@ -23,7 +23,7 @@ class FootworkCycleExecutionTests(unittest.TestCase):
         clear_source_aligned_feature_cache()
         self.addCleanup(clear_source_aligned_feature_cache)
 
-    def test_complete_synthetic_cycle_maps_only_fresh_conditions_to_proxy(self):
+    def test_complete_synthetic_cycle_maps_only_fresh_conditions_to_formal_score(self):
         fixture = synthetic_cycle()
         fixture[1].update(score=0, proxy_grade="E", grade="E", conditions=[{"passed":False}])
         with patch("rallymate_service.footwork_cycle_execution.prepare_source_aligned_context",
@@ -31,35 +31,35 @@ class FootworkCycleExecutionTests(unittest.TestCase):
             data = report(fixture)
         prepare.assert_called_once()
         row = instance(data, "FS04-M04")
-        self.assertEqual((row["status"], row["proxy_grade"], row["score"]), ("proxy_scored", "A", 100))
+        self.assertEqual((row["status"], row["proxy_grade"], row["score"]), ("scored", "A", 100))
         self.assertIsNone(row["original_grade"])
-        self.assertEqual(row["semantics"], "engineering_visual_condition_completion_not_original_technical_grade")
+        self.assertEqual(row["semantics"], "application_condition_completion_score")
         self.assertEqual(row["measurement_version"], "footwork-cycle-card-evidence-v1.0.0")
         self.assertEqual(row["quality"], row["evidence"]["coverage"])
         self.assertEqual(len(row["source"]["rubric_sha256"]), 64)
         self.assertEqual(len(row["evidence"]["source_frame_bindings"]), 22)
         self.assertEqual(len(data["cards"]), 10)
-        self.assertEqual(next(c for c in data["cards"] if c["indicator_id"] == "FS04-M04")["run_status"], "proxy_scored")
+        self.assertEqual(next(c for c in data["cards"] if c["indicator_id"] == "FS04-M04")["run_status"], "scored")
         self.assertEqual(data["coverage"]["source_fs_card_count"], 50)
-        self.assertIsNone(data["overall_score"])
+        self.assertIsNotNone(data["overall_score"])
         self.assertFalse(data["input"]["artifact_files_verified"])
         json.dumps(data, allow_nan=False)
 
     def test_real_candidate_keeps_all_raw_values_and_review_causes_without_grade(self):
         data = report(real_fixture())
         row = instance(data, "FS03-M03")
-        self.assertEqual(row["status"], "review_required")
+        self.assertEqual(row["status"], "unavailable")
         self.assertAlmostEqual(row["measurements"]["hip_displacement_torso"], 2.81227098454173, places=8)
         self.assertIn("complete_visual_motion_cycle_not_observed", row["reason_codes"])
         self.assertIsNone(row["proxy_grade"])
         self.assertIsNone(row["score"])
         self.assertTrue(all(c["passed"] is None for c in row["conditions"]))
-        self.assertEqual(data["coverage"]["instance_status_counts"], {"review_required": 5})
+        self.assertEqual(data["coverage"]["instance_status_counts"], {"unavailable": 5})
 
     def test_manual_window_missing_never_becomes_e_or_zero(self):
         data = report(synthetic_cycle(), bindings=False)
         row = instance(data, "FS04-M04")
-        self.assertEqual(row["status"], "review_required")
+        self.assertEqual(row["status"], "unavailable")
         self.assertIn("source_step_window_binding_required", row["reason_codes"])
         self.assertIsNone(row["score"])
 
@@ -92,7 +92,7 @@ class FootworkCycleExecutionTests(unittest.TestCase):
                 fixture = synthetic_cycle()
                 fixture[3].update(mutation)
                 row = instance(report(fixture), "FS04-M04")
-                self.assertEqual(row["status"], "review_required")
+                self.assertEqual(row["status"], "unavailable")
                 self.assertIsNone(row["score"])
 
 

@@ -12,7 +12,7 @@ import math
 import statistics
 
 from .card_kinematics import (
-    ANKLES, TORSO, _endpoint, _get, _middle, _point, _reference_point,
+    ANKLES, TORSO, _endpoint, _get, _integer, _middle, _point, _reference_point,
     _source_times, finite, validate_window,
 )
 
@@ -70,10 +70,19 @@ def _source_geometry(sample, frame_index):
     source_binding = ({key: deepcopy(value) if value is None or isinstance(value, (str, bool)) or finite(value) else None
         for key in binding_keys if key in binding for value in (binding[key],)}
         if isinstance(binding, Mapping) else None)
-    return {"frame_index": frame_index, "normalized_points": points,
+    result = {"frame_index": frame_index, "normalized_points": points,
         "point_confidences": confidence, "observation_semantics": semantics if isinstance(semantics, str) else None,
         "normalization_basis": basis if isinstance(basis, str) else None,
         "pose_source": pose_source if isinstance(pose_source, str) else None, "source_binding": source_binding}
+    epoch_semantics = _get(sample, "model_epoch_semantics") if sample is not None else None
+    if epoch_semantics is not None:
+        # Never relabel raw SAM source_binding.selection_epoch as primary state.
+        primary_epoch = _get(sample, "selection_epoch")
+        model_epoch = _get(sample, "source_model_selection_epoch")
+        result.update(model_epoch_semantics=epoch_semantics if isinstance(epoch_semantics, str) else None,
+            selection_epoch=primary_epoch if _integer(primary_epoch) else None,
+            source_model_selection_epoch=model_epoch if _integer(model_epoch) else None)
+    return result
 
 
 def validate_step_motion_observation(observation, *, first_frame, last_frame):

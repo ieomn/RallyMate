@@ -57,7 +57,7 @@ class FSWindowUnifiedContracts(unittest.TestCase):
         all_rows = [instance for row in self.report["cards"] for instance in row["instances"]]
         self.assertEqual(self.report["coverage"]["computed_card_instance_count"], len(all_rows))
         self.assertEqual(self.report["summary"], execution.summarize_card_scores(all_rows, [row["indicator_id"] for row in self.report["cards"]]))
-        self.assertIsNone(self.report["overall_score"])
+        self.assertEqual(self.report["overall_score"], self.report["summary"]["channels"]["formal"]["score"])
 
     def test_invalid_annotation_isolated_from_temporal_gs_and_cycle_results(self):
         self.annotate()

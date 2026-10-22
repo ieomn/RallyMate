@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
@@ -10,7 +11,9 @@ import numpy as np
 
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.source_alignment import JOINTS, clear_source_aligned_feature_cache
-from rallymate_scoring.temporal_card_evidence import CARD_CONDITIONS, compute_temporal_card_evidence
+from rallymate_scoring.temporal_card_evidence import (
+    CARD_CONDITIONS, SOURCE_BINDING_EVIDENCE_VERSION, compute_temporal_card_evidence,
+)
 from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 
 
@@ -114,11 +117,82 @@ class TemporalCardEvidenceTests(unittest.TestCase):
 
     def test_successor_requires_identity_across_the_gap(self):
         sequence, events, timeline = fixture()
-        timeline[33]["identity_ambiguous"] = True  # 1320ms, between stop and next launch.
+        timeline[33]["source_track_id"] = 99  # 1320ms, between stop and next launch.
         row = card(compute_temporal_card_evidence(sequence, events[2], events=events, primary_timeline=timeline), "FS09-M05")
         self.assertEqual(row["status"], "needs_review")
         self.assertEqual(row["reason"], "measurement_window_subject_continuity_unverified")
         self.assertNotIn("successor_interval_ms", row["measurements"])
+        proof = row["evidence"]["successor"]
+        self.assertEqual([r["frame_index"] for r in proof["source_frame_bindings"]], proof["source_frames"])
+        mismatched = next(r for r in proof["source_frame_bindings"] if r["frame_index"] == 33)
+        self.assertEqual(mismatched["primary_selection"]["source_track_id"], 99)
+        self.assertEqual(mismatched["person_track_id"], 1)
+
+    def test_all_five_cards_preserve_original_rawtrack_and_decoder_binding_per_frame(self):
+        sequence, events, timeline = fixture()
+        baseline = {row["indicator_id"]: row["measurements"] for event_row in (events[0], events[2])
+                    for row in compute_temporal_card_evidence(sequence, event_row, events=events,
+                        primary_timeline=timeline)["cards"]}
+        clear_source_aligned_feature_cache()
+        for binding in sequence.source_time_bindings.values(): binding["person_track_id"] = 7
+        for event_row in events: event_row["track_diagnostics"]["source_track_ids"] = [7]
+        for selected in timeline: selected["source_track_id"] = 7
+        original_bindings, original_timeline = deepcopy(sequence.source_time_bindings), deepcopy(timeline)
+        rows = [row for event_row in (events[0], events[2]) for row in
+                compute_temporal_card_evidence(sequence, event_row, events=events, primary_timeline=timeline)["cards"]]
+        self.assertEqual({row["indicator_id"] for row in rows}, set(CARD_CONDITIONS))
+        for row in rows:
+            evidence = row["evidence"]
+            self.assertEqual(row["measurements"], baseline[row["indicator_id"]])
+            self.assertEqual(evidence["source_frame_binding_version"], SOURCE_BINDING_EVIDENCE_VERSION)
+            self.assertEqual(evidence["source_track_ids"], [7])
+            self.assertEqual([r["frame_index"] for r in evidence["source_frame_bindings"]], evidence["source_frames"])
+            for binding in evidence["source_frame_bindings"]:
+                index = binding["frame_index"]
+                self.assertEqual({k: binding[k] for k in original_bindings[index]}, original_bindings[index])
+                self.assertEqual(binding["status"], "verified_decoder_binding")
+                self.assertEqual(binding["primary_selection"], original_timeline[index])
+                self.assertEqual(binding["primary_player_id"], 1)
+                self.assertEqual(binding["person_track_id"], 7)
+                self.assertIsNone(binding["model_geometry_source"])
+            if "successor" in evidence:
+                successor = evidence["successor"]
+                self.assertEqual(successor["source_track_ids"], [7])
+                self.assertEqual(successor["successor_source_track_ids"], [7])
+                self.assertEqual([r["frame_index"] for r in successor["source_frame_bindings"]], successor["source_frames"])
+        rows[0]["evidence"]["source_frame_bindings"][0]["primary_selection"]["source_track_id"] = 99
+        self.assertEqual(timeline, original_timeline)
+        self.assertEqual(sequence.source_time_bindings, original_bindings)
+
+    def test_binding_proof_keeps_separate_source_and_video_clocks(self):
+        sequence, events, timeline = fixture()
+        for binding in sequence.source_time_bindings.values():
+            binding["pts"] += 9000
+            binding["source_timestamp_ms"] += 9000
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events,
+            primary_timeline=timeline), "FS01-M05")
+        self.assertEqual(row["status"], "measured_visual_proxy")
+        for binding, video_ms, source_ms in zip(row["evidence"]["source_frame_bindings"],
+                row["evidence"]["timestamps_ms"], row["evidence"]["source_timestamps_ms"]):
+            self.assertEqual(binding["video_timestamp_ms"], video_ms)
+            self.assertEqual(binding["source_timestamp_ms"], source_ms)
+            self.assertEqual(source_ms - video_ms, 9000)
+            self.assertNotIn("timestamp_ms", binding)
+        self.assertEqual(row["measurements"]["successor_interval_ms"], 320)
+
+    def test_missing_clock_evidence_retains_original_frame_and_does_not_invent_binding(self):
+        sequence, events, timeline = fixture()
+        del sequence.source_time_bindings[13]
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events,
+            primary_timeline=timeline), "FS01-M05")
+        self.assertEqual(row["status"], "needs_review")
+        self.assertTrue(all(condition["passed"] is None for condition in row["conditions"]))
+        proof = row["evidence"]["source_frame_bindings"]
+        missing = next(binding for binding in proof if binding["frame_index"] == 13)
+        self.assertEqual(missing["status"], "unavailable")
+        self.assertNotIn("pts", missing)
+        self.assertEqual(missing["primary_selection"], timeline[13])
+        self.assertEqual(len(proof), len(row["evidence"]["source_frames"]))
 
     def test_no_successor_is_missing_evidence_not_zero_or_e(self):
         sequence, events, timeline = fixture()
@@ -168,7 +242,7 @@ class TemporalCardEvidenceTests(unittest.TestCase):
         self.assertEqual(len(CARD_CONDITIONS), 5)
         self.assertEqual(compute_temporal_card_evidence(sequence, events[1], events=events, primary_timeline=timeline)["cards"], [])
 
-    def test_real_clip_fallback_retains_candidate_but_does_not_grade_standing_as_preload(self):
+    def test_real_clip_fallback_keeps_unverified_action_semantics_but_exposes_complete_conditions(self):
         payload = json.loads((Path(__file__).parent / "fixtures" / "temporal-card-real-0a3.json").read_text(encoding="utf-8"))
         data = payload["sequence"]
         for key in ("timestamp_ms", "source_frames", "frame_dimensions_px", "frame_transforms_to_reference"):
@@ -186,13 +260,35 @@ class TemporalCardEvidenceTests(unittest.TestCase):
         after = card(compute_temporal_card_evidence(sequence, events[0], events=events,
             primary_timeline=timeline), "FS01-M02")
         self.assertEqual(before["reason"], "pre_takeoff_window_too_short_for_turn_evidence")
-        self.assertEqual(after["reason"], "fallback_local_dip_action_type_unverified")
+        self.assertIsNone(after["reason"])
+        self.assertEqual(after["advisory_reason_codes"], ["fallback_local_dip_action_type_unverified"])
         self.assertEqual(after["evidence"]["requested_window_ms"], {"start_ms": 1467., "end_ms": 1633.})
         self.assertTrue(after["measurements"])
         self.assertFalse(after["evidence"]["coverage"]["visibility_verified"])
         self.assertIsNone(after["evidence"]["coverage"]["source_visibility_70_percent_verified"])
-        self.assertTrue(all(row["passed"] is None for row in after["conditions"]))
-        self.assertEqual(after["status"], "needs_review")
+        self.assertTrue(all(type(row["passed"]) is bool for row in after["conditions"]))
+        self.assertEqual(after["status"], "measured_visual_proxy")
+        proof = after["evidence"]["fallback"]["proof"]
+        self.assertEqual(proof["version"], "temporal-local-dip-proof-v1.0.0")
+        self.assertEqual(proof["measurement_window_ms"], after["evidence"]["requested_window_ms"])
+        self.assertEqual(proof["parent_event"]["event_id"], events[0]["event_id"])
+        self.assertEqual(proof["parent_event"]["key_phases_ms"], events[0]["key_phases_ms"])
+        self.assertEqual(proof["search_end_basis"], "landing_proxy_ms")
+        self.assertEqual(proof["search_end_ms"], events[0]["key_phases_ms"]["landing_proxy_ms"])
+        self.assertFalse(proof["takeoff_inferred"])
+        rows = [r for r in proof["rows"] if 1467 <= r["timestamp_ms"] <= 1633]
+        self.assertEqual([r["frame_index"] for r in rows], after["evidence"]["source_frames"])
+        hips = np.asarray([(np.asarray(r["points"]["left_hip"]) + r["points"]["right_hip"]) / 2 for r in rows])
+        shoulders = np.asarray([(np.asarray(r["points"]["left_shoulder"]) + r["points"]["right_shoulder"]) / 2 for r in rows])
+        scale = np.median(np.linalg.norm(shoulders - hips, axis=1))
+        self.assertAlmostEqual((hips[-1, 1] - hips[0, 1]) / scale, after["measurements"]["hip_drop_torso"])
+        for r in rows:
+            self.assertEqual(r["source_binding"]["frame_index"], r["frame_index"])
+            self.assertEqual(r["primary_selection"]["source_track_id"], proof["source_track_ids"][0])
+            original_index = list(sequence.source_frames).index(r["frame_index"])
+            self.assertEqual(r["model_geometry_source"]["source_binding"], sequence.model_estimate_bindings[original_index])
+            self.assertEqual(r["model_geometry_source"]["observation_semantics"], "monocular_model_estimate")
+            self.assertFalse(r["model_geometry_source"]["confidence_available"])
         self.assertIsNone(after["original_grade"])
         self.assertEqual(events[0]["key_phases_ms"]["takeoff_proxy_ms"], 1133)
         # The next actual FS09 candidate has a complete geometric window. The
@@ -204,6 +300,24 @@ class TemporalCardEvidenceTests(unittest.TestCase):
         self.assertEqual(braking["evidence"]["requested_window_ms"], {"start_ms": 2500., "end_ms": 2933.})
         self.assertFalse(braking["evidence"]["coverage"]["visibility_verified"])
         self.assertIsNone(braking["original_grade"])
+        seen = set()
+        by_frame = {int(frame): i for i, frame in enumerate(sequence.source_frames)}
+        primary_by_frame = {row["source_frame_index"]: row for row in timeline}
+        for source_event in events:
+            for measured in compute_temporal_card_evidence(sequence, source_event, events=events,
+                    primary_timeline=timeline)["cards"]:
+                evidence = measured["evidence"]
+                if not evidence.get("source_frames"):
+                    continue
+                seen.add(measured["indicator_id"])
+                self.assertEqual([r["frame_index"] for r in evidence["source_frame_bindings"]], evidence["source_frames"])
+                for bound in evidence["source_frame_bindings"]:
+                    index = by_frame[bound["frame_index"]]
+                    self.assertEqual(bound["status"], "verified_decoder_binding")
+                    self.assertEqual(bound["primary_selection"], primary_by_frame[bound["frame_index"]])
+                    self.assertEqual(bound["model_geometry_source"]["source_binding"], sequence.model_estimate_bindings[index])
+                    self.assertEqual(bound["person_track_id"], evidence["source_track_ids"][0])
+        self.assertEqual(seen, set(CARD_CONDITIONS))
         json.dumps([before, after, braking], allow_nan=False)
 
     def test_quality_hard_failure_and_context_from_other_snapshot_are_rejected(self):
@@ -257,9 +371,9 @@ class TemporalCardEvidenceTests(unittest.TestCase):
                 outcomes.append(card(compute_temporal_card_evidence(sequence, events[0], events=events,
                     primary_timeline=timeline), "FS01-M05"))
         self.assertEqual(outcomes[0], outcomes[1])
-        self.assertEqual(outcomes[0]["reason"], "temporal_boundary_quality_requires_review")
+        self.assertIsNone(outcomes[0]["reason"])
         self.assertEqual(outcomes[0]["evidence"]["event_quality"]["raw_input_quality_flags"], ["pose_kinematic_coverage_low"])
-        self.assertTrue(all(c["passed"] is None for c in outcomes[0]["conditions"]))
+        self.assertTrue(all(type(c["passed"]) is bool for c in outcomes[0]["conditions"]))
 
     def test_pose_jump_diagnostics_are_scoped_to_actual_card_required_joints(self):
         sequence, events, timeline = fixture()
@@ -272,8 +386,74 @@ class TemporalCardEvidenceTests(unittest.TestCase):
         self.assertEqual(support["status"], "measured_visual_proxy")
         self.assertEqual(len(support["evidence"]["event_quality"]["irrelevant_joint_flags"]), 2)
         braking = card(result, "FS09-M03")
-        self.assertEqual(braking["reason"], "temporal_required_joint_quality_requires_review")
-        self.assertTrue(all(c["passed"] is None for c in braking["conditions"]))
+        self.assertEqual(braking["reason"], "required_condition_unavailable")
+        self.assertEqual(len(braking["evidence"]["event_quality"]["advisory_flags"]), 2)
+        self.assertIsNone(next(c["passed"] for c in braking["conditions"] if c["metric"] == "hip_speed_drop_fraction"))
+
+    def test_all_seven_soft_flags_keep_complete_temporal_observations(self):
+        from rallymate_scoring.card_scoring_policy import ADVISORY_QUALITY_FLAGS
+        for flag in ADVISORY_QUALITY_FLAGS:
+            with self.subTest(flag=flag):
+                sequence, events, timeline = fixture()
+                events[0]["quality_flags"] = [flag]
+                events[0]["track_diagnostics"].update(primary_identity_ambiguous=True,
+                    source_track_switch_candidate_count=2)
+                for row in timeline:
+                    row["identity_ambiguous"] = True
+                result = compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline)
+                for row in result["cards"]:
+                    self.assertEqual(row["status"], "measured_visual_proxy", row["reason"])
+                    self.assertEqual(row["evidence"]["event_quality"]["blocking_flags"], [])
+                    self.assertIn(flag, row["evidence"]["event_quality"]["advisory_flags"])
+
+    def test_advisory_identity_never_waives_missing_raw_subject_or_epoch(self):
+        for defect in ("track", "epoch", "missing", "confirmed"):
+            sequence, events, timeline = fixture()
+            events[0]["quality_flags"] = ["primary_identity_ambiguous"]
+            events[0]["track_diagnostics"]["primary_identity_ambiguous"] = True
+            if defect == "track":
+                events[0]["track_diagnostics"]["source_track_ids"] = [1, 2]
+            elif defect == "epoch":
+                sequence.source_time_bindings[3]["selection_epoch"] += 1
+            elif defect == "missing":
+                timeline[3].clear()
+            else:
+                events[0]["track_diagnostics"]["confirmed_id_switch_count"] = 1
+            row = card(compute_temporal_card_evidence(sequence, events[0], events=events,
+                primary_timeline=timeline), "FS01-M02")
+            self.assertEqual(row["status"], "needs_review", defect)
+            self.assertTrue(all(c["passed"] is None for c in row["conditions"]), defect)
+
+    def test_preload_validator_defaults_preserve_legacy_identity_policy(self):
+        from copy import deepcopy
+        from rallymate_features.source_alignment import locate_source_preload, prepare_source_aligned_context
+        from rallymate_scoring.temporal_card_evidence import _identity_reason, _subject_window_reason
+        sequence, events, timeline = fixture()
+        events[0]["track_diagnostics"].update(primary_identity_ambiguous=True,
+            source_track_switch_candidate_count=1)
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        before = deepcopy(events)
+        legacy = locate_source_preload(context, events[0])
+        current = locate_source_preload(context, events[0], identity_validator=_identity_reason,
+                                        subject_validator=_subject_window_reason)
+        self.assertEqual(legacy["status"], "unavailable")
+        self.assertEqual(legacy["repair_reason"], "subject_identity_continuity_unverified")
+        self.assertEqual(current["status"], "observed_candidate")
+        self.assertEqual(events, before)
+
+    def test_absent_model_binding_does_not_erase_existing_detector_clock_binding(self):
+        from rallymate_features.source_alignment import prepare_source_aligned_context
+        from rallymate_scoring.temporal_card_evidence import _subject_window_reason
+        sequence, events, timeline = fixture()
+        sequence = replace(sequence, model_estimate_bindings=(None,) * len(sequence.timestamp_ms))
+        for row in timeline:
+            row["selection_epoch"] = sequence.source_time_bindings[row["source_frame_index"]]["selection_epoch"]
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        indexes = context.indexes(40, 160)
+        self.assertIsNone(_subject_window_reason(context, indexes, events[0]))
+        # The sequence-wide mixed-source geometry contract is not supplied by
+        # this local subject check; retain the existing window-level rejection.
+        self.assertEqual(context.window_reason(indexes, 40, 160), "source_model_binding_discontinuity")
 
 
 if __name__ == "__main__":

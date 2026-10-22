@@ -7,6 +7,7 @@ image-plane geometry cannot establish gaze, forces, centre of mass or contact.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from fractions import Fraction
 import math
 from typing import Any
@@ -15,15 +16,17 @@ import numpy as np
 
 from rallymate_events.associations import event_identity, finite_time
 from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION, validated_camera_transform
-from rallymate_features.schemas import PoseSequence, validated_source_time_binding
+from rallymate_features.schemas import PoseSequence, validated_source_time_binding, MODEL_MEASUREMENT_PROVENANCE
 from rallymate_features.source_alignment import (
     JOINTS, HIPS, SourceAlignedContext, locate_source_preload,
     prepare_source_aligned_context,
 )
 from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 from rallymate_scoring.joint_quality_scope import known_joint_names
+from rallymate_scoring.card_scoring_policy import ADVISORY_QUALITY_FLAGS
 
 VERSION = "temporal-card-evidence-v1.0.0"
+SOURCE_BINDING_EVIDENCE_VERSION = "temporal-source-frame-bindings-v1.0.0"
 MIN_DURATION_MS = 80
 MAX_BRAKING_WINDOW_MS = 600
 LOW_HIP_SPEED_TORSO_S = .6
@@ -65,7 +68,7 @@ CARD_CONDITIONS = {
 }
 CARD_REQUIRED_JOINTS = {card: JOINTS for card in CARD_CONDITIONS}
 CARD_REQUIRED_JOINTS["FS09-M04"] = JOINTS[:4] + JOINTS[6:]
-LOCAL_QUALITY_VERSION = "temporal-card-local-quality-v1"
+LOCAL_QUALITY_VERSION = "temporal-card-local-quality-v2"
 BOUNDARY_REVIEW_FLAGS = frozenset({"primary_pose_coverage_low", "pose_kinematic_coverage_low"})
 JOINT_REVIEW_FLAGS = frozenset({"keypoint_jump_candidates_present", "left_right_swap_candidates_present"})
 
@@ -85,15 +88,46 @@ def _identity_reason(context: SourceAlignedContext, event: Mapping) -> str | Non
         return "subject_identity_unverified"
     if (identity in context.events.conflicts or context.events.events.get(identity) != event):
         return "event_conflicting_or_not_in_snapshot"
-    if (diagnostics.get("primary_identity_ambiguous") is not False
-            or diagnostics.get("source_track_switch_candidate_count") != 0
-            or diagnostics.get("confirmed_id_switch_count") not in (None, 0)):
+    candidates = diagnostics.get("source_track_switch_candidate_count")
+    confirmed = diagnostics.get("confirmed_id_switch_count")
+    if (type(diagnostics.get("primary_identity_ambiguous")) is not bool
+            or type(candidates) is not int or candidates < 0
+            or confirmed is not None and (type(confirmed) is not int or confirmed != 0)):
         return "subject_continuity_unverified"
     tracks = diagnostics.get("source_track_ids")
     if not isinstance(tracks, list) or len(tracks) != 1 or type(tracks[0]) is not int or tracks[0] < 0:
         return "source_track_identity_unverified"
     if context.primary_timeline is None:
         return "frame_subject_timeline_required"
+    return None
+
+
+def _subject_window_reason(context: SourceAlignedContext, indexes: np.ndarray, event: Mapping) -> str | None:
+    """Candidate ambiguity is advisory only with a closed raw identity chain."""
+    tracks = event.get("track_diagnostics", {}).get("source_track_ids")
+    if (context.primary_timeline is None or not isinstance(tracks, list) or len(tracks) != 1
+            or type(tracks[0]) is not int or tracks[0] < 0):
+        return "measurement_window_subject_continuity_unverified"
+    for index in indexes:
+        frame = int(context.sequence.source_frames[index])
+        row = context.identity_rows.get(frame, {})
+        if (row.get("selection_status") != "selected" or type(row.get("identity_ambiguous")) is not bool
+                or type(row.get("primary_player_id")) is not int
+                or row["primary_player_id"] != event.get("person_track_id")
+                or type(row.get("source_track_id")) is not int or row["source_track_id"] != tracks[0]
+                or not _finite(row.get("timestamp_ms"))
+                or row["timestamp_ms"] != float(context.sequence.timestamp_ms[index])):
+            return "measurement_window_subject_continuity_unverified"
+        binding = context.sequence.source_time_bindings.get(frame, {})
+        if not binding and context.sequence.model_estimate_bindings is not None:
+            model_binding = context.sequence.model_estimate_bindings[index]
+            if isinstance(model_binding, Mapping):
+                binding = model_binding
+        if any(key in row and (type(row[key]) is not int or row[key] != binding.get(key))
+               for key in ("selection_epoch", "camera_reference_epoch")):
+            return "measurement_window_subject_epoch_mismatch"
+    # Callers separately require the complete decoder bindings through
+    # _source_times; a selected numeric track never waives that check.
     return None
 
 
@@ -145,6 +179,39 @@ def _source_times(sequence: PoseSequence, indexes: np.ndarray) -> list[Fraction]
     return times
 
 
+def _source_frame_evidence(context: SourceAlignedContext, indexes: np.ndarray) -> list[dict]:
+    """Expose original clocks and selection rows; never authorize a missing row.
+
+    Source time and exported video time remain separate. The model contract is
+    retained verbatim beside the decoder binding, rather than inferred from a
+    geometry mask or substituted for the raw selected-person observation.
+    """
+    sequence, rows = context.sequence, []
+    for i in indexes:
+        frame = int(sequence.source_frames[i])
+        binding = validated_source_time_binding(sequence.source_time_bindings.get(frame))
+        model = sequence.model_estimate_bindings[i] if sequence.model_estimate_bindings is not None else None
+        if binding is None and isinstance(model, Mapping):
+            binding = validated_source_time_binding({
+                **{key: model.get(key) for key in ("frame_index", "processed_index", "video_sha256", "pts",
+                    "time_base_num", "time_base_den", "person_track_id", "selection_epoch", "camera_reference_epoch")},
+                "source_timestamp_ms": model.get("timestamp_ms"),
+                "video_timestamp_ms": int(sequence.timestamp_ms[i]), "timestamp_source": "decoder_pts",
+                "primary_player_id": sequence.primary_player_id})
+        row = ({**binding, "status": "verified_decoder_binding"} if binding else
+               {"frame_index": frame, "status": "unavailable"})
+        row["primary_selection"] = deepcopy(context.identity_rows.get(frame))
+        row["model_geometry_source"] = ({
+            "source_binding": deepcopy(model),
+            "pose_source": MODEL_MEASUREMENT_PROVENANCE["pose_source"],
+            "observation_semantics": MODEL_MEASUREMENT_PROVENANCE["observation_semantics"],
+            "metadata_source": "PoseSequence.model_estimate_bindings_contract",
+            "confidence_available": False,
+        } if isinstance(model, Mapping) else None)
+        rows.append(row)
+    return rows
+
+
 def _window(context: SourceAlignedContext, event: Mapping, start: float, end: float,
             required: tuple[str, ...] = JOINTS) -> tuple[np.ndarray, dict, str | None]:
     indexes = context.indexes(start, end)
@@ -156,7 +223,7 @@ def _window(context: SourceAlignedContext, event: Mapping, start: float, end: fl
                 "interpolation_used": False}
     reason = (_identity_reason(context, event)
               or context.window_reason(indexes, start, end, minimum_samples=3)
-              or context.subject_window_reason(indexes, event))
+              or _subject_window_reason(context, indexes, event))
     tracks = event.get("track_diagnostics", {}).get("source_track_ids", [])
     if context.sequence.model_estimate_bindings is not None:
         if any(not isinstance(binding := context.sequence.model_estimate_bindings[i], Mapping)
@@ -302,7 +369,7 @@ def _successor(context: SourceAlignedContext, event: Mapping, anchor: float, cod
     indexes = context.indexes(anchor, start)
     reason = (_identity_reason(context, successor)
               or context.window_reason(indexes, anchor, start, minimum_samples=1 if start == anchor else 2)
-              or context.subject_window_reason(indexes, event))
+              or _subject_window_reason(context, indexes, event))
     if successor.get("track_diagnostics", {}).get("source_track_ids") != event.get("track_diagnostics", {}).get("source_track_ids"):
         reason = reason or "successor_source_track_changed"
     if not indexes.size or context.sequence.timestamp_ms[indexes[0]] != anchor or context.sequence.timestamp_ms[indexes[-1]] != start:
@@ -312,7 +379,11 @@ def _successor(context: SourceAlignedContext, event: Mapping, anchor: float, cod
         reason = reason or "successor_source_clock_unverified"
     association.update(successor_event_id=successor["event_id"], successor_event_code=successor["event_code"],
                        successor_start_ms=start, interval_ms=float(exact_times[-1] - exact_times[0]) if exact_times else None,
-                       source_frames=context.sequence.source_frames[indexes].astype(int).tolist())
+                       source_frames=context.sequence.source_frames[indexes].astype(int).tolist(),
+                       source_frame_binding_version=SOURCE_BINDING_EVIDENCE_VERSION,
+                       source_frame_bindings=_source_frame_evidence(context, indexes),
+                       source_track_ids=deepcopy(event.get("track_diagnostics", {}).get("source_track_ids")),
+                       successor_source_track_ids=deepcopy(successor.get("track_diagnostics", {}).get("source_track_ids")))
     return association, reason
 
 
@@ -355,9 +426,76 @@ def _preload_fallback(context: SourceAlignedContext, event: Mapping, original: M
             "phase_semantics": "local_dip_visual_proxy_not_confirmed_pre_takeoff_load"}
 
 
+def _local_dip_proof(context: SourceAlignedContext, event: Mapping, selected: Mapping) -> dict:
+    """Retain the original parent and every source row for independent readers.
+
+    The parent includes the observations on either side of the selected dip;
+    declaring a subwindow or a pass bit never substitutes for those rows.
+    """
+    sequence = context.sequence
+    indexes = context.indexes(event["start_ms"], event["end_ms"])
+    landing, landing_reason = _phase(event, "landing_proxy_ms")
+    search_end = landing if landing is not None else float(event["end_ms"])
+    rows = []
+    for i in indexes:
+        frame = int(sequence.source_frames[i])
+        binding = validated_source_time_binding(sequence.source_time_bindings.get(frame))
+        if binding is None and sequence.model_estimate_bindings is not None:
+            model = sequence.model_estimate_bindings[i]
+            if isinstance(model, Mapping):
+                binding = validated_source_time_binding({
+                    **{key: model.get(key) for key in ("frame_index", "processed_index", "video_sha256", "pts",
+                        "time_base_num", "time_base_den", "person_track_id", "selection_epoch", "camera_reference_epoch")},
+                    "source_timestamp_ms": model.get("timestamp_ms"),
+                    "video_timestamp_ms": int(sequence.timestamp_ms[i]), "timestamp_source": "decoder_pts",
+                    "primary_player_id": sequence.primary_player_id})
+        rows.append({"frame_index": frame, "timestamp_ms": float(sequence.timestamp_ms[i]),
+            "source_binding": binding,
+            "model_geometry_source": {
+                "source_binding": deepcopy(sequence.model_estimate_bindings[i]),
+                "pose_source": MODEL_MEASUREMENT_PROVENANCE["pose_source"],
+                "observation_semantics": MODEL_MEASUREMENT_PROVENANCE["observation_semantics"],
+                "metadata_source": "PoseSequence.model_estimate_bindings_contract",
+                "confidence_available": False,
+            } if sequence.model_estimate_bindings is not None and isinstance(sequence.model_estimate_bindings[i], Mapping) else None,
+            "primary_selection": deepcopy(context.identity_rows.get(frame)),
+            "points": {joint: context.points[joint][i].tolist() if np.isfinite(context.points[joint][i]).all() else None
+                       for joint in JOINTS},
+            "confidence": {joint: float(value) if _finite(value := float(sequence.confidence.get(joint, np.full(len(sequence.timestamp_ms), np.nan))[i])) else None
+                           for joint in JOINTS},
+            "model_estimate_mask": {joint: bool(sequence.model_estimate_masks.get(joint, np.zeros(len(sequence.timestamp_ms), dtype=bool))[i])
+                                    for joint in JOINTS} if sequence.model_estimate_bindings is not None else None,
+            "camera_reference_epoch": sequence.camera_reference_epochs[i] if sequence.camera_reference_epochs is not None else None,
+            "camera_motion_status": sequence.camera_motion_status[i] if sequence.camera_motion_status is not None else None,
+            "frame_dimensions_px": sequence.frame_dimensions_px[i].tolist() if sequence.frame_dimensions_px is not None else None,
+            "frame_transform_to_reference": sequence.frame_transforms_to_reference[i].tolist() if sequence.frame_transforms_to_reference is not None else None})
+    proof = {"version": "temporal-local-dip-proof-v1.0.0", "required_joint_names": list(JOINTS),
+        "parent_event": {key: deepcopy(event.get(key)) for key in
+                         ("video_id", "event_id", "event_code", "person_track_id", "start_ms", "end_ms", "key_phases_ms", "quality_flags")},
+        "source_track_ids": deepcopy(event.get("track_diagnostics", {}).get("source_track_ids")),
+        "coordinate_contract_version": sequence.coordinate_metadata.get("contract_version"),
+        "coordinate_system": sequence.coordinate_metadata.get("coordinate_system"),
+        "points_semantics": "already_camera_compensated_reference_xy_do_not_apply_transform_again",
+        "camera_compensation": deepcopy(sequence.coordinate_metadata.get("camera_compensation")),
+        "measurement_window_ms": {"start_ms": selected["start_ms"], "end_ms": selected["end_ms"]},
+        "search_end_ms": search_end, "search_end_basis": "landing_proxy_ms" if landing is not None else "event_end",
+        "landing_phase_reason": landing_reason,
+        "confirmation_end_ms": selected["confirmation_end_ms"], "rows": rows,
+        "expert_technical_grade_verified": False, "takeoff_inferred": False}
+    def json_value(value):
+        if isinstance(value, np.generic):
+            value = value.item()
+        if isinstance(value, dict):
+            return {key: json_value(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [json_value(item) for item in value]
+        return None if isinstance(value, float) and not math.isfinite(value) else value
+    return json_value(proof)
+
+
 def _result(indicator: str, event: Mapping, evidence: dict, measurements: dict, reason: str | None) -> dict:
     flags = event.get("quality_flags", [])
-    if isinstance(flags, list) and all(isinstance(flag, str) for flag in flags):
+    if isinstance(flags, list) and all(isinstance(flag, str) and flag for flag in flags):
         required = set(CARD_REQUIRED_JOINTS[indicator])
         diagnostics = event.get("track_diagnostics", {})
         scoped_flags, irrelevant = list(flags), []
@@ -378,21 +516,24 @@ def _result(indicator: str, event: Mapping, evidence: dict, measurements: dict, 
             irrelevant.append("left_right_swap_candidates_present")
         local_flags = sorted(set(scoped_flags) & (BOUNDARY_REVIEW_FLAGS | JOINT_REVIEW_FLAGS))
         quality = evaluate_indicator_event_quality(indicator, scoped_flags)
-        # A provisional legacy policy change must not silently turn these new
-        # temporal proxy windows into scores. The explicit local gate is stable.
-        quality["scoring_block_flags"] = sorted(set(quality["scoring_block_flags"]) | set(local_flags))
+        # Event-wide candidate warnings cannot override complete measurements.
+        # Confirmed failures and required source/phase evidence remain hard.
+        quality["hard_fail_flags"] = sorted(set(quality["hard_fail_flags"]) - ADVISORY_QUALITY_FLAGS)
+        quality["scoring_block_flags"] = sorted(set(quality["scoring_block_flags"]) - ADVISORY_QUALITY_FLAGS)
+        quality["hard_fail"] = bool(quality["hard_fail_flags"])
+        quality["measurement_allowed"] = not quality["hard_fail"]
+        quality["advisory_flags"] = sorted(set(quality["advisory_flags"]) | (set(scoped_flags) & ADVISORY_QUALITY_FLAGS))
+        quality["status"] = "hard_fail" if quality["hard_fail"] else "advisory" if quality["advisory_flags"] else "pass"
         quality["scoring_allowed"] = not quality["hard_fail"] and not quality["scoring_block_flags"]
         quality.update(temporal_policy_version=LOCAL_QUALITY_VERSION, raw_input_quality_flags=list(flags),
-                       temporal_local_review_flags=local_flags, irrelevant_joint_flags=irrelevant)
+                       temporal_local_review_flags=local_flags, irrelevant_joint_flags=irrelevant,
+                       blocking_flags=sorted(set(quality["hard_fail_flags"] + quality["scoring_block_flags"])),
+                       event_identity_diagnostics=deepcopy(diagnostics))
         evidence["event_quality"] = quality
         if quality["hard_fail"]:
             reason = reason or "event_quality_hard_fail"
-        elif set(local_flags) & BOUNDARY_REVIEW_FLAGS:
-            reason = reason or "temporal_boundary_quality_requires_review"
-        elif local_flags:
-            reason = reason or "temporal_required_joint_quality_requires_review"
         elif quality["scoring_block_flags"]:
-            reason = reason or "event_quality_requires_review"
+            reason = reason or "event_required_source_evidence_invalid"
     else:
         reason = reason or "quality_flags_invalid"
     conditions = []
@@ -411,6 +552,7 @@ def _result(indicator: str, event: Mapping, evidence: dict, measurements: dict, 
             "reason": reason if reason else (None if complete else "required_condition_unavailable"),
             "evidence_mode": "visual_proxy", "original_grade": None, "source_grade_supported": False,
             "conditions": conditions, "measurements": measurements, "evidence": evidence,
+            "advisory_reason_codes": list(evidence.get("advisory_reason_codes", [])),
             "threshold_basis": "engineering_provisional_not_source_or_calibrated",
             "grade_policy": "condition_completion_v1", "missing_policy": "unknown_never_E_or_zero",
             "limitations": ["2D hip midpoint is not physical centre of mass",
@@ -447,7 +589,8 @@ def compute_temporal_card_evidence(sequence: PoseSequence, event: Mapping[str, A
         evidence, values, reason = {}, {}, None
         association, successor_reason = None, None
         if card == "FS01-M02":
-            phase = locate_source_preload(context, event)
+            phase = locate_source_preload(context, event, identity_validator=_identity_reason,
+                                          subject_validator=_subject_window_reason)
             a, b = phase.get("source_preload_start_ms"), phase.get("source_preload_ms")
             evidence["phase_selection"] = phase
             if a is None or b is None:
@@ -483,6 +626,9 @@ def compute_temporal_card_evidence(sequence: PoseSequence, event: Mapping[str, A
         if a is not None and b is not None and reason is None:
             indexes, window, reason = _window(context, event, a, b, CARD_REQUIRED_JOINTS[card])
             evidence.update(window)
+            evidence.update(source_frame_binding_version=SOURCE_BINDING_EVIDENCE_VERSION,
+                source_frame_bindings=_source_frame_evidence(context, indexes),
+                source_track_ids=deepcopy(event.get("track_diagnostics", {}).get("source_track_ids")))
             if reason is None:
                 values, raw, reason = _measure(context, indexes)
                 evidence["series"] = raw
@@ -493,6 +639,7 @@ def compute_temporal_card_evidence(sequence: PoseSequence, event: Mapping[str, A
                 values["successor_interval_ms"] = association["interval_ms"]
             reason = reason or successor_reason
         if evidence.get("fallback", {}).get("selected") is not None:
-            reason = reason or "fallback_local_dip_action_type_unverified"
+            evidence["advisory_reason_codes"] = ["fallback_local_dip_action_type_unverified"]
+            evidence["fallback"]["proof"] = _local_dip_proof(context, event, evidence["fallback"]["selected"])
         output["cards"].append(_result(card, event, evidence, values, reason))
     return output

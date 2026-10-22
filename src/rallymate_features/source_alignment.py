@@ -310,7 +310,8 @@ def _speed_summary(context: SourceAlignedContext, indexes: np.ndarray, scale: fl
             "derivative_policy": "adjacent_observed_intervals_only_no_interpolation_no_cross_gap_stencil"}
 
 
-def locate_source_preload(context: SourceAlignedContext, event: Mapping) -> dict:
+def locate_source_preload(context: SourceAlignedContext, event: Mapping, *,
+                          identity_validator=None, subject_validator=None) -> dict:
     """Find an observed pre-takeoff dip, preserving the original phase intact.
 
     Two increasing and two decreasing observed changes reject a lone pose
@@ -329,8 +330,13 @@ def locate_source_preload(context: SourceAlignedContext, event: Mapping) -> dict
     if reason is not None:
         return {**result, "repair_reason": reason}
     indexes = context.indexes(event["start_ms"], takeoff)
-    reason = (_identity_reason(context, event) or context.window_reason(indexes, event["start_ms"], takeoff)
-              or context.subject_window_reason(indexes, event))
+    # The current card application can retain candidate-only diagnostics while
+    # independently checking every source-frame binding. Legacy callers keep
+    # the original identity policy unless they explicitly supply validators.
+    identity_validator = identity_validator or _identity_reason
+    subject_validator = subject_validator or (lambda context, indexes, event: context.subject_window_reason(indexes, event))
+    reason = (identity_validator(context, event) or context.window_reason(indexes, event["start_ms"], takeoff)
+              or subject_validator(context, indexes, event))
     if reason is not None:
         return {**result, "repair_reason": reason}
     if indexes.size < 5:

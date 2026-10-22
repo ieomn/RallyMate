@@ -49,7 +49,7 @@ class FSStepMotionWindowTests(unittest.TestCase):
             report = compute(args)
             row, = instances(report)
             self.assertEqual(args, before)
-            self.assertEqual(row["status"], "proxy_scored", (card, row["reason_codes"], row["conditions"]))
+            self.assertEqual(row["status"], "scored", (card, row["reason_codes"]))
             self.assertEqual(row["score"], 100)
             self.assertIsNone(row["original_grade"])
             self.assertFalse(report["input"]["service_eligible"])
@@ -90,7 +90,7 @@ class FSStepMotionWindowTests(unittest.TestCase):
         # trunk-range formula; a constant rotation still has zero angular range.
         self.assertAlmostEqual(row["conditions"][1]["value"], 0)
 
-    def test_original_quality_can_clear_score_after_motion_was_completely_measured(self):
+    def test_original_quality_preserves_advisory_and_blocks_missing_binding(self):
         for target in ("jump", "unknown_joint", "identity", "coverage", "wrong_track"):
             args = fixture()
             event = args[2][0]
@@ -105,9 +105,11 @@ class FSStepMotionWindowTests(unittest.TestCase):
                 event["track_diagnostics"]["source_track_ids"] = [2]
             row, = instances(compute(args))
             self.assertTrue(row["source_window_evidence"]["step_cycle_bound"])
-            self.assertEqual(row["status"], "review_required", target)
-            self.assertIsNone(row["score"])
-            self.assertTrue(all(condition["passed"] is None for condition in row["conditions"]))
+            soft = target in {"jump", "unknown_joint", "identity"}
+            self.assertEqual(row["status"], "scored" if soft else "unavailable", target)
+            self.assertEqual(row["score"], 100 if soft else None)
+            self.assertTrue(all(condition["passed"] is True if soft else condition["passed"] is None
+                for condition in row["conditions"]))
             self.assertEqual(row["source_window_evidence"]["original_event_quality"][0]["source_track_diagnostics"], event["track_diagnostics"])
 
     def test_invalid_observation_or_pts_is_not_repaired_by_uncertainty_or_saved_complete_flag(self):

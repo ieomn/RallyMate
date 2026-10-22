@@ -20,7 +20,8 @@ import subprocess
 
 from rallymate_features.coordinates import validated_camera_transform
 from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_card_scores
-from rallymate_scoring.card_kinematics import _point as _valid_card_point, finite, validate_window
+from rallymate_scoring.card_scoring_policy import apply_scoring_policy, apply_report_scoring_policy
+from rallymate_scoring.card_kinematics import MODEL_EPOCH_SEMANTICS, _point as _valid_card_point, finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.stroke_candidates import _sample, _stabilize_partial_torso_windows
 from rallymate_scoring.gs_preload_evidence import (
@@ -371,7 +372,8 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
         if selection is not None and (selection.get("source_frame_index") != index or selection.get("timestamp_ms") != frame["timestamp_ms"]):
             raise ValueError("primary_frame_time_binding_mismatch")
         current = (selection.get("source_track_id") if selection is not None
-                   and selection.get("selection_status") == "selected" and selection.get("identity_ambiguous") is False else None)
+                   and selection.get("selection_status") == "selected"
+                   and type(selection.get("identity_ambiguous")) is bool else None)
         if current is not None and not _integer(current):
             raise ValueError("selected_person_identity_invalid")
         if isinstance(camera, Mapping):
@@ -395,9 +397,24 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
         previous_selected = current
         if frame["camera_motion_status"] in {"moving", "unavailable"}:
             epoch += 1
+        if selection is not None:
+            # Primary epoch labels need not start at the local counter's 1.
+            # Preserve declared labels; actual continuity is checked separately.
+            if "video_sha256" in selection and (not isinstance(selection["video_sha256"], str)
+                    or selection["video_sha256"].lower() != video_sha256.lower()):
+                raise ValueError("primary_source_video_binding_mismatch")
+            if "selection_epoch" in selection and not _integer(selection["selection_epoch"]):
+                raise ValueError("primary_source_epoch_binding_mismatch:selection_epoch")
+            if "camera_reference_epoch" in selection and (not _integer(selection["camera_reference_epoch"])
+                    or selection["camera_reference_epoch"] != (camera.get("reference_epoch") if isinstance(camera, Mapping) else None)):
+                raise ValueError("primary_source_epoch_binding_mismatch:camera_reference_epoch")
+        primary_epoch = selection["selection_epoch"] if selection is not None and "selection_epoch" in selection else epoch
         timeline.append({key: value for key, value in source.items() if key != "actual_ms"} | {
-            "timestamp_ms": frame["timestamp_ms"], "selected_person_track_id": current, "selection_epoch": epoch,
+            "timestamp_ms": frame["timestamp_ms"], "selected_person_track_id": current, "selection_epoch": primary_epoch,
+            "derived_selection_epoch": epoch,
             "camera_reference_epoch": camera.get("reference_epoch") if isinstance(camera, Mapping) else None})
+        if current is not None and selection.get("identity_ambiguous") is True:
+            timeline[-1]["advisory_flags"] = ["primary_identity_ambiguous"]
         poses = record.get("poses", [])
         if (not isinstance(poses, list) or any(not isinstance(pose, Mapping) or not _integer(pose.get("person_track_id")) for pose in poses)
                 or len({pose.get("person_track_id") for pose in poses}) != len(poses)):
@@ -405,11 +422,25 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
         for pose in poses:
             sample = _sample(pose, frame)
             if sample is None:
+                # A rejected selected SAM declaration is not a missing detector
+                # frame. Retain it in this source row so a smaller 70% subset
+                # cannot silently turn an invalid model window into a score.
+                if pose["person_track_id"] == current and (pose.get("source") == "sam3d"
+                        or pose.get("keypoint_format") == "mhr70"):
+                    timeline[-1]["rejected_model_person_track_id"] = current
                 continue
-            sample.selection_epoch = epoch
+            sample.selection_epoch = primary_epoch
+            if sample.observation_semantics == "monocular_model_estimate":
+                # The SAM adapter counts detector-track epochs from 0. That
+                # source namespace is independent of primary selection epochs.
+                sample.source_model_selection_epoch = sample.source_binding["selection_epoch"]
+                sample.model_epoch_semantics = MODEL_EPOCH_SEMANTICS
+                if sample.track == current:
+                    timeline[-1].update(source_model_selection_epoch=sample.source_model_selection_epoch,
+                        model_epoch_semantics=MODEL_EPOCH_SEMANTICS)
             if not sample.source_binding:
                 sample.source_binding = {"video_sha256": video_sha256, "frame_index": sample.frame_index,
-                    "person_track_id": sample.track, "selection_epoch": epoch,
+                    "person_track_id": sample.track, "selection_epoch": primary_epoch,
                     "camera_reference_epoch": sample.camera_reference_epoch,
                     "pts": source["pts"], "time_base_num": source["time_base_num"], "time_base_den": source["time_base_den"],
                     "timestamp_ms": source["actual_ms"], "binding_source": "verified_decoder_and_run_artifact_snapshot"}
@@ -494,6 +525,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
         window = {"start_ms": bound[0]["timestamp_ms"] if bound else annotation["start_ms"],
             "end_ms": bound[-1]["timestamp_ms"] if bound else annotation["end_ms"],
             "person_track_id": annotation["person_track_id"], "selection_epoch": sample.selection_epoch if sample else None,
+            "derived_selection_epoch": bound[0]["derived_selection_epoch"] if bound else None,
             "camera_reference_epoch": sample.camera_reference_epoch if sample else None,
             "camera_compensated": sample.camera_compensated if sample else False,
             "video_sha256": _digest(document["video_sha256"]), "video_id": document["source_run_id"],
@@ -550,6 +582,10 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
                 source={key: rule["source"][key] for key in ("document_id", "document_sha256", "table", "rubric_sha256")},
                 source_annotation={"annotation_id": annotation["annotation_id"], "document_sha256": _canonical(document),
                     "digest_kind": "canonical_json_sorted_utf8_v1", "binding": deepcopy(annotation["binding"])},
+                source_stage_evidence={"source_frames": deepcopy(expected_indices),
+                    "source_frame_bindings": deepcopy(bound),
+                    "source_pts": [{key: row[key] for key in ("frame_index", "pts", "time_base_num", "time_base_den")} for row in expected],
+                    "interpolation_used": False},
                 original_grade=None, source_grade_supported=False)
             if racket_binding is not None:
                 result["source_annotation"]["racket_side_observation"] = deepcopy(racket_binding)
@@ -559,7 +595,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
                 result["source_annotation"]["requested_window_ms"] = {
                     "start_ms": annotation["start_ms"], "end_ms": annotation["end_ms"]}
                 result["auxiliary_evidence"] = auxiliary
-            by_card[rule["indicator_id"]].append(result)
+            by_card[rule["indicator_id"]].append(apply_scoring_policy(result))
             instance_ids.append(rule["indicator_id"])
         window_records.append({"annotation_id": annotation["annotation_id"], "action_id": annotation["action_id"],
             "stage_code": annotation["stage_code"], "requested_window_ms": {"start_ms": annotation["start_ms"], "end_ms": annotation["end_ms"]},
@@ -571,8 +607,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
     for rule in rules:
         actual = by_card.get(rule["indicator_id"], [])
         if actual:
-            run_status = "proxy_scored" if any(row["status"] == "proxy_scored" for row in actual) else (
-                "review_required" if any(row["status"] == "review_required" for row in actual) else "unavailable")
+            run_status = "scored" if any(row["status"] == "scored" for row in actual) else "unavailable"
             reasons = sorted({reason for row in actual for reason in row.get("reason_codes", [])})
         elif rule["event_code"] in observed_techniques:
             run_status, reasons = "not_executed", ["gs_stage_annotation_missing"]
@@ -585,7 +620,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             "original_grade": None, "source_grade_supported": False, "instance_count": len(actual),
             "instance_status_counts": dict(Counter(row["status"] for row in actual)), "instances": actual})
         instances.extend(actual)
-    return {"version": VERSION, "rule_version": catalogue["version"], "source_run_id": document["source_run_id"],
+    return apply_report_scoring_policy({"version": VERSION, "rule_version": catalogue["version"], "source_run_id": document["source_run_id"],
         "input": {"source": "frame_observations_primary_selection_decoder_pts_and_explicit_stage_annotations",
             "source_frame_count": len(frame_records), "decoder_frame_count": len(decoder_timeline),
             "annotation_count": len(document["stages"]), "action_count": len(document["actions"]),
@@ -608,7 +643,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             "source_stage_technical_behavior_not_established_by_2d_proxy",
             "no_automatic_ten_stage_gs_locator_registered",
             "missing_stage_never_inferred_from_three_generic_swing_phases",
-            "monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility"]}
+            "monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility"]})
 
 
 def _build_artifact_report(run_dir, annotation_document, *, video_path, service_identity):

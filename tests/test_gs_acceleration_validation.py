@@ -90,21 +90,44 @@ class GSAccelerationValidationTests(unittest.TestCase):
             report = compute_gs_card_execution(raw["frame_records"], raw["primary_timeline"], raw["decoder_timeline"],
                 document, source_job_id=raw["source_job_id"])
             actual = compact_case(case, report)
+            # These immutable inputs used the legacy derived primary labels.
+            # Current policy also exposes that same continuity ledger explicitly.
+            comparable = deepcopy(actual)
+            for row in actual["instances"] + actual["stage_windows"]:
+                self.assertEqual(row["window"]["derived_selection_epoch"], row["window"]["selection_epoch"])
+            # Several instances and their stage share the same window object;
+            # deepcopy deliberately preserves those aliases.
+            for row in comparable["instances"] + comparable["stage_windows"]:
+                row["window"].pop("derived_selection_epoch", None)
             expected = self.expected[case["case_id"]]
             self.assertFalse(report["input"]["artifact_files_verified"])
             self.assertFalse(report["input"]["service_eligible"])
             self.assertTrue(expected["input"]["artifact_files_verified"])
             self.assertTrue(expected["input"]["decoder_verified_from_original_video"])
-            for key in ("instances", "stage_windows", "coverage", "status_counts", "reason_counts", "executed_card_ids", "summary"):
-                self.assertEqual(actual[key], expected[key], (case["case_id"], key))
+            for key in ("stage_windows", "reason_counts", "executed_card_ids"):
+                self.assertEqual(comparable[key], expected[key], (case["case_id"], key))
+            self.assertEqual(len(actual["instances"]), len(expected["instances"]))
+            for computed, saved in zip(comparable["instances"], expected["instances"]):
+                self.assertEqual(computed["status"], {"proxy_scored": "scored", "review_required": "unavailable"}.get(
+                    saved["status"], saved["status"]))
+                for key in ("indicator_id", "event_id", "window", "score", "proxy_grade", "reason_codes", "quality"):
+                    self.assertEqual(computed.get(key), saved.get(key), (case["case_id"], key))
+                self.assertEqual(len(computed["conditions"]), len(saved["conditions"]))
+                for a, b in zip(computed["conditions"], saved["conditions"]):
+                    for key in ("metric", "value", "operator", "threshold", "unit", "evidence"):
+                        self.assertEqual(a.get(key), b.get(key), (computed["indicator_id"], key))
+                    self.assertEqual(a["passed"], b["passed"] if computed["status"] == "scored" else None)
+            for key, value in expected["coverage"].items():
+                if key not in {"run_card_status_counts", "instance_status_counts"}:
+                    self.assertEqual(actual["coverage"][key], value)
             all_instances.extend(actual["instances"])
         self.assertEqual(len(all_instances), 55)
         self.assertEqual(Counter(row["status"] for row in all_instances),
-            {"proxy_scored": 4, "review_required": 18, "unavailable": 33})
+            {"scored": 4, "unavailable": 51})
         for row in all_instances:
             self.assertIsNone(row["original_grade"])
             self.assertFalse(row["source_grade_supported"])
-            if row["status"] != "proxy_scored":
+            if row["status"] != "scored":
                 self.assertIsNone(row["score"])
                 self.assertIsNone(row["proxy_grade"])
 

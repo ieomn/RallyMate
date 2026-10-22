@@ -18,12 +18,14 @@ from rallymate_features.schemas import PoseSequence, validated_source_time_bindi
 from rallymate_features.source_alignment import JOINTS, SourceAlignedContext, prepare_source_aligned_context
 from rallymate_scoring.card_rule_catalog import get_card_rule
 from rallymate_scoring.joint_quality_scope import known_joint_names
+from rallymate_scoring.card_scoring_policy import ADVISORY_QUALITY_FLAGS
 from rallymate_scoring.temporal_card_evidence import (
     MIN_DURATION_MS, LOW_ANKLE_SPEED_TORSO_S, _finite, _source_times, _window,
 )
 
 VERSION = "footwork-cycle-card-evidence-v1.0.0"
 CYCLE_POLICY_VERSION = "continuous-ankle-motion-cycle-v1"
+QUALITY_POLICY_VERSION = "cycle-window-advisory-quality-v2"
 ORDER_DEADBAND_TORSO = .08  # Existing catalogue's ankle-order noise deadband.
 SUPPORTED_CODES = ("FS03", "FS04")
 CORE_JOINTS = JOINTS[:4] + JOINTS[6:]
@@ -144,7 +146,7 @@ def _binding_reason(context, event, indexes, binding):
 
 def _quality_evidence(event, required):
     flags = event.get("quality_flags", [])
-    if not isinstance(flags, list) or any(not isinstance(flag, str) for flag in flags):
+    if not isinstance(flags, list) or any(not isinstance(flag, str) or not flag for flag in flags):
         return {}, "quality_flags_invalid"
     relevant, ignored = set(flags), []
     diagnostics = event.get("track_diagnostics", {})
@@ -162,10 +164,23 @@ def _quality_evidence(event, required):
             if flag in relevant:
                 relevant.remove(flag)
                 ignored.append(flag)
-    blocks = sorted(flag for flag in relevant if flag in LOCAL_REVIEW_FLAGS
-        or "confirmed_id_switch" in flag or "id_switch_confirmed" in flag or "censored" in flag)
+    blocks = {flag for flag in relevant if flag not in ADVISORY_QUALITY_FLAGS and (
+        flag in LOCAL_REVIEW_FLAGS or "confirmed_id_switch" in flag or "id_switch_confirmed" in flag
+        or "censored" in flag or flag.startswith("required_phase_missing:"))}
+    confirmed = diagnostics.get("confirmed_id_switch_count") if isinstance(diagnostics, Mapping) else None
+    if confirmed is not None:
+        if type(confirmed) is not int or confirmed < 0:
+            blocks.add("confirmed_identity_diagnostic_invalid")
+        elif confirmed > 0:
+            blocks.add("confirmed_id_switch_present")
+    advisory = sorted(relevant & ADVISORY_QUALITY_FLAGS)
     return {"policy_version": CYCLE_POLICY_VERSION, "raw_input_quality_flags": list(flags),
-        "review_flags": blocks, "irrelevant_joint_flags": ignored}, "cycle_required_evidence_requires_review" if blocks else None
+        "quality_policy_version": QUALITY_POLICY_VERSION,
+        "review_flags": sorted(set(advisory) | blocks), "advisory_flags": advisory,
+        "blocking_flags": sorted(blocks), "irrelevant_joint_flags": ignored,
+        "unclassified_flags": sorted(relevant - ADVISORY_QUALITY_FLAGS - blocks
+            - {"event_ground_truth_missing", "provisional_rule_baseline", "low_motion_prominence"}),
+        "event_identity_diagnostics": deepcopy(diagnostics)}, "cycle_required_source_evidence_invalid" if blocks else None
 
 
 def _frame_bindings(sequence, indexes):

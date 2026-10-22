@@ -50,7 +50,7 @@ class CardEvaluationTests(unittest.TestCase):
         self.assertEqual(result["status"], "unavailable")
         self.assertIsNone(result["score"])
         boundary = evaluate_card_window(rule, samples[:7], window, timeline)
-        self.assertEqual(boundary["status"], "proxy_scored")
+        self.assertEqual(boundary["status"], "scored")
 
     def test_joint_union_cannot_be_replaced_with_individual_coverage(self):
         rule, samples, window, timeline = fixture()
@@ -173,11 +173,11 @@ class CardEvaluationTests(unittest.TestCase):
         result = evaluate_card_window(rule, samples, window, timeline)
         self.assertIn("model_source_binding_unverified", result["reason_codes"])
 
-    def test_unobservable_physics_requests_review_without_zero(self):
+    def test_unobservable_physics_is_unavailable_without_zero(self):
         rule, samples, window, timeline = fixture()
         rule["evaluation"]["kind"] = "manual_review"
         result = evaluate_card_window(rule, samples, window, timeline)
-        self.assertEqual(result["status"], "review_required")
+        self.assertEqual(result["status"], "unavailable")
         self.assertIsNone(result["score"])
 
     def test_grade_boundary_math_and_missing_are_distinct(self):

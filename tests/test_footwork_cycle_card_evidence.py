@@ -159,7 +159,7 @@ class FootworkCycleCardEvidenceTests(unittest.TestCase):
 
     def test_clock_identity_camera_and_video_bindings_fail_closed(self):
         mutations = [lambda s,e,t,b: s.source_time_bindings.pop(8),
-            lambda s,e,t,b: t[8].update(identity_ambiguous=True),
+            lambda s,e,t,b: t[8].update(source_track_id=99),
             lambda s,e,t,b: s.frame_transforms_to_reference.__setitem__(8, np.nan),
             lambda s,e,t,b: b.update(video_sha256="b"*64)]
         for mutation in mutations:
@@ -198,7 +198,8 @@ class FootworkCycleCardEvidenceTests(unittest.TestCase):
         self.assertEqual(card(report, 4)["status"], "measured_visual_proxy")
         event["track_diagnostics"]["keypoint_jump_candidate_joints"] = ["left_ankle"]
         report = compute((sequence, event, timeline, binding))
-        self.assertEqual(card(report, 4)["reason"], "cycle_required_evidence_requires_review")
+        self.assertIsNone(card(report, 4)["reason"])
+        self.assertEqual(card(report, 4)["evidence"]["event_quality"]["advisory_flags"], ["keypoint_jump_candidates_present"])
         self.assertEqual(card(report, 4)["evidence"]["event_quality"]["raw_input_quality_flags"], event["quality_flags"])
 
     def test_exact_decoder_clock_drives_motion_not_rounded_export_ms(self):
@@ -209,6 +210,29 @@ class FootworkCycleCardEvidenceTests(unittest.TestCase):
             row["time_base_den"] *= 2
         changed = card(compute((sequence, event, timeline, binding)), 4)
         self.assertEqual(baseline["measurements"], changed["measurements"])
+
+    def test_candidate_quality_is_advisory_only_with_closed_raw_identity_and_cycle(self):
+        from rallymate_scoring.card_scoring_policy import ADVISORY_QUALITY_FLAGS
+        for flag in ADVISORY_QUALITY_FLAGS:
+            data = synthetic_cycle()
+            data[1]["quality_flags"] = [flag]
+            data[1]["track_diagnostics"].update(primary_identity_ambiguous=True,
+                source_track_switch_candidate_count=2)
+            for row in data[2]:
+                row["identity_ambiguous"] = True
+            actual = card(compute(data), 4)
+            self.assertEqual(actual["status"], "measured_visual_proxy", flag)
+            self.assertEqual(actual["evidence"]["event_quality"]["blocking_flags"], [])
+            self.assertEqual(actual["evidence"]["event_quality"]["advisory_flags"], [flag])
+
+    def test_confirmed_switch_and_censored_boundary_are_still_hard(self):
+        for flag in ("confirmed_id_switch_present", "primary_player_id_switch_confirmed", "phase_right_censored_peak:landing_proxy_ms"):
+            data = synthetic_cycle()
+            data[1]["quality_flags"] = [flag]
+            actual = card(compute(data), 4)
+            self.assertEqual(actual["status"], "needs_review", flag)
+            self.assertIn(flag, actual["evidence"]["event_quality"]["blocking_flags"])
+            self.assertTrue(all(c["passed"] is None for c in actual["conditions"]))
 
     def test_real_original_inputs_keep_missing_time_binding_unscored(self):
         row = card(compute(real_fixture(False)), 3)

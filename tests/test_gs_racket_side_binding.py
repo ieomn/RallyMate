@@ -73,7 +73,7 @@ def wrist(report, technique="GS01"):
 class GSRacketSideBindingTests(unittest.TestCase):
     def test_explicit_side_selects_declared_wrist_not_faster_wrist(self):
         right, left = wrist(compute(synthetic_case())), wrist(compute(synthetic_case(side="left")))
-        self.assertEqual(right["status"], "proxy_scored")
+        self.assertEqual(right["status"], "scored")
         self.assertAlmostEqual(right["conditions"][0]["value"], 2.)
         self.assertAlmostEqual(left["conditions"][0]["value"], 0.)
         self.assertTrue(right["conditions"][0]["passed"])
@@ -101,14 +101,14 @@ class GSRacketSideBindingTests(unittest.TestCase):
 
     def test_exactly_seven_frames_preserves_minimum_three_endpoint_speeds(self):
         actual = wrist(compute(synthetic_case(count=7)))
-        self.assertEqual(actual["status"], "proxy_scored")
+        self.assertEqual(actual["status"], "scored")
         self.assertAlmostEqual(actual["conditions"][0]["value"], .75)
 
     def test_double_backhand_requires_both_observed_hands_but_not_dominant_hand(self):
         for side in ("left", "right"):
             case = synthetic_case(technique="GS02", side=side)
             actual = wrist(compute(case), "GS02")
-            self.assertEqual(actual["status"], "proxy_scored")
+            self.assertEqual(actual["status"], "scored")
             self.assertFalse(actual["source_annotation"]["racket_side_observation"]["dominant_hand_established"])
             case["annotations"]["actions"][0]["racket_side_observation"]["observed_racket_hands"] = side
             with self.assertRaisesRegex(ValueError, "hands_or_technique_mismatch"):
@@ -168,7 +168,7 @@ class GSRacketSideBindingTests(unittest.TestCase):
         for kind in ("unselected", "missing", "wrist"):
             case = synthetic_case()
             if kind == "unselected":
-                case["primary_timeline"][0]["identity_ambiguous"] = True
+                case["primary_timeline"][0]["selection_status"] = "unavailable"
             elif kind == "missing":
                 case["frame_records"].pop(0); case["primary_timeline"].pop(0)
             else:
@@ -266,7 +266,7 @@ class GSRacketSideBindingTests(unittest.TestCase):
                     for key in ("status", "proxy_grade", "score", "conditions", "reason_codes"):
                         self.assertEqual(x[key], y[key])
         self.assertEqual(frame_counts, [5, 2, 3])
-        self.assertEqual(counts, {"proxy_scored": 1, "review_required": 5, "unavailable": 9})
+        self.assertEqual(counts, {"scored": 1, "unavailable": 14})
 
     @unittest.skipUnless(os.environ.get("GS_RACKET_ARTIFACT_ROOT"), "requires explicitly selected original MIT artifacts")
     def test_original_video_artifact_replay_verifies_all_three_sampled_side_bindings(self):
@@ -283,7 +283,7 @@ class GSRacketSideBindingTests(unittest.TestCase):
             self.assertTrue(actual["input"]["service_eligible"])
             self.assertEqual(actual["input"]["video_sha256"], case["video_sha256"])
             counts.update(actual["coverage"]["instance_status_counts"])
-        self.assertEqual(counts, {"proxy_scored": 1, "review_required": 5, "unavailable": 9})
+        self.assertEqual(counts, {"scored": 1, "unavailable": 14})
 
 
 if __name__ == "__main__":

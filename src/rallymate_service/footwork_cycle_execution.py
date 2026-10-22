@@ -15,6 +15,7 @@ import json
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.source_alignment import prepare_source_aligned_context
 from rallymate_scoring.card_evaluation import GRADE_POINTS, summarize_card_scores
+from rallymate_scoring.card_scoring_policy import apply_scoring_policy, apply_report_scoring_policy, SCORING_POLICY_VERSION
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.footwork_cycle_card_evidence import (
     VERSION as MEASUREMENT_VERSION, CORE_JOINTS, SUPPORTED_CODES, compute_footwork_cycle_card_evidence,
@@ -69,13 +70,13 @@ def _instance(rule, raw, event):
         if not result["reason_codes"]:
             result["reason_codes"].append("required_cycle_measurement_missing")
         result["reason_codes"] = list(dict.fromkeys(result["reason_codes"]))
-        return result
+        return apply_scoring_policy(result)
     fraction = sum(c["passed"] for c in result["conditions"]) / len(result["conditions"])
     grade = "A" if fraction == 1 else "B" if fraction >= .75 else "C" if fraction >= .5 else "D" if fraction > 0 else "E"
     result.update(status="proxy_scored", proxy_grade=grade, score=GRADE_POINTS[grade],
         condition_completion_fraction=fraction,
         semantics="engineering_visual_condition_completion_not_original_technical_grade")
-    return result
+    return apply_scoring_policy(result)
 
 
 def compute_footwork_cycle_execution(sequence: PoseSequence, events: Sequence[Mapping], primary_timeline: Sequence[Mapping],
@@ -132,7 +133,7 @@ def compute_footwork_cycle_execution(sequence: PoseSequence, events: Sequence[Ma
     rows, instances = [], []
     for rule in rules:
         actual = by_card[rule["indicator_id"]]
-        status = "proxy_scored" if any(row["status"] == "proxy_scored" for row in actual) else "review_required" if actual else "not_observed"
+        status = "scored" if any(row["status"] == "scored" for row in actual) else "unavailable" if actual else "not_observed"
         rows.append({"indicator_id": rule["indicator_id"], "event_code": rule["event_code"],
             "stage_code": rule["stage_code"], "rule_version": rule["rule_version"], "rule_kind": rule["evaluation"]["kind"],
             "name_zh": rule["effective"]["name_zh"], "runtime_engine": VERSION if actual else None,
@@ -141,7 +142,8 @@ def compute_footwork_cycle_execution(sequence: PoseSequence, events: Sequence[Ma
             "original_grade": None, "source_grade_supported": False, "instances": actual})
         instances.extend(actual)
     observed = {event["event_code"] for event in selected}
-    return {"version": VERSION, "rule_version": catalogue["version"], "source_run_id": source_run_id,
+    return apply_report_scoring_policy({"version": VERSION, "rule_version": catalogue["version"], "source_run_id": source_run_id,
+        "scoring_policy_version": SCORING_POLICY_VERSION,
         "input": {"source": "source_bound_sequence_and_manual_cycle_windows", "source_frame_count": len(sequence.source_frames),
             "event_count": len(unique), "candidate_event_count": len(selected), "supplied_window_binding_count": len(by_binding),
             "manual_window_count": sum(binding.get("method") == "manual_anchor" for binding in by_binding.values()),
@@ -155,4 +157,4 @@ def compute_footwork_cycle_execution(sequence: PoseSequence, events: Sequence[Ma
         "overall_score": None, "missing_policy": "exclude_from_grade_keep_in_applicable_card_coverage",
         "limitations": ["manual_cycle_windows_are_nonexpert_estimates_not_step_family_ground_truth",
             "continuous_image_motion_does_not_establish_contact_force_target_arrival_or_original_grade",
-            "no_automatic_cycle_detector_registered", "record_level_entry_does_not_verify_artifact_files"]}
+            "no_automatic_cycle_detector_registered", "record_level_entry_does_not_verify_artifact_files"]})

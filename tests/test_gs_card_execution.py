@@ -2,6 +2,7 @@
 from collections import Counter
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
@@ -47,19 +48,35 @@ class GSCardExecutionTests(unittest.TestCase):
             self.assertEqual(len(actual), len(expected))
             for row in actual:
                 original = expected[row["event_id"], row["indicator_id"]]
-                for key in ("status", "proxy_grade", "score", "original_grade", "source_grade_supported", "reason_codes"):
+                # Historical files stay immutable. Fresh computation uses the
+                # explicit application policy; numeric measurements stay exact.
+                self.assertEqual(row["status"], {"proxy_scored": "scored", "review_required": "unavailable"}.get(
+                    original["status"], original["status"]))
+                for key in ("proxy_grade", "score", "original_grade", "source_grade_supported", "reason_codes"):
                     self.assertEqual(row[key], original[key], (row["event_id"], row["indicator_id"], key))
                 self.assertEqual(len(row["conditions"]), len(original["conditions"]))
                 for computed, saved in zip(row["conditions"], original["conditions"]):
-                    for key in ("metric", "value", "operator", "threshold", "unit", "passed"):
+                    for key in ("metric", "value", "operator", "threshold", "unit"):
                         self.assertEqual(computed[key], saved[key], (row["indicator_id"], key))
+                    self.assertEqual(computed["passed"], saved["passed"] if row["status"] == "scored" else None)
                 self.assertIsNone(row["original_grade"])
                 self.assertFalse(row["source_grade_supported"])
                 self.assertIn("document_sha256", row["source"])
                 self.assertEqual(row["source_annotation"]["binding"]["method"], "manual_anchor")
+                source = row["source_stage_evidence"]
+                self.assertFalse(source["interpolation_used"])
+                self.assertEqual(source["source_frames"], [r["frame_index"] for r in source["source_frame_bindings"]])
+                self.assertEqual(source["source_frames"], [r["frame_index"] for r in source["source_pts"]])
+                self.assertEqual(len(source["source_frames"]), row.get("quality", {}).get(
+                    "total_frame_count", len(source["source_frames"])))
+                for bound, pts in zip(source["source_frame_bindings"], source["source_pts"]):
+                    self.assertEqual(bound["derived_selection_epoch"], row["window"]["derived_selection_epoch"])
+                    self.assertEqual(bound["selected_person_track_id"], row["person_track_id"])
+                    self.assertEqual(bound["video_sha256"], case["video_sha256"])
+                    self.assertTrue(all(bound[key] == value for key, value in pts.items()))
                 observed[row["status"]] += 1
                 indicators.add(row["indicator_id"])
-        self.assertEqual(observed, {"proxy_scored": 27, "review_required": 16, "unavailable": 17})
+        self.assertEqual(observed, {"scored": 27, "unavailable": 33})
         self.assertEqual(len(indicators), 15)
 
     def test_wrong_technique_is_rejected(self):
@@ -180,13 +197,18 @@ class GSCardExecutionTests(unittest.TestCase):
         self.assertTrue(all(row["status"] == "unavailable" and row["score"] is None for row in affected))
         self.assertTrue(all("stage_identity_or_camera_epoch_changed" in row["reason_codes"] for row in affected))
 
-    def test_primary_ambiguity_is_not_bridged(self):
+    def test_unconfirmed_primary_ambiguity_is_advisory_when_raw_identity_is_unchanged(self):
         case = deepcopy(self.cases[0]); stage = case["annotations"]["stages"][0]
+        baseline = {row["indicator_id"]: row for row in _instances(self.compute(case))
+            if row["event_id"] == stage["annotation_id"]}
         target = next(row for row in case["primary_timeline"] if stage["start_ms"] < row["timestamp_ms"] < stage["end_ms"])
         target["identity_ambiguous"] = True
         report = self.compute(case)
         affected = [row for row in _instances(report) if row["event_id"] == stage["annotation_id"]]
-        self.assertTrue(all(row["status"] == "unavailable" for row in affected))
+        for row in affected:
+            self.assertEqual((row["status"], row["score"]),
+                (baseline[row["indicator_id"]]["status"], baseline[row["indicator_id"]]["score"]))
+            self.assertIn("primary_identity_ambiguous", row["advisory_flags"])
 
     def test_wrong_pts_and_primary_frame_time_are_rejected(self):
         case = deepcopy(self.cases[0]); case["decoder_timeline"][10]["pts"] += 100000
@@ -238,19 +260,20 @@ class GSArtifactIntegrationTests(unittest.TestCase):
         fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
         manifest = json.loads((ROOT / "tests/fixtures/card-video-cases.json").read_text(encoding="utf-8"))
         manifest_cases = {case["id"]: case for case in manifest["cases"]}
+        artifact_root = Path(os.environ.get("CARD_ARTIFACT_ROOT", ROOT))
         missing = [case["case_id"] for case in fixture["cases"]
-                   if not (ROOT / manifest_cases[case["case_id"]]["local_video"]).is_file()
-                   or not (ROOT / manifest_cases[case["case_id"]]["run_dir"] / "frames.jsonl").is_file()]
+                   if not (artifact_root / manifest_cases[case["case_id"]]["local_video"]).is_file()
+                   or not (artifact_root / manifest_cases[case["case_id"]]["run_dir"] / "frames.jsonl").is_file()]
         if missing:
             self.skipTest("integration_requires_original_local_source_artifacts:" + ",".join(missing))
         counts = Counter()
         for case in fixture["cases"]:
             reference = manifest_cases[case["case_id"]]
-            original_directory = ROOT / reference["run_dir"]
+            original_directory = artifact_root / reference["run_dir"]
             # The original research alias is intentionally not accepted by the
             # production entry point. Migration preserves every source byte.
             with self.assertRaisesRegex(ValueError, "source_summary_job_binding_mismatch"):
-                build_gs_card_execution_report(original_directory, case["annotations"], video_path=ROOT / reference["local_video"])
+                build_gs_card_execution_report(original_directory, case["annotations"], video_path=artifact_root / reference["local_video"])
             with tempfile.TemporaryDirectory() as temporary:
                 directory = Path(temporary) / case["source_job_id"]
                 directory.mkdir()
@@ -258,14 +281,14 @@ class GSArtifactIntegrationTests(unittest.TestCase):
                     shutil.copyfile(original_directory / name, directory / name)
                 annotations = deepcopy(case["annotations"])
                 annotations["source_run_id"] = case["source_job_id"]
-                report = build_gs_card_execution_report(directory, annotations, video_path=ROOT / reference["local_video"])
+                report = build_gs_card_execution_report(directory, annotations, video_path=artifact_root / reference["local_video"])
             self.assertTrue(report["input"]["artifact_files_verified"])
             self.assertTrue(report["input"]["decoder_verified_from_original_video"])
             self.assertTrue(report["input"]["service_eligible"])
             self.assertEqual(report["source_run_id"], case["source_job_id"])
             self.assertEqual(report["input"]["annotation_version"], ANNOTATION_VERSION)
             counts.update(report["coverage"]["instance_status_counts"])
-        self.assertEqual(counts, {"proxy_scored": 27, "review_required": 16, "unavailable": 17})
+        self.assertEqual(counts, {"scored": 27, "unavailable": 33})
 
 
 if __name__ == "__main__":

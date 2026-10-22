@@ -14,6 +14,7 @@ from fractions import Fraction
 from pathlib import Path
 
 from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_card_scores
+from rallymate_scoring.card_scoring_policy import apply_scoring_policy, apply_report_scoring_policy
 from rallymate_scoring.card_kinematics import finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.footwork_cycle_card_evidence import _quality_evidence
@@ -101,7 +102,7 @@ def validate_fs_card_annotations(document):
 
 
 def _quality_for_window(events, start, end, person, required, source_run_id, frame_times):
-    """Union original event warnings; manual inputs cannot clear any warning."""
+    """Preserve source warnings; only missing or invalid source evidence blocks."""
     seen, evidence, reasons, covered = {}, [], set(), set()
     for event in events:
         if (not isinstance(event, Mapping) or not _text(event.get("event_id"))
@@ -126,9 +127,9 @@ def _quality_for_window(events, start, end, person, required, source_run_id, fra
         belongs = valid_tracks and tracks == [person]
         if not valid_tracks:
             reasons.add("fs_window_original_quality_identity_unverified")
-        if belongs and (diagnostics.get("primary_identity_ambiguous") is not False
+        if belongs and (type(diagnostics.get("primary_identity_ambiguous")) is not bool
                 or type(diagnostics.get("source_track_switch_candidate_count")) is not int
-                or diagnostics["source_track_switch_candidate_count"] != 0):
+                or diagnostics["source_track_switch_candidate_count"] < 0):
             reasons.add("fs_window_original_quality_identity_unverified")
         flags = event.get("quality_flags")
         global_identity_warning = isinstance(flags, list) and any(isinstance(flag, str) and
@@ -137,8 +138,13 @@ def _quality_for_window(events, start, end, person, required, source_run_id, fra
                 or any(finite(diagnostics.get(key)) and diagnostics[key] > 0
                     for key in ("source_track_switch_candidate_count", "confirmed_id_switch_count"))):
             global_identity_warning = True
-        if global_identity_warning:
-            reasons.add("fs_window_original_identity_requires_review")
+        confirmed = diagnostics.get("confirmed_id_switch_count") if isinstance(diagnostics, Mapping) else None
+        confirmed_warning = (isinstance(flags, list) and any(isinstance(flag, str) and
+            ("confirmed_id_switch" in flag or "id_switch_confirmed" in flag) for flag in flags))
+        if confirmed is not None and (type(confirmed) is not int or confirmed != 0):
+            confirmed_warning = True
+        if confirmed_warning:
+            reasons.add("fs_window_original_confirmed_identity_switch")
         raw_binding = {"source_event_id": event["event_id"],
             "source_start_ms": event["start_ms"], "source_end_ms": event["end_ms"],
             "source_track_ids": deepcopy(tracks),
@@ -151,11 +157,18 @@ def _quality_for_window(events, start, end, person, required, source_run_id, fra
             evidence.append({**raw_binding, "applies_to_selected_person": False,
                 "raw_input_quality_flags": deepcopy(flags)})
             continue
-        if not isinstance(flags, list) or not isinstance(diagnostics, Mapping):
+        if (not isinstance(flags, list) or any(not isinstance(flag, str) for flag in flags)
+                or not isinstance(diagnostics, Mapping)):
             reasons.add("fs_window_original_quality_unverified")
         quality, reason = _quality_evidence(event, required)
         if reason:
-            reasons.add("fs_window_original_quality_requires_review")
+            reasons.add("fs_window_original_quality_source_invalid")
+        local_diagnostics = diagnostics if isinstance(diagnostics, Mapping) else {}
+        quality["advisory_flags"] = sorted(set(quality.get("advisory_flags", []))
+            | ({"primary_identity_ambiguous"} if local_diagnostics.get("primary_identity_ambiguous") is True else set())
+            | ({"source_track_switch_candidates_present"}
+                if finite(local_diagnostics.get("source_track_switch_candidate_count"))
+                and local_diagnostics["source_track_switch_candidate_count"] > 0 else set()))
         if isinstance(flags, list) and all(isinstance(flag, str) for flag in flags) and isinstance(diagnostics, Mapping):
             covered.update(index for index, time in enumerate(frame_times) if event["start_ms"] <= time <= event["end_ms"])
         evidence.append({**raw_binding, "applies_to_selected_person": True, **quality})
@@ -197,6 +210,7 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
         sample = samples[0] if samples else None
         window = {"start_ms": timeline[0]["timestamp_ms"], "end_ms": timeline[-1]["timestamp_ms"],
             "person_track_id": annotation["person_track_id"], "selection_epoch": sample.selection_epoch if sample else None,
+            "derived_selection_epoch": timeline[0].get("derived_selection_epoch"),
             "camera_reference_epoch": sample.camera_reference_epoch if sample else None,
             "camera_compensated": sample.camera_compensated if sample else False,
             "video_sha256": video_sha, "video_id": source_job_id, "event_id": annotation["annotation_id"],
@@ -216,11 +230,15 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
             [row["timestamp_ms"] for row in timeline])
         result = evaluate_card_window(rule, samples, window, timeline)
         if reasons or quality_reasons:
-            result.update(status="unavailable" if reasons or result["status"] == "unavailable" else "review_required", score=None, proxy_grade=None,
+            result.update(status="unavailable", score=None, proxy_grade=None,
                 reason_codes=sorted(set(result["reason_codes"] + reasons + quality_reasons)))
             for condition in result["conditions"]:
                 condition["passed"] = None
             result.pop("condition_completion_fraction", None)
+        advisory = sorted({flag for entry in quality for flag in entry.get("advisory_flags", [])}
+                          | set(result.get("advisory_flags", [])))
+        if advisory:
+            result["advisory_flags"] = advisory
         source_annotation = {"annotation_id": annotation["annotation_id"], "indicator_id": rule["indicator_id"],
             "document_version": ANNOTATION_VERSION, "document_sha256": _canonical(document),
             "digest_kind": "canonical_json_sorted_utf8_v1", "binding": deepcopy(annotation["binding"]),
@@ -243,13 +261,12 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
             result["source_window_evidence"].update(step_motion_version=STEP_MOTION_VERSION,
                 step_motion=deepcopy(step_evidence),
                 step_cycle_bound=bool(step_evidence and step_evidence["complete_visual_motion_cycle"]))
-        by_card[rule["indicator_id"]].append(result)
+        by_card[rule["indicator_id"]].append(apply_scoring_policy(result))
         windows.append({**deepcopy(source_annotation), "window": window, "source_frames": indices})
     cards, instances = [], []
     for identifier, rule in rules.items():
         actual = by_card[identifier]
-        status = ("proxy_scored" if any(row["status"] == "proxy_scored" for row in actual) else
-            "review_required" if any(row["status"] == "review_required" for row in actual) else
+        status = ("scored" if any(row["status"] == "scored" for row in actual) else
             "unavailable" if actual else "not_executed")
         cards.append({"indicator_id": identifier, "event_code": rule["event_code"], "rule_version": rule["rule_version"],
             "rule_kind": rule["evaluation"]["kind"], "name_zh": rule["effective"]["name_zh"],
@@ -259,7 +276,7 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
             "instance_status_counts": dict(Counter(row["status"] for row in actual)), "instances": actual})
         instances.extend(actual)
     catalogue = load_card_rules()
-    return {"version": VERSION, "rule_version": catalogue["version"], "source_run_id": source_job_id,
+    return apply_report_scoring_policy({"version": VERSION, "rule_version": catalogue["version"], "source_run_id": source_job_id,
         "cards": cards, "fs_card_windows": windows, "summary": summarize_card_scores(instances, list(rules)),
         "coverage": {"adapter_card_count": len(rules), "annotated_window_count": len(windows),
             "computed_card_instance_count": len(instances), "executed_card_count": sum(bool(row["instances"]) for row in cards),
@@ -273,7 +290,7 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
             "saved_grades_trusted": False}, "overall_score": None,
         "limitations": ["individual_manual_card_windows_are_estimates_not_technical_truth",
             "no_automatic_fs_phase_or_technique_locator_added", "complete_step_cycle_never_inferred_from_manual_window",
-            "manual_observable_cards_remain_ungraded", "engineering_proxy_thresholds_uncalibrated"]}
+            "unrecoverable_observables_remain_unavailable", "engineering_proxy_thresholds_uncalibrated"]})
 
 
 def build_fs_card_window_report(run_dir, annotation_document, *, video_path=None):

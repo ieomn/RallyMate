@@ -61,12 +61,12 @@ class FSCardWindowContracts(unittest.TestCase):
                 self.assertEqual(row["indicator_id"], identifier)
                 self.assertIsNone(row["original_grade"])
                 self.assertFalse(row["source_grade_supported"])
-                self.assertIsNone(report["overall_score"])
+                self.assertEqual(report["overall_score"], report["summary"]["channels"]["formal"]["score"])
                 self.assertFalse(report["input"]["artifact_files_verified"])
                 self.assertFalse(report["input"]["decoder_verified_from_original_video"])
                 self.assertFalse(report["input"]["service_eligible"])
                 if rule["evaluation"]["kind"] == "manual_review":
-                    self.assertEqual(row["status"], "review_required")
+                    self.assertEqual(row["status"], "unavailable")
                     self.assertIsNone(row["score"])
                 else:
                     self.assertEqual(row["quality"]["total_frame_count"], 18)
@@ -160,9 +160,9 @@ class FSCardWindowContracts(unittest.TestCase):
         second["track_diagnostics"]["keypoint_jump_candidate_joints"] = ["left_wrist"]
         arguments[2] = [raw, second, deepcopy(second)]
         result, = instances(compute(arguments))
-        self.assertEqual(result["status"], "review_required")
-        self.assertIsNone(result["score"])
-        self.assertTrue(all(condition["passed"] is None for condition in result["conditions"]))
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["score"], 100)
+        self.assertIn("keypoint_jump_candidates_present", result["advisory_flags"])
         evidence = result["source_window_evidence"]["original_event_quality"]
         self.assertEqual(len(evidence), 2)
         for entry in evidence:
@@ -196,8 +196,9 @@ class FSCardWindowContracts(unittest.TestCase):
                 other["track_diagnostics"].update(source_track_ids=[2], primary_identity_ambiguous=True)
                 arguments[2].append(other)
             row, = instances(compute(arguments))
-            self.assertEqual(row["status"], "proxy_scored" if variant == "complete" else "review_required", variant)
-            self.assertEqual(row["score"] is not None, variant == "complete", variant)
+            can_score = variant in {"complete", "other_identity_warning"}
+            self.assertEqual(row["status"], "scored" if can_score else "unavailable", variant)
+            self.assertEqual(row["score"] is not None, can_score, variant)
             if variant == "wrong_raw_track":
                 evidence, = row["source_window_evidence"]["original_event_quality"]
                 self.assertEqual(evidence["source_track_ids"], [2])

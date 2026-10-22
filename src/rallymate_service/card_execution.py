@@ -22,6 +22,9 @@ from rallymate_features.coordinates import pose_sequence_from_records
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.source_alignment import prepare_source_aligned_context, clear_source_aligned_feature_cache
 from rallymate_scoring.card_evaluation import GRADE_POINTS, summarize_card_scores
+from rallymate_scoring.card_scoring_policy import (
+    SCORING_POLICY_VERSION, apply_scoring_policy, apply_report_scoring_policy,
+)
 from rallymate_scoring.card_kinematics import finite
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.temporal_card_evidence import (
@@ -113,7 +116,7 @@ def _score_temporal(rule: Mapping, raw: Mapping, event: Mapping) -> dict:
         "version": VERSION, "indicator_id": raw["indicator_id"], "rule_version": rule["rule_version"],
         "measurement_version": raw["rule_version"], "video_id": event.get("video_id"),
         "event_id": event.get("event_id"), "person_track_id": event.get("person_track_id"),
-        "event_code": event.get("event_code"), "status": "review_required",
+        "event_code": event.get("event_code"), "status": "unavailable",
         "original_grade": None, "proxy_grade": None, "score": None,
         "source_grade_supported": False, "reason_codes": [], "conditions": [],
         "measurements": raw["measurements"], "evidence": raw["evidence"],
@@ -121,6 +124,7 @@ def _score_temporal(rule: Mapping, raw: Mapping, event: Mapping) -> dict:
         "limitations": raw["limitations"], "source": {key: rule["source"][key]
             for key in ("document_id", "document_sha256", "table", "rubric_sha256")},
     }
+    result["advisory_reason_codes"] = list(raw.get("advisory_reason_codes", []))
     mismatch = _catalogue_reason(rule, raw)
     if mismatch:
         result["reason_codes"].append(mismatch)
@@ -139,13 +143,13 @@ def _score_temporal(rule: Mapping, raw: Mapping, event: Mapping) -> dict:
     if result["reason_codes"] or any(c["passed"] is None for c in result["conditions"]):
         if not result["reason_codes"]:
             result["reason_codes"].append("required_temporal_value_missing")
-        return result
+        return apply_scoring_policy(result)
     fraction = sum(c["passed"] for c in result["conditions"]) / len(result["conditions"])
     grade = "A" if fraction == 1 else "B" if fraction >= .75 else "C" if fraction >= .5 else "D" if fraction > 0 else "E"
     result.update(status="proxy_scored", proxy_grade=grade, score=GRADE_POINTS[grade],
                   condition_completion_fraction=fraction,
                   semantics="engineering_visual_condition_completion_not_original_technical_grade")
-    return result
+    return apply_scoring_policy(result)
 
 
 def build_card_execution_from_sequence(sequence: PoseSequence, events: Sequence[Mapping[str, Any]],
@@ -212,7 +216,7 @@ def build_card_execution_from_sequence(sequence: PoseSequence, events: Sequence[
     observed_ids = [identifier for identifier, rule in rules.items() if rule["event_code"] in observed_codes]
     summary = summarize_card_scores(computed, all_ids)
     observed_summary = summarize_card_scores(computed, observed_ids)
-    return {"version": VERSION, "rule_version": catalogue["version"], "source_run_id": source_run_id,
+    report = {"version": VERSION, "rule_version": catalogue["version"], "source_run_id": source_run_id,
         "input": {"source_frame_count": len(sequence.source_frames), "event_record_count": len(events),
                   "observed_event_codes": sorted(code for code in observed_codes if isinstance(code, str)),
                   "source": "original_frame_observations_events_and_primary_selection",
@@ -229,6 +233,7 @@ def build_card_execution_from_sequence(sequence: PoseSequence, events: Sequence[
         "limitations": ["Only five temporal calculators are wired by this adapter.",
                         "Automatic event candidates are not independently verified action labels.",
                         "Proxy thresholds are uncalibrated engineering rules, not Word-grade thresholds."]}
+    return apply_report_scoring_policy(report)
 
 
 def build_card_execution_from_records(records: list[dict[str, Any]], events: Sequence[Mapping[str, Any]],
@@ -326,13 +331,7 @@ def _apply_optional_gs_annotations(report: dict, directory: Path) -> None:
         report["input"]["gs_execution"] = {"status": "unavailable", "version": GS_VERSION, "reason_codes": [reason]}
         report.pop("gs_stage_windows", None)
         report["coverage"].update(gs_annotated_stage_count=0, gs_executed_card_count=0)
-    all_instances = [instance for row in report["cards"] for instance in row["instances"]]
-    all_ids = [row["indicator_id"] for row in report["cards"]]
-    observed_ids = [row["indicator_id"] for row in report["cards"] if row["event_code"] in report["input"]["observed_event_codes"]]
-    report["summary"] = summarize_card_scores(all_instances, all_ids)
-    report["observed_type_summary"] = summarize_card_scores(all_instances, observed_ids)
-    report["coverage"]["computed_card_instance_count"] = len(all_instances)
-    report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
+    apply_report_scoring_policy(report)
 
 
 def _apply_optional_cycle_annotations(report: dict, directory: Path) -> None:
@@ -374,13 +373,7 @@ def _apply_optional_cycle_annotations(report: dict, directory: Path) -> None:
         report["input"]["footwork_cycle_execution"] = {"status": "unavailable", "version": CYCLE_VERSION, "reason_codes": [reason]}
         report.pop("cycle_windows", None)
         report["coverage"].update(cycle_annotated_window_count=0, cycle_executed_card_count=0)
-    all_instances = [instance for row in report["cards"] for instance in row["instances"]]
-    all_ids = [row["indicator_id"] for row in report["cards"]]
-    observed_ids = [row["indicator_id"] for row in report["cards"] if row["event_code"] in report["input"]["observed_event_codes"]]
-    report["summary"] = summarize_card_scores(all_instances, all_ids)
-    report["observed_type_summary"] = summarize_card_scores(all_instances, observed_ids)
-    report["coverage"]["computed_card_instance_count"] = len(all_instances)
-    report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
+    apply_report_scoring_policy(report)
 
 
 def _apply_optional_fs_card_annotations(report: dict, directory: Path) -> None:
@@ -418,12 +411,7 @@ def _apply_optional_fs_card_annotations(report: dict, directory: Path) -> None:
         report["input"]["fs_card_window_execution"] = {"status": "unavailable", "version": FS_WINDOW_VERSION, "reason_codes": [reason]}
         report.pop("fs_card_windows", None)
         report["coverage"].update(fs_manual_card_window_count=0, fs_manual_window_executed_card_count=0)
-    instances = [instance for row in report["cards"] for instance in row["instances"]]
-    report["summary"] = summarize_card_scores(instances, [row["indicator_id"] for row in report["cards"]])
-    report["observed_type_summary"] = summarize_card_scores(instances,
-        [row["indicator_id"] for row in report["cards"] if row["event_code"] in report["input"]["observed_event_codes"]])
-    report["coverage"]["computed_card_instance_count"] = len(instances)
-    report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
+    apply_report_scoring_policy(report)
 
 
 @lru_cache(maxsize=2)
@@ -443,7 +431,7 @@ def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
         raise ValueError("card_input_changed_during_computation")
     report["input"]["catalogue_sha256"] = rule_digest
     report["input"]["catalogue_digest_kind"] = "canonical_json_sorted_utf8_v1"
-    return report
+    return apply_report_scoring_policy(report)
 
 
 def clear_card_execution_cache() -> None:
@@ -465,7 +453,7 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
         signature = _input_signature(directory)
         rule_digest = hashlib.sha256(json.dumps(load_card_rules(), sort_keys=True,
             ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
-        engine_version = VERSION + ":" + TEMPORAL_VERSION
+        engine_version = VERSION + ":" + TEMPORAL_VERSION + ":" + SCORING_POLICY_VERSION
         if (directory / "gs-stage-annotations.json").exists():
             from .gs_card_execution import VERSION as GS_VERSION
             engine_version += ":" + GS_VERSION

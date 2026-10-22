@@ -6,9 +6,9 @@ from collections.abc import Mapping
 import statistics
 
 from .card_kinematics import DYNAMIC_SPECS, SPECS, finite, measure_card_window
+from .card_scoring_policy import GRADE_POINTS, apply_scoring_policy
 
 VERSION = "card-evaluation-v1.0.0"
-GRADE_POINTS = {"A": 100, "B": 80, "C": 60, "D": 40, "E": 20}
 
 
 def _condition(condition, measurements):
@@ -41,6 +41,25 @@ def _condition(condition, measurements):
 
 
 def evaluate_card_window(rule, samples, window, timeline):
+    """Compute conditions first, then apply the current application policy."""
+    samples = list(samples)
+    result = _evaluate_card_window(rule, samples, window, timeline)
+    model_count = sum((sample.get("observation_semantics") if isinstance(sample, Mapping)
+                       else getattr(sample, "observation_semantics", None)) == "monocular_model_estimate"
+                      for sample in samples)
+    if model_count:
+        result["measurement_provenance"] = {
+            "observation_semantics": "monocular_model_estimate", "model_estimate_sample_count": model_count,
+            "detector_sample_count": len(samples) - model_count,
+            "confidence_semantics": "not_detector_confidence"}
+    advisory = sorted({flag for row in timeline if isinstance(row, Mapping)
+                       for flag in row.get("advisory_flags", []) if isinstance(flag, str)})
+    if advisory:
+        result["advisory_flags"] = advisory
+    return apply_scoring_policy(result)
+
+
+def _evaluate_card_window(rule, samples, window, timeline):
     """Evaluate only registered frame measurements, never caller-provided pass bits.
 
     A source stage must have a documented manual anchor or a versioned detector.
@@ -124,7 +143,8 @@ def summarize_card_scores(results, applicable_card_ids):
 
     This is aggregation of internal evaluator results, not proof of recognition
     accuracy. Unobserved applicable cards stay in coverage and out of score means.
-    No combined number merges original, proxy and manual judgments.
+    The current application channel is averaged separately from historical
+    original, proxy and manual channels; only it supplies the current total.
     """
     applicable = set(applicable_card_ids)
     if len(applicable) != len(applicable_card_ids):
@@ -137,13 +157,21 @@ def summarize_card_scores(results, applicable_card_ids):
         if key in unique and unique[key] != row:
             conflicts.add(key)
         unique[key] = row
+    from .card_scoring_policy import SCORING_POLICY_VERSION, FORMAL_SCORE_SEMANTICS
+    has_formal_policy = any(row.get("scoring_policy_version") == SCORING_POLICY_VERSION for row in unique.values())
     channels = {}
-    for channel, status, grade_field in (("original", "source_scored", "original_grade"),
-                                         ("visual_proxy", "proxy_scored", "proxy_grade"),
-                                         ("manual", "manual_scored", "manual_grade")):
+    channel_specs = [("original", "source_scored", "original_grade"),
+                     ("visual_proxy", "proxy_scored", "proxy_grade"),
+                     ("manual", "manual_scored", "manual_grade")]
+    if has_formal_policy:
+        channel_specs.append(("formal", "scored", "grade"))
+    for channel, status, grade_field in channel_specs:
         by_card = defaultdict(list)
         for key, row in unique.items():
             if key in conflicts or row.get("status") != status:
+                continue
+            if channel == "formal" and (row.get("scoring_policy_version") != SCORING_POLICY_VERSION
+                    or row.get("semantics") != FORMAL_SCORE_SEMANTICS):
                 continue
             grade, score = row.get(grade_field), row.get("score")
             if grade not in GRADE_POINTS or not finite(score) or GRADE_POINTS[grade] != score:
@@ -156,9 +184,15 @@ def summarize_card_scores(results, applicable_card_ids):
                              "scored_cards": len(scores), "applicable_cards": len(applicable),
                              "coverage": len(scores)/len(applicable) if applicable else None,
                              "scored_event_instances": sum(map(len, by_card.values())), "per_card": scores}
-    return {"version": VERSION, "grade_points": dict(GRADE_POINTS), "channels": channels,
+    result = {"version": VERSION, "grade_points": dict(GRADE_POINTS), "channels": channels,
             "status_counts": dict(Counter(row.get("status", "unavailable") for row in unique.values())),
-            "conflicting_event_instances": len(conflicts), "overall_score": None,
+            "conflicting_event_instances": len(conflicts),
+            "overall_score": channels.get("formal", {}).get("score"),
             "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
             "weight_policy": "equal_card_weight_after_event_mean",
             "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"}
+    if has_formal_policy:
+        result.update(scoring_policy_version=SCORING_POLICY_VERSION,
+                      formal_scored_cards=channels["formal"]["scored_cards"],
+                      formal_scored_instances=channels["formal"]["scored_event_instances"])
+    return result

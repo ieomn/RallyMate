@@ -52,6 +52,7 @@ class CycleArtifactContracts(unittest.TestCase):
         self.assertFalse(report["input"]["artifact_files_verified"])
         self.assertFalse(report["input"]["decoder_verified_from_original_video"])
         self.assertFalse(report["input"]["service_eligible"])
+        self.assertEqual(report["scoring_policy_version"], "automatic-formal-card-scoring-v1.0.0")
         self.assertIsNone(report["overall_score"])
         for row in instances(report):
             self.assertIsNone(row["original_grade"])
@@ -132,7 +133,9 @@ class CycleArtifactContracts(unittest.TestCase):
         for row in instances(report):
             self.assertEqual(row["evidence"]["quality_source_event_ids"], ["raw-incomplete", "raw-complete"])
             self.assertIn("keypoint_jump_candidates_present", row["evidence"]["event_quality"]["review_flags"])
-            self.assertEqual(row["status"], "review_required")
+            self.assertEqual(row["status"], "unavailable")
+            self.assertIn("keypoint_jump_candidates_present", row["evidence"]["event_quality"]["advisory_flags"])
+            self.assertNotIn("keypoint_jump_candidates_present", row["evidence"]["event_quality"]["blocking_flags"])
             self.assertIsNone(row["score"])
 
     def test_original_event_duplicates_are_idempotent_but_conflicts_rejected(self):
@@ -183,9 +186,10 @@ class CycleArtifactContracts(unittest.TestCase):
 
 
 class CycleOriginalArtifactIntegration(unittest.TestCase):
-    def test_original_usta_video_has_thirty_review_instances_with_unmodified_files(self):
+    def test_original_usta_video_has_thirty_incomplete_instances_unavailable_under_current_policy(self):
         document = json.loads((ROOT / "tests/fixtures/footwork-cycle-annotations-usta-v1.json").read_text(encoding="utf-8"))
-        original = ROOT / ".codex_tmp/card-video-extension-20261022/runs/fs-usta-return-footwork-heldout"
+        artifact_root = Path(os.environ.get("CARD_ARTIFACT_ROOT", str(ROOT)))
+        original = artifact_root / ".codex_tmp/card-video-extension-20261022/runs/fs-usta-return-footwork-heldout"
         if not all((original / name).is_file() for name in SOURCE_FILES):
             self.skipTest("integration_requires_original_usta_source_artifacts")
         summary = json.loads((original / "summary.json").read_text(encoding="utf-8"))
@@ -203,8 +207,12 @@ class CycleOriginalArtifactIntegration(unittest.TestCase):
         self.assertTrue(result["input"]["service_eligible"])
         self.assertTrue(result["input"]["decoder_verified_from_original_video"])
         self.assertEqual(result["input"]["source_frame_count"], 539)
-        self.assertEqual(result["coverage"]["instance_status_counts"], {"review_required": 30})
+        self.assertEqual(result["scoring_policy_version"], "automatic-formal-card-scoring-v1.0.0")
+        self.assertEqual(result["coverage"]["instance_status_counts"], {"unavailable": 30})
+        self.assertIsNone(result["overall_score"])
         for row in instances(result):
+            self.assertEqual(row["status"], "unavailable")
+            self.assertIsNone(row["grade"])
             self.assertIsNone(row["score"])
             self.assertIsNone(row["original_grade"])
             self.assertEqual(row["source_annotation"]["binding"]["semantics"], SEMANTICS)

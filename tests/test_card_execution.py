@@ -12,6 +12,7 @@ import numpy as np
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.source_alignment import clear_source_aligned_feature_cache
 import rallymate_service.card_execution as execution
+from rallymate_scoring.card_scoring_policy import SCORING_POLICY_VERSION
 
 
 def real_fixture():
@@ -49,25 +50,29 @@ class CardExecutionTests(unittest.TestCase):
         self.assertEqual((report["coverage"]["fs_card_count"], report["coverage"]["gs_card_count"]), (50, 248))
         self.assertEqual(report["coverage"]["wired_temporal_card_count"], 5)
         self.assertEqual(report["coverage"]["computed_card_instance_count"], 7)
-        self.assertEqual(report["summary"]["channels"]["visual_proxy"]["scored_cards"], 4)
-        self.assertEqual(report["summary"]["channels"]["visual_proxy"]["coverage"], 4 / 298)
-        self.assertEqual(report["observed_type_summary"]["channels"]["visual_proxy"]["applicable_cards"], 15)
+        self.assertEqual(report["summary"]["channels"]["formal"]["scored_cards"], 5)
+        self.assertEqual(report["summary"]["channels"]["formal"]["coverage"], 5 / 298)
+        self.assertEqual(report["observed_type_summary"]["channels"]["formal"]["applicable_cards"], 15)
         self.assertEqual(report["summary"]["channels"]["original"]["scored_cards"], 0)
         self.assertTrue(all(row["original_grade"] is None for row in rows(report)))
-        self.assertIsNone(report["overall_score"])
+        self.assertEqual(report["overall_score"], 68)
+        self.assertEqual(report["scoring_policy_version"], SCORING_POLICY_VERSION)
+        self.assertEqual(report["summary"]["status_counts"], {"scored": 5, "unavailable": 2})
         self.assertIn("not_executed", report["coverage"]["run_card_status_counts"])
         json.dumps(report, allow_nan=False)
 
-    def test_real_local_dip_review_never_scores_even_with_available_measurements(self):
+    def test_real_local_dip_with_complete_values_is_automatically_formally_scored(self):
         sequence, events, timeline = real_fixture()
         report = execution.build_card_execution_from_sequence(sequence, events, timeline)
         negative = next(row for row in rows(report) if row["indicator_id"] == "FS01-M02" and row["event_id"] == events[0]["event_id"])
         self.assertTrue(negative["measurements"])
-        self.assertEqual(negative["status"], "review_required")
-        self.assertIsNone(negative["score"])
-        self.assertIsNone(negative["proxy_grade"])
-        self.assertTrue(all(c["passed"] is None for c in negative["conditions"]))
-        self.assertEqual(negative["reason_codes"], ["fallback_local_dip_action_type_unverified"])
+        self.assertEqual(negative["status"], "scored")
+        self.assertEqual((negative["grade"], negative["score"]), ("D", 40))
+        self.assertEqual([c["passed"] for c in negative["conditions"]], [False, False, False, False, True])
+        self.assertEqual(negative["reason_codes"], [])
+        self.assertEqual(negative["advisory_reason_codes"], ["fallback_local_dip_action_type_unverified"])
+        self.assertFalse(negative["evidence"]["fallback"]["takeoff_inferred"])
+        self.assertIsNone(negative["original_grade"])
 
     def test_saved_event_grades_and_pass_bits_cannot_change_recomputed_output(self):
         sequence, events, timeline = real_fixture()
