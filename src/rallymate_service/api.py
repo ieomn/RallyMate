@@ -52,6 +52,8 @@ from rallymate_service.technical_review import (
 )
 from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.analysis_report import build_analysis_report
+from rallymate_service.card_execution import VERSION as CARD_EXECUTION_VERSION, build_card_execution_report
+from rallymate_scoring.card_rule_catalog import VERSION as CARD_RULE_VERSION
 from rallymate_service.report_compatibility import (
     DEFAULT_REPORT_CONTRACT,
     ReportContract,
@@ -1174,6 +1176,19 @@ def create_app(
             video_sha256=loop_provenance.get("video_sha256"),
             frames_sha256=loop_provenance.get("frames_sha256"),
         )
+        try:
+            card_execution = build_card_execution_report(Path(job["output_dir"]))
+            if card_execution.get("source_run_id") != job_id:
+                raise ValueError("card_report_job_binding_mismatch")
+            result["card_execution"] = card_execution
+        except (OSError, ValueError, TypeError, KeyError, OverflowError):
+            result["card_execution"] = {
+                "version": CARD_EXECUTION_VERSION, "rule_version": CARD_RULE_VERSION,
+                "status": "unavailable", "source_run_id": job_id,
+                "reason_codes": ["raw_card_execution_evidence_unavailable"],
+                "cards": [], "overall_score": None,
+                "limitations": ["本次逐卡计算所需的原始帧证据缺失、身份不一致或校验未通过，暂不能生成逐卡结果。"],
+            }
         result["analysis_report"] = build_analysis_report(result, summary=summary)
         return project_report(result, report_contract)
 
