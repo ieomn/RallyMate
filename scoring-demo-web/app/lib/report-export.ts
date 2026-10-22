@@ -224,7 +224,9 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
       `${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count}`,
       instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；"),
       instance.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
-      instance.source_stage ? `${text(instance.source_stage.stage_code)}；人工估计 ±${numberText(instance.source_stage.binding.uncertainty_ms)} 毫秒；${text(instance.source_stage.binding.source)}；${text(instance.source_stage.binding.version)}` : card.event_code.startsWith("GS") ? "未核验阶段来源" : "由动作检测器定位的候选窗口",
+      instance.source_stage ? `${text(instance.source_stage.stage_code)}；人工估计 ±${numberText(instance.source_stage.binding.uncertainty_ms)} 毫秒；${text(instance.source_stage.binding.source)}；${text(instance.source_stage.binding.version)}`
+        : instance.foot_cycle ? `${instance.foot_cycle.step_window_binding.method === "manual_anchor" ? "人工步周期候选窗口" : "步周期来源未核验"}；非专家步型或触地真值${instance.source_cycle_annotation ? `；边界不确定性 ±${numberText(instance.source_cycle_annotation.binding.uncertainty_ms)} 毫秒` : ""}；${text(instance.foot_cycle.step_window_binding.evidence_reference)}；${text(instance.foot_cycle.step_window_binding.version)}`
+        : card.event_code.startsWith("GS") ? "未核验阶段来源" : ["FS03", "FS04"].includes(card.event_code) ? "未核验人工步周期窗口来源" : "由动作检测器定位的候选窗口",
     ])) });
   }
   const parsedMotion = motionAnalysisOf(input.evidence.result ?? null, input.evidence.assessment, summary);

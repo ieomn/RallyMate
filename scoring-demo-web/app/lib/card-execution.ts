@@ -3,6 +3,8 @@
  * the backend catalogue. A registered rule is never counted as an execution.
  */
 import gsContract from "./gs-card-display-contract";
+import footworkContract from "./footwork-cycle-display-contract";
+import { footworkCycleOf, validFootworkCycle, footworkValuesAgree, type FootworkCycleEvidence } from "./footwork-cycle-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
@@ -11,9 +13,11 @@ export const SOURCE_CARD_COUNT = 298;
 export const CARD_RUN_LABELS = { proxy_scored: "有视觉代理结果", review_required: "需要复核", unavailable: "证据不足", not_executed: "尚未接入计算", not_observed: "未观察到此类动作" } as const;
 export type CardRunStatus = keyof typeof CARD_RUN_LABELS;
 type Obj = Record<string, unknown>;
-type ConditionSpec = [string, "gte" | "lte" | "between", number | [number, number], string];
+type ConditionSpec = [string, "gte" | "lte" | "between" | "eq", number | [number, number], string];
 type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: string[]; conditions: ConditionSpec[]; source: CardInstance["source"] };
 const GS_CARD_CONTRACTS = gsContract.cards as unknown as Record<string, GsSpec>;
+type FootworkSpec = Omit<GsSpec, "stage_code"> & { limitation: string };
+const FOOTWORK_CARD_CONTRACTS = footworkContract.cards as unknown as Record<string, FootworkSpec>;
 export const TEMPORAL_CARD_CONDITIONS: Record<string, ConditionSpec[]> = {
   "FS01-M02": [["hip_drop_torso", "gte", .03, "torso"], ["left_knee_flexion_change_deg", "gte", 4, "deg"], ["right_knee_flexion_change_deg", "gte", 4, "deg"], ["joint_descent_fraction", "gte", .7, "fraction"], ["speed_step_variation_ratio", "lte", 1.5, "ratio"]],
   "FS01-M05": [["hip_inside_support_fraction", "gte", .8, "fraction"], ["body_speed_std_torso_s", "lte", .3, "torso/s"], ["successor_interval_ms", "between", [0, 500], "ms"]],
@@ -41,6 +45,16 @@ const LIMITATION_LABELS: Record<string, string> = {
   no_automatic_ten_stage_gs_locator_registered: "尚未接入自动击球十阶段定位。",
   missing_stage_never_inferred_from_three_generic_swing_phases: "缺失阶段保留为空，未用三个通用挥拍阶段替代十个原卡阶段。",
   monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility: "单目几何不能直接确认真实视线、受力、球拍接触或关节可见性。",
+  manual_cycle_windows_are_nonexpert_estimates_not_step_family_ground_truth: "人工步周期窗口是候选估计，不代表专家已确认交叉步或并步类型。",
+  continuous_image_motion_does_not_establish_contact_force_target_arrival_or_original_grade: "连续画面运动不能证明真实触地、受力、到位或原卡技术等级。",
+  no_automatic_cycle_detector_registered: "尚未接入自动完整步周期定位。",
+  record_level_entry_does_not_verify_artifact_files: "此观测记录回放本身不声明已重新读取原视频及核验源文件。",
+  manual_window_is_nonexpert_candidate_not_contact_force_or_step_family_ground_truth: "人工窗口不是专家步型、触地或受力真值。",
+  "Explicit manual FS03/FS04 candidate windows are connected; no automatic step-family or ground-contact verifier is registered.": "当前支持有明确人工窗口来源的交叉步和并步候选，尚未自动确认步型或真实触地。",
+  "2D hip midpoint is not physical centre of mass": "二维髋部中点不能视作真实身体重心。",
+  "low bilateral ankle motion with projected support is not verified ground contact": "双踝低速且髋投影在支撑区间内，仍不能证明真实触地。",
+  "model geometry does not establish original-card joint visibility": "模型给出的几何坐标不能直接证明原卡要求的关节可见性。",
+  "pose candidate boundaries are not ground truth": "姿态候选的时间边界尚非人工确认的真值。",
 };
 type Grade = keyof typeof gradePoints;
 export interface CardCondition { key: string; metric: string; value: number | null; operator: string; threshold: number | [number, number] | null; unit: string; passed: boolean | null }
@@ -48,12 +62,21 @@ export interface CardSourceStage {
   stage_code: string; annotation_id: string; document_sha256: string; digest_kind: string;
   binding: { method: string; version: string; source: string; uncertainty_ms: number | null; semantics: string };
 }
+export interface CardCycleAnnotation {
+  document_sha256: string; document_version: string; event_id: string; event_code: string;
+  start_source_frame: number; end_source_frame: number; requested_window_ms: { start_ms: number; end_ms: number };
+  binding: { method: string; version: string; source: string; uncertainty_ms: number; semantics: string };
+}
 export interface CardInstance {
   indicator_id: string; event_id: string; video_id: string; person_track_id: number; rule_version: string; measurement_version: string;
   status: "proxy_scored" | "review_required" | "unavailable"; original_grade: null; source_grade_supported: false; proxy_grade: Grade | null; score: number | null;
   window: { start_ms: number; end_ms: number } | null; reason_codes: string[]; conditions: CardCondition[];
   quality: { total_frame_count: number; valid_frame_count: number; fraction: number | null; visibility_verified: false; required_joint_names: string[] };
   source_stage: CardSourceStage | null;
+  foot_cycle: FootworkCycleEvidence | null;
+  cycle_measurements: Record<string, number | null> | null;
+  source_cycle_annotation: CardCycleAnnotation | null;
+  limitations: string[];
   fallback: { trigger: string; strategy: string; selected: { start_ms: number; end_ms: number } | null } | null;
   threshold_basis: string; semantics: string; source: { document_id: string; document_sha256: string; table: string; rubric_sha256: string };
 }
@@ -78,7 +101,7 @@ function computedPass(condition: CardCondition): boolean | null {
   if (condition.value === null || condition.threshold === null) return null;
   if (condition.operator === "between" && Array.isArray(condition.threshold)) return condition.value >= condition.threshold[0] && condition.value <= condition.threshold[1];
   if (typeof condition.threshold !== "number") return null;
-  return condition.operator === "gte" ? condition.value >= condition.threshold : condition.operator === "lte" ? condition.value <= condition.threshold : null;
+  return condition.operator === "gte" ? condition.value >= condition.threshold : condition.operator === "lte" ? condition.value <= condition.threshold : condition.operator === "eq" ? condition.value === condition.threshold : null;
 }
 function invalidate(instance: CardInstance, reason: string): CardInstance {
   return { ...instance, status: "unavailable", proxy_grade: null, score: null, reason_codes: [...new Set([...instance.reason_codes, reason])], conditions: instance.conditions.map(c => ({ ...c, passed: null })) };
@@ -109,6 +132,22 @@ function validGsEvidence(instance: CardInstance, contract: GsSpec): boolean {
     && Object.entries(contract.source).every(([key, value]) => instance.source[key as keyof CardInstance["source"]] === value)
     && JSON.stringify([...instance.quality.required_joint_names].sort()) === JSON.stringify(contract.required_joint_names);
 }
+function cycleAnnotationOf(value: unknown, cycle: FootworkCycleEvidence | null, id: string, eventId: string): CardCycleAnnotation | null {
+  const row = obj(value), binding = obj(row.binding), window = windowOf(row.requested_window_ms);
+  const start = integer(row.start_source_frame), end = integer(row.end_source_frame), uncertainty = number(binding.uncertainty_ms);
+  if (!cycle || !window || start === null || end === null || start >= end || uncertainty === null || uncertainty < 0
+      || row.document_version !== "footwork-cycle-annotations-v1.0.0" || !/^[a-f0-9]{64}$/i.test(text(row.document_sha256))
+      || row.event_id !== eventId || row.event_code !== id.split("-")[0]
+      || start !== cycle.step_window_binding.start_source_frame || end !== cycle.step_window_binding.end_source_frame
+      || binding.method !== "manual_anchor" || !text(binding.version) || !text(binding.source)
+      || binding.version !== cycle.step_window_binding.version || binding.source !== cycle.step_window_binding.evidence_reference
+      || binding.semantics !== "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      || Math.abs(window.start_ms - Number(cycle.source_timestamps_ms[0])) > .51
+      || Math.abs(window.end_ms - Number(cycle.source_timestamps_ms.at(-1))) > .51) return null;
+  return { document_sha256: text(row.document_sha256), document_version: text(row.document_version), event_id: eventId,
+    event_code: text(row.event_code), start_source_frame: start, end_source_frame: end, requested_window_ms: window,
+    binding: { method: "manual_anchor", version: text(binding.version), source: text(binding.source), uncertainty_ms: uncertainty, semantics: text(binding.semantics) } };
+}
 function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstance | null {
   const row = obj(value), evidence = obj(row.evidence), quality = obj(row.quality), source = obj(row.source);
   if (row.indicator_id !== id || !text(row.event_id) || !text(row.video_id) || integer(row.person_track_id) === null || sourceRunId && row.video_id !== sourceRunId) return null;
@@ -116,17 +155,24 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const fallbackRaw = obj(row.fallback ?? evidence.fallback);
   const fallback = text(fallbackRaw.trigger) ? { trigger: text(fallbackRaw.trigger), strategy: text(fallbackRaw.strategy), selected: windowOf(fallbackRaw.selected) } : null;
   const conditions = list(row.conditions, 30).map(conditionOf);
+  const cycle = FOOTWORK_CARD_CONTRACTS[id] ? footworkCycleOf(row.foot_cycle ?? evidence) : null;
+  const cycleValues = obj(row.cycle_measurements ?? row.measurements);
   const state = row.status === "proxy_scored" ? "proxy_scored" : row.status === "review_required" ? "review_required" : "unavailable";
   const result: CardInstance = { indicator_id: id, event_id: text(row.event_id), video_id: text(row.video_id), person_track_id: Number(row.person_track_id),
     rule_version: text(row.rule_version), measurement_version: text(row.measurement_version), status: state, original_grade: null, source_grade_supported: false,
     proxy_grade: null, score: null, window: windowOf(row.window ?? evidence.requested_window_ms), reason_codes: strings(row.reason_codes), conditions,
     quality: { total_frame_count: total, valid_frame_count: valid <= total ? valid : 0, fraction: total > 0 && valid <= total ? valid / total : null, visibility_verified: false, required_joint_names: strings(quality.required_joint_names) },
     source_stage: sourceStageOf(row, id),
+    foot_cycle: cycle,
+    cycle_measurements: FOOTWORK_CARD_CONTRACTS[id] ? Object.fromEntries(conditions.map(c => [c.metric, number(cycleValues[c.metric])])) : null,
+    source_cycle_annotation: FOOTWORK_CARD_CONTRACTS[id] ? cycleAnnotationOf(row.source_cycle_annotation ?? row.source_annotation, cycle, id, text(row.event_id)) : null,
+    limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitations)].map(value => LIMITATION_LABELS[value] ?? value))],
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
   if (state !== "proxy_scored") return { ...result, conditions: conditions.map(c => ({ ...c, passed: null })) };
   const gsSpec = GS_CARD_CONTRACTS[id];
-  const specs = gsSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
+  const footworkSpec = FOOTWORK_CARD_CONTRACTS[id];
+  const specs = gsSpec?.conditions ?? footworkSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
   const expected = specs?.every(([metric, operator, threshold, unit]) => {
     const c = byMetric.get(metric);
     return c && c.operator === operator && c.unit === unit && JSON.stringify(c.threshold) === JSON.stringify(threshold) && c.passed !== null && c.passed === computedPass(c);
@@ -134,8 +180,15 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : MEASUREMENT_VERSION) || row.proxy_grade !== grade || row.score !== gradePoints[grade]
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : MEASUREMENT_VERSION) || row.proxy_grade !== grade || row.score !== gradePoints[grade]
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec))
+      || footworkSpec && (footworkSpec.rule_kind !== "visual_proxy"
+        || !Object.entries(footworkSpec.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
+        || JSON.stringify([...result.quality.required_joint_names].sort()) !== JSON.stringify(footworkSpec.required_joint_names)
+        || !validFootworkCycle(result.foot_cycle, { ...result, total_frames: total, valid_frames: valid })
+        || !result.cycle_measurements || conditions.some(c => c.value !== result.cycle_measurements![c.metric])
+        || !footworkValuesAgree(result.foot_cycle!, result.cycle_measurements!)
+        || !!(row.source_cycle_annotation ?? row.source_annotation) && !result.source_cycle_annotation)
       || total < 3 || valid > total || valid * 10 < total * 7 || result.reason_codes.length
       || row.semantics !== "engineering_visual_condition_completion_not_original_technical_grade"
       || !/^CARD-(?:FS|GS)$/.test(result.source.document_id) || !/^[a-fA-F0-9]{64}$/.test(result.source.document_sha256) || !/^[a-fA-F0-9]{64}$/.test(result.source.rubric_sha256)) {
@@ -154,8 +207,9 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
   for (const candidate of raw.cards) {
     const row = obj(candidate), id = text(row.indicator_id);
     if (!CARD_IDS.has(id) || row.event_code !== id.split("-")[0] || row.rule_version !== CARD_RULE_VERSION || !text(row.name_zh) || !["visual_proxy", "manual_review"].includes(text(row.rule_kind))) { rejected++; continue; }
-    const runtimeEngine = GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : MEASUREMENT_VERSION;
+    const runtimeEngine = GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : MEASUREMENT_VERSION;
     if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
+    if (FOOTWORK_CARD_CONTRACTS[id] && row.rule_kind !== FOOTWORK_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     const seenInstances = new Map<string, CardInstance>(), conflicting = new Set<string>();
     for (const value of list(row.instances, 5000)) {
       const instance = instanceOf(value, id, sourceRunId);
@@ -227,6 +281,25 @@ export const CARD_REASON_LABELS: Record<string, string> = {
   stage_window_truncated_by_source: "击球阶段时间窗超出可用原始片段",
   source_decoder_window_inventory_incomplete: "击球阶段所需的原始帧不完整，未缩短窗口或跨过缺帧评分",
   source_stage_binding_missing_or_mismatched: "击球阶段来源缺失或与评分卡不匹配",
+  source_step_window_binding_required: "缺少可追溯的人工步周期窗口来源",
+  automatic_cycle_detector_not_registered: "尚未接入自动步周期定位，不能将外部标记当作已确认周期",
+  source_step_window_empty: "人工步周期窗口没有原始帧",
+  step_window_binding_identity_or_frame_mismatch: "步周期的事件、球员或原帧边界不一致",
+  step_window_source_video_mismatch: "步周期窗口与原视频摘要不一致",
+  complete_visual_motion_cycle_not_observed: "尚未观察到前后低运动区间完整的脚部运动周期",
+  sequential_lead_follow_cycle_not_observed: "尚未观察到明确的先迈步、再跟随及先扩宽后收窄顺序",
+  ankle_order_not_persistently_resolved: "双踝先后顺序或中间换序观测不足，不能用端点推定交叉",
+  ball_direction_and_target_evidence_required: "缺少来球与目标区域证据，需要人工复核方向判断",
+  continuous_endpoint_window_missing: "连续步周期窗口过短，无法取得可靠的起止观测",
+  cycle_required_evidence_requires_review: "本周期必要关节或身份存在质量疑点，需要复核",
+  fixed_torso_scale_invalid_or_below_12_pixels: "固定躯干尺度无效或画面尺度不足12像素",
+  condition_measurement_unavailable: "本卡仍有条件缺少可计算的实值",
+  cycle_family_not_manually_annotated: "本次尚未标注此类步周期窗口",
+  cycle_evidence_incomplete: "步周期证据不完整，需要复核",
+  required_cycle_measurement_missing: "步周期仍有必要测量缺失，暂不评分",
+  required_external_observable_not_recovered_from_pose: "人体姿态不能证明本卡所需的外部方向或目标信息",
+  cycle_common_required_joint_contract_mismatch: "步周期所需关节与版本契约不一致，需要重新计算",
+  cycle_grade_policy_mismatch: "步周期条件完成度规则与当前版本不一致",
 };
 const PHASE_LABELS: Record<string, string> = { takeoff_proxy_ms: "起跳候选", landing_proxy_ms: "落地候选", stable_control_onset_ms: "重新稳定候选", peak_speed_ms: "速度峰值", deceleration_peak_ms: "减速峰值" };
 export const cardReasonLabel = (code: string) => {
