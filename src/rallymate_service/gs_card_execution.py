@@ -23,6 +23,10 @@ from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_ca
 from rallymate_scoring.card_kinematics import _point as _valid_card_point, finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.stroke_candidates import _sample, _stabilize_partial_torso_windows
+from rallymate_scoring.gs_preload_evidence import (
+    ANNOTATION_VERSION as PRELOAD_ANNOTATION_VERSION, ANNOTATION_SEMANTICS as PRELOAD_SEMANTICS,
+    SUPPORTED_CARDS as PRELOAD_CARDS, AUXILIARY_REFERENCES as PRELOAD_REFERENCES, compute_gs_preload_evidence,
+)
 
 VERSION = "gs-card-execution-v1.0.0"
 ANNOTATION_VERSION = "gs-stage-annotations-v1.0.0"
@@ -165,7 +169,8 @@ def validate_stage_annotations(document):
         actions[action["action_id"]] = action
     ids, accepted = set(), []
     for annotation in document["stages"]:
-        _keys(annotation, ("annotation_id", "action_id", "technique_code", "stage_code", "person_track_id", "start_ms", "end_ms", "binding"))
+        _keys(annotation, ("annotation_id", "action_id", "technique_code", "stage_code", "person_track_id", "start_ms", "end_ms", "binding"),
+              ("local_preload_observation",))
         identifier = annotation["annotation_id"]
         if not _text(identifier) or identifier in ids:
             raise ValueError("duplicate_or_invalid_annotation_id")
@@ -196,6 +201,8 @@ def validate_stage_annotations(document):
                 raise ValueError("automatic_stage_detector_unregistered")
         else:
             raise ValueError("stage_binding_method_invalid")
+        if "local_preload_observation" in annotation:
+            _validate_local_preload_observation(annotation["local_preload_observation"], annotation, document)
         for previous in accepted:
             if annotation["action_id"] == previous["action_id"] and annotation["stage_code"] == previous["stage_code"]:
                 raise ValueError("duplicate_action_stage_annotation")
@@ -214,6 +221,71 @@ def validate_stage_annotations(document):
                     raise ValueError("source_stage_order_or_containment_conflict")
         accepted.append(annotation)
     return deepcopy(document)
+
+
+def _validate_local_preload_observation(observation, stage, document):
+    _keys(observation, ("version", "method", "annotation_id", "action_id", "indicator_id", "video_sha256",
+        "person_track_id", "start_frame", "end_frame", "source", "source_description", "uncertainty_ms", "semantics"))
+    if (observation["version"] != PRELOAD_ANNOTATION_VERSION or observation["method"] != "manual_anchor"
+            or observation["semantics"] != PRELOAD_SEMANTICS):
+        raise ValueError("local_preload_version_or_semantics_invalid")
+    identifier = observation["indicator_id"]
+    if (not _text(identifier) or identifier not in PRELOAD_CARDS
+            or identifier.rsplit("-", 1)[0] != stage["stage_code"]):
+        raise ValueError("local_preload_card_or_stage_mismatch")
+    if (observation["annotation_id"] != stage["annotation_id"] or observation["action_id"] != stage["action_id"]
+            or not _integer(observation["person_track_id"]) or observation["person_track_id"] != stage["person_track_id"]
+            or _digest(observation["video_sha256"]) != _digest(document["video_sha256"])):
+        raise ValueError("local_preload_action_person_or_video_mismatch")
+    if (any(not _text(observation[key]) or not observation[key].strip() for key in ("source", "source_description"))
+            or not finite(observation["uncertainty_ms"]) or observation["uncertainty_ms"] < 0):
+        raise ValueError("local_preload_review_description_invalid")
+    times = []
+    for key in ("start_frame", "end_frame"):
+        row = observation[key]
+        _keys(row, ("frame_index", "pts", "time_base_num", "time_base_den"))
+        if (not _integer(row["frame_index"]) or not _integer(row["pts"])
+                or not _integer(row["time_base_num"]) or not row["time_base_num"]
+                or not _integer(row["time_base_den"]) or not row["time_base_den"]):
+            raise ValueError("local_preload_source_frame_invalid")
+        times.append(Fraction(row["pts"] * row["time_base_num"] * 1000, row["time_base_den"]))
+    if (observation["start_frame"]["frame_index"] >= observation["end_frame"]["frame_index"]
+            or not stage["start_ms"] <= times[0] < times[1] <= stage["end_ms"]):
+        raise ValueError("local_preload_window_outside_source_stage")
+
+
+def _local_preload_evidence(observation, annotation, document, decoder_timeline, timeline, by_track, stage_reasons):
+    for key in ("start_frame", "end_frame"):
+        row = observation[key]
+        if row["frame_index"] >= len(decoder_timeline) or any(
+                decoder_timeline[row["frame_index"]][field] != value for field, value in row.items()):
+            raise ValueError("local_preload_source_frame_or_pts_mismatch")
+    start, end = (observation[key]["frame_index"] for key in ("start_frame", "end_frame"))
+    expected = decoder_timeline[start:end + 1]
+    observed = {row["frame_index"]: row for row in timeline if start <= row["frame_index"] <= end}
+    bound = [dict(observed[row["frame_index"]]) if row["frame_index"] in observed else {
+        **dict(row), "timestamp_ms": float(Fraction(row["pts"] * row["time_base_num"] * 1000, row["time_base_den"])),
+        "selected_person_track_id": None, "selection_epoch": None, "camera_reference_epoch": None} for row in expected]
+    samples = [sample for sample in by_track.get(annotation["person_track_id"], []) if start <= sample.frame_index <= end]
+    sample = samples[0] if samples else None
+    window = {"start_ms": bound[0]["timestamp_ms"], "end_ms": bound[-1]["timestamp_ms"],
+        "person_track_id": annotation["person_track_id"], "selection_epoch": sample.selection_epoch if sample else None,
+        "camera_reference_epoch": sample.camera_reference_epoch if sample else None,
+        "camera_compensated": sample.camera_compensated if sample else False,
+        "video_sha256": _digest(document["video_sha256"]), "video_id": document["source_run_id"],
+        "event_id": annotation["annotation_id"], "event_code": annotation["technique_code"], "stage_code": annotation["stage_code"]}
+    result = compute_gs_preload_evidence(samples, window, bound)
+    if stage_reasons:
+        result["status"] = "unavailable"
+        result["reason_codes"] = sorted(set(result["reason_codes"] + ["parent_gs_stage_unavailable"] + list(stage_reasons)))
+        for row in result["auxiliary_observations"]:
+            row["value"] = None
+        result["joint_descent_fraction"] = None
+    result["source_annotation"] = {"observation": deepcopy(observation), "document_version": document["version"],
+        "document_sha256": _canonical(document), "digest_kind": "canonical_json_sorted_utf8_v1",
+        "stage_code": annotation["stage_code"], "stage_window_ms": {"start_ms": annotation["start_ms"], "end_ms": annotation["end_ms"]},
+        "expert_adjudicated": False, "file_verification": "parent_report_input_flags"}
+    return result
 
 
 def _decode_video_timeline(path, expected_digest):
@@ -457,6 +529,18 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             reasons.append("stage_window_truncated_by_source")
         if not reasons:
             reasons, _ = validate_window(samples, window, bound)
+        preload = annotation.get("local_preload_observation")
+        if preload is not None:
+            evaluation = next(rule["evaluation"] for rule in rules if rule["indicator_id"] == preload["indicator_id"])
+            if (evaluation.get("kind") != "manual_review" or evaluation.get("conditions") != []
+                    or evaluation.get("required_engine") != "temporal_preload_subwindow_required"
+                    or [(row.get("metric"), row.get("unit"), row.get("value")) for row in evaluation.get("auxiliary_observations", [])]
+                        != list(PRELOAD_REFERENCES)
+                    or any(row.get("operator") != "gte" or row.get("required") is not True
+                           for row in evaluation.get("auxiliary_observations", []))):
+                raise ValueError("local_preload_auxiliary_contract_mismatch")
+        auxiliary = (_local_preload_evidence(preload, annotation, document, decoder_timeline, timeline, by_track, reasons)
+                     if preload is not None else None)
         instance_ids = []
         for rule in rules:
             if rule["stage_code"] != annotation["stage_code"]:
@@ -469,6 +553,8 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
                 original_grade=None, source_grade_supported=False)
             if racket_binding is not None:
                 result["source_annotation"]["racket_side_observation"] = deepcopy(racket_binding)
+            if auxiliary is not None and rule["indicator_id"] == preload["indicator_id"]:
+                result["auxiliary_evidence"] = auxiliary
             by_card[rule["indicator_id"]].append(result)
             instance_ids.append(rule["indicator_id"])
         window_records.append({"annotation_id": annotation["annotation_id"], "action_id": annotation["action_id"],
