@@ -1,0 +1,469 @@
+{
+  "schema_version": "card-video-cases-extension-v1",
+  "annotation_policy": "Non-expert agent visual estimates from decoded original frames, not certified tennis labels. Slice self-rally and shadow demonstrations are exercise motions, not match contacts. No tuning is allowed on this extension; the footwork source is held out. Window overlap, action classification, hand compatibility and source-card phase validity are separate. No original-card scores or ten-stage completeness may be inferred.",
+  "media_distribution": "No video, photos or weights committed; source links and numeric provenance only.",
+  "inference_configuration": {
+    "detector": "yolo26n.pt",
+    "pose": "yolo26n-pose.pt",
+    "detect_imgsz": 640,
+    "pose_imgsz": 640,
+    "device": "cpu",
+    "max_players": 2,
+    "frame_stride": 1,
+    "original_source_frames": true
+  },
+  "cases": [
+    {
+      "id": "gs04-usta-self-slice",
+      "source_organization": "USTA",
+      "source_title": "Tennis Technique: The Slice Backhand",
+      "source_url": "https://www.usta.com/en/home/improve/tips-and-instruction/national/tennis-techniques--hitting-the-slice-backhand.html",
+      "media_url": "https://www.youtube.com/watch?v=GZIkbF19E8k",
+      "retrieved_on": "2026-10-22",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-slice-backhand.mp4",
+      "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8",
+      "run_dir": ".codex_tmp/card-video-extension-20261022/runs/gs04-usta-self-slice",
+      "split": "external_observational_validation",
+      "tuning_allowed": false,
+      "source_interval_ms": [
+        32400,
+        40400
+      ],
+      "range_semantics": "original_source_pts_end_exclusive_no_transcoding_no_subsampling",
+      "annotation_origin": "agent_visual_review_of_original_decoded_frames_2026-10-22",
+      "annotation_version": "slice-footwork-nonexpert-windows-v1",
+      "camera": "Edited front/oblique/rear views; near 35.0, 36.2 and 38.0s cuts; transition wipe near 40.2s",
+      "observation_limits": [
+        "Self-slice upward ball-control drill: not a full match GS04 cycle",
+        "Feet clipped in the first and rear close views; large movement/occlusion of racket",
+        "At least two demonstrators; source track id is reused across edited shots and does not certify physical identity",
+        "Camera compensation epochs do not establish anatomically valid 3D racket direction",
+        "Ball spin, grip, support forces and true impact timing are unverified"
+      ],
+      "annotations": [
+        {
+          "id": "backhand-self-slice-1",
+          "action_type": "backhand_slice_drill",
+          "start_ms": 32650,
+          "end_ms": 33100,
+          "anchor_ms": 32900,
+          "anchor_uncertainty_ms": 150,
+          "boundary_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "source-described Self-Slice Backhands; visible high-to-low/forward motion, not certified ball spin"
+        },
+        {
+          "id": "backhand-self-slice-2",
+          "action_type": "backhand_slice_drill",
+          "start_ms": 34100,
+          "end_ms": 34600,
+          "anchor_ms": 34300,
+          "anchor_uncertainty_ms": 150,
+          "boundary_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "source-described Self-Slice Backhands; visible high-to-low/forward motion, not certified ball spin"
+        },
+        {
+          "id": "backhand-self-slice-3",
+          "action_type": "backhand_slice_drill",
+          "start_ms": 35200,
+          "end_ms": 35650,
+          "anchor_ms": 35450,
+          "anchor_uncertainty_ms": 150,
+          "boundary_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "source-described Self-Slice Backhands; visible high-to-low/forward motion, not certified ball spin"
+        },
+        {
+          "id": "backhand-self-slice-4",
+          "action_type": "backhand_slice_drill",
+          "start_ms": 37000,
+          "end_ms": 37600,
+          "anchor_ms": 37300,
+          "anchor_uncertainty_ms": 150,
+          "boundary_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "source-described Self-Slice Backhands; visible high-to-low/forward motion, not certified ball spin"
+        },
+        {
+          "id": "backhand-self-slice-5",
+          "action_type": "backhand_slice_drill",
+          "start_ms": 39000,
+          "end_ms": 39550,
+          "anchor_ms": 39250,
+          "anchor_uncertainty_ms": 150,
+          "boundary_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "source-described Self-Slice Backhands; visible high-to-low/forward motion, not certified ball spin"
+        }
+      ],
+      "stage_windows": [],
+      "original_grade": null,
+      "declared_family": "GS04",
+      "exhaustive_annotation_scope": "five visible forward/downward self-slice motions in selected interval; reset movements excluded",
+      "manual_shot_boundaries_ms": [
+        35000,
+        36200,
+        38000,
+        40200
+      ],
+      "stage_observability": [
+        {
+          "stage_id": "GS04-M01",
+          "status": "not_observed",
+          "reason": "No opponent ball departure and no verified preparatory split-step landing in this isolated drill.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M02",
+          "status": "not_observed",
+          "reason": "No verified split-step-to-first-movement sequence.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M03",
+          "status": "visual_proxy_only",
+          "reason": "Shoulder/body turn is partly visible; weight-support establishment is not measurable from these images.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M04",
+          "status": "not_established",
+          "reason": "Foot placement does not establish weight support or push-off force.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M05",
+          "status": "visual_proxy_only",
+          "reason": "Raised racket/arm backswing visible; exact face-open boundary is unresolved.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M06",
+          "status": "not_established",
+          "reason": "3D racket-face opening and nondominant-hand release boundary cannot be certified.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M07",
+          "status": "visual_proxy_only",
+          "reason": "One-hand forward/downward sweep visible; convergence to a predicted contact region is unverified.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M08",
+          "status": "not_established",
+          "reason": "True racket-ball contact and outgoing backspin cannot be resolved; shadows have no ball.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M09",
+          "status": "visual_proxy_only",
+          "reason": "Follow-through visible, but outgoing backspin and source-defined low-finish boundary are unverified.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS04-M10",
+          "status": "not_established",
+          "reason": "Visible racket reset is not a certified low-finish-to-stable-ready boundary; edits/teaching pauses interrupt the cycle.",
+          "original_phase_established": false,
+          "original_grade": null
+        }
+      ],
+      "visual_phase_windows": [
+        {
+          "id": "gs04-visible-sweep",
+          "related_stage": "GS04-M07",
+          "start_ms": 37050,
+          "end_ms": 37500,
+          "boundary_uncertainty_ms": 150,
+          "semantics": "visible_forward_downward_arm_motion_only_not_source_card_phase",
+          "allow_card_scoring": false
+        },
+        {
+          "id": "gs04-visible-finish-to-return",
+          "related_stage": "GS04-M10",
+          "start_ms": 39400,
+          "end_ms": 40000,
+          "boundary_uncertainty_ms": 150,
+          "semantics": "visible_followthrough_and_initial_return_only_no_stable_ready",
+          "allow_card_scoring": false
+        }
+      ]
+    },
+    {
+      "id": "gs05-macci-forehand-slice",
+      "source_organization": "Rick Macci Tennis (public uploader)",
+      "source_title": "Forehand Slice by Rick Macci!",
+      "source_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+      "media_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+      "retrieved_on": "2026-10-22",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "run_dir": ".codex_tmp/card-video-extension-20261022/runs/gs05-macci-forehand-slice",
+      "split": "external_observational_validation",
+      "tuning_allowed": false,
+      "source_interval_ms": [
+        46000,
+        63000
+      ],
+      "range_semantics": "original_source_pts_end_exclusive_no_transcoding_no_subsampling",
+      "annotation_origin": "agent_visual_review_of_original_decoded_frames_2026-10-22",
+      "annotation_version": "slice-footwork-nonexpert-windows-v1",
+      "camera": "Fixed front-oblique court view, upper head sometimes cropped",
+      "observation_limits": [
+        "Three self-fed demonstrations plus two slow shadow motions; no opponent or return sequence",
+        "Video title/uploader attributes the demonstration; quality labels are not independently certified",
+        "Racket/ball blur and 25 fps prevent verified impact or spin measurement",
+        "Talking gestures and racket resets are negative examples for forward-swing detection",
+        "No claim that every source-card boundary is present"
+      ],
+      "annotations": [
+        {
+          "id": "forehand-slice-1",
+          "action_type": "forehand_slice",
+          "start_ms": 46050,
+          "end_ms": 46650,
+          "anchor_ms": 46320,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "self-fed slice demonstration"
+        },
+        {
+          "id": "forehand-slice-2",
+          "action_type": "forehand_slice",
+          "start_ms": 48350,
+          "end_ms": 48900,
+          "anchor_ms": 48600,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "self-fed slice demonstration"
+        },
+        {
+          "id": "forehand-slice-3",
+          "action_type": "forehand_slice",
+          "start_ms": 50550,
+          "end_ms": 51150,
+          "anchor_ms": 50800,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "self-fed slice demonstration"
+        },
+        {
+          "id": "forehand-slice-4",
+          "action_type": "forehand_slice",
+          "start_ms": 60850,
+          "end_ms": 61300,
+          "anchor_ms": 61040,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "slow shadow slice demonstration; no ball contact"
+        },
+        {
+          "id": "forehand-slice-5",
+          "action_type": "forehand_slice",
+          "start_ms": 62050,
+          "end_ms": 62600,
+          "anchor_ms": 62320,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "slow shadow slice demonstration; no ball contact"
+        }
+      ],
+      "stage_windows": [],
+      "original_grade": null,
+      "declared_family": "GS05",
+      "exhaustive_annotation_scope": "all five visible forward/downward demonstrations in 46–63s; pauses, explanations and resets excluded",
+      "negative_intervals": [
+        {
+          "start_ms": 51700,
+          "end_ms": 59500,
+          "description": "standing explanation, no complete forward swing"
+        }
+      ],
+      "stage_observability": [
+        {
+          "stage_id": "GS05-M01",
+          "status": "not_observed",
+          "reason": "No opponent ball departure and no verified preparatory split-step landing in this isolated drill.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M02",
+          "status": "not_observed",
+          "reason": "No verified split-step-to-first-movement sequence.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M03",
+          "status": "visual_proxy_only",
+          "reason": "Shoulder/body turn is partly visible; weight-support establishment is not measurable from these images.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M04",
+          "status": "not_established",
+          "reason": "Foot placement does not establish weight support or push-off force.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M05",
+          "status": "visual_proxy_only",
+          "reason": "Raised racket/arm backswing visible; exact face-open boundary is unresolved.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M06",
+          "status": "not_established",
+          "reason": "3D racket-face opening and nondominant-hand release boundary cannot be certified.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M07",
+          "status": "visual_proxy_only",
+          "reason": "One-hand forward/downward sweep visible; convergence to a predicted contact region is unverified.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M08",
+          "status": "not_established",
+          "reason": "True racket-ball contact and outgoing backspin cannot be resolved; shadows have no ball.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M09",
+          "status": "visual_proxy_only",
+          "reason": "Follow-through visible, but outgoing backspin and source-defined low-finish boundary are unverified.",
+          "original_phase_established": false,
+          "original_grade": null
+        },
+        {
+          "stage_id": "GS05-M10",
+          "status": "not_established",
+          "reason": "Visible racket reset is not a certified low-finish-to-stable-ready boundary; edits/teaching pauses interrupt the cycle.",
+          "original_phase_established": false,
+          "original_grade": null
+        }
+      ],
+      "visual_phase_windows": [
+        {
+          "id": "gs05-visible-sweep",
+          "related_stage": "GS05-M07",
+          "start_ms": 48360,
+          "end_ms": 48760,
+          "boundary_uncertainty_ms": 160,
+          "semantics": "visible_forward_downward_arm_motion_only_not_source_card_phase",
+          "allow_card_scoring": false
+        },
+        {
+          "id": "gs05-visible-reset",
+          "related_stage": "GS05-M10",
+          "start_ms": 49280,
+          "end_ms": 49760,
+          "boundary_uncertainty_ms": 160,
+          "semantics": "visible_racket_return_only_not_certified_stable_ready",
+          "allow_card_scoring": false
+        }
+      ]
+    },
+    {
+      "id": "fs-usta-return-footwork-heldout",
+      "source_organization": "USTA",
+      "source_title": "Cardio Tennis with Michael Harper: High Performance Footwork",
+      "source_url": "https://www.usta.com/en/home/play/adult-tennis/tennis-at-home/cardio-tennis-with-michael-harper--high-performance-footwork.html",
+      "media_url": "https://www.youtube.com/watch?v=h_F0qTFuvgo",
+      "retrieved_on": "2026-10-22",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-footwork.mp4",
+      "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+      "run_dir": ".codex_tmp/card-video-extension-20261022/runs/fs-usta-return-footwork-heldout",
+      "split": "held_out_validation",
+      "tuning_allowed": false,
+      "source_interval_ms": [
+        392000,
+        410000
+      ],
+      "range_semantics": "original_source_pts_end_exclusive_no_transcoding_no_subsampling",
+      "annotation_origin": "agent_visual_review_of_original_decoded_frames_2026-10-22",
+      "annotation_version": "slice-footwork-nonexpert-windows-v1",
+      "camera": "Fixed driveway view; moving demonstrator in foreground and adult coach in background",
+      "observation_limits": [
+        "Shadow drill without ball/opponent: stroke candidates do not imply contacts",
+        "Return crossovers and airborne transitions must not all be labelled split steps",
+        "Partial occlusion when demonstrator overlaps coach",
+        "Foot contact remains a visual proxy, no force/pressure sensor",
+        "30 fps and review sampling bound timing precision; no expert adjudication"
+      ],
+      "annotations": [],
+      "stage_windows": [],
+      "original_grade": null,
+      "declared_family": "FS",
+      "exhaustive_annotation_scope": "no stroke recall; footwork reviewed independently in dedicated annotations/results"
+    }
+  ],
+  "unprocessed_candidates": [
+    {
+      "source_url": "https://www.tennisresources.com/slice-forehand/",
+      "title": "USPTA/TennisResources Slice Forehand (Bill Tym)",
+      "status": "download_failed_not_run",
+      "media_url": "https://no-cache.uspta.com/trc/OCS2_10_Bill_Tym_Slice_forehand-Mobile.mp4",
+      "reason": "Public linked MP4 returned HTTP 404 over HTTP and HTTPS; no membership bypass attempted"
+    },
+    {
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "status": "catalogue_inspected_no_new_matching_case",
+      "reason": "Published list has forehand/backhands/volleys/serve; no separately labelled slice or footwork video. Volley was not relabelled slice."
+    }
+  ]
+}
