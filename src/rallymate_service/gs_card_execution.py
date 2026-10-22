@@ -20,12 +20,14 @@ import subprocess
 
 from rallymate_features.coordinates import validated_camera_transform
 from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_card_scores
-from rallymate_scoring.card_kinematics import finite, validate_window
+from rallymate_scoring.card_kinematics import _point as _valid_card_point, finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.stroke_candidates import _sample, _stabilize_partial_torso_windows
 
 VERSION = "gs-card-execution-v1.0.0"
 ANNOTATION_VERSION = "gs-stage-annotations-v1.0.0"
+RACKET_SIDE_VERSION = "manual-racket-side-observation-v1.0.0"
+RACKET_SIDE_SEMANTICS = "visually_observed_racket_holding_wrist_not_dominant_hand"
 MAX_RECORD_BYTES = 16 * 1024 * 1024
 MAX_FRAME_BYTES = 2 * 1024 * 1024 * 1024
 MAX_FRAME_RECORDS = 150000
@@ -104,6 +106,39 @@ def _keys(value, required, optional=()):
         raise ValueError("annotation_schema_fields_invalid")
 
 
+def _validate_racket_side_observation(observation, action, video_sha256):
+    _keys(observation, ("version", "method", "action_id", "video_sha256", "person_track_id",
+        "measurement_wrist_side", "observed_racket_hands", "source", "source_description",
+        "uncertainty_ms", "semantics", "source_frames"))
+    if (observation["version"] != RACKET_SIDE_VERSION or observation["method"] != "manual_visual_observation"
+            or observation["semantics"] != RACKET_SIDE_SEMANTICS):
+        raise ValueError("racket_side_observation_version_or_semantics_invalid")
+    if (observation["action_id"] != action["action_id"]
+            or not _integer(observation["person_track_id"])
+            or observation["person_track_id"] != action["person_track_id"]
+            or _digest(observation["video_sha256"]) != _digest(video_sha256)):
+        raise ValueError("racket_side_action_person_or_video_mismatch")
+    side, hands = observation["measurement_wrist_side"], observation["observed_racket_hands"]
+    if side not in ("left", "right") or hands not in ("left", "right", "both"):
+        raise ValueError("racket_side_value_invalid")
+    if (action["technique_code"] == "GS02" and hands != "both") or (hands != "both" and hands != side):
+        raise ValueError("racket_side_hands_or_technique_mismatch")
+    if (any(not _text(observation[key]) or not observation[key].strip() for key in ("source", "source_description"))
+            or not finite(observation["uncertainty_ms"]) or observation["uncertainty_ms"] < 0):
+        raise ValueError("racket_side_review_description_invalid")
+    frames = observation["source_frames"]
+    if not isinstance(frames, list) or not 1 <= len(frames) <= MAX_ANNOTATIONS:
+        raise ValueError("racket_side_source_frames_invalid")
+    previous = -1
+    for frame in frames:
+        _keys(frame, ("frame_index", "pts", "time_base_num", "time_base_den"))
+        if (not _integer(frame["frame_index"]) or frame["frame_index"] <= previous
+                or not _integer(frame["pts"]) or not _integer(frame["time_base_num"]) or frame["time_base_num"] == 0
+                or not _integer(frame["time_base_den"]) or frame["time_base_den"] == 0):
+            raise ValueError("racket_side_source_frame_identity_invalid")
+        previous = frame["frame_index"]
+
+
 def validate_stage_annotations(document):
     """Validate author-supplied identities and stages, never technical truth."""
     _keys(document, ("version", "source_run_id", "video_sha256", "input_artifact_sha256", "actions", "stages"))
@@ -120,11 +155,13 @@ def validate_stage_annotations(document):
     techniques = {row["event_code"] for row in stages.values()}
     actions = {}
     for action in document["actions"]:
-        _keys(action, ("action_id", "technique_code", "person_track_id", "start_ms", "end_ms"))
+        _keys(action, ("action_id", "technique_code", "person_track_id", "start_ms", "end_ms"), ("racket_side_observation",))
         if (not _text(action["action_id"]) or action["action_id"] in actions or not _text(action["technique_code"]) or action["technique_code"] not in techniques
                 or not _integer(action["person_track_id"]) or not finite(action["start_ms"]) or not finite(action["end_ms"])
                 or not 0 <= action["start_ms"] < action["end_ms"]):
             raise ValueError("action_identity_or_window_invalid")
+        if "racket_side_observation" in action:
+            _validate_racket_side_observation(action["racket_side_observation"], action, document["video_sha256"])
         actions[action["action_id"]] = action
     ids, accepted = set(), []
     for annotation in document["stages"]:
@@ -318,6 +355,43 @@ def _unavailable(rule, window, reasons):
         "source_grade_supported": False, "reason_codes": sorted(set(reasons)), "conditions": []}
 
 
+def _bind_racket_side_observations(document, timeline, by_track):
+    """Verify manual references, without inferring grip or dominant hand."""
+    source_by_index = {row["frame_index"]: row for row in timeline}
+    sample_by_identity = {(sample.track, sample.frame_index): sample for group in by_track.values() for sample in group}
+    bindings = {}
+    for action in document["actions"]:
+        observation = action.get("racket_side_observation")
+        if observation is None:
+            continue
+        verified = []
+        for frame in observation["source_frames"]:
+            source = source_by_index.get(frame["frame_index"])
+            if source is None or any(source[key] != frame[key] for key in ("pts", "time_base_num", "time_base_den")):
+                raise ValueError("racket_side_source_frame_or_pts_mismatch")
+            actual_ms = Fraction(source["pts"] * source["time_base_num"] * 1000, source["time_base_den"])
+            if not action["start_ms"] <= actual_ms <= action["end_ms"]:
+                raise ValueError("racket_side_source_frame_outside_action")
+            if source["selected_person_track_id"] != action["person_track_id"]:
+                raise ValueError("racket_side_selected_person_mismatch")
+            sample = sample_by_identity.get((action["person_track_id"], frame["frame_index"]))
+            hands = ("left", "right") if observation["observed_racket_hands"] == "both" else (observation["measurement_wrist_side"],)
+            if sample is None or any(_valid_card_point(sample, hand + "_wrist") is None for hand in hands):
+                raise ValueError("racket_side_source_wrist_observation_missing")
+            verified.append({**deepcopy(frame), "video_sha256": _digest(document["video_sha256"]),
+                "person_track_id": action["person_track_id"], "timestamp_ms": float(actual_ms),
+                "selection_epoch": source["selection_epoch"], "camera_reference_epoch": source["camera_reference_epoch"]})
+        bindings[action["action_id"]] = {**deepcopy(observation), "technique_code": action["technique_code"],
+            "action_window_ms": {"start_ms": action["start_ms"], "end_ms": action["end_ms"]},
+            "document_version": document["version"],
+            "document_sha256": _canonical(document), "digest_kind": "canonical_json_sorted_utf8_v1",
+            "verification": "source_frames_matched_to_decoder_and_selected_person",
+            "evidence_scope": "sampled_frames_only", "expert_adjudicated": False,
+            "dominant_hand_established": False, "continuous_racket_hold_established": False,
+            "source_frame_bindings": verified}
+    return bindings
+
+
 def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline, annotation_document, *, source_job_id):
     """Internal deterministic record replay; artifact entry point verifies files.
 
@@ -332,6 +406,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
     rules = [rule for rule in catalogue["cards"] if rule["event_code"].startswith("GS")]
     by_track, timeline = _prepare_samples(frame_records, primary_timeline, decoder_timeline,
         video_sha256=_digest(document["video_sha256"]), job_id=source_job_id)
+    racket_bindings = _bind_racket_side_observations(document, timeline, by_track)
     by_card, window_records = defaultdict(list), []
     for annotation in document["stages"]:
         expected = [row for row in decoder_timeline if annotation["start_ms"] <=
@@ -351,6 +426,21 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             "event_code": annotation["technique_code"], "stage_code": annotation["stage_code"],
             "stage_id": annotation["stage_code"], "event_id": annotation["annotation_id"],
             "stage_binding": deepcopy(annotation["binding"])}
+        racket_binding = deepcopy(racket_bindings.get(annotation["action_id"]))
+        if racket_binding is not None:
+            # A track number alone does not establish identity across selection
+            # or camera resets. Never overwrite the stage's own binding.
+            applicable = bool(bound) and [row["frame_index"] for row in bound] == expected_indices and all(
+                row["selected_person_track_id"] == annotation["person_track_id"]
+                and row["selection_epoch"] == window["selection_epoch"]
+                and row["camera_reference_epoch"] == window["camera_reference_epoch"] for row in bound) and all(
+                row["selection_epoch"] == window["selection_epoch"]
+                and row["camera_reference_epoch"] == window["camera_reference_epoch"]
+                for row in racket_binding["source_frame_bindings"])
+            racket_binding["stage_continuity_verified"] = applicable
+            window["racket_side_binding"] = racket_binding
+            if applicable:
+                window["racket_side"] = racket_binding["measurement_wrist_side"]
         reasons = []
         if [row["frame_index"] for row in bound] != expected_indices:
             reasons.append("source_decoder_window_inventory_incomplete")
@@ -375,6 +465,8 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
                 source_annotation={"annotation_id": annotation["annotation_id"], "document_sha256": _canonical(document),
                     "digest_kind": "canonical_json_sorted_utf8_v1", "binding": deepcopy(annotation["binding"])},
                 original_grade=None, source_grade_supported=False)
+            if racket_binding is not None:
+                result["source_annotation"]["racket_side_observation"] = deepcopy(racket_binding)
             by_card[rule["indicator_id"]].append(result)
             instance_ids.append(rule["indicator_id"])
         window_records.append({"annotation_id": annotation["annotation_id"], "action_id": annotation["action_id"],

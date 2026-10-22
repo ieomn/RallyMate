@@ -1,0 +1,267 @@
+{
+  "version": "gs-racket-side-review-v1.0.0",
+  "created_on": "2026-10-22",
+  "base_stage_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+  "base_stage_manifest_sha256": "0a52e4992326fb03ed84c77a4c81b9a4c07cb58d5fa8b16d2c15d72e94ff3d5e",
+  "policy": {
+    "expert_adjudicated": false,
+    "dominant_hand_established": false,
+    "continuous_racket_hold_established": false,
+    "threshold_tuning": false,
+    "source_windows_changed": false,
+    "review_scope": "One sampled original frame in the first action of each existing MIT source; no extension of stage boundaries or promotion to technical truth."
+  },
+  "cases": [
+    {
+      "case_id": "ocw-pe.710-2-forehand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+        "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+      },
+      "reviewer_kind": "nonexpert_agent_visual_estimate",
+      "reviewed_source_frame": {
+        "frame_index": 38,
+        "pts": 229860,
+        "time_base_num": 1,
+        "time_base_den": 90000
+      },
+      "source_frame_image": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0038.png",
+      "source_frame_image_sha256": "bd598f49a3108b83c1f3d7a6f9478edc75e934b66d7af73254c60fff0c88e4f8",
+      "annotations": {
+        "version": "gs-stage-annotations-v1.0.0",
+        "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+        "input_artifact_sha256": {
+          "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+          "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+          "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+        },
+        "actions": [
+          {
+            "action_id": "forehand-1",
+            "technique_code": "GS01",
+            "person_track_id": 1,
+            "start_ms": 2087.0,
+            "end_ms": 3154.0,
+            "racket_side_observation": {
+              "version": "manual-racket-side-observation-v1.0.0",
+              "method": "manual_visual_observation",
+              "action_id": "forehand-1",
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "person_track_id": 1,
+              "measurement_wrist_side": "right",
+              "observed_racket_hands": "right",
+              "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+              "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+              "uncertainty_ms": 100,
+              "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+              "source_frames": [
+                {
+                  "frame_index": 38,
+                  "pts": 229860,
+                  "time_base_num": 1,
+                  "time_base_den": 90000
+                }
+              ]
+            }
+          }
+        ],
+        "stages": [
+          {
+            "annotation_id": "forehand-1-source-m07-v1",
+            "action_id": "forehand-1",
+            "technique_code": "GS01",
+            "stage_code": "GS01-M07",
+            "person_track_id": 1,
+            "start_ms": 2354.0,
+            "end_ms": 2620.0,
+            "binding": {
+              "method": "manual_anchor",
+              "version": "mit-source-m07-visible-boundaries-v1",
+              "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+              "uncertainty_ms": 150,
+              "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "ocw-pe.710-1hand_backhand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k",
+      "input_artifact_sha256": {
+        "frames.jsonl": "7896343f0c8b9a29056705ff437b9294b251ca558af67a88875d8d33902a598f",
+        "primary-player.jsonl": "60695c660254a1e6e827deae4694558f54c4768f3330fb61a07f791e49c8409e",
+        "summary.json": "27de6664d1a4e40e414bedd01829e47a0623660a879ce73262f5c1ed173cb0a0"
+      },
+      "reviewer_kind": "nonexpert_agent_visual_estimate",
+      "reviewed_source_frame": {
+        "frame_index": 36,
+        "pts": 217800,
+        "time_base_num": 1,
+        "time_base_den": 90000
+      },
+      "source_frame_image": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0036.png",
+      "source_frame_image_sha256": "87a471e499face81b167d1562d45ff225da9362b064b968f689e331364343211",
+      "annotations": {
+        "version": "gs-stage-annotations-v1.0.0",
+        "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+        "input_artifact_sha256": {
+          "frames.jsonl": "7896343f0c8b9a29056705ff437b9294b251ca558af67a88875d8d33902a598f",
+          "primary-player.jsonl": "60695c660254a1e6e827deae4694558f54c4768f3330fb61a07f791e49c8409e",
+          "summary.json": "27de6664d1a4e40e414bedd01829e47a0623660a879ce73262f5c1ed173cb0a0"
+        },
+        "actions": [
+          {
+            "action_id": "backhand-1",
+            "technique_code": "GS03",
+            "person_track_id": 1,
+            "start_ms": 1954.0,
+            "end_ms": 3020.0,
+            "racket_side_observation": {
+              "version": "manual-racket-side-observation-v1.0.0",
+              "method": "manual_visual_observation",
+              "action_id": "backhand-1",
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "person_track_id": 1,
+              "measurement_wrist_side": "right",
+              "observed_racket_hands": "right",
+              "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+              "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+              "uncertainty_ms": 100,
+              "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+              "source_frames": [
+                {
+                  "frame_index": 36,
+                  "pts": 217800,
+                  "time_base_num": 1,
+                  "time_base_den": 90000
+                }
+              ]
+            }
+          }
+        ],
+        "stages": [
+          {
+            "annotation_id": "backhand-1-source-m07-v1",
+            "action_id": "backhand-1",
+            "technique_code": "GS03",
+            "stage_code": "GS03-M07",
+            "person_track_id": 1,
+            "start_ms": 2354.0,
+            "end_ms": 2420.0,
+            "binding": {
+              "method": "manual_anchor",
+              "version": "mit-source-m07-visible-boundaries-v1",
+              "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+              "uncertainty_ms": 100,
+              "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "ocw-pe.710-2-hand_backhand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+      "input_artifact_sha256": {
+        "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+        "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+        "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+      },
+      "reviewer_kind": "nonexpert_agent_visual_estimate",
+      "reviewed_source_frame": {
+        "frame_index": 28,
+        "pts": 169830,
+        "time_base_num": 1,
+        "time_base_den": 90000
+      },
+      "source_frame_image": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0028.png",
+      "source_frame_image_sha256": "71f97c6b2eca90d249c7a7c2ef9df45bcc914a154126730e47334273cf2dcfab",
+      "annotations": {
+        "version": "gs-stage-annotations-v1.0.0",
+        "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+        "input_artifact_sha256": {
+          "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+          "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+          "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+        },
+        "actions": [
+          {
+            "action_id": "two_handed_backhand-1",
+            "technique_code": "GS02",
+            "person_track_id": 1,
+            "start_ms": 1354.0,
+            "end_ms": 2287.0,
+            "racket_side_observation": {
+              "version": "manual-racket-side-observation-v1.0.0",
+              "method": "manual_visual_observation",
+              "action_id": "two_handed_backhand-1",
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "person_track_id": 1,
+              "measurement_wrist_side": "right",
+              "observed_racket_hands": "both",
+              "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+              "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+              "uncertainty_ms": 100,
+              "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+              "source_frames": [
+                {
+                  "frame_index": 28,
+                  "pts": 169830,
+                  "time_base_num": 1,
+                  "time_base_den": 90000
+                }
+              ]
+            }
+          }
+        ],
+        "stages": [
+          {
+            "annotation_id": "two_handed_backhand-1-source-m07-v1",
+            "action_id": "two_handed_backhand-1",
+            "technique_code": "GS02",
+            "stage_code": "GS02-M07",
+            "person_track_id": 1,
+            "start_ms": 1754.0,
+            "end_ms": 1887.0,
+            "binding": {
+              "method": "manual_anchor",
+              "version": "mit-source-m07-visible-boundaries-v1",
+              "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+              "uncertainty_ms": 100,
+              "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "base_stage_manifest_raw_sha256_at_review": "db01b85f27e6ea1dce71c0737b45de1d5ffca8a5b015b632d8aaffcd1b2b3eb7",
+  "base_stage_manifest_digest_kind": "canonical_json_sorted_utf8_v1",
+  "input_artifact_digest_kind": "raw_file_sha256",
+  "source_video_digest_kind": "raw_file_sha256",
+  "source_frame_image_digest_kind": "raw_file_sha256"
+}
