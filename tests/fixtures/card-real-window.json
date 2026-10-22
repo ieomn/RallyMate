@@ -1,0 +1,3700 @@
+{
+  "schema_version": "card-real-window-v1",
+  "source": "Fresh CPU YOLO26n inference of MIT OCW 2026-10-22; all coordinates are actual model output, no repaired trajectories.",
+  "cases": [
+    {
+      "case_id": "ocw-pe.710-2-forehand-220k",
+      "source_video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46"
+      },
+      "window": {
+        "start_ms": 1687,
+        "end_ms": 2287,
+        "person_track_id": 1,
+        "selection_epoch": 9,
+        "camera_reference_epoch": 4,
+        "camera_compensated": true,
+        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+        "stage_id": "GS01-M03",
+        "event_code": "GS01",
+        "stage_code": "M03",
+        "event_id": "forehand-1-preparation",
+        "video_id": "ocw-pe.710-2-forehand-220k",
+        "stage_binding": {
+          "method": "manual_anchor",
+          "version": "mit-forward-swing-windows-v1",
+          "source": "agent_visual_review_of_decoded_frames_2026-10-22",
+          "uncertainty_ms": 150
+        }
+      },
+      "timeline": [
+        {
+          "frame_index": 25,
+          "pts": 151830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1687
+        },
+        {
+          "frame_index": 26,
+          "pts": 157860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1754
+        },
+        {
+          "frame_index": 27,
+          "pts": 163800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1820
+        },
+        {
+          "frame_index": 28,
+          "pts": 169830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1887
+        },
+        {
+          "frame_index": 29,
+          "pts": 175860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1954
+        },
+        {
+          "frame_index": 30,
+          "pts": 181800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 2020
+        },
+        {
+          "frame_index": 31,
+          "pts": 187830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 2087
+        },
+        {
+          "frame_index": 32,
+          "pts": 193860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 2154
+        },
+        {
+          "frame_index": 33,
+          "pts": 199800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 2220
+        },
+        {
+          "frame_index": 34,
+          "pts": 205830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 2287
+        }
+      ],
+      "samples": [
+        {
+          "time": 1687,
+          "frame_index": 25,
+          "track": 1,
+          "center": [
+            208.05089392466886,
+            70.99213659081431
+          ],
+          "scale": 42.07222777001854,
+          "points": {
+            "nose": [
+              -0.10733097066193868,
+              -0.2888166745593196
+            ],
+            "left_eye": [
+              -0.049526051085990334,
+              -0.35084543221424486
+            ],
+            "right_eye": [
+              -0.1743536165202054,
+              -0.33167543170752944
+            ],
+            "left_ear": [
+              0.06347942454532364,
+              -0.326328731067705
+            ],
+            "right_ear": [
+              -0.23160696859221402,
+              -0.27896956440682275
+            ],
+            "left_shoulder": [
+              0.18412707548448726,
+              -0.016056268025421795
+            ],
+            "right_shoulder": [
+              -0.18412707548448726,
+              0.01605626802542146
+            ],
+            "left_elbow": [
+              -0.11564709884042927,
+              0.43427639634401366
+            ],
+            "right_elbow": [
+              -0.39372154348104915,
+              0.3727070252715781
+            ],
+            "left_wrist": [
+              -0.5407638020403508,
+              0.4022349601948527
+            ],
+            "right_wrist": [
+              -0.665089934436662,
+              0.32755845211959667
+            ],
+            "left_hip": [
+              0.22187228045966906,
+              0.9950577629779085
+            ],
+            "right_hip": [
+              -0.05339988818222617,
+              0.9978338680548264
+            ],
+            "left_knee": [
+              0.08595115912567834,
+              1.76895541164956
+            ],
+            "right_knee": [
+              -0.08717096141636659,
+              1.7631213986467134
+            ],
+            "left_ankle": [
+              0.17416407223582886,
+              2.5731036392019133
+            ],
+            "right_ankle": [
+              0.015391792569325833,
+              2.516572891354007
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              185.153,
+              93.336
+            ],
+            "right": [
+              178.983,
+              89.619
+            ]
+          },
+          "raw_scale": 49.66659522506047,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.98517,
+            "left_eye": 0.98301,
+            "right_eye": 0.95869,
+            "left_ear": 0.83892,
+            "right_ear": 0.50161,
+            "left_shoulder": 0.99101,
+            "right_shoulder": 0.99022,
+            "left_elbow": 0.97755,
+            "right_elbow": 0.9472,
+            "left_wrist": 0.9505,
+            "right_wrist": 0.94107,
+            "left_hip": 0.99238,
+            "right_hip": 0.99195,
+            "left_knee": 0.9972,
+            "right_knee": 0.99664,
+            "left_ankle": 0.98988,
+            "right_ankle": 0.99062
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              203.5352408802026,
+              58.8409756749753
+            ],
+            "left_eye": [
+              205.9672226228295,
+              56.231287654626
+            ],
+            "right_eye": [
+              200.7154488579043,
+              57.0378122822959
+            ],
+            "left_ear": [
+              210.72161473284942,
+              57.2627598894327
+            ],
+            "right_ear": [
+              198.3066727889337,
+              59.25526553618761
+            ],
+            "left_shoulder": [
+              215.7975301830796,
+              70.3166136253123
+            ],
+            "right_shoulder": [
+              200.3042576662581,
+              71.66765955631631
+            ],
+            "left_elbow": [
+              203.18536284131247,
+              89.2631120529425
+            ],
+            "right_elbow": [
+              191.4861514693709,
+              86.6727514495262
+            ],
+            "left_wrist": [
+              185.299756075446,
+              87.9150574531965
+            ],
+            "right_wrist": [
+              180.0690787155029,
+              84.7732503963847
+            ],
+            "left_hip": [
+              217.3855550440215,
+              112.856433439146
+            ],
+            "right_hip": [
+              205.80424166617271,
+              112.9732303642556
+            ],
+            "left_knee": [
+              211.6670506685015,
+              145.41603158474152
+            ],
+            "right_knee": [
+              204.38341738102798,
+              145.1705816608725
+            ],
+            "left_ankle": [
+              215.3783644411286,
+              179.24833897518081
+            ],
+            "right_ankle": [
+              208.6984609274344,
+              176.86996447571423
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 25,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 151830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1687.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1754,
+          "frame_index": 26,
+          "track": 1,
+          "center": [
+            207.26984276210905,
+            70.23003230916336
+          ],
+          "scale": 43.025478570336,
+          "points": {
+            "nose": [
+              -0.08782000472317428,
+              -0.2507605746864096
+            ],
+            "left_eye": [
+              -0.033005878180465624,
+              -0.31082331537059354
+            ],
+            "right_eye": [
+              -0.1506046102242844,
+              -0.2950747549701483
+            ],
+            "left_ear": [
+              0.06855688043202883,
+              -0.3040795731484734
+            ],
+            "right_ear": [
+              -0.2123563400988796,
+              -0.265997457502495
+            ],
+            "left_shoulder": [
+              0.17577291322665897,
+              -3.0619513407646426e-05
+            ],
+            "right_shoulder": [
+              -0.17577291322665897,
+              3.061951340731614e-05
+            ],
+            "left_elbow": [
+              -0.16254638952913622,
+              0.3724703525158581
+            ],
+            "right_elbow": [
+              -0.4706822744726185,
+              0.24352329647901488
+            ],
+            "left_wrist": [
+              -0.6786641277549376,
+              0.3429779264416161
+            ],
+            "right_wrist": [
+              -0.8265712011952946,
+              0.20926730863522217
+            ],
+            "left_hip": [
+              0.2362301333979204,
+              0.9977065855071954
+            ],
+            "right_hip": [
+              -0.025095563393644486,
+              0.9911177388988363
+            ],
+            "left_knee": [
+              0.09746613142215875,
+              1.7835709431891922
+            ],
+            "right_knee": [
+              -0.04483704614466259,
+              1.792227043742592
+            ],
+            "left_ankle": [
+              0.19710524861724796,
+              2.588936400070405
+            ],
+            "right_ankle": [
+              0.05187431662592714,
+              2.5346406828779147
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              177.789,
+              89.865
+            ],
+            "right": [
+              170.288,
+              83.064
+            ]
+          },
+          "raw_scale": 50.781472007514694,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.98463,
+            "left_eye": 0.97848,
+            "right_eye": 0.972,
+            "left_ear": 0.78599,
+            "right_ear": 0.6525,
+            "left_shoulder": 0.9948,
+            "right_shoulder": 0.99148,
+            "left_elbow": 0.98518,
+            "right_elbow": 0.91886,
+            "left_wrist": 0.96181,
+            "right_wrist": 0.87869,
+            "left_hip": 0.99058,
+            "right_hip": 0.98844,
+            "left_knee": 0.99718,
+            "right_knee": 0.99576,
+            "left_ankle": 0.97808,
+            "right_ankle": 0.97937
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              203.4913450308453,
+              59.440938576708106
+            ],
+            "left_eye": [
+              205.8497490577603,
+              56.856710414525104
+            ],
+            "right_eye": [
+              200.7900073323103,
+              57.5342997625481
+            ],
+            "left_ear": [
+              210.2195353519864,
+              57.1468631509868
+            ],
+            "right_ear": [
+              198.13310960190972,
+              58.785364401625905
+            ],
+            "left_shoulder": [
+              214.8325564733882,
+              70.22871488994541
+            ],
+            "right_shoulder": [
+              199.7071290508299,
+              70.2313497283813
+            ],
+            "left_elbow": [
+              200.2762065627377,
+              86.25574747941991
+            ],
+            "right_elbow": [
+              187.0185126483504,
+              80.7077386831988
+            ],
+            "left_wrist": [
+              178.0699938769332,
+              84.9868217333754
+            ],
+            "right_wrist": [
+              171.70622125822402,
+              79.23385841232
+            ],
+            "left_hip": [
+              217.4337573042889,
+              113.1568356233863
+            ],
+            "right_hip": [
+              206.1900941371053,
+              112.87334734483511
+            ],
+            "left_knee": [
+              211.4633697109467,
+              146.96902570402392
+            ],
+            "right_knee": [
+              205.3407073940547,
+              147.3414585728869
+            ],
+            "left_ankle": [
+              215.7503904125912,
+              181.6202599103554
+            ],
+            "right_ankle": [
+              209.5017600604487,
+              179.28416069382888
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 26,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 157860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1754.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1820,
+          "frame_index": 27,
+          "track": 1,
+          "center": [
+            206.6021244573518,
+            70.21113976594265
+          ],
+          "scale": 43.62154498174947,
+          "points": {
+            "nose": [
+              -0.10436546436053878,
+              -0.2533113820164466
+            ],
+            "left_eye": [
+              -0.042578760947721915,
+              -0.31519526040903484
+            ],
+            "right_eye": [
+              -0.16496261943620422,
+              -0.2978543647357573
+            ],
+            "left_ear": [
+              0.07178684058686878,
+              -0.3033161567607435
+            ],
+            "right_ear": [
+              -0.2255248211012459,
+              -0.26273387769186934
+            ],
+            "left_shoulder": [
+              0.20414065314457502,
+              -0.027147397361695844
+            ],
+            "right_shoulder": [
+              -0.2041406531445757,
+              0.02714739736169617
+            ],
+            "left_elbow": [
+              0.06963177359768248,
+              0.2877544686259308
+            ],
+            "right_elbow": [
+              -0.4432306633946964,
+              0.23151882815460548
+            ],
+            "left_wrist": [
+              -0.25334684698860194,
+              0.2647121371618012
+            ],
+            "right_wrist": [
+              -0.7957196443890332,
+              0.17365814894318393
+            ],
+            "left_hip": [
+              0.2640519418514609,
+              0.9882738469199787
+            ],
+            "right_hip": [
+              -0.028739727125273097,
+              0.9978349521141162
+            ],
+            "left_knee": [
+              0.11994247643894995,
+              1.7516510094855282
+            ],
+            "right_knee": [
+              -0.06967198483847045,
+              1.7304010213192673
+            ],
+            "left_ankle": [
+              0.20077167509137223,
+              2.5348881903297875
+            ],
+            "right_ankle": [
+              0.048853149521271635,
+              2.4590128686284025
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              200.102,
+              86.139
+            ],
+            "right": [
+              172.181,
+              81.411
+            ]
+          },
+          "raw_scale": 51.49162555455013,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.99069,
+            "left_eye": 0.99363,
+            "right_eye": 0.98659,
+            "left_ear": 0.87852,
+            "right_ear": 0.61517,
+            "left_shoulder": 0.99058,
+            "right_shoulder": 0.99379,
+            "left_elbow": 0.91417,
+            "right_elbow": 0.96763,
+            "left_wrist": 0.82898,
+            "right_wrist": 0.96552,
+            "left_hip": 0.9933,
+            "right_hip": 0.99348,
+            "left_knee": 0.99803,
+            "right_knee": 0.99801,
+            "left_ankle": 0.98495,
+            "right_ankle": 0.98987
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              202.0495416592074,
+              59.1613059209231
+            ],
+            "left_eye": [
+              204.7447731214036,
+              56.461835535975695
+            ],
+            "right_eye": [
+              199.4062001333082,
+              57.218272196611395
+            ],
+            "left_ear": [
+              209.73357735310958,
+              56.9800203901125
+            ],
+            "right_ear": [
+              196.7643833291828,
+              58.750282101977305
+            ],
+            "left_shoulder": [
+              215.5070551411016,
+              69.026928350792
+            ],
+            "right_shoulder": [
+              197.69719377360198,
+              71.3953511810933
+            ],
+            "left_elbow": [
+              209.6395700015021,
+              82.7634342628081
+            ],
+            "right_elbow": [
+              187.2677181367894,
+              80.3103487424107
+            ],
+            "left_wrist": [
+              195.5507435754541,
+              81.7582921643612
+            ],
+            "right_wrist": [
+              171.8916041967739,
+              77.7863765215151
+            ],
+            "left_hip": [
+              218.1204781163436,
+              113.32117183364909
+            ],
+            "right_hip": [
+              205.3484531577935,
+              113.7382420139504
+            ],
+            "left_knee": [
+              211.8342005885559,
+              146.6208630685425
+            ],
+            "right_knee": [
+              203.5629248367527,
+              145.6939057538863
+            ],
+            "left_ankle": [
+              215.3600951134113,
+              180.786878984119
+            ],
+            "right_ankle": [
+              208.7331743166941,
+              177.4770802255173
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 27,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 163800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1820.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1887,
+          "frame_index": 28,
+          "track": 1,
+          "center": [
+            206.0718992880503,
+            68.92129171581351
+          ],
+          "scale": 44.81664078509939,
+          "points": {
+            "nose": [
+              -0.15273615183071124,
+              -0.19696473999011338
+            ],
+            "left_eye": [
+              -0.09983404577851586,
+              -0.25599335687315417
+            ],
+            "right_eye": [
+              -0.19484426404052765,
+              -0.24260068725218925
+            ],
+            "left_ear": [
+              0.03252801509443743,
+              -0.2689910803573578
+            ],
+            "left_shoulder": [
+              0.16452000111699927,
+              -0.011555536673290486
+            ],
+            "right_shoulder": [
+              -0.16452000111699927,
+              0.011555536673290486
+            ],
+            "left_elbow": [
+              -0.041051848373321057,
+              0.26698288821352506
+            ],
+            "right_elbow": [
+              -0.40401840855738635,
+              0.2209235682771075
+            ],
+            "left_wrist": [
+              -0.38304121953331816,
+              0.21274789223059695
+            ],
+            "right_wrist": [
+              -0.7371479671254489,
+              0.15401647043921773
+            ],
+            "left_hip": [
+              0.24372975513530987,
+              0.9968601749285059
+            ],
+            "right_hip": [
+              -0.01394225053192167,
+              0.9898953970350283
+            ],
+            "left_knee": [
+              0.1404933126692244,
+              1.7533793830254742
+            ],
+            "right_knee": [
+              -0.07248168777834053,
+              1.6958817384678744
+            ],
+            "left_ankle": [
+              0.21469659153235537,
+              2.5084871951932097
+            ],
+            "right_ankle": [
+              0.06817724376395672,
+              2.4207891406497075
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              194.064,
+              82.304
+            ],
+            "right": [
+              175.326,
+              79.166
+            ]
+          },
+          "raw_scale": 52.93005688642322,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.98174,
+            "left_eye": 0.9896,
+            "right_eye": 0.91541,
+            "left_ear": 0.92352,
+            "left_shoulder": 0.99095,
+            "right_shoulder": 0.99282,
+            "left_elbow": 0.90639,
+            "right_elbow": 0.96017,
+            "left_wrist": 0.75676,
+            "right_wrist": 0.94795,
+            "left_hip": 0.99396,
+            "right_hip": 0.99402,
+            "left_knee": 0.998,
+            "right_knee": 0.99798,
+            "left_ankle": 0.98609,
+            "right_ankle": 0.99138
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              199.22677803655492,
+              60.0939937163461
+            ],
+            "left_eye": [
+              201.5976727202714,
+              57.448529397457605
+            ],
+            "right_eye": [
+              197.33963389750892,
+              58.048743861013904
+            ],
+            "left_ear": [
+              207.52969565599,
+              56.866015093042
+            ],
+            "left_shoulder": [
+              213.445133080075,
+              68.40341137964761
+            ],
+            "right_shoulder": [
+              198.6986654960256,
+              69.43917205197941
+            ],
+            "left_elbow": [
+              204.2320933459388,
+              80.88656791264741
+            ],
+            "right_elbow": [
+              187.9651514011664,
+              78.82234391625101
+            ],
+            "left_wrist": [
+              188.9052785463392,
+              78.45593757969921
+            ],
+            "right_wrist": [
+              173.0354036399228,
+              75.82379254647681
+            ],
+            "left_hip": [
+              216.99504817258972,
+              113.5972160885557
+            ],
+            "right_hip": [
+              205.4470544542253,
+              113.28507813955571
+            ],
+            "left_knee": [
+              212.3683376146556,
+              147.50186568486538
+            ],
+            "right_knee": [
+              202.8235135233907,
+              144.9250144027381
+            ],
+            "left_ankle": [
+              215.69387930854109,
+              181.3432612568091
+            ],
+            "right_ankle": [
+              209.1273743315377,
+              177.41292904878088
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 28,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 169830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1887.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1954,
+          "frame_index": 29,
+          "track": 1,
+          "center": [
+            206.7706854604022,
+            67.6596034789961
+          ],
+          "scale": 45.28617490584108,
+          "points": {
+            "nose": [
+              -0.19995625268330017,
+              -0.1670285486039663
+            ],
+            "left_eye": [
+              -0.15632447305398434,
+              -0.22896848699799718
+            ],
+            "right_eye": [
+              -0.2386464733378141,
+              -0.20813947459165832
+            ],
+            "left_ear": [
+              -0.0071139671435123345,
+              -0.25245928010211277
+            ],
+            "left_shoulder": [
+              0.14430330920435988,
+              0.019763793159663864
+            ],
+            "right_shoulder": [
+              -0.14430330920435924,
+              -0.019763793159663864
+            ],
+            "left_elbow": [
+              -0.2241566382292971,
+              0.2862687002726409
+            ],
+            "right_elbow": [
+              -0.4028670390646591,
+              0.030382469356393667
+            ],
+            "left_wrist": [
+              -0.694674949775984,
+              0.3162754003300532
+            ],
+            "right_wrist": [
+              -0.7233329907610688,
+              -0.142445014024935
+            ],
+            "left_hip": [
+              0.2084786778873425,
+              1.0088918325250207
+            ],
+            "right_hip": [
+              -0.031331334250007545,
+              0.9832474243147806
+            ],
+            "left_knee": [
+              0.12114440258467046,
+              1.736998818073892
+            ],
+            "right_knee": [
+              -0.10110622081953125,
+              1.6792325210727899
+            ],
+            "left_ankle": [
+              0.17848631080359076,
+              2.5000634404463593
+            ],
+            "right_ankle": [
+              0.024449437794764644,
+              2.4382117453114667
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              180.014,
+              86.336
+            ],
+            "right": [
+              178.525,
+              61.804
+            ]
+          },
+          "raw_scale": 53.473366045630605,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.96488,
+            "left_eye": 0.96899,
+            "right_eye": 0.64915,
+            "left_ear": 0.91154,
+            "left_shoulder": 0.98454,
+            "right_shoulder": 0.99266,
+            "left_elbow": 0.9466,
+            "right_elbow": 0.97946,
+            "left_wrist": 0.898,
+            "right_wrist": 0.96312,
+            "left_hip": 0.98875,
+            "right_hip": 0.99045,
+            "left_knee": 0.99711,
+            "right_knee": 0.9963,
+            "left_ankle": 0.99143,
+            "right_ankle": 0.99215
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              197.71543162786972,
+              60.09551941264811
+            ],
+            "left_eye": [
+              199.69134803161603,
+              57.290496528879004
+            ],
+            "right_eye": [
+              195.96329952816382,
+              58.2337628278284
+            ],
+            "left_ear": [
+              206.4485211000667,
+              56.2266883636891
+            ],
+            "left_shoulder": [
+              213.3056303605225,
+              68.5546300728275
+            ],
+            "right_shoulder": [
+              200.23574056028193,
+              66.7645768851647
+            ],
+            "left_elbow": [
+              196.61948873524491,
+              80.62361790961072
+            ],
+            "right_elbow": [
+              188.52637826552174,
+              69.0355093003411
+            ],
+            "left_wrist": [
+              175.31151418214063,
+              81.9825065767578
+            ],
+            "right_wrist": [
+              174.01370112563131,
+              61.20881365939791
+            ],
+            "left_hip": [
+              216.2118873313469,
+              113.34845546779871
+            ],
+            "right_hip": [
+              205.351809177523,
+              112.187118312233
+            ],
+            "left_knee": [
+              212.25685206471522,
+              146.3216357655296
+            ],
+            "right_knee": [
+              202.19197146030032,
+              143.70562113587494
+            ],
+            "left_ankle": [
+              214.85364774975193,
+              180.87791371874874
+            ],
+            "right_ankle": [
+              207.8779069767254,
+              178.07688703464723
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 29,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 175860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1954.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 2020,
+          "frame_index": 30,
+          "track": 1,
+          "center": [
+            206.43508009864277,
+            67.20687860507024
+          ],
+          "scale": 45.89308542231696,
+          "points": {
+            "nose": [
+              -0.2005738020405981,
+              -0.16003565495077454
+            ],
+            "left_eye": [
+              -0.16178712483101085,
+              -0.22496273336048261
+            ],
+            "right_eye": [
+              -0.2501359166275053,
+              -0.19379353557977747
+            ],
+            "left_ear": [
+              -0.0259198671833814,
+              -0.2497595752599469
+            ],
+            "left_shoulder": [
+              0.11442315924470536,
+              0.0015060341391853371
+            ],
+            "right_shoulder": [
+              -0.11442315924470536,
+              -0.0015060341391850275
+            ],
+            "left_elbow": [
+              -0.21382735313091794,
+              0.2504588304015941
+            ],
+            "right_elbow": [
+              -0.35398572262827155,
+              0.03939089887087847
+            ],
+            "left_wrist": [
+              -0.6414853716649099,
+              0.3481043756970898
+            ],
+            "right_wrist": [
+              -0.6319777921952385,
+              -0.1925007708055168
+            ],
+            "left_hip": [
+              0.20527130581268865,
+              0.9982977944333589
+            ],
+            "right_hip": [
+              -0.0018775664757800146,
+              0.9913330725363286
+            ],
+            "left_knee": [
+              0.09492361418733328,
+              1.7025381633924306
+            ],
+            "right_knee": [
+              -0.08307229758054237,
+              1.7011859445142705
+            ],
+            "left_ankle": [
+              0.18667168339778714,
+              2.4459958596375238
+            ],
+            "right_ankle": [
+              0.012005635782028571,
+              2.428765022144432
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              183.674,
+              87.741
+            ],
+            "right": [
+              184.243,
+              58.451
+            ]
+          },
+          "raw_scale": 54.18186820330211,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.97576,
+            "left_eye": 0.97719,
+            "right_eye": 0.82982,
+            "left_ear": 0.88189,
+            "left_shoulder": 0.98777,
+            "right_shoulder": 0.99074,
+            "left_elbow": 0.97236,
+            "right_elbow": 0.96846,
+            "left_wrist": 0.95811,
+            "right_wrist": 0.94186,
+            "left_hip": 0.98821,
+            "right_hip": 0.98771,
+            "left_knee": 0.99748,
+            "right_knee": 0.99576,
+            "left_ankle": 0.98823,
+            "right_ankle": 0.9853
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              197.2301294681147,
+              59.862348621797906
+            ],
+            "left_eye": [
+              199.01016975854213,
+              56.8826446661197
+            ],
+            "right_eye": [
+              194.95557110966712,
+              58.313095322414696
+            ],
+            "left_ear": [
+              205.24553741986074,
+              55.7446410826239
+            ],
+            "left_shoulder": [
+              211.6863119201514,
+              67.2759951584688
+            ],
+            "right_shoulder": [
+              201.18384827713413,
+              67.1377620516717
+            ],
+            "left_elbow": [
+              196.62188311577762,
+              78.7012071034642
+            ],
+            "right_elbow": [
+              190.1895830917829,
+              69.01464849181332
+            ],
+            "left_wrist": [
+              176.99533713965832,
+              83.1824624548191
+            ],
+            "right_wrist": [
+              177.43166929641941,
+              58.3724242866308
+            ],
+            "left_hip": [
+              215.85561367105504,
+              113.021844561911
+            ],
+            "right_hip": [
+              206.34891277998372,
+              112.70221198494791
+            ],
+            "left_knee": [
+              210.79141763313712,
+              145.3416079723937
+            ],
+            "right_knee": [
+              202.6226360495508,
+              145.27955047590862
+            ],
+            "left_ankle": [
+              215.00201961074512,
+              179.46117553404872
+            ],
+            "right_ankle": [
+              206.98605576713663,
+              178.6703992370802
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 30,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 181800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 2020.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 2087,
+          "frame_index": 31,
+          "track": 1,
+          "center": [
+            205.64209844344776,
+            68.87243900000375
+          ],
+          "scale": 44.0856146451051,
+          "points": {
+            "nose": [
+              -0.22651514868967193,
+              -0.18768902301651055
+            ],
+            "left_eye": [
+              -0.17908293701317235,
+              -0.25307975754327716
+            ],
+            "right_eye": [
+              -0.2737967265129961,
+              -0.22923676079113145
+            ],
+            "left_ear": [
+              -0.033858871099232524,
+              -0.2664287228493659
+            ],
+            "left_shoulder": [
+              0.11565476924864093,
+              -0.01382334298275935
+            ],
+            "right_shoulder": [
+              -0.11565476924864157,
+              0.01382334298275935
+            ],
+            "left_elbow": [
+              -0.21104349459177382,
+              0.246817628534071
+            ],
+            "right_elbow": [
+              -0.29367952125873326,
+              0.18258652098801798
+            ],
+            "left_wrist": [
+              -0.6169413354433732,
+              0.31547560832235283
+            ],
+            "right_wrist": [
+              -0.5948362165739435,
+              0.1843658413427497
+            ],
+            "left_hip": [
+              0.2388794725808623,
+              0.993410996236109
+            ],
+            "right_hip": [
+              0.014622799947232168,
+              0.9904581017194724
+            ],
+            "left_knee": [
+              0.11433077849987941,
+              1.7028003558968454
+            ],
+            "right_knee": [
+              -0.07762122364079643,
+              1.7042458546630395
+            ],
+            "left_ankle": [
+              0.21768888386344024,
+              2.4781345728882034
+            ],
+            "right_ankle": [
+              0.019088443621279094,
+              2.468602510937561
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              186.902,
+              87.235
+            ],
+            "right": [
+              188.065,
+              80.413
+            ]
+          },
+          "raw_scale": 52.04884138960251,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.97688,
+            "left_eye": 0.98142,
+            "right_eye": 0.83174,
+            "left_ear": 0.90601,
+            "left_shoulder": 0.98615,
+            "right_shoulder": 0.98566,
+            "left_elbow": 0.97495,
+            "right_elbow": 0.94668,
+            "left_wrist": 0.93877,
+            "right_wrist": 0.92901,
+            "left_hip": 0.99093,
+            "right_hip": 0.99107,
+            "left_knee": 0.99762,
+            "right_knee": 0.99705,
+            "left_ankle": 0.9937,
+            "right_ankle": 0.99313
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              195.6560388870362,
+              60.598053058181605
+            ],
+            "left_eye": [
+              197.74711709277142,
+              57.715262334474204
+            ],
+            "right_eye": [
+              193.5716014673046,
+              58.76639550127379
+            ],
+            "left_ear": [
+              204.1494092998487,
+              57.126764994079096
+            ],
+            "left_shoulder": [
+              210.7408100324119,
+              68.2630284281587
+            ],
+            "right_shoulder": [
+              200.5433868544836,
+              69.4818495718488
+            ],
+            "left_elbow": [
+              196.3381162675185,
+              79.7535458591755
+            ],
+            "right_elbow": [
+              192.6950562400763,
+              76.9218780036719
+            ],
+            "left_wrist": [
+              178.4438604704547,
+              82.78037509843311
+            ],
+            "right_wrist": [
+              179.4183782226166,
+              77.0003204351608
+            ],
+            "left_hip": [
+              216.1732468182736,
+              112.66757336427881
+            ],
+            "right_hip": [
+              206.2867535669539,
+              112.53739319453072
+            ],
+            "left_knee": [
+              210.68244108646832,
+              143.9414393076199
+            ],
+            "right_knee": [
+              202.2201190897381,
+              144.0051650091963
+            ],
+            "left_ankle": [
+              215.23904668997443,
+              178.1225248190652
+            ],
+            "right_ankle": [
+              206.4836242131103,
+              177.70229800913592
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 31,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 187830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 2087.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 2154,
+          "frame_index": 32,
+          "track": 1,
+          "center": [
+            205.1010202973065,
+            70.81209194467024
+          ],
+          "scale": 44.93920968184107,
+          "points": {
+            "nose": [
+              -0.2400462149746603,
+              -0.18649932903216068
+            ],
+            "left_eye": [
+              -0.19816703233830066,
+              -0.25344165135792684
+            ],
+            "right_eye": [
+              -0.2842482104455435,
+              -0.2215430964067338
+            ],
+            "left_ear": [
+              -0.048054076155856044,
+              -0.2677658794863049
+            ],
+            "left_shoulder": [
+              0.13200251155016932,
+              -0.03429413517790651
+            ],
+            "right_shoulder": [
+              -0.13200251155016932,
+              0.034294135177906825
+            ],
+            "left_elbow": [
+              -0.1423950479060438,
+              0.2185638405932215
+            ],
+            "right_elbow": [
+              -0.27310105347696845,
+              0.2707302379286508
+            ],
+            "left_wrist": [
+              -0.4870306262455308,
+              0.3014577169273589
+            ],
+            "right_wrist": [
+              -0.5482174908402372,
+              0.36304689265795886
+            ],
+            "left_hip": [
+              0.272307220006636,
+              0.98084084570821
+            ],
+            "right_hip": [
+              0.01627092406419169,
+              0.998230313892838
+            ],
+            "left_knee": [
+              0.17138098853315817,
+              1.6616660257461076
+            ],
+            "right_knee": [
+              -0.05012381928557318,
+              1.7125722798379126
+            ],
+            "left_ankle": [
+              0.3035149389019813,
+              2.3628923209092605
+            ],
+            "right_ankle": [
+              0.04890223945076758,
+              2.405550570940663
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              194.072,
+              89.093
+            ],
+            "right": [
+              190.819,
+              92.355
+            ]
+          },
+          "raw_scale": 53.06386508727007,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.98145,
+            "left_eye": 0.98921,
+            "right_eye": 0.88331,
+            "left_ear": 0.94465,
+            "left_shoulder": 0.99184,
+            "right_shoulder": 0.98902,
+            "left_elbow": 0.97701,
+            "right_elbow": 0.95213,
+            "left_wrist": 0.93795,
+            "right_wrist": 0.939,
+            "left_hip": 0.9951,
+            "right_hip": 0.99511,
+            "left_knee": 0.99795,
+            "right_knee": 0.99774,
+            "left_ankle": 0.99227,
+            "right_ankle": 0.99129
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              194.31353310922793,
+              62.430959491771304
+            ],
+            "left_eye": [
+              196.19555047902742,
+              59.42262443218431
+            ],
+            "right_eye": [
+              192.32713036640612,
+              60.8561202816837
+            ],
+            "left_ear": [
+              202.94150809287132,
+              58.7789049407926
+            ],
+            "left_shoulder": [
+              211.0331088423892,
+              69.2709406130529
+            ],
+            "right_shoulder": [
+              199.16893175222378,
+              72.3532432762876
+            ],
+            "left_elbow": [
+              198.70189938180098,
+              80.63417820595751
+            ],
+            "right_elbow": [
+              192.82807479077331,
+              82.9784948741606
+            ],
+            "left_wrist": [
+              183.2142488629802,
+              84.35936349587791
+            ],
+            "right_wrist": [
+              180.46455952518428,
+              87.1271323781671
+            ],
+            "left_hip": [
+              217.33829155506393,
+              114.89030437446581
+            ],
+            "right_hip": [
+              205.83222276554451,
+              115.67177333147052
+            ],
+            "left_knee": [
+              212.80274647647929,
+              145.4860498968661
+            ],
+            "right_knee": [
+              202.8484954723774,
+              147.7737367236148
+            ],
+            "left_ankle": [
+              218.7407417781938,
+              176.9986054096236
+            ],
+            "right_ankle": [
+              207.29864828989614,
+              178.9156334524452
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 32,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 193860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 2154.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 2220,
+          "frame_index": 33,
+          "track": 1,
+          "center": [
+            203.4619620474023,
+            73.3772102638691
+          ],
+          "scale": 44.01437901690527,
+          "points": {
+            "nose": [
+              -0.22415362547793072,
+              -0.220850600110913
+            ],
+            "left_eye": [
+              -0.17185795141212531,
+              -0.2886999704776852
+            ],
+            "right_eye": [
+              -0.2766438241577521,
+              -0.2583813465232394
+            ],
+            "left_ear": [
+              -0.020684767088042236,
+              -0.2944808179293777
+            ],
+            "left_shoulder": [
+              0.146943418143409,
+              -0.05659728515493581
+            ],
+            "right_shoulder": [
+              -0.146943418143409,
+              0.056597285154935485
+            ],
+            "left_elbow": [
+              -0.06582353742701476,
+              0.28440640400789763
+            ],
+            "right_elbow": [
+              -0.19567545022250385,
+              0.40841718290470214
+            ],
+            "left_wrist": [
+              -0.38737301922870804,
+              0.4081362215912585
+            ],
+            "right_wrist": [
+              -0.38847294926238424,
+              0.4688118593006345
+            ],
+            "left_hip": [
+              0.3553140173239962,
+              0.9620038025745326
+            ],
+            "right_hip": [
+              0.07239210614172742,
+              0.9917278760215643
+            ],
+            "left_knee": [
+              0.28966542389484273,
+              1.674664749211848
+            ],
+            "right_knee": [
+              -0.029030273396992573,
+              1.6873916089220746
+            ],
+            "left_ankle": [
+              0.3847409521247724,
+              2.3761985594086106
+            ],
+            "right_ankle": [
+              0.09384707845432066,
+              2.3912594911183547
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              198.797,
+              97.335
+            ],
+            "right": [
+              198.734,
+              100.489
+            ]
+          },
+          "raw_scale": 51.983152366896704,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.97775,
+            "left_eye": 0.98939,
+            "right_eye": 0.92715,
+            "left_ear": 0.92796,
+            "left_shoulder": 0.99304,
+            "right_shoulder": 0.98312,
+            "left_elbow": 0.96203,
+            "right_elbow": 0.86366,
+            "left_wrist": 0.88406,
+            "right_wrist": 0.84538,
+            "left_hip": 0.9956,
+            "right_hip": 0.99393,
+            "left_knee": 0.99761,
+            "right_knee": 0.99695,
+            "left_ankle": 0.9899,
+            "right_ankle": 0.99014
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              193.59597941760322,
+              63.656608244476395
+            ],
+            "left_eye": [
+              195.89774103688012,
+              60.6702603410949
+            ],
+            "right_eye": [
+              191.2856559182369,
+              62.0047157470969
+            ],
+            "left_ear": [
+              202.5515348689128,
+              60.4158199303172
+            ],
+            "left_shoulder": [
+              209.9295853476059,
+              70.88611590373189
+            ],
+            "right_shoulder": [
+              196.9943387471987,
+              75.8683046240063
+            ],
+            "left_elbow": [
+              200.56477992285622,
+              85.8951815247078
+            ],
+            "right_elbow": [
+              194.84942861700543,
+              91.35343894925339
+            ],
+            "left_wrist": [
+              186.411979158147,
+              91.34107261151439
+            ],
+            "right_wrist": [
+              186.3635664207527,
+              94.0116731267473
+            ],
+            "left_hip": [
+              219.1008878759199,
+              115.71921024608869
+            ],
+            "right_hip": [
+              206.64825564495632,
+              117.02749688071268
+            ],
+            "left_knee": [
+              216.21140580280243,
+              147.08653926193
+            ],
+            "right_knee": [
+              202.18421259114268,
+              147.6467040889109
+            ],
+            "left_ankle": [
+              220.39609613754703,
+              177.964114277104
+            ],
+            "right_ankle": [
+              207.59258292812,
+              178.6270118337244
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 33,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 199800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 2220.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 2287,
+          "frame_index": 34,
+          "track": 1,
+          "center": [
+            201.42589445204038,
+            74.98781534022224
+          ],
+          "scale": 44.51063696813306,
+          "points": {
+            "nose": [
+              -0.18753052690070493,
+              -0.2126939930293799
+            ],
+            "left_eye": [
+              -0.12727231094768207,
+              -0.27666788085049426
+            ],
+            "right_eye": [
+              -0.2543597804530309,
+              -0.25380969687217175
+            ],
+            "left_ear": [
+              0.0013367565553235377,
+              -0.26941555097577896
+            ],
+            "right_ear": [
+              -0.30937055398483254,
+              -0.21153191579103012
+            ],
+            "left_shoulder": [
+              0.17014669358859452,
+              -0.07792538921804223
+            ],
+            "right_shoulder": [
+              -0.17014669358859452,
+              0.07792538921804223
+            ],
+            "left_elbow": [
+              0.08614407596099882,
+              0.26630188405557503
+            ],
+            "right_elbow": [
+              -0.1090446603836222,
+              0.47112931248754764
+            ],
+            "left_wrist": [
+              -0.19850954357409192,
+              0.481323274443238
+            ],
+            "right_wrist": [
+              -0.20860911588515482,
+              0.5829821455522467
+            ],
+            "left_hip": [
+              0.4417455305919368,
+              0.9340794282034809
+            ],
+            "right_hip": [
+              0.13231253480158178,
+              0.9817643382755737
+            ],
+            "left_knee": [
+              0.4124130353195222,
+              1.6502170203728679
+            ],
+            "right_knee": [
+              0.0008720954545676451,
+              1.6413680987708787
+            ],
+            "left_ankle": [
+              0.46935101980913946,
+              2.3770919631790797
+            ],
+            "right_ankle": [
+              0.1418844606274705,
+              2.324103224611052
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 9,
+          "raw_wrists_px": {
+            "left": [
+              207.1,
+              103.327
+            ],
+            "right": [
+              206.559,
+              108.67
+            ]
+          },
+          "raw_scale": 52.56807855058049,
+          "camera_reference_epoch": 4,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.98089,
+            "left_eye": 0.99117,
+            "right_eye": 0.97401,
+            "left_ear": 0.8875,
+            "right_ear": 0.53756,
+            "left_shoulder": 0.99459,
+            "right_shoulder": 0.97063,
+            "left_elbow": 0.98042,
+            "right_elbow": 0.78598,
+            "left_wrist": 0.94948,
+            "right_wrist": 0.85037,
+            "left_hip": 0.99662,
+            "right_hip": 0.99248,
+            "left_knee": 0.99766,
+            "right_knee": 0.99433,
+            "left_ankle": 0.99109,
+            "right_ankle": 0.98976
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              193.0787912487204,
+              65.52067023118889
+            ],
+            "left_eye": [
+              195.76092282335276,
+              62.6731517349432
+            ],
+            "right_eye": [
+              190.1041786050015,
+              63.69058406375311
+            ],
+            "left_ear": [
+              201.48539433778916,
+              62.995957557169795
+            ],
+            "right_ear": [
+              187.6556140349913,
+              65.572395029274
+            ],
+            "left_shoulder": [
+              208.9992321616905,
+              71.51930663013749
+            ],
+            "right_shoulder": [
+              193.85255674239028,
+              78.45632405030699
+            ],
+            "left_elbow": [
+              205.26022214409568,
+              86.8410818253498
+            ],
+            "right_elbow": [
+              196.5722471603916,
+              95.95808113340159
+            ],
+            "left_wrist": [
+              192.59010822330418,
+              96.41182087327829
+            ],
+            "right_wrist": [
+              192.14056982663305,
+              100.9367219798016
+            ],
+            "left_hip": [
+              221.0882693965134,
+              116.56428566838869
+            ],
+            "right_hip": [
+              207.31520965492706,
+              118.68677138946569
+            ],
+            "left_knee": [
+              219.78266134807347,
+              148.4400260526732
+            ],
+            "right_knee": [
+              201.4647119762202,
+              148.0461549156876
+            ],
+            "left_ankle": [
+              222.31700730538802,
+              180.79369275315298
+            ],
+            "right_ankle": [
+              207.7412621704491,
+              178.4351302473522
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "frame_index": 34,
+            "person_track_id": 1,
+            "selection_epoch": 9,
+            "camera_reference_epoch": 4,
+            "pts": 205830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 2287.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        }
+      ],
+      "indicator_id": "GS01-M03-01",
+      "expected": {
+        "status": "proxy_scored",
+        "proxy_grade": "A",
+        "score": 100,
+        "quality": {
+          "required_joint_names": [
+            "left_hip",
+            "left_shoulder",
+            "right_hip",
+            "right_shoulder"
+          ],
+          "valid_frame_count": 10,
+          "total_frame_count": 10,
+          "geometry_gate_passed": true,
+          "visibility_verified": false,
+          "minimum_fraction": 0.7,
+          "denominator": "all_decoder_samples_in_bound_stage"
+        },
+        "conditions": [
+          {
+            "key": "shoulder_axis_deg.range",
+            "metric": "shoulder_axis_deg.range",
+            "value": 32.40599301621404,
+            "passed": true
+          },
+          {
+            "key": "hip_axis_deg.range",
+            "metric": "hip_axis_deg.range",
+            "value": 14.864408042175683,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "ocw-pe.710-2-hand_backhand-220k",
+      "source_video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "input_artifact_sha256": {
+        "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+        "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358"
+      },
+      "window": {
+        "start_ms": 954,
+        "end_ms": 1487,
+        "person_track_id": 1,
+        "selection_epoch": 11,
+        "camera_reference_epoch": 5,
+        "camera_compensated": true,
+        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+        "stage_id": "GS02-M03",
+        "event_code": "GS02",
+        "stage_code": "M03",
+        "event_id": "two_handed_backhand-1-preparation",
+        "video_id": "ocw-pe.710-2-hand_backhand-220k",
+        "stage_binding": {
+          "method": "manual_anchor",
+          "version": "mit-forward-swing-windows-v1",
+          "source": "agent_visual_review_of_decoded_frames_2026-10-22",
+          "uncertainty_ms": 150
+        }
+      },
+      "timeline": [
+        {
+          "frame_index": 14,
+          "pts": 85860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 954
+        },
+        {
+          "frame_index": 15,
+          "pts": 91800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1020
+        },
+        {
+          "frame_index": 16,
+          "pts": 97830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1087
+        },
+        {
+          "frame_index": 17,
+          "pts": 103860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1154
+        },
+        {
+          "frame_index": 18,
+          "pts": 109800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1220
+        },
+        {
+          "frame_index": 19,
+          "pts": 115830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1287
+        },
+        {
+          "frame_index": 20,
+          "pts": 121860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1354
+        },
+        {
+          "frame_index": 21,
+          "pts": 127800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1420
+        },
+        {
+          "frame_index": 22,
+          "pts": 133830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "time_binding_source": "ffmpeg_showinfo_actual_decoded_frame",
+          "timestamp_ms": 1487
+        }
+      ],
+      "samples": [
+        {
+          "time": 954,
+          "frame_index": 14,
+          "track": 1,
+          "center": [
+            173.03346754991446,
+            87.40870908777255
+          ],
+          "scale": 53.024516363136605,
+          "points": {
+            "nose": [
+              0.3776812466449265,
+              -0.19150682788802462
+            ],
+            "right_eye": [
+              0.3428125655026057,
+              -0.25542959476142163
+            ],
+            "right_ear": [
+              0.17597222521327494,
+              -0.2600554645792222
+            ],
+            "left_shoulder": [
+              -0.14732122181528134,
+              -0.019458509445582948
+            ],
+            "right_shoulder": [
+              0.1473212218152808,
+              0.019458509445582948
+            ],
+            "right_elbow": [
+              0.15053720933177708,
+              0.5024025980160586
+            ],
+            "right_wrist": [
+              0.2199457626812039,
+              0.9352255083602867
+            ],
+            "left_hip": [
+              -0.3980521397407148,
+              0.9413248473129814
+            ],
+            "right_hip": [
+              -0.18774692173356328,
+              0.9709616007841265
+            ],
+            "left_knee": [
+              -0.19702944177258644,
+              1.6272196529691014
+            ],
+            "right_knee": [
+              -0.0029644058816545435,
+              1.700881130068525
+            ],
+            "left_ankle": [
+              -0.2668201693610815,
+              2.409203413348739
+            ],
+            "right_ankle": [
+              -0.12595132413970236,
+              2.4831724274484457
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              184.768,
+              130.103
+            ]
+          },
+          "raw_scale": 52.89897663707682,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.96202,
+            "right_eye": 0.98458,
+            "right_ear": 0.98691,
+            "left_shoulder": 0.90057,
+            "right_shoulder": 0.99834,
+            "right_elbow": 0.99238,
+            "right_wrist": 0.98901,
+            "left_hip": 0.94026,
+            "right_hip": 0.98832,
+            "left_knee": 0.98695,
+            "right_knee": 0.99589,
+            "left_ankle": 0.98093,
+            "right_ankle": 0.97771
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              193.0598329926882,
+              77.2541521587716
+            ],
+            "right_eye": [
+              191.21093803889622,
+              73.8646783607162
+            ],
+            "right_ear": [
+              182.36430968519332,
+              73.61939385086849
+            ],
+            "left_shoulder": [
+              165.2218310131328,
+              86.37693103527299
+            ],
+            "right_shoulder": [
+              180.8451040866961,
+              88.44048714027211
+            ],
+            "right_elbow": [
+              181.0156302693882,
+              114.04836386715739
+            ],
+            "right_wrist": [
+              184.69598524220652,
+              136.99858935904533
+            ],
+            "left_hip": [
+              151.9269453528514,
+              137.3220038571468
+            ],
+            "right_hip": [
+              163.0782778263246,
+              138.89347837652778
+            ],
+            "left_knee": [
+              162.58607669062428,
+              173.69124420305013
+            ],
+            "right_knee": [
+              172.8762813617357,
+              177.59710840084134
+            ],
+            "left_ankle": [
+              158.88545711361292,
+              215.15555490100732
+            ],
+            "right_ankle": [
+              166.3549595021101,
+              219.07772609950229
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 14,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 85860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 954.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1020,
+          "frame_index": 15,
+          "track": 1,
+          "center": [
+            173.5698870615933,
+            88.8499290632277
+          ],
+          "scale": 54.50963243874382,
+          "points": {
+            "nose": [
+              0.36378988738220264,
+              -0.16438900729871078
+            ],
+            "right_eye": [
+              0.3318544971704189,
+              -0.22302090815233647
+            ],
+            "right_ear": [
+              0.19615664032435165,
+              -0.23385413464332394
+            ],
+            "left_shoulder": [
+              -0.15898436926886447,
+              -0.02679940763484188
+            ],
+            "right_shoulder": [
+              0.15898436926886397,
+              0.026799407634841618
+            ],
+            "right_elbow": [
+              0.1440018179363233,
+              0.5604534252799287
+            ],
+            "right_wrist": [
+              0.18168609194759958,
+              0.9195552191094987
+            ],
+            "left_hip": [
+              -0.43117869789292884,
+              0.9374545041237465
+            ],
+            "right_hip": [
+              -0.18612430498381693,
+              0.9648958849054021
+            ],
+            "left_knee": [
+              -0.27254023254578097,
+              1.5860584747075959
+            ],
+            "right_knee": [
+              0.03896789970631582,
+              1.657449239461633
+            ],
+            "left_ankle": [
+              -0.3437733739593115,
+              2.265848410658298
+            ],
+            "right_ankle": [
+              -0.12605955023803259,
+              2.3573205070431786
+            ]
+          },
+          "racket_sides": [
+            "right"
+          ],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              183.534,
+              131.599
+            ]
+          },
+          "raw_scale": 54.3796362483237,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.83357,
+            "right_eye": 0.91243,
+            "right_ear": 0.96835,
+            "left_shoulder": 0.9323,
+            "right_shoulder": 0.99637,
+            "right_elbow": 0.9836,
+            "right_wrist": 0.93047,
+            "left_hip": 0.97877,
+            "right_hip": 0.99345,
+            "left_knee": 0.99172,
+            "right_knee": 0.99498,
+            "left_ankle": 0.99446,
+            "right_ankle": 0.98744
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              193.39994010772918,
+              79.889144698405
+            ],
+            "right_eye": [
+              191.659153725497,
+              76.693141333689
+            ],
+            "right_ear": [
+              184.2623134260926,
+              76.10262613953961
+            ],
+            "left_shoulder": [
+              164.90370752924198,
+              87.38910320347641
+            ],
+            "right_shoulder": [
+              182.2360665939446,
+              90.31075492297899
+            ],
+            "right_elbow": [
+              181.4193732278132,
+              119.40003927427159
+            ],
+            "right_wrist": [
+              183.47352915288877,
+              138.97454606401502
+            ],
+            "left_hip": [
+              150.0664947240336,
+              139.95022951105798
+            ],
+            "right_hip": [
+              163.4243196090088,
+              141.44604909107764
+            ],
+            "left_knee": [
+              158.71381916075302,
+              175.30539354589342
+            ],
+            "right_knee": [
+              175.69401295149441,
+              179.1968778921568
+            ],
+            "left_ankle": [
+              154.8309268048444,
+              212.3604930901234
+            ],
+            "right_ankle": [
+              166.6984273127248,
+              217.34660344246458
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 15,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 91800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1020.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1087,
+          "frame_index": 16,
+          "track": 1,
+          "center": [
+            172.89027458258937,
+            90.6038174716218
+          ],
+          "scale": 53.538419911951216,
+          "points": {
+            "nose": [
+              0.35574496080920415,
+              -0.15665062847206718
+            ],
+            "left_eye": [
+              0.36236497299479936,
+              -0.22314117809396897
+            ],
+            "right_eye": [
+              0.3082538359199695,
+              -0.21873684448406416
+            ],
+            "right_ear": [
+              0.15676644514791666,
+              -0.23920867006939353
+            ],
+            "left_shoulder": [
+              -0.16661875283122246,
+              -0.03159334597533055
+            ],
+            "right_shoulder": [
+              0.166618752831223,
+              0.03159334597533081
+            ],
+            "right_elbow": [
+              0.15521481514904104,
+              0.5679898986351414
+            ],
+            "right_wrist": [
+              0.16508004445354055,
+              0.9154943336630437
+            ],
+            "left_hip": [
+              -0.4712299575321537,
+              0.9300962619934627
+            ],
+            "right_hip": [
+              -0.2104453116090467,
+              0.9501480911269697
+            ],
+            "left_knee": [
+              -0.34582022833131504,
+              1.6138780824204524
+            ],
+            "right_knee": [
+              0.07091279291426275,
+              1.635910576174608
+            ],
+            "left_ankle": [
+              -0.4737700290448624,
+              2.312177773594858
+            ],
+            "right_ankle": [
+              -0.099248161090037,
+              2.3728718331357834
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              181.792,
+              131.961
+            ]
+          },
+          "raw_scale": 53.414278058399326,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.97063,
+            "left_eye": 0.43619,
+            "right_eye": 0.98708,
+            "right_ear": 0.97718,
+            "left_shoulder": 0.92299,
+            "right_shoulder": 0.99419,
+            "right_elbow": 0.9789,
+            "right_wrist": 0.95082,
+            "left_hip": 0.97812,
+            "right_hip": 0.99128,
+            "left_knee": 0.9959,
+            "right_knee": 0.99649,
+            "left_ankle": 0.99622,
+            "right_ankle": 0.98803
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              191.93629767595317,
+              82.2169903450132
+            ],
+            "left_eye": [
+              192.2907226681678,
+              78.6571913791794
+            ],
+            "right_eye": [
+              189.3936978895424,
+              78.8929924414188
+            ],
+            "right_ear": [
+              181.2833023510224,
+              77.79696324686721
+            ],
+            "left_shoulder": [
+              163.96976982830577,
+              88.912359648371
+            ],
+            "right_shoulder": [
+              181.810779336873,
+              92.29527529487261
+            ],
+            "right_elbow": [
+              181.20023053259462,
+              121.0130991704966
+            ],
+            "right_wrist": [
+              181.7283993216266,
+              139.6179375342858
+            ],
+            "left_hip": [
+              147.661367241142,
+              140.399701704764
+            ],
+            "right_hip": [
+              161.6233651211628,
+              141.4732449529164
+            ],
+            "left_knee": [
+              154.37560598414058,
+              177.00829993494258
+            ],
+            "right_knee": [
+              176.6868334667624,
+              178.18788483726001
+            ],
+            "left_ankle": [
+              147.5253758258882,
+              214.39416202542378
+            ],
+            "right_ankle": [
+              167.576684858662,
+              217.6436260712868
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 16,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 97830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1087.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1154,
+          "frame_index": 17,
+          "track": 1,
+          "center": [
+            170.22309710211363,
+            91.08435186260616
+          ],
+          "scale": 53.67397483712601,
+          "points": {
+            "nose": [
+              0.389642423960552,
+              -0.14876177224307835
+            ],
+            "right_eye": [
+              0.35630665043400395,
+              -0.20822236951182707
+            ],
+            "right_ear": [
+              0.2166432274117063,
+              -0.23800786583584205
+            ],
+            "left_shoulder": [
+              -0.1922822603116023,
+              -0.04871902488444758
+            ],
+            "right_shoulder": [
+              0.19228226031160284,
+              0.048719024884447314
+            ],
+            "right_elbow": [
+              0.16641528667749866,
+              0.6391936565441643
+            ],
+            "right_wrist": [
+              0.16603953846202593,
+              0.9811868976740598
+            ],
+            "left_hip": [
+              -0.44055424648288416,
+              0.9428262924007998
+            ],
+            "right_hip": [
+              -0.14641613139696832,
+              0.9691009487596954
+            ],
+            "left_knee": [
+              -0.3860718537535635,
+              1.645161234298796
+            ],
+            "right_knee": [
+              0.11956151946726648,
+              1.644875645437956
+            ],
+            "left_ankle": [
+              -0.6106936444578485,
+              2.3045638920722276
+            ],
+            "right_ankle": [
+              -0.05938432262578115,
+              2.3819048312460565
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              179.175,
+              136.039
+            ]
+          },
+          "raw_scale": 53.55073391187093,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.88956,
+            "right_eye": 0.93892,
+            "right_ear": 0.96799,
+            "left_shoulder": 0.95524,
+            "right_shoulder": 0.99498,
+            "right_elbow": 0.97589,
+            "right_wrist": 0.87627,
+            "left_hip": 0.991,
+            "right_hip": 0.99634,
+            "left_knee": 0.99636,
+            "right_knee": 0.99726,
+            "left_ankle": 0.99573,
+            "right_ankle": 0.98864
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              191.13675476124908,
+              83.0997162425049
+            ],
+            "right_eye": [
+              189.347491291809,
+              79.9082296409016
+            ],
+            "right_ear": [
+              181.85120023884332,
+              78.3095236606951
+            ],
+            "left_shoulder": [
+              159.90254390052297,
+              88.469408146869
+            ],
+            "right_shoulder": [
+              180.5436503037043,
+              93.6992955783433
+            ],
+            "right_elbow": [
+              179.1552670117548,
+              125.39241610000819
+            ],
+            "right_wrist": [
+              179.13509911149242,
+              143.74855271888137
+            ],
+            "left_hip": [
+              146.5767995620023,
+              141.6895865567075
+            ],
+            "right_hip": [
+              162.3643613497634,
+              143.099851800969
+            ],
+            "left_knee": [
+              149.50108613842227,
+              179.3866945553749
+            ],
+            "right_knee": [
+              176.64043908948824,
+              179.3713658660444
+            ],
+            "left_ankle": [
+              137.4447417962903,
+              214.77945621624008
+            ],
+            "right_ankle": [
+              167.03570446377768,
+              218.93065183933587
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 17,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 103860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1154.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1220,
+          "frame_index": 18,
+          "track": 1,
+          "center": [
+            169.83675875369659,
+            91.20920094676835
+          ],
+          "scale": 53.617910292327245,
+          "points": {
+            "nose": [
+              0.3805776180417273,
+              -0.13666734581934217
+            ],
+            "right_eye": [
+              0.34982186787192104,
+              -0.19355308092116252
+            ],
+            "right_ear": [
+              0.20238038595822883,
+              -0.22078509317976505
+            ],
+            "left_shoulder": [
+              -0.2024965550274421,
+              -0.048367895569681844
+            ],
+            "right_shoulder": [
+              0.2024965550274421,
+              0.048367895569681844
+            ],
+            "right_elbow": [
+              0.1639454146118317,
+              0.5817468913537338
+            ],
+            "right_wrist": [
+              0.15182242174827495,
+              0.9828440565800993
+            ],
+            "left_hip": [
+              -0.4915824300506222,
+              0.9245846294264299
+            ],
+            "right_hip": [
+              -0.17321734979491227,
+              0.9616924585745159
+            ],
+            "left_knee": [
+              -0.4540428470227093,
+              1.603551201193063
+            ],
+            "right_knee": [
+              0.10280217126831925,
+              1.668040888797651
+            ],
+            "left_ankle": [
+              -0.6278104716894861,
+              2.3221492448070236
+            ],
+            "right_ankle": [
+              -0.04154417814574877,
+              2.373701802426063
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              178.011,
+              136.181
+            ]
+          },
+          "raw_scale": 53.49380933341727,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.9374,
+            "right_eye": 0.97601,
+            "right_ear": 0.98535,
+            "left_shoulder": 0.95932,
+            "right_shoulder": 0.9963,
+            "right_elbow": 0.98228,
+            "right_wrist": 0.94153,
+            "left_hip": 0.98992,
+            "right_hip": 0.99669,
+            "left_knee": 0.99788,
+            "right_knee": 0.9982,
+            "left_ankle": 0.99294,
+            "right_ankle": 0.97886
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              190.2425353371255,
+              83.8813834587364
+            ],
+            "right_eye": [
+              188.5934762835476,
+              80.8312892171339
+            ],
+            "right_ear": [
+              180.68797213293146,
+              79.3711656267726
+            ],
+            "left_shoulder": [
+              158.9793166317299,
+              88.6158154610845
+            ],
+            "right_shoulder": [
+              180.69420087566328,
+              93.8025864324522
+            ],
+            "right_elbow": [
+              178.62716928719217,
+              122.4012535802131
+            ],
+            "right_wrist": [
+              177.97715974335946,
+              143.90724540382712
+            ],
+            "left_hip": [
+              143.4791361179581,
+              140.7834966650193
+            ],
+            "right_hip": [
+              160.5492064313183,
+              142.77314091942438
+            ],
+            "left_knee": [
+              145.4919301131601,
+              177.1882654014916
+            ],
+            "right_knee": [
+              175.3487963506178,
+              180.6460676862546
+            ],
+            "left_ankle": [
+              136.17487320206607,
+              215.7179908402268
+            ],
+            "right_ankle": [
+              167.60924673670937,
+              218.4821312499845
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 18,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 109800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1220.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1287,
+          "frame_index": 19,
+          "track": 1,
+          "center": [
+            167.7386171751761,
+            90.6670426142472
+          ],
+          "scale": 53.58848191571058,
+          "points": {
+            "nose": [
+              0.37641508299087306,
+              -0.12194494302338064
+            ],
+            "right_eye": [
+              0.3494563712017659,
+              -0.1775845954748838
+            ],
+            "right_ear": [
+              0.2111956953826132,
+              -0.20653965323232912
+            ],
+            "left_shoulder": [
+              -0.18950370698151658,
+              -0.04866639509884349
+            ],
+            "right_shoulder": [
+              0.18950370698151606,
+              0.04866639509884349
+            ],
+            "right_elbow": [
+              0.15905834369846514,
+              0.6083790218827643
+            ],
+            "right_wrist": [
+              0.17130911499930201,
+              1.0044667319784115
+            ],
+            "left_hip": [
+              -0.49662270896583605,
+              0.9273158550781511
+            ],
+            "right_hip": [
+              -0.1887124013652521,
+              0.9515976039580746
+            ],
+            "left_knee": [
+              -0.4456401326831736,
+              1.6158483809604967
+            ],
+            "right_knee": [
+              0.1266803347821142,
+              1.6146623226203902
+            ],
+            "left_ankle": [
+              -0.5891726258103437,
+              2.3308136529853813
+            ],
+            "right_ankle": [
+              -0.0021856057004887466,
+              2.3426260805579187
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              176.932,
+              136.723
+            ]
+          },
+          "raw_scale": 53.46497761385484,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.86681,
+            "right_eye": 0.93844,
+            "right_ear": 0.97743,
+            "left_shoulder": 0.96198,
+            "right_shoulder": 0.99596,
+            "right_elbow": 0.97138,
+            "right_wrist": 0.80704,
+            "left_hip": 0.9862,
+            "right_hip": 0.99455,
+            "left_knee": 0.99632,
+            "right_knee": 0.99682,
+            "left_ankle": 0.99445,
+            "right_ankle": 0.98665
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              187.9101300428332,
+              84.1321982403264
+            ],
+            "right_eye": [
+              186.46545360365178,
+              81.1505537311326
+            ],
+            "right_ear": [
+              179.0562738778632,
+              79.59889614212939
+            ],
+            "left_shoulder": [
+              157.58340120063698,
+              88.05908438059
+            ],
+            "right_shoulder": [
+              177.8938331497152,
+              93.2750008479044
+            ],
+            "right_elbow": [
+              176.26231235000418,
+              123.2691508263094
+            ],
+            "right_wrist": [
+              176.91881258631258,
+              144.4948899158052
+            ],
+            "left_hip": [
+              141.1253601168292,
+              140.3604915442544
+            ],
+            "right_hip": [
+              157.62580606734397,
+              141.661713604988
+            ],
+            "left_knee": [
+              143.857438983969,
+              177.257904355879
+            ],
+            "right_knee": [
+              174.5272240047236,
+              177.19434528996922
+            ],
+            "left_ankle": [
+              136.16575057170678,
+              215.5718079061456
+            ],
+            "right_ankle": [
+              167.6214938836206,
+              216.20481796749718
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 19,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 115830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1287.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1354,
+          "frame_index": 20,
+          "track": 1,
+          "center": [
+            165.5240957034002,
+            90.52922954144483
+          ],
+          "scale": 53.86103669353602,
+          "points": {
+            "nose": [
+              0.3907767046443768,
+              -0.1285575215683516
+            ],
+            "right_eye": [
+              0.362617758141704,
+              -0.18445767645362213
+            ],
+            "right_ear": [
+              0.2184825457429112,
+              -0.20741821883614395
+            ],
+            "left_shoulder": [
+              -0.1987478666516177,
+              -0.04882205629571971
+            ],
+            "right_shoulder": [
+              0.1987478666516177,
+              0.04882205629571997
+            ],
+            "right_elbow": [
+              0.17148824707960372,
+              0.5888781282311885
+            ],
+            "right_wrist": [
+              0.1787832851327042,
+              0.9549647834403757
+            ],
+            "left_hip": [
+              -0.5085645437092667,
+              0.9285415978657582
+            ],
+            "right_hip": [
+              -0.1901106009029564,
+              0.9454522768043518
+            ],
+            "left_knee": [
+              -0.4273050412506711,
+              1.6514392239059563
+            ],
+            "right_knee": [
+              0.18685928671562382,
+              1.585282446011499
+            ],
+            "left_ankle": [
+              -0.5740405799476455,
+              2.3425607643182
+            ],
+            "right_ankle": [
+              0.041402140697719414,
+              2.310143832292981
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              175.156,
+              134.189
+            ]
+          },
+          "raw_scale": 53.73731452631403,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.92091,
+            "right_eye": 0.96233,
+            "right_ear": 0.97846,
+            "left_shoulder": 0.96821,
+            "right_shoulder": 0.9972,
+            "right_elbow": 0.9689,
+            "right_wrist": 0.72512,
+            "left_hip": 0.98183,
+            "right_hip": 0.99406,
+            "left_knee": 0.99397,
+            "right_knee": 0.9978,
+            "left_ankle": 0.99043,
+            "right_ankle": 0.99284
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              186.57173413123007,
+              83.6049881550218
+            ],
+            "right_eye": [
+              185.0550640803983,
+              80.5941478615719
+            ],
+            "right_ear": [
+              177.2917921165563,
+              79.3574692458034
+            ],
+            "left_shoulder": [
+              154.81932956491542,
+              87.8996229758472
+            ],
+            "right_shoulder": [
+              176.228861841885,
+              93.15883610704249
+            ],
+            "right_elbow": [
+              174.7606304718649,
+              122.24681601412568
+            ],
+            "right_wrist": [
+              175.1535487841237,
+              141.9646227833616
+            ],
+            "left_hip": [
+              138.13228215364398,
+              140.541442615567
+            ],
+            "right_hip": [
+              155.2845416523359,
+              141.4522693143912
+            ],
+            "left_knee": [
+              142.5090031972649,
+              179.4774581773882
+            ],
+            "right_knee": [
+              175.5885306017184,
+              175.91418553568872
+            ],
+            "left_ankle": [
+              134.60567496326138,
+              216.7019808252252
+            ],
+            "right_ankle": [
+              167.754057922711,
+              214.955971259923
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 20,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 121860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1354.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1420,
+          "frame_index": 21,
+          "track": 1,
+          "center": [
+            164.45608502766873,
+            90.1091402055445
+          ],
+          "scale": 52.33313078204431,
+          "points": {
+            "nose": [
+              0.41520351616741114,
+              -0.13996342310617577
+            ],
+            "right_eye": [
+              0.38591020841972407,
+              -0.20040209666883083
+            ],
+            "right_ear": [
+              0.23336911997089774,
+              -0.22351577136827033
+            ],
+            "left_shoulder": [
+              -0.231435402399728,
+              -0.052006200728845126
+            ],
+            "right_shoulder": [
+              0.23143540239972746,
+              0.052006200728845126
+            ],
+            "right_elbow": [
+              0.18650770042306697,
+              0.6183838241612158
+            ],
+            "right_wrist": [
+              0.21976611051056308,
+              0.9716646409465836
+            ],
+            "left_hip": [
+              -0.4968602208599601,
+              0.9434433144018739
+            ],
+            "right_hip": [
+              -0.12572422148283588,
+              0.9571851638001946
+            ],
+            "left_knee": [
+              -0.421432155320498,
+              1.679605047871108
+            ],
+            "right_knee": [
+              0.24697594606539,
+              1.5978773107779627
+            ],
+            "left_ankle": [
+              -0.5729127002578784,
+              2.4093479346207562
+            ],
+            "right_ankle": [
+              0.06598100853699773,
+              2.3455905473178182
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {
+            "right": [
+              175.942,
+              133.1
+            ]
+          },
+          "raw_scale": 52.21324708586895,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.93736,
+            "right_eye": 0.96481,
+            "right_ear": 0.97738,
+            "left_shoulder": 0.98124,
+            "right_shoulder": 0.99805,
+            "right_elbow": 0.95628,
+            "right_wrist": 0.39577,
+            "left_hip": 0.98155,
+            "right_hip": 0.99429,
+            "left_knee": 0.98947,
+            "right_knee": 0.99711,
+            "left_ankle": 0.9845,
+            "right_ankle": 0.99269
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              186.1849849404225,
+              82.7844160794264
+            ],
+            "right_eye": [
+              184.65197443502413,
+              79.6214710715787
+            ],
+            "right_ear": [
+              176.66902170359631,
+              78.4118601106793
+            ],
+            "left_shoulder": [
+              152.34434584628872,
+              87.3874929013246
+            ],
+            "right_shoulder": [
+              176.56782420904872,
+              92.8307875097644
+            ],
+            "right_elbow": [
+              174.21661690576744,
+              122.4711017488741
+            ],
+            "right_wrist": [
+              175.95713363047923,
+              140.9593929364902
+            ],
+            "left_hip": [
+              138.45383410900902,
+              139.48248256358312
+            ],
+            "right_hip": [
+              157.87654290233678,
+              140.2016365653326
+            ],
+            "left_knee": [
+              142.4012209275223,
+              178.00813083796498
+            ],
+            "right_knee": [
+              177.3811095131279,
+              173.73106248414888
+            ],
+            "left_ankle": [
+              134.47376975837904,
+              216.19786076750088
+            ],
+            "right_ankle": [
+              167.90907777656662,
+              212.86123707945478
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 21,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 127800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1420.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        },
+        {
+          "time": 1487,
+          "frame_index": 22,
+          "track": 1,
+          "center": [
+            165.3257238580324,
+            89.71302603547306
+          ],
+          "scale": 52.89307872711654,
+          "points": {
+            "nose": [
+              0.40943107787031635,
+              -0.12134517260292292
+            ],
+            "right_eye": [
+              0.381512460862013,
+              -0.18269342927212975
+            ],
+            "right_ear": [
+              0.2304358065353021,
+              -0.21619183201640302
+            ],
+            "left_shoulder": [
+              -0.23725564125778403,
+              -0.05777250383445474
+            ],
+            "right_shoulder": [
+              0.23725564125778403,
+              0.057772503834454474
+            ],
+            "right_elbow": [
+              0.19992200867872956,
+              0.6074635195729747
+            ],
+            "left_hip": [
+              -0.4871988888617037,
+              0.9419162016804062
+            ],
+            "right_hip": [
+              -0.11827836498180773,
+              0.9642310368817463
+            ],
+            "left_knee": [
+              -0.4286139070481709,
+              1.6775793123024179
+            ],
+            "right_knee": [
+              0.21800983502048576,
+              1.602485913403034
+            ],
+            "left_ankle": [
+              -0.6128992658954763,
+              2.4204379217399516
+            ],
+            "right_ankle": [
+              0.09165357827071045,
+              2.359070804065895
+            ]
+          },
+          "racket_sides": [],
+          "selection_epoch": 11,
+          "raw_wrists_px": {},
+          "raw_scale": 52.77478656517711,
+          "camera_reference_epoch": 5,
+          "camera_compensated": true,
+          "point_confidences": {
+            "nose": 0.9457,
+            "right_eye": 0.97697,
+            "right_ear": 0.98362,
+            "left_shoulder": 0.97094,
+            "right_shoulder": 0.99765,
+            "right_elbow": 0.94172,
+            "left_hip": 0.96948,
+            "right_hip": 0.99095,
+            "left_knee": 0.98687,
+            "right_knee": 0.99634,
+            "left_ankle": 0.97464,
+            "right_ankle": 0.98878
+          },
+          "timestamp_source": "decoder_pts",
+          "normalization_basis": "full_torso",
+          "reference_points": {
+            "nose": [
+              186.98179409315523,
+              83.29470626783112
+            ],
+            "right_eye": [
+              185.50509248578282,
+              80.04980809805541
+            ],
+            "right_ear": [
+              177.51418311465073,
+              78.2779744444699
+            ],
+            "left_shoulder": [
+              152.7765425465319,
+              86.6572604418946
+            ],
+            "right_shoulder": [
+              177.8749051695329,
+              92.7687916290515
+            ],
+            "right_elbow": [
+              175.90021440235972,
+              121.84364180009771
+            ],
+            "left_hip": [
+              139.5562746737066,
+              139.53387384530137
+            ],
+            "right_hip": [
+              159.06961698733502,
+              140.71417418038848
+            ],
+            "left_knee": [
+              142.6550147289965,
+              178.44536067206687
+            ],
+            "right_knee": [
+              176.85693522505665,
+              174.473439612195
+            ],
+            "left_ankle": [
+              132.90759473523104,
+              217.73743958416267
+            ],
+            "right_ankle": [
+              170.17356378912703,
+              214.49154379777258
+            ]
+          },
+          "pose_source": null,
+          "observation_semantics": null,
+          "source_binding": {
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "frame_index": 22,
+            "person_track_id": 1,
+            "selection_epoch": 11,
+            "camera_reference_epoch": 5,
+            "pts": 133830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "timestamp_ms": 1487.0,
+            "binding_source": "verified_run_video_and_frames_sha256"
+          }
+        }
+      ],
+      "indicator_id": "GS02-M03-02",
+      "expected": {
+        "status": "unavailable",
+        "proxy_grade": null,
+        "score": null,
+        "quality": {
+          "required_joint_names": [
+            "left_hip",
+            "left_shoulder",
+            "left_wrist",
+            "right_hip",
+            "right_shoulder",
+            "right_wrist"
+          ],
+          "valid_frame_count": 0,
+          "total_frame_count": 9,
+          "geometry_gate_passed": false,
+          "visibility_verified": false,
+          "minimum_fraction": 0.7,
+          "denominator": "all_decoder_samples_in_bound_stage"
+        },
+        "conditions": [
+          {
+            "key": "wrist_separation_torso.median",
+            "metric": "wrist_separation_torso.median",
+            "value": null,
+            "passed": null
+          }
+        ]
+      }
+    }
+  ]
+}
