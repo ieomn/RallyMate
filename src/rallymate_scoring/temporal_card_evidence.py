@@ -21,6 +21,7 @@ from rallymate_features.source_alignment import (
     prepare_source_aligned_context,
 )
 from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
+from rallymate_scoring.joint_quality_scope import known_joint_names
 
 VERSION = "temporal-card-evidence-v1.0.0"
 MIN_DURATION_MS = 80
@@ -364,13 +365,14 @@ def _result(indicator: str, event: Mapping, evidence: dict, measurements: dict, 
         # proves it irrelevant to this card. Missing/empty provenance fails closed.
         jumps = diagnostics.get("keypoint_jump_candidate_joints") if isinstance(diagnostics, Mapping) else None
         if ("keypoint_jump_candidates_present" in scoped_flags and isinstance(jumps, list) and jumps
-                and all(isinstance(joint, str) and joint for joint in jumps) and required.isdisjoint(jumps)):
+                and known_joint_names(jumps) and required.isdisjoint(jumps)):
             scoped_flags.remove("keypoint_jump_candidates_present")
             irrelevant.append("keypoint_jump_candidates_present")
         pairs = diagnostics.get("left_right_swap_candidate_joint_pairs") if isinstance(diagnostics, Mapping) else None
         if ("left_right_swap_candidates_present" in scoped_flags and isinstance(pairs, list) and pairs
                 and all(isinstance(pair, Mapping) and all(isinstance(pair.get(key), str) and pair[key]
                     for key in ("left_joint", "right_joint")) for pair in pairs)
+                and known_joint_names([joint for pair in pairs for joint in (pair["left_joint"], pair["right_joint"])])
                 and required.isdisjoint(joint for pair in pairs for joint in (pair["left_joint"], pair["right_joint"]))):
             scoped_flags.remove("left_right_swap_candidates_present")
             irrelevant.append("left_right_swap_candidates_present")

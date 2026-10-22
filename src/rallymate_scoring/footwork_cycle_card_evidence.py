@@ -17,6 +17,7 @@ import numpy as np
 from rallymate_features.schemas import PoseSequence, validated_source_time_binding
 from rallymate_features.source_alignment import JOINTS, SourceAlignedContext, prepare_source_aligned_context
 from rallymate_scoring.card_rule_catalog import get_card_rule
+from rallymate_scoring.joint_quality_scope import known_joint_names
 from rallymate_scoring.temporal_card_evidence import (
     MIN_DURATION_MS, LOW_ANKLE_SPEED_TORSO_S, _finite, _source_times, _window,
 )
@@ -157,7 +158,7 @@ def _quality_evidence(event, required):
                 for k in ("left_joint", "right_joint")) for pair in entries):
                 continue
             entries = [pair[k] for pair in entries for k in ("left_joint", "right_joint")]
-        if all(isinstance(name, str) and name for name in entries) and set(required).isdisjoint(entries):
+        if known_joint_names(entries) and set(required).isdisjoint(entries):
             if flag in relevant:
                 relevant.remove(flag)
                 ignored.append(flag)
