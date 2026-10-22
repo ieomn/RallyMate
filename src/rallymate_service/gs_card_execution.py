@@ -264,6 +264,8 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
     for row in primary_timeline:
         if not isinstance(row, Mapping):
             raise ValueError("primary_record_not_object")
+        if any(key in row and row[key] != job_id for key in ("job_id", "video_id")):
+            raise ValueError("primary_source_run_binding_mismatch")
         index = row.get("processed_index")
         if not _integer(index) or index in selected:
             raise ValueError("duplicate_or_invalid_primary_frame")

@@ -68,6 +68,14 @@ class GSCardExecutionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "technique_stage_or_person_mismatch"):
             self.compute(document=document)
 
+    def test_explicit_foreign_primary_run_cannot_bind_matching_frame_numbers(self):
+        for key in ("job_id", "video_id"):
+            case = deepcopy(self.cases[0])
+            for row in case["primary_timeline"]:
+                row[key] = "a-different-source-run"
+            with self.assertRaisesRegex(ValueError, "primary_source_run_binding_mismatch"):
+                self.compute(case)
+
     def test_wrong_stage_and_generic_three_phase_name_are_rejected(self):
         for stage in ("GS02-M03", "preparation", "GS01-M11", "M03"):
             document = deepcopy(self.cases[0]["annotations"])
