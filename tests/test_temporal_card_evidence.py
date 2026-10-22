@@ -1,0 +1,280 @@
+from __future__ import annotations
+
+from dataclasses import replace
+import json
+from pathlib import Path
+import unittest
+from unittest.mock import patch
+
+import numpy as np
+
+from rallymate_features.schemas import PoseSequence
+from rallymate_features.source_alignment import JOINTS, clear_source_aligned_feature_cache
+from rallymate_scoring.temporal_card_evidence import CARD_CONDITIONS, compute_temporal_card_evidence
+from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
+
+
+def event(code="FS01", start=0, end=800, identifier="split", **phases):
+    return {"video_id": "test-video", "event_id": identifier, "event_code": code,
+            "person_track_id": 1, "start_ms": start, "end_ms": end, "key_phases_ms": phases,
+            "quality_flags": [], "track_diagnostics": {"primary_identity_ambiguous": False,
+                "source_track_switch_candidate_count": 0, "source_track_ids": [1]}}
+
+
+def fixture():
+    times = np.arange(0, 1640, 40)
+    n = len(times)
+    depth = np.zeros(n)
+    depth[:9] = [.01, 0, .01, .025, .04, .025, .01, 0, 0]
+    xy = {name: np.empty((n, 2)) for name in JOINTS}
+    for i, dip in enumerate(depth):
+        hip_y = .45 + dip
+        for side, sign in (("left", -1), ("right", 1)):
+            xy[f"{side}_shoulder"][i] = [.5 + sign * .2, hip_y - .25]
+            xy[f"{side}_hip"][i] = [.5 + sign * .1, hip_y]
+            xy[f"{side}_knee"][i] = [.5 + sign * (.2 + dip), (hip_y + .9) / 2]
+            xy[f"{side}_ankle"][i] = [.5 + sign * .3, .9]
+    sequence = PoseSequence(times, np.arange(n), xy, {name: np.full(n, .95) for name in JOINTS},
+        camera_motion_status=("stationary",) * n, camera_reference_epochs=(0,) * n,
+        frame_dimensions_px=np.tile([1280, 720], (n, 1)),
+        frame_transforms_to_reference=np.tile([[1., 0., 0.], [0., 1., 0.]], (n, 1, 1)),
+        source_time_bindings={i: {"frame_index": i, "processed_index": i, "video_sha256": "a" * 64,
+            "pts": int(t), "time_base_num": 1, "time_base_den": 1000, "source_timestamp_ms": int(t),
+            "video_timestamp_ms": int(t), "timestamp_source": "decoder_pts", "primary_player_id": 1,
+            "person_track_id": 1, "selection_epoch": 0, "camera_reference_epoch": 0} for i, t in enumerate(times)},
+        coordinate_metadata={"contract_version": "isotropic-frame-long-edge-v1.1.0",
+            "coordinate_system": "camera_reference_xy_divided_by_source_long_edge",
+            "camera_compensation": {"applied_source_frames": list(range(n))}})
+    events = [event(preload_ms=640, takeoff_proxy_ms=320, landing_proxy_ms=480),
+              event("FS02", 800, 920, "launch"),
+              event("FS09", 920, 1200, "stop", peak_speed_ms=920,
+                    deceleration_peak_ms=960, restabilization_onset_ms=1080, stable_control_onset_ms=1080),
+              event("FS02", 1400, 1560, "next-launch")]
+    timeline = [{"source_frame_index": i, "timestamp_ms": int(t), "primary_player_id": 1,
+                 "source_track_id": 1, "selection_status": "selected", "identity_ambiguous": False}
+                for i, t in enumerate(times)]
+    return sequence, events, timeline
+
+
+def card(result, identifier):
+    return next(row for row in result["cards"] if row["indicator_id"] == identifier)
+
+
+class TemporalCardEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        clear_source_aligned_feature_cache()
+        self.addCleanup(clear_source_aligned_feature_cache)
+
+    def test_joint_preload_uses_repaired_continuous_window_and_fixed_reference(self):
+        sequence, events, timeline = fixture()
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M02")
+        self.assertEqual(row["status"], "measured_visual_proxy")
+        self.assertEqual(row["evidence"]["requested_window_ms"], {"start_ms": 40., "end_ms": 160.})
+        self.assertAlmostEqual(row["measurements"]["hip_drop_torso"], .16)
+        self.assertEqual(row["measurements"]["joint_descent_fraction"], 1.)
+        self.assertEqual(row["evidence"]["series"]["pair_source_frames"], [[1, 2], [2, 3], [3, 4]])
+        self.assertIsNone(row["original_grade"])
+        self.assertFalse(row["source_grade_supported"])
+        self.assertEqual(events[0]["key_phases_ms"]["preload_ms"], 640)
+        json.dumps(row, allow_nan=False)
+
+    def test_ankle_motion_does_not_change_reference_hip_drop(self):
+        sequence, events, timeline = fixture()
+        baseline = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M02")
+        clear_source_aligned_feature_cache()
+        for side in ("left", "right"):
+            sequence.keypoints_xy[f"{side}_ankle"][1:5, 1] += np.arange(4) * .02
+        changed = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M02")
+        self.assertEqual(baseline["measurements"]["hip_drop_torso"], changed["measurements"]["hip_drop_torso"])
+
+    def test_time_separated_knee_and_hip_actions_do_not_pass_joint_descent(self):
+        sequence, events, timeline = fixture()
+        from rallymate_features.source_alignment import prepare_source_aligned_context
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        # Inject independently measured angle series to isolate temporal joining:
+        # both knees increase only during one of three downward intervals.
+        context.knees["left"][1:5] = [10, 30, 30, 30]
+        context.knees["right"][1:5] = [10, 30, 30, 30]
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events, context=context), "FS01-M02")
+        self.assertGreater(row["measurements"]["left_knee_flexion_change_deg"], 4)
+        self.assertAlmostEqual(row["measurements"]["joint_descent_fraction"], 1 / 3)
+        joint = next(c for c in row["conditions"] if c["metric"] == "joint_descent_fraction")
+        self.assertFalse(joint["passed"])
+
+    def test_visibility_gap_retains_full_denominator_and_never_becomes_failed_grade(self):
+        sequence, events, timeline = fixture()
+        sequence.confidence["left_knee"][2] = .1
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M02")
+        coverage = row["evidence"]["coverage"]
+        self.assertEqual((coverage["valid_frame_count"], coverage["total_frame_count"]), (3, 4))
+        self.assertTrue(coverage["passes"])
+        self.assertEqual(row["reason"], "required_joint_gap_inside_continuous_window")
+        self.assertTrue(all(c["passed"] is None for c in row["conditions"]))
+        self.assertIsNone(row["original_grade"])
+
+    def test_successor_requires_identity_across_the_gap(self):
+        sequence, events, timeline = fixture()
+        timeline[33]["identity_ambiguous"] = True  # 1320ms, between stop and next launch.
+        row = card(compute_temporal_card_evidence(sequence, events[2], events=events, primary_timeline=timeline), "FS09-M05")
+        self.assertEqual(row["status"], "needs_review")
+        self.assertEqual(row["reason"], "measurement_window_subject_continuity_unverified")
+        self.assertNotIn("successor_interval_ms", row["measurements"])
+
+    def test_no_successor_is_missing_evidence_not_zero_or_e(self):
+        sequence, events, timeline = fixture()
+        events = events[:1]
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M05")
+        self.assertEqual(row["status"], "needs_review")
+        self.assertEqual(row["reason"], "same_player_successor_not_observed")
+        self.assertTrue(all(c["passed"] is None for c in row["conditions"]))
+
+    def test_low_foot_motion_does_not_establish_support_when_hip_outside_interval(self):
+        sequence, events, timeline = fixture()
+        for side in ("left", "right"):
+            sequence.keypoints_xy[f"{side}_hip"][23:, 0] += 1
+            sequence.keypoints_xy[f"{side}_shoulder"][23:, 0] += 1
+        row = card(compute_temporal_card_evidence(sequence, events[2], events=events, primary_timeline=timeline), "FS09-M04")
+        self.assertEqual(row["measurements"]["supported_low_motion_duration_ms"], 0)
+        self.assertEqual(row["measurements"]["hip_inside_support_fraction"], 0)
+        self.assertFalse(row["evidence"]["phase_selection"]["physical_contact_confirmed"])
+
+    def test_braking_window_is_phase_local_not_whole_event_quartiles(self):
+        sequence, events, timeline = fixture()
+        row = card(compute_temporal_card_evidence(sequence, events[2], events=events, primary_timeline=timeline), "FS09-M03")
+        self.assertEqual(row["evidence"]["requested_window_ms"], {"start_ms": 920., "end_ms": 1080.})
+        self.assertEqual(row["evidence"]["source_frames"], [23, 24, 25, 26, 27])
+        self.assertIsNone(row["measurements"]["hip_speed_drop_fraction"])
+        self.assertEqual(row["status"], "needs_review")
+
+    def test_camera_epoch_change_frame_gap_or_unverified_coordinates_block_measurement(self):
+        for defect in ("camera", "frames", "coordinates", "timeline"):
+            sequence, events, timeline = fixture()
+            if defect == "camera":
+                sequence = replace(sequence, source_time_bindings={}, camera_reference_epochs=(0,) * 3 + (1,) * (len(sequence.timestamp_ms) - 3))
+            elif defect == "frames":
+                sequence.source_time_bindings.clear()
+                sequence.source_frames[3] = 1000
+            elif defect == "coordinates":
+                sequence = replace(sequence, coordinate_metadata={})
+            else:
+                timeline = None
+            row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M02")
+            self.assertEqual(row["status"], "needs_review", defect)
+            self.assertTrue(all(c["passed"] is None for c in row["conditions"]), defect)
+            clear_source_aligned_feature_cache()
+
+    def test_contract_is_complete_for_five_cards_and_unknown_types_stay_empty(self):
+        sequence, events, timeline = fixture()
+        self.assertEqual(len(CARD_CONDITIONS), 5)
+        self.assertEqual(compute_temporal_card_evidence(sequence, events[1], events=events, primary_timeline=timeline)["cards"], [])
+
+    def test_real_clip_fallback_retains_candidate_but_does_not_grade_standing_as_preload(self):
+        payload = json.loads((Path(__file__).parent / "fixtures" / "temporal-card-real-0a3.json").read_text(encoding="utf-8"))
+        data = payload["sequence"]
+        for key in ("timestamp_ms", "source_frames", "frame_dimensions_px", "frame_transforms_to_reference"):
+            data[key] = np.asarray(data[key])
+        for key in ("keypoints_xy", "confidence", "model_estimate_masks"):
+            data[key] = {name: np.asarray(value, dtype=bool if key == "model_estimate_masks" else float)
+                         for name, value in data[key].items()}
+        for key in ("camera_motion_status", "camera_reference_epochs", "model_estimate_bindings"):
+            data[key] = tuple(data[key])
+        data["source_time_bindings"] = {int(k): v for k, v in data["source_time_bindings"].items()}
+        sequence = PoseSequence(**data)
+        events, timeline = payload["events"], payload["timeline"]
+        before = card(compute_temporal_card_evidence(sequence, events[0], events=events,
+            primary_timeline=timeline, allow_phase_fallback=False), "FS01-M02")
+        after = card(compute_temporal_card_evidence(sequence, events[0], events=events,
+            primary_timeline=timeline), "FS01-M02")
+        self.assertEqual(before["reason"], "pre_takeoff_window_too_short_for_turn_evidence")
+        self.assertEqual(after["reason"], "fallback_local_dip_action_type_unverified")
+        self.assertEqual(after["evidence"]["requested_window_ms"], {"start_ms": 1467., "end_ms": 1633.})
+        self.assertTrue(after["measurements"])
+        self.assertFalse(after["evidence"]["coverage"]["visibility_verified"])
+        self.assertIsNone(after["evidence"]["coverage"]["source_visibility_70_percent_verified"])
+        self.assertTrue(all(row["passed"] is None for row in after["conditions"]))
+        self.assertEqual(after["status"], "needs_review")
+        self.assertIsNone(after["original_grade"])
+        self.assertEqual(events[0]["key_phases_ms"]["takeoff_proxy_ms"], 1133)
+        # The next actual FS09 candidate has a complete geometric window. The
+        # source-bound model remains a visual proxy even when every point exists.
+        stop = next(row for row in events if row["event_code"] == "FS09")
+        braking = card(compute_temporal_card_evidence(sequence, stop, events=events,
+            primary_timeline=timeline), "FS09-M03")
+        self.assertEqual(braking["status"], "measured_visual_proxy")
+        self.assertEqual(braking["evidence"]["requested_window_ms"], {"start_ms": 2500., "end_ms": 2933.})
+        self.assertFalse(braking["evidence"]["coverage"]["visibility_verified"])
+        self.assertIsNone(braking["original_grade"])
+        json.dumps([before, after, braking], allow_nan=False)
+
+    def test_quality_hard_failure_and_context_from_other_snapshot_are_rejected(self):
+        sequence, events, timeline = fixture()
+        events[0]["quality_flags"] = ["confirmed_id_switch_present"]
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M05")
+        self.assertEqual(row["reason"], "event_quality_hard_fail")
+        self.assertTrue(all(c["passed"] is None for c in row["conditions"]))
+        from rallymate_features.source_alignment import prepare_source_aligned_context
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        with self.assertRaises(ValueError):
+            compute_temporal_card_evidence(sequence, events[0], events=list(events), context=context)
+
+    def test_support_card_does_not_require_unrelated_knees(self):
+        sequence, events, timeline = fixture()
+        sequence.confidence["left_knee"][:] = 0.
+        sequence.confidence["right_knee"][:] = 0.
+        result = compute_temporal_card_evidence(sequence, events[2], events=events, primary_timeline=timeline)
+        support = card(result, "FS09-M04")
+        self.assertEqual(support["status"], "measured_visual_proxy")
+        self.assertNotIn("left_knee", support["evidence"]["coverage"]["required_joint_names"])
+        self.assertEqual(card(result, "FS09-M03")["status"], "needs_review")
+        json.dumps(result, allow_nan=False)
+
+    def test_minimum_duration_uses_decoder_pts_not_rounded_playback_time(self):
+        sequence, events, timeline = fixture()
+        events[0]["end_ms"] = 560
+        events[1].update(start_ms=560, end_ms=680)
+        bindings = {}
+        for index, original in sequence.source_time_bindings.items():
+            pts = original["pts"] * 10 - (1 if index == 13 else 2 if index == 14 else 0)
+            bindings[index] = {**original, "pts": pts, "time_base_den": 10000, "source_timestamp_ms": pts / 10}
+        sequence = replace(sequence, source_time_bindings=bindings)
+        row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M05")
+        self.assertEqual(row["evidence"]["requested_window_ms"], {"start_ms": 480., "end_ms": 560.})
+        self.assertAlmostEqual(row["evidence"]["source_duration_ms"], 79.8)
+        self.assertEqual(row["reason"], "continuous_window_below_80_ms")
+        self.assertTrue(all(c["passed"] is None for c in row["conditions"]))
+
+    def test_local_quality_gate_does_not_depend_on_legacy_policy_relaxation(self):
+        sequence, events, timeline = fixture()
+        events[0]["quality_flags"] = ["pose_kinematic_coverage_low"]
+        outcomes = []
+        for relaxed in (False, True):
+            def legacy(indicator, flags):
+                result = evaluate_indicator_event_quality(indicator, flags)
+                result["scoring_block_flags"] = [] if relaxed else ["pose_kinematic_coverage_low"]
+                result["scoring_allowed"] = relaxed
+                return result
+            with patch("rallymate_scoring.temporal_card_evidence.evaluate_indicator_event_quality", side_effect=legacy):
+                outcomes.append(card(compute_temporal_card_evidence(sequence, events[0], events=events,
+                    primary_timeline=timeline), "FS01-M05"))
+        self.assertEqual(outcomes[0], outcomes[1])
+        self.assertEqual(outcomes[0]["reason"], "temporal_boundary_quality_requires_review")
+        self.assertEqual(outcomes[0]["evidence"]["event_quality"]["raw_input_quality_flags"], ["pose_kinematic_coverage_low"])
+        self.assertTrue(all(c["passed"] is None for c in outcomes[0]["conditions"]))
+
+    def test_pose_jump_diagnostics_are_scoped_to_actual_card_required_joints(self):
+        sequence, events, timeline = fixture()
+        events[2]["quality_flags"] = ["keypoint_jump_candidates_present", "left_right_swap_candidates_present"]
+        diagnostics = events[2]["track_diagnostics"]
+        diagnostics["keypoint_jump_candidate_joints"] = ["left_knee"]
+        diagnostics["left_right_swap_candidate_joint_pairs"] = [{"left_joint": "left_knee", "right_joint": "right_knee"}]
+        result = compute_temporal_card_evidence(sequence, events[2], events=events, primary_timeline=timeline)
+        support = card(result, "FS09-M04")
+        self.assertEqual(support["status"], "measured_visual_proxy")
+        self.assertEqual(len(support["evidence"]["event_quality"]["irrelevant_joint_flags"]), 2)
+        braking = card(result, "FS09-M03")
+        self.assertEqual(braking["reason"], "temporal_required_joint_quality_requires_review")
+        self.assertTrue(all(c["passed"] is None for c in braking["conditions"]))
+
+
+if __name__ == "__main__":
+    unittest.main()

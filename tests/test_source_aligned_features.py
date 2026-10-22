@@ -10,7 +10,7 @@ import numpy as np
 
 from rallymate_events.associations import SuccessorEventIndex
 from rallymate_features.schemas import PoseSequence
-from rallymate_features.source_alignment import JOINTS, locate_source_preload
+from rallymate_features.source_alignment import JOINTS, HEAD, locate_source_preload
 from rallymate_scoring.source_aligned_features import (
     clear_source_aligned_feature_cache, compute_source_aligned_features, prepare_source_aligned_context,
 )
@@ -36,8 +36,11 @@ def fixture():
             xy[f"{side}_hip"][index] = [.5 + sign * .1, hip_y]
             xy[f"{side}_knee"][index] = [.5 + sign * (.2 + depth), (hip_y + .9) / 2]
             xy[f"{side}_ankle"][index] = [.5 + sign * .3, .9]
-    sequence = PoseSequence(times, np.arange(count), xy, {name: np.full(count, .95) for name in JOINTS},
-                            camera_motion_status=("stationary",) * count, camera_reference_epochs=(0,) * count)
+    for name,x in (("nose",.5),("left_ear",.46),("right_ear",.54)):
+        xy[name]=np.tile([x,.1],(count,1))
+    sequence = PoseSequence(times, np.arange(count), xy, {name: np.full(count, .95) for name in JOINTS+HEAD},
+                            camera_motion_status=("stationary",) * count, camera_reference_epochs=(0,) * count,
+                            coordinate_metadata={"contract_version":"isotropic-frame-long-edge-v1.1.0"})
     events = [event(preload_ms=640, takeoff_proxy_ms=320, landing_proxy_ms=480),
               event("launch", "FS02", 800, 920),
               event("stop", "FS09", 920, 1200, stable_control_onset_ms=960),
@@ -61,6 +64,80 @@ class SourceAlignedFeatureTests(unittest.TestCase):
     def setUp(self):
         clear_source_aligned_feature_cache()
         self.addCleanup(clear_source_aligned_feature_cache)
+
+    def test_fs02_direction_only_has_full_source_window_and_no_correctness_grade(self):
+        sequence, events, timeline = fixture()
+        count = len(sequence.timestamp_ms)
+        for name in HEAD:
+            sequence.keypoints_xy[name] = np.tile([.5, .15], (count, 1))
+            sequence.confidence[name] = np.full(count, .95)
+        for name in ('left_hip', 'right_hip'):
+            sequence.keypoints_xy[name][:, 0] += np.arange(count) * .003
+        context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
+        result = compute_source_aligned_features(sequence, events[1], events=events, context=context)
+        row = feature(result, 'FS02-M01', 'launch_direction_deg')
+        self.assertEqual(row['status'], 'measured')
+        self.assertAlmostEqual(row['value'], 0.)
+        self.assertEqual(row['source_ref'], 'CARD-FS:word/document.xml:P0258')
+        self.assertEqual(row['source_frames'], [20,21,22,23])
+        self.assertEqual(row['coverage']['required_joint_names'], list(HEAD + ('left_hip','right_hip')))
+        self.assertFalse(row['evidence']['direction_correctness_evaluated'])
+        self.assertIsNone(result['grade'])
+
+    def test_head_speed_and_circular_angle_variation_are_measurements_not_gaze(self):
+        sequence,events,timeline=fixture()
+        for name in HEAD:sequence.keypoints_xy[name][:,0]+=sequence.timestamp_ms/1000*.2
+        context=prepare_source_aligned_context(sequence,events,primary_timeline=timeline)
+        result=compute_source_aligned_features(sequence,events[0],events=events,context=context)
+        speed=feature(result,'FS01-M01','head_center_mean_speed_frame_long_edge_s')
+        angle=feature(result,'FS01-M01','head_axis_circular_std_deg')
+        self.assertAlmostEqual(speed['value'],.2)
+        self.assertAlmostEqual(angle['value'],0.)
+        self.assertEqual(speed['window_ms'],{'start_ms':0,'end_ms':320})
+        self.assertEqual(speed['source_ref'],'CARD-FS:word/document.xml:P0080')
+        self.assertFalse(speed['evidence']['gaze_evaluated'])
+        self.assertFalse(speed['evidence']['technical_stability_evaluated'])
+        self.assertIsNone(result['grade'])
+
+    def test_head_visibility_missing_phase_and_occlusion_never_create_gaze_or_cross_gap_speed(self):
+        sequence,events,timeline=fixture()
+        for name in HEAD:sequence.keypoints_xy[name][:,0]+=sequence.timestamp_ms/1000*.2
+        sequence.confidence['nose'][4]=.1
+        context=prepare_source_aligned_context(sequence,events,primary_timeline=timeline)
+        result=compute_source_aligned_features(sequence,events[0],events=events,context=context)
+        speed=feature(result,'FS01-M01','head_center_mean_speed_frame_long_edge_s')
+        self.assertAlmostEqual(speed['value'],.2)
+        self.assertNotIn([3,5],speed['evidence']['used_adjacent_source_frame_pairs'])
+        self.assertFalse(any(4 in pair for pair in speed['evidence']['used_adjacent_source_frame_pairs']))
+        for defect in ('phase','coverage','identity'):
+            sequence,events,timeline=fixture()
+            if defect=='phase':events[0]['key_phases_ms'].pop('takeoff_proxy_ms')
+            elif defect=='coverage':sequence.confidence['nose'][:15]=.1
+            else:timeline[2]['identity_ambiguous']=True
+            context=prepare_source_aligned_context(sequence,events,primary_timeline=timeline)
+            result=compute_source_aligned_features(sequence,events[0],events=events,context=context)
+            self.assertTrue(all(row['value'] is None for row in indicator(result,'FS01-M01')['source_measurements']),defect)
+            clear_source_aligned_feature_cache()
+
+    def test_fs02_missing_head_insufficient_coverage_identity_or_clock_cannot_be_rescued(self):
+        for defect in ('missing_head','low_head_coverage','identity','camera','frame_gap'):
+            sequence,events,timeline=fixture()
+            count=len(sequence.timestamp_ms)
+            for name in HEAD:
+                sequence.keypoints_xy[name]=np.tile([.5,.15],(count,1))
+                sequence.confidence[name]=np.full(count,.95)
+            for name in ('left_hip','right_hip'):
+                sequence.keypoints_xy[name][:,0]+=np.arange(count)*.003
+            if defect=='missing_head': del sequence.keypoints_xy['left_ear']
+            elif defect=='low_head_coverage': sequence.confidence['right_ear'][20:22]=.1
+            elif defect=='identity': timeline[21]['source_track_id']=2
+            elif defect=='camera': sequence=replace(sequence,camera_reference_epochs=(0,)*21+(1,)*(count-21))
+            else: sequence.source_frames[21]=999
+            context=prepare_source_aligned_context(sequence,events,primary_timeline=timeline)
+            row=feature(compute_source_aligned_features(sequence,events[1],events=events,context=context),'FS02-M01','launch_direction_deg')
+            self.assertEqual(row['status'],'unavailable',defect)
+            self.assertIsNone(row['value'],defect)
+            clear_source_aligned_feature_cache()
 
     def test_reversed_preload_repaired_from_observed_turn_without_mutating_event(self):
         sequence, events, timeline = fixture()
@@ -180,7 +257,7 @@ class SourceAlignedFeatureTests(unittest.TestCase):
                     events[0]["quality_flags"].append(evidence)
                 context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
                 result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
-                self.assertEqual(result["version"], "source-aligned-fs-measurements-v1.1.0")
+                self.assertEqual(result["version"], "source-aligned-fs-measurements-v1.2.0")
                 for item in result["indicators"]:
                     for row in item["source_measurements"]:
                         self.assertEqual(row["reason"], "confirmed_subject_identity_switch")
@@ -215,7 +292,25 @@ class SourceAlignedFeatureTests(unittest.TestCase):
                                       "unconfirmed_id_switch", "confirmed_id_switch_candidate"]
         context = prepare_source_aligned_context(sequence, events, primary_timeline=timeline)
         result = compute_source_aligned_features(sequence, events[0], events=events, context=context)
-        self.assertTrue(all(row["status"] == "measured" for item in result["indicators"] for row in item["source_measurements"]))
+        rows = {row["feature_name"]: row for item in result["indicators"] for row in item["source_measurements"]}
+        legacy_values = {"preload_hip_height_drop_body": .16,
+                         "left_preload_knee_flexion_change_deg": 18.016364769242756,
+                         "right_preload_knee_flexion_change_deg": 18.016364769242756,
+                         "preload_body_speed_change_rate_body_s2": 6.25,
+                         "post_slowdown_ankle_width_to_hip_width_ratio": 3.,
+                         "landing_proxy_to_next_fs02_ms": 320.,
+                         "post_landing_body_speed_std_body_s": 0.,
+                         "head_center_mean_speed_frame_long_edge_s": 0.,
+                         "head_axis_circular_std_deg": 0.}
+        reference_names = {"preload_hip_reference_dy_px", "preload_hip_reference_dy_torso"}
+        self.assertEqual(set(rows), set(legacy_values) | reference_names)
+        for name, value in legacy_values.items():
+            self.assertEqual(rows[name]["status"], "measured", name)
+            self.assertAlmostEqual(rows[name]["value"], value, msg=name)
+        for name in reference_names:
+            self.assertEqual(rows[name]["status"], "unavailable")
+            self.assertEqual(rows[name]["reason"], "stable_reference_coordinate_contract_unverified")
+            self.assertIsNone(rows[name]["value"])
 
     def test_confirmed_switch_count_must_be_unknown_or_nonnegative_integer(self):
         for count in (None, 0, -1, "1", 1.0, True):
@@ -295,7 +390,25 @@ class SourceAlignedFeatureTests(unittest.TestCase):
     def test_absent_timeline_preserves_legacy_event_diagnostic_measurements(self):
         sequence, events, _ = fixture()
         result = compute_source_aligned_features(sequence, events[0], events=events)
-        self.assertTrue(all(row["status"] == "measured" for item in result["indicators"] for row in item["source_measurements"]))
+        rows = {row["feature_name"]: row for item in result["indicators"] for row in item["source_measurements"]}
+        legacy_values = {"preload_hip_height_drop_body": .16,
+                         "left_preload_knee_flexion_change_deg": 18.016364769242756,
+                         "right_preload_knee_flexion_change_deg": 18.016364769242756,
+                         "preload_body_speed_change_rate_body_s2": 6.25,
+                         "post_slowdown_ankle_width_to_hip_width_ratio": 3.,
+                         "landing_proxy_to_next_fs02_ms": 320.,
+                         "post_landing_body_speed_std_body_s": 0.,
+                         "head_center_mean_speed_frame_long_edge_s": 0.,
+                         "head_axis_circular_std_deg": 0.}
+        reference_names = {"preload_hip_reference_dy_px", "preload_hip_reference_dy_torso"}
+        self.assertEqual(set(rows), set(legacy_values) | reference_names)
+        for name, value in legacy_values.items():
+            self.assertEqual(rows[name]["status"], "measured", name)
+            self.assertAlmostEqual(rows[name]["value"], value, msg=name)
+        for name in reference_names:
+            self.assertEqual(rows[name]["status"], "unavailable")
+            self.assertEqual(rows[name]["reason"], "stable_reference_coordinate_contract_unverified")
+            self.assertIsNone(rows[name]["value"])
         stop = compute_source_aligned_features(sequence, events[2], events=events)
         self.assertIsNone(feature(stop, "FS09-M05", "stable_control_proxy_to_next_fs10_or_fs02_ms")["value"])
 

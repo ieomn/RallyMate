@@ -17,6 +17,7 @@ from dataclasses import dataclass
 import math
 import statistics
 from typing import Any, Protocol
+from .pose_observations import MODEL_ESTIMATE, measurement_provenance, sample_source_reference, source_time_is_continuous
 
 
 CONTRACT_VERSION = "temporal-pose-window-v1.0.0"
@@ -43,6 +44,8 @@ def samples_are_continuous(before: Any, after: Any, *, max_gap_ms: int = 160) ->
             and before.selection_epoch == after.selection_epoch
             and getattr(before, "camera_reference_epoch", None) == getattr(after, "camera_reference_epoch", None)
             and getattr(before, "normalization_basis", "full_torso") == getattr(after, "normalization_basis", "full_torso")
+            and sample_source_reference(before) == sample_source_reference(after)
+            and source_time_is_continuous(before, after)
             and before.scale > 0 and after.scale > 0
             and _distance(before.center, after.center) / after.scale < 0.8
             and 0.65 < after.scale / before.scale < 1.55)
@@ -68,6 +71,7 @@ class TemporalPoseWindow:
             "coordinate_unit", "person_track_id", "selection_epoch", "camera_reference_epoch",
             "normalization_basis", "sample_rate_hz", "sampling_method", "observed_sample_count",
             "total_frames", "start_ms", "end_ms", "observed_joint_fraction", "source_time_status",
+            "measurement_provenance",
         )}
 
 
@@ -92,6 +96,7 @@ def build_temporal_window(samples: Sequence[Any], *, sample_rate_hz: int = 20) -
     period = 1000 / sample_rate_hz
     targets = [round(times[0] + index * period, 6) for index in range(math.floor((times[-1] - times[0]) / period) + 1)]
     keypoints, scores, masks, confidence_masks, source_times, source_frames = [], [], [], [], [], []
+    geometry_masks, estimate_masks = [], []
     for target in targets:
         insertion = bisect_left(times, target)
         options = [index for index in (insertion - 1, insertion) if 0 <= index < len(times)]
@@ -99,7 +104,8 @@ def build_temporal_window(samples: Sequence[Any], *, sample_rate_hz: int = 20) -
         sample = samples[nearest] if abs(times[nearest] - target) <= period / 2 else None
         points = sample.points if sample else {}
         confidence = getattr(sample, "point_confidences", {}) if sample else {}
-        row, score_row, mask_row, confidence_row = [], [], [], []
+        row, score_row, mask_row, confidence_row, geometry_row, estimate_row = [], [], [], [], [], []
+        estimated = getattr(sample, "observation_semantics", None) == MODEL_ESTIMATE
         for name in HALPE26_JOINTS:
             point = points.get(name)
             valid = (isinstance(point, (tuple, list)) and len(point) == 2
@@ -108,12 +114,16 @@ def build_temporal_window(samples: Sequence[Any], *, sample_rate_hz: int = 20) -
             score_valid = valid and isinstance(score, (int, float)) and not isinstance(score, bool) and math.isfinite(score) and 0 <= score <= 1
             row.append(list(point) if valid else [0.0, 0.0])
             score_row.append(float(score) if score_valid else 0.0)
-            mask_row.append(bool(valid))
+            mask_row.append(bool(valid and not estimated))
+            geometry_row.append(bool(valid))
+            estimate_row.append(bool(valid and estimated))
             confidence_row.append(bool(score_valid))
         keypoints.append(row)
         scores.append(score_row)
         masks.append(mask_row)
         confidence_masks.append(confidence_row)
+        geometry_masks.append(geometry_row)
+        estimate_masks.append(estimate_row)
         source_times.append(sample.time if sample else None)
         source_frames.append(sample.frame_index if sample else None)
     first = samples[0]
@@ -131,6 +141,8 @@ def build_temporal_window(samples: Sequence[Any], *, sample_rate_hz: int = 20) -
         "timestamp_ms": targets, "source_timestamp_ms": source_times, "source_frame_index": source_frames,
         "keypoint": [keypoints], "keypoint_score": [scores], "observed_mask": [masks],
         "confidence_available_mask": [confidence_masks],
+        "geometry_available_mask": [geometry_masks], "model_estimate_mask": [estimate_masks],
+        "measurement_provenance": measurement_provenance(samples),
         "observed_joint_fraction": round(sum(sum(row) for row in masks) / (len(targets) * len(HALPE26_JOINTS)), 4),
     }
     return TemporalPoseWindow(samples, data)
@@ -183,8 +195,10 @@ def _classification(samples: list[Any], side: str, hand_evidence: Mapping[str, A
         return {"label": "unclassified", "label_zh": LABELS["unclassified"], "status": "unclassified", "reason_zh": reason}
     if len(samples) < 5:
         return unknown("完整的类型判定时间窗未被连续观测覆盖，保留运动测量。")
-    if hand_evidence.get("hand") != side:
+    if hand_evidence.get("hand") not in {"left", "right"}:
         return unknown("持拍手的独立球拍关联不足，保留挥拍测量，暂不判断正反手。")
+    if hand_evidence["hand"] != side:
+        return unknown("局部持拍手证据与当前挥拍候选侧不一致，保留该侧运动测量，暂不判断正反手。")
     axes = [_axis(sample) for sample in samples]
     if sum(axis is not None for axis in axes) < len(samples) * 0.85:
         return unknown("身体侧轴过于侧向或肩髋方向不一致，正反手暂不可区分。")

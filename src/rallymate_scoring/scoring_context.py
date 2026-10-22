@@ -137,6 +137,9 @@ def build_target_direction_alignment_feature(
         "unit": "deg",
         "source_frames": source_frames,
     }
+    model_proof = {key: launch_direction_feature[key] for key in ("measurement_provenance", "source_window", "geometry_mask")
+                   if isinstance(launch_direction_feature, Mapping) and key in launch_direction_feature}
+    base.update(model_proof)
     if (
         not isinstance(launch_direction_feature, Mapping)
         or launch_direction_feature.get("valid") is not True
@@ -164,10 +167,8 @@ def build_target_direction_alignment_feature(
         launch_direction_feature.get("value"), "launch_direction_feature.value"
     )
     target = _finite_number(target_direction_deg, "target_direction_deg")
-    feature_confidence = _finite_number(
-        launch_direction_feature.get("confidence"),
-        "launch_direction_feature.confidence",
-    )
+    feature_confidence = (_finite_number(launch_direction_feature.get("confidence"), "launch_direction_feature.confidence")
+                          if launch_direction_feature.get("confidence") is not None else None)
     reference_confidence_value = _finite_number(
         reference_confidence, "reference_confidence"
     )
@@ -176,7 +177,8 @@ def build_target_direction_alignment_feature(
         **base,
         "value": round(abs(signed_error), 8),
         "signed_value": round(signed_error, 8),
-        "confidence": round(min(feature_confidence, reference_confidence_value), 8),
+        "confidence": (round(min(feature_confidence, reference_confidence_value), 8)
+                       if feature_confidence is not None else None),
         "valid": True,
         "reason": "valid_external_reference_alignment_not_grade",
         "observed_motion_direction_deg": round(observed, 8),
@@ -205,7 +207,8 @@ def compact_target_direction_alignment_feature(
         "value": feature.get("value"),
         "unit": feature["unit"],
         "valid": feature.get("valid") is True,
-        "confidence": float(feature.get("confidence", 0.0)),
+        "confidence": None if feature.get("confidence") is None else float(feature.get("confidence", 0.0)),
+        **{key: feature[key] for key in ("measurement_provenance", "source_window", "geometry_mask") if key in feature},
         "reason": str(feature.get("reason") or "target_direction_unavailable"),
         "source_frames": list(feature.get("source_frames", [])),
     }
@@ -611,7 +614,10 @@ def validate_resolved_target_direction_context(
         "coordinate_frame",
         "direction_convention",
     }
-    if set(feature) != expected_feature_fields:
+    proof_fields = {key for key in ("measurement_provenance", "source_window", "geometry_mask")
+                    if isinstance(launch_direction_feature, Mapping) and key in launch_direction_feature}
+    if (set(feature) != expected_feature_fields | proof_fields
+            or any(feature.get(key) != launch_direction_feature[key] for key in proof_fields)):
         raise ValueError("resolved context feature fields are invalid")
     source_sha256 = context.get("source_sha256")
     if (
@@ -679,12 +685,15 @@ def validate_resolved_target_direction_context(
         or feature_source_frames != launch_source_frames
     ):
         raise ValueError("resolved context source_frames mismatch")
-    confidence = _finite_number(feature.get("confidence"), "alignment confidence")
-    launch_confidence = _finite_number(
-        launch_direction_feature.get("confidence"), "launch direction confidence"
-    )
-    if not 0.0 <= confidence <= 1.0 or confidence > launch_confidence + 1e-7:
-        raise ValueError("resolved context confidence is invalid")
+    confidence, launch_confidence = feature.get("confidence"), launch_direction_feature.get("confidence")
+    if launch_confidence is None:
+        if confidence is not None:
+            raise ValueError("resolved context cannot invent unknown launch confidence")
+    else:
+        confidence = _finite_number(confidence, "alignment confidence")
+        launch_confidence = _finite_number(launch_confidence, "launch direction confidence")
+        if not 0.0 <= confidence <= 1.0 or confidence > launch_confidence + 1e-7:
+            raise ValueError("resolved context confidence is invalid")
     expected_signed = signed_angle_delta_deg(observed, target)
     actual_signed = _finite_number(feature.get("signed_value"), "signed alignment error")
     actual_absolute = _finite_number(feature.get("value"), "alignment error")

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from fractions import Fraction
 from typing import Any
 
 import numpy as np
 
-from rallymate_features.schemas import PoseSequence
+from rallymate_features.schemas import PoseSequence, validated_source_time_binding
 from rallymate_features.validity import valid_point_mask
 
 
@@ -43,7 +44,110 @@ def validated_camera_transform(camera: Any) -> np.ndarray | None:
 
 
 def _finite_number(value: Any) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    try:
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def _bound_model_points(record, selected, *, unique_source):
+    """Authorize raw model geometry using independent decoder and selection data."""
+    from rallymate_scoring.pose_observations import sam_source_bound_points, SOURCE_FIELDS
+    frame = record["frame"]
+    if (not isinstance(selected, dict) or selected.get("selection_status") != "selected"
+            or type(selected.get("primary_player_id")) is not int or selected["primary_player_id"] != 1
+            or selected.get("identity_ambiguous") is not False or not unique_source
+            or any(selected.get(key) != frame.get(other) for key, other in (
+                ("processed_index", "processed_index"), ("source_frame_index", "index"), ("timestamp_ms", "timestamp_ms")))):
+        return None
+    track = selected.get("source_track_id")
+    if type(track) is not int or track < 0:
+        return None
+    poses = [p for p in record.get("poses", []) if p.get("person_track_id") == track]
+    detections = [d for d in record.get("detections", []) if d.get("class_name") == "player" and d.get("track_id") == track]
+    if len(poses) != 1 or len(detections) != 1:
+        return None
+    camera = record.get("camera_motion")
+    try:
+        result = sam_source_bound_points(poses[0], {**frame, "camera_motion": camera})
+    except (OverflowError, TypeError, ValueError):
+        return None
+    if result is None:
+        return None
+    points, binding = result
+    if (not isinstance(frame.get("video_sha256"), str)
+            or frame["video_sha256"].lower() != binding["video_sha256"].lower()
+            or any(type(frame.get(key)) is not int or frame[key] != binding[key] for key in ("pts", "time_base_num", "time_base_den"))
+            or not isinstance(camera, dict) or type(camera.get("reference_epoch")) is not int
+            or camera["reference_epoch"] != binding["camera_reference_epoch"]
+            or validated_camera_transform(camera) is None
+            or "selection_epoch" in selected and (type(selected["selection_epoch"]) is not int or selected["selection_epoch"] != binding["selection_epoch"])):
+        return None
+    ledger = record.get("sam3d_requests")
+    requests = [r for r in ledger if isinstance(r, dict) and type(r.get("person_track_id")) is int and r["person_track_id"] == track] if isinstance(ledger, list) else []
+    if len(requests) != 1:
+        return None
+    request = requests[0]
+    if (request.get("status") != "ok" or type(request.get("selection_epoch")) is not int
+            or request["selection_epoch"] != binding["selection_epoch"]
+            or any(key in request and (type(request[key]) is not type(binding[key]) or request[key] != binding[key]) for key in SOURCE_FIELDS)):
+        return None
+    return points, {key: binding[key] for key in SOURCE_FIELDS}
+
+
+def _source_time_binding(record, selected, *, unique_source):
+    """Retain verified decoder PTS without authorizing any pose geometry."""
+    frame = record["frame"]
+    if not unique_source:
+        return None, "duplicate_source_frame"
+    if frame.get("timestamp_source") != "decoder_pts":
+        return None, "decoder_pts_provenance_unavailable"
+    if not isinstance(selected, dict):
+        return None, "primary_timeline_missing_or_duplicated"
+    if (selected.get("selection_status") != "selected" or selected.get("identity_ambiguous") is not False
+            or type(selected.get("primary_player_id")) is not int or selected["primary_player_id"] != 1
+            or type(selected.get("source_track_id")) is not int or selected["source_track_id"] < 0):
+        return None, "selected_identity_unverified"
+    if any(type(selected.get(key)) is not int or selected[key] != frame.get(other) for key, other in (
+            ("processed_index", "processed_index"), ("source_frame_index", "index"), ("timestamp_ms", "timestamp_ms"))):
+        return None, "primary_timeline_frame_or_video_time_mismatch"
+    camera = record.get("camera_motion")
+    epoch = camera.get("reference_epoch") if isinstance(camera, dict) else None
+    selection_epoch = selected.get("selection_epoch")
+    if any(type(value) is not int or value < 0 for value in (epoch, selection_epoch)):
+        return None, "source_identity_epoch_unavailable"
+    binding = {"frame_index": frame.get("index"), "processed_index": frame.get("processed_index"),
+        "video_sha256": frame.get("video_sha256"), "pts": frame.get("pts"),
+        "time_base_num": frame.get("time_base_num"), "time_base_den": frame.get("time_base_den"),
+        "source_timestamp_ms": frame.get("source_timestamp_ms"), "video_timestamp_ms": frame.get("timestamp_ms"),
+        "timestamp_source": frame.get("timestamp_source"), "primary_player_id": selected["primary_player_id"],
+        "person_track_id": selected["source_track_id"], "selection_epoch": selection_epoch,
+        "camera_reference_epoch": epoch}
+    binding = validated_source_time_binding(binding)
+    if binding is None:
+        return None, "decoder_source_time_binding_invalid"
+    for row, fields in ((selected, ("source_timestamp_ms", "camera_reference_epoch", "video_sha256",
+                                    "pts", "time_base_num", "time_base_den")),
+                        (frame, ("selection_epoch", "camera_reference_epoch", "person_track_id"))):
+        for key in fields:
+            if key not in row:
+                continue
+            actual, expected = row[key], binding[key]
+            if key == "video_sha256" and isinstance(actual, str):
+                actual = actual.lower()
+            if (isinstance(actual, bool) or actual != expected
+                    or key in {"camera_reference_epoch", "pts", "time_base_num", "time_base_den",
+                               "selection_epoch", "person_track_id"} and type(actual) is not int):
+                return None, "decoder_timeline_identity_or_clock_mismatch"
+    benchmark = record.get("benchmark_provenance")
+    if benchmark is not None:
+        if (not isinstance(benchmark, dict)
+                or type(benchmark.get("selected_person_track_id")) is not int
+                or benchmark["selected_person_track_id"] != binding["person_track_id"]
+                or type(benchmark.get("selection_epoch")) is not int
+                or benchmark["selection_epoch"] != binding["selection_epoch"]):
+            return None, "frozen_selection_identity_mismatch"
+    return binding, None
 
 
 def _frame_dimensions(frame: dict[str, Any]) -> tuple[int, int] | None:
@@ -93,7 +197,13 @@ def pose_sequence_from_records(
     Missing frame dimensions make that frame unavailable; no aspect ratio is
     inferred for legacy records.
     """
-    timeline = {int(item["processed_index"]): item for item in primary_timeline}
+    timeline = {}
+    for item in primary_timeline:
+        index = int(item["processed_index"])
+        timeline[index] = item if index not in timeline else None
+    has_model_estimates = any(pose.get("source") == "sam3d" for record in records for pose in record.get("poses", []))
+    source_frame_counts = Counter((str(record["frame"].get("video_sha256", "")).lower(), record["frame"].get("index")) for record in records)
+    time_frame_counts = Counter(record["frame"].get("index") for record in records)
     names = sorted(
         {
             point["name"]
@@ -107,6 +217,11 @@ def pose_sequence_from_records(
     frames = []
     keypoints = {name: [] for name in names}
     confidences = {name: [] for name in names}
+    model_masks = {name: [] for name in names}
+    model_bindings = []
+    source_time_bindings = {}
+    source_time_rejections = {}
+    time_origin_ranges = {}
     dimensions_by_frame = []
     dimension_counts: Counter[tuple[int, int]] = Counter()
     source_counts: Counter[str] = Counter()
@@ -141,6 +256,24 @@ def pose_sequence_from_records(
         transforms.append(transform if transform is not None else np.full((2, 3), np.nan))
         processed_index = int(frame["processed_index"])
         selected = timeline.get(processed_index)
+        time_binding, time_reason = _source_time_binding(record, selected,
+            unique_source=time_frame_counts[frame.get("index")] == 1)
+        if time_binding is not None:
+            identity = tuple(time_binding[key] for key in ("video_sha256", "time_base_num", "time_base_den"))
+            exact_ms = Fraction(time_binding["pts"] * time_binding["time_base_num"] * 1000, time_binding["time_base_den"])
+            offset = exact_ms - time_binding["video_timestamp_ms"]
+            lower, upper = offset - Fraction(51, 100), offset + Fraction(51, 100)
+            if identity in time_origin_ranges:
+                previous_lower, previous_upper = time_origin_ranges[identity]
+                lower, upper = max(lower, previous_lower), min(upper, previous_upper)
+            if lower > upper:
+                time_binding, time_reason = None, "source_and_video_time_origin_mismatch"
+            else:
+                time_origin_ranges[identity] = lower, upper
+        if time_binding is not None:
+            source_time_bindings[int(frame["index"])] = time_binding
+        else:
+            source_time_rejections[int(frame["index"])] = time_reason
         source_track_id = selected.get("source_track_id") if selected else None
         pose = next(
             (
@@ -150,6 +283,8 @@ def pose_sequence_from_records(
             ),
             None,
         )
+        bound = _bound_model_points(record, selected, unique_source=source_frame_counts[(str(frame.get("video_sha256", "")).lower(), frame.get("index"))] == 1) if has_model_estimates else None
+        model_bindings.append(bound[1] if bound is not None else None)
         point_map = {
             point["name"]: point for point in pose.get("keypoints", [])
         } if pose is not None else {}
@@ -169,15 +304,21 @@ def pose_sequence_from_records(
                 xy, reason = None, "camera_reference_transform_unavailable"
             elif point is None:
                 xy, reason = None, "point_unobserved"
+            elif has_model_estimates:
+                raw = bound[0].get(name) if bound is not None else None
+                corrected = transform @ np.asarray([*raw, 1.0]) if raw is not None else None
+                xy = (corrected / max(dimensions)).tolist() if corrected is not None and np.isfinite(corrected).all() else None
+                reason = "source_bound_model_estimate_raw_pixels" if xy is not None else "model_geometry_unbound_or_unavailable"
             else:
                 xy, reason = _isotropic_point(point, dimensions, transform)
+            model_masks[name].append(bool(has_model_estimates and xy is not None))
             if xy is None:
                 keypoints[name].append([math.nan, math.nan])
                 confidences[name].append(math.nan)
                 rejected_counts[reason] += 1
             else:
                 keypoints[name].append(xy)
-                confidences[name].append(float(point["confidence"]))
+                confidences[name].append(math.nan if has_model_estimates else float(point["confidence"]))
                 source_counts[reason] += 1
     return PoseSequence(
         timestamp_ms=np.asarray(timestamps, dtype=np.int64),
@@ -188,11 +329,24 @@ def pose_sequence_from_records(
         camera_motion_status=tuple(camera_statuses) if has_camera_observations else None,
         frame_transforms_to_reference=np.asarray(transforms, dtype=np.float64).reshape((-1, 2, 3)),
         camera_reference_epochs=tuple(camera_epochs) if has_reference_epochs else None,
+        model_estimate_masks={name: np.asarray(values, dtype=bool) for name, values in model_masks.items()} if has_model_estimates else {},
+        model_estimate_bindings=tuple(model_bindings) if has_model_estimates else None,
+        source_time_bindings=source_time_bindings,
         coordinate_metadata={
             "contract_version": COORDINATE_CONTRACT_VERSION,
             "coordinate_system": "camera_reference_xy_divided_by_source_long_edge",
             "axis_units": "same_for_x_and_y",
             "is_metric_or_3d": False,
+            "source_time_binding": {
+                "version": "decoder-source-time-binding-v1",
+                "semantics": "decoder_time_and_selected_identity_only_not_pose_validity_or_visibility",
+                "exact_time_formula": "Fraction(pts * time_base_num * 1000, time_base_den)",
+                "export_timestamp_check_tolerance_ms": .51,
+                "duration_or_window_tolerance_ms": 0,
+                "video_clock_policy": "one_constant_origin_per_video_timebase_with_export_rounding_only",
+                "bound_frame_count": len(source_time_bindings),
+                "unavailable_source_frames": source_time_rejections,
+            },
             "camera_compensation": {
                 "method": "validated_current_pixels_to_reference_similarity",
                 "semantics": "background_image_motion_compensation_not_3d_or_anatomical_rotation",
@@ -228,9 +382,10 @@ def point_series(
         values = np.full((sequence.timestamp_ms.size, 2), np.nan)
         return values, np.zeros(sequence.timestamp_ms.size, dtype=bool)
     values = np.asarray(sequence.keypoints_xy[name], dtype=np.float64).copy()
-    mask = valid_point_mask(
-        values, sequence.confidence[name], confidence_min=confidence_min
-    )
+    if sequence.model_estimate_bindings is not None:
+        mask = np.asarray(sequence.model_estimate_masks.get(name, np.zeros(len(values), dtype=bool))) & np.isfinite(values).all(axis=1)
+    else:
+        mask = valid_point_mask(values, sequence.confidence[name], confidence_min=confidence_min)
     values[~mask] = np.nan
     return values, mask
 
