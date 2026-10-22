@@ -152,6 +152,43 @@ class StepMotionEvidenceTests(unittest.TestCase):
             self.assertEqual(raw["total_frame_count"], 10)
             self.assertIsNone(evaluate_card_window(*args)["score"])
 
+    def test_original_normalized_geometry_is_retained_separately_from_camera_reference(self):
+        args = fixture("FS08-M03")
+        # A changing compensation rotation must never be substituted for the
+        # raw normalized plane used by the trunk-tilt condition.
+        for index, sample in enumerate(args[1]):
+            angle = .03*index
+            sample.reference_points = {name: (x*math.cos(angle)-y*math.sin(angle),
+                x*math.sin(angle)+y*math.cos(angle)) for name, (x, y) in sample.reference_points.items()}
+        raw = evidence(args)
+        self.assertEqual(len(raw["source_geometry_series"]), 10)
+        self.assertEqual(raw["source_geometry_series"][5]["normalized_points"]["left_shoulder"], [-.3, 0])
+        self.assertEqual(raw["source_geometry_series"][5]["point_confidences"]["left_shoulder"], .9)
+        self.assertNotEqual(raw["reference_series"][5]["points"]["left_shoulder"], [-30, 0])
+        self.assertEqual(evaluate_card_window(*args)["conditions"][1]["value"], 0)
+
+    def test_geometry_series_keeps_low_confidence_and_null_missing_rows_without_rescuing_nan(self):
+        args = fixture()
+        args[1][0].point_confidences["left_ankle"] = .1
+        args[1][1].point_confidences["left_ankle"] = float("nan")
+        args[1][1].observation_semantics = "monocular_model_estimate"
+        args[1].pop(4)
+        raw = evidence(args)
+        self.assertEqual(len(raw["source_geometry_series"]), 10)
+        self.assertEqual(raw["source_geometry_series"][0]["point_confidences"]["left_ankle"], .1)
+        self.assertIsNone(raw["source_geometry_series"][1]["normalized_points"]["left_ankle"])
+        self.assertTrue(all(value is None for value in raw["source_geometry_series"][4]["normalized_points"].values()))
+        self.assertEqual(raw["source_geometry_series"][4]["frame_index"], 4)
+        self.assertFalse(raw["complete_visual_motion_cycle"])
+        import json
+        json.dumps(raw, allow_nan=False)
+        args = fixture()
+        del args[3][4]["pts"]
+        invalid_clock = evidence(args)
+        self.assertEqual(len(invalid_clock["source_geometry_series"]), 10)
+        self.assertTrue(all(all(point is None for point in row["normalized_points"].values())
+            for row in invalid_clock["source_geometry_series"]))
+
     def test_identity_camera_and_source_clock_changes_reject_even_with_complete_geometry(self):
         for field, value in (("track", 2), ("selection_epoch", 2), ("camera_reference_epoch", 2),
                              ("camera_compensated", False), ("timestamp_source", "fps")):

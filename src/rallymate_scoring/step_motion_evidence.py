@@ -12,11 +12,11 @@ import math
 import statistics
 
 from .card_kinematics import (
-    ANKLES, TORSO, _endpoint, _middle, _point, _reference_point,
+    ANKLES, TORSO, _endpoint, _get, _middle, _point, _reference_point,
     _source_times, finite, validate_window,
 )
 
-VERSION = "step-motion-evidence-v1.0.0"
+VERSION = "step-motion-evidence-v1.0.1"
 POLICY_VERSION = "single-low-move-low-2d-v1.0.0"
 SUPPORTED_CARDS = frozenset(("FS02-M04", "FS07-M02", "FS08-M02", "FS08-M03"))
 ANNOTATION_VERSION = "manual-fs-step-motion-v1.0.0"
@@ -32,6 +32,30 @@ def supported_step_window(window):
     if isinstance(stage, str) and stage.startswith("M"):
         stage = str(window.get("event_code")) + "-" + stage
     return stage in SUPPORTED_CARDS
+
+
+def _source_geometry(sample, frame_index):
+    """Keep the original normalized plane separate from camera-reference points.
+
+    Low finite confidences are retained, so readers can reconstruct the common
+    mask. Nonfinite/invalid point or confidence values become null geometry,
+    never a missing-confidence exception for monocular model observations.
+    """
+    raw_points = _get(sample, "points", {}) if sample is not None else {}
+    raw_confidence = _get(sample, "point_confidences", {}) if sample is not None else {}
+    raw_points = raw_points if isinstance(raw_points, Mapping) else {}
+    raw_confidence = raw_confidence if isinstance(raw_confidence, Mapping) else {}
+    points, confidence = {}, {}
+    for joint in REQUIRED_JOINTS:
+        point, value = raw_points.get(joint), raw_confidence.get(joint)
+        valid_point = (isinstance(point, (tuple, list)) and len(point) == 2
+            and all(finite(coordinate) and abs(coordinate) <= 1e6 for coordinate in point)
+            and (value is None or finite(value)))
+        points[joint] = list(point) if valid_point else None
+        confidence[joint] = value if finite(value) else None
+    semantics = _get(sample, "observation_semantics") if sample is not None else None
+    return {"frame_index": frame_index, "normalized_points": points,
+        "point_confidences": confidence, "observation_semantics": semantics if isinstance(semantics, str) else None}
 
 
 def validate_step_motion_observation(observation, *, first_frame, last_frame):
@@ -106,6 +130,10 @@ def _phases(path, exact, scale, indices, endpoint_count):
 def compute_step_motion_evidence(samples, window, timeline):
     """Recompute every gate from the entire original timeline and raw points."""
     reasons, aligned = validate_window(samples, window, timeline)
+    if len(aligned) != len(timeline):
+        # Invalid binding/clock checks can return before alignment. Preserve
+        # explicit null rows for that entire original timeline as well.
+        aligned = [None] * len(timeline)
     indices = [row["frame_index"] for row in timeline]
     result = {"version": VERSION, "policy_version": POLICY_VERSION,
         "policy_basis": "engineering_observation_policy_uncalibrated",
@@ -132,6 +160,8 @@ def compute_step_motion_evidence(samples, window, timeline):
     result["moving_foot_observation"] = observation
     common = [row["frame_index"] for row, sample in zip(timeline, aligned)
         if sample is not None and all(_point(sample, joint) is not None for joint in REQUIRED_JOINTS)]
+    result["source_geometry_series"] = [_source_geometry(sample, row["frame_index"])
+        for row, sample in zip(timeline, aligned)]
     result.update(valid_source_frames=common, valid_frame_count=len(common),
         geometry_gate_passed=len(timeline) >= 3 and len(common)*10 >= len(timeline)*7)
     if len(timeline) < 7:

@@ -60,6 +60,7 @@ class FSStepMotionWindowTests(unittest.TestCase):
             self.assertEqual(row["source_window_annotation"]["step_motion_observation"], args[-1]["windows"][0]["step_motion_observation"])
             self.assertFalse(proof["source_behavior_or_contact_verified"])
             self.assertEqual(len(proof["step_motion"]["feet"]["right"]["intervals"]), 17)
+            self.assertEqual([entry["frame_index"] for entry in proof["step_motion"]["source_geometry_series"]], proof["source_frames"])
             json.dumps(report, allow_nan=False)
 
     def test_original_quality_can_clear_score_after_motion_was_completely_measured(self):
@@ -105,6 +106,8 @@ class FSStepMotionWindowTests(unittest.TestCase):
         self.assertEqual(proof["total_frame_count"], 18)
         self.assertEqual(proof["valid_frame_count"], 17)
         self.assertFalse(proof["complete_visual_motion_cycle"])
+        # The raw-record pose extractor already omits this low-confidence point.
+        self.assertIsNone(proof["source_geometry_series"][0]["normalized_points"]["right_ankle"])
 
     def test_observation_is_only_allowed_for_four_cards_and_shared_crossing_window_must_agree(self):
         args = fixture("FS01-M04")
