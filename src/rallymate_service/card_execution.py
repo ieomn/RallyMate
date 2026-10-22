@@ -1,8 +1,8 @@
 """Recompute card evidence from frame observations, never saved grades.
 
 The catalogue contains all 298 source cards. Five temporal card calculators run
-by default. A service-controlled GS annotation file optionally connects exact
-manual stage windows through the independently source-verified GS adapter.
+by default. Service-controlled annotation files optionally connect exact
+manual GS stages and FS03/FS04 windows through source-verified adapters.
 """
 from __future__ import annotations
 
@@ -254,14 +254,14 @@ def build_card_execution_from_records(records: list[dict[str, Any]], events: Seq
 def _input_signature(directory: Path) -> tuple:
     base = tuple((name, (stat := (directory / name).stat()).st_size, stat.st_mtime_ns)
                  for name in ("events.jsonl", "primary-player.jsonl", "frames.jsonl"))
-    annotation = directory / "gs-stage-annotations.json"
-    if not annotation.exists():
-        return base + (("gs-stage-annotations.json", "absent"),)
-    # Optional GS inputs are content-bound, including the actual video. Even a
+    annotation_names = ("gs-stage-annotations.json", "footwork-cycle-annotations.json")
+    if not any((directory / name).exists() for name in annotation_names):
+        return base + tuple((name, "absent") for name in annotation_names)
+    # Optional manual inputs are content-bound, including the actual video. A
     # same-size edit that preserves mtime must invalidate a completed report.
     from .gs_card_execution import _read_json
     extra = []
-    for name in ("gs-stage-annotations.json", "summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl"):
+    for name in (*annotation_names, "summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl"):
         path = directory / name
         if not path.is_file():
             extra.append((name, "missing_or_not_file"))
@@ -334,6 +334,54 @@ def _apply_optional_gs_annotations(report: dict, directory: Path) -> None:
     report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
 
 
+def _apply_optional_cycle_annotations(report: dict, directory: Path) -> None:
+    annotation_path = directory / "footwork-cycle-annotations.json"
+    if not annotation_path.exists():
+        return
+    from .footwork_cycle_artifacts import _read_json, build_footwork_cycle_artifact_report
+    from .footwork_cycle_execution import VERSION as CYCLE_VERSION
+    try:
+        annotations = _read_json(annotation_path)
+        cycle = build_footwork_cycle_artifact_report(directory, annotations)
+        if (cycle["source_run_id"] != report["source_run_id"] or cycle["rule_version"] != report["rule_version"]
+                or cycle["input"].get("service_eligible") is not True
+                or cycle["input"].get("artifact_files_verified") is not True
+                or cycle["input"].get("decoder_verified_from_original_video") is not True):
+            raise ValueError("cycle_production_report_binding_mismatch")
+        replacements = {row["indicator_id"]: row for row in cycle["cards"]}
+        expected = {row["indicator_id"] for row in report["cards"] if row["event_code"] in {"FS03", "FS04"}}
+        if set(replacements) != expected or len(cycle["cards"]) != len(expected):
+            raise ValueError("cycle_production_card_inventory_mismatch")
+        report["cards"] = [replacements.get(row["indicator_id"], row) for row in report["cards"]]
+        observed = set(report["input"]["observed_event_codes"])
+        observed.update(window["event_code"] for window in annotations["windows"])
+        report["input"]["observed_event_codes"] = sorted(observed)
+        report["input"]["footwork_cycle_execution"] = {"status": "executed", "version": CYCLE_VERSION, **cycle["input"]}
+        report["cycle_windows"] = cycle["cycle_windows"]
+        report["coverage"].update(cycle_annotated_window_count=len(cycle["cycle_windows"]),
+            cycle_executed_card_count=sum(bool(row["instances"]) for row in cycle["cards"]))
+        report["limitations"].extend(cycle["limitations"])
+        report["limitations"].append("Explicit manual FS03/FS04 candidate windows are connected; no automatic step-family or ground-contact verifier is registered.")
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        reason = str(exc)
+        if not reason or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789_:" for character in reason):
+            reason = "cycle_annotation_or_source_validation_failed"
+        for row in report["cards"]:
+            if row["event_code"] in {"FS03", "FS04"}:
+                row.update(run_status="unavailable", reason_codes=[reason], runtime_engine=None,
+                    instance_count=0, instance_status_counts={}, instances=[], original_grade=None, source_grade_supported=False)
+        report["input"]["footwork_cycle_execution"] = {"status": "unavailable", "version": CYCLE_VERSION, "reason_codes": [reason]}
+        report.pop("cycle_windows", None)
+        report["coverage"].update(cycle_annotated_window_count=0, cycle_executed_card_count=0)
+    all_instances = [instance for row in report["cards"] for instance in row["instances"]]
+    all_ids = [row["indicator_id"] for row in report["cards"]]
+    observed_ids = [row["indicator_id"] for row in report["cards"] if row["event_code"] in report["input"]["observed_event_codes"]]
+    report["summary"] = summarize_card_scores(all_instances, all_ids)
+    report["observed_type_summary"] = summarize_card_scores(all_instances, observed_ids)
+    report["coverage"]["computed_card_instance_count"] = len(all_instances)
+    report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
+
+
 @lru_cache(maxsize=2)
 def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
                    engine_version: str) -> dict:
@@ -345,6 +393,7 @@ def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
     # still fails here; a successful GS report must not conceal that failure.
     report = build_card_execution_from_records(records, events, timeline, source_run_id=directory.name)
     _apply_optional_gs_annotations(report, directory)
+    _apply_optional_cycle_annotations(report, directory)
     if _input_signature(directory) != signature:
         raise ValueError("card_input_changed_during_computation")
     report["input"]["catalogue_sha256"] = rule_digest
@@ -361,8 +410,8 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
     """Cache two finished reports; no raw frames/sequence live in this cache.
 
     File size/mtime, catalogue contents and engine versions bind a cache entry.
-    When GS annotations exist, their contents, source files and video are also
-    hashed into the key. Missing GS annotations retain the original FS path.
+    When manual annotations exist, their contents, source files and video are
+    also hashed into the key. Missing annotations retain the original FS path.
     The lock prevents concurrent requests from parsing the same large run twice.
     Returned copies keep callers from mutating a cached report.
     """
@@ -375,4 +424,9 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
         if (directory / "gs-stage-annotations.json").exists():
             from .gs_card_execution import VERSION as GS_VERSION
             engine_version += ":" + GS_VERSION
+        if (directory / "footwork-cycle-annotations.json").exists():
+            from .footwork_cycle_artifacts import VERSION as ARTIFACT_VERSION
+            from .footwork_cycle_execution import VERSION as CYCLE_VERSION
+            from rallymate_scoring.footwork_cycle_card_evidence import VERSION as CYCLE_MEASUREMENT_VERSION
+            engine_version += ":" + ARTIFACT_VERSION + ":" + CYCLE_VERSION + ":" + CYCLE_MEASUREMENT_VERSION
         return deepcopy(_cached_report(str(directory), signature, rule_digest, engine_version))
