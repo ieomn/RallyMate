@@ -216,7 +216,7 @@ def _speed(points, times, scale):
     return [math.dist(a, b)*1000/(dt*scale) for a, b, dt in zip(points, points[1:], times)]
 
 
-def _dynamic_value(name, samples, window, exact_times):
+def _dynamic_value(name, samples, window, exact_times, step_motion=None):
     if len(samples) < 7 or any(s is None for s in samples):
         return None, "continuous_endpoint_window_missing"
     joints = DYNAMIC_SPECS[name][0]
@@ -256,6 +256,16 @@ def _dynamic_value(name, samples, window, exact_times):
             return None, "racket_side_unresolved"
         speeds = _speed([r[f"{side}_wrist"] for r in points], times, scale)
         return statistics.median(speeds[-count:])-statistics.median(speeds[:count]), None
+    if step_motion is not None and name in {"ankle_max_displacement_torso", "ankle_stability_ratio"}:
+        if step_motion is False:
+            return None, "complete_step_cycle_not_bound"
+        if step_motion["complete_visual_motion_cycle"] is not True:
+            return None, step_motion["reason_codes"][0] if step_motion["reason_codes"] else "complete_step_cycle_not_bound"
+        feet = list(step_motion["feet"].values())
+        if name == "ankle_max_displacement_torso":
+            return max(foot["net_displacement_torso"] for foot in feet), None
+        paths = [foot["path_length_torso"] for foot in feet]
+        return (min(paths)/max(paths), None) if max(paths) >= .1 else (None, "ankle_path_too_small")
     cycle = window.get("step_cycle_binding", {})
     if (not isinstance(cycle, Mapping) or cycle.get("method") not in {"manual_anchor", "versioned_detector"}
             or not isinstance(cycle.get("version"), str) or not cycle["version"]
@@ -284,6 +294,13 @@ def measure_card_window(samples, window, timeline, *, required_joint_names=()):
     # The original decoder timeline remains the denominator after this mask.
     aligned = [s if s is not None and all(_point(s, name) is not None for name in required_joint_names) else None
                for s in aligned]
+    # Only these four cards use the new 2D single-foot motion policy. Existing
+    # FS03/FS04 semantics remain owned by their independent cycle verifier.
+    from .step_motion_evidence import supported_step_window, compute_step_motion_evidence
+    step_motion = None
+    if supported_step_window(window):
+        step_motion = (compute_step_motion_evidence(samples, window, timeline)
+            if "step_motion_observation" in window else False)
     output = {}
     for name, (joints, unit, kind) in SPECS.items():
         values = [_value(s, joints, kind) if s is not None else None for s in aligned] if not reasons else []
@@ -320,7 +337,7 @@ def measure_card_window(samples, window, timeline, *, required_joint_names=()):
                 row["reason_codes"].append("partial_window_cannot_establish_change")
         output[name] = row
     for name, (joints, unit) in DYNAMIC_SPECS.items():
-        value, reason = _dynamic_value(name, aligned, window, _source_times(timeline)) if not reasons else (None, reasons[0])
+        value, reason = _dynamic_value(name, aligned, window, _source_times(timeline), step_motion) if not reasons else (None, reasons[0])
         if not finite(value):
             value = None
         valid = value is not None
@@ -332,6 +349,10 @@ def measure_card_window(samples, window, timeline, *, required_joint_names=()):
                         "image_bounds_verified": False,
                         "reason_codes": [] if valid else [reason or "invalid_computed_value"],
                         "semantics": "image_plane_visual_proxy"}
+        if isinstance(step_motion, Mapping) and name in {"ankle_max_displacement_torso", "ankle_stability_ratio"}:
+            output[name]["step_motion_evidence"] = step_motion
+            if not valid:
+                output[name]["reason_codes"] = sorted(set(output[name]["reason_codes"] + step_motion["reason_codes"]))
     names = {joint for spec in list(SPECS.values()) + list(DYNAMIC_SPECS.values()) for joint in spec[0]}
     valid_frames = {name: [r["frame_index"] for r, s in zip(timeline, aligned)
                           if not reasons and s is not None and _point(s, name) is not None] for name in names}

@@ -477,5 +477,6 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
         if (directory / "fs-card-window-annotations.json").exists():
             from .fs_card_windows import VERSION as FS_WINDOW_VERSION
             from rallymate_scoring.card_kinematics import VERSION as KINEMATICS_VERSION
-            engine_version += ":" + FS_WINDOW_VERSION + ":" + KINEMATICS_VERSION
+            from rallymate_scoring.step_motion_evidence import VERSION as STEP_MOTION_VERSION
+            engine_version += ":" + FS_WINDOW_VERSION + ":" + KINEMATICS_VERSION + ":" + STEP_MOTION_VERSION
         return deepcopy(_cached_report(str(directory), signature, rule_digest, engine_version))

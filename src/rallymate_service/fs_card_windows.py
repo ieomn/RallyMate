@@ -18,6 +18,10 @@ from rallymate_scoring.card_kinematics import finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.footwork_cycle_card_evidence import _quality_evidence
 from rallymate_scoring.temporal_card_evidence import CARD_CONDITIONS
+from rallymate_scoring.step_motion_evidence import (
+    SUPPORTED_CARDS as STEP_MOTION_CARDS, VERSION as STEP_MOTION_VERSION,
+    validate_step_motion_observation,
+)
 from .gs_card_execution import (
     _canonical, _decode_video_timeline, _digest, _integer, _keys, _prepare_samples,
     _read_json, _records, _sha, _text,
@@ -48,8 +52,9 @@ def validate_fs_card_annotations(document):
         raise ValueError("fs_window_annotation_inventory_invalid")
     rules, seen, accepted = supported_rules(), set(), []
     for row in document["windows"]:
-        _keys(row, ("annotation_id", "indicator_id", "person_track_id", "start_source_frame", "end_source_frame",
-            "start_ms", "end_ms", "binding"))
+        required_keys = ("annotation_id", "indicator_id", "person_track_id", "start_source_frame", "end_source_frame",
+            "start_ms", "end_ms", "binding")
+        _keys(row, required_keys, ("step_motion_observation",))
         if not _text(row["annotation_id"]) or row["annotation_id"] in seen:
             raise ValueError("fs_window_duplicate_or_invalid_annotation_id")
         seen.add(row["annotation_id"])
@@ -66,6 +71,11 @@ def validate_fs_card_annotations(document):
                 or not _text(binding["version"]) or not _text(binding["source"])
                 or not finite(binding["uncertainty_ms"]) or binding["uncertainty_ms"] < 0):
             raise ValueError("fs_window_manual_binding_invalid")
+        if "step_motion_observation" in row:
+            if row["indicator_id"] not in STEP_MOTION_CARDS:
+                raise ValueError("step_motion_card_not_supported")
+            validate_step_motion_observation(row["step_motion_observation"],
+                first_frame=row["start_source_frame"], last_frame=row["end_source_frame"])
         for previous in accepted:
             if (row["person_track_id"] == previous["person_track_id"]
                     and row["indicator_id"].split("-")[0] != previous["indicator_id"].split("-")[0]
@@ -77,6 +87,15 @@ def validate_fs_card_annotations(document):
                     and max(row["start_source_frame"], previous["start_source_frame"])
                     <= min(row["end_source_frame"], previous["end_source_frame"])):
                 raise ValueError("fs_window_duplicate_card_source_interval")
+            if ({row["indicator_id"], previous["indicator_id"]} == {"FS08-M02", "FS08-M03"}
+                    and max(row["start_source_frame"], previous["start_source_frame"])
+                    <= min(row["end_source_frame"], previous["end_source_frame"])):
+                # Two metrics of one crossing step must not silently choose
+                # different subjects, endpoints, or observed moving feet.
+                if (any(row[key] != previous[key] for key in ("person_track_id", "start_source_frame", "end_source_frame", "start_ms", "end_ms"))
+                        or (row.get("step_motion_observation") or {}).get("moving_foot")
+                        != (previous.get("step_motion_observation") or {}).get("moving_foot")):
+                    raise ValueError("step_motion_shared_cycle_binding_conflict")
         accepted.append(row)
     return deepcopy(document)
 
@@ -183,6 +202,8 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
             "video_sha256": video_sha, "video_id": source_job_id, "event_id": annotation["annotation_id"],
             "event_code": rule["event_code"], "stage_code": rule["indicator_id"],
             "stage_binding": deepcopy(annotation["binding"])}
+        if "step_motion_observation" in annotation:
+            window["step_motion_observation"] = deepcopy(annotation["step_motion_observation"])
         reasons = []
         if any(row["selected_person_track_id"] != annotation["person_track_id"] for row in timeline):
             reasons.append("fs_window_primary_person_binding_unverified")
@@ -206,6 +227,8 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
             "start_source_frame": first, "end_source_frame": last,
             "requested_window_ms": {key: annotation[key] for key in ("start_ms", "end_ms")},
             "video_sha256": video_sha, "person_track_id": annotation["person_track_id"]}
+        if "step_motion_observation" in annotation:
+            source_annotation["step_motion_observation"] = deepcopy(annotation["step_motion_observation"])
         result.update(version=VERSION, event_code=rule["event_code"], original_grade=None, source_grade_supported=False,
             source={key: rule["source"][key] for key in ("document_id", "document_sha256", "table", "rubric_sha256")},
             source_window_annotation=source_annotation,
@@ -214,6 +237,12 @@ def compute_fs_card_windows(records, primary, source_events, decoder_timeline, a
                 "original_event_quality": quality, "quality_observations_present": bool(quality),
                 "interpolation_used": False, "step_cycle_bound": False,
                 "source_behavior_or_contact_verified": False})
+        if "step_motion_observation" in annotation:
+            step_evidence = next((condition["evidence"].get("step_motion_evidence") for condition in result["conditions"]
+                if condition["evidence"].get("step_motion_evidence") is not None), None)
+            result["source_window_evidence"].update(step_motion_version=STEP_MOTION_VERSION,
+                step_motion=deepcopy(step_evidence),
+                step_cycle_bound=bool(step_evidence and step_evidence["complete_visual_motion_cycle"]))
         by_card[rule["indicator_id"]].append(result)
         windows.append({**deepcopy(source_annotation), "window": window, "source_frames": indices})
     cards, instances = [], []
