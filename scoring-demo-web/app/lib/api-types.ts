@@ -154,6 +154,7 @@ export interface JobProgress extends JobSubmission {
 }
 
 export interface DemoResultResponse {
+  card_execution?: unknown;
   runtime?: {
     annotated_video_compatibility?: { timing_preserved?: boolean; timebase?: string; timing_warning?: string; [key: string]: unknown } | null;
     [key: string]: unknown;

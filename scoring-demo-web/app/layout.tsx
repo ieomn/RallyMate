@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./card-execution.css";
 import "./product-workspace.css";
 import "./product-report.css";
 import "./product-analysis.css";

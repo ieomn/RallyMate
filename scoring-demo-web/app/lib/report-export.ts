@@ -1,3 +1,4 @@
+import { cardExecutionOf, CARD_RUN_LABELS, cardReasonLabel } from "./card-execution";
 import { evidenceReferenceScore, measurementCounts, measurementWarnings, normalizeMeasurementResult } from "./measurement-evidence";
 import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./api-types";
 import type { ScoreReport } from "../scoring/engine";
@@ -89,6 +90,7 @@ function hasAnalysis(input: ReportExportInput): boolean {
   return (result.result_kind === "imported_stage1_summary" && (Object.keys(asRecord(asRecord(result.summary).processing)).length > 0 || Object.keys(asRecord(asRecord(result.summary).coverage)).length > 0))
     || asArray(result.actions).some(item => Boolean(asRecord(item).name_zh) && finite(asRecord(item).detected_segments) !== null)
     || asArray(training.indicator_evaluations).length > 0
+    || Boolean(cardExecutionOf(result.card_execution)?.summary.computed_cards)
     || (typeof training.summary_zh === "string" && Boolean(training.summary_zh.trim()))
     || asArray(assessment.techniques).some(item => Boolean(asRecord(item).name_zh) && typeof asRecord(item).observed === "boolean")
     || ["candidates_detected", "no_candidates", "insufficient_pose"].includes(String(recognitionOf(input).status))
@@ -206,6 +208,24 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
       ["处理耗时", numberText(processing.elapsed_seconds, " 秒")],
     ],
   }];
+  const cardExecution = cardExecutionOf(result.card_execution);
+  if (cardExecution) {
+    const counts = cardExecution.summary;
+    sections.push({ title: "逐卡计算结果", paragraphs: [
+      `本报告包含 ${counts.catalogue_cards} / ${counts.expected_source_cards} 张来源卡；${counts.computed_cards} 张运行过计算，${counts.proxy_scored_cards} 张有视觉代理结果。原卡完整技术评分：0 张。`,
+      `视觉代理实例 ${counts.proxy_scored_instances} 条，待复核 ${counts.review_instances} 条，证据不足 ${counts.unavailable_instances} 条。缺失值保留为空，不补零，不生成跨渠道总分。`,
+      "代理等级仅表示当前工程阈值的条件完成比例，不代表原卡完整 A–E 等级或教练评价。",
+    ], columns: ["评分卡", "状态", "实例数", "原因"], rows: cardExecution.cards.map(card => [
+      `${card.indicator_id} ${text(card.name_zh)}`, CARD_RUN_LABELS[card.run_status], String(card.instance_count), card.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
+    ]) });
+    sections.push({ title: "逐卡视频实例与条件", paragraphs: ["每个结果绑定一个视频事件和同一连续窗口；以下条件数值及通过状态已经校验。"], columns: ["评分卡 / 事件", "视频区间", "视觉代理结果", "同窗有效帧", "条件明细", "原因"], rows: cardExecution.cards.flatMap(card => card.instances.map(instance => [
+      `${card.indicator_id} / ${text(instance.event_id)}`, instance.window ? interval(instance.window) : "未定位",
+      instance.status === "proxy_scored" ? `${instance.proxy_grade} / ${instance.score}（视觉代理）` : CARD_RUN_LABELS[instance.status],
+      `${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count}`,
+      instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；"),
+      instance.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
+    ])) });
+  }
   const parsedMotion = motionAnalysisOf(input.evidence.result ?? null, input.evidence.assessment, summary);
   const explanationState = scoreExplanationOf(input.evidence.result ?? null);
   if (explanationState.status === "verified") {
@@ -366,7 +386,7 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   };
   return scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
     assessment: selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"]),
     summary: selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"]),
     trajectory: input.evidence.trajectory ? selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]) : null,

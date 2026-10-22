@@ -1,0 +1,32 @@
+.card-execution-panel {
+  margin: 16px 0; padding: 20px; border: 1px solid #d9e3dc;
+  border-radius: 16px; background: #fff; color: #233b30;
+  min-width: 0; line-height: 1.65;
+}
+.card-execution-panel > summary { cursor: pointer; font-weight: 700; font-size: 17px; }
+.card-execution-panel > summary span { display: block; margin: 4px 0 0 18px; color: #5c6d63; font-size: 13px; font-weight: 400; }
+.card-execution-panel p { overflow-wrap: anywhere; }
+.card-execution-panel .report-measurement-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.card-execution-panel .report-measurement-summary > div { padding: 12px; border-radius: 10px; background: #f3f7f3; }
+.card-execution-panel dt { color: #5c6d63; font-size: 13px; }
+.card-execution-panel dd { margin: 4px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.card-execution-panel .indicator-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card-execution-panel label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
+.card-execution-panel input, .card-execution-panel select { width: 100%; min-width: 0; min-height: 42px; padding: 9px 10px; border: 1px solid #b5c5ba; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+.card-execution-panel input:focus-visible, .card-execution-panel select:focus-visible, .card-execution-panel button:focus-visible, .card-execution-panel summary:focus-visible { outline: 3px solid #347b58; outline-offset: 3px; }
+.card-execution-panel .indicator-picker { margin-top: 14px; }
+.card-execution-panel .indicator-detail { margin-top: 20px; border-top: 1px solid #d9e3dc; padding-top: 20px; }
+.card-execution-panel .indicator-state { display: inline-block; background: #eaf2ed; color: #28583e; padding: 3px 9px; border-radius: 6px; font-size: 12px; }
+.card-execution-panel h3 { font-size: 20px; margin: 8px 0; }
+.card-execution-panel .indicator-observation { margin: 16px 0; padding: 16px; border: 1px solid #d9e3dc; border-radius: 10px; }
+.card-execution-panel .indicator-observation > strong { display: block; font-size: 24px; line-height: 1.4; }
+.card-execution-panel .indicator-observation > strong small { display: block; font-size: 13px; font-weight: 500; color: #5c6d63; margin-top: 4px; }
+.card-execution-panel .indicator-observation dl > div { padding: 10px 0; border-bottom: 1px solid #e9eeea; }
+.card-execution-panel details details { margin-top: 14px; }
+.card-execution-panel .indicator-grade-note { color: #5c6d63; font-size: 13px; }
+.card-execution-panel button { cursor: pointer; min-height: 42px; padding: 9px 14px; background: #f3f7f3; color: #28583e; border: 1px solid #b5c5ba; border-radius: 8px; }
+@media (max-width: 600px) {
+  .card-execution-panel { padding: 14px; }
+  .card-execution-panel .indicator-filters { grid-template-columns: 1fr; }
+  .card-execution-panel .indicator-observation { padding: 12px; }
+}

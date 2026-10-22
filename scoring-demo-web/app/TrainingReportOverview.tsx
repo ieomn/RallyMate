@@ -1,5 +1,8 @@
 "use client";
 
+import CardExecutionPanel from "./CardExecutionPanel";
+import { reportVideoDurationMs } from "./lib/workspace-navigation";
+
 import type { DemoResultResponse, MotionAnalysis } from "./lib/api-types";
 import { evidenceReferenceScore, measurementCounts } from "./lib/measurement-evidence";
 import { analysisReportOf, reportFocus, replayMoment } from "./lib/training-report";
@@ -18,6 +21,7 @@ export default function TrainingReportOverview({ result, motion, pending, title,
       {result && !pending && <div className="report-reference-highlight"><span>测量证据参考分</span><strong>{score === null ? "—" : score}<small>{score === null ? "暂不可计算" : "/ 100"}</small></strong><p>{score === null ? "未取得足够的可靠测量。" : `${counts.measured} / ${counts.total} 项有测量；高分不代表动作正确。`}</p><button type="button" onClick={() => { const details = document.getElementById("evidence-reference-details"); if (details instanceof HTMLDetailsElement) details.open = true; document.getElementById("score-explanation")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }}>查看分数构成 <span aria-hidden="true">↓</span></button></div>}
       {(!result || pending) && <p className="report-status-copy"><strong>{title}</strong>{description}</p>}
     </section>
+    {!pending && <CardExecutionPanel value={result?.card_execution} jobId={result?.job_id} durationMs={reportVideoDurationMs(result)} />}
     <section className="report-focus" aria-labelledby="report-focus-title">
       <div className="report-section-heading"><h2 id="report-focus-title">这次先关注</h2></div>
       {focus.length ? focus.map((item, index) => <article key={item.id} className="report-focus-item"><span className="focus-index" aria-hidden="true">0{index + 1}</span><div><small>{item.label}</small><h3>{item.title}</h3><p>{item.detail}</p>{item.moment && <button type="button" onClick={() => replayMoment(item.moment!, result?.job_id)}>回看片段 <span aria-hidden="true">↗</span></button>}</div></article>) : <p className="report-status-copy">{pending ? "完成后会在这里显示有依据的复核重点与补录建议。" : "上传一段训练视频，从步伐与转体开始复盘。"}</p>}
