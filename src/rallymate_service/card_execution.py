@@ -1,8 +1,8 @@
 """Recompute card evidence from frame observations, never saved grades.
 
-The catalogue contains all 298 source cards. This adapter executes only the five
-registered temporal card calculators; other observed cards stay explicitly
-``not_executed`` until a stage/metric extractor is connected.
+The catalogue contains all 298 source cards. Five temporal card calculators run
+by default. A service-controlled GS annotation file optionally connects exact
+manual stage windows through the independently source-verified GS adapter.
 """
 from __future__ import annotations
 
@@ -252,8 +252,86 @@ def build_card_execution_from_records(records: list[dict[str, Any]], events: Seq
 
 
 def _input_signature(directory: Path) -> tuple:
-    return tuple((name, (stat := (directory / name).stat()).st_size, stat.st_mtime_ns)
+    base = tuple((name, (stat := (directory / name).stat()).st_size, stat.st_mtime_ns)
                  for name in ("events.jsonl", "primary-player.jsonl", "frames.jsonl"))
+    annotation = directory / "gs-stage-annotations.json"
+    if not annotation.exists():
+        return base + (("gs-stage-annotations.json", "absent"),)
+    # Optional GS inputs are content-bound, including the actual video. Even a
+    # same-size edit that preserves mtime must invalidate a completed report.
+    from .gs_card_execution import _read_json
+    extra = []
+    for name in ("gs-stage-annotations.json", "summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl"):
+        path = directory / name
+        if not path.is_file():
+            extra.append((name, "missing_or_not_file"))
+            continue
+        try:
+            with path.open("rb") as stream:
+                extra.append((name, hashlib.file_digest(stream, "sha256").hexdigest()))
+        except OSError:
+            extra.append((name, "unreadable"))
+    try:
+        summary = _read_json(directory / "summary.json")
+        source = Path(summary["input"]["video_path"]).resolve()
+        if source.is_file():
+            with source.open("rb") as stream:
+                extra.append(("gs_source_video", str(source), hashlib.file_digest(stream, "sha256").hexdigest()))
+        else:
+            extra.append(("gs_source_video", "missing"))
+    except (OSError, ValueError, TypeError, KeyError):
+        extra.append(("gs_source_video", "source_summary_unavailable"))
+    return base + tuple(extra)
+
+
+def _apply_optional_gs_annotations(report: dict, directory: Path) -> None:
+    """Recompute optional GS inputs; never merge externally supplied scores."""
+    annotation_path = directory / "gs-stage-annotations.json"
+    if not annotation_path.exists():
+        return
+    from .gs_card_execution import VERSION as GS_VERSION, _read_json, build_gs_card_execution_report
+    try:
+        annotations = _read_json(annotation_path)
+        gs = build_gs_card_execution_report(directory, annotations)
+        if (gs["source_run_id"] != report["source_run_id"] or gs["rule_version"] != report["rule_version"]
+                or gs["input"].get("service_eligible") is not True
+                or gs["input"].get("artifact_files_verified") is not True
+                or gs["input"].get("decoder_verified_from_original_video") is not True):
+            raise ValueError("gs_production_report_binding_mismatch")
+        replacements = {row["indicator_id"]: row for row in gs["cards"]}
+        expected = {row["indicator_id"] for row in report["cards"] if row["event_code"].startswith("GS")}
+        if set(replacements) != expected or len(gs["cards"]) != len(expected):
+            raise ValueError("gs_production_card_inventory_mismatch")
+        report["cards"] = [replacements[row["indicator_id"]] if row["indicator_id"] in replacements else row for row in report["cards"]]
+        observed = set(report["input"]["observed_event_codes"])
+        observed.update(action["technique_code"] for action in annotations["actions"])
+        report["input"]["observed_event_codes"] = sorted(observed)
+        report["input"]["gs_execution"] = {"status": "executed", "version": GS_VERSION, **gs["input"]}
+        report["gs_stage_windows"] = gs["stage_windows"]
+        report["coverage"].update(gs_annotated_stage_count=gs["coverage"]["annotated_stage_count"],
+                                  gs_executed_card_count=gs["coverage"]["executed_card_count"])
+        report["limitations"][0] = "Five temporal FS calculators and explicitly annotated GS stages are connected; no automatic ten-stage GS locator is registered."
+        report["limitations"].extend(gs["limitations"])
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        # GS errors cannot suppress a valid FS result or turn an unverifiable
+        # annotation into a grade. Avoid exposing paths from OS/JSON errors.
+        reason = str(exc)
+        if not reason or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789_:" for character in reason):
+            reason = "gs_annotation_or_source_validation_failed"
+        for row in report["cards"]:
+            if row["event_code"].startswith("GS"):
+                row.update(run_status="unavailable", reason_codes=[reason], runtime_engine=None,
+                    instance_count=0, instance_status_counts={}, instances=[], original_grade=None, source_grade_supported=False)
+        report["input"]["gs_execution"] = {"status": "unavailable", "version": GS_VERSION, "reason_codes": [reason]}
+        report.pop("gs_stage_windows", None)
+        report["coverage"].update(gs_annotated_stage_count=0, gs_executed_card_count=0)
+    all_instances = [instance for row in report["cards"] for instance in row["instances"]]
+    all_ids = [row["indicator_id"] for row in report["cards"]]
+    observed_ids = [row["indicator_id"] for row in report["cards"] if row["event_code"] in report["input"]["observed_event_codes"]]
+    report["summary"] = summarize_card_scores(all_instances, all_ids)
+    report["observed_type_summary"] = summarize_card_scores(all_instances, observed_ids)
+    report["coverage"]["computed_card_instance_count"] = len(all_instances)
+    report["coverage"]["run_card_status_counts"] = dict(Counter(row["run_status"] for row in report["cards"]))
 
 
 @lru_cache(maxsize=2)
@@ -263,7 +341,10 @@ def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
     events = _read_records(directory / "events.jsonl", MAX_EVENT_FILE_BYTES, MAX_EVENT_RECORDS)
     timeline = _read_records(directory / "primary-player.jsonl", MAX_FRAME_FILE_BYTES, MAX_FRAME_RECORDS)
     records = _read_records(directory / "frames.jsonl", MAX_FRAME_FILE_BYTES, MAX_FRAME_RECORDS)
+    # Preserve the existing strict FS source contract. A broken FS source run
+    # still fails here; a successful GS report must not conceal that failure.
     report = build_card_execution_from_records(records, events, timeline, source_run_id=directory.name)
+    _apply_optional_gs_annotations(report, directory)
     if _input_signature(directory) != signature:
         raise ValueError("card_input_changed_during_computation")
     report["input"]["catalogue_sha256"] = rule_digest
@@ -280,6 +361,8 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
     """Cache two finished reports; no raw frames/sequence live in this cache.
 
     File size/mtime, catalogue contents and engine versions bind a cache entry.
+    When GS annotations exist, their contents, source files and video are also
+    hashed into the key. Missing GS annotations retain the original FS path.
     The lock prevents concurrent requests from parsing the same large run twice.
     Returned copies keep callers from mutating a cached report.
     """
@@ -288,4 +371,8 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
         signature = _input_signature(directory)
         rule_digest = hashlib.sha256(json.dumps(load_card_rules(), sort_keys=True,
             ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
-        return deepcopy(_cached_report(str(directory), signature, rule_digest, VERSION + ":" + TEMPORAL_VERSION))
+        engine_version = VERSION + ":" + TEMPORAL_VERSION
+        if (directory / "gs-stage-annotations.json").exists():
+            from .gs_card_execution import VERSION as GS_VERSION
+            engine_version += ":" + GS_VERSION
+        return deepcopy(_cached_report(str(directory), signature, rule_digest, engine_version))

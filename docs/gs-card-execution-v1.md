@@ -43,6 +43,14 @@
 
 `compute_gs_card_execution(...)` 是内部记录重放入口，用于原始观测小样本测试；它不会声称已经验证源文件或解码视频，`service_eligible=false`。`build_gs_research_replay_report(...)` 只用于保留旧研究目录的显式别名，输出也为 `service_eligible=false`，正式服务不调用它。
 
+## 服务接线使用
+
+服务控制的 run 目录可以放置 `gs-stage-annotations.json`，内容必须符合上述注释协议。调用既有 `build_card_execution_report(run_dir)` 时，有文件便从原视频、源帧和标注重新计算 GS，替换统一报告中的 248 个 GS 行并重算汇总；整体仍为 `card-execution-v1.0.0`、298 行，实例保留 `source_annotation`。`input.gs_execution` 记录 GS 验证状态，`gs_stage_windows` 保留阶段窗口证据。
+
+没有该文件时，服务维持原有五个 FS 计算器路径。新增文件、标注内容或其源文件/视频内容变化会使缓存失效，即使大小和修改时间未变也不复用旧 GS 结果。坏标注或 GS 源验证失败只让 GS 不可用，保留已有效计算的 FS；原始 FS 的源身份或输入验证失败仍使整个调用失败，GS 不会遮蔽它。服务不接收外部预计算评分报告。
+
+人工锚点表示带来源和时间不确定度的阶段估计，不代表专家确认，更不代表自动识别了原卡十阶段。接线契约测试会明确模拟生产调用边界来检查隔离、合并和缓存之外的调用规则；这些无媒体测试不计入真实视频验证覆盖。真实三段素材的正式入口回归独立执行。
+
 ## 真实回归与边界
 
 三个 MIT OpenCourseWare 片段的 12 个准备期人工锚点产生 60 个实例，涉及 15 张 GS 卡：27 个代理评分、16 个复核、17 个不可用。既有结果的每个条件实值、通过标志、等级、分数与拒绝原因逐项一致。来源为 [MIT PE.710 Tennis 视频课程](https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/)，原视频摘要和原始输入摘要在测试夹具内。

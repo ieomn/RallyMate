@@ -21,6 +21,16 @@ const catalogue = JSON.parse(fs.readFileSync(new URL("../../src/rallymate_scorin
 const evidence = JSON.parse(fs.readFileSync(new URL("./fixtures/gs-card-execution-real.json", import.meta.url), "utf8"));
 const reports = evidence.reports;
 
+test("service limitations render clear Chinese explanations and survive backup normalization", () => {
+  const raw = structuredClone(reports[0]);
+  raw.limitations = ["Five temporal FS calculators and explicitly annotated GS stages are connected; no automatic ten-stage GS locator is registered.",
+    "manual_stage_annotations_are_estimates_not_expert_ground_truth", "missing_stage_never_inferred_from_three_generic_swing_phases"];
+  const parsed = cardExecutionOf(raw);
+  assert.ok(parsed.limitations.every(value => /[\u4e00-\u9fff]/.test(value)));
+  assert.ok(parsed.limitations.some(value => value.includes("尚非专家")));
+  assert.deepEqual(cardExecutionOf(parsed), parsed);
+});
+
 test("all 248 GS display contracts retain source kind, thresholds, joint union and source anchors", () => {
   const expected = Object.fromEntries(catalogue.cards.filter(card => card.event_code.startsWith("GS")).map(card => [card.indicator_id, {
     stage_code: card.stage_code, rule_kind: card.evaluation.kind,

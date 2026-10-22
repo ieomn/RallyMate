@@ -31,6 +31,17 @@ const integer = (value: unknown): number | null => Number.isSafeInteger(value) &
 const list = (value: unknown, limit = 1000): unknown[] => Array.isArray(value) ? value.slice(0, limit) : [];
 const strings = (value: unknown) => [...new Set(list(value, 50).map(v => text(v)).filter(Boolean))];
 const gradePoints = { A: 100, B: 80, C: 60, D: 40, E: 20 } as const;
+const LIMITATION_LABELS: Record<string, string> = {
+  "Only five temporal calculators are wired by this adapter.": "当前已接入五张步伐卡的连续窗口计算，其余卡片仍按证据状态分别列出。",
+  "Automatic event candidates are not independently verified action labels.": "自动动作候选尚未逐段独立确认动作类型，需要结合原视频复核。",
+  "Proxy thresholds are uncalibrated engineering rules, not Word-grade thresholds.": "代理阈值是尚未专家标定的工程规则，不能用于宣称原卡技术等级。",
+  "Five temporal FS calculators and explicitly annotated GS stages are connected; no automatic ten-stage GS locator is registered.": "当前接入五张步伐卡和有明确人工阶段标注的击球卡，尚未实现自动击球十阶段定位。",
+  manual_stage_annotations_are_estimates_not_expert_ground_truth: "人工阶段标注是带时间误差的估计，尚非专家确认的真值。",
+  source_stage_technical_behavior_not_established_by_2d_proxy: "二维几何代理不足以证明原卡阶段要求的完整技术行为。",
+  no_automatic_ten_stage_gs_locator_registered: "尚未接入自动击球十阶段定位。",
+  missing_stage_never_inferred_from_three_generic_swing_phases: "缺失阶段保留为空，未用三个通用挥拍阶段替代十个原卡阶段。",
+  monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility: "单目几何不能直接确认真实视线、受力、球拍接触或关节可见性。",
+};
 type Grade = keyof typeof gradePoints;
 export interface CardCondition { key: string; metric: string; value: number | null; operator: string; threshold: number | [number, number] | null; unit: string; passed: boolean | null }
 export interface CardSourceStage {
@@ -178,7 +189,7 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
       proxy_scored_cards: cards.filter(c => c.instances.some(i => i.status === "proxy_scored")).length, proxy_scored_instances: allInstances.filter(i => i.status === "proxy_scored").length,
       review_instances: allInstances.filter(i => i.status === "review_required").length, unavailable_instances: allInstances.filter(i => i.status === "unavailable").length,
       original_scored_cards: 0, manual_scored_cards: 0, run_card_status_counts: counts, conflicting_instances: conflicts, rejected_cards: rejected },
-    overall_score: null, missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitations) };
+    overall_score: null, missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitations).map(value => LIMITATION_LABELS[value] ?? value) };
 }
 
 export const CARD_REASON_LABELS: Record<string, string> = {
