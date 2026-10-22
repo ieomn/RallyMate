@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CARD_RUN_LABELS, cardExecutionOf, cardReasonLabel, type CardCondition, type CardCycleAnnotation } from "./lib/card-execution";
 import { replayMoment } from "./lib/training-report";
 import { cycleFrameTime, cycleMotionSteps, type FootworkCycleEvidence } from "./lib/footwork-cycle-evidence";
+import ManualCardEvidence from "./ManualCardEvidence";
 
 const metricLabels: Record<string, string> = {
   hip_drop_torso: "髋部下降", left_knee_flexion_change_deg: "左膝屈曲变化", right_knee_flexion_change_deg: "右膝屈曲变化",
@@ -20,6 +21,9 @@ const metricLabels: Record<string, string> = {
   "left_knee_flexion_deg.range": "左膝投影屈伸范围", "right_knee_flexion_deg.range": "右膝投影屈伸范围",
   ankle_order_exchange_count: "有中间观测的双踝投影换序次数", ankle_max_displacement_torso: "脚踝起止投影位移",
   ankle_width_contraction_torso: "双踝展开后的间距收窄",
+  "ankle_distance_over_hip_width.median": "双踝横向间距与髋宽之比中位数",
+  ankle_stability_ratio: "双踝投影运动路程比（较小/较大）",
+  head_relative_motion_range_torso: "头部相对肩中点的投影运动范围",
 };
 const unitLabels: Record<string, string> = { torso: "躯干单位", "torso/s": "躯干单位/秒", deg: "度", "deg/s": "度/秒", ms: "毫秒", fraction: "比例", ratio: "比例", count: "次" };
 const format = (value: number) => value.toLocaleString("zh-CN", { maximumFractionDigits: 3 });
@@ -117,6 +121,7 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
         <p>{instance.quality.total_frame_count > 0 ? `所需关节同时有效：${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count} 帧。` : "尚无此卡所需关节的有效帧统计。"}此处仅检查几何可用性，未验证真实可见或物理受力。</p>
         {instance.source_stage && <p>阶段来源：{instance.source_stage.stage_code}，人工估计时间窗{instance.source_stage.binding.uncertainty_ms !== null ? `，边界不确定性 ±${format(instance.source_stage.binding.uncertainty_ms)} 毫秒` : ""}。这不是专家真值，也不代表系统已自动定位完整十阶段。</p>}
         {instance.foot_cycle && <CycleEvidence cycle={instance.foot_cycle} annotation={instance.source_cycle_annotation} />}
+        <ManualCardEvidence instance={instance} />
         {instance.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
         {instance.fallback && <p>已触发复核路径：{cardReasonLabel(instance.fallback.trigger)}{instance.fallback.selected ? `；候选片段 ${clock(instance.fallback.selected.start_ms)}–${clock(instance.fallback.selected.end_ms)}` : ""}。复核候选不能当作已确认动作。</p>}
         {instance.conditions.length > 0 && <details open><summary>逐条件计算依据</summary><dl>{instance.conditions.map(condition => <div key={condition.metric}><dt>{metricLabels[condition.metric] ?? condition.metric}</dt><dd>实测 {condition.value === null ? "— 缺测" : `${format(condition.value)} ${unitLabels[condition.unit] ?? condition.unit}`}；{thresholdLabel(condition)}；{condition.passed === null ? "未判定" : condition.passed ? "满足工程条件" : "未满足工程条件"}</dd></div>)}</dl></details>}

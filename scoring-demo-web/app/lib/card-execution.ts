@@ -4,7 +4,9 @@
  */
 import gsContract from "./gs-card-display-contract";
 import footworkContract from "./footwork-cycle-display-contract";
+import fsWindowContract from "./fs-card-window-display-contract";
 import { footworkCycleOf, validFootworkCycle, footworkValuesAgree, type FootworkCycleEvidence } from "./footwork-cycle-evidence";
+import { evidenceObject, racketSideOf, validRacketSide, validFsWindow, type EvidenceObject, type RacketSideEvidence } from "./manual-card-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
@@ -18,6 +20,8 @@ type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: str
 const GS_CARD_CONTRACTS = gsContract.cards as unknown as Record<string, GsSpec>;
 type FootworkSpec = Omit<GsSpec, "stage_code"> & { limitation: string };
 const FOOTWORK_CARD_CONTRACTS = footworkContract.cards as unknown as Record<string, FootworkSpec>;
+type FsWindowSpec = FootworkSpec & { requires_complete_step_cycle: boolean };
+const FS_WINDOW_CONTRACTS = fsWindowContract.cards as unknown as Record<string, FsWindowSpec>;
 export const TEMPORAL_CARD_CONDITIONS: Record<string, ConditionSpec[]> = {
   "FS01-M02": [["hip_drop_torso", "gte", .03, "torso"], ["left_knee_flexion_change_deg", "gte", 4, "deg"], ["right_knee_flexion_change_deg", "gte", 4, "deg"], ["joint_descent_fraction", "gte", .7, "fraction"], ["speed_step_variation_ratio", "lte", 1.5, "ratio"]],
   "FS01-M05": [["hip_inside_support_fraction", "gte", .8, "fraction"], ["body_speed_std_torso_s", "lte", .3, "torso/s"], ["successor_interval_ms", "between", [0, 500], "ms"]],
@@ -55,6 +59,11 @@ const LIMITATION_LABELS: Record<string, string> = {
   "low bilateral ankle motion with projected support is not verified ground contact": "双踝低速且髋投影在支撑区间内，仍不能证明真实触地。",
   "model geometry does not establish original-card joint visibility": "模型给出的几何坐标不能直接证明原卡要求的关节可见性。",
   "pose candidate boundaries are not ground truth": "姿态候选的时间边界尚非人工确认的真值。",
+  individual_manual_card_windows_are_estimates_not_technical_truth: "逐卡人工窗口是边界估计，不是专家技术真值。",
+  no_automatic_fs_phase_or_technique_locator_added: "尚未接入自动步伐阶段或技术类型定位。",
+  complete_step_cycle_never_inferred_from_manual_window: "人工窗口不用于推定完整步周期。",
+  manual_observable_cards_remain_ungraded: "需要人工确认的原卡信息保留复核，不生成分数。",
+  engineering_proxy_thresholds_uncalibrated: "视觉代理采用尚未专家标定的工程阈值。",
 };
 type Grade = keyof typeof gradePoints;
 export interface CardCondition { key: string; metric: string; value: number | null; operator: string; threshold: number | [number, number] | null; unit: string; passed: boolean | null }
@@ -76,6 +85,10 @@ export interface CardInstance {
   foot_cycle: FootworkCycleEvidence | null;
   cycle_measurements: Record<string, number | null> | null;
   source_cycle_annotation: CardCycleAnnotation | null;
+  racket_side_evidence: RacketSideEvidence | null;
+  source_window_annotation: EvidenceObject | null;
+  source_window_evidence: EvidenceObject | null;
+  source_window_context: EvidenceObject | null;
   limitations: string[];
   fallback: { trigger: string; strategy: string; selected: { start_ms: number; end_ms: number } | null } | null;
   threshold_basis: string; semantics: string; source: { document_id: string; document_sha256: string; table: string; rubric_sha256: string };
@@ -166,13 +179,18 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
     foot_cycle: cycle,
     cycle_measurements: FOOTWORK_CARD_CONTRACTS[id] ? Object.fromEntries(conditions.map(c => [c.metric, number(cycleValues[c.metric])])) : null,
     source_cycle_annotation: FOOTWORK_CARD_CONTRACTS[id] ? cycleAnnotationOf(row.source_cycle_annotation ?? row.source_annotation, cycle, id, text(row.event_id)) : null,
+    racket_side_evidence: GS_CARD_CONTRACTS[id] ? racketSideOf(row) : null,
+    source_window_annotation: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_annotation) : null,
+    source_window_evidence: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_evidence) : null,
+    source_window_context: FS_WINDOW_CONTRACTS[id] && row.source_window_annotation ? evidenceObject(row.source_window_context ?? row.window) : null,
     limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitations)].map(value => LIMITATION_LABELS[value] ?? value))],
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
   if (state !== "proxy_scored") return { ...result, conditions: conditions.map(c => ({ ...c, passed: null })) };
   const gsSpec = GS_CARD_CONTRACTS[id];
   const footworkSpec = FOOTWORK_CARD_CONTRACTS[id];
-  const specs = gsSpec?.conditions ?? footworkSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
+  const fsWindowSpec = FS_WINDOW_CONTRACTS[id];
+  const specs = gsSpec?.conditions ?? footworkSpec?.conditions ?? fsWindowSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
   const expected = specs?.every(([metric, operator, threshold, unit]) => {
     const c = byMetric.get(metric);
     return c && c.operator === operator && c.unit === unit && JSON.stringify(c.threshold) === JSON.stringify(threshold) && c.passed !== null && c.passed === computedPass(c);
@@ -180,8 +198,14 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : MEASUREMENT_VERSION) || row.proxy_grade !== grade || row.score !== gradePoints[grade]
-      || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec))
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION) || row.proxy_grade !== grade || row.score !== gradePoints[grade]
+      || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
+        || !validRacketSide(result.racket_side_evidence, result, result.source_stage, conditions.some(c => c.metric === "wrist_speed_increase_torso_s")))
+      || fsWindowSpec && (fsWindowSpec.rule_kind !== "visual_proxy" || fsWindowSpec.requires_complete_step_cycle
+        || result.threshold_basis !== "engineering_v1_uncalibrated"
+        || !Object.entries(fsWindowSpec.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
+        || JSON.stringify([...result.quality.required_joint_names].sort()) !== JSON.stringify(fsWindowSpec.required_joint_names)
+        || !validFsWindow(result.source_window_annotation, result.source_window_evidence, result.source_window_context, result))
       || footworkSpec && (footworkSpec.rule_kind !== "visual_proxy"
         || !Object.entries(footworkSpec.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
         || JSON.stringify([...result.quality.required_joint_names].sort()) !== JSON.stringify(footworkSpec.required_joint_names)
@@ -207,9 +231,10 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
   for (const candidate of raw.cards) {
     const row = obj(candidate), id = text(row.indicator_id);
     if (!CARD_IDS.has(id) || row.event_code !== id.split("-")[0] || row.rule_version !== CARD_RULE_VERSION || !text(row.name_zh) || !["visual_proxy", "manual_review"].includes(text(row.rule_kind))) { rejected++; continue; }
-    const runtimeEngine = GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : MEASUREMENT_VERSION;
+    const runtimeEngine = GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
     if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     if (FOOTWORK_CARD_CONTRACTS[id] && row.rule_kind !== FOOTWORK_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
+    if (FS_WINDOW_CONTRACTS[id] && row.rule_kind !== FS_WINDOW_CONTRACTS[id].rule_kind) { rejected++; continue; }
     const seenInstances = new Map<string, CardInstance>(), conflicting = new Set<string>();
     for (const value of list(row.instances, 5000)) {
       const instance = instanceOf(value, id, sourceRunId);
@@ -247,6 +272,16 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
 }
 
 export const CARD_REASON_LABELS: Record<string, string> = {
+  fs_card_manual_window_missing: "缺少这张步伐卡的明确人工窗口",
+  fs_window_primary_person_binding_unverified: "窗口内主球员绑定尚未核验",
+  fs_window_identity_or_camera_epoch_changed: "窗口跨越选人或相机参考分段",
+  fs_window_original_quality_identity_unverified: "源质量观测尚未绑定同一球员",
+  fs_window_original_identity_requires_review: "原始身份质量标记需要复核",
+  fs_window_original_quality_unverified: "缺少已核验的原始质量观测",
+  fs_window_original_quality_requires_review: "原始质量观测要求人工复核",
+  fs_window_original_quality_coverage_incomplete: "原始质量观测未覆盖完整窗口",
+  complete_step_cycle_not_bound: "尚未绑定完整步周期",
+  racket_side_unresolved: "测量腕侧别尚未绑定到此阶段",
   event_type_not_observed_in_run: "本次没有观察到对应动作类型", required_observable_needs_manual_review: "该指标需要人工确认画面之外或姿态无法证明的信息",
   runtime_stage_or_metric_binding_missing: "此卡的阶段定位或计算还没有接入本次视频", fallback_local_dip_action_type_unverified: "找到了局部髋部下降，但尚不能确认垫步动作，需要复核",
   required_temporal_value_missing: "缺少必要的连续时间测量", temporal_evidence_incomplete: "动作窗口证据不完整", required_condition_evidence_missing: "必要条件的观测不足",

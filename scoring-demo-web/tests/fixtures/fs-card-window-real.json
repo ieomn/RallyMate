@@ -1,0 +1,2685 @@
+{
+  "provenance": {
+    "kind": "actual_original_video_unified_artifact_report_excerpt",
+    "original_report_sha256": "9726c7d8ccb49400962e2513aa39151c9c3f1d34968091d5ad45b1dde9706537",
+    "warning": "manual_development_windows_not_expert_technique_completion_or_HTTP_validation;no_score_expected"
+  },
+  "report": {
+    "version": "card-execution-v1.0.0",
+    "rule_version": "card-rules-v1.0.0",
+    "source_run_id": "extension-fs-usta-return-footwork-heldout",
+    "input": {
+      "source_frame_count": 539,
+      "event_record_count": 39,
+      "observed_event_codes": [
+        "FS01",
+        "FS02",
+        "FS09"
+      ],
+      "source": "original_frame_observations_events_and_primary_selection",
+      "saved_grades_trusted": false,
+      "fs_card_window_execution": {
+        "status": "executed",
+        "version": "fs-card-windows-v1.0.0",
+        "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+        "source_frame_count": 539,
+        "decoder_frame_count": 13153,
+        "input_artifact_sha256": {
+          "frames.jsonl": "176b05874bab181f13118e6103a762866cbfc6769e56f1bca1eb663a55189593",
+          "primary-player.jsonl": "9a5fe0c6b0d5f18eb7c3085c3225558041c2295fd90f0636fb00bc5b7a003cee",
+          "events.jsonl": "db28426728b58210420c42911c59140685ab6d0432361848ca3f22d7b0fdafde",
+          "summary.json": "0780e7ad8f02d5eb59cd2b3538fcb65d88c3eca71a43f03e119bdf073891e56d"
+        },
+        "annotation_document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+        "annotation_version": "fs-card-window-annotations-v1.0.0",
+        "catalogue_sha256": "1c41382a15166ca653e36197e1bcffc963361770633681d14c181422c3439aff",
+        "catalogue_digest_kind": "canonical_json_sorted_utf8_v1",
+        "annotation_digest_kind": "canonical_json_sorted_utf8_v1",
+        "artifact_digest_kind": "raw_file_sha256",
+        "artifact_files_verified": true,
+        "decoder_verified_from_original_video": true,
+        "service_eligible": true,
+        "saved_grades_trusted": false
+      },
+      "catalogue_sha256": "1c41382a15166ca653e36197e1bcffc963361770633681d14c181422c3439aff",
+      "catalogue_digest_kind": "canonical_json_sorted_utf8_v1"
+    },
+    "cards": [
+      {
+        "indicator_id": "FS01-M01",
+        "event_code": "FS01",
+        "rule_version": "card-rules-v1.0.0",
+        "rule_kind": "visual_proxy",
+        "name_zh": "观察对方击球",
+        "runtime_engine": "fs-card-windows-v1.0.0",
+        "run_status": "unavailable",
+        "reason_codes": [
+          "fs_window_original_quality_requires_review",
+          "required_condition_evidence_missing"
+        ],
+        "original_grade": null,
+        "source_grade_supported": false,
+        "instance_count": 1,
+        "instance_status_counts": {
+          "unavailable": 1
+        },
+        "instances": [
+          {
+            "version": "fs-card-windows-v1.0.0",
+            "indicator_id": "FS01-M01",
+            "rule_version": "card-rules-v1.0.0",
+            "event_id": "usta-pre-split-head-001",
+            "video_id": "extension-fs-usta-return-footwork-heldout",
+            "person_track_id": 2,
+            "window": {
+              "start_ms": 394494,
+              "end_ms": 394661,
+              "person_track_id": 2,
+              "selection_epoch": 1,
+              "camera_reference_epoch": 0,
+              "camera_compensated": true,
+              "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+              "video_id": "extension-fs-usta-return-footwork-heldout",
+              "event_id": "usta-pre-split-head-001",
+              "event_code": "FS01",
+              "stage_code": "FS01-M01",
+              "stage_binding": {
+                "method": "manual_anchor",
+                "version": "usta-fs35-nonexpert-visual-20261022-v1",
+                "source": "fs35-manual-visual-freeze.json#usta-pre-split-head-001",
+                "uncertainty_ms": 67,
+                "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+              }
+            },
+            "status": "unavailable",
+            "original_grade": null,
+            "proxy_grade": null,
+            "score": null,
+            "reason_codes": [
+              "fs_window_original_quality_requires_review",
+              "required_condition_evidence_missing"
+            ],
+            "conditions": [
+              {
+                "key": "head_relative_motion_range_torso",
+                "metric": "head_relative_motion_range_torso",
+                "value": null,
+                "operator": "lte",
+                "passed": null,
+                "threshold": 0.15,
+                "unit": "torso",
+                "evidence": {
+                  "feature_name": "head_relative_motion_range_torso",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "torso",
+                  "required_joint_names": [
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_hip",
+                    "right_hip",
+                    "nose"
+                  ],
+                  "geometry_gate_passed": false,
+                  "valid_frame_count": 0,
+                  "total_frame_count": 6,
+                  "source_frames": [
+                    11823,
+                    11824,
+                    11825,
+                    11826,
+                    11827,
+                    11828
+                  ],
+                  "statistics": {},
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "reason_codes": [
+                    "continuous_endpoint_window_missing"
+                  ],
+                  "semantics": "image_plane_visual_proxy"
+                },
+                "reason": "metric_not_computed_or_incomplete"
+              }
+            ],
+            "source_grade_supported": false,
+            "threshold_basis": "engineering_v1_uncalibrated",
+            "measurement_version": "card-kinematics-v1.0.0",
+            "quality": {
+              "required_joint_names": [
+                "left_hip",
+                "left_shoulder",
+                "nose",
+                "right_hip",
+                "right_shoulder"
+              ],
+              "valid_frame_count": 6,
+              "total_frame_count": 6,
+              "geometry_gate_passed": true,
+              "visibility_verified": false,
+              "minimum_fraction": 0.7,
+              "image_bounds_verified": false,
+              "denominator": "all_decoder_samples_in_bound_stage"
+            },
+            "event_code": "FS01",
+            "source": {
+              "document_id": "CARD-FS",
+              "document_sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+              "table": "T002",
+              "rubric_sha256": "29d69aac455b9b289ed368618ded71fece490fc7436bcf4aec6245a41096fa6a"
+            },
+            "source_window_annotation": {
+              "annotation_id": "usta-pre-split-head-001",
+              "indicator_id": "FS01-M01",
+              "document_version": "fs-card-window-annotations-v1.0.0",
+              "document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+              "digest_kind": "canonical_json_sorted_utf8_v1",
+              "binding": {
+                "method": "manual_anchor",
+                "version": "usta-fs35-nonexpert-visual-20261022-v1",
+                "source": "fs35-manual-visual-freeze.json#usta-pre-split-head-001",
+                "uncertainty_ms": 67,
+                "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+              },
+              "start_source_frame": 11823,
+              "end_source_frame": 11828,
+              "requested_window_ms": {
+                "start_ms": 394494,
+                "end_ms": 394661
+              },
+              "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+              "person_track_id": 2
+            },
+            "source_window_evidence": {
+              "source_frames": [
+                11823,
+                11824,
+                11825,
+                11826,
+                11827,
+                11828
+              ],
+              "source_pts": [
+                {
+                  "frame_index": 11823,
+                  "pts": 11834823,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11824,
+                  "pts": 11835824,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11825,
+                  "pts": 11836825,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11826,
+                  "pts": 11837826,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11827,
+                  "pts": 11838827,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11828,
+                  "pts": 11839828,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                }
+              ],
+              "source_frame_bindings": [
+                {
+                  "frame_index": 11823,
+                  "pts": 11834823,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394494,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11824,
+                  "pts": 11835824,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394527,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11825,
+                  "pts": 11836825,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394561,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11826,
+                  "pts": 11837826,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394594,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11827,
+                  "pts": 11838827,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394628,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11828,
+                  "pts": 11839828,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394661,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                }
+              ],
+              "original_event_quality": [
+                {
+                  "source_event_id": "fs09-001-c6659f0318a6",
+                  "source_start_ms": 393894,
+                  "source_end_ms": 395028,
+                  "source_track_ids": [
+                    2
+                  ],
+                  "source_track_diagnostics": {
+                    "schema_version": "1.0.0",
+                    "algorithm_version": "primary-player-v0.3.0",
+                    "interval": {
+                      "start_ms": 393894,
+                      "end_ms": 395028,
+                      "frame_count": 35
+                    },
+                    "primary_player_id": 1,
+                    "track_coverage_fraction": 1.0,
+                    "pose_coverage_fraction": 1.0,
+                    "source_track_ids": [
+                      2
+                    ],
+                    "source_track_switch_candidate_count": 0,
+                    "confirmed_id_switch_count": null,
+                    "confirmed_id_switch_status": "ground_truth_required",
+                    "primary_identity_ambiguous": false,
+                    "primary_identity_ambiguity_status": "no_score_tie_detected",
+                    "primary_identity_ambiguous_frames": [],
+                    "identity_ambiguity_assessed_frame_count": 35,
+                    "selection_score_compared_frame_count": 35,
+                    "selection_score_margin_min": 4.512733621,
+                    "selection_score_margin_median": 5.714321019,
+                    "selection_score_tie_abs_tolerance": 1e-09,
+                    "keypoint_valid_fraction": 1.0,
+                    "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+                    "model_estimate_geometry": {
+                      "version": "sam-primary-geometry-v1.1",
+                      "status": "not_applicable",
+                      "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+                      "confidence_available": false,
+                      "visibility_verified": false,
+                      "accuracy_validated": false,
+                      "scoring_allowed": false,
+                      "used_for_primary_selection": false,
+                      "interval_frame_count": 35,
+                      "sam_pose_frame_count": 0,
+                      "independent_source_frame_count": 35,
+                      "duplicate_source_frame_count": 0,
+                      "source_bound_frame_count": 0,
+                      "source_bound_frame_fraction": null,
+                      "frames_with_any_mapped_joint": 0,
+                      "frames_with_all_mapped_joints": 0,
+                      "mapped_joint_names": [
+                        "nose",
+                        "left_eye",
+                        "right_eye",
+                        "left_ear",
+                        "right_ear",
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_elbow",
+                        "right_elbow",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle",
+                        "right_wrist",
+                        "left_wrist"
+                      ],
+                      "mapped_joint_count": 17,
+                      "in_frame_joint_count": 0,
+                      "geometry_coverage_fraction": null,
+                      "target_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "target_joint_geometry_fraction": null,
+                      "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+                      "joint_coverage": {
+                        "nose": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        }
+                      },
+                      "reason_counts": {},
+                      "frame_evidence": []
+                    },
+                    "left_right_swap_candidate_frames": [
+                      58
+                    ],
+                    "left_right_swap_candidate_joint_pairs": [
+                      {
+                        "left_joint": "left_shoulder",
+                        "right_joint": "right_shoulder",
+                        "frames": [
+                          58
+                        ]
+                      }
+                    ],
+                    "keypoint_jump_candidate_frames": [],
+                    "keypoint_jump_candidate_joints": [],
+                    "keypoint_jump_candidate_frames_by_joint": {},
+                    "longest_pose_missing_frames": 0,
+                    "longest_pose_missing_ms": 0,
+                    "quality_flags": [
+                      "left_right_swap_candidates_present"
+                    ],
+                    "diagnostic_semantics": "score_tie_is_selector_ambiguity_not_identity_accuracy;heuristic_candidates_not_identity_or_keypoint_accuracy;jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;jump_and_swap_require_numeric_confidence_sam_not_assessed;model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
+                  },
+                  "primary_identity_ambiguous": false,
+                  "source_track_switch_candidate_count": 0,
+                  "confirmed_id_switch_count": null,
+                  "global_identity_warning": false,
+                  "applies_to_selected_person": true,
+                  "policy_version": "continuous-ankle-motion-cycle-v1",
+                  "raw_input_quality_flags": [
+                    "event_ground_truth_missing",
+                    "left_right_swap_candidates_present",
+                    "provisional_rule_baseline"
+                  ],
+                  "review_flags": [
+                    "left_right_swap_candidates_present"
+                  ],
+                  "irrelevant_joint_flags": []
+                },
+                {
+                  "source_event_id": "fs01-002-890b85ec83b1",
+                  "source_start_ms": 394294,
+                  "source_end_ms": 395028,
+                  "source_track_ids": [
+                    2
+                  ],
+                  "source_track_diagnostics": {
+                    "schema_version": "1.0.0",
+                    "algorithm_version": "primary-player-v0.3.0",
+                    "interval": {
+                      "start_ms": 394294,
+                      "end_ms": 395028,
+                      "frame_count": 23
+                    },
+                    "primary_player_id": 1,
+                    "track_coverage_fraction": 1.0,
+                    "pose_coverage_fraction": 1.0,
+                    "source_track_ids": [
+                      2
+                    ],
+                    "source_track_switch_candidate_count": 0,
+                    "confirmed_id_switch_count": null,
+                    "confirmed_id_switch_status": "ground_truth_required",
+                    "primary_identity_ambiguous": false,
+                    "primary_identity_ambiguity_status": "no_score_tie_detected",
+                    "primary_identity_ambiguous_frames": [],
+                    "identity_ambiguity_assessed_frame_count": 23,
+                    "selection_score_compared_frame_count": 23,
+                    "selection_score_margin_min": 4.512733621,
+                    "selection_score_margin_median": 5.310527826,
+                    "selection_score_tie_abs_tolerance": 1e-09,
+                    "keypoint_valid_fraction": 1.0,
+                    "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+                    "model_estimate_geometry": {
+                      "version": "sam-primary-geometry-v1.1",
+                      "status": "not_applicable",
+                      "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+                      "confidence_available": false,
+                      "visibility_verified": false,
+                      "accuracy_validated": false,
+                      "scoring_allowed": false,
+                      "used_for_primary_selection": false,
+                      "interval_frame_count": 23,
+                      "sam_pose_frame_count": 0,
+                      "independent_source_frame_count": 23,
+                      "duplicate_source_frame_count": 0,
+                      "source_bound_frame_count": 0,
+                      "source_bound_frame_fraction": null,
+                      "frames_with_any_mapped_joint": 0,
+                      "frames_with_all_mapped_joints": 0,
+                      "mapped_joint_names": [
+                        "nose",
+                        "left_eye",
+                        "right_eye",
+                        "left_ear",
+                        "right_ear",
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_elbow",
+                        "right_elbow",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle",
+                        "right_wrist",
+                        "left_wrist"
+                      ],
+                      "mapped_joint_count": 17,
+                      "in_frame_joint_count": 0,
+                      "geometry_coverage_fraction": null,
+                      "target_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "target_joint_geometry_fraction": null,
+                      "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+                      "joint_coverage": {
+                        "nose": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        }
+                      },
+                      "reason_counts": {},
+                      "frame_evidence": []
+                    },
+                    "left_right_swap_candidate_frames": [],
+                    "left_right_swap_candidate_joint_pairs": [],
+                    "keypoint_jump_candidate_frames": [],
+                    "keypoint_jump_candidate_joints": [],
+                    "keypoint_jump_candidate_frames_by_joint": {},
+                    "longest_pose_missing_frames": 0,
+                    "longest_pose_missing_ms": 0,
+                    "quality_flags": [],
+                    "diagnostic_semantics": "score_tie_is_selector_ambiguity_not_identity_accuracy;heuristic_candidates_not_identity_or_keypoint_accuracy;jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;jump_and_swap_require_numeric_confidence_sam_not_assessed;model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
+                  },
+                  "primary_identity_ambiguous": false,
+                  "source_track_switch_candidate_count": 0,
+                  "confirmed_id_switch_count": null,
+                  "global_identity_warning": false,
+                  "applies_to_selected_person": true,
+                  "policy_version": "continuous-ankle-motion-cycle-v1",
+                  "raw_input_quality_flags": [
+                    "event_ground_truth_missing",
+                    "provisional_rule_baseline"
+                  ],
+                  "review_flags": [],
+                  "irrelevant_joint_flags": []
+                }
+              ],
+              "quality_observations_present": true,
+              "interpolation_used": false,
+              "step_cycle_bound": false,
+              "source_behavior_or_contact_verified": false
+            }
+          }
+        ]
+      },
+      {
+        "indicator_id": "FS01-M04",
+        "event_code": "FS01",
+        "rule_version": "card-rules-v1.0.0",
+        "rule_kind": "visual_proxy",
+        "name_zh": "双脚分开落地",
+        "runtime_engine": "fs-card-windows-v1.0.0",
+        "run_status": "review_required",
+        "reason_codes": [
+          "fs_window_original_quality_requires_review"
+        ],
+        "original_grade": null,
+        "source_grade_supported": false,
+        "instance_count": 1,
+        "instance_status_counts": {
+          "review_required": 1
+        },
+        "instances": [
+          {
+            "version": "fs-card-windows-v1.0.0",
+            "indicator_id": "FS01-M04",
+            "rule_version": "card-rules-v1.0.0",
+            "event_id": "usta-split-landing-001",
+            "video_id": "extension-fs-usta-return-footwork-heldout",
+            "person_track_id": 2,
+            "window": {
+              "start_ms": 394828,
+              "end_ms": 394995,
+              "person_track_id": 2,
+              "selection_epoch": 1,
+              "camera_reference_epoch": 0,
+              "camera_compensated": true,
+              "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+              "video_id": "extension-fs-usta-return-footwork-heldout",
+              "event_id": "usta-split-landing-001",
+              "event_code": "FS01",
+              "stage_code": "FS01-M04",
+              "stage_binding": {
+                "method": "manual_anchor",
+                "version": "usta-fs35-nonexpert-visual-20261022-v1",
+                "source": "fs35-manual-visual-freeze.json#usta-split-landing-001",
+                "uncertainty_ms": 67,
+                "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+              }
+            },
+            "status": "review_required",
+            "original_grade": null,
+            "proxy_grade": null,
+            "score": null,
+            "reason_codes": [
+              "fs_window_original_quality_requires_review"
+            ],
+            "conditions": [
+              {
+                "key": "hip_inside_ankle_support_fraction.mean",
+                "metric": "hip_inside_ankle_support_fraction.mean",
+                "value": 1.0,
+                "operator": "gte",
+                "passed": null,
+                "threshold": 0.8,
+                "unit": "fraction",
+                "evidence": {
+                  "feature_name": "hip_inside_ankle_support_fraction",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "fraction",
+                  "required_joint_names": [
+                    "left_hip",
+                    "right_hip",
+                    "left_ankle",
+                    "right_ankle"
+                  ],
+                  "total_frame_count": 6,
+                  "valid_frame_count": 6,
+                  "fraction": 1.0,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage",
+                  "source_frames": [
+                    11833,
+                    11834,
+                    11835,
+                    11836,
+                    11837,
+                    11838
+                  ],
+                  "valid_source_frames": [
+                    11833,
+                    11834,
+                    11835,
+                    11836,
+                    11837,
+                    11838
+                  ],
+                  "reason_codes": [],
+                  "statistics": {
+                    "mean": 1.0,
+                    "median": 1.0,
+                    "range": 0.0,
+                    "min": 1.0,
+                    "max": 1.0,
+                    "start": 1.0,
+                    "end": 1.0,
+                    "delta": 0.0,
+                    "delta_abs": 0.0
+                  },
+                  "semantics": "image_plane_visual_proxy"
+                }
+              },
+              {
+                "key": "trunk_tilt_deg.range",
+                "metric": "trunk_tilt_deg.range",
+                "value": 1.8166969546549694,
+                "operator": "lte",
+                "passed": null,
+                "threshold": 15,
+                "unit": "deg",
+                "evidence": {
+                  "feature_name": "trunk_tilt_deg",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "deg",
+                  "required_joint_names": [
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_hip",
+                    "right_hip"
+                  ],
+                  "total_frame_count": 6,
+                  "valid_frame_count": 6,
+                  "fraction": 1.0,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage",
+                  "source_frames": [
+                    11833,
+                    11834,
+                    11835,
+                    11836,
+                    11837,
+                    11838
+                  ],
+                  "valid_source_frames": [
+                    11833,
+                    11834,
+                    11835,
+                    11836,
+                    11837,
+                    11838
+                  ],
+                  "reason_codes": [],
+                  "statistics": {
+                    "mean": 2.588433263692707,
+                    "median": 2.4545731574598335,
+                    "range": 1.8166969546549694,
+                    "min": 1.8256761455556691,
+                    "max": 3.6423731002106385,
+                    "start": 2.5496685021922008,
+                    "end": 2.2878566438221135,
+                    "delta": -0.26181185837008725,
+                    "delta_abs": 0.26181185837008725
+                  },
+                  "semantics": "image_plane_visual_proxy"
+                }
+              },
+              {
+                "key": "ankle_distance_over_hip_width.median",
+                "metric": "ankle_distance_over_hip_width.median",
+                "value": 1.4268890535434235,
+                "operator": "between",
+                "passed": null,
+                "threshold": [
+                  1,
+                  5
+                ],
+                "unit": "ratio",
+                "evidence": {
+                  "feature_name": "ankle_distance_over_hip_width",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "ratio",
+                  "required_joint_names": [
+                    "left_hip",
+                    "right_hip",
+                    "left_ankle",
+                    "right_ankle"
+                  ],
+                  "total_frame_count": 6,
+                  "valid_frame_count": 6,
+                  "fraction": 1.0,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage",
+                  "source_frames": [
+                    11833,
+                    11834,
+                    11835,
+                    11836,
+                    11837,
+                    11838
+                  ],
+                  "valid_source_frames": [
+                    11833,
+                    11834,
+                    11835,
+                    11836,
+                    11837,
+                    11838
+                  ],
+                  "reason_codes": [],
+                  "statistics": {
+                    "mean": 1.4419868197014847,
+                    "median": 1.4268890535434235,
+                    "range": 0.7227747297629568,
+                    "min": 1.142537401509898,
+                    "max": 1.8653121312728547,
+                    "start": 1.218181236793319,
+                    "end": 1.57211204154599,
+                    "delta": 0.353930804752671,
+                    "delta_abs": 0.353930804752671
+                  },
+                  "semantics": "image_plane_visual_proxy"
+                }
+              }
+            ],
+            "source_grade_supported": false,
+            "threshold_basis": "engineering_v1_uncalibrated",
+            "measurement_version": "card-kinematics-v1.0.0",
+            "quality": {
+              "required_joint_names": [
+                "left_ankle",
+                "left_hip",
+                "left_shoulder",
+                "right_ankle",
+                "right_hip",
+                "right_shoulder"
+              ],
+              "valid_frame_count": 6,
+              "total_frame_count": 6,
+              "geometry_gate_passed": true,
+              "visibility_verified": false,
+              "minimum_fraction": 0.7,
+              "image_bounds_verified": false,
+              "denominator": "all_decoder_samples_in_bound_stage"
+            },
+            "semantics": "engineering_visual_condition_completion_not_original_technical_grade",
+            "event_code": "FS01",
+            "source": {
+              "document_id": "CARD-FS",
+              "document_sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+              "table": "T005",
+              "rubric_sha256": "94c1bda71e963d7d821a72830337df5db6b1d0bca9c208276b4c9d29c1a5b102"
+            },
+            "source_window_annotation": {
+              "annotation_id": "usta-split-landing-001",
+              "indicator_id": "FS01-M04",
+              "document_version": "fs-card-window-annotations-v1.0.0",
+              "document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+              "digest_kind": "canonical_json_sorted_utf8_v1",
+              "binding": {
+                "method": "manual_anchor",
+                "version": "usta-fs35-nonexpert-visual-20261022-v1",
+                "source": "fs35-manual-visual-freeze.json#usta-split-landing-001",
+                "uncertainty_ms": 67,
+                "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+              },
+              "start_source_frame": 11833,
+              "end_source_frame": 11838,
+              "requested_window_ms": {
+                "start_ms": 394828,
+                "end_ms": 394995
+              },
+              "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+              "person_track_id": 2
+            },
+            "source_window_evidence": {
+              "source_frames": [
+                11833,
+                11834,
+                11835,
+                11836,
+                11837,
+                11838
+              ],
+              "source_pts": [
+                {
+                  "frame_index": 11833,
+                  "pts": 11844833,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11834,
+                  "pts": 11845834,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11835,
+                  "pts": 11846835,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11836,
+                  "pts": 11847836,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11837,
+                  "pts": 11848837,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11838,
+                  "pts": 11849838,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                }
+              ],
+              "source_frame_bindings": [
+                {
+                  "frame_index": 11833,
+                  "pts": 11844833,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394828,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11834,
+                  "pts": 11845834,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394861,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11835,
+                  "pts": 11846835,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394894,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11836,
+                  "pts": 11847836,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394928,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11837,
+                  "pts": 11848837,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394961,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11838,
+                  "pts": 11849838,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 394995,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                }
+              ],
+              "original_event_quality": [
+                {
+                  "source_event_id": "fs09-001-c6659f0318a6",
+                  "source_start_ms": 393894,
+                  "source_end_ms": 395028,
+                  "source_track_ids": [
+                    2
+                  ],
+                  "source_track_diagnostics": {
+                    "schema_version": "1.0.0",
+                    "algorithm_version": "primary-player-v0.3.0",
+                    "interval": {
+                      "start_ms": 393894,
+                      "end_ms": 395028,
+                      "frame_count": 35
+                    },
+                    "primary_player_id": 1,
+                    "track_coverage_fraction": 1.0,
+                    "pose_coverage_fraction": 1.0,
+                    "source_track_ids": [
+                      2
+                    ],
+                    "source_track_switch_candidate_count": 0,
+                    "confirmed_id_switch_count": null,
+                    "confirmed_id_switch_status": "ground_truth_required",
+                    "primary_identity_ambiguous": false,
+                    "primary_identity_ambiguity_status": "no_score_tie_detected",
+                    "primary_identity_ambiguous_frames": [],
+                    "identity_ambiguity_assessed_frame_count": 35,
+                    "selection_score_compared_frame_count": 35,
+                    "selection_score_margin_min": 4.512733621,
+                    "selection_score_margin_median": 5.714321019,
+                    "selection_score_tie_abs_tolerance": 1e-09,
+                    "keypoint_valid_fraction": 1.0,
+                    "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+                    "model_estimate_geometry": {
+                      "version": "sam-primary-geometry-v1.1",
+                      "status": "not_applicable",
+                      "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+                      "confidence_available": false,
+                      "visibility_verified": false,
+                      "accuracy_validated": false,
+                      "scoring_allowed": false,
+                      "used_for_primary_selection": false,
+                      "interval_frame_count": 35,
+                      "sam_pose_frame_count": 0,
+                      "independent_source_frame_count": 35,
+                      "duplicate_source_frame_count": 0,
+                      "source_bound_frame_count": 0,
+                      "source_bound_frame_fraction": null,
+                      "frames_with_any_mapped_joint": 0,
+                      "frames_with_all_mapped_joints": 0,
+                      "mapped_joint_names": [
+                        "nose",
+                        "left_eye",
+                        "right_eye",
+                        "left_ear",
+                        "right_ear",
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_elbow",
+                        "right_elbow",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle",
+                        "right_wrist",
+                        "left_wrist"
+                      ],
+                      "mapped_joint_count": 17,
+                      "in_frame_joint_count": 0,
+                      "geometry_coverage_fraction": null,
+                      "target_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "target_joint_geometry_fraction": null,
+                      "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+                      "joint_coverage": {
+                        "nose": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        }
+                      },
+                      "reason_counts": {},
+                      "frame_evidence": []
+                    },
+                    "left_right_swap_candidate_frames": [
+                      58
+                    ],
+                    "left_right_swap_candidate_joint_pairs": [
+                      {
+                        "left_joint": "left_shoulder",
+                        "right_joint": "right_shoulder",
+                        "frames": [
+                          58
+                        ]
+                      }
+                    ],
+                    "keypoint_jump_candidate_frames": [],
+                    "keypoint_jump_candidate_joints": [],
+                    "keypoint_jump_candidate_frames_by_joint": {},
+                    "longest_pose_missing_frames": 0,
+                    "longest_pose_missing_ms": 0,
+                    "quality_flags": [
+                      "left_right_swap_candidates_present"
+                    ],
+                    "diagnostic_semantics": "score_tie_is_selector_ambiguity_not_identity_accuracy;heuristic_candidates_not_identity_or_keypoint_accuracy;jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;jump_and_swap_require_numeric_confidence_sam_not_assessed;model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
+                  },
+                  "primary_identity_ambiguous": false,
+                  "source_track_switch_candidate_count": 0,
+                  "confirmed_id_switch_count": null,
+                  "global_identity_warning": false,
+                  "applies_to_selected_person": true,
+                  "policy_version": "continuous-ankle-motion-cycle-v1",
+                  "raw_input_quality_flags": [
+                    "event_ground_truth_missing",
+                    "left_right_swap_candidates_present",
+                    "provisional_rule_baseline"
+                  ],
+                  "review_flags": [
+                    "left_right_swap_candidates_present"
+                  ],
+                  "irrelevant_joint_flags": []
+                },
+                {
+                  "source_event_id": "fs01-002-890b85ec83b1",
+                  "source_start_ms": 394294,
+                  "source_end_ms": 395028,
+                  "source_track_ids": [
+                    2
+                  ],
+                  "source_track_diagnostics": {
+                    "schema_version": "1.0.0",
+                    "algorithm_version": "primary-player-v0.3.0",
+                    "interval": {
+                      "start_ms": 394294,
+                      "end_ms": 395028,
+                      "frame_count": 23
+                    },
+                    "primary_player_id": 1,
+                    "track_coverage_fraction": 1.0,
+                    "pose_coverage_fraction": 1.0,
+                    "source_track_ids": [
+                      2
+                    ],
+                    "source_track_switch_candidate_count": 0,
+                    "confirmed_id_switch_count": null,
+                    "confirmed_id_switch_status": "ground_truth_required",
+                    "primary_identity_ambiguous": false,
+                    "primary_identity_ambiguity_status": "no_score_tie_detected",
+                    "primary_identity_ambiguous_frames": [],
+                    "identity_ambiguity_assessed_frame_count": 23,
+                    "selection_score_compared_frame_count": 23,
+                    "selection_score_margin_min": 4.512733621,
+                    "selection_score_margin_median": 5.310527826,
+                    "selection_score_tie_abs_tolerance": 1e-09,
+                    "keypoint_valid_fraction": 1.0,
+                    "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+                    "model_estimate_geometry": {
+                      "version": "sam-primary-geometry-v1.1",
+                      "status": "not_applicable",
+                      "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+                      "confidence_available": false,
+                      "visibility_verified": false,
+                      "accuracy_validated": false,
+                      "scoring_allowed": false,
+                      "used_for_primary_selection": false,
+                      "interval_frame_count": 23,
+                      "sam_pose_frame_count": 0,
+                      "independent_source_frame_count": 23,
+                      "duplicate_source_frame_count": 0,
+                      "source_bound_frame_count": 0,
+                      "source_bound_frame_fraction": null,
+                      "frames_with_any_mapped_joint": 0,
+                      "frames_with_all_mapped_joints": 0,
+                      "mapped_joint_names": [
+                        "nose",
+                        "left_eye",
+                        "right_eye",
+                        "left_ear",
+                        "right_ear",
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_elbow",
+                        "right_elbow",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle",
+                        "right_wrist",
+                        "left_wrist"
+                      ],
+                      "mapped_joint_count": 17,
+                      "in_frame_joint_count": 0,
+                      "geometry_coverage_fraction": null,
+                      "target_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "target_joint_geometry_fraction": null,
+                      "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+                      "joint_coverage": {
+                        "nose": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        }
+                      },
+                      "reason_counts": {},
+                      "frame_evidence": []
+                    },
+                    "left_right_swap_candidate_frames": [],
+                    "left_right_swap_candidate_joint_pairs": [],
+                    "keypoint_jump_candidate_frames": [],
+                    "keypoint_jump_candidate_joints": [],
+                    "keypoint_jump_candidate_frames_by_joint": {},
+                    "longest_pose_missing_frames": 0,
+                    "longest_pose_missing_ms": 0,
+                    "quality_flags": [],
+                    "diagnostic_semantics": "score_tie_is_selector_ambiguity_not_identity_accuracy;heuristic_candidates_not_identity_or_keypoint_accuracy;jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;jump_and_swap_require_numeric_confidence_sam_not_assessed;model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
+                  },
+                  "primary_identity_ambiguous": false,
+                  "source_track_switch_candidate_count": 0,
+                  "confirmed_id_switch_count": null,
+                  "global_identity_warning": false,
+                  "applies_to_selected_person": true,
+                  "policy_version": "continuous-ankle-motion-cycle-v1",
+                  "raw_input_quality_flags": [
+                    "event_ground_truth_missing",
+                    "provisional_rule_baseline"
+                  ],
+                  "review_flags": [],
+                  "irrelevant_joint_flags": []
+                }
+              ],
+              "quality_observations_present": true,
+              "interpolation_used": false,
+              "step_cycle_bound": false,
+              "source_behavior_or_contact_verified": false
+            }
+          }
+        ]
+      },
+      {
+        "indicator_id": "FS09-M02",
+        "event_code": "FS09",
+        "rule_version": "card-rules-v1.0.0",
+        "rule_kind": "visual_proxy",
+        "name_zh": "制动脚落地",
+        "runtime_engine": "fs-card-windows-v1.0.0",
+        "run_status": "review_required",
+        "reason_codes": [
+          "fs_window_original_quality_requires_review"
+        ],
+        "original_grade": null,
+        "source_grade_supported": false,
+        "instance_count": 1,
+        "instance_status_counts": {
+          "review_required": 1
+        },
+        "instances": [
+          {
+            "version": "fs-card-windows-v1.0.0",
+            "indicator_id": "FS09-M02",
+            "rule_version": "card-rules-v1.0.0",
+            "event_id": "usta-lateral-braking-001",
+            "video_id": "extension-fs-usta-return-footwork-heldout",
+            "person_track_id": 2,
+            "window": {
+              "start_ms": 392425,
+              "end_ms": 392759,
+              "person_track_id": 2,
+              "selection_epoch": 1,
+              "camera_reference_epoch": 0,
+              "camera_compensated": true,
+              "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+              "video_id": "extension-fs-usta-return-footwork-heldout",
+              "event_id": "usta-lateral-braking-001",
+              "event_code": "FS09",
+              "stage_code": "FS09-M02",
+              "stage_binding": {
+                "method": "manual_anchor",
+                "version": "usta-fs35-nonexpert-visual-20261022-v1",
+                "source": "fs35-manual-visual-freeze.json#usta-lateral-braking-001",
+                "uncertainty_ms": 100,
+                "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+              }
+            },
+            "status": "review_required",
+            "original_grade": null,
+            "proxy_grade": null,
+            "score": null,
+            "reason_codes": [
+              "fs_window_original_quality_requires_review"
+            ],
+            "conditions": [
+              {
+                "key": "hip_speed_drop_torso_s",
+                "metric": "hip_speed_drop_torso_s",
+                "value": 2.5891164183774587,
+                "operator": "gte",
+                "passed": null,
+                "threshold": 0.2,
+                "unit": "torso/s",
+                "evidence": {
+                  "feature_name": "hip_speed_drop_torso_s",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "torso/s",
+                  "required_joint_names": [
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_hip",
+                    "right_hip"
+                  ],
+                  "geometry_gate_passed": true,
+                  "valid_frame_count": 11,
+                  "total_frame_count": 11,
+                  "source_frames": [
+                    11761,
+                    11762,
+                    11763,
+                    11764,
+                    11765,
+                    11766,
+                    11767,
+                    11768,
+                    11769,
+                    11770,
+                    11771
+                  ],
+                  "statistics": {
+                    "value": 2.5891164183774587
+                  },
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "reason_codes": [],
+                  "semantics": "image_plane_visual_proxy"
+                }
+              },
+              {
+                "key": "left_knee_flexion_deg.range",
+                "metric": "left_knee_flexion_deg.range",
+                "value": 44.22961946362683,
+                "operator": "gte",
+                "passed": null,
+                "threshold": 4,
+                "unit": "deg",
+                "evidence": {
+                  "feature_name": "left_knee_flexion_deg",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "deg",
+                  "required_joint_names": [
+                    "left_hip",
+                    "left_knee",
+                    "left_ankle"
+                  ],
+                  "total_frame_count": 11,
+                  "valid_frame_count": 11,
+                  "fraction": 1.0,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage",
+                  "source_frames": [
+                    11761,
+                    11762,
+                    11763,
+                    11764,
+                    11765,
+                    11766,
+                    11767,
+                    11768,
+                    11769,
+                    11770,
+                    11771
+                  ],
+                  "valid_source_frames": [
+                    11761,
+                    11762,
+                    11763,
+                    11764,
+                    11765,
+                    11766,
+                    11767,
+                    11768,
+                    11769,
+                    11770,
+                    11771
+                  ],
+                  "reason_codes": [],
+                  "statistics": {
+                    "mean": 33.77220930973704,
+                    "median": 31.246512744522192,
+                    "range": 44.22961946362683,
+                    "min": 18.546905135807663,
+                    "max": 62.776524599434495,
+                    "start": 19.68126597152971,
+                    "end": 52.36222526631683,
+                    "delta": 32.680959294787115,
+                    "delta_abs": 32.680959294787115
+                  },
+                  "semantics": "image_plane_visual_proxy"
+                }
+              },
+              {
+                "key": "right_knee_flexion_deg.range",
+                "metric": "right_knee_flexion_deg.range",
+                "value": 49.80140699073314,
+                "operator": "gte",
+                "passed": null,
+                "threshold": 4,
+                "unit": "deg",
+                "evidence": {
+                  "feature_name": "right_knee_flexion_deg",
+                  "feature_version": "card-kinematics-v1.0.0",
+                  "unit": "deg",
+                  "required_joint_names": [
+                    "right_hip",
+                    "right_knee",
+                    "right_ankle"
+                  ],
+                  "total_frame_count": 11,
+                  "valid_frame_count": 11,
+                  "fraction": 1.0,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage",
+                  "source_frames": [
+                    11761,
+                    11762,
+                    11763,
+                    11764,
+                    11765,
+                    11766,
+                    11767,
+                    11768,
+                    11769,
+                    11770,
+                    11771
+                  ],
+                  "valid_source_frames": [
+                    11761,
+                    11762,
+                    11763,
+                    11764,
+                    11765,
+                    11766,
+                    11767,
+                    11768,
+                    11769,
+                    11770,
+                    11771
+                  ],
+                  "reason_codes": [],
+                  "statistics": {
+                    "mean": 39.30747720226198,
+                    "median": 43.46914637188527,
+                    "range": 49.80140699073314,
+                    "min": 10.217032514325979,
+                    "max": 60.01843950505912,
+                    "start": 15.521854423014474,
+                    "end": 58.42463759574488,
+                    "delta": 42.90278317273041,
+                    "delta_abs": 42.90278317273041
+                  },
+                  "semantics": "image_plane_visual_proxy"
+                }
+              }
+            ],
+            "source_grade_supported": false,
+            "threshold_basis": "engineering_v1_uncalibrated",
+            "measurement_version": "card-kinematics-v1.0.0",
+            "quality": {
+              "required_joint_names": [
+                "left_ankle",
+                "left_hip",
+                "left_knee",
+                "left_shoulder",
+                "right_ankle",
+                "right_hip",
+                "right_knee",
+                "right_shoulder"
+              ],
+              "valid_frame_count": 11,
+              "total_frame_count": 11,
+              "geometry_gate_passed": true,
+              "visibility_verified": false,
+              "minimum_fraction": 0.7,
+              "image_bounds_verified": false,
+              "denominator": "all_decoder_samples_in_bound_stage"
+            },
+            "semantics": "engineering_visual_condition_completion_not_original_technical_grade",
+            "event_code": "FS09",
+            "source": {
+              "document_id": "CARD-FS",
+              "document_sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+              "table": "T043",
+              "rubric_sha256": "e675857ebcf40932879e6b56d847eee2a3caebe71ea2a39f431cba4f85184ca1"
+            },
+            "source_window_annotation": {
+              "annotation_id": "usta-lateral-braking-001",
+              "indicator_id": "FS09-M02",
+              "document_version": "fs-card-window-annotations-v1.0.0",
+              "document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+              "digest_kind": "canonical_json_sorted_utf8_v1",
+              "binding": {
+                "method": "manual_anchor",
+                "version": "usta-fs35-nonexpert-visual-20261022-v1",
+                "source": "fs35-manual-visual-freeze.json#usta-lateral-braking-001",
+                "uncertainty_ms": 100,
+                "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+              },
+              "start_source_frame": 11761,
+              "end_source_frame": 11771,
+              "requested_window_ms": {
+                "start_ms": 392425,
+                "end_ms": 392759
+              },
+              "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+              "person_track_id": 2
+            },
+            "source_window_evidence": {
+              "source_frames": [
+                11761,
+                11762,
+                11763,
+                11764,
+                11765,
+                11766,
+                11767,
+                11768,
+                11769,
+                11770,
+                11771
+              ],
+              "source_pts": [
+                {
+                  "frame_index": 11761,
+                  "pts": 11772761,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11762,
+                  "pts": 11773762,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11763,
+                  "pts": 11774763,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11764,
+                  "pts": 11775764,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11765,
+                  "pts": 11776765,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11766,
+                  "pts": 11777766,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11767,
+                  "pts": 11778767,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11768,
+                  "pts": 11779768,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11769,
+                  "pts": 11780769,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11770,
+                  "pts": 11781770,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                },
+                {
+                  "frame_index": 11771,
+                  "pts": 11782771,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0"
+                }
+              ],
+              "source_frame_bindings": [
+                {
+                  "frame_index": 11761,
+                  "pts": 11772761,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392425,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11762,
+                  "pts": 11773762,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392459,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11763,
+                  "pts": 11774763,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392492,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11764,
+                  "pts": 11775764,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392525,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11765,
+                  "pts": 11776765,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392559,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11766,
+                  "pts": 11777766,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392592,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11767,
+                  "pts": 11778767,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392626,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11768,
+                  "pts": 11779768,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392659,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11769,
+                  "pts": 11780769,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392692,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11770,
+                  "pts": 11781770,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392726,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                },
+                {
+                  "frame_index": 11771,
+                  "pts": 11782771,
+                  "time_base_num": 1,
+                  "time_base_den": 30000,
+                  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+                  "timestamp_ms": 392759,
+                  "selected_person_track_id": 2,
+                  "selection_epoch": 1,
+                  "camera_reference_epoch": 0
+                }
+              ],
+              "original_event_quality": [
+                {
+                  "source_event_id": "fs02-000-fd7daf066b3c",
+                  "source_start_ms": 392292,
+                  "source_end_ms": 392792,
+                  "source_track_ids": [
+                    2
+                  ],
+                  "source_track_diagnostics": {
+                    "schema_version": "1.0.0",
+                    "algorithm_version": "primary-player-v0.3.0",
+                    "interval": {
+                      "start_ms": 392292,
+                      "end_ms": 392792,
+                      "frame_count": 16
+                    },
+                    "primary_player_id": 1,
+                    "track_coverage_fraction": 1.0,
+                    "pose_coverage_fraction": 1.0,
+                    "source_track_ids": [
+                      2
+                    ],
+                    "source_track_switch_candidate_count": 0,
+                    "confirmed_id_switch_count": null,
+                    "confirmed_id_switch_status": "ground_truth_required",
+                    "primary_identity_ambiguous": false,
+                    "primary_identity_ambiguity_status": "no_score_tie_detected",
+                    "primary_identity_ambiguous_frames": [],
+                    "identity_ambiguity_assessed_frame_count": 16,
+                    "selection_score_compared_frame_count": 16,
+                    "selection_score_margin_min": 7.01250958,
+                    "selection_score_margin_median": 7.198081352,
+                    "selection_score_tie_abs_tolerance": 1e-09,
+                    "keypoint_valid_fraction": 1.0,
+                    "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+                    "model_estimate_geometry": {
+                      "version": "sam-primary-geometry-v1.1",
+                      "status": "not_applicable",
+                      "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+                      "confidence_available": false,
+                      "visibility_verified": false,
+                      "accuracy_validated": false,
+                      "scoring_allowed": false,
+                      "used_for_primary_selection": false,
+                      "interval_frame_count": 16,
+                      "sam_pose_frame_count": 0,
+                      "independent_source_frame_count": 16,
+                      "duplicate_source_frame_count": 0,
+                      "source_bound_frame_count": 0,
+                      "source_bound_frame_fraction": null,
+                      "frames_with_any_mapped_joint": 0,
+                      "frames_with_all_mapped_joints": 0,
+                      "mapped_joint_names": [
+                        "nose",
+                        "left_eye",
+                        "right_eye",
+                        "left_ear",
+                        "right_ear",
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_elbow",
+                        "right_elbow",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle",
+                        "right_wrist",
+                        "left_wrist"
+                      ],
+                      "mapped_joint_count": 17,
+                      "in_frame_joint_count": 0,
+                      "geometry_coverage_fraction": null,
+                      "target_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "target_joint_geometry_fraction": null,
+                      "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+                      "joint_coverage": {
+                        "nose": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        }
+                      },
+                      "reason_counts": {},
+                      "frame_evidence": []
+                    },
+                    "left_right_swap_candidate_frames": [
+                      23
+                    ],
+                    "left_right_swap_candidate_joint_pairs": [
+                      {
+                        "left_joint": "left_elbow",
+                        "right_joint": "right_elbow",
+                        "frames": [
+                          23
+                        ]
+                      },
+                      {
+                        "left_joint": "left_wrist",
+                        "right_joint": "right_wrist",
+                        "frames": [
+                          23
+                        ]
+                      }
+                    ],
+                    "keypoint_jump_candidate_frames": [],
+                    "keypoint_jump_candidate_joints": [],
+                    "keypoint_jump_candidate_frames_by_joint": {},
+                    "longest_pose_missing_frames": 0,
+                    "longest_pose_missing_ms": 0,
+                    "quality_flags": [
+                      "left_right_swap_candidates_present"
+                    ],
+                    "diagnostic_semantics": "score_tie_is_selector_ambiguity_not_identity_accuracy;heuristic_candidates_not_identity_or_keypoint_accuracy;jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;jump_and_swap_require_numeric_confidence_sam_not_assessed;model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
+                  },
+                  "primary_identity_ambiguous": false,
+                  "source_track_switch_candidate_count": 0,
+                  "confirmed_id_switch_count": null,
+                  "global_identity_warning": false,
+                  "applies_to_selected_person": true,
+                  "policy_version": "continuous-ankle-motion-cycle-v1",
+                  "raw_input_quality_flags": [
+                    "event_ground_truth_missing",
+                    "left_right_swap_candidates_present",
+                    "provisional_rule_baseline",
+                    "tactical_target_direction_not_observed"
+                  ],
+                  "review_flags": [],
+                  "irrelevant_joint_flags": [
+                    "left_right_swap_candidates_present"
+                  ]
+                },
+                {
+                  "source_event_id": "fs09-000-2279bf326a52",
+                  "source_start_ms": 392459,
+                  "source_end_ms": 393760,
+                  "source_track_ids": [
+                    2
+                  ],
+                  "source_track_diagnostics": {
+                    "schema_version": "1.0.0",
+                    "algorithm_version": "primary-player-v0.3.0",
+                    "interval": {
+                      "start_ms": 392459,
+                      "end_ms": 393760,
+                      "frame_count": 40
+                    },
+                    "primary_player_id": 1,
+                    "track_coverage_fraction": 1.0,
+                    "pose_coverage_fraction": 1.0,
+                    "source_track_ids": [
+                      2
+                    ],
+                    "source_track_switch_candidate_count": 0,
+                    "confirmed_id_switch_count": null,
+                    "confirmed_id_switch_status": "ground_truth_required",
+                    "primary_identity_ambiguous": false,
+                    "primary_identity_ambiguity_status": "no_score_tie_detected",
+                    "primary_identity_ambiguous_frames": [],
+                    "identity_ambiguity_assessed_frame_count": 40,
+                    "selection_score_compared_frame_count": 40,
+                    "selection_score_margin_min": 7.167638768,
+                    "selection_score_margin_median": 7.371648451,
+                    "selection_score_tie_abs_tolerance": 1e-09,
+                    "keypoint_valid_fraction": 1.0,
+                    "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+                    "model_estimate_geometry": {
+                      "version": "sam-primary-geometry-v1.1",
+                      "status": "not_applicable",
+                      "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+                      "confidence_available": false,
+                      "visibility_verified": false,
+                      "accuracy_validated": false,
+                      "scoring_allowed": false,
+                      "used_for_primary_selection": false,
+                      "interval_frame_count": 40,
+                      "sam_pose_frame_count": 0,
+                      "independent_source_frame_count": 40,
+                      "duplicate_source_frame_count": 0,
+                      "source_bound_frame_count": 0,
+                      "source_bound_frame_fraction": null,
+                      "frames_with_any_mapped_joint": 0,
+                      "frames_with_all_mapped_joints": 0,
+                      "mapped_joint_names": [
+                        "nose",
+                        "left_eye",
+                        "right_eye",
+                        "left_ear",
+                        "right_ear",
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_elbow",
+                        "right_elbow",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle",
+                        "right_wrist",
+                        "left_wrist"
+                      ],
+                      "mapped_joint_count": 17,
+                      "in_frame_joint_count": 0,
+                      "geometry_coverage_fraction": null,
+                      "target_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_knee",
+                        "right_knee",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "target_joint_geometry_fraction": null,
+                      "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+                      "joint_coverage": {
+                        "nose": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_eye": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ear": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_shoulder": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_elbow": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_hip": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_knee": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_ankle": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "right_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        },
+                        "left_wrist": {
+                          "in_frame_count": 0,
+                          "fraction_over_interval": null
+                        }
+                      },
+                      "reason_counts": {},
+                      "frame_evidence": []
+                    },
+                    "left_right_swap_candidate_frames": [
+                      23
+                    ],
+                    "left_right_swap_candidate_joint_pairs": [
+                      {
+                        "left_joint": "left_elbow",
+                        "right_joint": "right_elbow",
+                        "frames": [
+                          23
+                        ]
+                      },
+                      {
+                        "left_joint": "left_wrist",
+                        "right_joint": "right_wrist",
+                        "frames": [
+                          23
+                        ]
+                      }
+                    ],
+                    "keypoint_jump_candidate_frames": [
+                      37
+                    ],
+                    "keypoint_jump_candidate_joints": [
+                      "right_ankle"
+                    ],
+                    "keypoint_jump_candidate_frames_by_joint": {
+                      "right_ankle": [
+                        37
+                      ]
+                    },
+                    "longest_pose_missing_frames": 0,
+                    "longest_pose_missing_ms": 0,
+                    "quality_flags": [
+                      "left_right_swap_candidates_present",
+                      "keypoint_jump_candidates_present"
+                    ],
+                    "diagnostic_semantics": "score_tie_is_selector_ambiguity_not_identity_accuracy;heuristic_candidates_not_identity_or_keypoint_accuracy;jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;jump_and_swap_require_numeric_confidence_sam_not_assessed;model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
+                  },
+                  "primary_identity_ambiguous": false,
+                  "source_track_switch_candidate_count": 0,
+                  "confirmed_id_switch_count": null,
+                  "global_identity_warning": false,
+                  "applies_to_selected_person": true,
+                  "policy_version": "continuous-ankle-motion-cycle-v1",
+                  "raw_input_quality_flags": [
+                    "event_ground_truth_missing",
+                    "keypoint_jump_candidates_present",
+                    "left_right_swap_candidates_present",
+                    "provisional_rule_baseline"
+                  ],
+                  "review_flags": [
+                    "keypoint_jump_candidates_present"
+                  ],
+                  "irrelevant_joint_flags": [
+                    "left_right_swap_candidates_present"
+                  ]
+                }
+              ],
+              "quality_observations_present": true,
+              "interpolation_used": false,
+              "step_cycle_bound": false,
+              "source_behavior_or_contact_verified": false
+            }
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "version": "card-evaluation-v1.0.0",
+      "grade_points": {
+        "A": 100,
+        "B": 80,
+        "C": 60,
+        "D": 40,
+        "E": 20
+      },
+      "channels": {
+        "original": {
+          "score": null,
+          "scored_cards": 0,
+          "applicable_cards": 298,
+          "coverage": 0.0,
+          "scored_event_instances": 0,
+          "per_card": {}
+        },
+        "visual_proxy": {
+          "score": null,
+          "scored_cards": 0,
+          "applicable_cards": 298,
+          "coverage": 0.0,
+          "scored_event_instances": 0,
+          "per_card": {}
+        },
+        "manual": {
+          "score": null,
+          "scored_cards": 0,
+          "applicable_cards": 298,
+          "coverage": 0.0,
+          "scored_event_instances": 0,
+          "per_card": {}
+        }
+      },
+      "status_counts": {
+        "unavailable": 1,
+        "review_required": 67
+      },
+      "conflicting_event_instances": 0,
+      "overall_score": null,
+      "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+      "weight_policy": "equal_card_weight_after_event_mean",
+      "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+    },
+    "observed_type_summary": {
+      "version": "card-evaluation-v1.0.0",
+      "grade_points": {
+        "A": 100,
+        "B": 80,
+        "C": 60,
+        "D": 40,
+        "E": 20
+      },
+      "channels": {
+        "original": {
+          "score": null,
+          "scored_cards": 0,
+          "applicable_cards": 15,
+          "coverage": 0.0,
+          "scored_event_instances": 0,
+          "per_card": {}
+        },
+        "visual_proxy": {
+          "score": null,
+          "scored_cards": 0,
+          "applicable_cards": 15,
+          "coverage": 0.0,
+          "scored_event_instances": 0,
+          "per_card": {}
+        },
+        "manual": {
+          "score": null,
+          "scored_cards": 0,
+          "applicable_cards": 15,
+          "coverage": 0.0,
+          "scored_event_instances": 0,
+          "per_card": {}
+        }
+      },
+      "status_counts": {
+        "unavailable": 1,
+        "review_required": 67
+      },
+      "conflicting_event_instances": 0,
+      "overall_score": null,
+      "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+      "weight_policy": "equal_card_weight_after_event_mean",
+      "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+    },
+    "coverage": {
+      "source_card_count": 298,
+      "fs_card_count": 50,
+      "gs_card_count": 248,
+      "wired_temporal_card_count": 5,
+      "computed_card_instance_count": 68,
+      "run_card_status_counts": {
+        "not_observed": 258,
+        "unavailable": 1,
+        "review_required": 7,
+        "not_executed": 32
+      },
+      "original_auto_graded_card_count": 0,
+      "semantics": "catalogue_coverage_is_not_extractor_or_validation_coverage",
+      "fs_manual_card_window_count": 3,
+      "fs_manual_window_executed_card_count": 3
+    },
+    "overall_score": null,
+    "missing_policy": "exclude_from_score_keep_in_coverage_no_missing_zero",
+    "limitations": [
+      "Only five temporal calculators are wired by this adapter.",
+      "Automatic event candidates are not independently verified action labels.",
+      "Proxy thresholds are uncalibrated engineering rules, not Word-grade thresholds.",
+      "individual_manual_card_windows_are_estimates_not_technical_truth",
+      "no_automatic_fs_phase_or_technique_locator_added",
+      "complete_step_cycle_never_inferred_from_manual_window",
+      "manual_observable_cards_remain_ungraded",
+      "engineering_proxy_thresholds_uncalibrated"
+    ],
+    "fs_card_windows": [
+      {
+        "annotation_id": "usta-pre-split-head-001",
+        "indicator_id": "FS01-M01",
+        "document_version": "fs-card-window-annotations-v1.0.0",
+        "document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+        "digest_kind": "canonical_json_sorted_utf8_v1",
+        "binding": {
+          "method": "manual_anchor",
+          "version": "usta-fs35-nonexpert-visual-20261022-v1",
+          "source": "fs35-manual-visual-freeze.json#usta-pre-split-head-001",
+          "uncertainty_ms": 67,
+          "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+        },
+        "start_source_frame": 11823,
+        "end_source_frame": 11828,
+        "requested_window_ms": {
+          "start_ms": 394494,
+          "end_ms": 394661
+        },
+        "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+        "person_track_id": 2,
+        "window": {
+          "start_ms": 394494,
+          "end_ms": 394661,
+          "person_track_id": 2,
+          "selection_epoch": 1,
+          "camera_reference_epoch": 0,
+          "camera_compensated": true,
+          "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+          "video_id": "extension-fs-usta-return-footwork-heldout",
+          "event_id": "usta-pre-split-head-001",
+          "event_code": "FS01",
+          "stage_code": "FS01-M01",
+          "stage_binding": {
+            "method": "manual_anchor",
+            "version": "usta-fs35-nonexpert-visual-20261022-v1",
+            "source": "fs35-manual-visual-freeze.json#usta-pre-split-head-001",
+            "uncertainty_ms": 67,
+            "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+          }
+        },
+        "source_frames": [
+          11823,
+          11824,
+          11825,
+          11826,
+          11827,
+          11828
+        ]
+      },
+      {
+        "annotation_id": "usta-split-landing-001",
+        "indicator_id": "FS01-M04",
+        "document_version": "fs-card-window-annotations-v1.0.0",
+        "document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+        "digest_kind": "canonical_json_sorted_utf8_v1",
+        "binding": {
+          "method": "manual_anchor",
+          "version": "usta-fs35-nonexpert-visual-20261022-v1",
+          "source": "fs35-manual-visual-freeze.json#usta-split-landing-001",
+          "uncertainty_ms": 67,
+          "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+        },
+        "start_source_frame": 11833,
+        "end_source_frame": 11838,
+        "requested_window_ms": {
+          "start_ms": 394828,
+          "end_ms": 394995
+        },
+        "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+        "person_track_id": 2,
+        "window": {
+          "start_ms": 394828,
+          "end_ms": 394995,
+          "person_track_id": 2,
+          "selection_epoch": 1,
+          "camera_reference_epoch": 0,
+          "camera_compensated": true,
+          "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+          "video_id": "extension-fs-usta-return-footwork-heldout",
+          "event_id": "usta-split-landing-001",
+          "event_code": "FS01",
+          "stage_code": "FS01-M04",
+          "stage_binding": {
+            "method": "manual_anchor",
+            "version": "usta-fs35-nonexpert-visual-20261022-v1",
+            "source": "fs35-manual-visual-freeze.json#usta-split-landing-001",
+            "uncertainty_ms": 67,
+            "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+          }
+        },
+        "source_frames": [
+          11833,
+          11834,
+          11835,
+          11836,
+          11837,
+          11838
+        ]
+      },
+      {
+        "annotation_id": "usta-lateral-braking-001",
+        "indicator_id": "FS09-M02",
+        "document_version": "fs-card-window-annotations-v1.0.0",
+        "document_sha256": "ed561da67a8e54c96cce30ea3bbfc58c0706f50b23c1773390a2aa3f3b167ca5",
+        "digest_kind": "canonical_json_sorted_utf8_v1",
+        "binding": {
+          "method": "manual_anchor",
+          "version": "usta-fs35-nonexpert-visual-20261022-v1",
+          "source": "fs35-manual-visual-freeze.json#usta-lateral-braking-001",
+          "uncertainty_ms": 100,
+          "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+        },
+        "start_source_frame": 11761,
+        "end_source_frame": 11771,
+        "requested_window_ms": {
+          "start_ms": 392425,
+          "end_ms": 392759
+        },
+        "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+        "person_track_id": 2,
+        "window": {
+          "start_ms": 392425,
+          "end_ms": 392759,
+          "person_track_id": 2,
+          "selection_epoch": 1,
+          "camera_reference_epoch": 0,
+          "camera_compensated": true,
+          "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+          "video_id": "extension-fs-usta-return-footwork-heldout",
+          "event_id": "usta-lateral-braking-001",
+          "event_code": "FS09",
+          "stage_code": "FS09-M02",
+          "stage_binding": {
+            "method": "manual_anchor",
+            "version": "usta-fs35-nonexpert-visual-20261022-v1",
+            "source": "fs35-manual-visual-freeze.json#usta-lateral-braking-001",
+            "uncertainty_ms": 100,
+            "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+          }
+        },
+        "source_frames": [
+          11761,
+          11762,
+          11763,
+          11764,
+          11765,
+          11766,
+          11767,
+          11768,
+          11769,
+          11770,
+          11771
+        ]
+      }
+    ]
+  }
+}
