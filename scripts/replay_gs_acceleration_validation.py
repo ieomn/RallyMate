@@ -165,6 +165,8 @@ def replay(manifest_path, artifact_root, output_directory):
         print(json.dumps({"case_id": case["case_id"], "status_counts": compact["status_counts"]}), flush=True)
     instances = [row for case in cases for row in case["instances"]]
     result = {"version": VERSION, "window_manifest_sha256": sha256(manifest_path),
+        "window_manifest_utf8_lf_sha256": normalized_sha256(manifest_path.read_bytes()),
+        "window_manifest_normalization": "utf8_sig_removed_crlf_and_cr_to_lf_sha256",
         "runtime": runtime_provenance(artifact_root, commit),
         "runner_sha256": sha256(Path(__file__)),
         "runner_digest_kind": "raw_file_sha256", "full_report_sha256": reports,

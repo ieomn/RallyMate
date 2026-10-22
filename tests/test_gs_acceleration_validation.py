@@ -8,7 +8,7 @@ import unittest
 
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_service.gs_card_execution import compute_gs_card_execution
-from scripts.replay_gs_acceleration_validation import build_annotations, compact_case, source_ms
+from scripts.replay_gs_acceleration_validation import build_annotations, compact_case, normalized_sha256, source_ms
 
 ROOT = Path(__file__).resolve().parents[1]
 WINDOWS = ROOT / "tests/fixtures/gs-acceleration-windows-20261022.json"
@@ -27,7 +27,11 @@ class GSAccelerationValidationTests(unittest.TestCase):
         cls.expected = {case["case_id"]: case for case in cls.result["cases"]}
 
     def test_review_inventory_was_frozen_and_all_twelve_actions_remain(self):
-        self.assertEqual(hashlib.sha256(WINDOWS.read_bytes()).hexdigest(), self.result["window_manifest_sha256"])
+        # The historical production run used CRLF bytes. Git archives use LF;
+        # keep that original raw digest while verifying portable text identity.
+        self.assertEqual(normalized_sha256(WINDOWS.read_bytes()), self.result["window_manifest_utf8_lf_sha256"])
+        self.assertEqual(self.result["window_manifest_normalization"], "utf8_sig_removed_crlf_and_cr_to_lf_sha256")
+        self.assertRegex(self.result["window_manifest_sha256"], "^[0-9a-f]{64}$")
         reviews = [review for case in self.manifest["cases"] for review in case["reviews"]]
         self.assertEqual(len(reviews), 12)
         self.assertEqual(Counter(row["decision"] for row in reviews),
@@ -54,6 +58,11 @@ class GSAccelerationValidationTests(unittest.TestCase):
             if case["technique_code"] == "GS01":
                 for review in case["reviews"]:
                     self.assertIn("predicted_hitting_trajectory_convergence", review["unverified_source_requirements"])
+
+    def test_line_ending_equivalence_does_not_accept_content_changes(self):
+        lf = WINDOWS.read_bytes().decode("utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
+        self.assertEqual(normalized_sha256(lf.encode()), normalized_sha256(lf.replace("\n", "\r\n").encode()))
+        self.assertNotEqual(normalized_sha256((lf + " ").encode()), self.result["window_manifest_utf8_lf_sha256"])
 
     def test_every_boundary_refers_to_original_decoder_pts_and_short_windows_stay_short(self):
         for case in self.manifest["cases"]:

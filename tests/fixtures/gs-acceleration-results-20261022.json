@@ -6327,5 +6327,7 @@
     },
     "original_graded_instance_count": 0,
     "overall_score": null
-  }
+  },
+  "window_manifest_utf8_lf_sha256": "fe1965d379a687dfac40a51529f919e1d4236a02eb1d46a521197d3b7e4eb83d",
+  "window_manifest_normalization": "utf8_sig_removed_crlf_and_cr_to_lf_sha256"
 }
