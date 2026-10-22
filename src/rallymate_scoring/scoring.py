@@ -31,7 +31,7 @@ def _base_result(
     *,
     status: str,
     grade: str | None,
-    confidence: float,
+    confidence: float | None,
     feature: dict[str, Any],
     threshold_version: str | None,
     model_versions: dict[str, str | None],
@@ -44,7 +44,7 @@ def _base_result(
         "schema_version": "1.0.0",
         "status": status,
         "grade": grade,
-        "confidence": round(max(0.0, min(1.0, confidence)), 6),
+        "confidence": None if confidence is None else round(max(0.0, min(1.0, confidence)), 6),
         "feature": feature,
         "threshold_version": threshold_version,
         "model_versions": model_versions,
@@ -229,6 +229,20 @@ def score_indicator(
         raise ValueError("scoring features require non-empty feature_name")
     if len(feature_names) != len(set(feature_names)):
         raise ValueError("scoring feature_name values must be unique")
+    # Unknown feature confidence cannot authorize an original technical grade,
+    # even when numeric model geometry and a calibration are available.
+    if any(item.get("confidence") is None for item in features):
+        reason_codes, feedback = _append_concurrent_scoring_blocks(
+            reason_codes=["feature_confidence_unavailable"],
+            feedback="观测置信度未知，保留测量证据，不输出原始技术等级。",
+            quality_gate=quality_gate,
+        )
+        return _base_result(
+            status="unavailable", grade=None, confidence=None,
+            feature={"items": features}, threshold_version=None,
+            model_versions=model_versions, evidence=evidence,
+            reason_codes=reason_codes, feedback=feedback, quality_gate=quality_gate,
+        )
     feature_by_name = {item["feature_name"]: item for item in features}
     invalid = [item for item in features if not item.get("valid")]
     if invalid:

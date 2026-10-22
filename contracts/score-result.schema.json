@@ -7,7 +7,7 @@
     "schema_version": {"const": "1.0.0"},
     "status": {"enum": ["scored", "calibration_required", "unavailable"]},
     "grade": {"type": ["string", "null"], "enum": ["A", "B", "C", "D", "E", null]},
-    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
     "feature": {"type": "object"},
     "threshold_version": {"type": ["string", "null"]},
     "model_versions": {"type": "object"},
