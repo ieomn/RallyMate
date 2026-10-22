@@ -152,10 +152,11 @@ class StepMotionEvidenceTests(unittest.TestCase):
             self.assertEqual(raw["total_frame_count"], 10)
             self.assertIsNone(evaluate_card_window(*args)["score"])
 
-    def test_original_normalized_geometry_is_retained_separately_from_camera_reference(self):
+    def test_supplied_normalized_geometry_is_retained_without_replacing_it_with_pixels(self):
         args = fixture("FS08-M03")
-        # A changing compensation rotation must never be substituted for the
-        # raw normalized plane used by the trunk-tilt condition.
+        # This deliberately decoupled core fixture tests record retention only.
+        # Production source records normalize after camera compensation; their
+        # normalization closure is checked by the raw-record adapter test.
         for index, sample in enumerate(args[1]):
             angle = .03*index
             sample.reference_points = {name: (x*math.cos(angle)-y*math.sin(angle),
@@ -166,6 +167,26 @@ class StepMotionEvidenceTests(unittest.TestCase):
         self.assertEqual(raw["source_geometry_series"][5]["point_confidences"]["left_shoulder"], .9)
         self.assertNotEqual(raw["reference_series"][5]["points"]["left_shoulder"], [-30, 0])
         self.assertEqual(evaluate_card_window(*args)["conditions"][1]["value"], 0)
+
+    def test_geometry_retains_source_context_without_mutation_or_nonfinite_json(self):
+        args = fixture()
+        sample = args[1][3]
+        sample.pose_source = "sam3d"
+        sample.source_binding.update(frame_index=3, pts=120, time_base_num=1, time_base_den=1000,
+            person_track_id=sample.track, selection_epoch=sample.selection_epoch,
+            camera_reference_epoch=sample.camera_reference_epoch, timestamp_ms=float("nan"),
+            unrelated_private_path="C:/private/not-evidence")
+        raw = evidence(args)
+        saved = raw["source_geometry_series"][3]
+        self.assertEqual(saved["normalization_basis"], "full_torso")
+        self.assertEqual(saved["pose_source"], "sam3d")
+        self.assertEqual(saved["source_binding"]["pts"], 120)
+        self.assertIsNone(saved["source_binding"]["timestamp_ms"])
+        self.assertNotIn("unrelated_private_path", saved["source_binding"])
+        saved["source_binding"]["pts"] = 999
+        self.assertEqual(sample.source_binding["pts"], 120)
+        import json
+        json.dumps(raw, allow_nan=False)
 
     def test_geometry_series_keeps_low_confidence_and_null_missing_rows_without_rescuing_nan(self):
         args = fixture()

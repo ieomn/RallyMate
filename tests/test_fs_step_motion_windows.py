@@ -1,6 +1,7 @@
 """Synthetic source-record plumbing; no relabelled tennis clip is step truth."""
 from copy import deepcopy
 import json
+import math
 import unittest
 
 from rallymate_service.fs_card_windows import validate_fs_card_annotations
@@ -62,6 +63,32 @@ class FSStepMotionWindowTests(unittest.TestCase):
             self.assertEqual(len(proof["step_motion"]["feet"]["right"]["intervals"]), 17)
             self.assertEqual([entry["frame_index"] for entry in proof["step_motion"]["source_geometry_series"]], proof["source_frames"])
             json.dumps(report, allow_nan=False)
+
+    def test_production_geometry_is_normalized_after_camera_compensation_and_retains_binding(self):
+        args = fixture("FS08-M03")
+        angle = .2
+        cosine, sine = math.cos(angle), math.sin(angle)
+        for record in args[0]:
+            record["camera_motion"]["matrix_to_reference"] = [[cosine, -sine, 17], [sine, cosine, -9]]
+        row, = instances(compute(args))
+        proof = row["source_window_evidence"]
+        motion = proof["step_motion"]
+        self.assertTrue(motion["complete_visual_motion_cycle"])
+        for normalized, reference, source in zip(motion["source_geometry_series"], motion["reference_series"], proof["source_pts"]):
+            p = reference["points"]
+            center = tuple((a+b)/2 for a,b in zip(p["left_shoulder"], p["right_shoulder"]))
+            hips = tuple((a+b)/2 for a,b in zip(p["left_hip"], p["right_hip"]))
+            scale = max(math.dist(center, hips), math.dist(p["left_shoulder"], p["right_shoulder"])*.75)
+            self.assertEqual(normalized["normalization_basis"], "full_torso")
+            for joint, coordinates in normalized["normalized_points"].items():
+                for axis in (0, 1):
+                    self.assertAlmostEqual(coordinates[axis], (p[joint][axis]-center[axis])/scale)
+            for key in ("frame_index", "pts", "time_base_num", "time_base_den", "video_sha256"):
+                self.assertEqual(normalized["source_binding"][key], source[key])
+            self.assertEqual(normalized["source_binding"]["person_track_id"], 1)
+        # Rotation affects both coordinate representations before the original
+        # trunk-range formula; a constant rotation still has zero angular range.
+        self.assertAlmostEqual(row["conditions"][1]["value"], 0)
 
     def test_original_quality_can_clear_score_after_motion_was_completely_measured(self):
         for target in ("jump", "unknown_joint", "identity", "coverage", "wrong_track"):

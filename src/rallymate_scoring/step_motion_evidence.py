@@ -16,7 +16,7 @@ from .card_kinematics import (
     _source_times, finite, validate_window,
 )
 
-VERSION = "step-motion-evidence-v1.0.1"
+VERSION = "step-motion-evidence-v1.0.2"
 POLICY_VERSION = "single-low-move-low-2d-v1.0.0"
 SUPPORTED_CARDS = frozenset(("FS02-M04", "FS07-M02", "FS08-M02", "FS08-M03"))
 ANNOTATION_VERSION = "manual-fs-step-motion-v1.0.0"
@@ -35,7 +35,11 @@ def supported_step_window(window):
 
 
 def _source_geometry(sample, frame_index):
-    """Keep the original normalized plane separate from camera-reference points.
+    """Keep the calculation's normalized points and their source context.
+
+    The production adapter normalizes after camera compensation. Its full-torso
+    points can be reconstructed from the reference points; they are not an
+    uncompensated original-image coordinate system.
 
     Low finite confidences are retained, so readers can reconstruct the common
     mask. Nonfinite/invalid point or confidence values become null geometry,
@@ -54,8 +58,22 @@ def _source_geometry(sample, frame_index):
         points[joint] = list(point) if valid_point else None
         confidence[joint] = value if finite(value) else None
     semantics = _get(sample, "observation_semantics") if sample is not None else None
+    basis = _get(sample, "normalization_basis") if sample is not None else None
+    pose_source = _get(sample, "pose_source") if sample is not None else None
+    binding = _get(sample, "source_binding") if sample is not None else None
+    binding_keys = ("video_sha256", "frame_index", "processed_index", "pts", "time_base_num",
+        "time_base_den", "timestamp_ms", "person_track_id", "selection_epoch", "camera_reference_epoch")
+    # Preserve only the identity/clock snapshot needed for independent checks.
+    # The original record remains in the separately hashed frames.jsonl. Invalid
+    # values stay null rather than making diagnostic JSON nonfinite or copying
+    # arbitrary caller fields into a portable evidence record.
+    source_binding = ({key: deepcopy(value) if value is None or isinstance(value, (str, bool)) or finite(value) else None
+        for key in binding_keys if key in binding for value in (binding[key],)}
+        if isinstance(binding, Mapping) else None)
     return {"frame_index": frame_index, "normalized_points": points,
-        "point_confidences": confidence, "observation_semantics": semantics if isinstance(semantics, str) else None}
+        "point_confidences": confidence, "observation_semantics": semantics if isinstance(semantics, str) else None,
+        "normalization_basis": basis if isinstance(basis, str) else None,
+        "pose_source": pose_source if isinstance(pose_source, str) else None, "source_binding": source_binding}
 
 
 def validate_step_motion_observation(observation, *, first_frame, last_frame):
