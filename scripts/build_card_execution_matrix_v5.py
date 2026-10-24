@@ -186,7 +186,11 @@ def compact_report(report, entry, rules):
     require(report["input"].get("catalogue_sha256") == canonical(load_card_rules())
         and report["input"].get("catalogue_digest_kind") == v4.CANONICAL, "report_not_current_catalogue")
     if entry["route"] != "temporal":
-        require(report["input"].get("video_sha256") == entry["video_sha256"]
+        # The cycle artifact adapter's native contract names this source digest
+        # explicitly. Other adapters must retain their own exact field; this is
+        # not an alias fallback that can hide a missing/wrong native binding.
+        video_key = "source_video_sha256" if entry["route"] == "footwork_cycle" else "video_sha256"
+        require(report["input"].get(video_key) == entry["video_sha256"]
             and report["input"].get("input_artifact_sha256") == entry["input_artifact_sha256"], "report_source_artifact_binding_mismatch")
     projected = {key: effective_rule(rule, application_contracts()[key]) if key in application_contracts() else rule for key, rule in rules.items()}
     validator = type("Validator", (), {"validate_instance": staticmethod(validate_instance)})

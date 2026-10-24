@@ -6,6 +6,7 @@ requires exact committed source, original videos, immutable artifacts and all
 """
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -86,6 +87,51 @@ class MatrixV5Tests(unittest.TestCase):
                 self.assertEqual(row["source_window_evidence"]["source_frames"], list(range(112, 137)))
             with self.assertRaisesRegex(ValueError, "record_only_or_research_report_rejected"):
                 m.compact_report(report, entry, self.rules)
+
+    def test_recorded_cycle_native_digest_is_checked_without_certifying_media_io(self):
+        from tests.test_footwork_cycle_card_evidence import real_fixture
+        from rallymate_service.footwork_cycle_execution import compute_footwork_cycle_execution
+        sequence, event, timeline, binding = real_fixture()
+        report = compute_footwork_cycle_execution(sequence, [event], timeline, [binding], source_run_id=event["video_id"])
+        entry = next(e for e in self.manifest["executions"] if e["route"] == "footwork_cycle")
+        # Recorded trajectories test the native source schema, not filesystem
+        # verification. Do not turn any media-verification flag on here.
+        report["input"].update(source_video_sha256=entry["video_sha256"],
+            input_artifact_sha256=deepcopy(entry["input_artifact_sha256"]))
+        self.assertNotIn("video_sha256", report["input"])
+        with self.assertRaisesRegex(ValueError, "record_only_or_research_report_rejected"):
+            m.compact_report(report, entry, self.rules)
+        for kind in ("missing_native", "wrong_native_with_valid_alias", "missing_raw", "wrong_raw", "extra_raw"):
+            changed = deepcopy(report)
+            if kind == "missing_native":
+                changed["input"]["video_sha256"] = changed["input"].pop("source_video_sha256")
+            if kind == "wrong_native_with_valid_alias":
+                changed["input"].update(source_video_sha256="0"*64, video_sha256=entry["video_sha256"])
+            if kind == "missing_raw": changed["input"]["input_artifact_sha256"].pop("events.jsonl")
+            if kind == "wrong_raw": changed["input"]["input_artifact_sha256"]["frames.jsonl"] = "0"*64
+            if kind == "extra_raw": changed["input"]["input_artifact_sha256"]["unbound.json"] = "0"*64
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, "report_source_artifact_binding_mismatch"):
+                m.compact_report(changed, entry, self.rules)
+
+    def test_actual_usta_cycle_adapter_compacts_all_thirty_null_instances(self):
+        from rallymate_service.footwork_cycle_artifacts import build_footwork_cycle_artifact_report
+        entry = next(e for e in self.manifest["executions"] if e["route"] == "footwork_cycle")
+        artifact_root = Path(os.environ.get("CARD_ARTIFACT_ROOT", ROOT))
+        directory, video = artifact_root/entry["run_dir"], artifact_root/entry["local_video"]
+        if not directory.is_dir() or not video.is_file():
+            self.skipTest("physical USTA originals unavailable; recorded cycle schema test still executes")
+        before = {name: m.sha(directory/name) for name in entry["input_artifact_sha256"]}
+        self.assertEqual(before, entry["input_artifact_sha256"])
+        report = build_footwork_cycle_artifact_report(directory,
+            m.read_json(artifact_root/entry["annotation_path"]), video_path=video)
+        self.assertTrue(all(report["input"][key] is True for key in
+            ("artifact_files_verified", "decoder_verified_from_original_video", "service_eligible")))
+        self.assertNotIn("video_sha256", report["input"])
+        self.assertEqual(report["input"]["source_video_sha256"], entry["video_sha256"])
+        compact = m.compact_report(report, entry, self.rules)
+        self.assertEqual((compact["instance_count"], compact["status_counts"]), (30, {"unavailable": 30}))
+        self.assertTrue(all(row["score"] is None for row in compact["instances"]))
+        self.assertEqual(before, {name: m.sha(directory/name) for name in before})
 
     def test_application_contract_and_arithmetic_mutations_rejected(self):
         entry, report = self.applications["directional_micro"]
