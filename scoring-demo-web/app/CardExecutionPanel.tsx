@@ -7,6 +7,7 @@ import { cycleFrameTime, cycleMotionSteps, type FootworkCycleEvidence } from "./
 import ManualCardEvidence from "./ManualCardEvidence";
 import GsPreloadEvidence from "./GsPreloadEvidence";
 import { isFormalScoringPolicy } from "./lib/formal-card-scoring-policy";
+import TechniqueExamples from "./TechniqueExamples";
 
 const metricLabels: Record<string, string> = {
   hip_drop_torso: "髋部下降", left_knee_flexion_change_deg: "左膝屈曲变化", right_knee_flexion_change_deg: "右膝屈曲变化",
@@ -139,6 +140,7 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
         <details><summary>版本与来源</summary><p>事件：{instance.event_id} · 球员轨迹 {instance.person_track_id}</p><p>计算版本：{instance.measurement_version || "未生成测量"}</p><p>原卡定位：{instance.source.document_id} · {instance.source.table}</p>{instance.source_stage && <p>阶段标注：{instance.source_stage.binding.source} · {instance.source_stage.binding.version}</p>}<p>规则阈值为工程暂定值，尚无专家标定准确率。</p></details>
       </div> : <p>本次没有可用的计算实例，不生成分数。</p>}
       <p className="indicator-grade-note">{formal ? "总分来自有完整计算依据的评分卡，缺失卡保留在覆盖范围中。" : "原卡等级、视觉代理与人工复核分别统计，未合并为总分。"}</p>
+      <TechniqueExamples indicatorId={card.indicator_id} />
     </article> : <p>没有匹配的评分卡。</p>}
   </details>;
 }
