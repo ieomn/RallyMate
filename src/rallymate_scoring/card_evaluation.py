@@ -3,12 +3,57 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from collections.abc import Mapping
+from copy import deepcopy
 import statistics
 
-from .card_kinematics import DYNAMIC_SPECS, SPECS, finite, measure_card_window
+from .card_kinematics import DYNAMIC_SPECS, SPECS, VERSION as KINEMATICS_VERSION, finite, measure_card_window
 from .card_scoring_policy import GRADE_POINTS, apply_scoring_policy
 
 VERSION = "card-evaluation-v1.0.0"
+HAND_RACKET_SCORING_REVISION = "gs01-m09-hand-racket-observability-v1.0.0"
+HAND_RACKET_AUXILIARY_VERSION = "gs-hand-racket-auxiliary-v1.0.0"
+
+
+def hand_racket_observability_metadata(rule):
+    """Only the two revised source cards opt into this non-scoring path."""
+    evaluation = rule.get("evaluation", {})
+    if (rule.get("indicator_id") not in {"GS01-M09-04", "GS01-M09-05"}
+            or evaluation.get("scoring_revision_id") != HAND_RACKET_SCORING_REVISION):
+        return {}
+    return {"scoring_revision_id": HAND_RACKET_SCORING_REVISION,
+            "missing_required_observables": list(evaluation["required_observables"])}
+
+
+def _source_stage_bound(identifier, window):
+    binding = window.get("stage_binding", {})
+    event_code, part = identifier.split("-")[:2]
+    stage = window.get("stage_code")
+    if stage == part:
+        stage = event_code + "-" + stage
+    return (window.get("event_code") == event_code and stage == event_code + "-" + part
+        and isinstance(window.get("event_id"), str) and bool(window["event_id"])
+        and isinstance(window.get("video_id"), str) and bool(window["video_id"])
+        and isinstance(binding, Mapping) and binding.get("method") in {"manual_anchor", "versioned_detector"}
+        and isinstance(binding.get("version"), str) and bool(binding["version"]))
+
+
+def _hand_racket_auxiliary(rule, samples, window, timeline):
+    """Recompute the old wrist metric, with no condition or grade conversion."""
+    output = {"version": HAND_RACKET_AUXILIARY_VERSION,
+        "semantics": "bilateral_wrist_geometry_only_not_hand_racket_approach_or_control",
+        "measurement_version": KINEMATICS_VERSION,
+        "scoring_eligible": False, "status": "unavailable", "measurements": {}, "reason_codes": []}
+    if not _source_stage_bound(rule["indicator_id"], window):
+        output["reason_codes"] = ["source_stage_binding_missing_or_mismatched"]
+        return output
+    measured = measure_card_window(samples, window, timeline,
+        required_joint_names=("left_shoulder", "right_shoulder", "left_hip", "right_hip", "left_wrist", "right_wrist"))
+    wrist = deepcopy(measured["measurements"]["wrist_separation_torso"])
+    output.update(measurement_version=measured["version"], measurements={"wrist_separation_torso": wrist},
+                  reason_codes=sorted(set(measured["reason_codes"] + wrist["reason_codes"])))
+    if finite(wrist.get("statistics", {}).get("delta")) and wrist["geometry_gate_passed"] and not output["reason_codes"]:
+        output["status"] = "measured_auxiliary"
+    return output
 
 
 def _condition(condition, measurements):
@@ -73,20 +118,14 @@ def _evaluate_card_window(rule, samples, window, timeline):
               "reason_codes": [], "conditions": [], "source_grade_supported": False,
               "threshold_basis": evaluation.get("numeric_basis", "engineering_v1_uncalibrated")}
     if evaluation.get("kind") == "manual_review":
+        metadata = hand_racket_observability_metadata(rule)
+        if metadata:
+            result.update(**metadata, status="unavailable", reason_codes=[evaluation["score_block_reason_code"]],
+                auxiliary_observations=_hand_racket_auxiliary(rule, samples, window, timeline))
+            return result
         result.update(status="review_required", reason_codes=["required_observable_not_recoverable_from_pose"])
         return result
-    binding = window.get("stage_binding", {})
-    event_code, part = identifier.split("-")[:2]
-    canonical_stage = event_code + "-" + part
-    supplied_stage = window.get("stage_code")
-    if supplied_stage == part:
-        supplied_stage = event_code + "-" + supplied_stage
-    if (window.get("event_code") != identifier.split("-")[0]
-            or supplied_stage != canonical_stage
-            or not isinstance(window.get("event_id"), str) or not window["event_id"]
-            or not isinstance(window.get("video_id"), str) or not window["video_id"]
-            or not isinstance(binding, Mapping) or binding.get("method") not in {"manual_anchor", "versioned_detector"}
-            or not isinstance(binding.get("version"), str) or not binding["version"]):
+    if not _source_stage_bound(identifier, window):
         result["reason_codes"] = ["source_stage_binding_missing_or_mismatched"]
         return result
     conditions = evaluation.get("conditions", [])

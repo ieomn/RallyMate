@@ -912,55 +912,41 @@ export default {
     },
     "GS01-M09-04": {
       "stage_code": "GS01-M09",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "wrist_separation_torso.delta",
-          "lte",
-          -0.15,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T047",
         "rubric_sha256": "d99e70faf12a2f2cd84c29afba1794733f5dd463dc334429e50a3c9b250cdb67"
-      }
+      },
+      "scoring_revision_id": "gs01-m09-hand-racket-observability-v1.0.0",
+      "score_block_reason_code": "non_racket_hand_to_racket_source_required",
+      "required_observables": [
+        "source_bound_non_racket_hand_identity",
+        "source_bound_racket_geometry",
+        "continuous_hand_to_racket_approach"
+      ]
     },
     "GS01-M09-05": {
       "stage_code": "GS01-M09",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "wrist_separation_torso.delta",
-          "lte",
-          -0.15,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T048",
         "rubric_sha256": "f2e83b440ec952d81a0e865d3d1c54a50fea7a7fcc274935b00c7e12728c7ab2"
-      }
+      },
+      "scoring_revision_id": "gs01-m09-hand-racket-observability-v1.0.0",
+      "score_block_reason_code": "hand_racket_control_sequence_required",
+      "required_observables": [
+        "source_bound_non_racket_hand_identity",
+        "source_bound_racket_handle_or_contact_region",
+        "hand_racket_recontact_or_control_sequence"
+      ]
     },
     "GS01-M10-01": {
       "stage_code": "GS01-M10",

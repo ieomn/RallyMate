@@ -7,10 +7,10 @@ from pathlib import Path
 import unittest
 
 from rallymate_scoring.card_rule_catalog import load_card_rules
-from rallymate_service.gs_card_execution import compute_gs_card_execution, validate_stage_annotations
+from rallymate_service.gs_card_execution import build_gs_card_execution_report, compute_gs_card_execution, validate_stage_annotations
 from scripts.replay_gs_follow_through_validation import (
     FIXED_WINDOWS, FROZEN_SHA, assert_source_windows, build_annotations,
-    compact_report, normalized_sha256, replay, source_ms, validate_manifest,
+    compact_report, normalized_sha256, sha256, source_ms, validate_manifest, verify_artifacts,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +33,24 @@ class GSFollowThroughValidationTests(unittest.TestCase):
         return compute_gs_card_execution(raw["frame_records"], raw["primary_timeline"], raw["decoder_timeline"],
             document, source_job_id=raw["source_job_id"])
 
+    def assert_current_instances_preserve_historical_measurements(self, instances):
+        old = {(row["indicator_id"], row["event_id"]): row for row in self.expected["instances"]}
+        self.assertEqual(len(instances), len(old))
+        for row in instances:
+            previous = old[(row["indicator_id"], row["event_id"])]
+            if row["indicator_id"] not in {"GS01-M09-04", "GS01-M09-05"}:
+                self.assertEqual(row, previous)
+                continue
+            self.assertEqual(row["status"], "unavailable")
+            self.assertEqual(row["conditions"], [])
+            self.assertEqual(row["window"], previous["window"])
+            self.assertEqual(row["source_stage_evidence"], previous["source_stage_evidence"])
+            for field in ("grade", "proxy_grade", "score", "original_grade"):
+                self.assertIsNone(row[field])
+            measurement = row["auxiliary_observations"]["measurements"]["wrist_separation_torso"]
+            self.assertEqual(measurement, previous["conditions"][0]["evidence"])
+            self.assertEqual(measurement["statistics"].get("delta"), previous["conditions"][0]["value"])
+
     def test_frozen_boundaries_parent_revisions_and_historical_inputs(self):
         self.assertEqual(normalized_sha256(WINDOWS.read_bytes()), self.expected["window_manifest_utf8_lf_sha256"])
         self.assertEqual(self.expected["frozen_boundary_sha256"], FROZEN_SHA)
@@ -53,10 +71,9 @@ class GSFollowThroughValidationTests(unittest.TestCase):
 
     def test_original_observations_recompute_twenty_full_instances(self):
         compact = compact_report(self.manifest, self.report)
-        self.assertEqual(compact["instances"], self.expected["instances"])
+        self.assert_current_instances_preserve_historical_measurements(compact["instances"])
         self.assertEqual(compact["stage_windows"], self.expected["stage_windows"])
-        self.assertEqual(compact["condition_diagnostics"], self.expected["condition_diagnostics"])
-        self.assertEqual(Counter(row["status"] for row in compact["instances"]), {"scored": 5, "unavailable": 15})
+        self.assertEqual(Counter(row["status"] for row in compact["instances"]), {"scored": 3, "unavailable": 17})
         self.assertEqual(compact["summary"]["card_instance_count"], 20)
         self.assertFalse(self.report["input"]["artifact_files_verified"])
         for row in compact["instances"]:
@@ -82,11 +99,11 @@ class GSFollowThroughValidationTests(unittest.TestCase):
             self.assertIsNotNone(row["conditions"][1]["value"], "measured tilt must survive a missing displacement")
             self.assertIsNone(row["conditions"][1]["passed"], "incomplete card cannot gain a grade")
         approach = cards["GS01-M09-04"]
-        self.assertEqual([row["score"] for row in approach], [20, None, None, None])
-        self.assertAlmostEqual(approach[0]["conditions"][0]["value"], -.0846946610547554)
-        self.assertFalse(approach[0]["conditions"][0]["passed"])
-        self.assertEqual([row["conditions"][0]["evidence"]["total_frame_count"] for row in approach], [6, 5, 5, 6])
-        self.assertEqual(approach[3]["conditions"][0]["evidence"]["valid_frame_count"], 5)
+        self.assertEqual([row["score"] for row in approach], [None]*4)
+        measurements = [row["auxiliary_observations"]["measurements"]["wrist_separation_torso"] for row in approach]
+        self.assertAlmostEqual(measurements[0]["statistics"]["delta"], -.0846946610547554)
+        self.assertEqual([row["total_frame_count"] for row in measurements], [6, 5, 5, 6])
+        self.assertEqual(measurements[3]["valid_frame_count"], 5)
 
     def test_original_control_requirement_is_not_proved_by_duplicate_approach_predicate(self):
         rules = {row["indicator_id"]: row for row in load_card_rules()["cards"]}
@@ -94,11 +111,15 @@ class GSFollowThroughValidationTests(unittest.TestCase):
         self.assertEqual((approach["source"]["table"], control["source"]["table"]), ("T047", "T048"))
         self.assertIn("主动接近", approach["effective"]["definition"])
         self.assertIn("控制", control["effective"]["definition"])
-        self.assertEqual(approach["evaluation"]["conditions"], control["evaluation"]["conditions"])
-        self.assertEqual(approach["evaluation"]["conditions"][0]["metric"], "wrist_separation_torso.delta")
+        self.assertEqual(approach["evaluation"]["conditions"], [])
+        self.assertEqual(control["evaluation"]["conditions"], [])
+        self.assertNotEqual(approach["evaluation"]["required_observables"], control["evaluation"]["required_observables"])
         cards = {row["indicator_id"]: row["instances"] for row in self.report["cards"]}
         for a, b in zip(cards["GS01-M09-04"], cards["GS01-M09-05"]):
-            self.assertEqual(a["conditions"], b["conditions"])
+            self.assertNotEqual(a["missing_required_observables"], b["missing_required_observables"])
+            self.assertEqual(a["auxiliary_observations"], b["auxiliary_observations"])
+            self.assertIsNone(a["score"])
+            self.assertIsNone(b["score"])
         self.assertFalse(self.expected["summary"]["original_contact_or_control_verified"])
         self.assertFalse(self.expected["summary"]["independent_behavior_count_claimed"])
 
@@ -137,12 +158,17 @@ class GSFollowThroughValidationTests(unittest.TestCase):
         artifact = Path(os.environ.get("CARD_ARTIFACT_ROOT", str(ROOT)))
         if not (artifact/self.manifest["case"]["local_video"]).is_file():
             self.skipTest("original_MIT_media_and_frozen_review_assets_unavailable")
-        output = artifact/".codex_tmp/gs-follow-through-validation-20261024/integration-test"
-        result = json.loads(replay(WINDOWS, artifact, output).read_text(encoding="utf-8"))
-        self.assertEqual(result["instances"], self.expected["instances"])
-        self.assertTrue(result["input"]["artifact_files_verified"])
-        self.assertTrue(result["input"]["decoder_verified_from_original_video"])
-        self.assertTrue(result["runtime"]["all_imported_source_matches_commit"])
+        # The frozen producer and fixture remain historical. Execute the current
+        # strict adapter without claiming its source equals that old commit.
+        before = verify_artifacts(self.manifest, artifact)
+        case = self.manifest["case"]
+        report = build_gs_card_execution_report(artifact/case["run_dir"], self.document,
+            video_path=artifact/case["local_video"])
+        self.assert_current_instances_preserve_historical_measurements(
+            [row for card in report["cards"] for row in card["instances"]])
+        self.assertTrue(report["input"]["artifact_files_verified"])
+        self.assertTrue(report["input"]["decoder_verified_from_original_video"])
+        self.assertTrue(all(sha256(artifact/name) == digest for name, digest in before.items()))
 
 
 if __name__ == "__main__":

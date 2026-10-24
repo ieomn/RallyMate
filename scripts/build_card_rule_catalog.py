@@ -123,6 +123,19 @@ def gs_evaluation(rule):
     """Reviewed behavior families; output retains card-specific source definition."""
     identifier = rule["indicator_id"]
     name = rule["name_zh"]
+    if identifier in {"GS01-M09-04", "GS01-M09-05"}:
+        approach = identifier.endswith("04")
+        result = evaluation("non_racket_hand_approach_requires_racket_source" if approach else "racket_control_reentry_requires_sequence", [], kind="manual_review",
+            limitation=("非持拍手接近球拍需要明确手侧、同源球拍几何及手到球拍的连续相对运动；双腕靠近不能代替。缺少必要球拍来源时不评分。"
+                if approach else "球拍重新进入非持拍手控制需要同源手与球拍接触区域及重新接触或控制时序；双腕靠近或末端稳定不能代替。接触后支持窗必须另行绑定，不暗扩M09。缺少必要来源时不评分。"))
+        result.update(scoring_revision_id="gs01-m09-hand-racket-observability-v1.0.0",
+            score_block_reason_code="non_racket_hand_to_racket_source_required" if approach else "hand_racket_control_sequence_required",
+            required_observables=["source_bound_non_racket_hand_identity", "source_bound_racket_geometry", "continuous_hand_to_racket_approach"]
+                if approach else ["source_bound_non_racket_hand_identity", "source_bound_racket_handle_or_contact_region", "hand_racket_recontact_or_control_sequence"],
+            auxiliary_observations=[{"metric": "wrist_separation_torso.delta", "unit": "torso", "required_joint_names": WRISTS,
+                "measurement_semantics": METRICS["wrist_separation_torso.delta"]["definition"],
+                "description": "双腕距离变化仅为人体相对几何附属观察，不证明手向球拍接近、接触或控制。", "scoring_eligible": False}])
+        return result
     if identifier == "GS01-M03-04":
         result = evaluation("racket_side_loading_review", [], kind="manual_review",
             limitation="任意方向髋位移不能证明向持拍侧加载。需绑定持拍侧、支撑脚与髋相对支撑变化，再区分视觉侧移和真实承重；现有无方向位移只作附属观察，不判加载代理等级。")

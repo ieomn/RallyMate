@@ -19,7 +19,7 @@ import re
 import subprocess
 
 from rallymate_features.coordinates import validated_camera_transform
-from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_card_scores
+from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_card_scores, hand_racket_observability_metadata
 from rallymate_scoring.card_scoring_policy import apply_scoring_policy, apply_report_scoring_policy
 from rallymate_scoring.card_kinematics import MODEL_EPOCH_SEMANTICS, _point as _valid_card_point, finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
@@ -454,10 +454,13 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
 
 
 def _unavailable(rule, window, reasons):
+    revision = hand_racket_observability_metadata(rule)
+    if revision:
+        reasons = list(reasons) + [rule["evaluation"]["score_block_reason_code"]]
     return {"version": VERSION, "indicator_id": rule["indicator_id"], "rule_version": rule["rule_version"],
         "video_id": window["video_id"], "event_id": window["event_id"], "person_track_id": window["person_track_id"],
         "window": window, "status": "unavailable", "original_grade": None, "proxy_grade": None, "score": None,
-        "source_grade_supported": False, "reason_codes": sorted(set(reasons)), "conditions": []}
+        "source_grade_supported": False, "reason_codes": sorted(set(reasons)), "conditions": [], **revision}
 
 
 def _bind_racket_side_observations(document, timeline, by_track):
@@ -618,7 +621,9 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             "rule_kind": rule["evaluation"]["kind"], "name_zh": rule["effective"]["name_zh"],
             "runtime_engine": VERSION if actual else None, "run_status": run_status, "reason_codes": reasons,
             "original_grade": None, "source_grade_supported": False, "instance_count": len(actual),
-            "instance_status_counts": dict(Counter(row["status"] for row in actual)), "instances": actual})
+            "instance_status_counts": dict(Counter(row["status"] for row in actual)), "instances": actual,
+            **({"scoring_revision_id": rule["evaluation"]["scoring_revision_id"]}
+               if hand_racket_observability_metadata(rule) else {})})
         instances.extend(actual)
     return apply_report_scoring_policy({"version": VERSION, "rule_version": catalogue["version"], "source_run_id": document["source_run_id"],
         "input": {"source": "frame_observations_primary_selection_decoder_pts_and_explicit_stage_annotations",

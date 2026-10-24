@@ -24,7 +24,7 @@ export const CARD_RUN_LABELS = { scored: "已评分", proxy_scored: "有视觉�
 export type CardRunStatus = keyof typeof CARD_RUN_LABELS;
 type Obj = Record<string, unknown>;
 type ConditionSpec = [string, "gte" | "lte" | "between" | "eq", number | [number, number], string];
-type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: string[]; conditions: ConditionSpec[]; source: CardInstance["source"] };
+type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: string[]; conditions: ConditionSpec[]; source: CardInstance["source"]; scoring_revision_id?: string; score_block_reason_code?: string; required_observables?: string[] };
 const GS_CARD_CONTRACTS = gsContract.cards as unknown as Record<string, GsSpec>;
 type FootworkSpec = Omit<GsSpec, "stage_code"> & { limitation: string };
 const FOOTWORK_CARD_CONTRACTS = footworkContract.cards as unknown as Record<string, FootworkSpec>;
@@ -121,6 +121,11 @@ export interface CardInstance {
   model_scoring_policy_version: string | null;
   temporal_evidence: EvidenceObject | null;
   local_dip_validation: LocalDipValidation | null;
+  scoring_revision_id: string | null;
+  missing_required_observables: string[];
+  auxiliary_observations: EvidenceObject | null;
+  superseded_conditions: CardCondition[];
+  superseded_condition_evidence: EvidenceObject[];
   auxiliary_evidence: EvidenceObject | null;
   auxiliary_parent_context: EvidenceObject | null;
   step_motion_validation: StepMotionValidation | null;
@@ -252,10 +257,28 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
     measurement_provenance: evidenceObject(row.measurement_provenance),
     model_scoring_policy_version: text(row.model_scoring_policy_version) || null,
     temporal_evidence: TEMPORAL_CARD_CONDITIONS[id] ? evidenceObject(row.temporal_evidence ?? row.evidence) : null, local_dip_validation: null,
+    scoring_revision_id: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? text(row.scoring_revision_id) || null : null,
+    missing_required_observables: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? strings(row.missing_required_observables) : [],
+    auxiliary_observations: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? evidenceObject(row.auxiliary_observations) : null,
+    superseded_conditions: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? list(row.superseded_conditions, 30).map(conditionOf).map(c => ({ ...c, passed: null })) : [],
+    superseded_condition_evidence: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? list(row.superseded_condition_evidence, 30).map(evidenceObject).filter((e): e is EvidenceObject => e !== null) : [],
     auxiliary_evidence: auxiliary, auxiliary_parent_context: auxiliaryParent, auxiliary_validation: null, step_motion_validation: null,
     limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitation_codes ?? row.limitations)].map(value => limitationLabel(value, formal)))],
     limitation_codes: strings(row.limitation_codes ?? row.limitations),
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
+  // These two historical wrist-distance predicates were retired: neither
+  // establishes the corresponding hand-to-racket behavior. Keep source rows
+  // and observations, but never accept saved scores or auxiliary pass bits.
+  const revision = GS_CARD_CONTRACTS[id];
+  if (revision?.scoring_revision_id) {
+    const revised = { ...result, scoring_revision_id: revision.scoring_revision_id,
+      missing_required_observables: [...(revision.required_observables ?? [])], conditions: [],
+      superseded_conditions: conditions.length ? conditions.map(c => ({ ...c, passed: null })) : result.superseded_conditions,
+      superseded_condition_evidence: conditions.length ? list(row.conditions, 30).map(c => ({ metric: text(obj(c).metric), evidence: evidenceObject(obj(c).evidence) })) : result.superseded_condition_evidence };
+    if (row.scoring_revision_id !== revision.scoring_revision_id || conditions.length)
+      revised.reason_codes = [...new Set([...revised.reason_codes, "hand_racket_scoring_rule_revised"])];
+    return invalidate(revised, revision.score_block_reason_code ?? "required_observable_not_recoverable_from_pose");
+  }
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
   if (policy !== reportPolicy || reportPolicy !== null && !isFormalScoringPolicy(reportPolicy)
       || state === "scored" && !formal || state === "proxy_scored" && formal) return invalidate(result, "scoring_policy_mismatch");
@@ -332,7 +355,10 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     const micro = id in microContract.cards && row.application_rule_version === microContract.application_rule_version && row.runtime_engine === microContract.runtime_engine;
     const microCycles = id === microCycleContract.card_id && row.application_rule_version === microCycleContract.application_rule_version && row.runtime_engine === microCycleContract.runtime_engine;
     const runtimeEngine = microCycles ? microCycleContract.runtime_engine : micro ? microContract.runtime_engine : GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
-    if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
+    const revisedGs = GS_CARD_CONTRACTS[id]?.scoring_revision_id ? GS_CARD_CONTRACTS[id] : null;
+    const retiredGsKind = Boolean(revisedGs && row.rule_kind === "visual_proxy" && revisedGs.rule_kind === "manual_review");
+    if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind && !retiredGsKind) { rejected++; continue; }
+    const effectiveKind = revisedGs?.rule_kind ?? text(row.rule_kind);
     if (FOOTWORK_CARD_CONTRACTS[id] && row.rule_kind !== FOOTWORK_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     if (FS_WINDOW_CONTRACTS[id] && row.rule_kind !== FS_WINDOW_CONTRACTS[id].rule_kind) { rejected++; continue; }
     const seenInstances = new Map<string, CardInstance>(), conflicting = new Set<string>();
@@ -352,10 +378,10 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
       .map(instance => instance.status === "scored" && instance.micro_cycle_validation && (cycleExecutionConflict || !validMicroReportCopies(instance, cycleExecution, cycleWindows, microCycleContract))
         ? invalidate(instance, "micro_cycle_report_source_mismatch") : instance)
       .map(instance => ["scored", "proxy_scored"].includes(instance.status) && (row.runtime_engine !== runtimeEngine || ((micro || microCycles) ? row.rule_kind !== "manual_review" || instance.application_rule_version !== (microCycles ? microCycleContract.application_rule_version : microContract.application_rule_version) : row.rule_kind !== "visual_proxy")) ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
-    const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : row.rule_kind === "manual_review" || row.run_status === "review_required" ? formal ? "unavailable" : "review_required" : "not_executed";
+    const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : effectiveKind === "manual_review" || row.run_status === "review_required" ? formal ? "unavailable" : "review_required" : "not_executed";
     const status: CardRunStatus = instances.some(i => i.status === "scored") ? "scored" : instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
-    const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: text(row.rule_kind),
-      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, application_rule_version: text(row.application_rule_version) || null, run_status: status, reason_codes: strings(row.reason_codes), instances, instance_count: instances.length };
+    const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: effectiveKind,
+      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, application_rule_version: text(row.application_rule_version) || null, run_status: status, reason_codes: [...new Set([...strings(row.reason_codes), ...(retiredGsKind ? ["hand_racket_scoring_rule_revised"] : [])])], instances, instance_count: instances.length };
     const prior = seenCards.get(id);
     if (prior) {
       if (JSON.stringify(prior) !== JSON.stringify(card)) { prior.run_status = "unavailable"; prior.reason_codes = [...new Set([...prior.reason_codes, "conflicting_duplicate_card"])]; prior.instances = prior.instances.map(i => invalidate(i, "conflicting_duplicate_card")); conflicts++; }
@@ -484,6 +510,9 @@ export const CARD_REASON_LABELS: Record<string, string> = {
 };
 const PHASE_LABELS: Record<string, string> = { takeoff_proxy_ms: "起跳候选", landing_proxy_ms: "落地候选", stable_control_onset_ms: "重新稳定候选", peak_speed_ms: "速度峰值", deceleration_peak_ms: "减速峰值" };
 const FORMAL_REASON_LABELS: Record<string, string> = {
+  non_racket_hand_to_racket_source_required: "缺少非持拍手身份、同源球拍位置及手向球拍接近的连续观测",
+  hand_racket_control_sequence_required: "缺少非持拍手与拍柄或接触区域重新建立持续关系的观测",
+  hand_racket_scoring_rule_revised: "旧双腕距离评分依据已修订；保留观测，未生成手拍动作分数",
   fallback_local_dip_action_type_unverified: "局部髋部下降已测量；此证据不确认垫步动作类型",
   temporal_boundary_quality_requires_review: "原事件带有边界或姿态覆盖提示，完整计算子窗的依据随结果保留",
   temporal_required_joint_quality_requires_review: "原必要关节带有跳点或左右混淆候选标记",
@@ -509,3 +538,17 @@ export const cardReasonLabel = (code: string, formal = false) => {
   if (reason === "phase_boundary_censored") return `${PHASE_LABELS[phase] ?? "所需阶段"}边界被片段截断`;
   return formal === true ? `来源记录：${code}` : "计算证据未通过校验，需要复核原始动作片段";
 };
+
+export function handRacketAuxiliarySummary(instance: CardInstance): string {
+  if (!GS_CARD_CONTRACTS[instance.indicator_id]?.scoring_revision_id) return "";
+  const a = obj(instance.auxiliary_observations), m = obj(obj(a.measurements).wrist_separation_torso);
+  const usable = a.version === "gs-hand-racket-auxiliary-v1.0.0" && a.scoring_eligible === false
+    && a.semantics === "bilateral_wrist_geometry_only_not_hand_racket_approach_or_control"
+    && a.measurement_version === gsContract.measurement_version && a.status === "measured_auxiliary"
+    && m.geometry_gate_passed === true && m.unit === "torso";
+  const delta = usable ? number(obj(m.statistics).delta) : null;
+  const prior = instance.superseded_conditions.find(c => c.metric === "wrist_separation_torso.delta")?.value ?? null;
+  const value = delta ?? prior;
+  const record = value === null ? "双腕距离变化缺测" : `${delta === null ? "旧规则" : ""}双腕距离变化记录 ${value.toLocaleString("zh-CN", { maximumFractionDigits: 6 })} 躯干长度`;
+  return `${record}；双腕观测不用于判定手到球拍的接近或重新控制，本卡未评分`;
+}

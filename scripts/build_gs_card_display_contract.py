@@ -28,6 +28,9 @@ def build_contract(catalogue):
             "conditions": conditions,
             "source": {key: rule["source"][key] for key in
                 ("document_id", "document_sha256", "table", "rubric_sha256")}}
+        if evaluation.get("scoring_revision_id"):
+            cards[rule["indicator_id"]].update({key: evaluation[key] for key in
+                ("scoring_revision_id", "score_block_reason_code", "required_observables")})
     return {"rule_version": catalogue["version"], "runtime_engine": "gs-card-execution-v1.0.0",
         "measurement_version": "card-kinematics-v1.0.0", "cards": cards}
 

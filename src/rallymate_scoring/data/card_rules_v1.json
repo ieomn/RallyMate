@@ -18272,43 +18272,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "hands_reapproach",
-        "conditions": [
-          {
-            "key": "wrist_separation_torso.delta",
-            "metric": "wrist_separation_torso.delta",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕靠近",
-            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": -0.15
-          }
-        ],
+        "kind": "manual_review",
+        "family": "non_racket_hand_approach_requires_racket_source",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -18319,10 +18293,34 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "双腕靠近只是接拍候选，手拍接触须球拍证据复核。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "非持拍手接近球拍需要明确手侧、同源球拍几何及手到球拍的连续相对运动；双腕靠近不能代替。缺少必要球拍来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "scoring_revision_id": "gs01-m09-hand-racket-observability-v1.0.0",
+        "score_block_reason_code": "non_racket_hand_to_racket_source_required",
+        "required_observables": [
+          "source_bound_non_racket_hand_identity",
+          "source_bound_racket_geometry",
+          "continuous_hand_to_racket_approach"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "description": "双腕距离变化仅为人体相对几何附属观察，不证明手向球拍接近、接触或控制。",
+            "scoring_eligible": false
+          }
+        ]
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -18601,43 +18599,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "hands_reapproach",
-        "conditions": [
-          {
-            "key": "wrist_separation_torso.delta",
-            "metric": "wrist_separation_torso.delta",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕靠近",
-            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": -0.15
-          }
-        ],
+        "kind": "manual_review",
+        "family": "racket_control_reentry_requires_sequence",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -18648,10 +18620,34 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "双腕靠近只是接拍候选，手拍接触须球拍证据复核。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "球拍重新进入非持拍手控制需要同源手与球拍接触区域及重新接触或控制时序；双腕靠近或末端稳定不能代替。接触后支持窗必须另行绑定，不暗扩M09。缺少必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "scoring_revision_id": "gs01-m09-hand-racket-observability-v1.0.0",
+        "score_block_reason_code": "hand_racket_control_sequence_required",
+        "required_observables": [
+          "source_bound_non_racket_hand_identity",
+          "source_bound_racket_handle_or_contact_region",
+          "hand_racket_recontact_or_control_sequence"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "description": "双腕距离变化仅为人体相对几何附属观察，不证明手向球拍接近、接触或控制。",
+            "scoring_eligible": false
+          }
+        ]
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,

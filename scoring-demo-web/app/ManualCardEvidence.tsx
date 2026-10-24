@@ -1,4 +1,4 @@
-import type { CardInstance } from "./lib/card-execution";
+import { handRacketAuxiliarySummary, type CardInstance } from "./lib/card-execution";
 import { objectOf, validRacketSide } from "./lib/manual-card-evidence";
 import FsStepMotionEvidence from "./FsStepMotionEvidence";
 import MicroAdjustmentCyclesEvidence from "./MicroAdjustmentCyclesEvidence";
@@ -13,6 +13,14 @@ export default function ManualCardEvidence({ instance }: { instance: CardInstanc
   const observation = proof?.observation, validSide = proof && validRacketSide(proof, instance, instance.source_stage);
   const binding = objectOf(a?.binding);
   return <>
+    {instance.scoring_revision_id && <div className="card-hand-racket-evidence">
+      <p>{handRacketAuxiliarySummary(instance)}</p>
+      <details><summary>双腕辅助观测与规则修订记录</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{JSON.stringify({
+        scoring_revision_id: instance.scoring_revision_id, missing_required_observables: instance.missing_required_observables,
+        auxiliary_observations: instance.auxiliary_observations, superseded_conditions: instance.superseded_conditions,
+        superseded_condition_evidence: instance.superseded_condition_evidence,
+      }, null, 2)}</pre></details>
+    </div>}
     {instance.measurement_provenance && <div className="card-model-measurement-provenance">
       <p>模型测量来源随结果保留，应用评分政策与原始测量来源分别记录。</p>
       <details><summary>完整模型测量来源记录</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{JSON.stringify({ model_scoring_policy_version: instance.model_scoring_policy_version, measurement_provenance: instance.measurement_provenance }, null, 2)}</pre></details>
