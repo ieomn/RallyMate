@@ -1,0 +1,323 @@
+{
+  "version": "card-execution-inputs-v5.0.0",
+  "baseline_manifest": {
+    "path": "tests/fixtures/card-execution-inputs-v4.json",
+    "raw_sha256": "5d2bce2fa333917ae4a334f2441a576346a5c36a4636a93472bb6d8e68a90285",
+    "utf8_lf_sha256": "cfc0fe2dca10750839d569dda4dbfb990ba3662ca3d4e4d28059d0637b341fee"
+  },
+  "inventory_manifests": [
+    "tests/fixtures/card-video-cases.json",
+    "tests/fixtures/card-video-cases-extension-20261022.json",
+    "tests/fixtures/card-video-cases-heldout-20261022.json"
+  ],
+  "executions": [
+    {
+      "id": "temporal-original",
+      "route": "temporal",
+      "source_run_id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+      "run_dir": ".codex_tmp/local-migration-20261019/local-data/runs/0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+      "local_video": ".codex_tmp/local-migration-20261019/local-data/uploads/0a3df3a3-2629-4dd5-80a1-54e4b11f7341.mp4",
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "input_artifact_sha256": {
+        "frames.jsonl": "88d8675ce0c1d6ad2230973570b73ba672225f9cee4c0a05fb2146c2a7cd4fb6",
+        "primary-player.jsonl": "ce7aaad4485565f9314bae2f1cfddf09bcc6302e049315165e3ed4e733e59576",
+        "summary.json": "c11e04786f6e21abc1fd6723b491f2bba0faba0a499bbb4930401188d9d758ba",
+        "events.jsonl": "743e087a7dc83823477c0d2c270bdad12c0a864b6fd6aae52a441f047d473353"
+      },
+      "cohort": "v3_comparable_nine_groups",
+      "annotation_source_digests": {}
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "id": "gs-preparation-ocw-pe.710-2-forehand-220k",
+      "route": "gs_preparation",
+      "annotation_path": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k/gs-stage-annotations.json",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+        "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+      },
+      "annotation_source_digests": {
+        ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k/gs-stage-annotations.json": {
+          "raw_sha256": "37b24ad86426455d58e2adba6b0ea3b71abf6b97b95894a41a6cd7872d6855dd",
+          "utf8_lf_sha256": "19232571542ed10e98980d591c88bee15e85ab991a5bb0b082a3df5e65f68c0b"
+        }
+      }
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "id": "gs-preparation-ocw-pe.710-1hand_backhand-220k",
+      "route": "gs_preparation",
+      "annotation_path": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k/gs-stage-annotations.json",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "7896343f0c8b9a29056705ff437b9294b251ca558af67a88875d8d33902a598f",
+        "primary-player.jsonl": "60695c660254a1e6e827deae4694558f54c4768f3330fb61a07f791e49c8409e",
+        "summary.json": "27de6664d1a4e40e414bedd01829e47a0623660a879ce73262f5c1ed173cb0a0"
+      },
+      "annotation_source_digests": {
+        ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k/gs-stage-annotations.json": {
+          "raw_sha256": "2a06451d238eba8b00d039e6d6bb4dd783152aabf45fb0d8859c7dbb0c0927dd",
+          "utf8_lf_sha256": "cdecc4ebc98fddfb6daebffda052a5c0f7987199e52e266334f86263d8243ad7"
+        }
+      }
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "id": "gs-preparation-ocw-pe.710-2-hand_backhand-220k",
+      "route": "gs_preparation",
+      "annotation_path": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k/gs-stage-annotations.json",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+        "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+        "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+      },
+      "annotation_source_digests": {
+        ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k/gs-stage-annotations.json": {
+          "raw_sha256": "80d0ae642f134d6f92e6a504d709385cce0717c5b9993d6feccfc40b0a3570d8",
+          "utf8_lf_sha256": "421cd7dacbd2c9d7d312d0f3e690e30e4dda4118eeba6565f76a17d3590fd04d"
+        }
+      }
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "id": "gs-acceleration-ocw-pe.710-2-forehand-220k",
+      "route": "gs_acceleration",
+      "annotation_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+      "annotation_case_id": "ocw-pe.710-2-forehand-220k",
+      "racket_side_manifest": "tests/fixtures/gs-racket-side-observations-20261022.json",
+      "racket_side_case_id": "ocw-pe.710-2-forehand-220k",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+        "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+      },
+      "annotation_source_digests": {
+        "tests/fixtures/gs-acceleration-windows-20261022.json": {
+          "raw_sha256": "db01b85f27e6ea1dce71c0737b45de1d5ffca8a5b015b632d8aaffcd1b2b3eb7",
+          "utf8_lf_sha256": "fe1965d379a687dfac40a51529f919e1d4236a02eb1d46a521197d3b7e4eb83d"
+        },
+        "tests/fixtures/gs-racket-side-observations-20261022.json": {
+          "raw_sha256": "5d7f942a06ba27062d8138f7f7ca396c0dd33ce1967b7fee2fb52dd91d3517b0",
+          "utf8_lf_sha256": "c8637914525bcbe8be1307b39b804a41f50b6b066df8c00a9b8f15334a7e39e5"
+        }
+      }
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "id": "gs-acceleration-ocw-pe.710-1hand_backhand-220k",
+      "route": "gs_acceleration",
+      "annotation_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+      "annotation_case_id": "ocw-pe.710-1hand_backhand-220k",
+      "racket_side_manifest": "tests/fixtures/gs-racket-side-observations-20261022.json",
+      "racket_side_case_id": "ocw-pe.710-1hand_backhand-220k",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "7896343f0c8b9a29056705ff437b9294b251ca558af67a88875d8d33902a598f",
+        "primary-player.jsonl": "60695c660254a1e6e827deae4694558f54c4768f3330fb61a07f791e49c8409e",
+        "summary.json": "27de6664d1a4e40e414bedd01829e47a0623660a879ce73262f5c1ed173cb0a0"
+      },
+      "annotation_source_digests": {
+        "tests/fixtures/gs-acceleration-windows-20261022.json": {
+          "raw_sha256": "db01b85f27e6ea1dce71c0737b45de1d5ffca8a5b015b632d8aaffcd1b2b3eb7",
+          "utf8_lf_sha256": "fe1965d379a687dfac40a51529f919e1d4236a02eb1d46a521197d3b7e4eb83d"
+        },
+        "tests/fixtures/gs-racket-side-observations-20261022.json": {
+          "raw_sha256": "5d7f942a06ba27062d8138f7f7ca396c0dd33ce1967b7fee2fb52dd91d3517b0",
+          "utf8_lf_sha256": "c8637914525bcbe8be1307b39b804a41f50b6b066df8c00a9b8f15334a7e39e5"
+        }
+      }
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "id": "gs-acceleration-ocw-pe.710-2-hand_backhand-220k",
+      "route": "gs_acceleration",
+      "annotation_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+      "annotation_case_id": "ocw-pe.710-2-hand_backhand-220k",
+      "racket_side_manifest": "tests/fixtures/gs-racket-side-observations-20261022.json",
+      "racket_side_case_id": "ocw-pe.710-2-hand_backhand-220k",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+        "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+        "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+      },
+      "annotation_source_digests": {
+        "tests/fixtures/gs-acceleration-windows-20261022.json": {
+          "raw_sha256": "db01b85f27e6ea1dce71c0737b45de1d5ffca8a5b015b632d8aaffcd1b2b3eb7",
+          "utf8_lf_sha256": "fe1965d379a687dfac40a51529f919e1d4236a02eb1d46a521197d3b7e4eb83d"
+        },
+        "tests/fixtures/gs-racket-side-observations-20261022.json": {
+          "raw_sha256": "5d7f942a06ba27062d8138f7f7ca396c0dd33ce1967b7fee2fb52dd91d3517b0",
+          "utf8_lf_sha256": "c8637914525bcbe8be1307b39b804a41f50b6b066df8c00a9b8f15334a7e39e5"
+        }
+      }
+    },
+    {
+      "id": "cycle-usta-manual-fs04",
+      "route": "footwork_cycle",
+      "source_run_id": "extension-fs-usta-return-footwork-heldout",
+      "run_dir": ".codex_tmp/cycle-artifact-clean-check-20261022/runs/extension-fs-usta-return-footwork-heldout",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-footwork.mp4",
+      "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+      "annotation_path": ".codex_tmp/cycle-artifact-clean-check-20261022/runs/extension-fs-usta-return-footwork-heldout/footwork-cycle-annotations.json",
+      "cohort": "v3_comparable_nine_groups",
+      "input_artifact_sha256": {
+        "frames.jsonl": "176b05874bab181f13118e6103a762866cbfc6769e56f1bca1eb663a55189593",
+        "primary-player.jsonl": "9a5fe0c6b0d5f18eb7c3085c3225558041c2295fd90f0636fb00bc5b7a003cee",
+        "summary.json": "0780e7ad8f02d5eb59cd2b3538fcb65d88c3eca71a43f03e119bdf073891e56d",
+        "events.jsonl": "db28426728b58210420c42911c59140685ab6d0432361848ca3f22d7b0fdafde"
+      },
+      "annotation_source_digests": {
+        ".codex_tmp/cycle-artifact-clean-check-20261022/runs/extension-fs-usta-return-footwork-heldout/footwork-cycle-annotations.json": {
+          "raw_sha256": "12f91c7d3e07cb61fee1c0f24541a8fb769ba870a4a4f788b9d590bffb0c3f7c",
+          "utf8_lf_sha256": "ffa4a2e16b6457e9d76094992ec726892cdb236e1153176294cfc82735b282c8"
+        }
+      }
+    },
+    {
+      "id": "fs-manual-usta-three-windows",
+      "route": "fs_card_windows",
+      "source_run_id": "extension-fs-usta-return-footwork-heldout",
+      "run_dir": ".codex_tmp/fs35-real-window-development-20261022/source-runs/extension-fs-usta-return-footwork-heldout",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-footwork.mp4",
+      "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+      "input_artifact_sha256": {
+        "frames.jsonl": "176b05874bab181f13118e6103a762866cbfc6769e56f1bca1eb663a55189593",
+        "primary-player.jsonl": "9a5fe0c6b0d5f18eb7c3085c3225558041c2295fd90f0636fb00bc5b7a003cee",
+        "summary.json": "0780e7ad8f02d5eb59cd2b3538fcb65d88c3eca71a43f03e119bdf073891e56d",
+        "events.jsonl": "db28426728b58210420c42911c59140685ab6d0432361848ca3f22d7b0fdafde"
+      },
+      "annotation_fixture": "tests/fixtures/fs-card-real-usta-manual-v1.json",
+      "cohort": "v3_comparable_nine_groups",
+      "annotation_source_digests": {
+        "tests/fixtures/fs-card-real-usta-manual-v1.json": {
+          "raw_sha256": "85af2d9a53a1f4e0888f6f3c8fc98dc39a91753d64853222dcf0db0965605a16",
+          "utf8_lf_sha256": "9e3fd5d31337871cdbbfc77f1d748b041bcd86cde9ac7b77f97c56c6c9d5e747"
+        }
+      }
+    },
+    {
+      "id": "fs-manual-mit-fs07-frozen-negative",
+      "route": "fs_card_windows",
+      "cohort": "mit_fs07_frozen_development_negative",
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+        "events.jsonl": "31fcec5980f374710124e3002a52777c0b9bbc80e4a0f0e8d8c3c9b91df795e0",
+        "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+      },
+      "annotation_fixture": "tests/fixtures/fs-step-real-mit-development-v1.json",
+      "annotation_source_digests": {
+        "tests/fixtures/fs-step-real-mit-development-v1.json": {
+          "raw_sha256": "b5d78acc94cf1c3a53ab6bc200b484aaf22f13eaf183e5a14b355cf72d50ba0a",
+          "utf8_lf_sha256": "b5d78acc94cf1c3a53ab6bc200b484aaf22f13eaf183e5a14b355cf72d50ba0a"
+        }
+      }
+    },
+    {
+      "id": "native-e420-directional-micro",
+      "route": "directional_micro",
+      "cohort": "v5_added_current_application_and_follow_through",
+      "source_run_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+      "run_dir": ".codex_tmp/autodl-sam-coordination-20261018/failed-final-job-preserved/e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+      "local_video": ".codex_tmp/local-migration-20261019/local-data/uploads/0a3df3a3-2629-4dd5-80a1-54e4b11f7341.mp4",
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "input_artifact_sha256": {
+        "frames.jsonl": "6fee1cf13414306ea8019960d777b6849c7d6a0dcb80701625bff9100fccafd7",
+        "primary-player.jsonl": "09a27e0fa7e67f7b55d336eb5c9f8c1e35ce030d137f7987b5d2bdbf6947bdeb",
+        "events.jsonl": "040c8ffdaeb02b207f792adf2203a6e2b2b9a25dd1f8ff3a5c1d172589cf4a7d",
+        "summary.json": "5c692ec525d381e9837af5cb73af562c87626fb1708d6c520959a72c3f733640"
+      },
+      "annotation_path": "tests/fixtures/directional-micro-adjustment-e420-annotations-v1.json",
+      "annotation_source_digests": {
+        "tests/fixtures/directional-micro-adjustment-e420-annotations-v1.json": {
+          "raw_sha256": "5cedfb45d5f1aae27f86103baad78ab9eb98c6cbf3b73776ba08bc1cf0bd7d16",
+          "utf8_lf_sha256": "fd0aec3797d219f8f31d95cef30320d966433b2b389f78a86f5cbc5c0ee535df"
+        }
+      }
+    },
+    {
+      "id": "native-e420-micro-cycles",
+      "route": "micro_cycles",
+      "cohort": "v5_added_current_application_and_follow_through",
+      "source_run_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+      "run_dir": ".codex_tmp/autodl-sam-coordination-20261018/failed-final-job-preserved/e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+      "local_video": ".codex_tmp/local-migration-20261019/local-data/uploads/0a3df3a3-2629-4dd5-80a1-54e4b11f7341.mp4",
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "input_artifact_sha256": {
+        "frames.jsonl": "6fee1cf13414306ea8019960d777b6849c7d6a0dcb80701625bff9100fccafd7",
+        "primary-player.jsonl": "09a27e0fa7e67f7b55d336eb5c9f8c1e35ce030d137f7987b5d2bdbf6947bdeb",
+        "events.jsonl": "040c8ffdaeb02b207f792adf2203a6e2b2b9a25dd1f8ff3a5c1d172589cf4a7d",
+        "summary.json": "5c692ec525d381e9837af5cb73af562c87626fb1708d6c520959a72c3f733640"
+      },
+      "annotation_path": "tests/fixtures/micro-adjustment-cycles-e420-annotations-v1.json",
+      "annotation_source_digests": {
+        "tests/fixtures/micro-adjustment-cycles-e420-annotations-v1.json": {
+          "raw_sha256": "7c0257c638a6f347debe467176676b0028572e74c7fae75a0129fd71b251860b",
+          "utf8_lf_sha256": "14364d2e2295115f3a1a79aac98dd6d8eea7edbeca77e1ffd931fd71b80b324e"
+        }
+      }
+    },
+    {
+      "id": "gs-follow-through-ocw-pe.710-2-forehand-220k",
+      "route": "gs_follow_through",
+      "cohort": "v5_added_current_application_and_follow_through",
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+        "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+      },
+      "annotation_manifest": "tests/fixtures/gs-follow-through-windows-20261024.json",
+      "annotation_source_digests": {
+        "tests/fixtures/gs-follow-through-windows-20261024.json": {
+          "raw_sha256": "354b4d5ec4ebf5e5d9ec948922fc66b862f0aac34eb15ee8dc0c624f86ce10df",
+          "utf8_lf_sha256": "cd88316d09b64d94bd341377e3250f28919513c740da3ea72ea5c7888e79a3bb"
+        }
+      }
+    }
+  ],
+  "retirement_history": {
+    "path": "tests/fixtures/gs-follow-through-results-20261024.json",
+    "raw_sha256": "43481d162cf1380862a31da0e93af970456ad2616f548a8416bc41ef97fccf77",
+    "utf8_lf_sha256": "c7e309ac3f611207ab0a2ae18ff67af0c3d684be5dbb3f8bc98306736226b7ff"
+  },
+  "policy": {
+    "old_results_are_not_current_score_inputs": true,
+    "all_thirteen_groups_require_fresh_current_runtime_replay": true,
+    "native_e420_selection": "Only FS05-M02/M03/M04 fixed 112-136, not the other 185 native-export instances.",
+    "same_media_different_pose_exports_must_stay_distinct": true,
+    "no_cross_source_overall_score": true,
+    "no_inference": true,
+    "m09_windows": "40-45,103-107,162-166,224-229 unchanged; retired 04/05 audit only"
+  }
+}
