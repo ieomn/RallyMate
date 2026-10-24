@@ -1,0 +1,504 @@
+{
+  "version": "gs-follow-through-windows-v1.0.0",
+  "runtime_base_commit": "7da25727faa04dfb4f213cec50e57aabf911a76c",
+  "annotation_version": "manual-mit-fh-follow-through-20261024-v1",
+  "annotation_frozen_before_scoring": true,
+  "frozen_boundary_source": {
+    "artifact_path": ".codex_tmp/gs-m09-boundary-feasibility-20261024/candidate-boundaries.json",
+    "raw_sha256": "8e109efaaf878bdeb15a9909b2d3bad536cd7055af9f6b89ee163daf24c62c79",
+    "document": {
+      "version": "gs-m09-visible-boundary-feasibility-v1.0.0",
+      "frozen_date": "2026-10-24",
+      "source_case_id": "ocw-pe.710-2-forehand-220k",
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "original_video_sha_verified": true,
+      "original_video_pts_redecoded": true,
+      "existing_pngs_not_newly_reencoded": true,
+      "original_m07_and_preparation_files_unchanged": true,
+      "source_manifest_sha256": "db01b85f27e6ea1dce71c0737b45de1d5ffca8a5b015b632d8aaffcd1b2b3eb7",
+      "catalogue_change": false,
+      "new_score_computation": false,
+      "rule_gap": {
+        "cards": [
+          "GS01-M09-04",
+          "GS01-M09-05"
+        ],
+        "current_shared_metric": "wrist_separation_torso.delta",
+        "limitation": "Approach cannot establish racket contact or renewed control; a future application rule must identify this repeated partial observation and cannot claim captured racket."
+      },
+      "cases": [
+        {
+          "action_id": "forehand-1",
+          "technique_code": "GS01",
+          "candidate_stage_code": "GS01-M09",
+          "existing_sheet_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-1.jpg",
+          "existing_sheet_sha256": "17290bcba662d98a7675ca3f69586a587d7856c606de7b94ecb2b9c32ce99d2a",
+          "all_sheet_frames_visually_inspected": true,
+          "individual_pngs_visually_inspected": [
+            40,
+            44,
+            45
+          ],
+          "source_scope": "nonexpert_visual_reapproach_candidate_not_contact_or_control_truth",
+          "start_estimate": {
+            "frame_index": 40,
+            "pts": 241830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 2687.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0040.png",
+            "existing_png_sha256": "9c4cd4c6a02ddc0a1540fa8d8be3017e444115038f9f182e638033f7dd05df3f"
+          },
+          "start_bracket": [
+            {
+              "frame_index": 39,
+              "pts": 235800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 2620.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0039.png",
+              "existing_png_sha256": "a0a41736f034e52b2d2b503fd5851532ca7df6025b4c5ce1c7c3708a9ce2dc91"
+            },
+            {
+              "frame_index": 40,
+              "pts": 241830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 2687.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0040.png",
+              "existing_png_sha256": "9c4cd4c6a02ddc0a1540fa8d8be3017e444115038f9f182e638033f7dd05df3f"
+            }
+          ],
+          "end_estimate": {
+            "frame_index": 45,
+            "pts": 271800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 3020.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0045.png",
+            "existing_png_sha256": "76717e08a45d9f6b830d012b24aad731cae1e64ada1ce01e06f576b2b7b7521e"
+          },
+          "end_bracket": [
+            {
+              "frame_index": 43,
+              "pts": 259830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 2887.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0043.png",
+              "existing_png_sha256": "00a60efefb982c002669ebfc9f3a1ea662495dd7d3fde86200850e14b2410b19"
+            },
+            {
+              "frame_index": 46,
+              "pts": 277830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 3087.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0046.png",
+              "existing_png_sha256": "bbd573e0597f693a4a533c7b2e7318345b3b55883ec482d6ef36328fb222f42a"
+            }
+          ],
+          "source_frames": [
+            40,
+            41,
+            42,
+            43,
+            44,
+            45
+          ],
+          "source_frame_count": 6,
+          "old_parent": {
+            "action_id": "forehand-1",
+            "technique_code": "GS01",
+            "person_track_id": 1,
+            "start_ms": 1650,
+            "end_ms": 2950
+          },
+          "proposed_parent_revision": {
+            "start_ms": 1650,
+            "end_ms": 3087.0,
+            "revision_kind": "new_source_full_action_boundary_revision",
+            "reason": "existing preparation parent ends before late reapproach bound; do not rewrite historical preparation annotation"
+          },
+          "visual_start": "Ball is visibly separated from the racket-face image region after its close passage; exact contact is unresolved between sampled frames.",
+          "visual_end": "Hands and handle region have converged near the shoulder; earliest recontact is uncertain within the bracket. Grip, force and regained control cannot be proved.",
+          "original_grade": null,
+          "score": null,
+          "contact_verified": false,
+          "racket_control_verified": false,
+          "scoring_executed": false,
+          "do_not_extend_for_minimum_algorithm_frames": true,
+          "dynamic_window_note": "Only5or6originalframes; existing7frame dynamic endpoint gate is not satisfied by the estimated stage."
+        },
+        {
+          "action_id": "forehand-2",
+          "technique_code": "GS01",
+          "candidate_stage_code": "GS01-M09",
+          "existing_sheet_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-2.jpg",
+          "existing_sheet_sha256": "cc5256f5b4aa40278acb1f31396191d54e9938cda81933105c30430b68af9b5e",
+          "all_sheet_frames_visually_inspected": true,
+          "individual_pngs_visually_inspected": [
+            103,
+            106,
+            107
+          ],
+          "source_scope": "nonexpert_visual_reapproach_candidate_not_contact_or_control_truth",
+          "start_estimate": {
+            "frame_index": 103,
+            "pts": 619830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 6887.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0103.png",
+            "existing_png_sha256": "d380d35f3be4492ef2eb553e8acecca409e9c504b6ab711f47390c7629e093f3"
+          },
+          "start_bracket": [
+            {
+              "frame_index": 102,
+              "pts": 613800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 6820.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0102.png",
+              "existing_png_sha256": "9e149f5bb002888cf0e1287105bf7361cf8e9011c1523d52c0b27742abd474fa"
+            },
+            {
+              "frame_index": 103,
+              "pts": 619830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 6887.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0103.png",
+              "existing_png_sha256": "d380d35f3be4492ef2eb553e8acecca409e9c504b6ab711f47390c7629e093f3"
+            }
+          ],
+          "end_estimate": {
+            "frame_index": 107,
+            "pts": 643860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 7154.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0107.png",
+            "existing_png_sha256": "9cbfcc6c532d11216b18e3388685f39339206a6ef2b257baec29b54cb5c20dd6"
+          },
+          "end_bracket": [
+            {
+              "frame_index": 105,
+              "pts": 631800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 7020.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0105.png",
+              "existing_png_sha256": "ab653f881628779e53310bc9f396da1995c52885f185bf3ce914d150aa7d4d60"
+            },
+            {
+              "frame_index": 108,
+              "pts": 649800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 7220.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0108.png",
+              "existing_png_sha256": "64849f066abe6ddeace372e7dc69b182d41bfec9802fccdaa5f880f825c8332d"
+            }
+          ],
+          "source_frames": [
+            103,
+            104,
+            105,
+            106,
+            107
+          ],
+          "source_frame_count": 5,
+          "old_parent": {
+            "action_id": "forehand-2",
+            "technique_code": "GS01",
+            "person_track_id": 1,
+            "start_ms": 5750,
+            "end_ms": 7150
+          },
+          "proposed_parent_revision": {
+            "start_ms": 5750,
+            "end_ms": 7220.0,
+            "revision_kind": "new_source_full_action_boundary_revision",
+            "reason": "existing preparation parent ends before late reapproach bound; do not rewrite historical preparation annotation"
+          },
+          "visual_start": "Ball is visibly separated from the racket-face image region after its close passage; exact contact is unresolved between sampled frames.",
+          "visual_end": "Hands and handle region have converged near the shoulder; earliest recontact is uncertain within the bracket. Grip, force and regained control cannot be proved.",
+          "original_grade": null,
+          "score": null,
+          "contact_verified": false,
+          "racket_control_verified": false,
+          "scoring_executed": false,
+          "do_not_extend_for_minimum_algorithm_frames": true,
+          "dynamic_window_note": "Only5or6originalframes; existing7frame dynamic endpoint gate is not satisfied by the estimated stage."
+        },
+        {
+          "action_id": "forehand-3",
+          "technique_code": "GS01",
+          "candidate_stage_code": "GS01-M09",
+          "existing_sheet_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-3.jpg",
+          "existing_sheet_sha256": "bfff3312b52723d66c167b46537e3102210deed56c640294d691a810f57013fa",
+          "all_sheet_frames_visually_inspected": true,
+          "individual_pngs_visually_inspected": [
+            162,
+            165,
+            166
+          ],
+          "source_scope": "nonexpert_visual_reapproach_candidate_not_contact_or_control_truth",
+          "start_estimate": {
+            "frame_index": 162,
+            "pts": 973800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 10820.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0162.png",
+            "existing_png_sha256": "e62a78543347fd18312959c7be0f32000258d6321b80ed5a5e19c6f521430558"
+          },
+          "start_bracket": [
+            {
+              "frame_index": 161,
+              "pts": 967860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 10754.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0161.png",
+              "existing_png_sha256": "8615b24d77b3975b310615f055e60115e4a343c06703f219b12150c97fd220bf"
+            },
+            {
+              "frame_index": 163,
+              "pts": 979830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 10887.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0163.png",
+              "existing_png_sha256": "145f2856a5227fa224cf3f7b9963998b3082c2427bd8328556ae1c1043a25354"
+            }
+          ],
+          "end_estimate": {
+            "frame_index": 166,
+            "pts": 997830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 11087.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0166.png",
+            "existing_png_sha256": "46bb987820f2356bdea196f87ea92171203a08f9288474688c793e0fe0a42f66"
+          },
+          "end_bracket": [
+            {
+              "frame_index": 164,
+              "pts": 985860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 10954.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0164.png",
+              "existing_png_sha256": "b26657408374ffda11062ad9366a08607cfba9a0ff733506b6d3e4dd3935df8c"
+            },
+            {
+              "frame_index": 167,
+              "pts": 1003860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 11154.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0167.png",
+              "existing_png_sha256": "a2659ac98a10e70a284a24892be0d2c93ce0bfd83cc716ab760c5b1b266cb139"
+            }
+          ],
+          "source_frames": [
+            162,
+            163,
+            164,
+            165,
+            166
+          ],
+          "source_frame_count": 5,
+          "old_parent": {
+            "action_id": "forehand-3",
+            "technique_code": "GS01",
+            "person_track_id": 1,
+            "start_ms": 9650,
+            "end_ms": 11050
+          },
+          "proposed_parent_revision": {
+            "start_ms": 9650,
+            "end_ms": 11154.0,
+            "revision_kind": "new_source_full_action_boundary_revision",
+            "reason": "existing preparation parent ends before late reapproach bound; do not rewrite historical preparation annotation"
+          },
+          "visual_start": "Ball is visibly separated from the racket-face image region after its close passage; exact contact is unresolved between sampled frames.",
+          "visual_end": "Hands and handle region have converged near the shoulder; earliest recontact is uncertain within the bracket. Grip, force and regained control cannot be proved.",
+          "original_grade": null,
+          "score": null,
+          "contact_verified": false,
+          "racket_control_verified": false,
+          "scoring_executed": false,
+          "do_not_extend_for_minimum_algorithm_frames": true,
+          "dynamic_window_note": "Only5or6originalframes; existing7frame dynamic endpoint gate is not satisfied by the estimated stage."
+        },
+        {
+          "action_id": "forehand-4",
+          "technique_code": "GS01",
+          "candidate_stage_code": "GS01-M09",
+          "existing_sheet_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-4.jpg",
+          "existing_sheet_sha256": "5b90c84fa8225aedefd3779cfd75af7abc6e73735e22719a2f66300d8230873e",
+          "all_sheet_frames_visually_inspected": true,
+          "individual_pngs_visually_inspected": [
+            224,
+            228,
+            229
+          ],
+          "source_scope": "nonexpert_visual_reapproach_candidate_not_contact_or_control_truth",
+          "start_estimate": {
+            "frame_index": 224,
+            "pts": 1345860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 14954.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0224.png",
+            "existing_png_sha256": "994a2f35ac58957bee7c53da642a0f184abce27fcfe0d718e98014da19ecb612"
+          },
+          "start_bracket": [
+            {
+              "frame_index": 223,
+              "pts": 1339830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 14887.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0223.png",
+              "existing_png_sha256": "cfbbc4bda71133ba70048a7a5289eaf450c0b906757abc6f9548d5bd1aac78cc"
+            },
+            {
+              "frame_index": 225,
+              "pts": 1351800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 15020.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0225.png",
+              "existing_png_sha256": "86bc4ffa2a4eb940b89e4ef42aa182f9089cd2f53e710afc607cae6f6e09dcc0"
+            }
+          ],
+          "end_estimate": {
+            "frame_index": 229,
+            "pts": 1375830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+            "timestamp_ms": 15287.0,
+            "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0229.png",
+            "existing_png_sha256": "66d8f594729069b66522a736af39cca5da61b8802ba9d1a6f0dd47122b831b34"
+          },
+          "end_bracket": [
+            {
+              "frame_index": 227,
+              "pts": 1363860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 15154.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0227.png",
+              "existing_png_sha256": "299bc09a7443bfc3d7deb50c62b4afc3fc81e2609fd0af3b92b28290d8d63669"
+            },
+            {
+              "frame_index": 230,
+              "pts": 1381860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 15354.0,
+              "existing_png_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0230.png",
+              "existing_png_sha256": "bf3d3a5edf39f91ec5630d98aee4a29e58886267e2996be18eb9868d4bfd6434"
+            }
+          ],
+          "source_frames": [
+            224,
+            225,
+            226,
+            227,
+            228,
+            229
+          ],
+          "source_frame_count": 6,
+          "old_parent": {
+            "action_id": "forehand-4",
+            "technique_code": "GS01",
+            "person_track_id": 1,
+            "start_ms": 13950,
+            "end_ms": 15200
+          },
+          "proposed_parent_revision": {
+            "start_ms": 13950,
+            "end_ms": 15354.0,
+            "revision_kind": "new_source_full_action_boundary_revision",
+            "reason": "existing preparation parent ends before late reapproach bound; do not rewrite historical preparation annotation"
+          },
+          "visual_start": "Ball is visibly separated from the racket-face image region after its close passage; exact contact is unresolved between sampled frames.",
+          "visual_end": "Hands and handle region have converged near the shoulder; earliest recontact is uncertain within the bracket. Grip, force and regained control cannot be proved.",
+          "original_grade": null,
+          "score": null,
+          "contact_verified": false,
+          "racket_control_verified": false,
+          "scoring_executed": false,
+          "do_not_extend_for_minimum_algorithm_frames": true,
+          "dynamic_window_note": "Only5or6originalframes; existing7frame dynamic endpoint gate is not satisfied by the estimated stage."
+        }
+      ]
+    }
+  },
+  "historical_inputs": {
+    "tests/fixtures/gs-acceleration-windows-20261022.json": {
+      "raw_sha256": "db01b85f27e6ea1dce71c0737b45de1d5ffca8a5b015b632d8aaffcd1b2b3eb7",
+      "utf8_lf_sha256": "fe1965d379a687dfac40a51529f919e1d4236a02eb1d46a521197d3b7e4eb83d"
+    },
+    "tests/fixtures/gs-card-real-mit-preparation-v1.json": {
+      "raw_sha256": "d761126d7e4c36a1aa04c8ea6fc5c8fc74a25f5dc58816f9d6d7a8ca1d918738",
+      "utf8_lf_sha256": "184870a7770b0c0c006269ff42e3d8914070156c7cdfbde6c73b28a80a1d8a5a"
+    }
+  },
+  "case": {
+    "case_id": "ocw-pe.710-2-forehand-220k",
+    "source_organization": "MIT OpenCourseWare",
+    "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+    "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+    "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+    "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+    "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+    "input_artifact_sha256": {
+      "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+      "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+      "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+    }
+  },
+  "policy": {
+    "raw_stage_frames_may_not_be_extended_for_scoring": true,
+    "original_grade_supported": false,
+    "contact_verified": false,
+    "racket_control_verified": false,
+    "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+    "new_parent_revision_semantics": "new_source_full_action_boundary_revision_not_historical_annotation_rewrite",
+    "development_not_heldout": true,
+    "source_pose_inference_rerun": false,
+    "shared_catalogue_and_engine_changed": false
+  }
+}
