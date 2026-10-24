@@ -11,6 +11,8 @@ import { validateGsPreload, type PreloadValidation } from "./gs-preload-evidence
 import { validateFsStepMotion, type StepMotionValidation } from "./fs-step-motion-evidence";
 import { formalScoreSemantics, isFormalScoringPolicy } from "./formal-card-scoring-policy";
 import { validateTemporalLocalDip, validFormalTemporalSource, type LocalDipValidation } from "./temporal-local-dip-evidence";
+import microContract from "./directional-micro-display-contract";
+import { directionalMicroApplies, validateDirectionalMicro, type DirectionalMicroValidation } from "./directional-micro-adjustment-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
@@ -42,6 +44,8 @@ const number = (value: unknown): number | null => typeof value === "number" && N
 const integer = (value: unknown): number | null => Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : null;
 const list = (value: unknown, limit = 1000): unknown[] => Array.isArray(value) ? value.slice(0, limit) : [];
 const strings = (value: unknown) => [...new Set(list(value, 50).map(v => text(v)).filter(Boolean))];
+const equalEvidence = (a: unknown, b: unknown): boolean => Array.isArray(a) ? Array.isArray(b) && a.length === b.length && a.every((v, i) => equalEvidence(v, b[i]))
+  : a && typeof a === "object" ? Object.keys(a).length === Object.keys(obj(b)).length && Object.entries(a).every(([key, value]) => equalEvidence(value, obj(b)[key])) : a === b;
 const gradePoints = { A: 100, B: 80, C: 60, D: 40, E: 20 } as const;
 const LIMITATION_LABELS: Record<string, string> = {
   "Only five temporal calculators are wired by this adapter.": "当前已接入五张步伐卡的连续窗口计算，其余卡片仍按证据状态分别列出。",
@@ -68,6 +72,13 @@ const LIMITATION_LABELS: Record<string, string> = {
   complete_step_cycle_never_inferred_from_manual_window: "人工窗口不用于推定完整步周期。",
   manual_observable_cards_remain_ungraded: "需要人工确认的原卡信息保留复核，不生成分数。",
   engineering_proxy_thresholds_uncalibrated: "视觉代理采用尚未专家标定的工程阈值。",
+  image_axis_not_metric_court_direction: "所标场地线只是图像投影轴，不是标定后的球场方向。",
+  visible_ball_position_not_predicted_impact_truth: "所标目标是此帧可见球的位置，不是预测击球点。",
+  distance_reasonableness_not_established: "此测量未确定人与球的距离是否符合技术要求。",
+  visual_motion_not_foot_contact_or_technical_step: "脚部画面运动不代表真实触地或已确认的技术步型。",
+  original_qualitative_grade_not_established: "原卡定性技术等级尚未建立。",
+  manual_image_references_not_metric_court_or_target_truth: "人工标记的是图像中的场地线与可见目标，不能直接当作标定后的球场方向或真实击球目标。",
+  application_thresholds_uncalibrated: "应用评分阈值尚未经过专家标定。",
 };
 type Grade = keyof typeof gradePoints;
 export interface CardCondition { key: string; metric: string; value: number | null; operator: string; threshold: number | [number, number] | null; unit: string; passed: boolean | null }
@@ -96,6 +107,8 @@ export interface CardInstance {
   source_window_annotation: EvidenceObject | null;
   source_window_evidence: EvidenceObject | null;
   source_window_context: EvidenceObject | null;
+  application_rule_version: string | null;
+  directional_micro_validation: DirectionalMicroValidation | null;
   measurement_provenance: EvidenceObject | null;
   model_scoring_policy_version: string | null;
   temporal_evidence: EvidenceObject | null;
@@ -105,15 +118,18 @@ export interface CardInstance {
   step_motion_validation: StepMotionValidation | null;
   auxiliary_validation: PreloadValidation | null;
   limitations: string[];
+  limitation_codes: string[];
   fallback: { trigger: string; strategy: string; selected: { start_ms: number; end_ms: number } | null } | null;
   threshold_basis: string; semantics: string; source: { document_id: string; document_sha256: string; table: string; rubric_sha256: string };
 }
-export interface ExecutedCard { indicator_id: string; event_code: string; name_zh: string; rule_version: string; rule_kind: string; runtime_engine: string | null; run_status: CardRunStatus; reason_codes: string[]; instances: CardInstance[]; instance_count: number }
+export interface ExecutedCard { indicator_id: string; event_code: string; name_zh: string; rule_version: string; rule_kind: string; runtime_engine: string | null; application_rule_version: string | null; run_status: CardRunStatus; reason_codes: string[]; instances: CardInstance[]; instance_count: number }
 export interface CardExecutionReport {
   version: typeof CARD_EXECUTION_VERSION; rule_version: typeof CARD_RULE_VERSION; source_run_id: string; cards: ExecutedCard[]; scoring_policy_version: string | null;
   status: "available" | "unavailable"; reason_codes: string[];
   summary: { catalogue_cards: number; expected_source_cards: number; computed_cards: number; formal_scored_cards: number; formal_scored_instances: number; proxy_scored_cards: number; proxy_scored_instances: number; review_instances: number; unavailable_instances: number; original_scored_cards: 0; manual_scored_cards: 0; run_card_status_counts: Record<string, number>; conflicting_instances: number; rejected_cards: number };
-  overall_score: number | null; missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero"; limitations: string[];
+  overall_score: number | null; missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero"; limitations: string[]; limitation_codes: string[];
+  directional_micro_adjustment_execution: EvidenceObject | null;
+  directional_micro_adjustment_windows: EvidenceObject[];
 }
 
 function windowOf(value: unknown) {
@@ -136,11 +152,15 @@ function invalidate(instance: CardInstance, reason: string): CardInstance {
 }
 function withPreloadValidation(instance: CardInstance): CardInstance {
   const motion = validateFsStepMotion(instance.source_window_annotation, instance.source_window_evidence, instance.source_window_context, instance);
+  const measuredMicro = validateDirectionalMicro(instance.source_window_annotation, instance.source_window_evidence, instance.source_window_context, instance);
+  const micro = measuredMicro && instance.reason_codes.includes("directional_micro_report_source_mismatch")
+    ? { ...measuredMicro, status: "invalid" as const, reason_codes: ["directional_micro_report_source_mismatch"], values: {}, feet: null, condition_values_match: false } : measuredMicro;
   const dip = isFormalScoringPolicy(instance.scoring_policy_version) ? validateTemporalLocalDip(instance.temporal_evidence, instance) : null;
-  const invalidDip = dip?.status === "invalid";
-  return { ...instance, ...(invalidDip ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
-      reason_codes: [...new Set([...instance.reason_codes, "local_dip_source_evidence_invalid"])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
-    conditions: motion?.status === "invalid" || invalidDip ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
+  const invalidDip = dip?.status === "invalid", invalidMicro = micro?.status === "invalid";
+  return { ...instance, ...(invalidDip || invalidMicro ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
+      reason_codes: [...new Set([...instance.reason_codes, ...(invalidDip ? ["local_dip_source_evidence_invalid"] : []), ...(invalidMicro ? ["directional_micro_source_evidence_invalid"] : [])])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
+    conditions: motion?.status === "invalid" || invalidDip || invalidMicro ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
+    directional_micro_validation: micro,
     step_motion_validation: motion };
 }
 function sourceStageOf(row: Obj, id: string): CardSourceStage | null {
@@ -214,11 +234,13 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
     source_window_annotation: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_annotation) : null,
     source_window_evidence: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_evidence) : null,
     source_window_context: FS_WINDOW_CONTRACTS[id] && row.source_window_annotation ? evidenceObject(row.source_window_context ?? row.window) : null,
+    application_rule_version: text(row.application_rule_version) || null, directional_micro_validation: null,
     measurement_provenance: evidenceObject(row.measurement_provenance),
     model_scoring_policy_version: text(row.model_scoring_policy_version) || null,
     temporal_evidence: TEMPORAL_CARD_CONDITIONS[id] ? evidenceObject(row.temporal_evidence ?? row.evidence) : null, local_dip_validation: null,
     auxiliary_evidence: auxiliary, auxiliary_parent_context: auxiliaryParent, auxiliary_validation: null, step_motion_validation: null,
-    limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitations)].map(value => LIMITATION_LABELS[value] ?? value))],
+    limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitation_codes ?? row.limitations)].map(value => limitationLabel(value, formal)))],
+    limitation_codes: strings(row.limitation_codes ?? row.limitations),
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
   if (policy !== reportPolicy || reportPolicy !== null && !isFormalScoringPolicy(reportPolicy)
@@ -227,7 +249,9 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   const gsSpec = GS_CARD_CONTRACTS[id];
   const footworkSpec = FOOTWORK_CARD_CONTRACTS[id];
   const fsWindowSpec = FS_WINDOW_CONTRACTS[id];
-  const specs = gsSpec?.conditions ?? footworkSpec?.conditions ?? fsWindowSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
+  const micro = directionalMicroApplies(id, row);
+  const specs: ConditionSpec[] | undefined = micro ? microContract.conditions.map(c => [c.metric, c.operator, c.threshold, c.unit]) as ConditionSpec[]
+    : gsSpec?.conditions ?? footworkSpec?.conditions ?? fsWindowSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
   const expected = specs?.every(([metric, operator, threshold, unit]) => {
     const c = byMetric.get(metric);
     return c && c.operator === operator && c.unit === unit && JSON.stringify(c.threshold) === JSON.stringify(threshold) && c.passed !== null && c.passed === computedPass(c);
@@ -235,12 +259,17 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected && (!formal || validateTemporalLocalDip(result.temporal_evidence, result)?.status !== "measured_local_dip")
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (micro ? microContract.measurement_version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
       || formal && row.grade !== grade || row.proxy_grade !== grade || row.score !== gradePoints[grade]
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
         || formal && !validFormalGsStageSource(result.source_stage_evidence, result.source_stage_context, result)
         || !validRacketSide(result.racket_side_evidence, result, result.source_stage, conditions.some(c => c.metric === "wrist_speed_increase_torso_s")))
-      || fsWindowSpec && (fsWindowSpec.rule_kind !== "visual_proxy"
+      || micro && (!formal || result.application_rule_version !== microContract.application_rule_version
+        || microContract.conditions.some(spec => byMetric.get(spec.metric)?.key !== spec.key)
+        || result.threshold_basis !== "application_thresholds_uncalibrated_not_source_or_literature_standard"
+        || !Object.entries((microContract.cards as Record<string, { source: CardInstance["source"] }>)[id].source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
+        || validateDirectionalMicro(result.source_window_annotation, result.source_window_evidence, result.source_window_context, result)?.status !== "measured_directional_motion")
+      || fsWindowSpec && !micro && (fsWindowSpec.rule_kind !== "visual_proxy"
         || result.threshold_basis !== "engineering_v1_uncalibrated"
         || !Object.entries(fsWindowSpec.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
         || JSON.stringify([...result.quality.required_joint_names].sort()) !== JSON.stringify(fsWindowSpec.required_joint_names)
@@ -267,12 +296,17 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
   if (raw.cards.reduce((sum: number, row: unknown) => sum + (Array.isArray(obj(row).instances) ? (obj(row).instances as unknown[]).length : 0), 0) > 30000
       || raw.cards.some(row => Array.isArray(obj(row).instances) && (obj(row).instances as unknown[]).length > 5000)) return null;
   const sourceRunId = text(raw.source_run_id), reportPolicy = text(raw.scoring_policy_version) || null, formal = isFormalScoringPolicy(reportPolicy);
+  const microExecution = evidenceObject(raw.directional_micro_adjustment_execution ?? obj(raw.input).directional_micro_adjustment_execution);
+  const microExecutionConflict = raw.directional_micro_adjustment_execution != null && obj(raw.input).directional_micro_adjustment_execution != null
+    && !equalEvidence(raw.directional_micro_adjustment_execution, obj(raw.input).directional_micro_adjustment_execution);
+  const microWindows = list(raw.directional_micro_adjustment_windows).map(evidenceObject).filter((row): row is EvidenceObject => row !== null);
   const cards: ExecutedCard[] = [], seenCards = new Map<string, ExecutedCard>();
   let conflicts = 0, rejected = 0;
   for (const candidate of raw.cards) {
     const row = obj(candidate), id = text(row.indicator_id);
     if (!CARD_IDS.has(id) || row.event_code !== id.split("-")[0] || row.rule_version !== CARD_RULE_VERSION || !text(row.name_zh) || !["visual_proxy", "manual_review"].includes(text(row.rule_kind))) { rejected++; continue; }
-    const runtimeEngine = GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
+    const micro = id in microContract.cards && row.application_rule_version === microContract.application_rule_version && row.runtime_engine === microContract.runtime_engine;
+    const runtimeEngine = micro ? microContract.runtime_engine : GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
     if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     if (FOOTWORK_CARD_CONTRACTS[id] && row.rule_kind !== FOOTWORK_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     if (FS_WINDOW_CONTRACTS[id] && row.rule_kind !== FS_WINDOW_CONTRACTS[id].rule_kind) { rejected++; continue; }
@@ -288,11 +322,13 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     conflicts += conflicting.size;
     const instances = [...seenInstances].map(([key, instance]) => conflicting.has(key) ? invalidate(instance, "conflicting_duplicate_event_instance") : instance)
       .map(instance => raw.status === "unavailable" ? invalidate(instance, "card_execution_report_unavailable") : instance)
-      .map(instance => ["scored", "proxy_scored"].includes(instance.status) && (row.runtime_engine !== runtimeEngine || row.rule_kind !== "visual_proxy") ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
+      .map(instance => instance.status === "scored" && instance.directional_micro_validation && (microExecutionConflict || !validMicroReportCopies(instance, microExecution, microWindows))
+        ? invalidate(instance, "directional_micro_report_source_mismatch") : instance)
+      .map(instance => ["scored", "proxy_scored"].includes(instance.status) && (row.runtime_engine !== runtimeEngine || (micro ? row.rule_kind !== "manual_review" || instance.application_rule_version !== microContract.application_rule_version : row.rule_kind !== "visual_proxy")) ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
     const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : row.rule_kind === "manual_review" || row.run_status === "review_required" ? formal ? "unavailable" : "review_required" : "not_executed";
     const status: CardRunStatus = instances.some(i => i.status === "scored") ? "scored" : instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
     const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: text(row.rule_kind),
-      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, run_status: status, reason_codes: strings(row.reason_codes), instances, instance_count: instances.length };
+      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, application_rule_version: text(row.application_rule_version) || null, run_status: status, reason_codes: strings(row.reason_codes), instances, instance_count: instances.length };
     const prior = seenCards.get(id);
     if (prior) {
       if (JSON.stringify(prior) !== JSON.stringify(card)) { prior.run_status = "unavailable"; prior.reason_codes = [...new Set([...prior.reason_codes, "conflicting_duplicate_card"])]; prior.instances = prior.instances.map(i => invalidate(i, "conflicting_duplicate_card")); conflicts++; }
@@ -313,7 +349,36 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
       review_instances: allInstances.filter(i => i.status === "review_required").length, unavailable_instances: allInstances.filter(i => i.status === "unavailable").length,
       original_scored_cards: 0, manual_scored_cards: 0, run_card_status_counts: counts, conflicting_instances: conflicts, rejected_cards: rejected },
     overall_score: formal && formalCards.length ? formalCards.reduce((sum, score) => sum + score, 0) / formalCards.length : null,
-    missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitations).map(value => LIMITATION_LABELS[value] ?? value) };
+    missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitation_codes ?? raw.limitations).map(value => limitationLabel(value, formal)),
+    limitation_codes: strings(raw.limitation_codes ?? raw.limitations),
+    directional_micro_adjustment_execution: microExecution, directional_micro_adjustment_windows: microWindows };
+}
+
+function validMicroReportCopies(instance: CardInstance, execution: EvidenceObject | null, windows: EvidenceObject[]): boolean {
+  const annotation = instance.source_window_annotation;
+  if (!annotation || !execution || execution.version !== microContract.runtime_engine || execution.application_rule_version !== microContract.application_rule_version
+      || execution.annotation_version !== microContract.annotation_version || execution.annotation_document_sha256 !== annotation.document_sha256
+      || execution.video_sha256 !== annotation.video_sha256 || execution.annotation_digest_kind !== "canonical_json_sorted_utf8_v1"
+      || execution.saved_grades_trusted !== false || execution.artifact_files_verified !== true || execution.decoder_verified_from_original_video !== true
+      || !list(execution.replaced_card_ids).includes(instance.indicator_id)) return false;
+  const candidates = windows.filter(row => row.annotation_id === instance.event_id && row.indicator_id === instance.indicator_id);
+  if (candidates.length !== 1) return false;
+  const { window, source_frames: frames, ...copy } = candidates[0];
+  return equalEvidence(copy, annotation) && equalEvidence(window, instance.source_window_context)
+    && equalEvidence(frames, instance.source_window_evidence?.source_frames);
+}
+
+export function selectedCardInstance(instances: CardInstance[], selectedEvent: string, formal: boolean): CardInstance | undefined {
+  return instances.find(row => `${row.video_id}:${row.event_id}:${row.person_track_id}` === selectedEvent)
+    ?? (formal ? instances.find(row => row.status === "scored" && row.score !== null) : undefined) ?? instances[0];
+}
+
+function limitationLabel(value: string, formal: boolean): string {
+  const label = LIMITATION_LABELS[value] ?? value;
+  if (!formal) return label;
+  if (label === LIMITATION_LABELS.manual_observable_cards_remain_ungraded) return "该项尚无可计算观测，未生成分数。";
+  if (label === LIMITATION_LABELS["Automatic event candidates are not independently verified action labels."]) return "自动动作候选尚未独立确认动作类型，原始来源记录随测量保留。";
+  return label;
 }
 
 export const CARD_REASON_LABELS: Record<string, string> = {
@@ -383,10 +448,27 @@ export const CARD_REASON_LABELS: Record<string, string> = {
   cycle_grade_policy_mismatch: "步周期条件完成度规则与当前版本不一致",
 };
 const PHASE_LABELS: Record<string, string> = { takeoff_proxy_ms: "起跳候选", landing_proxy_ms: "落地候选", stable_control_onset_ms: "重新稳定候选", peak_speed_ms: "速度峰值", deceleration_peak_ms: "减速峰值" };
-export const cardReasonLabel = (code: string) => {
+const FORMAL_REASON_LABELS: Record<string, string> = {
+  fallback_local_dip_action_type_unverified: "局部髋部下降已测量；此证据不确认垫步动作类型",
+  temporal_boundary_quality_requires_review: "原事件带有边界或姿态覆盖提示，完整计算子窗的依据随结果保留",
+  temporal_required_joint_quality_requires_review: "原必要关节带有跳点或左右混淆候选标记",
+  primary_track_coverage_low: "原事件球员轨迹覆盖偏低", primary_pose_coverage_low: "原事件姿态覆盖偏低",
+  pose_kinematic_coverage_low: "原事件运动学观测覆盖偏低", keypoint_jump_candidates_present: "原姿态带有关节跳点候选",
+  left_right_swap_candidates_present: "原姿态带有左右混淆候选", primary_identity_ambiguous: "选人记录含候选身份歧义标记",
+  source_track_switch_candidates_present: "原轨迹含候选切换标记",
+  model_estimate_measurement_only: "测量来自单目模型估计，原始模型来源随结果保留",
+  fs_window_original_identity_requires_review: "原始身份质量记录含疑点标记", fs_window_original_quality_requires_review: "原始质量记录含疑点标记",
+  required_observable_needs_manual_review: "该指标缺少姿态数据以外的必要观测",
+  required_observable_not_recoverable_from_pose: "人体姿态不能直接证明此项技术行为",
+  ball_direction_and_target_evidence_required: "缺少来球与目标区域观测",
+  cycle_required_evidence_requires_review: "本周期必要关节或身份记录含质量疑点", cycle_evidence_incomplete: "步周期证据不完整",
+  directional_micro_source_evidence_invalid: "方向微调的来源或数值校验未通过，相关分数已排除",
+};
+export const cardReasonLabel = (code: string, formal = false) => {
+  if (formal === true && FORMAL_REASON_LABELS[code]) return FORMAL_REASON_LABELS[code];
   if (CARD_REASON_LABELS[code]) return CARD_REASON_LABELS[code];
   const [reason, phase] = code.split(":");
   if (["phase_not_observed", "phase_not_observed_or_outside_event"].includes(reason)) return `未定位${PHASE_LABELS[phase] ?? "所需阶段"}边界`;
   if (reason === "phase_boundary_censored") return `${PHASE_LABELS[phase] ?? "所需阶段"}边界被片段截断`;
-  return "计算证据未通过校验，需要复核原始动作片段";
+  return formal === true ? `来源记录：${code}` : "计算证据未通过校验，需要复核原始动作片段";
 };

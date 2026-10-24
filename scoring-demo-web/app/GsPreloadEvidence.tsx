@@ -1,5 +1,6 @@
 import type { CardInstance } from "./lib/card-execution";
 import { objectOf } from "./lib/manual-card-evidence";
+import { isFormalScoringPolicy } from "./lib/formal-card-scoring-policy";
 
 const array = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const display = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value.toLocaleString("zh-CN", { maximumFractionDigits: 4 }) : "—";
@@ -34,16 +35,17 @@ const reasons: Record<string, string> = {
 export default function GsPreloadEvidence({ instance }: { instance: CardInstance }) {
   const raw = instance.auxiliary_evidence, validation = instance.auxiliary_validation;
   if (!raw || !validation) return null;
+  const formal = isFormalScoringPolicy(instance.scoring_policy_version);
   const source = objectOf(raw.source_annotation), observation = objectOf(source.observation), series = objectOf(raw.series);
   const bindings = array(raw.source_frame_bindings), frames = array(series.source_frames);
   return <section className="card-preload-evidence" aria-label="局部下降辅助观测">
     <h4>局部下降辅助观测 · 不评分</h4>
     <p>人工圈定的局部下降也可能是站姿调整，不能确认垫步、触地、发力或真实重心。下列工程参考值不判定通过，不产生原卡等级或视觉代理分。</p>
-    <p>{validation.status === "measured_auxiliary" ? "连续辅助几何已计算；父卡仍需人工复核。" : validation.status === "unavailable" ? "连续辅助观测缺测；父卡保持原有复核或不可用状态。" : "辅助输入未通过独立校验，数值不显示为有效测量。"}</p>
+    <p>{validation.status === "measured_auxiliary" ? formal ? "连续辅助几何已计算；父卡缺少完整计分条件，未生成分数。" : "连续辅助几何已计算；父卡仍需人工复核。" : validation.status === "unavailable" ? formal ? "连续辅助观测缺测，父卡未生成分数。" : "连续辅助观测缺测；父卡保持原有复核或不可用状态。" : "辅助输入未通过独立校验，数值不显示为有效测量。"}</p>
     {validation.total_frame_count !== null && <p>八关节共同有效：{validation.valid_frame_count} / {validation.total_frame_count} 个原帧。肩、髋、膝、踝两侧必须同时有效；连续测量要求每帧完整，70% 仅为诊断参考。</p>}
     {validation.status !== "invalid" && <>
       <p>人工局部窗口来源：{text(observation.source)}；边界不确定性 ±{display(observation.uncertainty_ms)} 毫秒。不是专家真值，也不代表自动定位准备阶段。</p>
-      <dl>{validation.observations.map(row => <div key={row.metric}><dt>{labels[row.metric] ?? row.metric}</dt><dd>辅助值 {display(row.value)} {row.unit === "deg" ? "度" : "躯干单位"}；工程参考 ≥{display(row.engineering_reference)}，仅供复核，不判通过。</dd></div>)}</dl>
+      <dl>{validation.observations.map(row => <div key={row.metric}><dt>{labels[row.metric] ?? row.metric}</dt><dd>辅助值 {display(row.value)} {row.unit === "deg" ? "度" : "躯干单位"}；工程参考 ≥{display(row.engineering_reference)}，{formal ? "仅作辅助测量，不判通过" : "仅供复核，不判通过"}。</dd></div>)}</dl>
       <p>相邻髋下降与双膝屈曲共同发生的时间比：{validation.joint_descent_fraction === null ? "— 缺测" : `${display(validation.joint_descent_fraction * 100)}%`}。按实际 PTS 时长计算，不是区间数量占比或技术得分。</p>
       <details><summary>原始时钟与完整逐帧辅助序列（{frames.length} 帧）</summary>
         <p>髋 y 使用固定相机参考像素；屈曲角使用度。保留原始 PTS 原点，不换算为播放器零点。首尾中位数各使用 {display(series.endpoint_frame_count)} 帧，固定躯干尺度 {display(series.fixed_torso_scale)} 像素。</p>

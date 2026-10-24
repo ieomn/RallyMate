@@ -120,15 +120,22 @@ export function validFormalGsStageSource(evidence: EvidenceObject | null, w: Evi
 }
 
 export function validFsWindow(annotation: EvidenceObject | null, evidence: EvidenceObject | null, w: EvidenceObject | null, context: InstanceContext): boolean {
+  const motionRequired = context.indicator_id in stepContract.cards;
+  const motion = motionRequired ? validateFsStepMotion(annotation, evidence, w, context) : null;
+  return (!motionRequired || motion?.status === "measured_visual_motion" && motion.condition_values_match)
+    && validFsWindowSource(annotation, evidence, w, context, fsContract.annotation_version, motionRequired);
+}
+
+/** Source closure only. The caller must independently validate its registered
+ * measurement policy before using this provenance to authorize a score. */
+export function validFsWindowSource(annotation: EvidenceObject | null, evidence: EvidenceObject | null, w: EvidenceObject | null,
+  context: InstanceContext, annotationVersion: string, stepCycleBound: boolean): boolean {
   if (!annotation || !evidence || !w || !context.window) return false;
   const a = annotation, binding = objectOf(a.binding), requested = objectOf(a.requested_window_ms);
   const formal = isFormalScoringPolicy(context.scoring_policy_version);
   const frames = rows(evidence.source_frames), pts = rows(evidence.source_pts), selected = rows(evidence.source_frame_bindings);
   if (!validDerivedSelectionLedger(selected, formal, w.derived_selection_epoch)) return false;
-  const motionRequired = context.indicator_id in stepContract.cards;
-  const motion = motionRequired ? validateFsStepMotion(annotation, evidence, w, context) : null;
-  if (motionRequired && (motion?.status !== "measured_visual_motion" || !motion.condition_values_match)) return false;
-  if (a.document_version !== fsContract.annotation_version || !sha(a.document_sha256) || a.digest_kind !== "canonical_json_sorted_utf8_v1"
+  if (a.document_version !== annotationVersion || !sha(a.document_sha256) || a.digest_kind !== "canonical_json_sorted_utf8_v1"
       || a.annotation_id !== context.event_id || a.indicator_id !== context.indicator_id || a.person_track_id !== context.person_track_id
       || !integer(a.start_source_frame) || !integer(a.end_source_frame) || a.start_source_frame >= a.end_source_frame
       || !sha(a.video_sha256) || w.video_sha256 !== a.video_sha256 || w.video_id !== context.video_id || w.event_id !== context.event_id
@@ -139,7 +146,7 @@ export function validFsWindow(annotation: EvidenceObject | null, evidence: Evide
       || binding.semantics !== fsContract.annotation_semantics || !finite(binding.uncertainty_ms) || binding.uncertainty_ms < 0
       || !frames.length || frames.length !== a.end_source_frame - a.start_source_frame + 1 || frames.length !== context.quality.total_frame_count
       || frames.length !== pts.length || frames.length !== selected.length || evidence.interpolation_used !== false
-      || evidence.step_cycle_bound !== motionRequired || evidence.source_behavior_or_contact_verified !== false || evidence.quality_observations_present !== true) return false;
+      || evidence.step_cycle_bound !== stepCycleBound || evidence.source_behavior_or_contact_verified !== false || evidence.quality_observations_present !== true) return false;
   const times: number[] = [];
   for (let i = 0; i < frames.length; i++) {
     const s = objectOf(pts[i]), b = objectOf(selected[i]), time = ptsTime(s);

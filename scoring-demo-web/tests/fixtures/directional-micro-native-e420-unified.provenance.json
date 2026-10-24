@@ -1,0 +1,11 @@
+{
+  "kind": "actual_unified_api_response_lossless_gzip",
+  "source_run_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+  "backend_commit": "94b2f77df8df17be0fecdedcf95076b0bfc8504f",
+  "response_sha256": "0e33be175f972db405af2ad38bae16644451c346878dbd2c9ca6f0e394c8b3c9",
+  "gzip_sha256": "7cb21e64440afa175554bf2c5b7bab772dfc4464480eb3b0bca170cd6d3999f1",
+  "actual_http_response_equal": true,
+  "source_report": ".codex_tmp\\directional-unified-20261024\\actual-api\\unified-report.json",
+  "original_source_card_count": 298,
+  "note": "Full real unified response; no test-only envelope, source rows/conditions/quality retained. Same video as production0a3 but native e420 model source is distinct."
+}

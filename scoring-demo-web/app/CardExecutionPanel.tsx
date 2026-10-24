@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CARD_RUN_LABELS, cardExecutionOf, cardReasonLabel, type CardCondition, type CardCycleAnnotation } from "./lib/card-execution";
+import { CARD_RUN_LABELS, cardExecutionOf, cardReasonLabel, selectedCardInstance, type CardCondition, type CardCycleAnnotation } from "./lib/card-execution";
 import { replayMoment } from "./lib/training-report";
 import { cycleFrameTime, cycleMotionSteps, type FootworkCycleEvidence } from "./lib/footwork-cycle-evidence";
 import ManualCardEvidence from "./ManualCardEvidence";
@@ -27,6 +27,9 @@ const metricLabels: Record<string, string> = {
   "ankle_distance_over_hip_width.median": "双踝横向间距与髋宽之比中位数",
   ankle_stability_ratio: "双踝投影运动路程比（较小/较大）",
   head_relative_motion_range_torso: "头部相对肩中点的投影运动范围",
+  hip_axis_target_error_reduction_torso: "沿所标轴接近可见球的距离变化",
+  both_ankles_max_path_length_torso: "双脚完整运动路程的较大值",
+  hip_axis_alignment_fraction: "髋部运动与所标轴的一致比例",
 };
 const unitLabels: Record<string, string> = { torso: "躯干单位", "torso/s": "躯干单位/秒", deg: "度", "deg/s": "度/秒", ms: "毫秒", fraction: "比例", ratio: "比例", count: "次" };
 const format = (value: number) => value.toLocaleString("zh-CN", { maximumFractionDigits: 3 });
@@ -90,7 +93,7 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
   const cards = report.cards.filter(card => (!status || card.run_status === status) && `${card.indicator_id} ${card.name_zh}`.toLowerCase().includes(query.trim().toLowerCase()));
   const card = cards.find(row => row.indicator_id === selectedId) ?? (formal ? cards.find(row => row.run_status === "scored") : undefined) ?? cards[0];
   const instanceKey = (row: NonNullable<typeof card>["instances"][number]) => `${row.video_id}:${row.event_id}:${row.person_track_id}`;
-  const instance = card?.instances.find(row => instanceKey(row) === selectedEvent) ?? card?.instances[0];
+  const instance = selectedCardInstance(card?.instances ?? [], selectedEvent, formal);
   const summary = report.summary;
   const canReplay = instance?.window && jobId && report.source_run_id === jobId
     && typeof durationMs === "number" && Number.isFinite(durationMs) && instance.window.end_ms <= durationMs;
@@ -128,11 +131,11 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
         {instance.foot_cycle && <CycleEvidence cycle={instance.foot_cycle} annotation={instance.source_cycle_annotation} />}
         <ManualCardEvidence instance={instance} />
         <GsPreloadEvidence instance={instance} />
-        {instance.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
-        {[...instance.advisory_reason_codes, ...instance.advisory_flags].length > 0 && <p>来源备注：{[...instance.advisory_reason_codes, ...instance.advisory_flags].map(cardReasonLabel).join("；")}</p>}
+        {instance.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason, formal)}</p>)}
+        {[...instance.advisory_reason_codes, ...instance.advisory_flags].length > 0 && <p>来源备注：{[...instance.advisory_reason_codes, ...instance.advisory_flags].map(code => cardReasonLabel(code, formal)).join("；")}</p>}
         {instance.local_dip_validation?.status === "measured_local_dip" && <p>已从完整父事件独立重算最早完整局部下降；量测 {instance.local_dip_validation.source_frames.length} 原帧，转折确认 {instance.local_dip_validation.confirmation_source_frames.length} 原帧。未推断起跳或完整技术动作。</p>}
         {instance.temporal_evidence && <details><summary>完整时间序列与来源记录</summary><pre>{JSON.stringify(instance.temporal_evidence, null, 2)}</pre></details>}
-        {instance.fallback && <p>{formal ? "局部运动测量来源" : "已触发复核路径"}：{cardReasonLabel(instance.fallback.trigger)}{instance.fallback.selected ? `；候选片段 ${clock(instance.fallback.selected.start_ms)}–${clock(instance.fallback.selected.end_ms)}` : ""}。候选定位不代表已确认完整技术动作。</p>}
+        {instance.fallback && <p>{formal ? "局部运动测量来源" : "已触发复核路径"}：{cardReasonLabel(instance.fallback.trigger, formal)}{instance.fallback.selected ? `；候选片段 ${clock(instance.fallback.selected.start_ms)}–${clock(instance.fallback.selected.end_ms)}` : ""}。候选定位不代表已确认完整技术动作。</p>}
         <p>评分政策：{instance.scoring_policy_version ?? "历史视觉代理格式"}；原卡技术等级：未建立。</p>
         </details>
         {instance.conditions.length > 0 && <details open><summary>逐条件计算依据</summary><dl>{instance.conditions.map(condition => <div key={condition.metric}><dt>{metricLabels[condition.metric] ?? condition.metric}</dt><dd>实测 {condition.value === null ? "— 缺测" : `${format(condition.value)} ${unitLabels[condition.unit] ?? condition.unit}`}；{thresholdLabel(condition)}；{condition.passed === null ? "未判定" : condition.passed ? "满足工程条件" : "未满足工程条件"}</dd></div>)}</dl></details>}

@@ -3,6 +3,7 @@ import { stepMotionSummary } from "./fs-step-motion-evidence";
 import { preloadSummary, preloadSourceSummary } from "./gs-preload-evidence";
 import { manualCardSourceLabel } from "./manual-card-evidence";
 import { cardExecutionOf, CARD_RUN_LABELS, cardReasonLabel } from "./card-execution";
+import { directionalMicroSummary } from "./directional-micro-adjustment-evidence";
 import { evidenceReferenceScore, measurementCounts, measurementWarnings, normalizeMeasurementResult } from "./measurement-evidence";
 import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./api-types";
 import type { ScoreReport } from "../scoring/engine";
@@ -225,15 +226,15 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
       `视觉代理实例 ${counts.proxy_scored_instances} 条，待复核 ${counts.review_instances} 条，证据不足 ${counts.unavailable_instances} 条。缺失值保留为空，不补零，不生成跨渠道总分。`,
       "代理等级仅表示当前工程阈值的条件完成比例，不代表原卡完整 A–E 等级或教练评价。",
     ], columns: ["评分卡", "状态", "实例数", "原因"], rows: cardExecution.cards.map(card => [
-      `${card.indicator_id} ${text(card.name_zh)}`, CARD_RUN_LABELS[card.run_status], String(card.instance_count), card.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
+      `${card.indicator_id} ${text(card.name_zh)}`, CARD_RUN_LABELS[card.run_status], String(card.instance_count), card.reason_codes.map(code => text(cardReasonLabel(code, formal))).join("；"),
     ]) });
     sections.push({ title: "逐卡视频实例与条件", paragraphs: ["每个结果绑定一个视频事件和同一连续窗口；以下条件数值及通过状态已经校验。人工标注的击球阶段保留来源与时间不确定性，不代表专家真值或自动定位完整十阶段。"], columns: ["评分卡 / 事件", "视频区间", formal ? "正式评分" : "视觉代理结果", "同窗有效帧", "条件明细", "原因", "阶段来源"], rows: cardExecution.cards.flatMap(card => card.instances.map(instance => [
       `${card.indicator_id} / ${text(instance.event_id)}`, instance.window ? interval(instance.window) : "未定位",
       instance.status === "scored" ? `${instance.grade} / ${instance.score}（正式评分）` : instance.status === "proxy_scored" ? `${instance.proxy_grade} / ${instance.score}（视觉代理）` : CARD_RUN_LABELS[instance.status],
       `${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count}`,
       instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；") + preloadSummary(instance.auxiliary_validation),
-      instance.reason_codes.map(code => text(cardReasonLabel(code))).join("；"),
-      instance.source_window_annotation ? manualCardSourceLabel(instance) + (instance.step_motion_validation ? "；" + stepMotionSummary(instance.step_motion_validation) : "")
+      [...instance.reason_codes, ...instance.advisory_reason_codes, ...instance.advisory_flags].map(code => text(cardReasonLabel(code, formal))).join("；"),
+      instance.source_window_annotation ? manualCardSourceLabel(instance) + (instance.directional_micro_validation ? "；" + directionalMicroSummary(instance.directional_micro_validation) : "") + (instance.step_motion_validation ? "；" + stepMotionSummary(instance.step_motion_validation) : "")
         : instance.source_stage ? `${text(instance.source_stage.stage_code)}；人工估计 ±${numberText(instance.source_stage.binding.uncertainty_ms)} 毫秒；${text(instance.source_stage.binding.source)}；${text(instance.source_stage.binding.version)}${instance.racket_side_evidence ? `；${manualCardSourceLabel(instance)}` : ""}${preloadSourceSummary(instance.auxiliary_evidence, instance.auxiliary_validation)}`
         : instance.foot_cycle ? `${instance.foot_cycle.step_window_binding.method === "manual_anchor" ? "人工步周期候选窗口" : "步周期来源未核验"}；非专家步型或触地真值${instance.source_cycle_annotation ? `；边界不确定性 ±${numberText(instance.source_cycle_annotation.binding.uncertainty_ms)} 毫秒` : ""}；${text(instance.foot_cycle.step_window_binding.evidence_reference)}；${text(instance.foot_cycle.step_window_binding.version)}`
         : card.event_code.startsWith("GS") ? "未核验阶段来源" : ["FS03", "FS04"].includes(card.event_code) ? "未核验人工步周期窗口来源" : "由动作检测器定位的候选窗口",
@@ -395,7 +396,7 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
     if (typeof value === "number") return finite(value);
     if (value === null || typeof value === "boolean") return value;
     if (Array.isArray(value)) return value.map(item => scrub(item, depth + 1));
-    return Object.fromEntries(Object.entries(asRecord(value)).filter(([key, item]) => key === "wrist_path_torso" || key === "path_length_torso" && finite(item) !== null || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? trustedScoreRows.has(asRecord(value)) ? finite(item) : evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
+    return Object.fromEntries(Object.entries(asRecord(value)).filter(([key, item]) => key === "wrist_path_torso" || ["path_length_torso", "moving_ankle_path_length_torso", "both_ankles_max_path_length_torso"].includes(key) && finite(item) !== null || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? trustedScoreRows.has(asRecord(value)) ? finite(item) : evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
   };
   return scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,

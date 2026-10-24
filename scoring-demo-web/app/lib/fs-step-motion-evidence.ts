@@ -50,7 +50,7 @@ const empty = (status: StepMotionValidation["status"], reason: string): StepMoti
   moving_foot: null, total_frame_count: null, valid_frame_count: null, fixed_torso_scale: null, endpoint_count: null,
   feet: null, values: {}, condition_values_match: false, model_estimate_sample_count: 0 });
 
-function phases(path: Point[], times: number[], pts: EvidenceObject[], frames: number[], scale: number, count: number): StepMotionFoot {
+export function recomputeStepMotionFoot(path: Point[], times: number[], pts: EvidenceObject[], frames: number[], scale: number, count: number): StepMotionFoot {
   const intervals = path.slice(1).map((p, i) => { const duration = times[i + 1] - times[i], speed = distance(path[i], p) * 1000 / (duration * scale);
     return { source_frames: frames.slice(i, i + 2), duration_ms: duration, speed_torso_s: speed, moving: speed > contract.low_speed_threshold_torso_s }; });
   const runs: StepMotionPhase[] = [];
@@ -184,8 +184,8 @@ export function validateFsStepMotion(annotation: EvidenceObject | null, evidence
   }
   const scales = points.map(p => distance(middle(p.left_shoulder, p.right_shoulder), middle(p.left_hip, p.right_hip))), scale = median(scales), count = Math.max(3, Math.ceil(n * .2));
   if (!finite(scale) || scale <= 0 || !near(raw.fixed_torso_scale, scale) || !matches(scales, raw.source_torso_scales) || raw.endpoint_count !== count) return invalid("step_motion_fixed_scale_invalid");
-  const feet = { left: phases(points.map(p => p.left_ankle), times, pts, frames as number[], scale, count),
-    right: phases(points.map(p => p.right_ankle), times, pts, frames as number[], scale, count) };
+  const feet = { left: recomputeStepMotionFoot(points.map(p => p.left_ankle), times, pts, frames as number[], scale, count),
+    right: recomputeStepMotionFoot(points.map(p => p.right_ankle), times, pts, frames as number[], scale, count) };
   const declared = feet[side as "left" | "right"], other = feet[side === "left" ? "right" : "left"], reasons = [...declared.reason_codes];
   if (other.complete_visual_motion_cycle) reasons.push("step_motion_competing_ankle_cycle");
   if (other.net_displacement_torso > declared.net_displacement_torso || other.path_length_torso > declared.path_length_torso) reasons.push("step_motion_declared_side_conflicts_with_paths");
