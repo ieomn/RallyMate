@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -254,11 +255,16 @@ class Yolo26Perception:
         player_detections: Sequence[dict],
         max_players: int,
     ) -> list[dict]:
-        return self.pose_estimator.estimate(
+        self.last_pose_association_diagnostics = None
+        poses = self.pose_estimator.estimate(
             frame,
             player_detections,
             max_players,
         )
+        self.last_pose_association_diagnostics = deepcopy(
+            getattr(self.pose_estimator, "last_association_diagnostics", None)
+        )
+        return poses
 
     def pose_metadata(self) -> dict:
         return self.pose_backend.metadata().to_dict()

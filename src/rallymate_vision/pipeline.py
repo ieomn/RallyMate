@@ -47,6 +47,7 @@ from rallymate_tracking import build_primary_player_artifacts
 from rallymate_vision.contracts import FRAME_SCHEMA_VERSION, SCHEMA_VERSION, PipelineRequest
 from rallymate_vision.inference import Yolo26Perception
 from rallymate_vision.pose.metadata import keypoint_schema, sha256_file
+from rallymate_vision.pose.diagnostics import bind_pose_association_diagnostics
 from rallymate_vision.quality import (
     aggregate_quality,
     analyze_frame,
@@ -729,6 +730,12 @@ def run_pipeline(
                     },
                 },
             }
+            pose_diagnostics = bind_pose_association_diagnostics(
+                getattr(perception, "last_pose_association_diagnostics", None),
+                record["frame"],
+            )
+            if pose_diagnostics is not None:
+                record["pose_association"] = pose_diagnostics
             validate_frame_observation(record)
             frames_file.write(json.dumps(record, ensure_ascii=False) + "\n")
 
