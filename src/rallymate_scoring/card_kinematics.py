@@ -177,6 +177,9 @@ def validate_window(samples, window, timeline):
     if any(row.get("rejected_model_person_track_id") == window["person_track_id"]
            and row.get("selected_person_track_id") == window["person_track_id"] for row in timeline):
         reasons.append("selected_model_observation_rejected")
+    if any(row.get("rejected_pose_person_track_id") == window["person_track_id"]
+           and row.get("selected_person_track_id") == window["person_track_id"] for row in timeline):
+        reasons.append("selected_pose_person_association_conflict")
     model_epochs = set()
     for sample in samples:
         frame = _get(sample, "frame_index")

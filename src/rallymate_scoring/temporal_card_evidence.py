@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 
 from rallymate_events.associations import event_identity, finite_time
-from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION, validated_camera_transform
+from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION, POSE_ASSOCIATION_LEDGER_VERSION, validated_camera_transform
 from rallymate_features.schemas import PoseSequence, validated_source_time_binding, MODEL_MEASUREMENT_PROVENANCE
 from rallymate_features.source_alignment import (
     JOINTS, HIPS, SourceAlignedContext, locate_source_preload,
@@ -27,6 +27,7 @@ from rallymate_scoring.card_scoring_policy import ADVISORY_QUALITY_FLAGS
 
 VERSION = "temporal-card-evidence-v1.0.0"
 SOURCE_BINDING_EVIDENCE_VERSION = "temporal-source-frame-bindings-v1.0.0"
+POSE_ASSOCIATION_GATE_VERSION = "temporal-pose-person-association-gate-v1.0.0"
 MIN_DURATION_MS = 80
 MAX_BRAKING_WINDOW_MS = 600
 LOW_HIP_SPEED_TORSO_S = .6
@@ -131,6 +132,68 @@ def _subject_window_reason(context: SourceAlignedContext, indexes: np.ndarray, e
     return None
 
 
+def _pose_association_window(context: SourceAlignedContext, indexes: np.ndarray, event: Mapping) -> tuple[dict | None, str | None]:
+    """Reject selected raw-person conflicts in precisely the consumed frames.
+
+    Geometry and the original frame denominator remain intact. The audit is an
+    independent hard source gate, never an advisory flag or a 70% mask.
+    Legacy direct PoseSequence inputs without the record audit are unchanged;
+    they do not acquire an audit-success claim.
+    """
+    ledger = context.sequence.coordinate_metadata.get("source_pose_person_association")
+    if ledger is None:
+        return None, None
+    from rallymate_vision.pose.association import POLICY_VERSION
+    frames = context.sequence.source_frames[indexes].astype(int).tolist()
+    tracks = event.get("track_diagnostics", {}).get("source_track_ids")
+    raw_track = tracks[0] if isinstance(tracks, list) and len(tracks) == 1 and type(tracks[0]) is int and tracks[0] >= 0 else None
+    proof = {"gate_version": POSE_ASSOCIATION_GATE_VERSION, "source_frames": frames,
+        "selected_source_track_id": raw_track, "rows": [], "rejected_source_frames": [],
+        "semantics": "selected_raw_track_duplicate_geometry_hard_gate_not_person_identity_truth",
+        "original_frame_denominator_preserved": True}
+    if (not isinstance(ledger, Mapping) or ledger.get("version") != POSE_ASSOCIATION_LEDGER_VERSION
+            or ledger.get("policy_version") != POLICY_VERSION
+            or ledger.get("source") != "recomputed_from_original_record_poses_and_player_detections"
+            or not isinstance(ledger.get("rows_by_source_frame"), Mapping) or raw_track is None):
+        return proof, "source_pose_association_evidence_invalid"
+    proof.update(ledger_version=ledger["version"], policy_version=ledger["policy_version"])
+    reason = None
+    for i, frame in zip(indexes, frames):
+        row = ledger["rows_by_source_frame"].get(str(frame))
+        proof["rows"].append(deepcopy(row))
+        binding = context.sequence.source_time_bindings.get(frame)
+        if binding is None and context.sequence.model_estimate_bindings is not None:
+            binding = context.sequence.model_estimate_bindings[i]
+        if (not isinstance(row, Mapping) or not isinstance(binding, Mapping)
+                or any(row.get(key) != binding.get(key) for key in
+                       ("frame_index", "processed_index", "pts", "time_base_num", "time_base_den"))
+                or str(row.get("video_sha256")).lower() != str(binding.get("video_sha256")).lower()
+                or row.get("selected_source_track_id") != raw_track or binding.get("person_track_id") != raw_track):
+            reason = reason or "source_pose_association_evidence_invalid"
+            continue
+        audit = row.get("audit")
+        # Missing source dimensions already fail the geometric source contract;
+        # preserve this explicit unaudited row instead of calling it conflict-free.
+        if audit is None:
+            reason = reason or "source_pose_association_audit_unavailable"
+            continue
+        rejected = audit.get("rejected_person_track_ids") if isinstance(audit, Mapping) else None
+        conflicts = audit.get("conflicts") if isinstance(audit, Mapping) else None
+        if (not isinstance(audit, Mapping) or audit.get("policy_version") != POLICY_VERSION
+                or not isinstance(rejected, list) or any(type(v) is not int or v < 0 for v in rejected)
+                or not isinstance(conflicts, list) or any(not isinstance(c, Mapping)
+                    or not isinstance(c.get("rejected_person_track_ids"), list)
+                    or any(type(v) is not int or v < 0 for v in c["rejected_person_track_ids"]) for c in conflicts)
+                or sorted(set(rejected)) != sorted({v for c in conflicts for v in c["rejected_person_track_ids"]})):
+            reason = reason or "source_pose_association_evidence_invalid"
+            continue
+        if raw_track in rejected:
+            proof["rejected_source_frames"].append(frame)
+    if proof["rejected_source_frames"]:
+        reason = "selected_pose_person_association_conflict"
+    return proof, reason
+
+
 def _phase(event: Mapping, name: str) -> tuple[float | None, str | None]:
     phases = event.get("key_phases_ms", {})
     value = finite_time(phases.get(name)) if isinstance(phases, Mapping) else None
@@ -208,6 +271,10 @@ def _source_frame_evidence(context: SourceAlignedContext, indexes: np.ndarray) -
             "metadata_source": "PoseSequence.model_estimate_bindings_contract",
             "confidence_available": False,
         } if isinstance(model, Mapping) else None)
+        ledger = sequence.coordinate_metadata.get("source_pose_person_association")
+        if isinstance(ledger, Mapping):
+            source_rows = ledger.get("rows_by_source_frame")
+            row["pose_person_association"] = deepcopy(source_rows.get(str(frame))) if isinstance(source_rows, Mapping) else None
         rows.append(row)
     return rows
 
@@ -221,6 +288,9 @@ def _window(context: SourceAlignedContext, event: Mapping, start: float, end: fl
                 "timestamps_ms": context.sequence.timestamp_ms[indexes].astype(float).tolist(),
                 "coverage": coverage, "reference": "one_camera_epoch_fixed_median_torso",
                 "interpolation_used": False}
+    association, association_reason = _pose_association_window(context, indexes, event)
+    if association is not None:
+        evidence["pose_person_association"] = association
     reason = (_identity_reason(context, event)
               or context.window_reason(indexes, start, end, minimum_samples=3)
               or _subject_window_reason(context, indexes, event))
@@ -270,7 +340,9 @@ def _window(context: SourceAlignedContext, event: Mapping, start: float, end: fl
         # The 70% source gate is necessary but not sufficient for a continuous
         # trajectory. Interpolating this gap could invent the joint descent.
         reason = reason or "required_joint_gap_inside_continuous_window"
-    return indexes, evidence, reason
+    # Preserve the established missing-clock/geometry diagnostic when the
+    # source was already unusable, while independently retaining this audit.
+    return indexes, evidence, reason or association_reason
 
 
 def _longest_interval_duration(times: list[Fraction], active: np.ndarray) -> float:
@@ -370,6 +442,9 @@ def _successor(context: SourceAlignedContext, event: Mapping, anchor: float, cod
     reason = (_identity_reason(context, successor)
               or context.window_reason(indexes, anchor, start, minimum_samples=1 if start == anchor else 2)
               or _subject_window_reason(context, indexes, event))
+    association_proof, association_reason = _pose_association_window(context, indexes, event)
+    if association_proof is not None:
+        association["pose_person_association"] = association_proof
     if successor.get("track_diagnostics", {}).get("source_track_ids") != event.get("track_diagnostics", {}).get("source_track_ids"):
         reason = reason or "successor_source_track_changed"
     if not indexes.size or context.sequence.timestamp_ms[indexes[0]] != anchor or context.sequence.timestamp_ms[indexes[-1]] != start:
@@ -384,7 +459,7 @@ def _successor(context: SourceAlignedContext, event: Mapping, anchor: float, cod
                        source_frame_bindings=_source_frame_evidence(context, indexes),
                        source_track_ids=deepcopy(event.get("track_diagnostics", {}).get("source_track_ids")),
                        successor_source_track_ids=deepcopy(successor.get("track_diagnostics", {}).get("source_track_ids")))
-    return association, reason
+    return association, reason or association_reason
 
 
 def _preload_fallback(context: SourceAlignedContext, event: Mapping, original: Mapping) -> dict:
@@ -400,6 +475,7 @@ def _preload_fallback(context: SourceAlignedContext, event: Mapping, original: M
     y = context.hip[indexes, 1]
     changes = np.diff(y)
     candidates = []
+    rejected_candidates = []
     for peak in range(2, len(y) - 2):
         if not np.isfinite(changes[peak - 1:peak + 1]).all() or changes[peak - 1] < 0 or changes[peak] >= 0:
             continue
@@ -415,15 +491,31 @@ def _preload_fallback(context: SourceAlignedContext, event: Mapping, original: M
         a, b, confirmation = [float(context.sequence.timestamp_ms[indexes[i]]) for i in (left, peak, right)]
         if b - a < MIN_DURATION_MS:
             continue
+        # The preceding source row proves this is an observed local turn, not a
+        # cropped descent. It is decision support, not an extra measured frame.
+        support = indexes[left-1:right+1]
+        association, association_reason = _pose_association_window(context, support, event)
         _, _, reason = _window(context, event, a, confirmation)
+        reason = reason or association_reason
         if reason is not None:
+            if association is not None:
+                rejected_candidates.append({"start_ms": a, "end_ms": b, "confirmation_end_ms": confirmation,
+                    "decision_support_source_frames": context.sequence.source_frames[support].astype(int).tolist(),
+                    "reason": reason, "pose_person_association": association})
             continue
-        candidates.append({"start_ms": a, "end_ms": b, "confirmation_end_ms": confirmation,
-                           "source_frames": context.sequence.source_frames[indexes[left:right + 1]].astype(int).tolist()})
-    return {"trigger": original.get("repair_reason"), "strategy": "earliest_complete_local_dip_before_landing_or_event_end",
+        candidate = {"start_ms": a, "end_ms": b, "confirmation_end_ms": confirmation,
+                     "source_frames": context.sequence.source_frames[indexes[left:right + 1]].astype(int).tolist()}
+        if association is not None:
+            candidate.update(decision_support_source_frames=context.sequence.source_frames[support].astype(int).tolist(),
+                pose_person_association=association)
+        candidates.append(candidate)
+    result = {"trigger": original.get("repair_reason"), "strategy": "earliest_complete_local_dip_before_landing_or_event_end",
             "candidates": candidates, "selected": candidates[0] if candidates else None,
             "takeoff_inferred": False, "original_event_modified": False,
             "phase_semantics": "local_dip_visual_proxy_not_confirmed_pre_takeoff_load"}
+    if rejected_candidates:
+        result["rejected_candidates"] = rejected_candidates
+    return result
 
 
 def _local_dip_proof(context: SourceAlignedContext, event: Mapping, selected: Mapping) -> dict:
@@ -469,6 +561,10 @@ def _local_dip_proof(context: SourceAlignedContext, event: Mapping, selected: Ma
             "camera_motion_status": sequence.camera_motion_status[i] if sequence.camera_motion_status is not None else None,
             "frame_dimensions_px": sequence.frame_dimensions_px[i].tolist() if sequence.frame_dimensions_px is not None else None,
             "frame_transform_to_reference": sequence.frame_transforms_to_reference[i].tolist() if sequence.frame_transforms_to_reference is not None else None})
+        ledger = sequence.coordinate_metadata.get("source_pose_person_association")
+        if isinstance(ledger, Mapping):
+            source_rows = ledger.get("rows_by_source_frame")
+            rows[-1]["pose_person_association"] = deepcopy(source_rows.get(str(frame))) if isinstance(source_rows, Mapping) else None
     proof = {"version": "temporal-local-dip-proof-v1.0.0", "required_joint_names": list(JOINTS),
         "parent_event": {key: deepcopy(event.get(key)) for key in
                          ("video_id", "event_id", "event_code", "person_track_id", "start_ms", "end_ms", "key_phases_ms", "quality_flags")},
@@ -587,12 +683,21 @@ def compute_temporal_card_evidence(sequence: PoseSequence, event: Mapping[str, A
         return output
     for card in cards:
         evidence, values, reason = {}, {}, None
+        phase_association_reason = None
         association, successor_reason = None, None
         if card == "FS01-M02":
             phase = locate_source_preload(context, event, identity_validator=_identity_reason,
                                           subject_validator=_subject_window_reason)
             a, b = phase.get("source_preload_start_ms"), phase.get("source_preload_ms")
             evidence["phase_selection"] = phase
+            if a is not None and b is not None:
+                support_frames = phase.get("source_frames", [])
+                support = np.flatnonzero(np.isin(sequence.source_frames, support_frames))
+                if support.size and support[0] > 0:
+                    support = np.r_[support[0]-1, support]
+                phase_association, phase_association_reason = _pose_association_window(context, support, event)
+                if phase_association is not None:
+                    evidence["phase_pose_person_association"] = phase_association
             if a is None or b is None:
                 reason = phase["repair_reason"]
                 if allow_phase_fallback:
@@ -601,6 +706,9 @@ def compute_temporal_card_evidence(sequence: PoseSequence, event: Mapping[str, A
                     if fallback["selected"] is not None:
                         a, b = fallback["selected"]["start_ms"], fallback["selected"]["end_ms"]
                         reason = None
+                    elif any(row.get("reason") == "selected_pose_person_association_conflict"
+                             for row in fallback.get("rejected_candidates", [])):
+                        reason = "selected_pose_person_association_conflict"
         elif card == "FS09-M03":
             a, reason = _phase(event, "peak_speed_ms")
             b = None
@@ -629,6 +737,7 @@ def compute_temporal_card_evidence(sequence: PoseSequence, event: Mapping[str, A
             evidence.update(source_frame_binding_version=SOURCE_BINDING_EVIDENCE_VERSION,
                 source_frame_bindings=_source_frame_evidence(context, indexes),
                 source_track_ids=deepcopy(event.get("track_diagnostics", {}).get("source_track_ids")))
+            reason = reason or phase_association_reason
             if reason is None:
                 values, raw, reason = _measure(context, indexes)
                 evidence["series"] = raw

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from copy import deepcopy
 from collections import Counter
 from fractions import Fraction
 from typing import Any
@@ -12,6 +13,7 @@ from rallymate_features.validity import valid_point_mask
 
 
 COORDINATE_CONTRACT_VERSION = "isotropic-frame-long-edge-v1.1.0"
+POSE_ASSOCIATION_LEDGER_VERSION = "source-pose-person-association-ledger-v1.0.0"
 
 
 def validated_camera_transform(camera: Any) -> np.ndarray | None:
@@ -197,6 +199,7 @@ def pose_sequence_from_records(
     Missing frame dimensions make that frame unavailable; no aspect ratio is
     inferred for legacy records.
     """
+    from rallymate_vision.pose.association import audit_pose_person_associations, POLICY_VERSION
     timeline = {}
     for item in primary_timeline:
         index = int(item["processed_index"])
@@ -220,6 +223,7 @@ def pose_sequence_from_records(
     model_masks = {name: [] for name in names}
     model_bindings = []
     source_time_bindings = {}
+    pose_association_rows = {}
     source_time_rejections = {}
     time_origin_ranges = {}
     dimensions_by_frame = []
@@ -256,6 +260,18 @@ def pose_sequence_from_records(
         transforms.append(transform if transform is not None else np.full((2, 3), np.nan))
         processed_index = int(frame["processed_index"])
         selected = timeline.get(processed_index)
+        # Recompute from all original same-frame poses before selecting one.
+        # Caller-supplied audit flags are never used as a source of authority.
+        frame_size = _frame_dimensions(frame)
+        audit = audit_pose_person_associations(record.get("poses", []),
+            [value for value in record.get("detections", []) if value.get("class_name") == "player"],
+            frame_size=frame_size) if frame_size is not None else None
+        pose_association_rows[str(int(frame["index"]))] = {
+            "frame_index": int(frame["index"]), "processed_index": processed_index,
+            **{key: deepcopy(frame.get(key)) for key in ("video_sha256", "pts", "time_base_num", "time_base_den")},
+            "selected_source_track_id": selected.get("source_track_id") if selected else None,
+            "audit": audit, "audit_unavailable_reason": None if audit is not None else "frame_dimensions_unavailable",
+        }
         time_binding, time_reason = _source_time_binding(record, selected,
             unique_source=time_frame_counts[frame.get("index")] == 1)
         if time_binding is not None:
@@ -337,6 +353,12 @@ def pose_sequence_from_records(
             "coordinate_system": "camera_reference_xy_divided_by_source_long_edge",
             "axis_units": "same_for_x_and_y",
             "is_metric_or_3d": False,
+            "source_pose_person_association": {
+                "version": POSE_ASSOCIATION_LEDGER_VERSION, "policy_version": POLICY_VERSION,
+                "source": "recomputed_from_original_record_poses_and_player_detections",
+                "scope": "same_source_frame_geometric_duplicate_audit_not_visual_identity_truth",
+                "rows_by_source_frame": pose_association_rows,
+            },
             "source_time_binding": {
                 "version": "decoder-source-time-binding-v1",
                 "semantics": "decoder_time_and_selected_identity_only_not_pose_validity_or_visibility",

@@ -24,6 +24,7 @@ from rallymate_scoring.card_scoring_policy import apply_scoring_policy, apply_re
 from rallymate_scoring.card_kinematics import MODEL_EPOCH_SEMANTICS, _point as _valid_card_point, finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.stroke_candidates import _sample, _stabilize_partial_torso_windows
+from rallymate_vision.pose.association import audit_pose_person_associations
 from rallymate_scoring.gs_preload_evidence import (
     ANNOTATION_VERSION as PRELOAD_ANNOTATION_VERSION, ANNOTATION_SEMANTICS as PRELOAD_SEMANTICS,
     SUPPORTED_CARDS as PRELOAD_CARDS, AUXILIARY_REFERENCES as PRELOAD_REFERENCES, compute_gs_preload_evidence,
@@ -419,7 +420,19 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
         if (not isinstance(poses, list) or any(not isinstance(pose, Mapping) or not _integer(pose.get("person_track_id")) for pose in poses)
                 or len({pose.get("person_track_id") for pose in poses}) != len(poses)):
             raise ValueError("duplicate_or_invalid_pose_identity")
+        association = audit_pose_person_associations(
+            poses, [d for d in record.get("detections", [])
+                    if isinstance(d, Mapping) and d.get("class_name") == "player"],
+            frame_size=(frame.get("width"), frame.get("height")))
+        rejected_tracks = set(association["rejected_person_track_ids"])
+        if current in rejected_tracks:
+            # Keep the conflict in the full source ledger. Merely omitting a
+            # bad sample would let a 70% subset turn the same window into a score.
+            timeline[-1]["rejected_pose_person_track_id"] = current
+            timeline[-1]["pose_person_association"] = association
         for pose in poses:
+            if pose["person_track_id"] in rejected_tracks:
+                continue
             sample = _sample(pose, frame)
             if sample is None:
                 # A rejected selected SAM declaration is not a missing detector
@@ -551,6 +564,9 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             if applicable:
                 window["racket_side"] = racket_binding["measurement_wrist_side"]
         reasons = []
+        if any(row.get("rejected_pose_person_track_id") == annotation["person_track_id"]
+               and row.get("selected_person_track_id") == annotation["person_track_id"] for row in bound):
+            reasons.append("selected_pose_person_association_conflict")
         if [row["frame_index"] for row in bound] != expected_indices:
             reasons.append("source_decoder_window_inventory_incomplete")
         if not samples or len(bound) < 3:

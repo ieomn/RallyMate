@@ -584,6 +584,9 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
         rule_digest = hashlib.sha256(json.dumps(load_card_rules(), sort_keys=True,
             ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
         engine_version = VERSION + ":" + TEMPORAL_VERSION + ":" + SCORING_POLICY_VERSION
+        from rallymate_vision.pose.association import POLICY_VERSION as POSE_ASSOCIATION_POLICY_VERSION
+        from rallymate_scoring.temporal_card_evidence import POSE_ASSOCIATION_GATE_VERSION
+        engine_version += ":" + POSE_ASSOCIATION_POLICY_VERSION + ":" + POSE_ASSOCIATION_GATE_VERSION
         if (directory / "gs-stage-annotations.json").exists():
             from .gs_card_execution import VERSION as GS_VERSION
             engine_version += ":" + GS_VERSION
