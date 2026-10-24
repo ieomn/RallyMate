@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from rallymate_scoring.card_kinematics import DYNAMIC_SPECS, SPECS, VERSION as MEASUREMENT_VERSION
 from rallymate_scoring.card_rule_catalog import load_card_rules
-from rallymate_scoring.footwork_cycle_card_evidence import CYCLE_POLICY_VERSION, LOCAL_REVIEW_FLAGS
+from rallymate_scoring.footwork_cycle_card_evidence import CYCLE_POLICY_VERSION, LOCAL_REVIEW_FLAGS, QUALITY_POLICY_VERSION
 from rallymate_vision.pose.metadata import load_keypoint_schemas
 from rallymate_service.fs_card_windows import ANNOTATION_VERSION, SEMANTICS, VERSION, supported_rules
 
@@ -41,6 +41,7 @@ def build_contract():
     return {"rule_version": load_card_rules()["version"], "runtime_engine": VERSION,
         "measurement_version": MEASUREMENT_VERSION, "annotation_version": ANNOTATION_VERSION,
         "annotation_semantics": SEMANTICS, "quality_policy_version": CYCLE_POLICY_VERSION,
+        "advisory_quality_policy_version": QUALITY_POLICY_VERSION,
         "quality_review_flags": sorted(LOCAL_REVIEW_FLAGS),
         "known_joint_names": sorted({point["name"] for schema in load_keypoint_schemas()["formats"].values() for point in schema["keypoints"]}), "cards": cards}
 

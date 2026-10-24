@@ -4,6 +4,16 @@ export default {
   "runtime_engine": "footwork-cycle-execution-v1.0.0",
   "measurement_version": "footwork-cycle-card-evidence-v1.0.0",
   "cycle_policy_version": "continuous-ankle-motion-cycle-v1",
+  "advisory_quality_policy_version": "cycle-window-advisory-quality-v2",
+  "quality_review_flags": [
+    "keypoint_jump_candidates_present",
+    "left_right_swap_candidates_present",
+    "pose_kinematic_coverage_low",
+    "primary_identity_ambiguous",
+    "primary_pose_coverage_low",
+    "primary_track_coverage_low",
+    "source_track_switch_candidates_present"
+  ],
   "minimum_motion_interval_ms": 80,
   "low_ankle_speed_torso_s": 0.5,
   "order_deadband_torso": 0.08,

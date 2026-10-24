@@ -31,6 +31,8 @@ def build_contract():
         }
     return {"rule_version": catalogue["version"], "runtime_engine": RUNTIME_VERSION,
             "measurement_version": core.VERSION, "cycle_policy_version": core.CYCLE_POLICY_VERSION,
+            "advisory_quality_policy_version": core.QUALITY_POLICY_VERSION,
+            "quality_review_flags": sorted(core.LOCAL_REVIEW_FLAGS),
             "minimum_motion_interval_ms": core.MIN_DURATION_MS,
             "low_ankle_speed_torso_s": core.LOW_ANKLE_SPEED_TORSO_S,
             "order_deadband_torso": core.ORDER_DEADBAND_TORSO, "cards": cards}

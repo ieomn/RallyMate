@@ -1,7 +1,9 @@
 /** Auxiliary measurements have no grade path. Raw input survives for diagnosis;
  * presentation and exports use this independently recomputed validation only. */
 import contract from "./gs-preload-display-contract";
-import { objectOf, type EvidenceObject } from "./manual-card-evidence";
+import { objectOf, validFormalGsStageSource, type EvidenceObject } from "./manual-card-evidence";
+
+import { isFormalScoringPolicy } from "./formal-card-scoring-policy";
 
 const rows = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -13,7 +15,8 @@ const clockNear = (a: unknown, b: unknown) => finite(a) && finite(b) && Math.abs
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const exactKeys = (value: EvidenceObject, expected: string[]) => same(Object.keys(value).sort(), [...expected].sort());
 const median = (values: number[]) => { const sorted = [...values].sort((a, b) => a - b), n = sorted.length; return (sorted[Math.floor((n - 1) / 2)] + sorted[Math.floor(n / 2)]) / 2; };
-type Context = { indicator_id: string; event_id: string; video_id: string; person_track_id: number; status: string;
+type Context = { scoring_policy_version?: string | null; source_stage_evidence?: EvidenceObject | null; source_stage_context?: EvidenceObject | null;
+  indicator_id: string; event_id: string; video_id: string; person_track_id: number; status: string;
   window: { start_ms: number; end_ms: number } | null;
   source_stage: { stage_code: string; annotation_id: string; document_sha256: string; digest_kind: string } | null;
   source: { document_id: string; document_sha256: string; table: string; rubric_sha256: string } };
@@ -130,7 +133,10 @@ export function validateGsPreload(value: EvidenceObject | null, context: Context
   if (!Array.isArray(a.reason_codes) || reasons.some(v => !nonempty(v))) return invalid("preload_series_invalid");
   const gaps = actualTimes.slice(1).map((time, i) => time - actualTimes[i]), duration = end - start;
   if (a.status === "measured_auxiliary") {
-    if (context.status !== "review_required" || reasons.length || !sourceComplete || n < 7 || valid !== n || duration < 80
+    const formalParent = isFormalScoringPolicy(context.scoring_policy_version) && context.status === "unavailable"
+      && validFormalGsStageSource(context.source_stage_evidence ?? null, context.source_stage_context ?? null, {
+        ...context, quality: { total_frame_count: rows(context.source_stage_evidence?.source_frames).length, required_joint_names: [] } });
+    if (!(context.status === "review_required" || formalParent) || reasons.length || !sourceComplete || n < 7 || valid !== n || duration < 80
         || gaps.some(gap => gap > Math.min(160, median(gaps) * 1.8))
         || numericSeries.some(values => !values.every(finite)) || scales.some(v => Number(v) <= 0)) return invalid("preload_continuous_measurement_invalid");
     const count = Math.max(3, Math.ceil(n * .2)), scale = median(scales as number[]);

@@ -1,5 +1,8 @@
 /** Preserve manual provenance, but never turn a supplied verification flag into a score. */
 import fsContract from "./fs-card-window-display-contract";
+import stepContract from "./fs-step-motion-display-contract";
+import { validateFsStepMotion } from "./fs-step-motion-evidence";
+import { isAdvisoryQualityFlag, isFormalScoringPolicy, validDerivedSelectionLedger } from "./formal-card-scoring-policy";
 
 export type EvidenceObject = Record<string, unknown>;
 export interface RacketSideEvidence { observation: EvidenceObject; window_binding: EvidenceObject; window: EvidenceObject; action_id: string }
@@ -38,7 +41,8 @@ export function racketSideOf(row: EvidenceObject): RacketSideEvidence | null {
 }
 
 type InstanceContext = { indicator_id: string; event_id: string; video_id: string; person_track_id: number;
-  window: { start_ms: number; end_ms: number } | null; quality: { total_frame_count: number; required_joint_names: string[] } };
+  window: { start_ms: number; end_ms: number } | null; quality: { total_frame_count: number; required_joint_names: string[] };
+  conditions?: { metric: string; value: number | null }[]; scoring_policy_version?: string | null };
 type Stage = { document_sha256: string; annotation_id: string; stage_code: string } | null;
 
 function ptsTime(row: EvidenceObject): number | null {
@@ -90,10 +94,40 @@ export function validRacketSide(proof: RacketSideEvidence | null, context: Insta
   return !requireApplicable || p.stage_continuity_verified === true;
 }
 
+export function validFormalGsStageSource(evidence: EvidenceObject | null, w: EvidenceObject | null, context: InstanceContext): boolean {
+  if (!evidence || !w || !context.window || !isFormalScoringPolicy(context.scoring_policy_version)) return false;
+  const frames = rows(evidence.source_frames), pts = rows(evidence.source_pts).map(objectOf), selected = rows(evidence.source_frame_bindings).map(objectOf);
+  if (frames.length < 3 || frames.length !== context.quality.total_frame_count || frames.length !== pts.length || frames.length !== selected.length
+      || evidence.interpolation_used !== false || !validDerivedSelectionLedger(selected, true, w.derived_selection_epoch)
+      || !sha(w.video_sha256) || w.video_id !== context.video_id || w.event_id !== context.event_id || w.person_track_id !== context.person_track_id
+      || w.event_code !== context.indicator_id.split("-")[0] || w.stage_code !== context.indicator_id.split("-").slice(0, 2).join("-")
+      || !integer(w.selection_epoch) || !integer(w.camera_reference_epoch) || w.camera_compensated !== true
+      || !close(w.start_ms, context.window.start_ms) || !close(w.end_ms, context.window.end_ms)) return false;
+  const times: number[] = [], modelEpochs = new Set<number>();
+  for (let i = 0; i < frames.length; i++) {
+    const p = pts[i], b = selected[i], time = ptsTime(p);
+    if (!integer(frames[i]) || i > 0 && Number(frames[i]) !== Number(frames[i - 1]) + 1 || p.frame_index !== frames[i] || time === null
+        || ["frame_index", "pts", "time_base_num", "time_base_den"].some(k => p[k] !== b[k]) || b.video_sha256 !== w.video_sha256
+        || b.selected_person_track_id !== context.person_track_id || b.selection_epoch !== w.selection_epoch || b.camera_reference_epoch !== w.camera_reference_epoch
+        || !close(b.timestamp_ms, time) || i > 0 && (time <= times[i - 1] || p.time_base_num !== pts[0].time_base_num || p.time_base_den !== pts[0].time_base_den)) return false;
+    if (b.model_epoch_semantics !== undefined || b.source_model_selection_epoch !== undefined) {
+      if (b.model_epoch_semantics !== "detector_track_epoch_primary_selection_applied_downstream" || !integer(b.source_model_selection_epoch)) return false;
+      modelEpochs.add(b.source_model_selection_epoch);
+    }
+    times.push(time);
+  }
+  return modelEpochs.size <= 1 && close(times[0], context.window.start_ms) && close(times.at(-1), context.window.end_ms);
+}
+
 export function validFsWindow(annotation: EvidenceObject | null, evidence: EvidenceObject | null, w: EvidenceObject | null, context: InstanceContext): boolean {
   if (!annotation || !evidence || !w || !context.window) return false;
   const a = annotation, binding = objectOf(a.binding), requested = objectOf(a.requested_window_ms);
+  const formal = isFormalScoringPolicy(context.scoring_policy_version);
   const frames = rows(evidence.source_frames), pts = rows(evidence.source_pts), selected = rows(evidence.source_frame_bindings);
+  if (!validDerivedSelectionLedger(selected, formal, w.derived_selection_epoch)) return false;
+  const motionRequired = context.indicator_id in stepContract.cards;
+  const motion = motionRequired ? validateFsStepMotion(annotation, evidence, w, context) : null;
+  if (motionRequired && (motion?.status !== "measured_visual_motion" || !motion.condition_values_match)) return false;
   if (a.document_version !== fsContract.annotation_version || !sha(a.document_sha256) || a.digest_kind !== "canonical_json_sorted_utf8_v1"
       || a.annotation_id !== context.event_id || a.indicator_id !== context.indicator_id || a.person_track_id !== context.person_track_id
       || !integer(a.start_source_frame) || !integer(a.end_source_frame) || a.start_source_frame >= a.end_source_frame
@@ -105,7 +139,7 @@ export function validFsWindow(annotation: EvidenceObject | null, evidence: Evide
       || binding.semantics !== fsContract.annotation_semantics || !finite(binding.uncertainty_ms) || binding.uncertainty_ms < 0
       || !frames.length || frames.length !== a.end_source_frame - a.start_source_frame + 1 || frames.length !== context.quality.total_frame_count
       || frames.length !== pts.length || frames.length !== selected.length || evidence.interpolation_used !== false
-      || evidence.step_cycle_bound !== false || evidence.source_behavior_or_contact_verified !== false || evidence.quality_observations_present !== true) return false;
+      || evidence.step_cycle_bound !== motionRequired || evidence.source_behavior_or_contact_verified !== false || evidence.quality_observations_present !== true) return false;
   const times: number[] = [];
   for (let i = 0; i < frames.length; i++) {
     const s = objectOf(pts[i]), b = objectOf(selected[i]), time = ptsTime(s);
@@ -126,18 +160,25 @@ export function validFsWindow(annotation: EvidenceObject | null, evidence: Evide
     const tracks = rows(q.source_track_ids), flags = rows(q.raw_input_quality_flags), diagnostics = objectOf(q.source_track_diagnostics);
     if (!nonempty(q.source_event_id) || identities.has(q.source_event_id) || tracks.length !== 1 || !integer(tracks[0])
         || !finite(q.source_start_ms) || !finite(q.source_end_ms) || q.source_start_ms > q.source_end_ms
-        || q.global_identity_warning !== false || q.primary_identity_ambiguous === true
-        || finite(q.source_track_switch_candidate_count) && q.source_track_switch_candidate_count > 0
+        || (formal ? typeof q.global_identity_warning !== "boolean" : q.global_identity_warning !== false || q.primary_identity_ambiguous === true
+          || finite(q.source_track_switch_candidate_count) && q.source_track_switch_candidate_count > 0)
         || finite(q.confirmed_id_switch_count) && q.confirmed_id_switch_count > 0
+        || q.confirmed_id_switch_count != null && (!integer(q.confirmed_id_switch_count) || q.confirmed_id_switch_count !== 0)
         || !Array.isArray(q.raw_input_quality_flags) || flags.some(flag => typeof flag !== "string"
-          || /identity_ambiguous|id_switch|track_switch/.test(flag))) return false;
+          || /identity_ambiguous|id_switch|track_switch/.test(flag) && !(formal && isAdvisoryQualityFlag(flag)))) return false;
     if (["source_track_ids", "primary_identity_ambiguous", "source_track_switch_candidate_count", "confirmed_id_switch_count"].some(key => !same(q[key], diagnostics[key]))) return false;
     identities.add(q.source_event_id);
     const applies = tracks[0] === context.person_track_id;
     if (q.applies_to_selected_person !== applies) return false;
     if (!applies) continue;
-    if (q.primary_identity_ambiguous !== false || q.source_track_switch_candidate_count !== 0
-        || q.policy_version !== fsContract.quality_policy_version || !Array.isArray(q.review_flags) || q.review_flags.length) return false;
+    if ((formal ? typeof q.primary_identity_ambiguous !== "boolean" || !integer(q.source_track_switch_candidate_count)
+          : q.primary_identity_ambiguous !== false || q.source_track_switch_candidate_count !== 0)
+        || q.policy_version !== fsContract.quality_policy_version || !Array.isArray(q.review_flags)
+        || rows(q.review_flags).some(flag => !formal || !isAdvisoryQualityFlag(flag))) return false;
+    if (formal && (q.quality_policy_version !== fsContract.advisory_quality_policy_version
+        || !Array.isArray(q.blocking_flags) || q.blocking_flags.length || !Array.isArray(q.advisory_flags)
+        || q.advisory_flags.some(flag => !isAdvisoryQualityFlag(flag))
+        || !same(q.event_identity_diagnostics, diagnostics))) return false;
     const ignored: string[] = [];
     for (const [flag, field] of [["keypoint_jump_candidates_present", "keypoint_jump_candidate_joints"], ["left_right_swap_candidates_present", "left_right_swap_candidate_joint_pairs"]]) {
       let joints: unknown[] = rows(diagnostics[field]);
@@ -146,7 +187,8 @@ export function validFsWindow(annotation: EvidenceObject | null, evidence: Evide
           && (fsContract.known_joint_names as readonly string[]).includes(joint) && !context.quality.required_joint_names.includes(joint))) ignored.push(flag);
     }
     if (!same([...rows(q.irrelevant_joint_flags)].sort(), ignored.sort()) || flags.some(flag => !ignored.includes(String(flag))
-        && ((fsContract.quality_review_flags as readonly unknown[]).includes(flag) || /confirmed_id_switch|id_switch_confirmed|censored/.test(String(flag))))) return false;
+        && ((fsContract.quality_review_flags as readonly unknown[]).includes(flag) || /confirmed_id_switch|id_switch_confirmed|censored/.test(String(flag)) || formal && String(flag).startsWith("required_phase_missing:"))
+        && !(formal && isAdvisoryQualityFlag(flag)))) return false;
     // The producer's event boundaries use validated source-record milliseconds
     // (which may be rounded), not the exact fractional PTS clock. Each binding
     // timestamp was already checked against its PTS above; use the same clock

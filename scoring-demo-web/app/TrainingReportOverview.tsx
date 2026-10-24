@@ -1,5 +1,8 @@
 "use client";
 
+import { cardExecutionOf } from "./lib/card-execution";
+import { isFormalScoringPolicy } from "./lib/formal-card-scoring-policy";
+
 import CardExecutionPanel from "./CardExecutionPanel";
 import { reportVideoDurationMs } from "./lib/workspace-navigation";
 
@@ -8,6 +11,11 @@ import { evidenceReferenceScore, measurementCounts } from "./lib/measurement-evi
 import { analysisReportOf, reportFocus, replayMoment } from "./lib/training-report";
 
 export default function TrainingReportOverview({ result, motion, pending, title, description }: { result: DemoResultResponse | null; motion: MotionAnalysis | null; pending: boolean; title: string; description: string }) {
+  const cardReport = cardExecutionOf(result?.card_execution);
+  if (!pending && cardReport && isFormalScoringPolicy(cardReport.scoring_policy_version)) return <aside className="training-overview" id="scoreboard" aria-label="正式评分报告">
+    <CardExecutionPanel value={cardReport} jobId={result?.job_id} durationMs={reportVideoDurationMs(result)} />
+
+  </aside>;
   const score = evidenceReferenceScore(result?.training_evaluation);
   const counts = measurementCounts(result);
   const focus = reportFocus(result, motion);

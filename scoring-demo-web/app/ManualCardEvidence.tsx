@@ -1,5 +1,6 @@
 import type { CardInstance } from "./lib/card-execution";
 import { objectOf, validRacketSide } from "./lib/manual-card-evidence";
+import FsStepMotionEvidence from "./FsStepMotionEvidence";
 
 const list = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const show = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value.toLocaleString("zh-CN", { maximumFractionDigits: 3 }) : typeof value === "string" ? value : "未核验";
@@ -10,6 +11,10 @@ export default function ManualCardEvidence({ instance }: { instance: CardInstanc
   const observation = proof?.observation, validSide = proof && validRacketSide(proof, instance, instance.source_stage);
   const binding = objectOf(a?.binding);
   return <>
+    {instance.measurement_provenance && <div className="card-model-measurement-provenance">
+      <p>模型测量来源随结果保留，应用评分政策与原始测量来源分别记录。</p>
+      <details><summary>完整模型测量来源记录</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{JSON.stringify({ model_scoring_policy_version: instance.model_scoring_policy_version, measurement_provenance: instance.measurement_provenance }, null, 2)}</pre></details>
+    </div>}
     {observation && <div className="card-racket-side-evidence">
       <p>测量腕：{validSide ? wrist(observation.measurement_wrist_side) : "来源未核验，侧别不用于评分"}；采样画面的持拍手观察：{validSide ? observation.observed_racket_hands === "both" ? "双手" : wrist(observation.observed_racket_hands) : "未确认"}。</p>
       <p>这是人工观察到的持拍腕，不是优势手判定；采样帧不证明全程持续持拍，也不是专家确认的技术真值。边界不确定性 ±{show(observation.uncertainty_ms)} 毫秒。</p>
@@ -24,7 +29,8 @@ export default function ManualCardEvidence({ instance }: { instance: CardInstanc
     </div>}
     {a && <div className="card-manual-fs-evidence">
       <p>步伐卡窗口来源：人工逐卡候选窗口，边界不确定性 ±{show(binding.uncertainty_ms)} 毫秒。不是专家动作、触地或受力真值，也不是自动步伐阶段定位。</p>
-      <p>完整步周期未由此窗口确认。需要完整脚序的条件保留缺测，不把人工窗口当作完整周期。</p>
+      {!evidence?.step_motion && <p>完整步周期未由此窗口确认。需要完整脚序的条件保留缺测，不把人工窗口当作完整周期。</p>}
+      <FsStepMotionEvidence instance={instance} />
       <details><summary>逐卡窗口原帧与来源依据</summary>
         <p>原帧 {show(a.start_source_frame)}–{show(a.end_source_frame)}；{show(binding.source)} · {show(binding.version)}</p>
         <p>保留原始 PTS 和时基，原时钟不按播放器零点改写。选人段与相机段是工程分段，不等于人工身份真值。</p>

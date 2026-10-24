@@ -1,5 +1,6 @@
 /** Checks the emitted cycle evidence; never replaces original-video decoding. */
 import contract from "./footwork-cycle-display-contract";
+import { isAdvisoryQualityFlag, isFormalScoringPolicy } from "./formal-card-scoring-policy";
 
 type Obj = Record<string, unknown>;
 const object = (value: unknown): Obj => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Obj : {};
@@ -83,10 +84,12 @@ export function cycleMotionSteps(cycle: FootworkCycleEvidence): Array<Obj & { si
 export function validFootworkCycle(cycle: FootworkCycleEvidence | null, context: {
   indicator_id: string; event_id: string; video_id: string; person_track_id: number;
   window: { start_ms: number; end_ms: number } | null; total_frames: number; valid_frames: number;
+  scoring_policy_version?: string | null;
 }): boolean {
   if (!cycle || !context.window) return false;
   const binding = cycle.step_window_binding, series = cycle.series, frames = cycle.source_frames;
   const times = cycle.source_timestamps_ms, videoTimes = cycle.timestamps_ms, n = frames.length;
+  const formal = isFormalScoringPolicy(context.scoring_policy_version);
   if (n < 7 || n !== context.total_frames || context.valid_frames !== n || !frames.every(integer)
       || frames.some((frame, i) => i > 0 && Number(frame) !== Number(frames[i - 1]) + 1)
       || !numbers(times, n) || !numbers(videoTimes, n) || cycle.source_frame_bindings.length !== n
@@ -101,8 +104,21 @@ export function validFootworkCycle(cycle: FootworkCycleEvidence | null, context:
       || binding.start_source_frame !== frames[0] || binding.end_source_frame !== frames[n - 1]
       || typeof binding.video_sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(binding.video_sha256)
       || cycle.event_quality.policy_version !== contract.cycle_policy_version || !Array.isArray(cycle.event_quality.review_flags)
-      || cycle.event_quality.review_flags.length) return false;
+      || array(cycle.event_quality.review_flags).some(flag => !formal || !isAdvisoryQualityFlag(flag))) return false;
   const source = cycle.source_frame_bindings.map(object), first = source[0];
+  if (formal) {
+    const quality = cycle.event_quality, diagnostics = object(quality.event_identity_diagnostics), flags = array(quality.raw_input_quality_flags);
+    const confirmed = diagnostics.confirmed_id_switch_count;
+    if (quality.quality_policy_version !== contract.advisory_quality_policy_version
+        || !Array.isArray(quality.raw_input_quality_flags) || flags.some(flag => typeof flag !== "string")
+        || !Array.isArray(quality.blocking_flags) || quality.blocking_flags.length || !Array.isArray(quality.advisory_flags)
+        || quality.advisory_flags.some(flag => !isAdvisoryQualityFlag(flag))
+        || JSON.stringify(diagnostics.source_track_ids) !== JSON.stringify([first.person_track_id])
+        || typeof diagnostics.primary_identity_ambiguous !== "boolean" || !integer(diagnostics.source_track_switch_candidate_count)
+        || confirmed != null && (!integer(confirmed) || confirmed !== 0)
+        || flags.some(flag => !isAdvisoryQualityFlag(flag) && ((contract.quality_review_flags as readonly unknown[]).includes(flag)
+          || /confirmed_id_switch|id_switch_confirmed|censored/.test(String(flag)) || String(flag).startsWith("required_phase_missing:")))) return false;
+  }
   let offsetLower = -Infinity, offsetUpper = Infinity;
   for (let i = 0; i < n; i++) {
     const row = source[i];

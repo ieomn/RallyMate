@@ -6,14 +6,17 @@ import gsContract from "./gs-card-display-contract";
 import footworkContract from "./footwork-cycle-display-contract";
 import fsWindowContract from "./fs-card-window-display-contract";
 import { footworkCycleOf, validFootworkCycle, footworkValuesAgree, type FootworkCycleEvidence } from "./footwork-cycle-evidence";
-import { evidenceObject, racketSideOf, validRacketSide, validFsWindow, type EvidenceObject, type RacketSideEvidence } from "./manual-card-evidence";
+import { evidenceObject, racketSideOf, validRacketSide, validFsWindow, validFormalGsStageSource, type EvidenceObject, type RacketSideEvidence } from "./manual-card-evidence";
 import { validateGsPreload, type PreloadValidation } from "./gs-preload-evidence";
+import { validateFsStepMotion, type StepMotionValidation } from "./fs-step-motion-evidence";
+import { formalScoreSemantics, isFormalScoringPolicy } from "./formal-card-scoring-policy";
+import { validateTemporalLocalDip, validFormalTemporalSource, type LocalDipValidation } from "./temporal-local-dip-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
 const MEASUREMENT_VERSION = "temporal-card-evidence-v1.0.0";
 export const SOURCE_CARD_COUNT = 298;
-export const CARD_RUN_LABELS = { proxy_scored: "有视觉代理结果", review_required: "需要复核", unavailable: "证据不足", not_executed: "尚未接入计算", not_observed: "未观察到此类动作" } as const;
+export const CARD_RUN_LABELS = { scored: "已评分", proxy_scored: "有视觉代理结果", review_required: "需要复核", unavailable: "证据不足", not_executed: "尚未接入计算", not_observed: "未观察到此类动作" } as const;
 export type CardRunStatus = keyof typeof CARD_RUN_LABELS;
 type Obj = Record<string, unknown>;
 type ConditionSpec = [string, "gte" | "lte" | "between" | "eq", number | [number, number], string];
@@ -79,10 +82,13 @@ export interface CardCycleAnnotation {
 }
 export interface CardInstance {
   indicator_id: string; event_id: string; video_id: string; person_track_id: number; rule_version: string; measurement_version: string;
-  status: "proxy_scored" | "review_required" | "unavailable"; original_grade: null; source_grade_supported: false; proxy_grade: Grade | null; score: number | null;
+  status: "scored" | "proxy_scored" | "review_required" | "unavailable"; original_grade: null; source_grade_supported: false; grade: Grade | null; proxy_grade: Grade | null; score: number | null;
+  scoring_policy_version: string | null; advisory_reason_codes: string[]; advisory_flags: string[];
   window: { start_ms: number; end_ms: number } | null; reason_codes: string[]; conditions: CardCondition[];
   quality: { total_frame_count: number; valid_frame_count: number; fraction: number | null; visibility_verified: false; required_joint_names: string[] };
   source_stage: CardSourceStage | null;
+  source_stage_evidence: EvidenceObject | null;
+  source_stage_context: EvidenceObject | null;
   foot_cycle: FootworkCycleEvidence | null;
   cycle_measurements: Record<string, number | null> | null;
   source_cycle_annotation: CardCycleAnnotation | null;
@@ -90,8 +96,13 @@ export interface CardInstance {
   source_window_annotation: EvidenceObject | null;
   source_window_evidence: EvidenceObject | null;
   source_window_context: EvidenceObject | null;
+  measurement_provenance: EvidenceObject | null;
+  model_scoring_policy_version: string | null;
+  temporal_evidence: EvidenceObject | null;
+  local_dip_validation: LocalDipValidation | null;
   auxiliary_evidence: EvidenceObject | null;
   auxiliary_parent_context: EvidenceObject | null;
+  step_motion_validation: StepMotionValidation | null;
   auxiliary_validation: PreloadValidation | null;
   limitations: string[];
   fallback: { trigger: string; strategy: string; selected: { start_ms: number; end_ms: number } | null } | null;
@@ -99,10 +110,10 @@ export interface CardInstance {
 }
 export interface ExecutedCard { indicator_id: string; event_code: string; name_zh: string; rule_version: string; rule_kind: string; runtime_engine: string | null; run_status: CardRunStatus; reason_codes: string[]; instances: CardInstance[]; instance_count: number }
 export interface CardExecutionReport {
-  version: typeof CARD_EXECUTION_VERSION; rule_version: typeof CARD_RULE_VERSION; source_run_id: string; cards: ExecutedCard[];
+  version: typeof CARD_EXECUTION_VERSION; rule_version: typeof CARD_RULE_VERSION; source_run_id: string; cards: ExecutedCard[]; scoring_policy_version: string | null;
   status: "available" | "unavailable"; reason_codes: string[];
-  summary: { catalogue_cards: number; expected_source_cards: number; computed_cards: number; proxy_scored_cards: number; proxy_scored_instances: number; review_instances: number; unavailable_instances: number; original_scored_cards: 0; manual_scored_cards: 0; run_card_status_counts: Record<string, number>; conflicting_instances: number; rejected_cards: number };
-  overall_score: null; missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero"; limitations: string[];
+  summary: { catalogue_cards: number; expected_source_cards: number; computed_cards: number; formal_scored_cards: number; formal_scored_instances: number; proxy_scored_cards: number; proxy_scored_instances: number; review_instances: number; unavailable_instances: number; original_scored_cards: 0; manual_scored_cards: 0; run_card_status_counts: Record<string, number>; conflicting_instances: number; rejected_cards: number };
+  overall_score: number | null; missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero"; limitations: string[];
 }
 
 function windowOf(value: unknown) {
@@ -121,10 +132,16 @@ function computedPass(condition: CardCondition): boolean | null {
   return condition.operator === "gte" ? condition.value >= condition.threshold : condition.operator === "lte" ? condition.value <= condition.threshold : condition.operator === "eq" ? condition.value === condition.threshold : null;
 }
 function invalidate(instance: CardInstance, reason: string): CardInstance {
-  return withPreloadValidation({ ...instance, status: "unavailable", proxy_grade: null, score: null, reason_codes: [...new Set([...instance.reason_codes, reason])], conditions: instance.conditions.map(c => ({ ...c, passed: null })) });
+  return withPreloadValidation({ ...instance, status: "unavailable", grade: null, proxy_grade: null, score: null, reason_codes: [...new Set([...instance.reason_codes, reason])], conditions: instance.conditions.map(c => ({ ...c, passed: null })) });
 }
 function withPreloadValidation(instance: CardInstance): CardInstance {
-  return { ...instance, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context) };
+  const motion = validateFsStepMotion(instance.source_window_annotation, instance.source_window_evidence, instance.source_window_context, instance);
+  const dip = isFormalScoringPolicy(instance.scoring_policy_version) ? validateTemporalLocalDip(instance.temporal_evidence, instance) : null;
+  const invalidDip = dip?.status === "invalid";
+  return { ...instance, ...(invalidDip ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
+      reason_codes: [...new Set([...instance.reason_codes, "local_dip_source_evidence_invalid"])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
+    conditions: motion?.status === "invalid" || invalidDip ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
+    step_motion_validation: motion };
 }
 function sourceStageOf(row: Obj, id: string): CardSourceStage | null {
   const normalized = obj(row.source_stage), annotation = obj(row.source_annotation);
@@ -168,11 +185,11 @@ function cycleAnnotationOf(value: unknown, cycle: FootworkCycleEvidence | null, 
     event_code: text(row.event_code), start_source_frame: start, end_source_frame: end, requested_window_ms: window,
     binding: { method: "manual_anchor", version: text(binding.version), source: text(binding.source), uncertainty_ms: uncertainty, semantics: text(binding.semantics) } };
 }
-function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstance | null {
-  const row = obj(value), evidence = obj(row.evidence), quality = obj(row.quality), source = obj(row.source);
+function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolicy: string | null): CardInstance | null {
+  const row = obj(value), evidence = obj(row.temporal_evidence ?? row.evidence), quality = obj(row.quality), source = obj(row.source);
   if (row.indicator_id !== id || !text(row.event_id) || !text(row.video_id) || integer(row.person_track_id) === null || sourceRunId && row.video_id !== sourceRunId) return null;
   const total = integer(quality.total_frame_count) ?? 0, valid = integer(quality.valid_frame_count) ?? 0;
-  const fallbackRaw = obj(row.fallback ?? evidence.fallback);
+  const fallbackRaw = obj(evidence.fallback ?? row.fallback);
   const fallback = text(fallbackRaw.trigger) ? { trigger: text(fallbackRaw.trigger), strategy: text(fallbackRaw.strategy), selected: windowOf(fallbackRaw.selected) } : null;
   const conditions = list(row.conditions, 30).map(conditionOf);
   const cycle = FOOTWORK_CARD_CONTRACTS[id] ? footworkCycleOf(row.foot_cycle ?? evidence) : null;
@@ -180,12 +197,16 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   const auxiliary = row.auxiliary_evidence === undefined || row.auxiliary_evidence === null ? null : evidenceObject(row.auxiliary_evidence) ?? {};
   const auxiliaryParent = auxiliary ? evidenceObject(row.auxiliary_parent_context ?? { action_id: row.action_id ?? "", window: row.window ?? {},
     ...(obj(row.source_annotation).requested_window_ms !== undefined ? { requested_window_ms: obj(row.source_annotation).requested_window_ms } : {}) }) : null;
-  const state = row.status === "proxy_scored" ? "proxy_scored" : row.status === "review_required" ? "review_required" : "unavailable";
+  const policy = text(row.scoring_policy_version) || null, formal = isFormalScoringPolicy(reportPolicy) && policy === reportPolicy;
+  const state = row.status === "scored" ? "scored" : row.status === "proxy_scored" ? "proxy_scored" : row.status === "review_required" && !formal ? "review_required" : "unavailable";
   const result: CardInstance = { indicator_id: id, event_id: text(row.event_id), video_id: text(row.video_id), person_track_id: Number(row.person_track_id),
     rule_version: text(row.rule_version), measurement_version: text(row.measurement_version), status: state, original_grade: null, source_grade_supported: false,
-    proxy_grade: null, score: null, window: windowOf(row.window ?? evidence.requested_window_ms), reason_codes: strings(row.reason_codes), conditions,
+    grade: null, proxy_grade: null, score: null, scoring_policy_version: policy, advisory_reason_codes: strings(row.advisory_reason_codes), advisory_flags: strings(row.advisory_flags),
+    window: windowOf(row.window ?? evidence.requested_window_ms), reason_codes: strings(row.reason_codes), conditions,
     quality: { total_frame_count: total, valid_frame_count: valid <= total ? valid : 0, fraction: total > 0 && valid <= total ? valid / total : null, visibility_verified: false, required_joint_names: strings(quality.required_joint_names) },
     source_stage: sourceStageOf(row, id),
+    source_stage_evidence: GS_CARD_CONTRACTS[id] ? evidenceObject(row.source_stage_evidence) : null,
+    source_stage_context: GS_CARD_CONTRACTS[id] ? evidenceObject(row.source_stage_context ?? row.window) : null,
     foot_cycle: cycle,
     cycle_measurements: FOOTWORK_CARD_CONTRACTS[id] ? Object.fromEntries(conditions.map(c => [c.metric, number(cycleValues[c.metric])])) : null,
     source_cycle_annotation: FOOTWORK_CARD_CONTRACTS[id] ? cycleAnnotationOf(row.source_cycle_annotation ?? row.source_annotation, cycle, id, text(row.event_id)) : null,
@@ -193,11 +214,16 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
     source_window_annotation: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_annotation) : null,
     source_window_evidence: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_evidence) : null,
     source_window_context: FS_WINDOW_CONTRACTS[id] && row.source_window_annotation ? evidenceObject(row.source_window_context ?? row.window) : null,
-    auxiliary_evidence: auxiliary, auxiliary_parent_context: auxiliaryParent, auxiliary_validation: null,
+    measurement_provenance: evidenceObject(row.measurement_provenance),
+    model_scoring_policy_version: text(row.model_scoring_policy_version) || null,
+    temporal_evidence: TEMPORAL_CARD_CONDITIONS[id] ? evidenceObject(row.temporal_evidence ?? row.evidence) : null, local_dip_validation: null,
+    auxiliary_evidence: auxiliary, auxiliary_parent_context: auxiliaryParent, auxiliary_validation: null, step_motion_validation: null,
     limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitations)].map(value => LIMITATION_LABELS[value] ?? value))],
     fallback, threshold_basis: text(row.threshold_basis), semantics: text(row.semantics), source: { document_id: text(source.document_id), document_sha256: text(source.document_sha256), table: text(source.table), rubric_sha256: text(source.rubric_sha256) } };
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
-  if (state !== "proxy_scored") return withPreloadValidation({ ...result, conditions: conditions.map(c => ({ ...c, passed: null })) });
+  if (policy !== reportPolicy || reportPolicy !== null && !isFormalScoringPolicy(reportPolicy)
+      || state === "scored" && !formal || state === "proxy_scored" && formal) return invalidate(result, "scoring_policy_mismatch");
+  if (state !== "proxy_scored" && state !== "scored") return withPreloadValidation({ ...result, conditions: conditions.map(c => ({ ...c, passed: null })) });
   const gsSpec = GS_CARD_CONTRACTS[id];
   const footworkSpec = FOOTWORK_CARD_CONTRACTS[id];
   const fsWindowSpec = FS_WINDOW_CONTRACTS[id];
@@ -208,11 +234,13 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
   });
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
-  if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION) || row.proxy_grade !== grade || row.score !== gradePoints[grade]
+  if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected && (!formal || validateTemporalLocalDip(result.temporal_evidence, result)?.status !== "measured_local_dip")
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
+      || formal && row.grade !== grade || row.proxy_grade !== grade || row.score !== gradePoints[grade]
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
+        || formal && !validFormalGsStageSource(result.source_stage_evidence, result.source_stage_context, result)
         || !validRacketSide(result.racket_side_evidence, result, result.source_stage, conditions.some(c => c.metric === "wrist_speed_increase_torso_s")))
-      || fsWindowSpec && (fsWindowSpec.rule_kind !== "visual_proxy" || fsWindowSpec.requires_complete_step_cycle
+      || fsWindowSpec && (fsWindowSpec.rule_kind !== "visual_proxy"
         || result.threshold_basis !== "engineering_v1_uncalibrated"
         || !Object.entries(fsWindowSpec.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
         || JSON.stringify([...result.quality.required_joint_names].sort()) !== JSON.stringify(fsWindowSpec.required_joint_names)
@@ -224,12 +252,13 @@ function instanceOf(value: unknown, id: string, sourceRunId: string): CardInstan
         || !result.cycle_measurements || conditions.some(c => c.value !== result.cycle_measurements![c.metric])
         || !footworkValuesAgree(result.foot_cycle!, result.cycle_measurements!)
         || !!(row.source_cycle_annotation ?? row.source_annotation) && !result.source_cycle_annotation)
+      || formal && !!TEMPORAL_CARD_CONDITIONS[id] && !validFormalTemporalSource(result.temporal_evidence, result)
       || total < 3 || valid > total || valid * 10 < total * 7 || result.reason_codes.length
-      || row.semantics !== "engineering_visual_condition_completion_not_original_technical_grade"
+      || row.semantics !== (formal ? formalScoreSemantics : "engineering_visual_condition_completion_not_original_technical_grade")
       || !/^CARD-(?:FS|GS)$/.test(result.source.document_id) || !/^[a-fA-F0-9]{64}$/.test(result.source.document_sha256) || !/^[a-fA-F0-9]{64}$/.test(result.source.rubric_sha256)) {
     return invalidate(result, "proxy_report_evidence_invalid_recompute_required");
   }
-  return withPreloadValidation({ ...result, proxy_grade: grade, score: gradePoints[grade] });
+  return withPreloadValidation({ ...result, grade: formal ? grade : null, proxy_grade: grade, score: gradePoints[grade] });
 }
 
 export function cardExecutionOf(value: unknown): CardExecutionReport | null {
@@ -237,7 +266,8 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
   if (raw.version !== CARD_EXECUTION_VERSION || raw.rule_version !== CARD_RULE_VERSION || !Array.isArray(raw.cards) || raw.cards.length > 1000) return null;
   if (raw.cards.reduce((sum: number, row: unknown) => sum + (Array.isArray(obj(row).instances) ? (obj(row).instances as unknown[]).length : 0), 0) > 30000
       || raw.cards.some(row => Array.isArray(obj(row).instances) && (obj(row).instances as unknown[]).length > 5000)) return null;
-  const sourceRunId = text(raw.source_run_id), cards: ExecutedCard[] = [], seenCards = new Map<string, ExecutedCard>();
+  const sourceRunId = text(raw.source_run_id), reportPolicy = text(raw.scoring_policy_version) || null, formal = isFormalScoringPolicy(reportPolicy);
+  const cards: ExecutedCard[] = [], seenCards = new Map<string, ExecutedCard>();
   let conflicts = 0, rejected = 0;
   for (const candidate of raw.cards) {
     const row = obj(candidate), id = text(row.indicator_id);
@@ -248,7 +278,7 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     if (FS_WINDOW_CONTRACTS[id] && row.rule_kind !== FS_WINDOW_CONTRACTS[id].rule_kind) { rejected++; continue; }
     const seenInstances = new Map<string, CardInstance>(), conflicting = new Set<string>();
     for (const value of list(row.instances, 5000)) {
-      const instance = instanceOf(value, id, sourceRunId);
+      const instance = instanceOf(value, id, sourceRunId, reportPolicy);
       if (!instance) continue;
       const key = `${instance.video_id}\u0000${instance.event_id}\u0000${instance.person_track_id}`;
       const prior = seenInstances.get(key);
@@ -258,9 +288,9 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     conflicts += conflicting.size;
     const instances = [...seenInstances].map(([key, instance]) => conflicting.has(key) ? invalidate(instance, "conflicting_duplicate_event_instance") : instance)
       .map(instance => raw.status === "unavailable" ? invalidate(instance, "card_execution_report_unavailable") : instance)
-      .map(instance => instance.status === "proxy_scored" && (row.runtime_engine !== runtimeEngine || row.rule_kind !== "visual_proxy") ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
-    const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : row.rule_kind === "manual_review" || row.run_status === "review_required" ? "review_required" : "not_executed";
-    const status: CardRunStatus = instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
+      .map(instance => ["scored", "proxy_scored"].includes(instance.status) && (row.runtime_engine !== runtimeEngine || row.rule_kind !== "visual_proxy") ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
+    const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : row.rule_kind === "manual_review" || row.run_status === "review_required" ? formal ? "unavailable" : "review_required" : "not_executed";
+    const status: CardRunStatus = instances.some(i => i.status === "scored") ? "scored" : instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
     const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: text(row.rule_kind),
       runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, run_status: status, reason_codes: strings(row.reason_codes), instances, instance_count: instances.length };
     const prior = seenCards.get(id);
@@ -271,18 +301,23 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     seenCards.set(id, card); cards.push(card);
   }
   const allInstances = cards.flatMap(c => c.instances), counts: Record<string, number> = {};
+  const formalCards = cards.map(card => card.instances.filter(instance => instance.status === "scored" && instance.score !== null))
+    .filter(instances => instances.length).map(instances => instances.reduce((sum, instance) => sum + instance.score!, 0) / instances.length);
   conflicts = allInstances.filter(instance => instance.reason_codes.includes("conflicting_duplicate_event_instance")).length + cards.filter(card => card.reason_codes.includes("conflicting_duplicate_card")).length;
   for (const card of cards) counts[card.run_status] = (counts[card.run_status] ?? 0) + 1;
-  return { version: CARD_EXECUTION_VERSION, rule_version: CARD_RULE_VERSION, source_run_id: sourceRunId, cards,
+  return { version: CARD_EXECUTION_VERSION, rule_version: CARD_RULE_VERSION, source_run_id: sourceRunId, cards, scoring_policy_version: reportPolicy,
     status: raw.status === "unavailable" ? "unavailable" : "available", reason_codes: strings(raw.reason_codes),
     summary: { catalogue_cards: cards.length, expected_source_cards: SOURCE_CARD_COUNT, computed_cards: cards.filter(c => c.instances.length).length,
+      formal_scored_cards: formalCards.length, formal_scored_instances: allInstances.filter(i => i.status === "scored").length,
       proxy_scored_cards: cards.filter(c => c.instances.some(i => i.status === "proxy_scored")).length, proxy_scored_instances: allInstances.filter(i => i.status === "proxy_scored").length,
       review_instances: allInstances.filter(i => i.status === "review_required").length, unavailable_instances: allInstances.filter(i => i.status === "unavailable").length,
       original_scored_cards: 0, manual_scored_cards: 0, run_card_status_counts: counts, conflicting_instances: conflicts, rejected_cards: rejected },
-    overall_score: null, missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitations).map(value => LIMITATION_LABELS[value] ?? value) };
+    overall_score: formal && formalCards.length ? formalCards.reduce((sum, score) => sum + score, 0) / formalCards.length : null,
+    missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitations).map(value => LIMITATION_LABELS[value] ?? value) };
 }
 
 export const CARD_REASON_LABELS: Record<string, string> = {
+  model_estimate_measurement_only: "单目模型估计仅保留测量并需复核，不生成代理分",
   fs_card_manual_window_missing: "缺少这张步伐卡的明确人工窗口",
   fs_window_primary_person_binding_unverified: "窗口内主球员绑定尚未核验",
   fs_window_identity_or_camera_epoch_changed: "窗口跨越选人或相机参考分段",

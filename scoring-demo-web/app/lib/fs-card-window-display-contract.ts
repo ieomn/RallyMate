@@ -6,6 +6,7 @@ export default {
   "annotation_version": "fs-card-window-annotations-v1.0.0",
   "annotation_semantics": "manual_card_window_not_expert_technique_contact_or_force_truth",
   "quality_policy_version": "continuous-ankle-motion-cycle-v1",
+  "advisory_quality_policy_version": "cycle-window-advisory-quality-v2",
   "quality_review_flags": [
     "keypoint_jump_candidates_present",
     "left_right_swap_candidates_present",

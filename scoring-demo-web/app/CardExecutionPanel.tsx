@@ -6,6 +6,7 @@ import { replayMoment } from "./lib/training-report";
 import { cycleFrameTime, cycleMotionSteps, type FootworkCycleEvidence } from "./lib/footwork-cycle-evidence";
 import ManualCardEvidence from "./ManualCardEvidence";
 import GsPreloadEvidence from "./GsPreloadEvidence";
+import { isFormalScoringPolicy } from "./lib/formal-card-scoring-policy";
 
 const metricLabels: Record<string, string> = {
   hip_drop_torso: "髋部下降", left_knee_flexion_change_deg: "左膝屈曲变化", right_knee_flexion_change_deg: "右膝屈曲变化",
@@ -84,53 +85,60 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
   const [selectedId, setSelectedId] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
   if (!report) return null;
+  const formal = isFormalScoringPolicy(report.scoring_policy_version);
   const cards = report.cards.filter(card => (!status || card.run_status === status) && `${card.indicator_id} ${card.name_zh}`.toLowerCase().includes(query.trim().toLowerCase()));
-  const card = cards.find(row => row.indicator_id === selectedId) ?? cards[0];
+  const card = cards.find(row => row.indicator_id === selectedId) ?? (formal ? cards.find(row => row.run_status === "scored") : undefined) ?? cards[0];
   const instanceKey = (row: NonNullable<typeof card>["instances"][number]) => `${row.video_id}:${row.event_id}:${row.person_track_id}`;
   const instance = card?.instances.find(row => instanceKey(row) === selectedEvent) ?? card?.instances[0];
   const summary = report.summary;
   const canReplay = instance?.window && jobId && report.source_run_id === jobId
     && typeof durationMs === "number" && Number.isFinite(durationMs) && instance.window.end_ms <= durationMs;
-  return <details className="indicator-assessment card-execution-panel">
-    <summary>逐卡计算与复核 <span>{summary.catalogue_cards} / {summary.expected_source_cards} 张规则已返回 · 本次执行 {summary.computed_cards} 张</span></summary>
-    <p className="indicator-assessment-intro">规则清单完整度与本次可评分范围分别显示。以下视觉代理分表示工程条件完成度，原卡技术等级尚未自动判定。缺测不记零分，也不记 E。</p>
+  return <details className="indicator-assessment card-execution-panel" open={formal}>
+    <summary>{formal ? "逐卡正式评分" : "逐卡计算与复核"} <span>{summary.catalogue_cards} / {summary.expected_source_cards} 张规则已返回 · 本次执行 {summary.computed_cards} 张</span></summary>
+    <p className="indicator-assessment-intro">{formal ? "可计算条件已自动生成正式评分，总分按各卡实例均值再等权汇总。缺测不记零分，也不记 E。" : "规则清单完整度与本次可评分范围分别显示。以下视觉代理分表示工程条件完成度，原卡技术等级尚未自动判定。缺测不记零分，也不记 E。"}</p>
     {report.status === "unavailable" && <p role="status">本次评分卡计算暂不可用，未生成评分结果。</p>}
-    {report.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
+    {report.reason_codes.length > 0 && formal ? <p>本次部分评分依据不足，缺失项未计入总分。</p> : report.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
     {report.limitations.length > 0 && <details><summary>本次计算范围与限制</summary>{report.limitations.map((limitation, index) => <p key={index}>{limitation}</p>)}</details>}
     <dl className="report-measurement-summary">
-      <div><dt>原卡自动判级</dt><dd>{summary.original_scored_cards} 张</dd></div>
-      <div><dt>有视觉代理分的卡</dt><dd>{summary.proxy_scored_cards} 张 · {summary.proxy_scored_instances} 次</dd></div>
-      <div><dt>需要人工复核</dt><dd>{summary.review_instances} 次</dd></div>
+      {formal ? <><div><dt>正式总分</dt><dd>{report.overall_score === null ? "—" : `${format(report.overall_score)} / 100`}</dd></div><div><dt>已评分</dt><dd>{summary.formal_scored_cards} 张 · {summary.formal_scored_instances} 次</dd></div></>
+        : <><div><dt>原卡自动判级</dt><dd>{summary.original_scored_cards} 张</dd></div><div><dt>有视觉代理分的卡</dt><dd>{summary.proxy_scored_cards} 张 · {summary.proxy_scored_instances} 次</dd></div><div><dt>需要人工复核</dt><dd>{summary.review_instances} 次</dd></div></>}
       <div><dt>证据不足</dt><dd>{summary.unavailable_instances} 次</dd></div>
     </dl>
     {summary.catalogue_cards < summary.expected_source_cards && <p className="indicator-grade-note">本报告只返回部分规则条目，未返回部分不能视作已执行。</p>}
     {(summary.conflicting_instances > 0 || summary.rejected_cards > 0) && <p role="status">存在重复冲突或无效记录，相关分数已排除，需要重新计算。</p>}
     <div className="indicator-filters">
       <label>搜索评分卡<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="名称或编号" /></label>
-      <label>本次执行状态<select value={status} onChange={event => setStatus(event.target.value)}><option value="">全部规则</option>{Object.entries(CARD_RUN_LABELS).map(([key, label]) => <option key={key} value={key}>{label}（{summary.run_card_status_counts[key] ?? 0}）</option>)}</select></label>
+      <label>本次执行状态<select value={status} onChange={event => setStatus(event.target.value)}><option value="">全部规则</option>{Object.entries(CARD_RUN_LABELS).filter(([key]) => !formal || !["review_required", "proxy_scored"].includes(key)).map(([key, label]) => <option key={key} value={key}>{label}（{summary.run_card_status_counts[key] ?? 0}）</option>)}</select></label>
     </div>
     <label className="indicator-picker">选择评分卡<select value={card?.indicator_id ?? ""} onChange={event => { setSelectedId(event.target.value); setSelectedEvent(""); }}>{cards.map(row => <option key={row.indicator_id} value={row.indicator_id}>{row.indicator_id} · {row.name_zh}</option>)}</select></label>
     {card ? <article className="indicator-detail">
       <span className="indicator-state">{CARD_RUN_LABELS[card.run_status]}</span><h3>{card.name_zh}</h3>
-      <p>{card.rule_kind === "visual_proxy" ? "视觉代理规则" : "人工复核规则"} · {card.rule_version}</p>
-      {card.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
+      <p>{formal ? "应用评分规则" : card.rule_kind === "visual_proxy" ? "视觉代理规则" : "人工复核规则"} · {card.rule_version}</p>
+      {formal ? card.reason_codes.length > 0 && <p>缺少本卡所需的完整计算依据。</p> : card.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
       {card.instances.length > 1 && <label className="indicator-picker">动作实例<select value={instance ? instanceKey(instance) : ""} onChange={event => setSelectedEvent(event.target.value)}>{card.instances.map((row, index) => <option key={instanceKey(row)} value={instanceKey(row)}>{index + 1}. {row.window ? `${clock(row.window.start_ms)}–${clock(row.window.end_ms)}` : "未定位完整时间窗"} · {CARD_RUN_LABELS[row.status]}</option>)}</select></label>}
       {instance ? <div className="indicator-observation">
-        <strong>{instance.score === null ? "— 未评分" : `${instance.proxy_grade} · ${instance.score} / 100`} <small>{instance.score === null ? CARD_RUN_LABELS[instance.status] : "工程条件完成度"}</small></strong>
+        <strong>{instance.score === null ? "— 未评分" : `${formal ? instance.grade : instance.proxy_grade} · ${instance.score} / 100`} <small>{instance.score === null ? CARD_RUN_LABELS[instance.status] : formal ? "正式评分" : "工程条件完成度"}</small></strong>
         <p>{instance.window ? `计算窗口：${clock(instance.window.start_ms)}–${clock(instance.window.end_ms)}` : "计算窗口不完整，保留缺失原因。"}</p>
+        <details><summary>测量与来源依据</summary>
         {instance.limitations.map((limitation, index) => <p key={`scope-${index}`}>{limitation}</p>)}
         <p>{instance.quality.total_frame_count > 0 ? `所需关节同时有效：${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count} 帧。` : "尚无此卡所需关节的有效帧统计。"}此处仅检查几何可用性，未验证真实可见或物理受力。</p>
+        {instance.source_stage_evidence && <details><summary>完整阶段原帧与分段账本</summary><pre>{JSON.stringify({ window: instance.source_stage_context, evidence: instance.source_stage_evidence }, null, 2)}</pre></details>}
         {instance.source_stage && <p>阶段来源：{instance.source_stage.stage_code}，人工估计时间窗{instance.source_stage.binding.uncertainty_ms !== null ? `，边界不确定性 ±${format(instance.source_stage.binding.uncertainty_ms)} 毫秒` : ""}。这不是专家真值，也不代表系统已自动定位完整十阶段。</p>}
         {instance.foot_cycle && <CycleEvidence cycle={instance.foot_cycle} annotation={instance.source_cycle_annotation} />}
         <ManualCardEvidence instance={instance} />
         <GsPreloadEvidence instance={instance} />
         {instance.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
-        {instance.fallback && <p>已触发复核路径：{cardReasonLabel(instance.fallback.trigger)}{instance.fallback.selected ? `；候选片段 ${clock(instance.fallback.selected.start_ms)}–${clock(instance.fallback.selected.end_ms)}` : ""}。复核候选不能当作已确认动作。</p>}
+        {[...instance.advisory_reason_codes, ...instance.advisory_flags].length > 0 && <p>来源备注：{[...instance.advisory_reason_codes, ...instance.advisory_flags].map(cardReasonLabel).join("；")}</p>}
+        {instance.local_dip_validation?.status === "measured_local_dip" && <p>已从完整父事件独立重算最早完整局部下降；量测 {instance.local_dip_validation.source_frames.length} 原帧，转折确认 {instance.local_dip_validation.confirmation_source_frames.length} 原帧。未推断起跳或完整技术动作。</p>}
+        {instance.temporal_evidence && <details><summary>完整时间序列与来源记录</summary><pre>{JSON.stringify(instance.temporal_evidence, null, 2)}</pre></details>}
+        {instance.fallback && <p>{formal ? "局部运动测量来源" : "已触发复核路径"}：{cardReasonLabel(instance.fallback.trigger)}{instance.fallback.selected ? `；候选片段 ${clock(instance.fallback.selected.start_ms)}–${clock(instance.fallback.selected.end_ms)}` : ""}。候选定位不代表已确认完整技术动作。</p>}
+        <p>评分政策：{instance.scoring_policy_version ?? "历史视觉代理格式"}；原卡技术等级：未建立。</p>
+        </details>
         {instance.conditions.length > 0 && <details open><summary>逐条件计算依据</summary><dl>{instance.conditions.map(condition => <div key={condition.metric}><dt>{metricLabels[condition.metric] ?? condition.metric}</dt><dd>实测 {condition.value === null ? "— 缺测" : `${format(condition.value)} ${unitLabels[condition.unit] ?? condition.unit}`}；{thresholdLabel(condition)}；{condition.passed === null ? "未判定" : condition.passed ? "满足工程条件" : "未满足工程条件"}</dd></div>)}</dl></details>}
         {canReplay && <button type="button" className="product-secondary" onClick={() => replayMoment({ startMs: instance.window!.start_ms }, jobId)}>回看计算片段</button>}
         <details><summary>版本与来源</summary><p>事件：{instance.event_id} · 球员轨迹 {instance.person_track_id}</p><p>计算版本：{instance.measurement_version || "未生成测量"}</p><p>原卡定位：{instance.source.document_id} · {instance.source.table}</p>{instance.source_stage && <p>阶段标注：{instance.source_stage.binding.source} · {instance.source_stage.binding.version}</p>}<p>规则阈值为工程暂定值，尚无专家标定准确率。</p></details>
       </div> : <p>本次没有可用的计算实例，不生成分数。</p>}
-      <p className="indicator-grade-note">原卡等级、视觉代理与人工复核分别统计，未合并为总分。</p>
+      <p className="indicator-grade-note">{formal ? "总分来自有完整计算依据的评分卡，缺失卡保留在覆盖范围中。" : "原卡等级、视觉代理与人工复核分别统计，未合并为总分。"}</p>
     </article> : <p>没有匹配的评分卡。</p>}
   </details>;
 }
