@@ -1,5 +1,5 @@
 /** Curated primary-source teaching links. These are learning references, never scoring inputs. */
-export const TECHNIQUE_EXAMPLES_VERSION = "technique-examples-v1.0.0";
+export const TECHNIQUE_EXAMPLES_VERSION = "technique-examples-v1.1.0";
 export const techniqueSources = {
   ustaUnitTurn: {
     provider: "USTA", title: "Improve Your Game: Perfecting Your Forehand",
@@ -20,6 +20,21 @@ export const techniqueSources = {
     provider: "USTA", title: "Tennis techniques: Hitting the slice backhand",
     url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/tennis-techniques--hitting-the-slice-backhand.html",
     publishedOn: null, verifiedOn: "2026-10-24",
+  },
+  ltaForehand: {
+    provider: "LTA", title: "How to hit a tennis forehand",
+    url: "https://www.lta.org.uk/play/tennis-tips-and-techniques/how-to-play-a-tennis-forehand/",
+    publishedOn: null, verifiedOn: "2026-10-24",
+  },
+  ustaTwoHandDrive: {
+    provider: "USTA", title: "Improve Your Game: Driving the Two-Handed Backhand",
+    url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/improve-your-tennis-game--the-driving-force-in-your-two-handed-b.html",
+    publishedOn: "2018-07-02", verifiedOn: "2026-10-24",
+  },
+  ustaOneHandTiming: {
+    provider: "USTA", title: "Improve Your Game: Hitting a One-Handed Backhand",
+    url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/improve-your-tennis-game--hitting-a-one-handed-backhand.html",
+    publishedOn: "2019-02-19", verifiedOn: "2026-10-24",
   },
 } as const;
 
@@ -61,6 +76,27 @@ export const techniqueExamples: readonly Example[] = [
   { id: "slice-practice", sourceId: "ustaSlice", cardIds: ["GS04-M08-01", "GS04-M09-01"],
     title: "反手切削：自抛与对练", sourceSection: "Self-Slice Backhands; Slice Backhand Rallies and Depth Drills",
     focus: "从自抛切削过渡到双人对练，学习控制回球深度。", scope: "technique_practice" },
+  { id: "forehand-ready", sourceId: "ltaForehand", cardIds: ["GS01-M01-05"],
+    title: "正手：建立移动前的准备姿态", sourceSection: "Step two – be ready",
+    focus: "观察身前持拍与随时移动的准备姿态。", scope: "related_movement" },
+  { id: "forehand-backswing", sourceId: "ltaForehand", cardIds: ["GS01-M03-01", "GS01-M03-03"],
+    title: "正手：及早转身与引拍", sourceSection: "Step three – beat the bounce",
+    focus: "学习在来球落地前完成定位、侧身与引拍准备。", scope: "related_movement" },
+  { id: "forehand-contact-region", sourceId: "ltaForehand", cardIds: ["GS01-M08-02"],
+    title: "正手：学习在身前击球", sourceSection: "Step four – play the ball in front",
+    focus: "以入门练习理解身前击球位置；具体位置仍取决于来球与击球任务。", scope: "technique_practice" },
+  { id: "forehand-follow-through", sourceId: "ltaForehand", cardIds: ["GS01-M09-03"],
+    title: "正手：连续挥拍与随挥", sourceSection: "Step five – the racket swing",
+    focus: "从便于控制的短挥拍逐渐过渡到更完整的随挥。", scope: "related_movement" },
+  { id: "forehand-ready-again", sourceId: "ltaForehand", cardIds: ["GS01-M10-04"],
+    title: "正手：恢复下一拍准备", sourceSection: "Bonus tip",
+    focus: "关注随挥后重新建立准备状态，回位位置结合实际球路选择。", scope: "related_movement" },
+  { id: "two-hand-drive-practice", sourceId: "ustaTwoHandDrive", cardIds: ["GS02-M07-01", "GS02-M09-01"],
+    title: "双反：体会非优势手参与挥拍", sourceSection: "正文中 Karl Davies 的交替练习",
+    focus: "右手球员可交替练习左手正手与双反，体会非优势手在挥拍和随挥中的作用。", scope: "technique_practice" },
+  { id: "one-hand-earlier-swing", sourceId: "ustaOneHandTiming", cardIds: ["GS03-M07-01"],
+    title: "单反：提前启动挥拍", sourceSection: "正文中 Ben Zaiser 的击球位置说明",
+    focus: "理解单反击球位置通常比正手更靠身前，并练习提前启动挥拍。", scope: "technique_practice" },
 ];
 
 export function techniqueExamplesForCard(indicatorId: string) {

@@ -23,7 +23,7 @@ test("teaching mappings reference actual source cards and only primary-source pa
   const cardIds = new Set(catalogue.cards.map(card => card.id));
   assert.equal(cardIds.size, 298);
   assert.equal(new Set(techniqueExamples.map(example => example.id)).size, techniqueExamples.length);
-  assert.equal(Object.keys(techniqueSources).length, 4);
+  assert.equal(Object.keys(techniqueSources).length, 7);
   const covered = new Set();
   for (const example of techniqueExamples) {
     assert.ok(techniqueSources[example.sourceId]);
@@ -32,7 +32,7 @@ test("teaching mappings reference actual source cards and only primary-source pa
     for (const id of example.cardIds) { assert.ok(cardIds.has(id), id); covered.add(id); }
     assert.equal("score" in example, false); assert.equal("grade" in example, false);
   }
-  assert.equal(covered.size, 27);
+  assert.equal(covered.size, 34);
   for (const source of Object.values(techniqueSources)) {
     const url = new URL(source.url);
     assert.equal(url.protocol, "https:"); assert.equal(url.username, ""); assert.equal(url.password, "");
