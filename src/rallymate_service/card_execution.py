@@ -261,7 +261,7 @@ def _input_signature(directory: Path) -> tuple:
     base = tuple((name, (stat := (directory / name).stat()).st_size, stat.st_mtime_ns)
                  for name in ("events.jsonl", "primary-player.jsonl", "frames.jsonl"))
     annotation_names = ("gs-stage-annotations.json", "footwork-cycle-annotations.json", "fs-card-window-annotations.json",
-                        "directional-micro-adjustment-annotations.json")
+                        "directional-micro-adjustment-annotations.json", "micro-adjustment-cycle-annotations.json")
     if not any((directory / name).exists() for name in annotation_names):
         return base + tuple((name, "absent") for name in annotation_names)
     # Optional manual inputs are content-bound, including the actual video. A
@@ -479,6 +479,69 @@ def _apply_optional_directional_annotations(report: dict, directory: Path) -> No
     apply_report_scoring_policy(report)
 
 
+def _apply_optional_micro_cycle_annotations(report: dict, directory: Path) -> None:
+    """Replace only FS05-M02 from service-controlled, freshly measured inputs."""
+    annotation_path = directory / "micro-adjustment-cycle-annotations.json"
+    if not annotation_path.exists():
+        return
+    from .micro_adjustment_cycles import (
+        VERSION as MICRO_VERSION, ANNOTATION_VERSION, RULE_VERSION, CARD,
+        build_micro_adjustment_cycle_report, validate_micro_adjustment_cycle_annotations,
+    )
+    from .gs_card_execution import _canonical, _read_json
+    affected = {CARD}
+    try:
+        annotations, _ = validate_micro_adjustment_cycle_annotations(_read_json(annotation_path))
+        affected = {CARD} if annotations["windows"] else set()
+        result = build_micro_adjustment_cycle_report(directory, annotations)
+        if (result["version"] != MICRO_VERSION or result["source_run_id"] != report["source_run_id"]
+                or result["rule_version"] != report["rule_version"]
+                or result.get("scoring_policy_version") != SCORING_POLICY_VERSION
+                or result["input"].get("application_rule_version") != RULE_VERSION
+                or result["input"].get("annotation_version") != ANNOTATION_VERSION
+                or result["input"].get("annotation_document_sha256") != _canonical(annotations)
+                or any(result["input"].get(key) is not True for key in
+                    ("service_eligible", "artifact_files_verified", "decoder_verified_from_original_video"))):
+            raise ValueError("micro_cycle_production_report_binding_mismatch")
+        if len(result["cards"]) != 1 or result["cards"][0]["indicator_id"] != CARD:
+            raise ValueError("micro_cycle_production_card_inventory_mismatch")
+        replacement = result["cards"][0]
+        expected = {row["annotation_id"] for row in annotations["windows"]}
+        instances = replacement["instances"]
+        if (len(instances) != len(expected) or {row["event_id"] for row in instances} != expected
+                or any(row["indicator_id"] != CARD or row["video_id"] != report["source_run_id"]
+                    or row.get("application_rule_version") != RULE_VERSION for row in instances)):
+            raise ValueError("micro_cycle_production_instance_inventory_mismatch")
+        # Top-level window metadata must describe the same actual instances;
+        # independently supplied or stale windows cannot accompany a new score.
+        expected_windows = [{**deepcopy(row["source_window_annotation"]), "window": deepcopy(row["window"]),
+            "source_frames": list(row["source_window_evidence"]["source_frames"])} for row in instances]
+        if result["fs_card_windows"] != expected_windows:
+            raise ValueError("micro_cycle_production_window_inventory_mismatch")
+        report["cards"] = [replacement if row["indicator_id"] in affected else row for row in report["cards"]]
+        report["input"]["observed_event_codes"] = sorted(set(report["input"]["observed_event_codes"]) | ({"FS05"} if affected else set()))
+        report["input"]["micro_adjustment_cycle_execution"] = {"status": "executed", "version": MICRO_VERSION,
+            "replaced_card_ids": sorted(affected), **result["input"]}
+        report["micro_adjustment_cycle_windows"] = result["fs_card_windows"]
+        report["coverage"].update(micro_cycle_annotated_window_count=len(expected), micro_cycle_executed_card_count=len(affected))
+        report["limitations"].extend(value for value in result["limitations"]
+            if value != "independent_one_card_not_unified_api_or_frontend")
+        report["limitations"].append("FS05-M02 is computed from explicit application windows; visual episodes do not verify the original technical phase or foot contact.")
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        reason = str(exc)
+        if not reason or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789_:" for character in reason):
+            reason = "micro_cycle_annotation_or_source_validation_failed"
+        for row in report["cards"]:
+            if row["indicator_id"] in affected:
+                row.update(run_status="unavailable", reason_codes=[reason], runtime_engine=None,
+                    instance_count=0, instance_status_counts={}, instances=[], original_grade=None, source_grade_supported=False)
+        report["input"]["micro_adjustment_cycle_execution"] = {"status": "unavailable", "version": MICRO_VERSION,
+            "affected_card_ids": sorted(affected), "reason_codes": [reason]}
+        report.pop("micro_adjustment_cycle_windows", None)
+        report["coverage"].update(micro_cycle_annotated_window_count=0, micro_cycle_executed_card_count=0)
+    apply_report_scoring_policy(report)
+
+
 @lru_cache(maxsize=2)
 def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
                    engine_version: str) -> dict:
@@ -493,6 +556,7 @@ def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
     _apply_optional_cycle_annotations(report, directory)
     _apply_optional_fs_card_annotations(report, directory)
     _apply_optional_directional_annotations(report, directory)
+    _apply_optional_micro_cycle_annotations(report, directory)
     if _input_signature(directory) != signature:
         raise ValueError("card_input_changed_during_computation")
     report["input"]["catalogue_sha256"] = rule_digest
@@ -538,4 +602,12 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
             from rallymate_scoring.direction_reference_observables import VERSION as DIRECTION_MEASUREMENT_VERSION
             from rallymate_scoring.step_motion_evidence import VERSION as STEP_MOTION_VERSION
             engine_version += ":" + DIRECTION_VERSION + ":" + DIRECTION_RULE_VERSION + ":" + DIRECTION_MEASUREMENT_VERSION + ":" + STEP_MOTION_VERSION
+        if (directory / "micro-adjustment-cycle-annotations.json").exists():
+            from .micro_adjustment_cycles import VERSION as MICRO_VERSION, RULE_VERSION as MICRO_RULE_VERSION, ANNOTATION_VERSION as MICRO_ANNOTATION_VERSION
+            from .fs_card_windows import VERSION as FS_WINDOW_VERSION
+            from rallymate_scoring.card_kinematics import VERSION as KINEMATICS_VERSION
+            from rallymate_scoring.direction_reference_observables import VERSION as DIRECTION_MEASUREMENT_VERSION
+            from rallymate_scoring.step_motion_evidence import VERSION as STEP_MOTION_VERSION
+            engine_version += ":" + ":".join((MICRO_VERSION, MICRO_RULE_VERSION, MICRO_ANNOTATION_VERSION,
+                FS_WINDOW_VERSION, KINEMATICS_VERSION, DIRECTION_MEASUREMENT_VERSION, STEP_MOTION_VERSION))
         return deepcopy(_cached_report(str(directory), signature, rule_digest, engine_version))
