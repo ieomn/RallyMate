@@ -10,6 +10,13 @@ import { isFormalScoringPolicy } from "./lib/formal-card-scoring-policy";
 import TechniqueExamples from "./TechniqueExamples";
 
 const metricLabels: Record<string, string> = {
+  shoulder_reference_error_reduction_deg: "肩轴至独立准备参照的误差缩小",
+  hip_reference_error_reduction_deg: "髋轴至独立准备参照的误差缩小",
+  terminal_max_reference_error_deg: "末段肩髋轴至独立参照的最大误差",
+  terminal_max_axis_range_deg: "末段肩髋轴最大摆动范围",
+  terminal_hip_speed_torso_s: "末段髋中心速度中位数",
+  terminal_hip_inside_ankle_support_fraction: "末段髋投影处于双踝区间的比例",
+  terminal_trunk_tilt_range_deg: "末段躯干投影倾角范围",
   hip_drop_torso: "髋部下降", left_knee_flexion_change_deg: "左膝屈曲变化", right_knee_flexion_change_deg: "右膝屈曲变化",
   joint_descent_fraction: "髋与双膝同时预加载比例", speed_step_variation_ratio: "速度变化比例", hip_inside_support_fraction: "髋投影位于双踝区间的比例",
   body_speed_std_torso_s: "躯干速度波动", successor_interval_ms: "到后继移动候选的间隔", hip_speed_drop_torso_s: "髋部速度下降",

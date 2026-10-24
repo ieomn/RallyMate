@@ -21,6 +21,8 @@ import subprocess
 from rallymate_features.coordinates import validated_camera_transform
 from rallymate_scoring.card_evaluation import evaluate_card_window, summarize_card_scores, hand_racket_observability_metadata
 from rallymate_scoring.card_scoring_policy import apply_scoring_policy, apply_report_scoring_policy
+from rallymate_scoring.gs_recovery_evidence import (REFERENCE_VERSION as RECOVERY_REFERENCE_VERSION,
+    REFERENCE_SEMANTICS as RECOVERY_REFERENCE_SEMANTICS, recovery_metadata)
 from rallymate_scoring.card_kinematics import MODEL_EPOCH_SEMANTICS, _point as _valid_card_point, finite, validate_window
 from rallymate_scoring.card_rule_catalog import load_card_rules
 from rallymate_scoring.stroke_candidates import _sample, _stabilize_partial_torso_windows
@@ -172,7 +174,7 @@ def validate_stage_annotations(document):
     ids, accepted = set(), []
     for annotation in document["stages"]:
         _keys(annotation, ("annotation_id", "action_id", "technique_code", "stage_code", "person_track_id", "start_ms", "end_ms", "binding"),
-              ("local_preload_observation",))
+              ("local_preload_observation", "recovery_reference_observation"))
         identifier = annotation["annotation_id"]
         if not _text(identifier) or identifier in ids:
             raise ValueError("duplicate_or_invalid_annotation_id")
@@ -203,6 +205,8 @@ def validate_stage_annotations(document):
                 raise ValueError("automatic_stage_detector_unregistered")
         else:
             raise ValueError("stage_binding_method_invalid")
+        if "recovery_reference_observation" in annotation:
+            _validate_recovery_reference_observation(annotation["recovery_reference_observation"], annotation, action, document)
         if "local_preload_observation" in annotation:
             _validate_local_preload_observation(annotation["local_preload_observation"], annotation, document)
         for previous in accepted:
@@ -223,6 +227,74 @@ def validate_stage_annotations(document):
                     raise ValueError("source_stage_order_or_containment_conflict")
         accepted.append(annotation)
     return deepcopy(document)
+
+
+
+def _validate_recovery_reference_observation(observation, stage, action, document):
+    _keys(observation, ("version", "method", "action_id", "person_track_id", "video_sha256", "start_frame", "end_frame",
+        "source", "source_description", "uncertainty_ms", "semantics"))
+    if (stage["stage_code"] not in {"GS01-M10", "GS02-M10", "GS03-M10"}
+            or observation["version"] != RECOVERY_REFERENCE_VERSION
+            or observation["method"] != "manual_visual_observation"
+            or observation["semantics"] != RECOVERY_REFERENCE_SEMANTICS):
+        raise ValueError("ready_reference_version_semantics_or_stage_invalid")
+    if (observation["action_id"] != action["action_id"]
+            or not _integer(observation["person_track_id"])
+            or observation["person_track_id"] != action["person_track_id"]
+            or _digest(observation["video_sha256"]) != _digest(document["video_sha256"])):
+        raise ValueError("ready_reference_action_person_or_video_mismatch")
+    if (any(not _text(observation[k]) or not observation[k].strip() for k in ("source", "source_description"))
+            or not finite(observation["uncertainty_ms"]) or observation["uncertainty_ms"] < 0):
+        raise ValueError("ready_reference_description_invalid")
+    times = []
+    for key in ("start_frame", "end_frame"):
+        frame = observation[key]
+        _keys(frame, ("frame_index", "pts", "time_base_num", "time_base_den"))
+        if (any(not _integer(frame[k]) for k in frame)
+                or frame["time_base_num"] == 0 or frame["time_base_den"] == 0):
+            raise ValueError("ready_reference_source_frame_invalid")
+        times.append(Fraction(frame["pts"]*frame["time_base_num"]*1000, frame["time_base_den"]))
+    if (observation["start_frame"]["frame_index"] >= observation["end_frame"]["frame_index"]
+            or not times[0] < times[1] < action["start_ms"]):
+        raise ValueError("ready_reference_not_independent_pre_action")
+
+
+def _bind_recovery_reference(observation, annotation, action, document, decoder_timeline, timeline, by_track, stage_window):
+    original = {row["frame_index"]: row for row in decoder_timeline}
+    for key in ("start_frame", "end_frame"):
+        frame = observation[key]
+        if frame["frame_index"] not in original or any(original[frame["frame_index"]].get(k) != v for k, v in frame.items()):
+            raise ValueError("ready_reference_source_frame_or_pts_mismatch")
+    start, end = (observation[key]["frame_index"] for key in ("start_frame", "end_frame"))
+    expected = [row for row in decoder_timeline if start <= row["frame_index"] <= end]
+    bound = [row for row in timeline if start <= row["frame_index"] <= end]
+    samples = [sample for group in by_track.values() for sample in group if start <= sample.frame_index <= end]
+    sample = samples[0] if samples else None
+    window = {"start_ms": bound[0]["timestamp_ms"] if bound else float(Fraction(expected[0]["pts"]*expected[0]["time_base_num"]*1000, expected[0]["time_base_den"])),
+        "end_ms": bound[-1]["timestamp_ms"] if bound else float(Fraction(expected[-1]["pts"]*expected[-1]["time_base_num"]*1000, expected[-1]["time_base_den"])),
+        "video_sha256": _digest(document["video_sha256"]), "video_id": document["source_run_id"],
+        "person_track_id": annotation["person_track_id"], "selection_epoch": sample.selection_epoch if sample else None,
+        "derived_selection_epoch": bound[0].get("derived_selection_epoch") if bound else None,
+        "camera_reference_epoch": sample.camera_reference_epoch if sample else None,
+        "camera_compensated": sample.camera_compensated if sample else False}
+    # The expected full decoder span stays distinct from available source rows.
+    # A missing endpoint cannot silently narrow the chosen reference window.
+    if [row["frame_index"] for row in bound] != [row["frame_index"] for row in expected]:
+        source = {row["frame_index"]: row for row in bound}
+        bound = [source.get(row["frame_index"], {**deepcopy(row),
+            "timestamp_ms": float(Fraction(row["pts"]*row["time_base_num"]*1000, row["time_base_den"])),
+            "selected_person_track_id": None, "selection_epoch": None, "derived_selection_epoch": None,
+            "camera_reference_epoch": None}) for row in expected]
+        window["start_ms"], window["end_ms"] = bound[0]["timestamp_ms"], bound[-1]["timestamp_ms"]
+    bridge = [row for row in timeline if start <= row["frame_index"] and row["timestamp_ms"] <= stage_window["end_ms"]]
+    binding = {**deepcopy(observation), "document_version": document["version"],
+        "document_sha256": _canonical(document), "digest_kind": "canonical_json_sorted_utf8_v1",
+        "expert_adjudicated": False, "evidence_scope": "independent_body_direction_reference_only"}
+    bridge_frames = {row["frame_index"] for row in bridge}
+    bridge_samples = [sample for group in by_track.values() for sample in group if sample.frame_index in bridge_frames]
+    return {"window": window, "timeline": bound, "samples": samples, "continuity_timeline": bridge,
+        "continuity_samples": bridge_samples,
+        "binding": binding, "action_start_ms": action["start_ms"]}
 
 
 def _validate_local_preload_observation(observation, stage, document):
@@ -467,8 +539,8 @@ def _prepare_samples(frame_records, primary_timeline, decoder_timeline, *, video
 
 
 def _unavailable(rule, window, reasons):
-    revision = hand_racket_observability_metadata(rule)
-    if revision:
+    revision = hand_racket_observability_metadata(rule) or recovery_metadata(rule)
+    if revision and rule["evaluation"]["kind"] == "manual_review":
         reasons = list(reasons) + [rule["evaluation"]["score_block_reason_code"]]
     return {"version": VERSION, "indicator_id": rule["indicator_id"], "rule_version": rule["rule_version"],
         "video_id": window["video_id"], "event_id": window["event_id"], "person_track_id": window["person_track_id"],
@@ -592,11 +664,15 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
                 raise ValueError("local_preload_auxiliary_contract_mismatch")
         auxiliary = (_local_preload_evidence(preload, annotation, document, decoder_timeline, timeline, by_track, reasons)
                      if preload is not None else None)
+        reference_observation = annotation.get("recovery_reference_observation")
+        recovery_reference = (_bind_recovery_reference(reference_observation, annotation,
+            next(action for action in document["actions"] if action["action_id"] == annotation["action_id"]),
+            document, decoder_timeline, timeline, by_track, window) if reference_observation is not None else None)
         instance_ids = []
         for rule in rules:
             if rule["stage_code"] != annotation["stage_code"]:
                 continue
-            result = (_unavailable(rule, window, reasons) if reasons else evaluate_card_window(rule, samples, window, bound))
+            result = (_unavailable(rule, window, reasons) if reasons else evaluate_card_window(rule, samples, window, bound, recovery_reference=recovery_reference))
             result.update(version=VERSION, event_code=rule["event_code"], action_id=annotation["action_id"],
                 source={key: rule["source"][key] for key in ("document_id", "document_sha256", "table", "rubric_sha256")},
                 source_annotation={"annotation_id": annotation["annotation_id"], "document_sha256": _canonical(document),
@@ -606,6 +682,13 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
                     "source_pts": [{key: row[key] for key in ("frame_index", "pts", "time_base_num", "time_base_den")} for row in expected],
                     "interpolation_used": False},
                 original_grade=None, source_grade_supported=False)
+            if recovery_metadata(rule):
+                action = next(action for action in document["actions"] if action["action_id"] == annotation["action_id"])
+                result["source_annotation"]["action_window"] = {key: deepcopy(action[key]) for key in
+                    ("action_id", "technique_code", "person_track_id", "start_ms", "end_ms")}
+                result["source_annotation"]["requested_window_ms"] = {"start_ms": annotation["start_ms"], "end_ms": annotation["end_ms"]}
+            if recovery_reference is not None:
+                result["source_annotation"]["recovery_reference_observation"] = deepcopy(recovery_reference["binding"])
             if racket_binding is not None:
                 result["source_annotation"]["racket_side_observation"] = deepcopy(racket_binding)
             if auxiliary is not None and rule["indicator_id"] == preload["indicator_id"]:
@@ -639,7 +722,7 @@ def compute_gs_card_execution(frame_records, primary_timeline, decoder_timeline,
             "original_grade": None, "source_grade_supported": False, "instance_count": len(actual),
             "instance_status_counts": dict(Counter(row["status"] for row in actual)), "instances": actual,
             **({"scoring_revision_id": rule["evaluation"]["scoring_revision_id"]}
-               if hand_racket_observability_metadata(rule) else {})})
+               if hand_racket_observability_metadata(rule) or recovery_metadata(rule) else {})})
         instances.extend(actual)
     return apply_report_scoring_policy({"version": VERSION, "rule_version": catalogue["version"], "source_run_id": document["source_run_id"],
         "input": {"source": "frame_observations_primary_selection_decoder_pts_and_explicit_stage_annotations",

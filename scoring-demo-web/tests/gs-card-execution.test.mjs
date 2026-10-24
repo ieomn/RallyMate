@@ -37,6 +37,9 @@ test("all 248 GS display contracts retain source kind, thresholds, joint union a
     required_joint_names: [...new Set([...card.required_joint_names, ...card.evaluation.conditions.flatMap(condition => [...condition.required_joint_names, ...catalogue.metrics[condition.metric].required_joint_names])])].sort(),
     conditions: card.evaluation.conditions.map(condition => [condition.metric, condition.operator, condition.bounds ?? condition.value, condition.unit]),
     source: Object.fromEntries(["document_id", "document_sha256", "table", "rubric_sha256"].map(key => [key, card.source[key]])),
+    ...(card.evaluation.scoring_revision_id ? Object.fromEntries(["scoring_revision_id", "score_block_reason_code", "required_observables",
+      ...(card.evaluation.scoring_revision_id === "gs-m10-observability-v1.0.0" ? ["required_engine"] : [])]
+      .filter(key => key in card.evaluation).map(key => [key, card.evaluation[key]])) : {}),
   }]));
   assert.deepEqual(contract.cards, expected);
   assert.equal(Object.keys(contract.cards).length, 248);

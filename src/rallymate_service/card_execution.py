@@ -589,7 +589,14 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
         engine_version += ":" + POSE_ASSOCIATION_POLICY_VERSION + ":" + POSE_ASSOCIATION_GATE_VERSION
         if (directory / "gs-stage-annotations.json").exists():
             from .gs_card_execution import VERSION as GS_VERSION
-            engine_version += ":" + GS_VERSION
+            from rallymate_scoring.gs_recovery_evidence import (
+                VERSION as RECOVERY_VERSION, POLICY_VERSION as RECOVERY_POLICY_VERSION,
+                SCORING_REVISION_ID as RECOVERY_REVISION_ID, REFERENCE_VERSION,
+                AUXILIARY_VERSION as RECOVERY_AUXILIARY_VERSION,
+            )
+            engine_version += ":" + ":".join((GS_VERSION, RECOVERY_VERSION,
+                RECOVERY_POLICY_VERSION, RECOVERY_REVISION_ID, REFERENCE_VERSION,
+                RECOVERY_AUXILIARY_VERSION))
         if (directory / "footwork-cycle-annotations.json").exists():
             from .footwork_cycle_artifacts import VERSION as ARTIFACT_VERSION
             from .footwork_cycle_execution import VERSION as CYCLE_VERSION

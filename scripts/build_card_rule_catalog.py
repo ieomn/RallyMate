@@ -78,6 +78,24 @@ metric("head_relative_motion_range_torso", "torso", ["nose"] + TORSO,
        "鼻点减肩中心并按躯干尺度归一化后的最大两帧欧氏距离；只能评价头相对躯干稳定。")
 
 
+
+# Explicit M10 revisions: body stability, projected return, and racket control
+# are distinct behaviors. These definitions do not change the source wording.
+for key, description in (
+    ("shoulder_reference_error_reduction_deg", "肩轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。"),
+    ("hip_reference_error_reduction_deg", "髋轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。"),
+    ("terminal_max_reference_error_deg", "末端20%至少3帧内，肩/髋轴至各自独立准备参照的绝对周期误差最大值。"),
+    ("terminal_max_axis_range_deg", "末端20%至少3帧内肩/髋连续展开轴角范围的较大值，非三维朝向。"),
+):
+    metric(key, "deg", TORSO, description, camera=True, dependencies=["independent_pre_action_body_ready_reference"])
+metric("terminal_hip_speed_torso_s", "torso/s", FEET,
+    "末端20%至少3帧内部相邻髋中心位移/实际PTS间隔/完整M10固定躯干中位尺度的速度中位数。", camera=True)
+metric("terminal_hip_inside_ankle_support_fraction", "fraction", FEET,
+    "末端20%至少3帧中髋中心x处于两踝x闭区间的比例；不证明接地或承重。", camera=True)
+metric("terminal_trunk_tilt_range_deg", "deg", FEET,
+    "末端20%至少3帧中躯干相对图像竖直倾角的最大值减最小值。", camera=True)
+
+
 def c(key, operator, value, description):
     spec = METRICS[key]
     row = {"key": key, "metric": key, "operator": operator, "unit": spec["unit"],
@@ -119,10 +137,55 @@ def evaluation(family, conditions, *, kind="visual_proxy", limitation="只评价
         "limitation": limitation, "extractor_status": "registry_and_runtime_evidence_required"}
 
 
+
+def m10_evaluation(identifier):
+    rotation = {"GS01-M10-02", "GS02-M10-02", "GS03-M10-03"}
+    stability = {"GS01-M10-03", "GS02-M10-03", "GS03-M10-04"}
+    missing = {
+        "GS01-M10-01": ("bilateral_hand_racket_control_source_required", ["source_bound_bilateral_hand_identity", "source_bound_racket_handle_or_contact_region", "bilateral_hand_racket_control_sequence"]),
+        "GS02-M10-01": ("continuous_two_hand_racket_control_source_required", ["source_bound_bilateral_hand_identity", "source_bound_racket_handle_geometry", "continuous_two_hand_racket_control_sequence"]),
+        "GS03-M10-01": ("non_racket_hand_to_throat_contact_source_required", ["source_bound_non_racket_hand_identity", "source_bound_racket_throat_RK013", "non_racket_hand_throat_recontact_sequence"]),
+        "GS03-M10-02": ("racket_hand_handle_control_source_required", ["source_bound_racket_hand_identity", "source_bound_racket_handle_and_axis", "racket_hand_handle_control_and_body_front_sequence"]),
+        "GS01-M10-04": ("complete_next_shot_ready_state_source_required", ["body_recovery_geometry", "bilateral_hand_racket_control_sequence", "source_bound_successor_split_or_first_step"]),
+        "GS02-M10-04": ("complete_two_hand_ready_posture_source_required", ["body_recovery_geometry", "continuous_two_hand_ready_grip_source", "independent_two_hand_ready_posture_reference"]),
+        "GS03-M10-05": ("complete_generic_ready_state_source_required", ["body_recovery_geometry", "bilateral_hand_racket_control_sequence", "source_bound_racket_in_front_of_body"]),
+    }
+    if identifier in rotation:
+        result = evaluation("projected_axis_return_to_independent_reference", [
+            c("shoulder_reference_error_reduction_deg", "gte", 8, "肩轴接近独立准备方向参照"),
+            c("hip_reference_error_reduction_deg", "gte", 8, "髋轴接近独立准备方向参照"),
+            c("terminal_max_reference_error_deg", "lte", 15, "末段肩髋轴保持在准备参照的工程容差内"),
+            c("terminal_max_axis_range_deg", "lte", 8, "末段肩髋投影轴不大幅摆动")],
+            limitation="只评价相对独立动作前准备参照的二维轴投影返回，不证明三维胸廓/骨盆朝向。无同源连续参照则缺测，不用末端自参考或身体稳定代替。8度/15度为预先固定工程分辨与容差，非原文阈值或教练校准。")
+        result.update(score_block_reason_code="independent_ready_reference_missing", required_observables=["independent_pre_action_body_ready_reference", "continuous_paired_shoulder_hip_axis_geometry"])
+    elif identifier in stability:
+        result = evaluation("terminal_body_projection_stability", [
+            c("terminal_hip_speed_torso_s", "lte", .6, "末段髋中心图像运动速度较低"),
+            c("terminal_hip_inside_ankle_support_fraction", "gte", .8, "末段髋投影大部分位于双踝区间"),
+            c("terminal_trunk_tilt_range_deg", "lte", 15, "末段躯干投影摆动有限")],
+            limitation="完整恢复窗中的末段身体投影稳定条件；不将匀速快移的低速度标准差当作稳定，不证明足底接地、受力或完整准备状态。")
+        result.update(score_block_reason_code="continuous_recovery_body_geometry_required", required_observables=["continuous_source_bound_body_recovery_geometry"])
+    elif identifier in missing:
+        reason, requirements = missing[identifier]
+        result = evaluation("m10_racket_or_complete_ready_observables_required", [], kind="manual_review",
+            limitation="此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。")
+        result.update(score_block_reason_code=reason, required_observables=requirements,
+            auxiliary_observations=[{"metric": key, "unit": METRICS[key]["unit"], "required_joint_names": METRICS[key]["required_joint_names"],
+                "measurement_semantics": METRICS[key]["definition"], "scoring_eligible": False}
+                for key in ("wrist_separation_torso.median", "wrist_separation_torso.delta", "shoulder_axis_deg.range", "hip_axis_deg.range", "trunk_tilt_deg.range", "hip_inside_ankle_support_fraction.mean")])
+    else:
+        return None
+    result.update(scoring_revision_id="gs-m10-observability-v1.0.0", required_engine="gs-recovery-evidence-v1.0.0")
+    return result
+
+
 def gs_evaluation(rule):
     """Reviewed behavior families; output retains card-specific source definition."""
     identifier = rule["indicator_id"]
     name = rule["name_zh"]
+    recovery = m10_evaluation(identifier)
+    if recovery is not None:
+        return recovery
     if identifier in {"GS01-M09-04", "GS01-M09-05"}:
         approach = identifier.endswith("04")
         result = evaluation("non_racket_hand_approach_requires_racket_source" if approach else "racket_control_reentry_requires_sequence", [], kind="manual_review",

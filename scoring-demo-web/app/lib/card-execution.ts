@@ -15,6 +15,7 @@ import microContract from "./directional-micro-display-contract";
 import microCycleContract from "./micro-cycle-display-contract";
 import { microCycleApplies, validateMicroCycles, type MicroCycleValidation } from "./micro-adjustment-cycles-evidence";
 import { directionalMicroApplies, validateDirectionalMicro, type DirectionalMicroValidation } from "./directional-micro-adjustment-evidence";
+import { recoveryPolicy, isRecoveryCard, isRecoveryBodyCard, validateGsRecovery, type GsRecoveryValidation } from "./gs-recovery-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
@@ -24,7 +25,7 @@ export const CARD_RUN_LABELS = { scored: "已评分", proxy_scored: "有视觉�
 export type CardRunStatus = keyof typeof CARD_RUN_LABELS;
 type Obj = Record<string, unknown>;
 type ConditionSpec = [string, "gte" | "lte" | "between" | "eq", number | [number, number], string];
-type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: string[]; conditions: ConditionSpec[]; source: CardInstance["source"]; scoring_revision_id?: string; score_block_reason_code?: string; required_observables?: string[] };
+type GsSpec = { stage_code: string; rule_kind: string; required_joint_names: string[]; conditions: ConditionSpec[]; source: CardInstance["source"]; scoring_revision_id?: string; score_block_reason_code?: string; required_observables?: string[]; required_engine?: string };
 const GS_CARD_CONTRACTS = gsContract.cards as unknown as Record<string, GsSpec>;
 type FootworkSpec = Omit<GsSpec, "stage_code"> & { limitation: string };
 const FOOTWORK_CARD_CONTRACTS = footworkContract.cards as unknown as Record<string, FootworkSpec>;
@@ -126,6 +127,9 @@ export interface CardInstance {
   auxiliary_observations: EvidenceObject | null;
   superseded_conditions: CardCondition[];
   superseded_condition_evidence: EvidenceObject[];
+  recovery_evidence?: EvidenceObject | null;
+  recovery_parent_context?: EvidenceObject | null;
+  recovery_validation?: GsRecoveryValidation | null;
   auxiliary_evidence: EvidenceObject | null;
   auxiliary_parent_context: EvidenceObject | null;
   step_motion_validation: StepMotionValidation | null;
@@ -176,9 +180,11 @@ function withPreloadValidation(instance: CardInstance): CardInstance {
   const invalidCycles = cycles?.status === "invalid";
   const dip = isFormalScoringPolicy(instance.scoring_policy_version) ? validateTemporalLocalDip(instance.temporal_evidence, instance) : null;
   const invalidDip = dip?.status === "invalid", invalidMicro = micro?.status === "invalid";
-  return { ...instance, ...(invalidDip || invalidMicro || invalidCycles ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
-      reason_codes: [...new Set([...instance.reason_codes, ...(invalidDip ? ["local_dip_source_evidence_invalid"] : []), ...(invalidMicro ? ["directional_micro_source_evidence_invalid"] : []), ...(invalidCycles ? ["micro_cycle_source_evidence_invalid"] : [])])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
-    conditions: motion?.status === "invalid" || invalidDip || invalidMicro || invalidCycles ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
+  const recovery = validateGsRecovery(instance.recovery_evidence, instance.recovery_parent_context, instance), invalidRecovery = recovery?.status === "invalid";
+  return { ...instance, ...(invalidDip || invalidMicro || invalidCycles || invalidRecovery ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
+      reason_codes: [...new Set([...instance.reason_codes, ...(invalidDip ? ["local_dip_source_evidence_invalid"] : []), ...(invalidMicro ? ["directional_micro_source_evidence_invalid"] : []), ...(invalidCycles ? ["micro_cycle_source_evidence_invalid"] : []), ...(invalidRecovery ? ["gs_recovery_source_evidence_invalid"] : [])])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
+    conditions: motion?.status === "invalid" || invalidDip || invalidMicro || invalidCycles || invalidRecovery ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
+    ...(isRecoveryCard(instance.indicator_id) ? { recovery_validation: recovery } : {}),
     directional_micro_validation: micro, micro_cycle_validation: cycles,
     step_motion_validation: motion };
 }
@@ -242,7 +248,9 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
     rule_version: text(row.rule_version), measurement_version: text(row.measurement_version), status: state, original_grade: null, source_grade_supported: false,
     grade: null, proxy_grade: null, score: null, scoring_policy_version: policy, advisory_reason_codes: strings(row.advisory_reason_codes), advisory_flags: strings(row.advisory_flags),
     window: windowOf(row.window ?? evidence.requested_window_ms), reason_codes: strings(row.reason_codes), conditions,
-    quality: { total_frame_count: total, valid_frame_count: valid <= total ? valid : 0, fraction: total > 0 && valid <= total ? valid / total : null, visibility_verified: false, required_joint_names: strings(quality.required_joint_names) },
+    quality: { total_frame_count: total, valid_frame_count: valid <= total ? valid : 0,
+      fraction: total > 0 ? valid <= total ? valid / total : isRecoveryCard(id) ? 0 : null : null,
+      visibility_verified: false, required_joint_names: strings(quality.required_joint_names) },
     source_stage: sourceStageOf(row, id),
     source_stage_evidence: GS_CARD_CONTRACTS[id] ? evidenceObject(row.source_stage_evidence) : null,
     source_stage_context: GS_CARD_CONTRACTS[id] ? evidenceObject(row.source_stage_context ?? row.window) : null,
@@ -262,6 +270,8 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
     auxiliary_observations: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? evidenceObject(row.auxiliary_observations) : null,
     superseded_conditions: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? list(row.superseded_conditions, 30).map(conditionOf).map(c => ({ ...c, passed: null })) : [],
     superseded_condition_evidence: GS_CARD_CONTRACTS[id]?.scoring_revision_id ? list(row.superseded_condition_evidence, 30).map(evidenceObject).filter((e): e is EvidenceObject => e !== null) : [],
+    ...(isRecoveryCard(id) ? { recovery_evidence: evidenceObject(row.recovery_evidence),
+      recovery_parent_context: evidenceObject(row.recovery_parent_context ?? { action_id: row.action_id ?? "", source_annotation: row.source_annotation ?? {} }), recovery_validation: null } : {}),
     auxiliary_evidence: auxiliary, auxiliary_parent_context: auxiliaryParent, auxiliary_validation: null, step_motion_validation: null,
     limitations: [...new Set([...(FOOTWORK_CARD_CONTRACTS[id] ? [FOOTWORK_CARD_CONTRACTS[id].limitation] : []), ...strings(row.limitation_codes ?? row.limitations)].map(value => limitationLabel(value, formal)))],
     limitation_codes: strings(row.limitation_codes ?? row.limitations),
@@ -270,7 +280,7 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   // establishes the corresponding hand-to-racket behavior. Keep source rows
   // and observations, but never accept saved scores or auxiliary pass bits.
   const revision = GS_CARD_CONTRACTS[id];
-  if (revision?.scoring_revision_id) {
+  if (revision?.scoring_revision_id === "gs01-m09-hand-racket-observability-v1.0.0") {
     const revised = { ...result, scoring_revision_id: revision.scoring_revision_id,
       missing_required_observables: [...(revision.required_observables ?? [])], conditions: [],
       superseded_conditions: conditions.length ? conditions.map(c => ({ ...c, passed: null })) : result.superseded_conditions,
@@ -279,7 +289,24 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
       revised.reason_codes = [...new Set([...revised.reason_codes, "hand_racket_scoring_rule_revised"])];
     return invalidate(revised, revision.score_block_reason_code ?? "required_observable_not_recoverable_from_pose");
   }
+  // Only the six explicitly revised body cards can acquire a new score, after
+  // complete geometry recomputation. Old M10 predicates and the seven missing
+  // racket/readiness behaviors retain their observations but lose saved grades.
+  if (isRecoveryCard(id) && (!isRecoveryBodyCard(id) || row.scoring_revision_id !== recoveryPolicy.scoring_revision_id
+      || !result.recovery_evidence || result.measurement_version !== recoveryPolicy.version || !formal)) {
+    const revised = { ...result, scoring_revision_id: recoveryPolicy.scoring_revision_id,
+      missing_required_observables: [...(revision.required_observables ?? [])], conditions: [],
+      superseded_conditions: conditions.length ? conditions.map(c => ({ ...c, passed: null })) : result.superseded_conditions,
+      superseded_condition_evidence: conditions.length ? list(row.conditions, 30).map(c => ({ metric: text(obj(c).metric), evidence: evidenceObject(obj(c).evidence) })) : result.superseded_condition_evidence };
+    if (row.scoring_revision_id !== recoveryPolicy.scoring_revision_id || conditions.length)
+      revised.reason_codes = [...new Set([...revised.reason_codes, "gs_m10_scoring_rule_revised"])];
+    return invalidate(revised, !isRecoveryBodyCard(id) ? revision.score_block_reason_code ?? "required_observable_not_recoverable_from_pose" : "gs_recovery_current_source_evidence_required");
+  }
   if (row.original_grade !== null || row.source_grade_supported !== false) return invalidate(result, "source_grade_claim_not_supported");
+  if (isRecoveryBodyCard(id) && (row.recovery_parent_context !== undefined && (row.action_id !== undefined || row.source_annotation !== undefined)
+      && !equalEvidence(row.recovery_parent_context, { action_id: row.action_id ?? "", source_annotation: row.source_annotation ?? {} })
+      || row.source_stage_context !== undefined && Object.entries(obj(row.window)).some(([key, value]) => !equalEvidence(value, obj(row.source_stage_context)[key]))))
+    return invalidate(result, "gs_recovery_source_copies_mismatch");
   if (policy !== reportPolicy || reportPolicy !== null && !isFormalScoringPolicy(reportPolicy)
       || state === "scored" && !formal || state === "proxy_scored" && formal) return invalidate(result, "scoring_policy_mismatch");
   if (state !== "proxy_scored" && state !== "scored") return withPreloadValidation({ ...result, conditions: conditions.map(c => ({ ...c, passed: null })) });
@@ -297,11 +324,14 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected && (!formal || validateTemporalLocalDip(result.temporal_evidence, result)?.status !== "measured_local_dip")
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (microCycles ? microCycleContract.measurement_version : micro ? microContract.measurement_version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (microCycles ? microCycleContract.measurement_version : micro ? microContract.measurement_version : isRecoveryBodyCard(id) ? recoveryPolicy.version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
       || formal && row.grade !== grade || row.proxy_grade !== grade || row.score !== gradePoints[grade]
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
         || formal && !validFormalGsStageSource(result.source_stage_evidence, result.source_stage_context, result)
         || !validRacketSide(result.racket_side_evidence, result, result.source_stage, conditions.some(c => c.metric === "wrist_speed_increase_torso_s")))
+      || isRecoveryBodyCard(id) && (row.scoring_revision_id !== recoveryPolicy.scoring_revision_id || !formal
+        || result.threshold_basis !== "engineering_v1_uncalibrated"
+        || validateGsRecovery(result.recovery_evidence, result.recovery_parent_context, result)?.status !== "measured_recovery")
       || micro && (!formal || result.application_rule_version !== microContract.application_rule_version
         || microContract.conditions.some(spec => byMetric.get(spec.metric)?.key !== spec.key)
         || result.threshold_basis !== "application_thresholds_uncalibrated_not_source_or_literature_standard"
@@ -381,7 +411,7 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : effectiveKind === "manual_review" || row.run_status === "review_required" ? formal ? "unavailable" : "review_required" : "not_executed";
     const status: CardRunStatus = instances.some(i => i.status === "scored") ? "scored" : instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
     const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: effectiveKind,
-      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, application_rule_version: text(row.application_rule_version) || null, run_status: status, reason_codes: [...new Set([...strings(row.reason_codes), ...(retiredGsKind ? ["hand_racket_scoring_rule_revised"] : [])])], instances, instance_count: instances.length };
+      runtime_engine: row.runtime_engine === runtimeEngine ? runtimeEngine : null, application_rule_version: text(row.application_rule_version) || null, run_status: status, reason_codes: [...new Set([...strings(row.reason_codes), ...(retiredGsKind ? [isRecoveryCard(id) ? "gs_m10_scoring_rule_revised" : "hand_racket_scoring_rule_revised"] : [])])], instances, instance_count: instances.length };
     const prior = seenCards.get(id);
     if (prior) {
       if (JSON.stringify(prior) !== JSON.stringify(card)) { prior.run_status = "unavailable"; prior.reason_codes = [...new Set([...prior.reason_codes, "conflicting_duplicate_card"])]; prior.instances = prior.instances.map(i => invalidate(i, "conflicting_duplicate_card")); conflicts++; }
@@ -443,6 +473,32 @@ function limitationLabel(value: string, formal: boolean): string {
 }
 
 export const CARD_REASON_LABELS: Record<string, string> = {
+  gs_m10_scoring_rule_revised: "恢复阶段旧规则已修订，历史分数不再计入当前成绩",
+  gs_recovery_current_source_evidence_required: "当前恢复规则尚缺完整几何或独立准备参照，旧条件只保留记录",
+  gs_recovery_source_evidence_invalid: "恢复阶段的来源或几何复算不一致，已取消该实例评分",
+  gs_recovery_source_copies_mismatch: "恢复阶段报告中的来源副本不一致，已取消该实例评分",
+  recovery_continuous_window_too_short: "恢复阶段不足连续7帧或80毫秒，保留原窗口而不延长取分",
+  ready_reference_too_short: "独立准备参照的连续原帧过少",
+  independent_ready_reference_missing: "缺少独立绑定的动作前准备参照",
+  ready_reference_not_independent_pre_action: "准备参照未独立位于动作开始前",
+  ready_reference_intervening_source_incomplete: "准备参照到恢复阶段之间的原帧来源不完整",
+  ready_reference_intervening_source_samples_missing: "准备参照到恢复阶段之间存在原始姿态样本缺失",
+  ready_reference_intervening_pts_invalid: "准备参照到恢复阶段之间的原始时钟不连续",
+  ready_reference_intervening_source_copy_mismatch: "准备参照与恢复阶段的原始来源副本不一致",
+  ready_reference_intervening_source_binding_invalid: "准备参照到恢复阶段之间的姿态来源绑定不完整",
+  ready_reference_intervening_model_epoch_invalid: "准备参照到恢复阶段之间的原模型轨迹分段不一致",
+  ready_reference_source_binding_invalid: "独立准备参照的原帧绑定不完整",
+  ready_reference_identity_or_camera_mismatch: "准备参照与恢复阶段的选人或相机分段不一致",
+  recovery_source_geometry_normalization_mismatch: "恢复阶段原几何与归一化记录不一致",
+  recovery_joint_missing_in_continuous_window: "恢复完整窗口中存在必要关节缺测",
+  continuous_recovery_body_geometry_required: "缺少完整恢复阶段的身体几何",
+  bilateral_hand_racket_control_source_required: "缺少双手与球拍控制关系的连续来源",
+  continuous_two_hand_racket_control_source_required: "缺少持续双手持拍关系的连续来源",
+  non_racket_hand_to_throat_contact_source_required: "缺少非持拍手与拍喉重新接触的来源",
+  racket_hand_handle_control_source_required: "缺少持拍手与拍柄控制关系的来源",
+  complete_next_shot_ready_state_source_required: "缺少下一拍完整准备状态及手拍关系的来源",
+  complete_two_hand_ready_posture_source_required: "缺少完整双反准备姿态及持续握拍的来源",
+  complete_generic_ready_state_source_required: "缺少完整通用准备状态及拍前置关系的来源",
   model_estimate_measurement_only: "单目模型估计仅保留测量并需复核，不生成代理分",
   fs_card_manual_window_missing: "缺少这张步伐卡的明确人工窗口",
   fs_window_primary_person_binding_unverified: "窗口内主球员绑定尚未核验",
@@ -540,7 +596,7 @@ export const cardReasonLabel = (code: string, formal = false) => {
 };
 
 export function handRacketAuxiliarySummary(instance: CardInstance): string {
-  if (!GS_CARD_CONTRACTS[instance.indicator_id]?.scoring_revision_id) return "";
+  if (GS_CARD_CONTRACTS[instance.indicator_id]?.scoring_revision_id !== "gs01-m09-hand-racket-observability-v1.0.0") return "";
   const a = obj(instance.auxiliary_observations), m = obj(obj(a.measurements).wrist_separation_torso);
   const usable = a.version === "gs-hand-racket-auxiliary-v1.0.0" && a.scoring_eligible === false
     && a.semantics === "bilateral_wrist_geometry_only_not_hand_racket_approach_or_control"

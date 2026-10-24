@@ -1,4 +1,5 @@
 import { handRacketAuxiliarySummary } from "./card-execution";
+import { isRecoveryCard, gsRecoverySummary } from "./gs-recovery-evidence";
 import { isFormalScoringPolicy } from "./formal-card-scoring-policy";
 import { stepMotionSummary } from "./fs-step-motion-evidence";
 import { preloadSummary, preloadSourceSummary } from "./gs-preload-evidence";
@@ -234,7 +235,7 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
       `${card.indicator_id} / ${text(instance.event_id)}`, instance.window ? interval(instance.window) : "未定位",
       instance.status === "scored" ? `${instance.grade} / ${instance.score}（正式评分）` : instance.status === "proxy_scored" ? `${instance.proxy_grade} / ${instance.score}（视觉代理）` : CARD_RUN_LABELS[instance.status],
       `${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count}`,
-      instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；")  + preloadSummary(instance.auxiliary_validation) + (instance.scoring_revision_id ? "；" + handRacketAuxiliarySummary(instance) : ""),
+      instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；")  + preloadSummary(instance.auxiliary_validation) + (isRecoveryCard(instance.indicator_id) ? "；" + gsRecoverySummary(instance.recovery_validation ?? null, instance.indicator_id) : instance.scoring_revision_id ? "；" + handRacketAuxiliarySummary(instance) : ""),
       [...instance.reason_codes, ...instance.advisory_reason_codes, ...instance.advisory_flags].map(code => text(cardReasonLabel(code, formal))).join("；"),
       instance.source_window_annotation ? manualCardSourceLabel(instance) + (instance.directional_micro_validation ? "；" + directionalMicroSummary(instance.directional_micro_validation) : "") + (instance.micro_cycle_validation ? "；" + microCycleSummary(instance.micro_cycle_validation) : "") + (instance.step_motion_validation ? "；" + stepMotionSummary(instance.step_motion_validation) : "")
         : instance.source_stage ? `${text(instance.source_stage.stage_code)}；人工估计 ±${numberText(instance.source_stage.binding.uncertainty_ms)} 毫秒；${text(instance.source_stage.binding.source)}；${text(instance.source_stage.binding.version)}${instance.racket_side_evidence ? `；${manualCardSourceLabel(instance)}` : ""}${preloadSourceSummary(instance.auxiliary_evidence, instance.auxiliary_validation)}`

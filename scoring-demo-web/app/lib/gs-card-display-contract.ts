@@ -950,59 +950,57 @@ export default {
     },
     "GS01-M10-01": {
       "stage_code": "GS01-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "wrist_separation_torso.median",
-          "lte",
-          0.65,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T049",
         "rubric_sha256": "ec8cc3e1231c504699f556bab9ad8a540f14dd242308332034494c2b0782f632"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "bilateral_hand_racket_control_source_required",
+      "required_observables": [
+        "source_bound_bilateral_hand_identity",
+        "source_bound_racket_handle_or_contact_region",
+        "bilateral_hand_racket_control_sequence"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS01-M10-02": {
       "stage_code": "GS01-M10",
       "rule_kind": "visual_proxy",
       "required_joint_names": [
-        "left_ankle",
         "left_hip",
         "left_shoulder",
-        "right_ankle",
         "right_hip",
         "right_shoulder"
       ],
       "conditions": [
         [
-          "hip_speed_std_torso_s",
-          "lte",
-          0.3,
-          "torso/s"
+          "shoulder_reference_error_reduction_deg",
+          "gte",
+          8,
+          "deg"
         ],
         [
-          "trunk_tilt_deg.range",
+          "hip_reference_error_reduction_deg",
+          "gte",
+          8,
+          "deg"
+        ],
+        [
+          "terminal_max_reference_error_deg",
           "lte",
           15,
           "deg"
         ],
         [
-          "hip_inside_ankle_support_fraction.mean",
-          "gte",
-          0.8,
-          "fraction"
+          "terminal_max_axis_range_deg",
+          "lte",
+          8,
+          "deg"
         ]
       ],
       "source": {
@@ -1010,7 +1008,14 @@ export default {
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T050",
         "rubric_sha256": "1d027a2a49143e742195b4353993997f68444afc480b26c05ed099936ca03800"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "independent_ready_reference_missing",
+      "required_observables": [
+        "independent_pre_action_body_ready_reference",
+        "continuous_paired_shoulder_hip_axis_geometry"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS01-M10-03": {
       "stage_code": "GS01-M10",
@@ -1025,22 +1030,22 @@ export default {
       ],
       "conditions": [
         [
-          "hip_speed_std_torso_s",
+          "terminal_hip_speed_torso_s",
           "lte",
-          0.3,
+          0.6,
           "torso/s"
         ],
         [
-          "trunk_tilt_deg.range",
-          "lte",
-          15,
-          "deg"
-        ],
-        [
-          "hip_inside_ankle_support_fraction.mean",
+          "terminal_hip_inside_ankle_support_fraction",
           "gte",
           0.8,
           "fraction"
+        ],
+        [
+          "terminal_trunk_tilt_range_deg",
+          "lte",
+          15,
+          "deg"
         ]
       ],
       "source": {
@@ -1048,47 +1053,33 @@ export default {
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T051",
         "rubric_sha256": "fc6106ddc2efe18337682c1c50b6c400a3f4fe12248049bb8ae92fbdd66998b0"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "continuous_recovery_body_geometry_required",
+      "required_observables": [
+        "continuous_source_bound_body_recovery_geometry"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS01-M10-04": {
       "stage_code": "GS01-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_ankle",
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_ankle",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "hip_inside_ankle_support_fraction.mean",
-          "gte",
-          0.8,
-          "fraction"
-        ],
-        [
-          "trunk_tilt_deg.range",
-          "lte",
-          15,
-          "deg"
-        ],
-        [
-          "wrist_separation_torso.median",
-          "lte",
-          0.65,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T052",
         "rubric_sha256": "e2934c251755349abb362f941db903d7d7c8483472018b7ab2c80a3423774130"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "complete_next_shot_ready_state_source_required",
+      "required_observables": [
+        "body_recovery_geometry",
+        "bilateral_hand_racket_control_sequence",
+        "source_bound_successor_split_or_first_step"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS02-M01-01": {
       "stage_code": "GS02-M01",
@@ -2072,59 +2063,57 @@ export default {
     },
     "GS02-M10-01": {
       "stage_code": "GS02-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "wrist_separation_torso.median",
-          "lte",
-          0.65,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T098",
         "rubric_sha256": "e04255d09e2fa370b02f19c666e11efd84894b779e9847463526527d8700d7f2"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "continuous_two_hand_racket_control_source_required",
+      "required_observables": [
+        "source_bound_bilateral_hand_identity",
+        "source_bound_racket_handle_geometry",
+        "continuous_two_hand_racket_control_sequence"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS02-M10-02": {
       "stage_code": "GS02-M10",
       "rule_kind": "visual_proxy",
       "required_joint_names": [
-        "left_ankle",
         "left_hip",
         "left_shoulder",
-        "right_ankle",
         "right_hip",
         "right_shoulder"
       ],
       "conditions": [
         [
-          "hip_speed_std_torso_s",
-          "lte",
-          0.3,
-          "torso/s"
+          "shoulder_reference_error_reduction_deg",
+          "gte",
+          8,
+          "deg"
         ],
         [
-          "trunk_tilt_deg.range",
+          "hip_reference_error_reduction_deg",
+          "gte",
+          8,
+          "deg"
+        ],
+        [
+          "terminal_max_reference_error_deg",
           "lte",
           15,
           "deg"
         ],
         [
-          "hip_inside_ankle_support_fraction.mean",
-          "gte",
-          0.8,
-          "fraction"
+          "terminal_max_axis_range_deg",
+          "lte",
+          8,
+          "deg"
         ]
       ],
       "source": {
@@ -2132,7 +2121,14 @@ export default {
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T099",
         "rubric_sha256": "9e5a000beb3a8c310f82cc54d26bbcbbec5daee63c02ad5e1adc5a0e5b6c33b0"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "independent_ready_reference_missing",
+      "required_observables": [
+        "independent_pre_action_body_ready_reference",
+        "continuous_paired_shoulder_hip_axis_geometry"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS02-M10-03": {
       "stage_code": "GS02-M10",
@@ -2147,22 +2143,22 @@ export default {
       ],
       "conditions": [
         [
-          "hip_speed_std_torso_s",
+          "terminal_hip_speed_torso_s",
           "lte",
-          0.3,
+          0.6,
           "torso/s"
         ],
         [
-          "trunk_tilt_deg.range",
-          "lte",
-          15,
-          "deg"
-        ],
-        [
-          "hip_inside_ankle_support_fraction.mean",
+          "terminal_hip_inside_ankle_support_fraction",
           "gte",
           0.8,
           "fraction"
+        ],
+        [
+          "terminal_trunk_tilt_range_deg",
+          "lte",
+          15,
+          "deg"
         ]
       ],
       "source": {
@@ -2170,47 +2166,33 @@ export default {
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T100",
         "rubric_sha256": "a8a30520c5dd78d0681f8f821ca14501857cb14d3164199f1f2774454f4cb8f2"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "continuous_recovery_body_geometry_required",
+      "required_observables": [
+        "continuous_source_bound_body_recovery_geometry"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS02-M10-04": {
       "stage_code": "GS02-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_ankle",
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_ankle",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "hip_inside_ankle_support_fraction.mean",
-          "gte",
-          0.8,
-          "fraction"
-        ],
-        [
-          "trunk_tilt_deg.range",
-          "lte",
-          15,
-          "deg"
-        ],
-        [
-          "wrist_separation_torso.median",
-          "lte",
-          0.65,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T101",
         "rubric_sha256": "23fabfc27b0349f58ea3f82048c566fda5b3ac61c76f33b97fcfa0a7b3d75cd2"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "complete_two_hand_ready_posture_source_required",
+      "required_observables": [
+        "body_recovery_geometry",
+        "continuous_two_hand_ready_grip_source",
+        "independent_two_hand_ready_posture_reference"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS03-M01-01": {
       "stage_code": "GS03-M01",
@@ -3202,85 +3184,77 @@ export default {
     },
     "GS03-M10-01": {
       "stage_code": "GS03-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "wrist_separation_torso.delta",
-          "lte",
-          -0.15,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T146",
         "rubric_sha256": "b7b7c4a15cd8fe4cdf27e79fcc82dbc7e0bda90765c5a0a71bab99e1b6492c27"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "non_racket_hand_to_throat_contact_source_required",
+      "required_observables": [
+        "source_bound_non_racket_hand_identity",
+        "source_bound_racket_throat_RK013",
+        "non_racket_hand_throat_recontact_sequence"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS03-M10-02": {
       "stage_code": "GS03-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "wrist_separation_torso.median",
-          "lte",
-          0.65,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T147",
         "rubric_sha256": "0a710dd5e5a38b7319014b9aaa087f8e8efa621f422f5134549dae749e0d6314"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "racket_hand_handle_control_source_required",
+      "required_observables": [
+        "source_bound_racket_hand_identity",
+        "source_bound_racket_handle_and_axis",
+        "racket_hand_handle_control_and_body_front_sequence"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS03-M10-03": {
       "stage_code": "GS03-M10",
       "rule_kind": "visual_proxy",
       "required_joint_names": [
-        "left_ankle",
         "left_hip",
         "left_shoulder",
-        "right_ankle",
         "right_hip",
         "right_shoulder"
       ],
       "conditions": [
         [
-          "hip_speed_std_torso_s",
-          "lte",
-          0.3,
-          "torso/s"
+          "shoulder_reference_error_reduction_deg",
+          "gte",
+          8,
+          "deg"
         ],
         [
-          "trunk_tilt_deg.range",
+          "hip_reference_error_reduction_deg",
+          "gte",
+          8,
+          "deg"
+        ],
+        [
+          "terminal_max_reference_error_deg",
           "lte",
           15,
           "deg"
         ],
         [
-          "hip_inside_ankle_support_fraction.mean",
-          "gte",
-          0.8,
-          "fraction"
+          "terminal_max_axis_range_deg",
+          "lte",
+          8,
+          "deg"
         ]
       ],
       "source": {
@@ -3288,7 +3262,14 @@ export default {
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T148",
         "rubric_sha256": "7f98521ea6f764977553c907301cfd53188ba101e53ce11f12da82170aa7ba5b"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "independent_ready_reference_missing",
+      "required_observables": [
+        "independent_pre_action_body_ready_reference",
+        "continuous_paired_shoulder_hip_axis_geometry"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS03-M10-04": {
       "stage_code": "GS03-M10",
@@ -3303,22 +3284,22 @@ export default {
       ],
       "conditions": [
         [
-          "hip_speed_std_torso_s",
+          "terminal_hip_speed_torso_s",
           "lte",
-          0.3,
+          0.6,
           "torso/s"
         ],
         [
-          "trunk_tilt_deg.range",
-          "lte",
-          15,
-          "deg"
-        ],
-        [
-          "hip_inside_ankle_support_fraction.mean",
+          "terminal_hip_inside_ankle_support_fraction",
           "gte",
           0.8,
           "fraction"
+        ],
+        [
+          "terminal_trunk_tilt_range_deg",
+          "lte",
+          15,
+          "deg"
         ]
       ],
       "source": {
@@ -3326,47 +3307,33 @@ export default {
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T149",
         "rubric_sha256": "9f49ab049ff657a3d96cf41faaf8998d2a0a6098a02095729293f41e1d9d512d"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "continuous_recovery_body_geometry_required",
+      "required_observables": [
+        "continuous_source_bound_body_recovery_geometry"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS03-M10-05": {
       "stage_code": "GS03-M10",
-      "rule_kind": "visual_proxy",
-      "required_joint_names": [
-        "left_ankle",
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_ankle",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
-      "conditions": [
-        [
-          "hip_inside_ankle_support_fraction.mean",
-          "gte",
-          0.8,
-          "fraction"
-        ],
-        [
-          "trunk_tilt_deg.range",
-          "lte",
-          15,
-          "deg"
-        ],
-        [
-          "wrist_separation_torso.median",
-          "lte",
-          0.65,
-          "torso"
-        ]
-      ],
+      "rule_kind": "manual_review",
+      "required_joint_names": [],
+      "conditions": [],
       "source": {
         "document_id": "CARD-GS",
         "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
         "table": "T150",
         "rubric_sha256": "cb60bfe0f12be6c8f022fc358ccaf74def473b8d92f678d7403b777fe8509b7d"
-      }
+      },
+      "scoring_revision_id": "gs-m10-observability-v1.0.0",
+      "score_block_reason_code": "complete_generic_ready_state_source_required",
+      "required_observables": [
+        "body_recovery_geometry",
+        "bilateral_hand_racket_control_sequence",
+        "source_bound_racket_in_front_of_body"
+      ],
+      "required_engine": "gs-recovery-evidence-v1.0.0"
     },
     "GS04-M01-01": {
       "stage_code": "GS04-M01",
@@ -5292,5 +5259,134 @@ export default {
         "rubric_sha256": "ab1efbd7304878dbf648e76cd4bb4934e732fe1fe7ca74625fe3ed5ab129248c"
       }
     }
+  },
+  "recovery": {
+    "version": "gs-recovery-evidence-v1.0.0",
+    "scoring_revision_id": "gs-m10-observability-v1.0.0",
+    "policy_version": "gs-m10-projected-recovery-v1.0.0",
+    "reference_version": "gs-ready-reference-v1.0.0",
+    "reference_semantics": "independent_pre_action_body_ready_reference_not_technical_ground_truth",
+    "auxiliary_version": "gs-m10-auxiliary-v1.0.0",
+    "rotation_cards": [
+      "GS01-M10-02",
+      "GS02-M10-02",
+      "GS03-M10-03"
+    ],
+    "stability_cards": [
+      "GS01-M10-03",
+      "GS02-M10-03",
+      "GS03-M10-04"
+    ],
+    "manual_requirements": {
+      "GS01-M10-01": [
+        "bilateral_hand_racket_control_source_required",
+        [
+          "source_bound_bilateral_hand_identity",
+          "source_bound_racket_handle_or_contact_region",
+          "bilateral_hand_racket_control_sequence"
+        ]
+      ],
+      "GS02-M10-01": [
+        "continuous_two_hand_racket_control_source_required",
+        [
+          "source_bound_bilateral_hand_identity",
+          "source_bound_racket_handle_geometry",
+          "continuous_two_hand_racket_control_sequence"
+        ]
+      ],
+      "GS03-M10-01": [
+        "non_racket_hand_to_throat_contact_source_required",
+        [
+          "source_bound_non_racket_hand_identity",
+          "source_bound_racket_throat_RK013",
+          "non_racket_hand_throat_recontact_sequence"
+        ]
+      ],
+      "GS03-M10-02": [
+        "racket_hand_handle_control_source_required",
+        [
+          "source_bound_racket_hand_identity",
+          "source_bound_racket_handle_and_axis",
+          "racket_hand_handle_control_and_body_front_sequence"
+        ]
+      ],
+      "GS01-M10-04": [
+        "complete_next_shot_ready_state_source_required",
+        [
+          "body_recovery_geometry",
+          "bilateral_hand_racket_control_sequence",
+          "source_bound_successor_split_or_first_step"
+        ]
+      ],
+      "GS02-M10-04": [
+        "complete_two_hand_ready_posture_source_required",
+        [
+          "body_recovery_geometry",
+          "continuous_two_hand_ready_grip_source",
+          "independent_two_hand_ready_posture_reference"
+        ]
+      ],
+      "GS03-M10-05": [
+        "complete_generic_ready_state_source_required",
+        [
+          "body_recovery_geometry",
+          "bilateral_hand_racket_control_sequence",
+          "source_bound_racket_in_front_of_body"
+        ]
+      ]
+    },
+    "rotation_conditions": [
+      [
+        "shoulder_reference_error_reduction_deg",
+        "gte",
+        8.0,
+        "deg"
+      ],
+      [
+        "hip_reference_error_reduction_deg",
+        "gte",
+        8.0,
+        "deg"
+      ],
+      [
+        "terminal_max_reference_error_deg",
+        "lte",
+        15.0,
+        "deg"
+      ],
+      [
+        "terminal_max_axis_range_deg",
+        "lte",
+        8.0,
+        "deg"
+      ]
+    ],
+    "stability_conditions": [
+      [
+        "terminal_hip_speed_torso_s",
+        "lte",
+        0.6,
+        "torso/s"
+      ],
+      [
+        "terminal_hip_inside_ankle_support_fraction",
+        "gte",
+        0.8,
+        "fraction"
+      ],
+      [
+        "terminal_trunk_tilt_range_deg",
+        "lte",
+        15.0,
+        "deg"
+      ]
+    ],
+    "min_recovery_frames": 7,
+    "min_reference_frames": 3,
+    "min_window_ms": 80,
+    "reference_max_axis_range_deg": 8.0,
+    "min_axis_length_torso": 0.18,
+    "endpoint_fraction": 0.2,
+    "min_endpoint_frames": 3
   }
 };

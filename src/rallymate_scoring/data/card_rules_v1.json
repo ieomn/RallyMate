@@ -426,6 +426,104 @@
       "camera_reference_required": false,
       "dependencies": []
     },
+    "shoulder_reference_error_reduction_deg": {
+      "unit": "deg",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip"
+      ],
+      "definition": "肩轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
+      "camera_reference_required": true,
+      "dependencies": [
+        "independent_pre_action_body_ready_reference"
+      ]
+    },
+    "hip_reference_error_reduction_deg": {
+      "unit": "deg",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip"
+      ],
+      "definition": "髋轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
+      "camera_reference_required": true,
+      "dependencies": [
+        "independent_pre_action_body_ready_reference"
+      ]
+    },
+    "terminal_max_reference_error_deg": {
+      "unit": "deg",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip"
+      ],
+      "definition": "末端20%至少3帧内，肩/髋轴至各自独立准备参照的绝对周期误差最大值。",
+      "camera_reference_required": true,
+      "dependencies": [
+        "independent_pre_action_body_ready_reference"
+      ]
+    },
+    "terminal_max_axis_range_deg": {
+      "unit": "deg",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip"
+      ],
+      "definition": "末端20%至少3帧内肩/髋连续展开轴角范围的较大值，非三维朝向。",
+      "camera_reference_required": true,
+      "dependencies": [
+        "independent_pre_action_body_ready_reference"
+      ]
+    },
+    "terminal_hip_speed_torso_s": {
+      "unit": "torso/s",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip",
+        "left_ankle",
+        "right_ankle"
+      ],
+      "definition": "末端20%至少3帧内部相邻髋中心位移/实际PTS间隔/完整M10固定躯干中位尺度的速度中位数。",
+      "camera_reference_required": true,
+      "dependencies": []
+    },
+    "terminal_hip_inside_ankle_support_fraction": {
+      "unit": "fraction",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip",
+        "left_ankle",
+        "right_ankle"
+      ],
+      "definition": "末端20%至少3帧中髋中心x处于两踝x闭区间的比例；不证明接地或承重。",
+      "camera_reference_required": true,
+      "dependencies": []
+    },
+    "terminal_trunk_tilt_range_deg": {
+      "unit": "deg",
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip",
+        "left_ankle",
+        "right_ankle"
+      ],
+      "definition": "末端20%至少3帧中躯干相对图像竖直倾角的最大值减最小值。",
+      "camera_reference_required": true,
+      "dependencies": []
+    },
     "hip_drop_torso": {
       "unit": "torso",
       "required_joint_names": [
@@ -18921,43 +19019,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "hand_relation_proxy",
-        "conditions": [
-          {
-            "key": "wrist_separation_torso.median",
-            "metric": "wrist_separation_torso.median",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕保持接近；不确认球拍握持或三角区",
-            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.65
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -18968,10 +19040,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "双腕距离只表示手的相对位置；不证明握拍、辅助手位于拍喉或双手控制球拍。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "bilateral_hand_racket_control_source_required",
+        "required_observables": [
+          "source_bound_bilateral_hand_identity",
+          "source_bound_racket_handle_or_contact_region",
+          "bilateral_hand_racket_control_sequence"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -19251,10 +19405,8 @@
         "subwindow_required": false
       },
       "required_joint_names": [
-        "left_ankle",
         "left_hip",
         "left_shoulder",
-        "right_ankle",
         "right_hip",
         "right_shoulder"
       ],
@@ -19262,20 +19414,21 @@
         "source_video_sha256",
         "continuous_person_identity",
         "exact_stage_landmarks",
+        "independent_pre_action_body_ready_reference",
         "stationary_or_compensated_camera_reference"
       ],
       "evaluation": {
         "kind": "visual_proxy",
-        "family": "recovery_stability",
+        "family": "projected_axis_return_to_independent_reference",
         "conditions": [
           {
-            "key": "hip_speed_std_torso_s",
-            "metric": "hip_speed_std_torso_s",
-            "operator": "lte",
-            "unit": "torso/s",
+            "key": "shoulder_reference_error_reduction_deg",
+            "metric": "shoulder_reference_error_reduction_deg",
+            "operator": "gte",
+            "unit": "deg",
             "required": true,
-            "description": "固定参考的髋速度波动有限",
-            "measurement_semantics": "相邻连续帧髋中心欧氏位移除真实时间间隔和固定躯干尺度，再取总体标准差。",
+            "description": "肩轴接近独立准备方向参照",
+            "measurement_semantics": "肩轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
@@ -19283,16 +19436,33 @@
               "right_hip"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.3
+            "value": 8
           },
           {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
+            "key": "hip_reference_error_reduction_deg",
+            "metric": "hip_reference_error_reduction_deg",
+            "operator": "gte",
+            "unit": "deg",
+            "required": true,
+            "description": "髋轴接近独立准备方向参照",
+            "measurement_semantics": "髋轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
+            "value": 8
+          },
+          {
+            "key": "terminal_max_reference_error_deg",
+            "metric": "terminal_max_reference_error_deg",
             "operator": "lte",
             "unit": "deg",
             "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "description": "末段肩髋轴保持在准备参照的工程容差内",
+            "measurement_semantics": "末端20%至少3帧内，肩/髋轴至各自独立准备参照的绝对周期误差最大值。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
@@ -19303,21 +19473,21 @@
             "value": 15
           },
           {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
-            "operator": "gte",
-            "unit": "fraction",
+            "key": "terminal_max_axis_range_deg",
+            "metric": "terminal_max_axis_range_deg",
+            "operator": "lte",
+            "unit": "deg",
             "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "description": "末段肩髋投影轴不大幅摆动",
+            "measurement_semantics": "末端20%至少3帧内肩/髋连续展开轴角范围的较大值，非三维朝向。",
             "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
               "left_hip",
-              "right_hip",
-              "left_ankle",
-              "right_ankle"
+              "right_hip"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.8
+            "value": 8
           }
         ],
         "grade_policy": "condition_completion_v1",
@@ -19332,8 +19502,15 @@
         "numeric_basis": "engineering_v1_uncalibrated",
         "source_behavior_coverage": "partial_observations_only",
         "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "limitation": "只评价相对独立动作前准备参照的二维轴投影返回，不证明三维胸廓/骨盆朝向。无同源连续参照则缺测，不用末端自参考或身体稳定代替。8度/15度为预先固定工程分辨与容差，非原文阈值或教练校准。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "independent_ready_reference_missing",
+        "required_observables": [
+          "independent_pre_action_body_ready_reference",
+          "continuous_paired_shoulder_hip_axis_geometry"
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -19623,51 +19800,38 @@
       ],
       "evaluation": {
         "kind": "visual_proxy",
-        "family": "recovery_stability",
+        "family": "terminal_body_projection_stability",
         "conditions": [
           {
-            "key": "hip_speed_std_torso_s",
-            "metric": "hip_speed_std_torso_s",
+            "key": "terminal_hip_speed_torso_s",
+            "metric": "terminal_hip_speed_torso_s",
             "operator": "lte",
             "unit": "torso/s",
             "required": true,
-            "description": "固定参考的髋速度波动有限",
-            "measurement_semantics": "相邻连续帧髋中心欧氏位移除真实时间间隔和固定躯干尺度，再取总体标准差。",
+            "description": "末段髋中心图像运动速度较低",
+            "measurement_semantics": "末端20%至少3帧内部相邻髋中心位移/实际PTS间隔/完整M10固定躯干中位尺度的速度中位数。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
               "left_hip",
-              "right_hip"
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.3
+            "value": 0.6
           },
           {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
-            "operator": "lte",
-            "unit": "deg",
-            "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 15
-          },
-          {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
+            "key": "terminal_hip_inside_ankle_support_fraction",
+            "metric": "terminal_hip_inside_ankle_support_fraction",
             "operator": "gte",
             "unit": "fraction",
             "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "description": "末段髋投影大部分位于双踝区间",
+            "measurement_semantics": "末端20%至少3帧中髋中心x处于两踝x闭区间的比例；不证明接地或承重。",
             "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
               "left_hip",
               "right_hip",
               "left_ankle",
@@ -19675,6 +19839,25 @@
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
             "value": 0.8
+          },
+          {
+            "key": "terminal_trunk_tilt_range_deg",
+            "metric": "terminal_trunk_tilt_range_deg",
+            "operator": "lte",
+            "unit": "deg",
+            "required": true,
+            "description": "末段躯干投影摆动有限",
+            "measurement_semantics": "末端20%至少3帧中躯干相对图像竖直倾角的最大值减最小值。",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
+            "value": 15
           }
         ],
         "grade_policy": "condition_completion_v1",
@@ -19689,8 +19872,14 @@
         "numeric_basis": "engineering_v1_uncalibrated",
         "source_behavior_coverage": "partial_observations_only",
         "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "limitation": "完整恢复窗中的末段身体投影稳定条件；不将匀速快移的低速度标准差当作稳定，不证明足底接地、受力或完整准备状态。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "continuous_recovery_body_geometry_required",
+        "required_observables": [
+          "continuous_source_bound_body_recovery_geometry"
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -19971,79 +20160,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_ankle",
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_ankle",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "ready_posture",
-        "conditions": [
-          {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
-            "operator": "gte",
-            "unit": "fraction",
-            "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
-            "required_joint_names": [
-              "left_hip",
-              "right_hip",
-              "left_ankle",
-              "right_ankle"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.8
-          },
-          {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
-            "operator": "lte",
-            "unit": "deg",
-            "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 15
-          },
-          {
-            "key": "wrist_separation_torso.median",
-            "metric": "wrist_separation_torso.median",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕接近的距离代理；是否位于身前须另证",
-            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.65
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -20054,10 +20181,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "姿态投影代理；完整准备状态还须球拍控制与下一动作时序。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "complete_next_shot_ready_state_source_required",
+        "required_observables": [
+          "body_recovery_geometry",
+          "bilateral_hand_racket_control_sequence",
+          "source_bound_successor_split_or_first_step"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -35121,43 +35330,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "hand_relation_proxy",
-        "conditions": [
-          {
-            "key": "wrist_separation_torso.median",
-            "metric": "wrist_separation_torso.median",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕保持接近；不确认球拍握持或三角区",
-            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.65
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -35168,10 +35351,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "双腕距离只表示手的相对位置；不证明握拍、辅助手位于拍喉或双手控制球拍。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "continuous_two_hand_racket_control_source_required",
+        "required_observables": [
+          "source_bound_bilateral_hand_identity",
+          "source_bound_racket_handle_geometry",
+          "continuous_two_hand_racket_control_sequence"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -35458,10 +35723,8 @@
         "subwindow_required": false
       },
       "required_joint_names": [
-        "left_ankle",
         "left_hip",
         "left_shoulder",
-        "right_ankle",
         "right_hip",
         "right_shoulder"
       ],
@@ -35469,20 +35732,21 @@
         "source_video_sha256",
         "continuous_person_identity",
         "exact_stage_landmarks",
+        "independent_pre_action_body_ready_reference",
         "stationary_or_compensated_camera_reference"
       ],
       "evaluation": {
         "kind": "visual_proxy",
-        "family": "recovery_stability",
+        "family": "projected_axis_return_to_independent_reference",
         "conditions": [
           {
-            "key": "hip_speed_std_torso_s",
-            "metric": "hip_speed_std_torso_s",
-            "operator": "lte",
-            "unit": "torso/s",
+            "key": "shoulder_reference_error_reduction_deg",
+            "metric": "shoulder_reference_error_reduction_deg",
+            "operator": "gte",
+            "unit": "deg",
             "required": true,
-            "description": "固定参考的髋速度波动有限",
-            "measurement_semantics": "相邻连续帧髋中心欧氏位移除真实时间间隔和固定躯干尺度，再取总体标准差。",
+            "description": "肩轴接近独立准备方向参照",
+            "measurement_semantics": "肩轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
@@ -35490,16 +35754,33 @@
               "right_hip"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.3
+            "value": 8
           },
           {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
+            "key": "hip_reference_error_reduction_deg",
+            "metric": "hip_reference_error_reduction_deg",
+            "operator": "gte",
+            "unit": "deg",
+            "required": true,
+            "description": "髋轴接近独立准备方向参照",
+            "measurement_semantics": "髋轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
+            "value": 8
+          },
+          {
+            "key": "terminal_max_reference_error_deg",
+            "metric": "terminal_max_reference_error_deg",
             "operator": "lte",
             "unit": "deg",
             "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "description": "末段肩髋轴保持在准备参照的工程容差内",
+            "measurement_semantics": "末端20%至少3帧内，肩/髋轴至各自独立准备参照的绝对周期误差最大值。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
@@ -35510,21 +35791,21 @@
             "value": 15
           },
           {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
-            "operator": "gte",
-            "unit": "fraction",
+            "key": "terminal_max_axis_range_deg",
+            "metric": "terminal_max_axis_range_deg",
+            "operator": "lte",
+            "unit": "deg",
             "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "description": "末段肩髋投影轴不大幅摆动",
+            "measurement_semantics": "末端20%至少3帧内肩/髋连续展开轴角范围的较大值，非三维朝向。",
             "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
               "left_hip",
-              "right_hip",
-              "left_ankle",
-              "right_ankle"
+              "right_hip"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.8
+            "value": 8
           }
         ],
         "grade_policy": "condition_completion_v1",
@@ -35539,8 +35820,15 @@
         "numeric_basis": "engineering_v1_uncalibrated",
         "source_behavior_coverage": "partial_observations_only",
         "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "limitation": "只评价相对独立动作前准备参照的二维轴投影返回，不证明三维胸廓/骨盆朝向。无同源连续参照则缺测，不用末端自参考或身体稳定代替。8度/15度为预先固定工程分辨与容差，非原文阈值或教练校准。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "independent_ready_reference_missing",
+        "required_observables": [
+          "independent_pre_action_body_ready_reference",
+          "continuous_paired_shoulder_hip_axis_geometry"
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -35837,51 +36125,38 @@
       ],
       "evaluation": {
         "kind": "visual_proxy",
-        "family": "recovery_stability",
+        "family": "terminal_body_projection_stability",
         "conditions": [
           {
-            "key": "hip_speed_std_torso_s",
-            "metric": "hip_speed_std_torso_s",
+            "key": "terminal_hip_speed_torso_s",
+            "metric": "terminal_hip_speed_torso_s",
             "operator": "lte",
             "unit": "torso/s",
             "required": true,
-            "description": "固定参考的髋速度波动有限",
-            "measurement_semantics": "相邻连续帧髋中心欧氏位移除真实时间间隔和固定躯干尺度，再取总体标准差。",
+            "description": "末段髋中心图像运动速度较低",
+            "measurement_semantics": "末端20%至少3帧内部相邻髋中心位移/实际PTS间隔/完整M10固定躯干中位尺度的速度中位数。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
               "left_hip",
-              "right_hip"
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.3
+            "value": 0.6
           },
           {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
-            "operator": "lte",
-            "unit": "deg",
-            "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 15
-          },
-          {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
+            "key": "terminal_hip_inside_ankle_support_fraction",
+            "metric": "terminal_hip_inside_ankle_support_fraction",
             "operator": "gte",
             "unit": "fraction",
             "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "description": "末段髋投影大部分位于双踝区间",
+            "measurement_semantics": "末端20%至少3帧中髋中心x处于两踝x闭区间的比例；不证明接地或承重。",
             "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
               "left_hip",
               "right_hip",
               "left_ankle",
@@ -35889,6 +36164,25 @@
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
             "value": 0.8
+          },
+          {
+            "key": "terminal_trunk_tilt_range_deg",
+            "metric": "terminal_trunk_tilt_range_deg",
+            "operator": "lte",
+            "unit": "deg",
+            "required": true,
+            "description": "末段躯干投影摆动有限",
+            "measurement_semantics": "末端20%至少3帧中躯干相对图像竖直倾角的最大值减最小值。",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
+            "value": 15
           }
         ],
         "grade_policy": "condition_completion_v1",
@@ -35903,8 +36197,14 @@
         "numeric_basis": "engineering_v1_uncalibrated",
         "source_behavior_coverage": "partial_observations_only",
         "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "limitation": "完整恢复窗中的末段身体投影稳定条件；不将匀速快移的低速度标准差当作稳定，不证明足底接地、受力或完整准备状态。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "continuous_recovery_body_geometry_required",
+        "required_observables": [
+          "continuous_source_bound_body_recovery_geometry"
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -36190,79 +36490,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_ankle",
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_ankle",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "ready_posture",
-        "conditions": [
-          {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
-            "operator": "gte",
-            "unit": "fraction",
-            "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
-            "required_joint_names": [
-              "left_hip",
-              "right_hip",
-              "left_ankle",
-              "right_ankle"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.8
-          },
-          {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
-            "operator": "lte",
-            "unit": "deg",
-            "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 15
-          },
-          {
-            "key": "wrist_separation_torso.median",
-            "metric": "wrist_separation_torso.median",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕接近的距离代理；是否位于身前须另证",
-            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.65
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -36273,10 +36511,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "姿态投影代理；完整准备状态还须球拍控制与下一动作时序。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "complete_two_hand_ready_posture_source_required",
+        "required_observables": [
+          "body_recovery_geometry",
+          "continuous_two_hand_ready_grip_source",
+          "independent_two_hand_ready_posture_reference"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -51165,43 +51485,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "hands_reapproach",
-        "conditions": [
-          {
-            "key": "wrist_separation_torso.delta",
-            "metric": "wrist_separation_torso.delta",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕靠近",
-            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": -0.15
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -51212,10 +51506,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "双腕靠近只是接拍候选，手拍接触须球拍证据复核。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "non_racket_hand_to_throat_contact_source_required",
+        "required_observables": [
+          "source_bound_non_racket_hand_identity",
+          "source_bound_racket_throat_RK013",
+          "non_racket_hand_throat_recontact_sequence"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -51496,43 +51872,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "hand_relation_proxy",
-        "conditions": [
-          {
-            "key": "wrist_separation_torso.median",
-            "metric": "wrist_separation_torso.median",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕保持接近；不确认球拍握持或三角区",
-            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.65
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -51543,10 +51893,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "双腕距离只表示手的相对位置；不证明握拍、辅助手位于拍喉或双手控制球拍。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "racket_hand_handle_control_source_required",
+        "required_observables": [
+          "source_bound_racket_hand_identity",
+          "source_bound_racket_handle_and_axis",
+          "racket_hand_handle_control_and_body_front_sequence"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -51833,10 +52265,8 @@
         "subwindow_required": false
       },
       "required_joint_names": [
-        "left_ankle",
         "left_hip",
         "left_shoulder",
-        "right_ankle",
         "right_hip",
         "right_shoulder"
       ],
@@ -51844,20 +52274,21 @@
         "source_video_sha256",
         "continuous_person_identity",
         "exact_stage_landmarks",
+        "independent_pre_action_body_ready_reference",
         "stationary_or_compensated_camera_reference"
       ],
       "evaluation": {
         "kind": "visual_proxy",
-        "family": "recovery_stability",
+        "family": "projected_axis_return_to_independent_reference",
         "conditions": [
           {
-            "key": "hip_speed_std_torso_s",
-            "metric": "hip_speed_std_torso_s",
-            "operator": "lte",
-            "unit": "torso/s",
+            "key": "shoulder_reference_error_reduction_deg",
+            "metric": "shoulder_reference_error_reduction_deg",
+            "operator": "gte",
+            "unit": "deg",
             "required": true,
-            "description": "固定参考的髋速度波动有限",
-            "measurement_semantics": "相邻连续帧髋中心欧氏位移除真实时间间隔和固定躯干尺度，再取总体标准差。",
+            "description": "肩轴接近独立准备方向参照",
+            "measurement_semantics": "肩轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
@@ -51865,16 +52296,33 @@
               "right_hip"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.3
+            "value": 8
           },
           {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
+            "key": "hip_reference_error_reduction_deg",
+            "metric": "hip_reference_error_reduction_deg",
+            "operator": "gte",
+            "unit": "deg",
+            "required": true,
+            "description": "髋轴接近独立准备方向参照",
+            "measurement_semantics": "髋轴至独立动作前准备参照的绝对180度周期误差：起端20%中位数减末端20%中位数，各端至少3帧。",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
+            "value": 8
+          },
+          {
+            "key": "terminal_max_reference_error_deg",
+            "metric": "terminal_max_reference_error_deg",
             "operator": "lte",
             "unit": "deg",
             "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "description": "末段肩髋轴保持在准备参照的工程容差内",
+            "measurement_semantics": "末端20%至少3帧内，肩/髋轴至各自独立准备参照的绝对周期误差最大值。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
@@ -51885,21 +52333,21 @@
             "value": 15
           },
           {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
-            "operator": "gte",
-            "unit": "fraction",
+            "key": "terminal_max_axis_range_deg",
+            "metric": "terminal_max_axis_range_deg",
+            "operator": "lte",
+            "unit": "deg",
             "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "description": "末段肩髋投影轴不大幅摆动",
+            "measurement_semantics": "末端20%至少3帧内肩/髋连续展开轴角范围的较大值，非三维朝向。",
             "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
               "left_hip",
-              "right_hip",
-              "left_ankle",
-              "right_ankle"
+              "right_hip"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.8
+            "value": 8
           }
         ],
         "grade_policy": "condition_completion_v1",
@@ -51914,8 +52362,15 @@
         "numeric_basis": "engineering_v1_uncalibrated",
         "source_behavior_coverage": "partial_observations_only",
         "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "limitation": "只评价相对独立动作前准备参照的二维轴投影返回，不证明三维胸廓/骨盆朝向。无同源连续参照则缺测，不用末端自参考或身体稳定代替。8度/15度为预先固定工程分辨与容差，非原文阈值或教练校准。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "independent_ready_reference_missing",
+        "required_observables": [
+          "independent_pre_action_body_ready_reference",
+          "continuous_paired_shoulder_hip_axis_geometry"
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -52212,51 +52667,38 @@
       ],
       "evaluation": {
         "kind": "visual_proxy",
-        "family": "recovery_stability",
+        "family": "terminal_body_projection_stability",
         "conditions": [
           {
-            "key": "hip_speed_std_torso_s",
-            "metric": "hip_speed_std_torso_s",
+            "key": "terminal_hip_speed_torso_s",
+            "metric": "terminal_hip_speed_torso_s",
             "operator": "lte",
             "unit": "torso/s",
             "required": true,
-            "description": "固定参考的髋速度波动有限",
-            "measurement_semantics": "相邻连续帧髋中心欧氏位移除真实时间间隔和固定躯干尺度，再取总体标准差。",
+            "description": "末段髋中心图像运动速度较低",
+            "measurement_semantics": "末端20%至少3帧内部相邻髋中心位移/实际PTS间隔/完整M10固定躯干中位尺度的速度中位数。",
             "required_joint_names": [
               "left_shoulder",
               "right_shoulder",
               "left_hip",
-              "right_hip"
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.3
+            "value": 0.6
           },
           {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
-            "operator": "lte",
-            "unit": "deg",
-            "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 15
-          },
-          {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
+            "key": "terminal_hip_inside_ankle_support_fraction",
+            "metric": "terminal_hip_inside_ankle_support_fraction",
             "operator": "gte",
             "unit": "fraction",
             "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "description": "末段髋投影大部分位于双踝区间",
+            "measurement_semantics": "末端20%至少3帧中髋中心x处于两踝x闭区间的比例；不证明接地或承重。",
             "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
               "left_hip",
               "right_hip",
               "left_ankle",
@@ -52264,6 +52706,25 @@
             ],
             "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
             "value": 0.8
+          },
+          {
+            "key": "terminal_trunk_tilt_range_deg",
+            "metric": "terminal_trunk_tilt_range_deg",
+            "operator": "lte",
+            "unit": "deg",
+            "required": true,
+            "description": "末段躯干投影摆动有限",
+            "measurement_semantics": "末端20%至少3帧中躯干相对图像竖直倾角的最大值减最小值。",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
+            "value": 15
           }
         ],
         "grade_policy": "condition_completion_v1",
@@ -52278,8 +52739,14 @@
         "numeric_basis": "engineering_v1_uncalibrated",
         "source_behavior_coverage": "partial_observations_only",
         "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "limitation": "完整恢复窗中的末段身体投影稳定条件；不将匀速快移的低速度标准差当作稳定，不证明足底接地、受力或完整准备状态。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "continuous_recovery_body_geometry_required",
+        "required_observables": [
+          "continuous_source_bound_body_recovery_geometry"
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,
@@ -52565,79 +53032,17 @@
         "binding_required": true,
         "subwindow_required": false
       },
-      "required_joint_names": [
-        "left_ankle",
-        "left_hip",
-        "left_shoulder",
-        "left_wrist",
-        "right_ankle",
-        "right_hip",
-        "right_shoulder",
-        "right_wrist"
-      ],
+      "required_joint_names": [],
       "dependencies": [
         "source_video_sha256",
         "continuous_person_identity",
-        "exact_stage_landmarks"
+        "exact_stage_landmarks",
+        "reviewer_observation_of_source_behavior"
       ],
       "evaluation": {
-        "kind": "visual_proxy",
-        "family": "ready_posture",
-        "conditions": [
-          {
-            "key": "hip_inside_ankle_support_fraction.mean",
-            "metric": "hip_inside_ankle_support_fraction.mean",
-            "operator": "gte",
-            "unit": "fraction",
-            "required": true,
-            "description": "髋投影大部分时间处于双踝区间",
-            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
-            "required_joint_names": [
-              "left_hip",
-              "right_hip",
-              "left_ankle",
-              "right_ankle"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.8
-          },
-          {
-            "key": "trunk_tilt_deg.range",
-            "metric": "trunk_tilt_deg.range",
-            "operator": "lte",
-            "unit": "deg",
-            "required": true,
-            "description": "躯干投影倾角没有大幅摆动",
-            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 15
-          },
-          {
-            "key": "wrist_separation_torso.median",
-            "metric": "wrist_separation_torso.median",
-            "operator": "lte",
-            "unit": "torso",
-            "required": true,
-            "description": "双腕接近的距离代理；是否位于身前须另证",
-            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
-            "required_joint_names": [
-              "left_shoulder",
-              "right_shoulder",
-              "left_hip",
-              "right_hip",
-              "left_wrist",
-              "right_wrist"
-            ],
-            "threshold_basis": "engineering_noise_or_proxy_check_v1_not_source_or_coach_calibration",
-            "value": 0.65
-          }
-        ],
+        "kind": "manual_review",
+        "family": "m10_racket_or_complete_ready_observables_required",
+        "conditions": [],
         "grade_policy": "condition_completion_v1",
         "grade_mapping": {
           "A": 100,
@@ -52648,10 +53053,92 @@
         },
         "source_grade_supported": false,
         "numeric_basis": "engineering_v1_uncalibrated",
-        "source_behavior_coverage": "partial_observations_only",
-        "output_semantics": "engineering_proxy_condition_completion",
-        "limitation": "姿态投影代理；完整准备状态还须球拍控制与下一动作时序。",
-        "extractor_status": "registry_and_runtime_evidence_required"
+        "source_behavior_coverage": "requires_additional_evidence",
+        "output_semantics": "manual_evidence_required",
+        "limitation": "此卡需要明确的手—球拍关系或完整准备状态来源；双腕相对位置、身体稳定或末段静止不能代替。可测人体几何保留为辅助，缺必要来源时不评分。",
+        "extractor_status": "registry_and_runtime_evidence_required",
+        "score_block_reason_code": "complete_generic_ready_state_source_required",
+        "required_observables": [
+          "body_recovery_geometry",
+          "bilateral_hand_racket_control_sequence",
+          "source_bound_racket_in_front_of_body"
+        ],
+        "auxiliary_observations": [
+          {
+            "metric": "wrist_separation_torso.median",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "两腕距离/肩中心至髋中心距离的中位数；不能证明握住球拍。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "wrist_separation_torso.delta",
+            "unit": "torso",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_wrist",
+              "right_wrist"
+            ],
+            "measurement_semantics": "末端减起始20%连续帧双腕距离/躯干长度中位数；不等同手拍接触。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "shoulder_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_axis_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "连续展开180度周期的画面轴线角度最大值减最小值；只代表投影变化。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "trunk_tilt_deg.range",
+            "unit": "deg",
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip"
+            ],
+            "measurement_semantics": "肩中点至髋中点向量相对画面竖直的绝对角度范围。",
+            "scoring_eligible": false
+          },
+          {
+            "metric": "hip_inside_ankle_support_fraction.mean",
+            "unit": "fraction",
+            "required_joint_names": [
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "measurement_semantics": "有效帧中髋中心x位于两踝x闭区间的比例；不代表足底真实接触或受力。",
+            "scoring_eligible": false
+          }
+        ],
+        "scoring_revision_id": "gs-m10-observability-v1.0.0",
+        "required_engine": "gs-recovery-evidence-v1.0.0"
       },
       "quality_policy": {
         "minimum_valid_fraction": 0.7,

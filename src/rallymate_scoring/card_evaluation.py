@@ -8,6 +8,8 @@ import statistics
 
 from .card_kinematics import DYNAMIC_SPECS, SPECS, VERSION as KINEMATICS_VERSION, finite, measure_card_window
 from .card_scoring_policy import GRADE_POINTS, apply_scoring_policy
+from .gs_recovery_evidence import (recovery_metadata, recovery_auxiliary, compute_gs_recovery_evidence,
+    ROTATION_CARDS, STABILITY_CARDS, MANUAL_REQUIREMENTS, ROTATION_CONDITIONS, STABILITY_CONDITIONS)
 
 VERSION = "card-evaluation-v1.0.0"
 HAND_RACKET_SCORING_REVISION = "gs01-m09-hand-racket-observability-v1.0.0"
@@ -85,10 +87,10 @@ def _condition(condition, measurements):
     return result
 
 
-def evaluate_card_window(rule, samples, window, timeline):
+def evaluate_card_window(rule, samples, window, timeline, *, recovery_reference=None):
     """Compute conditions first, then apply the current application policy."""
     samples = list(samples)
-    result = _evaluate_card_window(rule, samples, window, timeline)
+    result = _evaluate_card_window(rule, samples, window, timeline, recovery_reference=recovery_reference)
     model_count = sum((sample.get("observation_semantics") if isinstance(sample, Mapping)
                        else getattr(sample, "observation_semantics", None)) == "monocular_model_estimate"
                       for sample in samples)
@@ -104,7 +106,7 @@ def evaluate_card_window(rule, samples, window, timeline):
     return apply_scoring_policy(result)
 
 
-def _evaluate_card_window(rule, samples, window, timeline):
+def _evaluate_card_window(rule, samples, window, timeline, *, recovery_reference=None):
     """Evaluate only registered frame measurements, never caller-provided pass bits.
 
     A source stage must have a documented manual anchor or a versioned detector.
@@ -117,6 +119,8 @@ def _evaluate_card_window(rule, samples, window, timeline):
               "status": "unavailable", "original_grade": None, "proxy_grade": None, "score": None,
               "reason_codes": [], "conditions": [], "source_grade_supported": False,
               "threshold_basis": evaluation.get("numeric_basis", "engineering_v1_uncalibrated")}
+    if recovery_metadata(rule):
+        return _evaluate_recovery_card(rule, samples, window, timeline, result, recovery_reference)
     if evaluation.get("kind") == "manual_review":
         metadata = hand_racket_observability_metadata(rule)
         if metadata:
@@ -174,6 +178,53 @@ def _evaluate_card_window(rule, samples, window, timeline):
     result.update(status="proxy_scored", proxy_grade=grade, score=GRADE_POINTS[grade],
                   condition_completion_fraction=fraction,
                   semantics="engineering_visual_condition_completion_not_original_technical_grade")
+    return result
+
+
+
+def _evaluate_recovery_card(rule, samples, window, timeline, result, reference):
+    identifier, evaluation = rule["indicator_id"], rule["evaluation"]
+    result.update(**recovery_metadata(rule))
+    if not _source_stage_bound(identifier, window):
+        result["reason_codes"] = ["source_stage_binding_missing_or_mismatched"]
+        return result
+    result["auxiliary_observations"] = recovery_auxiliary(samples, window, timeline)
+    if identifier in MANUAL_REQUIREMENTS:
+        reason, observables = MANUAL_REQUIREMENTS[identifier]
+        if (evaluation.get("kind") != "manual_review" or evaluation.get("conditions") != []
+                or evaluation.get("score_block_reason_code") != reason
+                or evaluation.get("required_observables") != list(observables)):
+            result["reason_codes"] = ["recovery_card_contract_mismatch"]
+        else:
+            result["reason_codes"] = [reason]
+        return result
+    kind = "rotation" if identifier in ROTATION_CARDS else "stability"
+    evidence = compute_gs_recovery_evidence(samples, window, timeline, kind=kind, reference=reference)
+    result.update(recovery_evidence=evidence, measurement_version=evidence["version"])
+    conditions = evaluation.get("conditions", [])
+    expected = ROTATION_CONDITIONS if kind == "rotation" else STABILITY_CONDITIONS
+    actual = [(c.get("metric"), c.get("operator"), c.get("value"), c.get("unit")) for c in conditions if isinstance(c, Mapping)]
+    if (evaluation.get("kind") != "visual_proxy" or actual != list(expected)
+            or any(c.get("required") is not True for c in conditions)
+            or evaluation.get("grade_policy") != "condition_completion_v1"
+            or evaluation.get("grade_mapping") != GRADE_POINTS):
+        result["reason_codes"] = ["recovery_card_contract_mismatch"]
+        return result
+    result["conditions"] = [_condition(c, evidence["measurements"]) for c in conditions]
+    result["reason_codes"] = list(evidence["reason_codes"])
+    proof = evidence["stage"]
+    result["quality"] = {"required_joint_names": proof["required_joint_names"],
+        "valid_frame_count": proof["valid_frame_count"], "total_frame_count": proof["total_frame_count"],
+        "geometry_gate_passed": evidence["status"] == "measured", "minimum_fraction": 1.0,
+        "visibility_verified": False, "image_bounds_verified": False,
+        "denominator": "all_decoder_samples_in_bound_stage"}
+    if evidence["status"] != "measured" or any(c["passed"] is None for c in result["conditions"]):
+        result["reason_codes"] = sorted(set(result["reason_codes"] + ["required_condition_evidence_missing"]))
+        return result
+    fraction = sum(c["passed"] for c in result["conditions"])/len(conditions)
+    grade = "A" if fraction == 1 else "B" if fraction >= .75 else "C" if fraction >= .5 else "D" if fraction > 0 else "E"
+    result.update(status="proxy_scored", proxy_grade=grade, score=GRADE_POINTS[grade],
+        condition_completion_fraction=fraction, semantics="engineering_visual_condition_completion_not_original_technical_grade")
     return result
 
 
