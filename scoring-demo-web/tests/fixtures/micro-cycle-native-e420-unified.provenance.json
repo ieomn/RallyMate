@@ -1,0 +1,18 @@
+{
+  "fixture_semantics": "actual_original_video_unified_current_and_legacy_HTTP_response_not_test_envelope",
+  "source_run_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+  "producer_base_commit": "7da25727faa04dfb4f213cec50e57aabf911a76c",
+  "response_sha256": "e63caeb8d1bd9241acd2eb1598f1dba3f1124e4747a6dee48b3b17b623586a47",
+  "gzip_sha256": "6b79b838af605ef05da6baaa1a192272903cb236ea21e03367c25dc7a116637e",
+  "actual_http_response_equal": true,
+  "matching_response_files": {
+    "http-current.json": "e63caeb8d1bd9241acd2eb1598f1dba3f1124e4747a6dee48b3b17b623586a47",
+    "http-legacy-v1.json": "e63caeb8d1bd9241acd2eb1598f1dba3f1124e4747a6dee48b3b17b623586a47",
+    "unified-report.json": "e63caeb8d1bd9241acd2eb1598f1dba3f1124e4747a6dee48b3b17b623586a47"
+  },
+  "producer_validation_reference": ".codex_tmp/micro-adjustment-cycles-unified-20261024/candidate-manifest.json",
+  "scope": "one fixed development window 112–136, no heldout/expert/contact/FS05 stage truth",
+  "committed_producer_equivalent": "a8f04198ae4b9ac718e473c1805243043b3c8554",
+  "producer_candidate_manifest_sha256": "fcb058b019df39d912c960ac2421f60bd037fefa04dd6ae4068b04f813c4dcda",
+  "producer_runtime_closure_reference": "C:\\Users\\Admin\\Documents\\网球\\.codex_tmp\\micro-adjustment-cycles-unified-20261024\\validation-evidence.json"
+}

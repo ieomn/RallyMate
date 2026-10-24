@@ -12,6 +12,8 @@ import { validateFsStepMotion, type StepMotionValidation } from "./fs-step-motio
 import { formalScoreSemantics, isFormalScoringPolicy } from "./formal-card-scoring-policy";
 import { validateTemporalLocalDip, validFormalTemporalSource, type LocalDipValidation } from "./temporal-local-dip-evidence";
 import microContract from "./directional-micro-display-contract";
+import microCycleContract from "./micro-cycle-display-contract";
+import { microCycleApplies, validateMicroCycles, type MicroCycleValidation } from "./micro-adjustment-cycles-evidence";
 import { directionalMicroApplies, validateDirectionalMicro, type DirectionalMicroValidation } from "./directional-micro-adjustment-evidence";
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
@@ -78,6 +80,11 @@ const LIMITATION_LABELS: Record<string, string> = {
   visual_motion_not_foot_contact_or_technical_step: "脚部画面运动不代表真实触地或已确认的技术步型。",
   original_qualitative_grade_not_established: "原卡定性技术等级尚未建立。",
   manual_image_references_not_metric_court_or_target_truth: "人工标记的是图像中的场地线与可见目标，不能直接当作标定后的球场方向或真实击球目标。",
+  fixed_observed_development_window_not_verified_original_FS05_stage: "此窗是固定观察开发案例，尚未确认原卡 FS05 阶段。",
+  visual_episode_not_contact_or_tennis_step: "完整视觉运动片段不等于触地或网球技术步型。",
+  frequency_is_auxiliary_not_an_independent_condition: "频率仅描述所选窗口，不是独立计分条件或真实触地步频。",
+  micro_adjustment_cycle_windows_do_not_verify_original_FS05_phase: "连续微调窗口不证明原卡 FS05 阶段。",
+  "FS05-M02 is computed from explicit application windows; visual episodes do not verify the original technical phase or foot contact.": "FS05-M02 使用明确绑定的应用窗口计算；视觉运动片段不能证明原卡技术阶段或真实触地。",
   application_thresholds_uncalibrated: "应用评分阈值尚未经过专家标定。",
 };
 type Grade = keyof typeof gradePoints;
@@ -109,6 +116,7 @@ export interface CardInstance {
   source_window_context: EvidenceObject | null;
   application_rule_version: string | null;
   directional_micro_validation: DirectionalMicroValidation | null;
+  micro_cycle_validation: MicroCycleValidation | null;
   measurement_provenance: EvidenceObject | null;
   model_scoring_policy_version: string | null;
   temporal_evidence: EvidenceObject | null;
@@ -130,6 +138,8 @@ export interface CardExecutionReport {
   overall_score: number | null; missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero"; limitations: string[]; limitation_codes: string[];
   directional_micro_adjustment_execution: EvidenceObject | null;
   directional_micro_adjustment_windows: EvidenceObject[];
+  micro_adjustment_cycle_execution: EvidenceObject | null;
+  micro_adjustment_cycle_windows: EvidenceObject[];
 }
 
 function windowOf(value: unknown) {
@@ -155,12 +165,16 @@ function withPreloadValidation(instance: CardInstance): CardInstance {
   const measuredMicro = validateDirectionalMicro(instance.source_window_annotation, instance.source_window_evidence, instance.source_window_context, instance);
   const micro = measuredMicro && instance.reason_codes.includes("directional_micro_report_source_mismatch")
     ? { ...measuredMicro, status: "invalid" as const, reason_codes: ["directional_micro_report_source_mismatch"], values: {}, feet: null, condition_values_match: false } : measuredMicro;
+  const measuredCycles = validateMicroCycles(instance.source_window_annotation, instance.source_window_evidence, instance.source_window_context, instance);
+  const cycles = measuredCycles && instance.reason_codes.includes("micro_cycle_report_source_mismatch")
+    ? { ...measuredCycles, status: "invalid" as const, reason_codes: ["micro_cycle_report_source_mismatch"], values: {}, feet: null, cycles: [], episodes: [], auxiliary: {}, condition_values_match: false } : measuredCycles;
+  const invalidCycles = cycles?.status === "invalid";
   const dip = isFormalScoringPolicy(instance.scoring_policy_version) ? validateTemporalLocalDip(instance.temporal_evidence, instance) : null;
   const invalidDip = dip?.status === "invalid", invalidMicro = micro?.status === "invalid";
-  return { ...instance, ...(invalidDip || invalidMicro ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
-      reason_codes: [...new Set([...instance.reason_codes, ...(invalidDip ? ["local_dip_source_evidence_invalid"] : []), ...(invalidMicro ? ["directional_micro_source_evidence_invalid"] : [])])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
-    conditions: motion?.status === "invalid" || invalidDip || invalidMicro ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
-    directional_micro_validation: micro,
+  return { ...instance, ...(invalidDip || invalidMicro || invalidCycles ? { status: "unavailable" as const, grade: null, proxy_grade: null, score: null,
+      reason_codes: [...new Set([...instance.reason_codes, ...(invalidDip ? ["local_dip_source_evidence_invalid"] : []), ...(invalidMicro ? ["directional_micro_source_evidence_invalid"] : []), ...(invalidCycles ? ["micro_cycle_source_evidence_invalid"] : [])])] } : {}), local_dip_validation: dip, auxiliary_validation: validateGsPreload(instance.auxiliary_evidence, instance, instance.auxiliary_parent_context),
+    conditions: motion?.status === "invalid" || invalidDip || invalidMicro || invalidCycles ? instance.conditions.map(condition => ({ ...condition, value: null, passed: null })) : instance.conditions,
+    directional_micro_validation: micro, micro_cycle_validation: cycles,
     step_motion_validation: motion };
 }
 function sourceStageOf(row: Obj, id: string): CardSourceStage | null {
@@ -234,7 +248,7 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
     source_window_annotation: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_annotation) : null,
     source_window_evidence: FS_WINDOW_CONTRACTS[id] ? evidenceObject(row.source_window_evidence) : null,
     source_window_context: FS_WINDOW_CONTRACTS[id] && row.source_window_annotation ? evidenceObject(row.source_window_context ?? row.window) : null,
-    application_rule_version: text(row.application_rule_version) || null, directional_micro_validation: null,
+    application_rule_version: text(row.application_rule_version) || null, directional_micro_validation: null, micro_cycle_validation: null,
     measurement_provenance: evidenceObject(row.measurement_provenance),
     model_scoring_policy_version: text(row.model_scoring_policy_version) || null,
     temporal_evidence: TEMPORAL_CARD_CONDITIONS[id] ? evidenceObject(row.temporal_evidence ?? row.evidence) : null, local_dip_validation: null,
@@ -249,8 +263,9 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   const gsSpec = GS_CARD_CONTRACTS[id];
   const footworkSpec = FOOTWORK_CARD_CONTRACTS[id];
   const fsWindowSpec = FS_WINDOW_CONTRACTS[id];
-  const micro = directionalMicroApplies(id, row);
-  const specs: ConditionSpec[] | undefined = micro ? microContract.conditions.map(c => [c.metric, c.operator, c.threshold, c.unit]) as ConditionSpec[]
+  const micro = directionalMicroApplies(id, row), microCycles = microCycleApplies(id, row);
+  const specs: ConditionSpec[] | undefined = microCycles ? microCycleContract.conditions.map(c => [c.metric, c.operator, c.threshold, c.unit]) as ConditionSpec[]
+    : micro ? microContract.conditions.map(c => [c.metric, c.operator, c.threshold, c.unit]) as ConditionSpec[]
     : gsSpec?.conditions ?? footworkSpec?.conditions ?? fsWindowSpec?.conditions ?? TEMPORAL_CARD_CONDITIONS[id], byMetric = new Map(conditions.map(c => [c.metric, c]));
   const expected = specs?.every(([metric, operator, threshold, unit]) => {
     const c = byMetric.get(metric);
@@ -259,7 +274,7 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected && (!formal || validateTemporalLocalDip(result.temporal_evidence, result)?.status !== "measured_local_dip")
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (micro ? microContract.measurement_version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
+      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (microCycles ? microCycleContract.measurement_version : micro ? microContract.measurement_version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
       || formal && row.grade !== grade || row.proxy_grade !== grade || row.score !== gradePoints[grade]
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
         || formal && !validFormalGsStageSource(result.source_stage_evidence, result.source_stage_context, result)
@@ -269,7 +284,12 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
         || result.threshold_basis !== "application_thresholds_uncalibrated_not_source_or_literature_standard"
         || !Object.entries((microContract.cards as Record<string, { source: CardInstance["source"] }>)[id].source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
         || validateDirectionalMicro(result.source_window_annotation, result.source_window_evidence, result.source_window_context, result)?.status !== "measured_directional_motion")
-      || fsWindowSpec && !micro && (fsWindowSpec.rule_kind !== "visual_proxy"
+      || microCycles && (!formal || result.application_rule_version !== microCycleContract.application_rule_version
+        || microCycleContract.conditions.some(spec => byMetric.get(spec.metric)?.key !== spec.key)
+        || result.threshold_basis !== "application_thresholds_uncalibrated_not_source_or_literature_standard"
+        || !Object.entries(microCycleContract.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
+        || validateMicroCycles(result.source_window_annotation, result.source_window_evidence, result.source_window_context, result)?.status !== "measured_visual_adjustment_episodes")
+      || fsWindowSpec && !micro && !microCycles && (fsWindowSpec.rule_kind !== "visual_proxy"
         || result.threshold_basis !== "engineering_v1_uncalibrated"
         || !Object.entries(fsWindowSpec.source).every(([key, value]) => result.source[key as keyof CardInstance["source"]] === value)
         || JSON.stringify([...result.quality.required_joint_names].sort()) !== JSON.stringify(fsWindowSpec.required_joint_names)
@@ -300,13 +320,18 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
   const microExecutionConflict = raw.directional_micro_adjustment_execution != null && obj(raw.input).directional_micro_adjustment_execution != null
     && !equalEvidence(raw.directional_micro_adjustment_execution, obj(raw.input).directional_micro_adjustment_execution);
   const microWindows = list(raw.directional_micro_adjustment_windows).map(evidenceObject).filter((row): row is EvidenceObject => row !== null);
+  const cycleExecution = evidenceObject(raw.micro_adjustment_cycle_execution ?? obj(raw.input).micro_adjustment_cycle_execution);
+  const cycleExecutionConflict = raw.micro_adjustment_cycle_execution != null && obj(raw.input).micro_adjustment_cycle_execution != null
+    && !equalEvidence(raw.micro_adjustment_cycle_execution, obj(raw.input).micro_adjustment_cycle_execution);
+  const cycleWindows = list(raw.micro_adjustment_cycle_windows).map(evidenceObject).filter((row): row is EvidenceObject => row !== null);
   const cards: ExecutedCard[] = [], seenCards = new Map<string, ExecutedCard>();
   let conflicts = 0, rejected = 0;
   for (const candidate of raw.cards) {
     const row = obj(candidate), id = text(row.indicator_id);
     if (!CARD_IDS.has(id) || row.event_code !== id.split("-")[0] || row.rule_version !== CARD_RULE_VERSION || !text(row.name_zh) || !["visual_proxy", "manual_review"].includes(text(row.rule_kind))) { rejected++; continue; }
     const micro = id in microContract.cards && row.application_rule_version === microContract.application_rule_version && row.runtime_engine === microContract.runtime_engine;
-    const runtimeEngine = micro ? microContract.runtime_engine : GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
+    const microCycles = id === microCycleContract.card_id && row.application_rule_version === microCycleContract.application_rule_version && row.runtime_engine === microCycleContract.runtime_engine;
+    const runtimeEngine = microCycles ? microCycleContract.runtime_engine : micro ? microContract.runtime_engine : GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
     if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     if (FOOTWORK_CARD_CONTRACTS[id] && row.rule_kind !== FOOTWORK_CARD_CONTRACTS[id].rule_kind) { rejected++; continue; }
     if (FS_WINDOW_CONTRACTS[id] && row.rule_kind !== FS_WINDOW_CONTRACTS[id].rule_kind) { rejected++; continue; }
@@ -324,7 +349,9 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
       .map(instance => raw.status === "unavailable" ? invalidate(instance, "card_execution_report_unavailable") : instance)
       .map(instance => instance.status === "scored" && instance.directional_micro_validation && (microExecutionConflict || !validMicroReportCopies(instance, microExecution, microWindows))
         ? invalidate(instance, "directional_micro_report_source_mismatch") : instance)
-      .map(instance => ["scored", "proxy_scored"].includes(instance.status) && (row.runtime_engine !== runtimeEngine || (micro ? row.rule_kind !== "manual_review" || instance.application_rule_version !== microContract.application_rule_version : row.rule_kind !== "visual_proxy")) ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
+      .map(instance => instance.status === "scored" && instance.micro_cycle_validation && (cycleExecutionConflict || !validMicroReportCopies(instance, cycleExecution, cycleWindows, microCycleContract))
+        ? invalidate(instance, "micro_cycle_report_source_mismatch") : instance)
+      .map(instance => ["scored", "proxy_scored"].includes(instance.status) && (row.runtime_engine !== runtimeEngine || ((micro || microCycles) ? row.rule_kind !== "manual_review" || instance.application_rule_version !== (microCycles ? microCycleContract.application_rule_version : microContract.application_rule_version) : row.rule_kind !== "visual_proxy")) ? invalidate(instance, "proxy_report_evidence_invalid_recompute_required") : instance);
     const fallbackStatus: CardRunStatus = row.run_status === "unavailable" ? "unavailable" : row.run_status === "not_observed" ? "not_observed" : row.rule_kind === "manual_review" || row.run_status === "review_required" ? formal ? "unavailable" : "review_required" : "not_executed";
     const status: CardRunStatus = instances.some(i => i.status === "scored") ? "scored" : instances.some(i => i.status === "proxy_scored") ? "proxy_scored" : instances.some(i => i.status === "review_required") ? "review_required" : instances.length ? "unavailable" : fallbackStatus;
     const card: ExecutedCard = { indicator_id: id, event_code: text(row.event_code), name_zh: text(row.name_zh), rule_version: CARD_RULE_VERSION, rule_kind: text(row.rule_kind),
@@ -351,16 +378,24 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     overall_score: formal && formalCards.length ? formalCards.reduce((sum, score) => sum + score, 0) / formalCards.length : null,
     missing_policy: "exclude_from_score_keep_in_coverage_no_missing_zero", limitations: strings(raw.limitation_codes ?? raw.limitations).map(value => limitationLabel(value, formal)),
     limitation_codes: strings(raw.limitation_codes ?? raw.limitations),
-    directional_micro_adjustment_execution: microExecution, directional_micro_adjustment_windows: microWindows };
+    directional_micro_adjustment_execution: microExecution, directional_micro_adjustment_windows: microWindows,
+    micro_adjustment_cycle_execution: cycleExecution, micro_adjustment_cycle_windows: cycleWindows };
 }
 
-function validMicroReportCopies(instance: CardInstance, execution: EvidenceObject | null, windows: EvidenceObject[]): boolean {
+function validMicroReportCopies(instance: CardInstance, execution: EvidenceObject | null, windows: EvidenceObject[], policy: { runtime_engine: string; application_rule_version: string; annotation_version: string } = microContract): boolean {
   const annotation = instance.source_window_annotation;
-  if (!annotation || !execution || execution.version !== microContract.runtime_engine || execution.application_rule_version !== microContract.application_rule_version
-      || execution.annotation_version !== microContract.annotation_version || execution.annotation_document_sha256 !== annotation.document_sha256
+  if (!annotation || !execution || execution.version !== policy.runtime_engine || execution.application_rule_version !== policy.application_rule_version
+      || execution.annotation_version !== policy.annotation_version || execution.annotation_document_sha256 !== annotation.document_sha256
       || execution.video_sha256 !== annotation.video_sha256 || execution.annotation_digest_kind !== "canonical_json_sorted_utf8_v1"
       || execution.saved_grades_trusted !== false || execution.artifact_files_verified !== true || execution.decoder_verified_from_original_video !== true
       || !list(execution.replaced_card_ids).includes(instance.indicator_id)) return false;
+  if (policy.runtime_engine === microCycleContract.runtime_engine) {
+    const files = obj(execution.input_artifact_sha256), names = ["frames.jsonl", "primary-player.jsonl", "events.jsonl", "summary.json"];
+    if (execution.status !== "executed" || execution.service_eligible !== true || execution.artifact_digest_kind !== "raw_file_sha256"
+        || Object.keys(files).length !== names.length || names.some(name => !/^[a-f0-9]{64}$/i.test(text(files[name])))
+        || integer(execution.source_frame_count) === null || integer(execution.decoder_frame_count) === null
+        || Number(execution.source_frame_count) < instance.quality.total_frame_count || Number(execution.decoder_frame_count) < instance.quality.total_frame_count) return false;
+  }
   const candidates = windows.filter(row => row.annotation_id === instance.event_id && row.indicator_id === instance.indicator_id);
   if (candidates.length !== 1) return false;
   const { window, source_frames: frames, ...copy } = candidates[0];
@@ -462,6 +497,8 @@ const FORMAL_REASON_LABELS: Record<string, string> = {
   required_observable_not_recoverable_from_pose: "人体姿态不能直接证明此项技术行为",
   ball_direction_and_target_evidence_required: "缺少来球与目标区域观测",
   cycle_required_evidence_requires_review: "本周期必要关节或身份记录含质量疑点", cycle_evidence_incomplete: "步周期证据不完整",
+  micro_cycle_source_evidence_invalid: "连续微调的来源或数值校验未通过，相关分数已排除",
+  micro_cycle_report_source_mismatch: "连续微调的窗口与报告来源记录不一致，相关分数已排除",
   directional_micro_source_evidence_invalid: "方向微调的来源或数值校验未通过，相关分数已排除",
 };
 export const cardReasonLabel = (code: string, formal = false) => {

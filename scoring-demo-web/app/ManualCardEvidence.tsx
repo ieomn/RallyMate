@@ -1,6 +1,7 @@
 import type { CardInstance } from "./lib/card-execution";
 import { objectOf, validRacketSide } from "./lib/manual-card-evidence";
 import FsStepMotionEvidence from "./FsStepMotionEvidence";
+import MicroAdjustmentCyclesEvidence from "./MicroAdjustmentCyclesEvidence";
 import DirectionalMicroEvidence from "./DirectionalMicroEvidence";
 
 const list = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
@@ -30,9 +31,10 @@ export default function ManualCardEvidence({ instance }: { instance: CardInstanc
     </div>}
     {a && <div className="card-manual-fs-evidence">
       <p>步伐卡窗口来源：人工逐卡候选窗口，边界不确定性 ±{show(binding.uncertainty_ms)} 毫秒。不是专家动作、触地或受力真值，也不是自动步伐阶段定位。</p>
-      {!evidence?.step_motion && !instance.directional_micro_validation && <p>完整步周期未由此窗口确认。需要完整脚序的条件保留缺测，不把人工窗口当作完整周期。</p>}
+      {!evidence?.step_motion && !instance.directional_micro_validation && !instance.micro_cycle_validation && <p>完整步周期未由此窗口确认。需要完整脚序的条件保留缺测，不把人工窗口当作完整周期。</p>}
       <FsStepMotionEvidence instance={instance} />
       <DirectionalMicroEvidence instance={instance} />
+      <MicroAdjustmentCyclesEvidence instance={instance} />
       <details><summary>逐卡窗口原帧与来源依据</summary>
         <p>原帧 {show(a.start_source_frame)}–{show(a.end_source_frame)}；{show(binding.source)} · {show(binding.version)}</p>
         <p>保留原始 PTS 和时基，原时钟不按播放器零点改写。选人段与相机段是工程分段，不等于人工身份真值。</p>

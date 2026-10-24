@@ -28,6 +28,7 @@ const metricLabels: Record<string, string> = {
   ankle_stability_ratio: "双踝投影运动路程比（较小/较大）",
   head_relative_motion_range_torso: "头部相对肩中点的投影运动范围",
   hip_axis_target_error_reduction_torso: "沿所标轴接近可见球的距离变化",
+  complete_visual_adjustment_episode_count: "完整视觉运动片段数",
   both_ankles_max_path_length_torso: "双脚完整运动路程的较大值",
   hip_axis_alignment_fraction: "髋部运动与所标轴的一致比例",
 };
