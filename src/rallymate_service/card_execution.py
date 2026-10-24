@@ -260,7 +260,8 @@ def build_card_execution_from_records(records: list[dict[str, Any]], events: Seq
 def _input_signature(directory: Path) -> tuple:
     base = tuple((name, (stat := (directory / name).stat()).st_size, stat.st_mtime_ns)
                  for name in ("events.jsonl", "primary-player.jsonl", "frames.jsonl"))
-    annotation_names = ("gs-stage-annotations.json", "footwork-cycle-annotations.json", "fs-card-window-annotations.json")
+    annotation_names = ("gs-stage-annotations.json", "footwork-cycle-annotations.json", "fs-card-window-annotations.json",
+                        "directional-micro-adjustment-annotations.json")
     if not any((directory / name).exists() for name in annotation_names):
         return base + tuple((name, "absent") for name in annotation_names)
     # Optional manual inputs are content-bound, including the actual video. A
@@ -414,6 +415,70 @@ def _apply_optional_fs_card_annotations(report: dict, directory: Path) -> None:
     apply_report_scoring_policy(report)
 
 
+def _apply_optional_directional_annotations(report: dict, directory: Path) -> None:
+    """Refine explicitly annotated FS05 cards using freshly computed evidence.
+
+    The general FS-window adapter cannot measure these manual catalogue rules.
+    A directional document takes precedence only for its declared cards. Neither
+    failure nor a partial document can erase other independently computed cards.
+    """
+    annotation_path = directory / "directional-micro-adjustment-annotations.json"
+    if not annotation_path.exists():
+        return
+    from .directional_micro_adjustment import (
+        VERSION as DIRECTION_VERSION, RULE_VERSION, SUPPORTED_CARDS,
+        build_directional_micro_adjustment_report, validate_micro_adjustment_annotations,
+    )
+    from .gs_card_execution import _canonical, _read_json
+    expected, affected = set(SUPPORTED_CARDS), set(SUPPORTED_CARDS)
+    try:
+        annotations = _read_json(annotation_path)
+        # A malformed document has no trustworthy narrower ownership scope.
+        # Once the declared inventory is validated, isolate errors to that set.
+        annotations, _ = validate_micro_adjustment_annotations(annotations)
+        affected = {row["indicator_id"] for row in annotations["windows"]}
+        result = build_directional_micro_adjustment_report(directory, annotations)
+        if (result["version"] != DIRECTION_VERSION or result["source_run_id"] != report["source_run_id"]
+                or result["rule_version"] != report["rule_version"]
+                or result.get("scoring_policy_version") != SCORING_POLICY_VERSION
+                or result["input"].get("application_rule_version") != RULE_VERSION
+                or result["input"].get("annotation_document_sha256") != _canonical(annotations)
+                or any(result["input"].get(key) is not True for key in
+                    ("service_eligible", "artifact_files_verified", "decoder_verified_from_original_video"))):
+            raise ValueError("directional_production_report_binding_mismatch")
+        replacements = {row["indicator_id"]: row for row in result["cards"]}
+        if set(replacements) != expected or len(result["cards"]) != len(expected):
+            raise ValueError("directional_production_card_inventory_mismatch")
+        expected_instances = {(row["indicator_id"], row["annotation_id"]) for row in annotations["windows"]}
+        actual_instances = [(card["indicator_id"], row["event_id"]) for card in result["cards"] for row in card["instances"]]
+        if (set(actual_instances) != expected_instances or len(actual_instances) != len(expected_instances)
+                or any(row["indicator_id"] != card["indicator_id"] or row["video_id"] != report["source_run_id"]
+                    or row.get("application_rule_version") != RULE_VERSION
+                    for card in result["cards"] for row in card["instances"])):
+            raise ValueError("directional_production_instance_inventory_mismatch")
+        report["cards"] = [replacements[row["indicator_id"]] if row["indicator_id"] in affected else row for row in report["cards"]]
+        report["input"]["observed_event_codes"] = sorted(set(report["input"]["observed_event_codes"]) | ({"FS05"} if affected else set()))
+        report["input"]["directional_micro_adjustment_execution"] = {"status": "executed", "version": DIRECTION_VERSION,
+            "replaced_card_ids": sorted(affected), **result["input"]}
+        report["directional_micro_adjustment_windows"] = result["fs_card_windows"]
+        report["coverage"].update(directional_annotated_window_count=len(annotations["windows"]),
+            directional_executed_card_count=len(affected))
+        report["limitations"].extend(result["limitations"])
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        reason = str(exc)
+        if not reason or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789_:" for character in reason):
+            reason = "directional_annotation_or_source_validation_failed"
+        for row in report["cards"]:
+            if row["indicator_id"] in affected:
+                row.update(run_status="unavailable", reason_codes=[reason], runtime_engine=None,
+                    instance_count=0, instance_status_counts={}, instances=[], original_grade=None, source_grade_supported=False)
+        report["input"]["directional_micro_adjustment_execution"] = {"status": "unavailable", "version": DIRECTION_VERSION,
+            "affected_card_ids": sorted(affected), "reason_codes": [reason]}
+        report.pop("directional_micro_adjustment_windows", None)
+        report["coverage"].update(directional_annotated_window_count=0, directional_executed_card_count=0)
+    apply_report_scoring_policy(report)
+
+
 @lru_cache(maxsize=2)
 def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
                    engine_version: str) -> dict:
@@ -427,6 +492,7 @@ def _cached_report(directory_name: str, signature: tuple, rule_digest: str,
     _apply_optional_gs_annotations(report, directory)
     _apply_optional_cycle_annotations(report, directory)
     _apply_optional_fs_card_annotations(report, directory)
+    _apply_optional_directional_annotations(report, directory)
     if _input_signature(directory) != signature:
         raise ValueError("card_input_changed_during_computation")
     report["input"]["catalogue_sha256"] = rule_digest
@@ -467,4 +533,9 @@ def build_card_execution_report(run_directory: Path | str) -> dict:
             from rallymate_scoring.card_kinematics import VERSION as KINEMATICS_VERSION
             from rallymate_scoring.step_motion_evidence import VERSION as STEP_MOTION_VERSION
             engine_version += ":" + FS_WINDOW_VERSION + ":" + KINEMATICS_VERSION + ":" + STEP_MOTION_VERSION
+        if (directory / "directional-micro-adjustment-annotations.json").exists():
+            from .directional_micro_adjustment import VERSION as DIRECTION_VERSION, RULE_VERSION as DIRECTION_RULE_VERSION
+            from rallymate_scoring.direction_reference_observables import VERSION as DIRECTION_MEASUREMENT_VERSION
+            from rallymate_scoring.step_motion_evidence import VERSION as STEP_MOTION_VERSION
+            engine_version += ":" + DIRECTION_VERSION + ":" + DIRECTION_RULE_VERSION + ":" + DIRECTION_MEASUREMENT_VERSION + ":" + STEP_MOTION_VERSION
         return deepcopy(_cached_report(str(directory), signature, rule_digest, engine_version))

@@ -1,6 +1,6 @@
 # FS05 图像方向微调应用规则 v1
 
-本模块为 FS05-M03（前后）和 FS05-M04（左右）增加独立可调用的应用数值入口。原目录和原文 A–E 保持原样；`original_grade=null`、`source_grade_supported=false`。它尚未接入统一 298 卡报告、HTTP 路由或前端。不能将这两个适配器计作完整原文技术等级已实现。
+本模块为 FS05-M03（前后）和 FS05-M04（左右）增加可调用的应用数值入口。原目录和原文 A–E 保持原样；`original_grade=null`、`source_grade_supported=false`。可通过下述服务控制的注释文件进入统一 298 卡报告及既有 HTTP 导出；前端读取和展示须另行接入。不能将这两个适配器计作完整原文技术等级已实现。
 
 源定义分别保存在 `card_rules_v1.json` 的 CARD-FS T024/T025。M03 的 P0854 定义为前后小步修正与预计击球点的距离，P0856 明确涉及双踝，P0862 允许无标定时图像二维代理，P0874 明确无法据缺失球轨迹判断距离是否合理。M04 对应横向调整。原文没有“只有一个脚能动”要求，因此观察脚完整周期并不要求另一脚静止、路径更小或没有第二个周期。
 
@@ -39,3 +39,15 @@ python -m unittest tests.test_direction_reference_observables -v
 ```
 
 输出包含完整原 PTS、模型来源、每帧原/新局部归一化、双脚速度与三段证据、每项实值、源文档 hash 和条件版本。`validation-evidence.json` 分别保存实际导入代码 raw SHA 与 UTF-8 LF SHA；两种算法不能混用。
+
+## 统一报告的可选来源入口
+
+运行目录可放服务控制的 `directional-micro-adjustment-annotations.json`，内容为上面的版本化文档。既有 `GET /v1/jobs/{job_id}/demo-result` 在重算 `card_execution` 时调用原媒体入口；没有新增允许客户端提交分数或通过标志的接口。无文件时既有结果不变。
+
+方向入口在普通 FS 单卡窗口之后执行。只替换新文档实际声明的 M03/M04 行，保留未声明另一卡和其余 296 卡；相同卡的旧普通窗口结果由具有新方向观测的结果取代，不能重复计分。合法但缺轴/目标的窗口返回空分实例。失效附件带有来源失败原因，清空其声明卡的旧分，不抹掉独立卡结果；连声明范围都无法验证时保守清空这两卡。原始 FS 输入损坏仍先失败，不由可选方向结果掩盖。
+
+顶层版本仍为 `card-execution-v1.0.0`。`input.directional_micro_adjustment_execution` 保留独立入口版本、原媒体/四 artifact 核验、注释 canonical SHA 和 `replaced_card_ids`。`directional_micro_adjustment_windows` 保存完整来源注释。每实例版本、`application_rule_version`、三条件及 `source_window_evidence.directional_micro_adjustment` 原样保留。`coverage.directional_annotated_window_count`/`directional_executed_card_count` 只描述本入口，整体分母保持 298；统一 summary 按同卡实例平均后各卡等权重算，缺测不当作 E 或 0。
+
+缓存同时绑定注释内容、四输入文件、实际视频内容及数值/应用规则版本；相同大小且保留 mtime 的内容变更也会失效。`current` 和 `legacy-v1` HTTP 外层均传递同一完整原证据 JSON，不读取 summary 里保存的成绩。
+
+`tests/test_card_execution_directional_integration.py` 将纯合并合同测试与原媒体集成明确分开。原媒体测试只为 e420 源运行迁移 summary 中的本地视频路径并更新其 SHA；frames/events/primary 原字节及 run 身份不变，不能挪用 0a3 的姿态记录。它核对 298 行、只增加两卡实例、全证据 HTTP JSON 往返以及错 epoch 后缓存不能保留旧分。
