@@ -1,0 +1,29 @@
+{
+  "version": "micro-adjustment-cycle-annotations-v1.0.0",
+  "source_run_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+  "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+  "input_artifact_sha256": {
+    "frames.jsonl": "6fee1cf13414306ea8019960d777b6849c7d6a0dcb80701625bff9100fccafd7",
+    "primary-player.jsonl": "09a27e0fa7e67f7b55d336eb5c9f8c1e35ce030d137f7987b5d2bdbf6947bdeb",
+    "events.jsonl": "040c8ffdaeb02b207f792adf2203a6e2b2b9a25dd1f8ff3a5c1d172589cf4a7d",
+    "summary.json": "5c692ec525d381e9837af5cb73af562c87626fb1708d6c520959a72c3f733640"
+  },
+  "windows": [
+    {
+      "annotation_id": "e420-fixed-development-112-136-FS05-M02",
+      "indicator_id": "FS05-M02",
+      "person_track_id": 1,
+      "start_source_frame": 112,
+      "end_source_frame": 136,
+      "start_ms": 3733,
+      "end_ms": 4533,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "root-fs05-m02-fixed-application-window-20261024-v1",
+        "source": "Root authorized the already observed original frames112..136 for new FS05-M02 application-rule evaluation. Fixed development window, not a verified complete original FS05 technical stage or heldout. Original frame112 PNG SHA256 fcfcc80b565256645387916164ebe6ab324bc7f307bbc06c8a368d468deec56f; no score-based boundary change.",
+        "uncertainty_ms": 34,
+        "semantics": "manual_card_window_not_expert_technique_contact_or_force_truth"
+      }
+    }
+  ]
+}
