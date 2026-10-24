@@ -16,6 +16,7 @@ function compiledUrl(fileUrl) {
 }
 const { cardExecutionOf, handRacketAuxiliarySummary } = await import(compiledUrl(new URL("../app/lib/card-execution.ts", import.meta.url)));
 const { default: Evidence } = await import(compiledUrl(new URL("../app/ManualCardEvidence.tsx", import.meta.url)));
+const { default: CardExecutionPanel } = await import(compiledUrl(new URL("../app/CardExecutionPanel.tsx", import.meta.url)));
 const { buildReportBackup, buildPracticeReport } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
 const historicalBytes = fs.readFileSync(new URL("../../tests/fixtures/gs-follow-through-results-20261024.json", import.meta.url));
 const historical = JSON.parse(historicalBytes), catalogue = JSON.parse(fs.readFileSync(new URL("../../src/rallymate_scoring/data/card_rules_v1.json", import.meta.url), "utf8"));
@@ -101,6 +102,17 @@ test("revision, auxiliary values, saved pass bits, source-grade claims or change
 test("the kind exception is restricted to the two revised cards", () => {
   const r = original(); card(r, "GS01-M09-01").rule_kind = "manual_review";
   const p = cardExecutionOf(r); assert.equal(p.summary.rejected_cards, 1); assert.equal(card(p, "GS01-M09-01"), undefined);
+});
+
+test("one missing instance does not describe the already-scored instances as missing evidence", () => {
+  const r = original(); card(r, "GS01-M09-01").reason_codes = ["required_condition_evidence_missing"];
+  const html = renderToStaticMarkup(createElement(CardExecutionPanel, { value: r }));
+  assert.match(html, /部分实例缺少完整计算依据，已评分实例保持成绩/);
+  assert.match(html, /100/); assert.doesNotMatch(html, /缺少本卡所需的完整计算依据/);
+  r.cards = r.cards.filter(c => c.indicator_id === ids[1]);
+  card(r, ids[1]).reason_codes = ["hand_racket_control_sequence_required"];
+  const missing = renderToStaticMarkup(createElement(CardExecutionPanel, { value: r }));
+  assert.match(missing, /缺少本卡所需的完整计算依据/); assert.doesNotMatch(missing, /已评分实例保持成绩/);
 });
 
 test("auxiliary source records and revision survive complete JSON backup, while readable output contains no review prompt", () => {

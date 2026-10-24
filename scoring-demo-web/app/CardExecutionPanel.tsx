@@ -119,7 +119,7 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
     {card ? <article className="indicator-detail">
       <span className="indicator-state">{CARD_RUN_LABELS[card.run_status]}</span><h3>{card.name_zh}</h3>
       <p>{formal ? "应用评分规则" : card.rule_kind === "visual_proxy" ? "视觉代理规则" : "人工复核规则"} · {card.rule_version}</p>
-      {formal ? card.reason_codes.length > 0 && <p>缺少本卡所需的完整计算依据。</p> : card.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
+      {formal ? card.reason_codes.length > 0 && <p>{card.instances.some(row => row.status === "scored") ? "部分实例缺少完整计算依据，已评分实例保持成绩。" : "缺少本卡所需的完整计算依据。"}</p> : card.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
       {card.instances.length > 1 && <label className="indicator-picker">动作实例<select value={instance ? instanceKey(instance) : ""} onChange={event => setSelectedEvent(event.target.value)}>{card.instances.map((row, index) => <option key={instanceKey(row)} value={instanceKey(row)}>{index + 1}. {row.window ? `${clock(row.window.start_ms)}–${clock(row.window.end_ms)}` : "未定位完整时间窗"} · {CARD_RUN_LABELS[row.status]}</option>)}</select></label>}
       {instance ? <div className="indicator-observation">
         <strong>{instance.score === null ? "— 未评分" : `${formal ? instance.grade : instance.proxy_grade} · ${instance.score} / 100`} <small>{instance.score === null ? CARD_RUN_LABELS[instance.status] : formal ? "正式评分" : "工程条件完成度"}</small></strong>
