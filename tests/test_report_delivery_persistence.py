@@ -291,3 +291,25 @@ class ReportDeliveryPendingApiTests(unittest.TestCase):
                 finally:
                     release.set()
             self.assertEqual(list((settings.data_root / "report-delivery-cache").glob("*.report")), [])
+
+    def test_native_pose_rewrite_invalidates_cached_action_score(self):
+        fixture = independent_fixture.IndependentReportDeliveryApiTests()
+        with tempfile.TemporaryDirectory() as directory:
+            app, settings, database, job, folder, marker = fixture.setup_case(Path(directory))
+            native = folder / "sam3d_frames.jsonl"
+            native.write_bytes(b'{"pose":"A"}\n')
+            calls = []
+            def build(summary, records, **kwargs):
+                calls.append(1)
+                return {"job_id": job, "native_pose_marker": native.read_text()}
+            url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
+            with fixture.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}):
+                with TestClient(app) as client:
+                    first = fixture.ready(client, url).content
+                with TestClient(create_app(settings, database)) as client:
+                    self.assertEqual(fixture.ready(client, url).content, first)
+                    self.assertEqual(calls, [1])
+                    independent_fixture.rewrite_same_size_preserving_mtime(native, b'{"pose":"B"}\n')
+                    changed = fixture.ready(client, url)
+                    self.assertEqual(changed.json()["native_pose_marker"], '{"pose":"B"}\n')
+                    self.assertEqual(calls, [1, 1])

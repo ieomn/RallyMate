@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import ts from "typescript";
+import { tennisResult } from "./fixtures/tennis-assessment.mjs";
 const cache = new Map();
 function compiledUrl(fileUrl) {
   if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
@@ -44,6 +45,21 @@ test("clips retain real boundaries and measured phase anchors without inventing 
   assert.doesNotMatch(JSON.stringify(clips), /触球|候选|恢复开始/);
   assert.deepEqual(motion, before);
   assert.deepEqual(replayClipsOf(null, null), []);
+});
+
+test("new assessments navigate complete scored actions without mixing legacy fragments into the default list", () => {
+  const result = tennisResult();
+  const motion = { families: { baseline: { episodes: [{ episode_id: "old-fragment", family: "baseline", start_ms: 100, peak_ms: 200, end_ms: 300, classification: { label_zh: "挥拍动作" } }] } } };
+  const clips = replayClipsOf(result, motion);
+  assert.equal(clips.length, 2); assert.deepEqual(clips.map(c => c.id), ["tennis:complete-swing-1", "tennis:complete-swing-2"]);
+  assert.deepEqual(clips[0].anchors.map(a => a.sourceMs), [1000, 1500, 2200]);
+  assert.doesNotMatch(JSON.stringify(clips), /old-fragment|触球/);
+  const malformed = structuredClone(result); malformed.tennis_assessment.episodes.forEach(e => { e.peak_ms = e.end_ms; });
+  assert.deepEqual(replayClipsOf(malformed, motion), [], "invalid current episode times do not silently restore a long legacy fragment list");
+  const historical = structuredClone(result); delete historical.tennis_assessment.episodes;
+  assert.deepEqual(replayClipsOf(historical, motion).map(c => c.id), ["motion:old-fragment"]);
+  const foreign = structuredClone(result); foreign.tennis_assessment.source_run_id = "other-job";
+  assert.ok(replayClipsOf(foreign, motion).every(c => !c.id.startsWith("tennis:")));
 });
 
 test("playback context is clamped to actual media while out-of-range evidence is rejected", () => {

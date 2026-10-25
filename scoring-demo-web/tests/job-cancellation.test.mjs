@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import ts from "typescript";
+import { tennisResult } from "./fixtures/tennis-assessment.mjs";
 
 const hostKey = Symbol.for("rallymate.cancel-test-host");
 const dataUrl = source => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
@@ -140,4 +141,26 @@ test("no cancellation button exists during upload before a server job has been c
   assert.equal(app.button("取消分析"), undefined); assert.equal(app.requests.length, 0);
   app.upload.resolve({ id, status: "queued" }); await app.flush();
   assert.ok(app.button("取消分析")); assert.equal(app.watches[0].jobId, id);
+});
+
+test("a completed legacy report without source identity stops loading and retries the whole report", async t => {
+  const app = mount(t), job = { id, status: "succeeded" }, result = { job_id: id, status: "ready" };
+  app.progress(job); app.watches[0].resolve({ job, result, trajectory: null, assessment: null, warning: null }); await app.flush();
+  const report = app.find(node => node.props.replay && "result" in node.props);
+  assert.equal(report.props.assessmentLoading, false);
+  assert.match(report.props.assessmentMessage, /来源未读取完整/);
+  report.props.onRetryAssessment(); app.render();
+  assert.equal(app.watches.length, 2); assert.equal(app.watches[1].jobId, id);
+  assert.equal(app.watches[0].signal.aborted, true);
+});
+
+test("offline import rejects a foreign embedded job before its valid score can be displayed", async t => {
+  const app = mount(t, null), result = tennisResult();
+  const input = app.find(node => node.type === "input" && node.props.accept === "application/json,.json");
+  const content = JSON.stringify({ schemaVersion: "rallymate-practice-report/1", jobId: "wrapper-job-123", result });
+  await input.props.onChange({ target: { files: [new File([content], "mixed-report.json", { type: "application/json" })], value: "" } });
+  await app.flush();
+  assert.match(app.text(), /任务编号不一致/);
+  assert.equal(app.find(node => node.props.replay && "result" in node.props), undefined);
+  assert.equal(app.watches.length, 0, "an imported identifier never authorizes an online read");
 });

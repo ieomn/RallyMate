@@ -14,6 +14,7 @@ import { relativeReferenceOf } from "./relative-score";
 import { indicatorAssessmentOf } from "./indicator-assessment";
 import { cardExecutionOf } from "./card-execution";
 import { trainingScoreOf } from "./training-score";
+import { tennisAssessmentOf } from "./tennis-assessment";
 import { courtProjectionOf } from "./court-simulation";
 import { packReportBackup } from "./report-backup-codec";
 import { MAX_REPORT_FILE_BYTES } from "./report-file";
@@ -100,7 +101,8 @@ function recognitionOf(input: ReportExportInput): RecordValue {
 function hasAnalysis(input: ReportExportInput): boolean {
   const result = asRecord(input.evidence.result), training = asRecord(result.training_evaluation);
   const assessment = assessmentOf(input);
-  return (result.result_kind === "imported_stage1_summary" && (Object.keys(asRecord(asRecord(result.summary).processing)).length > 0 || Object.keys(asRecord(asRecord(result.summary).coverage)).length > 0))
+  return Boolean(tennisAssessmentOf(input.evidence.result ?? null))
+    || (result.result_kind === "imported_stage1_summary" && (Object.keys(asRecord(asRecord(result.summary).processing)).length > 0 || Object.keys(asRecord(asRecord(result.summary).coverage)).length > 0))
     || asArray(result.actions).some(item => Boolean(asRecord(item).name_zh) && finite(asRecord(item).detected_segments) !== null)
     || asArray(training.indicator_evaluations).length > 0
     || Boolean(indicatorAssessmentOf(result.indicator_assessment)?.indicators.length)
@@ -212,6 +214,29 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
   const videoName = typeof suppliedName === "string" ? text(suppliedName.split(/[\\/]/).pop()) : "未保留原始文件名";
   const width = finite(metadata.width ?? source.width), height = finite(metadata.height ?? source.height);
   const durationMs = finite(metadata.duration_ms);
+  const tennis = tennisAssessmentOf(input.evidence.result ?? null);
+  if (tennis) {
+    const sections: ReportSection[] = [{
+      title: tennis.overall_score === null ? "本次动作未完整入镜" : `动作评分：${numberText(tennis.overall_score)} / 100`,
+      paragraphs: [videoName, tennis.overall_score === null
+        ? "请固定相机，让全身保持入镜，并完整拍下准备、挥拍和随挥。"
+        : "根据本次连续动作的支撑、准备、协调、击球姿态与随挥表现计算。"],
+      columns: ["动作维度", "得分"], rows: tennis.dimensions.map(dimension => [
+        text(dimension.label), dimension.score === null ? "画面不足" : numberText(dimension.score, " / 100"),
+      ]),
+    }];
+    if (tennis.strengths.length) sections.push({ title: "继续保持", paragraphs: tennis.strengths.map(item => `${text(item.title)}：${text(item.observation)}`) });
+    for (const item of tennis.improvements) sections.push({ title: text(item.title), paragraphs: [
+      text(item.observation), `练习目标：${text(item.action)}`, `怎么练：${text(item.drill)}`, `复测标准：${text(item.retest)}`,
+      ...(item.start_ms !== null && item.end_ms !== null ? [`对应片段：${interval(item)}`] : []),
+    ] });
+    sections.push({ title: "评分说明", paragraphs: [
+      "分数用于跟踪动作练习，反映视频中可测的动作质量；比较进步时请保持动作类型和拍摄条件一致。",
+      "击球姿态评价挥拍阶段的身体结构，不表示已经确认触球、球速或真实受力。",
+    ] });
+    return { schemaVersion: "rallymate-readable-report/1", title: "RallyMate 训练报告", exportedAt: text(exportedAt),
+      sourceLabel: "本次动作评分与训练建议", isDemo: false, jobId, sections };
+  }
   const sections: ReportSection[] = [{
     title: "视频与任务", paragraphs: [], columns: ["项目", "内容"], rows: [
       ["视频文件", videoName], ["任务编号", jobId ?? "未提供（导入分析）"],
@@ -426,6 +451,7 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   const swingForExport = input.evidence.result?.swing_kinematics && sourceSha && report.jobId
     ? validatedSwingKinematicsReport(input.evidence.result.swing_kinematics, { jobId: report.jobId, videoSha256: sourceSha,
       motion: motionAnalysisOf(input.evidence.result, input.evidence.assessment, summaryOf(input)), durationMs: finite(videoMetadata.duration_ms) }) : null;
+  const tennisForExport = tennisAssessmentOf(input.evidence.result ?? null);
   // The ledger's child score rows omit score_semantics. Preserve only these exact
   // objects after the complete ledger has passed arithmetic and parent checks.
   const trustedScoreRows = new WeakSet<object>();
@@ -463,7 +489,7 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   };
   return packReportBackup(scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), ...(swingForExport ? { swing_kinematics: swingForExport } : {}), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), ...(tennisForExport ? { tennis_assessment: tennisForExport } : {}), ...(swingForExport ? { swing_kinematics: swingForExport } : {}), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
     assessment: omitDuplicatedMotion(selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"])),
     summary: omitDuplicatedMotion(selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"])),
     trajectory: input.evidence.trajectory ? { ...selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]), court_projection: courtProjectionOf(input.evidence.trajectory) } : null,

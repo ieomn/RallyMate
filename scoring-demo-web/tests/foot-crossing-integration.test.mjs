@@ -48,13 +48,13 @@ async function importActual(data) {
     setCurrentJournalRecordId() {}, visitReport: visit => `${visit.source}:${visit.jobId}`,
     measurementResultFromSummary: summary => ({ job_id: summary.job_id }),
   };
-  const functions = ["isStage1Summary", "isTechniqueAssessment", "extractTechniqueAssessment", "importSummary"];
+  const functions = ["isStage1Summary", "isTechniqueAssessment", "extractTechniqueAssessment", "assertImportedJobBinding", "importSummary"];
   const code = ts.transpileModule(functions.map(actualFunction).join("\n"), {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
   }).outputText;
   const run = vm.runInNewContext(`${code}; importSummary`, scope);
   await run({ target: { files: [{ name: "synthetic-import.json" }], value: "chosen" } });
-  assert.equal(importState?.status, "success");
+  assert.equal(importState?.status, "success", importState?.message);
   assert.equal(monitored, 0); assert.equal(invalidated, 1);
   return evidence;
 }

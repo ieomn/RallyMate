@@ -66,3 +66,25 @@ test("stored swing observations use an authenticated read-only endpoint", async 
   }
   assert.equal(calls, 1);
 });
+
+test("current tennis scores use an authenticated read-only endpoint", async t => {
+  const path = "/v1/jobs/66883aeb-e0c3-4065-80fd-f67aa108b208/tennis-assessment";
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    calls++;
+    assert.equal(String(url), `http://127.0.0.1:8001${path}`);
+    assert.equal(init.headers.get("authorization"), "Bearer fixture-key");
+    assert.equal(init.headers.get("cookie"), null);
+    return Response.json({ version: "tennis-motion-rubric-v1", overall_score: 71.4 });
+  });
+  const response = await proxyAnalysis(new Request(`http://localhost${path}`, {
+    headers: { cookie: "browser-secret", authorization: "Bearer browser-secret" },
+  }), env);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).overall_score, 71.4);
+  for (const method of ["POST", "PUT", "DELETE"]) {
+    assert.equal((await proxyAnalysis(new Request(`http://localhost${path}`, { method }), env)).status, 404);
+  }
+  assert.equal((await proxyAnalysis(new Request(`http://localhost${path}/extra`), env)).status, 404);
+  assert.equal(calls, 1);
+});

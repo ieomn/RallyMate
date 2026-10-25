@@ -17,6 +17,7 @@ const session = load("../app/lib/analysis-session.ts");
 const viewState = load("../app/lib/analysis-view-state.ts");
 const progress = load("../app/lib/analysis-progress.ts");
 const diagnostics = load("../app/lib/request-diagnostics.ts");
+const tennisAssessment = load("../app/lib/tennis-assessment.ts");
 const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 const jobId = "lifecycle-job-1234";
 const report = { job_id: jobId, status: "ready", training_evaluation: { score_0_to_100: 77 } };
@@ -44,12 +45,13 @@ function harness(t, clientOverrides = {}) {
     react: hooks, "react/jsx-runtime": { jsx: (type, props, key) => ({ type, props, key }), jsxs: (type, props, key) => ({ type, props, key }), Fragment: "fragment" },
     "./lib/analysis-session": session, "./lib/analysis-view-state": viewState, "./lib/analysis-progress": progress,
     "./lib/request-diagnostics": diagnostics,
+    "./lib/tennis-assessment": tennisAssessment,
     "./lib/api-client": { createApiClient: () => client, RallyMateApiError: class extends Error {} },
     "./TrainingJournal": { useTrainingJournal: () => journal, journalRecordId: (source, id) => `${source}:${id}` },
     "./lib/training-report": { recentReports: value => value },
     "./lib/workspace-navigation": { workspaceHref: (view, id) => `/?view=${view}${id ? `&job=${id}` : ""}`, readWorkspaceLocation: () => ({ view: "analysis" }) },
     "./lib/advice-display": { adviceContextKey: (id, technique) => `${id}:${technique}`, adviceForContext: (saved, key) => saved?.contextKey === key ? saved.response : null, adviceNotice: () => "建议已返回" },
-    "./lib/training-guidance": { trainingGuidance: () => [] }, "./lib/motion-analysis": { motionAnalysisOf: () => null },
+    "./lib/training-guidance": { trainingGuidance: () => [], focusSelection: value => value }, "./lib/motion-analysis": { motionAnalysisOf: () => null },
   };
   const component = load("../app/ScoreLab.tsx", name => {
     if (name === "react" || name === "react/jsx-runtime") return modules[name];
@@ -63,9 +65,9 @@ function harness(t, clientOverrides = {}) {
   t.after(() => { globalThis.window = oldWindow; globalThis.localStorage = oldStorage; });
   let tree;
   const render = () => { cursor = 0; return tree = component(); };
-  const nodes = value => !value || typeof value !== "object" ? [] : Array.isArray(value) ? value.flatMap(nodes) : [value, ...nodes(value.props?.children)];
+  const nodes = value => !value || typeof value !== "object" ? [] : Array.isArray(value) ? value.flatMap(nodes) : [value, ...nodes(value.props?.children), ...nodes(value.props?.details)];
   const find = predicate => nodes(tree).find(predicate);
-  const text = value => value == null || typeof value === "boolean" ? "" : typeof value !== "object" ? String(value) : Array.isArray(value) ? value.map(text).join("") : text(value.props?.children);
+  const text = value => value == null || typeof value === "boolean" ? "" : typeof value !== "object" ? String(value) : Array.isArray(value) ? value.map(text).join("") : text(value.props?.children) + text(value.props?.details);
   const open = id => { tree.props.onNavigate("overview"); render(); find(node => node.type === "TrainingHome").props.onOpenReport(id); render(); };
   render();
   return { calls, render, find, text: () => text(tree), open, button: label => find(node => node.type === "button" && text(node) === label), form: () => find(node => node.props?.className === "coach-form") };

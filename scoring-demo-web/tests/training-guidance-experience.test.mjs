@@ -32,18 +32,16 @@ const result = () => ({ job_id: "review-test-job", input: { video: { duration_ms
 } });
 const recommendations = (value, props = {}) => renderToStaticMarkup(createElement(TrainingRecommendations, { result: value, motion: null, pending: false, ...props }));
 
-test("completed report puts one honest score state before recommendations, journal and replay", () => {
+test("a legacy report waits for the new score while replay stays above folded measurements", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, status: "succeeded", journal: createElement("div", { id: "test-journal" }, "journal"), replay: createElement("div", { id: "test-replay" }, "replay") }));
-  const score = html.indexOf('class="process-overall-reference"');
-  assert.ok(score >= 0);
-  assert.equal((html.match(/class="process-overall-reference"/g) ?? []).length, 1);
-  for (const later of ['id="recommendations"', 'id="test-journal"', 'id="test-replay"', 'class="report-deep-heading"']) assert.ok(score < html.indexOf(later), later);
-  assert.match(html, /class="process-overall-reference"><strong>—<\/strong>/);
-  assert.match(html, /0 \/ 5 维有评分依据/);
-  assert.doesNotMatch(html, /class="process-overall-reference"><strong>50|中性先验|298.*评分卡/);
-  for (const options of [{ result: null, status: "error", error: "报告读取失败" }, { result: result(), pending: true, status: "running" }, { result: null, status: "cancelled" }]) {
-    const unavailable = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, pending: false, trajectory: null, ...options }));
-    assert.doesNotMatch(unavailable, /class="process-overall-reference"/);
+  const primary = html.slice(0, html.indexOf('id="details"'));
+  assert.equal((primary.match(/正在生成动作评分/g) ?? []).length, 1);
+  assert.ok(primary.includes('id="test-replay"'));
+  assert.doesNotMatch(primary, /process-overall-reference|0 \/ 5|中性先验|298.*评分卡/);
+  assert.ok(html.indexOf('id="details"') < html.indexOf('id="test-journal"'));
+  for (const status of ["failed", "cancelled"]) {
+    const unavailable = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, pending: false, trajectory: null, status }));
+    assert.doesNotMatch(unavailable, /正在生成动作评分|process-overall-reference/);
   }
 });
 
@@ -92,11 +90,11 @@ test("valid model estimates are identified once and never become confirmed visib
   assert.doesNotMatch(rows[0].observation, /已确认|技术水平/);
 });
 
-test("the report leads with practice actions, keeps the journal before playback and starts deep details folded", () => {
+test("continuous playback stays above the saved training journal and folded technical details", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, journal: createElement("section", { id: "test-journal" }, "训练记录"), replay: createElement("video", { id: "test-original" }) }));
-  assert.ok(html.indexOf('id="recommendations"') < html.indexOf('id="test-journal"'));
-  assert.ok(html.indexOf('id="test-journal"') < html.indexOf('id="test-original"'));
-  assert.ok(html.indexOf('id="test-original"') < html.indexOf("深入查看"));
+  assert.ok(html.indexOf('id="assessment"') < html.indexOf('id="test-original"'));
+  assert.ok(html.indexOf('id="test-original"') < html.indexOf('id="details"'));
+  assert.ok(html.indexOf('id="details"') < html.indexOf('id="test-journal"'));
   assert.doesNotMatch(html, /<details[^>]*open=/);
 });
 

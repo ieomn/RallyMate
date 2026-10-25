@@ -1,5 +1,6 @@
 import type { DemoResultResponse, MotionAnalysis } from "./api-types";
 import { reportMoments } from "./training-report";
+import { tennisAssessmentOf } from "./tennis-assessment";
 
 export type ReplayAnchor = { id: string; label: string; sourceMs: number };
 export type ReplayClip = {
@@ -13,6 +14,16 @@ const phaseNames: Record<string, string> = { preparation: "准备", acceleration
 
 /** Retain source boundaries; context is added only when a particular video is played. */
 export function replayClipsOf(result: DemoResultResponse | null, motion: MotionAnalysis | null): ReplayClip[] {
+  const assessment = tennisAssessmentOf(result);
+  if (assessment?.episodes !== undefined) return assessment.episodes.map(episode => ({
+    id: `tennis:${episode.episode_id}`, label: episode.family === "serve" ? "发球动作" : episode.family === "return" ? "接发动作" : "挥拍动作",
+    kind: "motion", startMs: episode.start_ms, endMs: episode.end_ms,
+    anchors: [
+      { id: "start", label: "动作开始", sourceMs: episode.start_ms },
+      { id: "peak", label: "运动峰值", sourceMs: episode.peak_ms },
+      { id: "end", label: "动作结束", sourceMs: episode.end_ms },
+    ],
+  }));
   const clips: ReplayClip[] = [];
   const seen = new Set<string>();
   const add = (clip: ReplayClip) => {

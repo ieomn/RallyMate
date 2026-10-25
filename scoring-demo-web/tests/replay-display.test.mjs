@@ -86,11 +86,12 @@ test("ball overlay preserves the source aspect inside a height-limited video sta
 
 test("report observations lead, source replay remains visible and the court starts folded", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: { job_id: "review-test-job", status: "ready" }, assessment: null, pending: false, trajectory: null, replay: createElement("section", { id: "source-visible" }, "原片回放") }));
-  assert.ok(html.indexOf('id="recommendations"') < html.indexOf('id="source-visible"'));
+  assert.ok(html.indexOf('id="assessment"') < html.indexOf('id="source-visible"'));
   assert.ok(html.indexOf('id="source-visible"') < html.indexOf('id="court"'));
   assert.match(html, /<div class="report-replay-area"><section id="source-visible">/);
   assert.match(html, /<details class="report-insight-details report-court-details"><summary>/);
-  assert.match(html, /按动作片段定位回放/);
+  assert.match(html, /全部动作片段/);
+  assert.ok(html.indexOf('id="source-visible"') < html.indexOf('id="details"'));
   const empty = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, pending: false, trajectory: null, replay: createElement("section", { id: "source-visible" }, "原片回放") }));
   assert.match(empty, /id="source-visible"/);
   assert.doesNotMatch(empty, /id="court"|process-radar/);

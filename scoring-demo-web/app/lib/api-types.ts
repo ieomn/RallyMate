@@ -236,6 +236,7 @@ export interface SwingKinematicsReport {
 }
 
 export interface DemoResultResponse {
+  tennis_assessment?: unknown;
   swing_kinematics?: SwingKinematicsReport;
   original_video?: OriginalVideo | null;
   sam3d_mesh?: Sam3dMeshPreview | null;

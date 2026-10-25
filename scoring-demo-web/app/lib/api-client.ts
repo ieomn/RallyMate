@@ -98,6 +98,7 @@ export function getApiConfig(): RallyMateApiConfig {
 }
 
 export interface RallyMateApiClient {
+  getTennisAssessment(jobId: string, signal?: AbortSignal): Promise<Record<string, unknown>>;
   getSwingKinematics(jobId: string, signal?: AbortSignal): Promise<SwingKinematicsReport>;
   getMeshPreview(jobId: string, signal?: AbortSignal): Promise<{ job_id: string; status: "ready" | "pending" | "failed" | "unavailable"; sam3d_mesh: Sam3dMeshPreview | null }>;
   readonly config: RallyMateApiConfig;
@@ -390,6 +391,7 @@ export function createApiClient(
     getJob: (jobId, signal) => get<JobProgress>(reportPath(jobId), signal, "current"),
     getMeshPreview: (jobId, signal) => get(reportPath(jobId, "/mesh-preview"), signal),
     getSwingKinematics: (jobId, signal) => get(reportPath(jobId, "/swing-kinematics"), signal),
+    getTennisAssessment: (jobId, signal) => get(reportPath(jobId, "/tennis-assessment"), signal),
     cancelJob: (jobId, signal) => fetchImpl(urlFor(reportPath(jobId, "/cancel")), {
       method: "POST", cache: "no-store", headers: { "X-Request-ID": requestId() },
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),

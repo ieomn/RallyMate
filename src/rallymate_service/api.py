@@ -64,6 +64,7 @@ from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.analysis_report import build_analysis_report
 from rallymate_service.process_evaluation import build_process_evaluation
 from rallymate_service.swing_kinematics import build_swing_kinematics
+from rallymate_service.tennis_assessment import build_tennis_assessment
 from rallymate_scoring.indicator_assessment import build_indicator_assessment
 from rallymate_service.card_execution import VERSION as CARD_EXECUTION_VERSION, build_card_execution_report
 from rallymate_scoring.card_rule_catalog import VERSION as CARD_RULE_VERSION
@@ -452,10 +453,10 @@ def create_app(
         # Stat-only identities cannot detect same-size rewrites with restored
         # mtime (Windows ctime is creation time). Hash every body dependency.
         body_dependencies = {"summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl",
-                             "indicator-features.jsonl", "source-aligned-measurements.json"}
+                             "indicator-features.jsonl", "source-aligned-measurements.json", "sam3d_frames.jsonl"}
         artifacts = tuple(artifact_signature(Path(job["output_dir"]) / name,
                                             content_hash=name in body_dependencies)
-                          for name in sorted(ALLOWED_ARTIFACTS - MESH_ARTIFACTS))
+                          for name in sorted((ALLOWED_ARTIFACTS - MESH_ARTIFACTS) | {"sam3d_frames.jsonl"}))
         registry = service_settings.resolved_technique_registry
         # These small resources are content-addressed, including an external
         # registry whose operator might preserve file size/modification time.
@@ -1251,6 +1252,9 @@ def create_app(
             summary, records, footwork_review=result["footwork_review"],
         )
         result["swing_kinematics"] = build_swing_kinematics(Path(job["output_dir"]), summary)
+        result["tennis_assessment"] = build_tennis_assessment(
+            summary, Path(job["output_dir"]), job_id=job_id,
+        )
         result["indicator_assessment"] = build_indicator_assessment(
             summary, records, source_assessment=result["source_aligned_assessment"],
             process_evaluation=result["process_evaluation"],
@@ -1445,6 +1449,20 @@ def create_app(
                     "message": _public_error_detail(str(exc), service_settings),
                 },
             ) from exc
+
+    @app.get("/v1/jobs/{job_id}/tennis-assessment")
+    def get_tennis_assessment(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] != "succeeded":
+            raise HTTPException(409, "tennis assessment requires a succeeded job")
+        response.headers["Cache-Control"] = "no-store"
+        # Re-evaluate saved motion with the current rubric. Historical videos do
+        # not need another GPU run or the large per-card evidence report.
+        return build_tennis_assessment(
+            summary_with_actions(job), Path(job["output_dir"]), job_id=job_id,
+        )
 
     @app.get("/v1/jobs/{job_id}/swing-kinematics")
     def get_swing_kinematics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:

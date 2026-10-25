@@ -50,7 +50,7 @@ test("verified server originals are preferred, switch to annotation and back, wi
   assert.equal(app.viewer.candidateReplayBinding.videoSha256, original.sha256);
   assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
   assert.equal(app.viewer.candidateReplayBinding.originMs, null);
-  assert.equal(app.swing.context.jobId, jobId); assert.equal(app.swing.context.videoSha256, original.sha256);
+  assert.equal(app.swing, undefined, "3D measurements live in the report details, outside continuous playback");
   app.choose("标注回放");
   assert.equal(app.viewer.videoSrc, `/v1/jobs/${jobId}/artifacts/annotated.mp4`);
   assert.equal(app.viewer.videoKind, "annotated"); assert.equal(app.viewer.candidateReplayBinding.kind, "annotated");
@@ -112,7 +112,7 @@ test("a ready official surface is selected first and the original remains switch
   app.button("原片与关键点").props.onClick(); app.render();
   assert.equal(app.mesh, undefined); assert.equal(app.viewer.videoKind, "original");
   assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
-  app.button("人体表面 · 官方渲染").props.onClick(); app.render();
+  app.button("3D 动作").props.onClick(); app.render();
   assert.equal(app.mesh.media, meshMedia);
 });
 

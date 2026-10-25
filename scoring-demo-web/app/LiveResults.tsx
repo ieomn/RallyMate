@@ -3,7 +3,9 @@
 import { productText } from "./lib/presentation-text";
 
 import { useState, type ReactNode } from "react";
-import TrainingReportOverview, { TrainingRecommendations } from "./TrainingReportOverview";
+import TrainingReportOverview from "./TrainingReportOverview";
+import TennisAssessmentSummary, { TennisAssessmentDetails } from "./TennisAssessmentSummary";
+import { tennisAssessmentOf } from "./lib/tennis-assessment";
 import CourtSimulationPanel from "./CourtSimulationPanel";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
 import ActionTimeline from "./ActionTimeline";
@@ -19,7 +21,6 @@ import type { FootCrossingPanelContext } from "./FootCrossingCandidatesPanel";
 import type { TrainingFocusSelection } from "./lib/training-guidance";
 import { courtProjectionOf } from "./lib/court-simulation";
 import { processEvaluationOf } from "./lib/process-evaluation";
-import { RelativeScoreSummary } from "./ProcessScorePanel";
 
 const FAMILIES = { baseline: "底线", serve: "发球", return: "接发", net_attack: "网前", footwork: "步伐" };
 const scoreText = (value: number | null) => value === null ? "—" : value.toFixed(1);
@@ -89,7 +90,7 @@ function LiveStats({ result, trajectory, summary }: { result: DemoResultResponse
   </section>;
 }
 
-export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay, journal, candidateContext, onSaveFocus, replayAvailable = true }: { result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode; journal?: ReactNode; candidateContext?: FootCrossingPanelContext; onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean }) {
+export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay, journal, details, assessmentLoading, assessmentError, assessmentMessage, assessmentOffline, onRetryAssessment, candidateContext, onSaveFocus, replayAvailable = true }: { result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode; journal?: ReactNode; details?: ReactNode; assessmentLoading?: boolean; assessmentError?: boolean; assessmentMessage?: string; assessmentOffline?: boolean; onRetryAssessment?: () => void; candidateContext?: FootCrossingPanelContext; onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean }) {
   result = result ? normalizeMeasurementResult(result) : null;
   const [chosenFamily, setFamily] = useState("");
   const [selected, setSelected] = useState("");
@@ -120,16 +121,18 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
   const court = courtProjectionOf(trajectory);
   const courtStatus = court.points.length ? `已有 ${court.points.length} 个场地投影点，展开查看适用范围` : court.status === "calibrated" ? "球场已定位，暂缺可展示的球路；可先回看原片" : "本报告暂未提供场地投影；展开可手动定位球场或读取本浏览器标定";
   const process = processEvaluationOf(result?.process_evaluation);
+  const tennis = tennisAssessmentOf(result);
 
   if (!result && !trajectory && !assessment && ["error", "cancelled"].includes(presentation.state)) return <div className="live-results" data-status={presentation.state}>{replay && <div className="report-replay-area">{replay}</div>}<section className="report-unavailable" aria-live="polite"><h2>{presentation.title}</h2><p>{presentation.description}</p><p>当前没有可查看的报告内容。可重新读取任务，或选择视频开始一次新分析。</p></section></div>;
 
   return <div className="live-results" aria-live="polite" data-status={presentation.state}>
-    <RelativeScoreSummary result={result} report={process} pending={pending || ["error", "cancelled"].includes(presentation.state)} />
-    <TrainingRecommendations result={result} motion={motionAnalysis} pending={pending} status={status} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
-    {journal}
-    {replay && <div className="report-replay-area">{replay}<details className="replay-segments"><summary>按动作片段定位回放</summary><ActionTimeline result={result} motion={motionAnalysis} /></details></div>}
-    {!replay && <ActionTimeline result={result} motion={motionAnalysis} />}
-    {(result || assessment || trajectory) && <div className="report-primary report-depth-layout"><div className="report-deep-heading"><h2>深入查看</h2><p>按需要展开场地、测量与逐项依据；已有观察和训练建议都在上方。</p></div><details className="report-insight-details report-court-details"><summary><span>场地与球路</span><small>{courtStatus}</small></summary><CourtSimulationPanel key={result?.job_id ?? trajectory?.job_id ?? "pending"} trajectory={trajectory} pending={pending} /></details><TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} candidateContext={candidateContext} preparedReport={process} showSummary={false}>
+    <TennisAssessmentSummary report={tennis} loading={assessmentLoading || pending} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
+    {replay && <div className="report-replay-area">{replay}</div>}
+    {(result || assessment || trajectory) && <details className="report-all-details" id="details"><summary>详细分析<span>测量依据、训练记录与更多工具</span></summary><div className="report-all-details-content">
+    <TennisAssessmentDetails report={tennis} />
+    {journal}{details}
+    <details className="replay-segments"><summary>全部动作片段</summary><ActionTimeline result={result} motion={motionAnalysis} /></details>
+    <div className="report-primary report-depth-layout"><details className="report-insight-details report-court-details"><summary><span>场地与球路</span><small>{courtStatus}</small></summary><CourtSimulationPanel key={result?.job_id ?? trajectory?.job_id ?? "pending"} trajectory={trajectory} pending={pending} /></details><TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} candidateContext={candidateContext} preparedReport={process} showSummary={false}>
     <details className="report-disclosure" id="rules"><summary>测量详情 <span>步伐、转体与动作阶段</span></summary>
     {result && !pending && <details className="report-disclosure" id="evidence-reference-details"><summary>查看测量证据参考分 <span>辅助判断测量是否充分 · 不参与过程评分</span></summary><ScoreExplanationPanel result={result} /></details>}
     {result && measurementWarnings(result).map(warning => <p className="measurement-warning" role="note" key={productText(warning)}>{productText(warning)}</p>)}
@@ -152,6 +155,6 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
       </aside></div></>}
     </section>
     </details>
-    </TrainingReportOverview></div>}
+    </TrainingReportOverview></div></div></details>}
   </div>;
 }

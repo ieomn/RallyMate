@@ -32,7 +32,9 @@ const { default: ScoreLab } = await import(dataUrl(componentJs));
 const { createApiClient: realCreateApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const jobId = "pose-diagnostic-job-123";
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
-const nodes = node => Array.isArray(node) ? node.flatMap(nodes) : node?.props ? [node, ...nodes(node.props.children)] : [];
+// Report diagnostics now live in the supplied details slot; inspect that slot
+// while keeping the peripheral view itself opaque to this lifecycle harness.
+const nodes = node => Array.isArray(node) ? node.flatMap(nodes) : node?.props ? [node, ...nodes(node.props.children), ...nodes(node.props.details)] : [];
 const text = node => Array.isArray(node) ? node.map(text).join("") : node?.props ? text(node.props.children) : typeof node === "string" || typeof node === "number" ? String(node) : "";
 const result = id => ({ job_id: id, artifact_urls: { "annotated.mp4": "available" }, runtime: { annotated_video_compatibility: { timing_preserved: true } } });
 function preview(request, x = .4) {

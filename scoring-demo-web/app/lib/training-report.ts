@@ -1,6 +1,7 @@
 import type { AnalysisReport, DemoResultResponse, MotionAnalysis } from "./api-types";
 import { footworkEpisodes } from "./footwork-review";
 import { hasMeasurement } from "./measurement-evidence";
+import { tennisAssessmentOf } from "./tennis-assessment";
 
 export type ReportMoment = { id: string; label: string; kind: "footwork" | "rotation"; startMs: number; endMs: number; note: string };
 export type ReportFocus = { id: string; title: string; detail: string; label: string; moment?: ReportMoment };
@@ -49,6 +50,14 @@ export function reportMoments(result: DemoResultResponse | null, motion?: Motion
 
 export function reportFocus(result: DemoResultResponse | null, motion?: MotionAnalysis | null): ReportFocus[] {
   if (!result) return [];
+  const tennis = tennisAssessmentOf(result);
+  if (tennis) return tennis.improvements.map(item => ({
+    id: `tennis:${item.dimension_id}`, title: item.title, detail: item.action, label: "训练重点",
+    moment: item.start_ms !== null && item.end_ms !== null ? {
+      id: `tennis:${item.dimension_id}`, label: item.title, kind: item.dimension_id === "movement" ? "footwork" as const : "rotation" as const,
+      startMs: item.start_ms, endMs: item.end_ms, note: item.observation,
+    } : undefined,
+  }));
   const report = analysisReportOf(result.analysis_report);
   const moments = reportMoments(result, motion);
   if (report?.focus_areas.length) return report.focus_areas.map(item => ({

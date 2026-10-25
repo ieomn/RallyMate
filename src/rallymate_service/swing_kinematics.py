@@ -10,6 +10,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from functools import lru_cache
 import json
+import hashlib
 import math
 from pathlib import Path
 import statistics
@@ -110,7 +111,7 @@ def _motion_episodes(summary):
     return [row for identifier, row in sorted(unique.items(), key=lambda item: (item[1]["start_ms"], item[0])) if identifier not in conflicts]
 
 
-def _episode(episode, timeline, records, expected_sha):
+def _episode(episode, timeline, records, expected_sha, pts_origin_ms=0.):
     result = {key: episode[key] for key in ("episode_id", "start_ms", "end_ms", "person_track_id", "racket_hand")}
     result.update(frame_count=0, valid_frame_count=0, coverage=0.0, reason_zh="", quality_reason_counts={},
                   metrics={key: _empty_metric(unit) for key, unit in METRIC_UNITS.items()})
@@ -124,6 +125,14 @@ def _episode(episode, timeline, records, expected_sha):
         result["quality_reason_counts"] = {"episode_source_binding_unavailable": 1}
         return result
     selected = [row for row in timeline if _finite(row.get("timestamp_ms")) and episode["start_ms"] <= row["timestamp_ms"] <= episode["end_ms"]]
+    # Motion episodes use the detector's raw track ID; the primary timeline has
+    # a separate stable player ID. Binding these two ID domains by equality
+    # rejected valid re-associated tracks (e.g. raw 89, canonical primary 1).
+    primary_ids = {row.get("primary_player_id") for row in selected
+                   if row.get("selection_status") == "selected" and row.get("source_track_id") == episode["person_track_id"]
+                   and type(row.get("primary_player_id")) is int}
+    primary_id = next(iter(primary_ids)) if len(primary_ids) == 1 else None
+    result["primary_player_id"] = primary_id
     result["frame_count"] = len(selected)
     reasons = Counter()
     valid, previous = [], None
@@ -136,7 +145,8 @@ def _episode(episode, timeline, records, expected_sha):
         record = candidates[0] if len(candidates) == 1 else None
         reason = None
         if (type(frame) is not int or frame_counts[frame] != 1 or row.get("selection_status") != "selected"
-                or row.get("primary_player_id") != episode["person_track_id"] or type(raw_track) is not int
+                or primary_id is None or row.get("primary_player_id") != primary_id
+                or raw_track != episode["person_track_id"] or type(raw_track) is not int
                 or row.get("identity_ambiguous") is not False):
             reason = "selected_subject_unverified"
         elif record is None:
@@ -145,7 +155,8 @@ def _episode(episode, timeline, records, expected_sha):
               or str(record.get("video_sha256", "")).lower() != expected_sha
               or record.get("selection_epoch") != source_epoch or record.get("camera_reference_epoch") != camera_epoch
               or record.get("coordinate_system_3d") != COORDINATES_3D or record.get("units_3d") != "model_units"
-              or record.get("timestamp_ms") != row.get("timestamp_ms")):
+              or record.get("relative_timestamp_ms", record.get("timestamp_ms")) != row.get("timestamp_ms")
+              or abs(float(_time(record) * 1000) - pts_origin_ms - row.get("timestamp_ms", -1e9)) > 1.01):
             reason = "source_clock_identity_or_reference_mismatch"
         points = {name: _point(record, name) for name in TORSO} if not reason else {}
         if not reason and any(point is None for point in points.values()):
@@ -162,7 +173,7 @@ def _episode(episode, timeline, records, expected_sha):
                 segments.append(current)
             current, previous = [], None
             continue
-        source_time = float(_time(record) * 1000)
+        source_time = float(_time(record) * 1000) - pts_origin_ms
         if not episode["start_ms"] <= source_time <= episode["end_ms"]:
             # Episode boundaries are integer milliseconds. An exact decoder PTS
             # just outside that window is not moved onto its rounded boundary.
@@ -231,7 +242,11 @@ def analyze_swing_kinematics(episodes, timeline, records, *, video_sha256, sourc
     for row in records:
         if isinstance(row, Mapping):
             indexed.setdefault((row.get("frame_index"), row.get("person_track_id")), []).append(row)
-    result["episodes"] = [_episode(row, timeline, indexed, video_sha256.lower()) for row in episodes]
+    origins = [float(_time(r) * 1000) - r["relative_timestamp_ms"] for rows in indexed.values() for r in rows
+               if _binding_error(r) is None and _finite(r.get("relative_timestamp_ms"))
+               and str(r.get("video_sha256", "")).lower() == video_sha256.lower()]
+    origin = statistics.median(origins) if origins else 0.
+    result["episodes"] = [_episode(row, timeline, indexed, video_sha256.lower(), origin) for row in episodes]
     count = sum(any(metric["value"] is not None for metric in row["metrics"].values()) for row in result["episodes"])
     if count:
         result.update(status="available" if count == len(episodes) and all(not row["quality_reason_counts"] for row in result["episodes"]) else "partial",
@@ -241,7 +256,14 @@ def analyze_swing_kinematics(episodes, timeline, records, *, video_sha256, sourc
 
 def _signature(path):
     stat = path.stat()
-    return stat.st_size, stat.st_mtime_ns
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    after = path.stat()
+    if (after.st_size, after.st_mtime_ns) != (stat.st_size, stat.st_mtime_ns):
+        raise ValueError("native_input_changed_during_hash")
+    return stat.st_size, stat.st_mtime_ns, digest.hexdigest()
 
 
 @lru_cache(maxsize=2)

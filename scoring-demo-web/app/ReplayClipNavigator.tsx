@@ -19,6 +19,11 @@ export default function ReplayClipNavigator({ containerRef, result, motion, medi
   const selected = available.find(clip => clip.id === playback.selectedId) ?? null;
   useEffect(() => () => controller.dispose(), [controller]);
   useEffect(() => {
+    // A lightweight assessment can replace the legacy list after playback has
+    // started. Drop its old loop without moving the current source clock.
+    if (playback.selectedId && !clips.some(clip => clip.id === playback.selectedId)) controller.select(null);
+  }, [clips, controller, playback.selectedId]);
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const connect = () => {

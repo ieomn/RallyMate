@@ -68,13 +68,13 @@ test("server focus keeps its evidence semantics and only links a validated repla
   assert.equal(analysisReportOf({ ...serverReport(), version: "future-v9" }), null);
 });
 
-test("report overview and timeline remain visible while calculations and process start folded", () => {
+test("legacy report measurements and timeline remain accessible inside the single details area", () => {
   const result = { ...motionResult(), analysis_report: serverReport(), footwork_review: footwork() };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /下一次怎么练/);
+  assert.match(html, /正在生成动作评分/);
   assert.match(html, /训练时间线/);
   assert.match(html, /class="report-timeline" id="timeline"/);
-  assert.match(html, /本次观察/); assert.match(html, /复测标准/);
+  assert.ok(html.indexOf('id="details"') < html.indexOf('id="timeline"'));
   assert.match(html, /<details class="report-disclosure" id="rules"><summary>/);
   assert.match(html, /<details class="report-layer-details"><summary>/);
   assert.match(html, /查看局部连续测量/);
@@ -82,11 +82,10 @@ test("report overview and timeline remain visible while calculations and process
   assert.doesNotMatch(html, /id="(?:technical-review|rule-review|source-measurements)"|按原文评审|全部原文指标|导出评审|录入技术评审/);
 });
 
-test("an empty report still provides a real timeline navigation destination and an honest empty state", () => {
+test("an empty report shows one loading state without an empty timeline or old score cards", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /class="report-timeline" id="timeline"/);
-  assert.match(html, /暂无可定位片段/);
-  assert.match(html, /已提供的测量仍可在测量详情中查看/);
+  assert.match(html, /正在生成动作评分/);
+  assert.doesNotMatch(html, /report-timeline|process-overall-reference|id="details"/);
 });
 
 test("readable export and JSON preserve new report context and independent measurements", () => {
@@ -105,7 +104,7 @@ test("readable export and JSON preserve new report context and independent measu
   assert.equal(analysisReportOf(restored.analysis_report).focus_areas[0].title_zh, "先回看启动");
 });
 
-test("actual 298-card evidence supplies one validated total without exposing internal cards", async () => {
+test("legacy 298-card evidence stays out of the primary score and survives complete backups", async () => {
   // Historical full HTTP report, not a synthetic expansion of the catalogue.
   const rawCards = JSON.parse(gunzipSync(fs.readFileSync(new URL("./fixtures/micro-cycle-native-e420-unified.json.gz", import.meta.url))));
   const process = JSON.parse(fs.readFileSync(new URL("./fixtures/process-v1.1-real.json", import.meta.url), "utf8"));
@@ -117,10 +116,9 @@ test("actual 298-card evidence supplies one validated total without exposing int
   // isolation. It is not a claim that these two source runs describe one video.
   const result = { status: "ready", job_id: rawCards.source_run_id, card_execution: rawCards, process_evaluation: process };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /本次训练评分/);
+  assert.match(html, /正在生成动作评分/);
   assert.ok(Number.isFinite(expected.overall_score));
-  assert.match(html, new RegExp(`class="process-overall-reference"><strong>${expected.overall_score.toFixed(1).replace(/\.0$/, "").replace(".", "\\.")}<small>\\/ 100`));
-  assert.equal((html.match(/class="process-overall-reference"/g) ?? []).length, 1);
+  assert.doesNotMatch(html.slice(0, html.indexOf('id="details"')), /process-overall-reference|步伐动作得分/);
   assert.doesNotMatch(html, /card-execution-panel|逐卡计算|正式逐卡|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}|全部原文指标/);
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const readable = buildPracticeReport(input), markdown = renderReportMarkdown(readable);

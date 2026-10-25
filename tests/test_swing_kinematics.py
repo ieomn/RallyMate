@@ -23,7 +23,7 @@ def inputs():
                  "selection_status": "selected", "primary_player_id": 8, "source_track_id": 1,
                  "identity_ambiguous": False} for row in records]
     episode = {"episode_id": "motion-one", "start_ms": 0, "end_ms": 400,
-               "person_track_id": 8, "racket_hand": "left", "continuity": {
+               "person_track_id": 1, "racket_hand": "left", "continuity": {
                    "pose_source": "sam3d", "video_sha256": "a" * 64,
                    "source_selection_epoch": 0, "camera_reference_epoch": 0}}
     return [episode], timeline, records
@@ -133,6 +133,28 @@ class SwingKinematicsTests(unittest.TestCase):
         report = calculate(episodes, timeline, records)
         self.assertEqual(report["status"], "unavailable")
         self.assertEqual(report["episodes"][0]["quality_reason_counts"], {"selected_subject_unverified": 11})
+
+    def test_raw_track_and_canonical_primary_are_distinct_identity_domains(self):
+        episodes, timeline, records = inputs()
+        report = calculate(episodes, timeline, records)
+        self.assertEqual(report["status"], "available")
+        self.assertEqual(report["episodes"][0]["person_track_id"], 1)
+        self.assertEqual(report["episodes"][0]["primary_player_id"], 8)
+        episodes[0]["person_track_id"] = 8
+        self.assertEqual(calculate(episodes, timeline, records)["status"], "unavailable")
+        episodes[0]["person_track_id"] = 1
+        for row in timeline[5:]:
+            row["primary_player_id"] = 9
+        self.assertEqual(calculate(episodes, timeline, records)["status"], "unavailable")
+
+    def test_nonzero_decoder_origin_preserves_original_media_navigation(self):
+        episodes, timeline, records = inputs()
+        expected = calculate(episodes, timeline, records)
+        for record in records:
+            record["relative_timestamp_ms"] = record["timestamp_ms"]
+            record["timestamp_ms"] += 12000
+            record["pts"] += 12000
+        self.assertEqual(calculate(episodes, timeline, records), expected)
 
 
 if __name__ == "__main__":

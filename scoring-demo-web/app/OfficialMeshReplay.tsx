@@ -60,6 +60,5 @@ export default function OfficialMeshReplay({ media, jobId }: { media: OfficialMe
       setFailed(false); readiness.retry();
     }}>重新读取官方回放</button></div>}
     <p className="replay-caption">{side ? "侧面视角，便于看清躯干与四肢的动作关系。" : "人体表面与原视频逐帧同步，直接查看完整动作。"}</p>
-    <details className="report-replay-details"><summary>人体回放说明</summary><p>SAM 3D Body 根据本次视频重建人体；遮挡处外形为模型估计。片段切换和慢放直接复用已生成的视频。</p></details>
   </div>;
 }
