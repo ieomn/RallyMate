@@ -60,6 +60,10 @@ class CardExecutionTests(unittest.TestCase):
         self.assertEqual(report["summary"]["status_counts"], {"scored": 5, "unavailable": 2})
         self.assertIn("not_executed", report["coverage"]["run_card_status_counts"])
         json.dumps(report, allow_nan=False)
+        # The API pools the in-memory result before FastAPI can normalize tuples.
+        from rallymate_service.report_evidence_transport import pack_report_evidence, unpack_report_evidence
+        self.assertEqual(unpack_report_evidence(pack_report_evidence(report)),
+                         json.loads(json.dumps(report, allow_nan=False)))
 
     def test_real_local_dip_with_complete_values_is_automatically_formally_scored(self):
         sequence, events, timeline = real_fixture()

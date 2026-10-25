@@ -25,7 +25,10 @@ sys.path.insert(0, str(ROOT / "src"))
 
 def sha256(path: Path) -> str:
     with path.open("rb") as handle:
-        return hashlib.file_digest(handle, "sha256").hexdigest()
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+        return digest.hexdigest()
 
 
 def normalized_sha256(path: Path) -> str:

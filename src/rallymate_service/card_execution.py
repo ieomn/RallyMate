@@ -139,7 +139,9 @@ def _score_temporal(rule: Mapping, raw: Mapping, event: Mapping) -> dict:
             passed = (threshold[0] <= value <= threshold[1] if operator == "between" else
                       value >= threshold if operator == "gte" else value <= threshold)
         result["conditions"].append({"key": metric, "metric": metric, "value": value,
-            "operator": operator, "threshold": threshold, "unit": unit, "passed": passed})
+            "operator": operator,
+            "threshold": list(threshold) if isinstance(threshold, tuple) else threshold,
+            "unit": unit, "passed": passed})
     if result["reason_codes"] or any(c["passed"] is None for c in result["conditions"]):
         if not result["reason_codes"]:
             result["reason_codes"].append("required_temporal_value_missing")
@@ -266,7 +268,7 @@ def _input_signature(directory: Path) -> tuple:
         return base + tuple((name, "absent") for name in annotation_names)
     # Optional manual inputs are content-bound, including the actual video. A
     # same-size edit that preserves mtime must invalidate a completed report.
-    from .gs_card_execution import _read_json
+    from .gs_card_execution import _read_json, _sha
     extra = []
     for name in (*annotation_names, "summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl"):
         path = directory / name
@@ -274,16 +276,14 @@ def _input_signature(directory: Path) -> tuple:
             extra.append((name, "missing_or_not_file"))
             continue
         try:
-            with path.open("rb") as stream:
-                extra.append((name, hashlib.file_digest(stream, "sha256").hexdigest()))
+            extra.append((name, _sha(path)))
         except OSError:
             extra.append((name, "unreadable"))
     try:
         summary = _read_json(directory / "summary.json")
         source = Path(summary["input"]["video_path"]).resolve()
         if source.is_file():
-            with source.open("rb") as stream:
-                extra.append(("gs_source_video", str(source), hashlib.file_digest(stream, "sha256").hexdigest()))
+            extra.append(("gs_source_video", str(source), _sha(source)))
         else:
             extra.append(("gs_source_video", "missing"))
     except (OSError, ValueError, TypeError, KeyError):

@@ -640,7 +640,10 @@ def _result(indicator: str, event: Mapping, evidence: dict, measurements: dict, 
             passed = (threshold[0] <= value <= threshold[1] if operator == "between" else
                       value >= threshold if operator == "gte" else value <= threshold)
         conditions.append({"key": metric, "metric": metric, "value": value, "operator": operator,
-                           "threshold": threshold, "unit": unit, "passed": passed,
+                           # Keep the public evidence JSON-native before proof pooling;
+                           # interval constants remain immutable tuples in the rubric.
+                           "threshold": list(threshold) if isinstance(threshold, tuple) else threshold,
+                           "unit": unit, "passed": passed,
                            "status": "measured" if passed is not None else "unavailable"})
     complete = reason is None and all(c["passed"] is not None for c in conditions)
     return {"indicator_id": indicator, "event_id": event.get("event_id"), "rule_version": VERSION,

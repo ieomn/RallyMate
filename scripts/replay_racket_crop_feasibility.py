@@ -32,7 +32,10 @@ def _integer(value):
 
 def _sha(path):
     with Path(path).open("rb") as handle:
-        return hashlib.file_digest(handle, "sha256").hexdigest()
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+        return digest.hexdigest()
 
 
 def merge_crop_observations(records, primary, supplemental, timeline):

@@ -30,6 +30,7 @@ def frame_info(index=0):
 def facade(estimator):
     obj = object.__new__(Yolo26Perception)
     obj.pose_estimator = estimator
+    obj.pose_backend = StubBackend([])
     return obj
 
 

@@ -57,6 +57,7 @@ class PipelineCancellationTests(unittest.TestCase):
             request = PipelineRequest('cancel-test', video, root / 'out',
                                       ModelConfig(root / 'detect', root / 'pose', device='cpu'))
             capture, writer, perception = Mock(), Mock(), Mock()
+            perception.last_pose_association_diagnostics = None
             capture.get.return_value = 0.0
             writer.isOpened.return_value = True
             perception.detect_model_path = request.models.detect

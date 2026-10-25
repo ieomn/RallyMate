@@ -60,6 +60,7 @@ class PipelineMeshArchiveTests(unittest.TestCase):
             processing=ProcessingConfig(write_annotated_video=False, max_frames=2))
         self.capture = TwoFrameDecoder()
         self.perception = Mock()
+        self.perception.last_pose_association_diagnostics = None
         self.perception.detect_model_path = self.request.models.detect
         self.perception.pose_model_path = self.request.models.pose
         self.perception.pose_metadata.return_value = {"backend": "sam3d", "runtime": "pytorch",

@@ -27,7 +27,10 @@ SEMANTICS = "reviewer_estimated_source_stage_not_expert_ground_truth"
 
 def sha256(path):
     with Path(path).open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+        return digest.hexdigest()
 
 
 def normalized_sha256(content):

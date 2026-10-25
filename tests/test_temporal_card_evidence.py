@@ -68,6 +68,18 @@ class TemporalCardEvidenceTests(unittest.TestCase):
         clear_source_aligned_feature_cache()
         self.addCleanup(clear_source_aligned_feature_cache)
 
+    def test_interval_thresholds_survive_report_evidence_transport(self):
+        from rallymate_service.report_evidence_transport import pack_report_evidence, unpack_report_evidence
+
+        sequence, events, timeline = fixture()
+        for source_event, identifier in ((events[0], "FS01-M05"), (events[2], "FS09-M05")):
+            with self.subTest(indicator=identifier):
+                row = card(compute_temporal_card_evidence(
+                    sequence, source_event, events=events, primary_timeline=timeline), identifier)
+                report = {"card_execution": {"cards": [{"indicator_id": identifier, "instances": [row]}]}}
+                wire_report = json.loads(json.dumps(report, allow_nan=False))
+                self.assertEqual(unpack_report_evidence(pack_report_evidence(report)), wire_report)
+
     def test_joint_preload_uses_repaired_continuous_window_and_fixed_reference(self):
         sequence, events, timeline = fixture()
         row = card(compute_temporal_card_evidence(sequence, events[0], events=events, primary_timeline=timeline), "FS01-M02")
