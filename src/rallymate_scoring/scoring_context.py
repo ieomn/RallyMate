@@ -25,10 +25,11 @@ SCORING_CONTEXT_FEATURE_DEFINITIONS = {
     }
 }
 
-_STATUSES = {"pending", "accepted", "unobservable"}
+_STATUSES = {"pending", "accepted", "provided", "unobservable"}
 _SOURCE_KINDS = {
     "coach_declared_training_target",
     "manual_event_adjudication",
+    "explicit_training_target",
 }
 
 
@@ -144,7 +145,6 @@ def build_target_direction_alignment_feature(
         not isinstance(launch_direction_feature, Mapping)
         or launch_direction_feature.get("valid") is not True
         or target_direction_deg is None
-        or reference_confidence is None
     ):
         return {
             **base,
@@ -169,16 +169,15 @@ def build_target_direction_alignment_feature(
     target = _finite_number(target_direction_deg, "target_direction_deg")
     feature_confidence = (_finite_number(launch_direction_feature.get("confidence"), "launch_direction_feature.confidence")
                           if launch_direction_feature.get("confidence") is not None else None)
-    reference_confidence_value = _finite_number(
-        reference_confidence, "reference_confidence"
-    )
+    reference_confidence_value = (_finite_number(reference_confidence, "reference_confidence")
+                                  if reference_confidence is not None else None)
     signed_error = signed_angle_delta_deg(observed, target)
     return {
         **base,
         "value": round(abs(signed_error), 8),
         "signed_value": round(signed_error, 8),
         "confidence": (round(min(feature_confidence, reference_confidence_value), 8)
-                       if feature_confidence is not None else None),
+                       if feature_confidence is not None and reference_confidence_value is not None else None),
         "valid": True,
         "reason": "valid_external_reference_alignment_not_grade",
         "observed_motion_direction_deg": round(observed, 8),
@@ -323,7 +322,8 @@ def validate_scoring_reference_context(
             "reviewer_id",
             "reason",
         }
-        if set(observation) != expected_fields:
+        optional_metadata = {"confidence", "observer_id", "reviewer_id"}
+        if not expected_fields - optional_metadata <= set(observation) or set(observation) - expected_fields:
             raise ValueError(f"{prefix} fields are invalid")
         observation_id = observation.get("observation_id")
         event_id = observation.get("event_id")
@@ -362,20 +362,17 @@ def validate_scoring_reference_context(
         observer_id = observation.get("observer_id")
         reviewer_id = observation.get("reviewer_id")
         reason = observation.get("reason")
-        if status == "accepted":
+        if status in {"accepted", "provided"}:
             direction = _finite_number(direction, f"{prefix}.target_direction_deg")
             if not -180.0 <= direction <= 180.0:
                 raise ValueError(f"{prefix}.target_direction_deg is outside -180..180")
             if frame != "image_plane":
                 raise ValueError(f"{prefix}.coordinate_frame must be image_plane")
-            confidence = _finite_number(confidence, f"{prefix}.confidence")
-            if not 0.0 <= confidence <= 1.0:
-                raise ValueError(f"{prefix}.confidence must be within 0..1")
-            for field, value in (("observer_id", observer_id), ("reviewer_id", reviewer_id)):
-                if not isinstance(value, str) or not value:
-                    raise ValueError(f"{prefix}.{field} must be non-empty when accepted")
-            if observer_id == reviewer_id:
-                raise ValueError(f"{prefix} accepted reference requires an independent reviewer")
+            if confidence is not None:
+                confidence = _finite_number(confidence, f"{prefix}.confidence")
+                if not 0.0 <= confidence <= 1.0:
+                    raise ValueError(f"{prefix}.confidence must be within 0..1")
+            # Authors/reviewers are optional provenance, never numeric prerequisites.
             if reason is not None:
                 raise ValueError(f"{prefix}.reason must be null when accepted")
         else:
@@ -508,7 +505,7 @@ def resolve_target_direction_context(
         or observation.get("end_ms") != event.get("end_ms")
     ):
         raise ValueError("target direction observation event binding mismatch")
-    if observation.get("status") != "accepted":
+    if observation.get("status") not in {"accepted", "provided"}:
         return {
             **base,
             "status": observation.get("status"),
@@ -637,14 +634,6 @@ def validate_resolved_target_direction_context(
         raise ValueError("available context observation_event_id mismatch")
     if context.get("reference_kind") != "accepted_operator_reference":
         raise ValueError("available context reference_kind is invalid")
-    observer_id = context.get("observer_id")
-    reviewer_id = context.get("reviewer_id")
-    if not isinstance(observer_id, str) or not observer_id:
-        raise ValueError("available context observer_id is required")
-    if not isinstance(reviewer_id, str) or not reviewer_id:
-        raise ValueError("available context reviewer_id is required")
-    if observer_id == reviewer_id:
-        raise ValueError("available context requires an independent reviewer")
     if feature.get("feature_name") != TARGET_DIRECTION_ALIGNMENT_FEATURE_NAME:
         raise ValueError("resolved context feature_name is invalid")
     if feature.get("feature_version") != TARGET_DIRECTION_ALIGNMENT_FEATURE_VERSION:
@@ -686,10 +675,7 @@ def validate_resolved_target_direction_context(
     ):
         raise ValueError("resolved context source_frames mismatch")
     confidence, launch_confidence = feature.get("confidence"), launch_direction_feature.get("confidence")
-    if launch_confidence is None:
-        if confidence is not None:
-            raise ValueError("resolved context cannot invent unknown launch confidence")
-    else:
+    if confidence is not None:
         confidence = _finite_number(confidence, "alignment confidence")
         launch_confidence = _finite_number(launch_confidence, "launch direction confidence")
         if not 0.0 <= confidence <= 1.0 or confidence > launch_confidence + 1e-7:

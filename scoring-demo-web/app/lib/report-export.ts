@@ -1,20 +1,20 @@
-import { handRacketAuxiliarySummary } from "./card-execution";
-import { isRecoveryCard, gsRecoverySummary } from "./gs-recovery-evidence";
-import { isFormalScoringPolicy } from "./formal-card-scoring-policy";
-import { stepMotionSummary } from "./fs-step-motion-evidence";
-import { preloadSummary, preloadSourceSummary } from "./gs-preload-evidence";
-import { manualCardSourceLabel } from "./manual-card-evidence";
-import { cardExecutionOf, CARD_RUN_LABELS, cardReasonLabel } from "./card-execution";
-import { directionalMicroSummary } from "./directional-micro-adjustment-evidence";
-import { microCycleSummary } from "./micro-adjustment-cycles-evidence";
-import { evidenceReferenceScore, measurementCounts, measurementWarnings, normalizeMeasurementResult } from "./measurement-evidence";
+import { evidenceReferenceScore, measurementCounts, measurementWarnings, normalizeMeasurementResult, technicalAssessmentState } from "./measurement-evidence";
 import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./api-types";
 import type { ScoreReport } from "../scoring/engine";
 import { footworkEpisodes } from "./footwork-review";
-import { analysisReportOf, reportFocus } from "./training-report";
+import { analysisReportOf } from "./training-report";
+import { trainingGuidance } from "./training-guidance";
 import { motionAnalysisOf, ROTATION_METRICS } from "./motion-analysis";
 import { scoreExplanationOf } from "./score-explanation";
-import { sourceAssessmentForExport, sourceReviewWindows } from "./technical-review";
+import { contextualHipMeasurements, contextualHipReason, isOpaqueSourceIdentity, sourceAssessmentForExport, sourceReviewWindows } from "./technical-review";
+import { processEvaluationOf, processEvaluationValidationOf, trainingDimensions } from "./process-evaluation";
+import { relativeReferenceOf } from "./relative-score";
+import { indicatorAssessmentOf } from "./indicator-assessment";
+import { cardExecutionOf } from "./card-execution";
+import { trainingScoreOf } from "./training-score";
+import { courtProjectionOf } from "./court-simulation";
+import { packReportBackup } from "./report-backup-codec";
+import { MAX_REPORT_FILE_BYTES } from "./report-file";
 
 export type ReportExportInput = {
   mode: "demo" | "live" | "live-pending";
@@ -98,6 +98,7 @@ function hasAnalysis(input: ReportExportInput): boolean {
   return (result.result_kind === "imported_stage1_summary" && (Object.keys(asRecord(asRecord(result.summary).processing)).length > 0 || Object.keys(asRecord(asRecord(result.summary).coverage)).length > 0))
     || asArray(result.actions).some(item => Boolean(asRecord(item).name_zh) && finite(asRecord(item).detected_segments) !== null)
     || asArray(training.indicator_evaluations).length > 0
+    || Boolean(indicatorAssessmentOf(result.indicator_assessment)?.indicators.length)
     || Boolean(cardExecutionOf(result.card_execution)?.summary.computed_cards)
     || (typeof training.summary_zh === "string" && Boolean(training.summary_zh.trim()))
     || asArray(assessment.techniques).some(item => Boolean(asRecord(item).name_zh) && typeof asRecord(item).observed === "boolean")
@@ -135,7 +136,7 @@ function requireReady(input: ReportExportInput): void {
 const BASE_LIMITATIONS = [
   "动作候选、动作片段、球检测点和球拍检测点均不等于已确认击球或触球次数。",
   "图像中的二维位置与归一化速度不能直接解释为真实三维球速、落点、旋转或场地距离。",
-  "测量证据参考分反映证据完整程度，高分不代表动作正确或技术水平更高；技术评分待教练标定。",
+  "测量证据参考分反映证据完整程度，高分不代表动作正确或技术水平更高；完整技术评分还需对应动作、正式阶段及规则证据。",
   "未观测表示当前视频没有足够可用证据，不能据此判断该动作没有发生。",
 ];
 
@@ -216,32 +217,37 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
       ["处理耗时", numberText(processing.elapsed_seconds, " 秒")],
     ],
   }];
-  const cardExecution = cardExecutionOf(result.card_execution);
-  if (cardExecution) {
-    const counts = cardExecution.summary;
-    const formal = isFormalScoringPolicy(cardExecution.scoring_policy_version);
-    sections.push({ title: "逐卡计算结果", paragraphs: formal ? [
-      `正式总分：${cardExecution.overall_score === null ? "—" : numberText(cardExecution.overall_score)} / 100；已评分 ${counts.formal_scored_cards} 张、${counts.formal_scored_instances} 条实例。`,
-      "先计算同卡有效实例均值，再等权平均各卡；缺失值保留为空，不补零或 E。",
-      "来源与数值依据随结果保留；应用评分不改写原卡技术等级。",
-    ] : [
-      `本报告包含 ${counts.catalogue_cards} / ${counts.expected_source_cards} 张来源卡；${counts.computed_cards} 张运行过计算，${counts.proxy_scored_cards} 张有视觉代理结果。原卡完整技术评分：0 张。`,
-      `视觉代理实例 ${counts.proxy_scored_instances} 条，待复核 ${counts.review_instances} 条，证据不足 ${counts.unavailable_instances} 条。缺失值保留为空，不补零，不生成跨渠道总分。`,
-      "代理等级仅表示当前工程阈值的条件完成比例，不代表原卡完整 A–E 等级或教练评价。",
-    ], columns: ["评分卡", "状态", "实例数", "原因"], rows: cardExecution.cards.map(card => [
-      `${card.indicator_id} ${text(card.name_zh)}`, CARD_RUN_LABELS[card.run_status], String(card.instance_count), card.reason_codes.map(code => text(cardReasonLabel(code, formal))).join("；"),
+  const processEvaluation = processEvaluationOf(result.process_evaluation);
+  const relativeReference = processEvaluation?.relative_reference ?? relativeReferenceOf();
+  const processValidation = processEvaluationValidationOf(result.process_evaluation, processEvaluation);
+  const currentScore = trainingScoreOf(input.evidence.result ?? null, processEvaluation);
+  if (currentScore.source === "validated_card_execution") {
+    sections.push({ title: `训练评分：${numberText(currentScore.score)} / 100`, paragraphs: [
+      `${currentScore.measuredIndicatorCount} 项动作指标已评分。根据本次已测得的动作项目计算，未测得的项目不计入平均分。`,
+    ] });
+  } else sections.push({ title: currentScore.score === null ? "训练评分：未评分" : `训练评分：${numberText(currentScore.score)} / 100`, paragraphs: [
+    `${relativeReference.observed_dimension_count} / 5 维有评分依据。仅对已测项目汇总，缺测不填分。`,
+    ...(processValidation.status === "invalid" ? [processValidation.reason_zh] : []),
+  ], columns: ["维度", "得分", "动作片段"], rows: relativeReference.dimensions.map(dimension => [
+    dimension.name_zh, dimension.score === null ? "未评分" : numberText(dimension.score, " / 100"),
+    dimension.sample_count ? `${dimension.sample_count} 段有效计分动作` : "暂无有效计分测量",
+  ]) });
+  if (processEvaluation) {
+    sections.push({ title: "训练指导五维评价", paragraphs: [
+      "数值仅表示已实现工程子项的过程参考，不是完整维度技术评分，尚未经过教练标定。测量覆盖率与识别置信度不参与过程分。",
+      "以下保留原始过程子项与分项得分。二维运动先后不等于真实发力顺序，画面方向不等于来球或目标方向。",
+    ], columns: ["维度", "当前相对参考分", "观察"], rows: trainingDimensions(processEvaluation.dimensions).map(dimension => [
+      text(dimension.name_zh), numberText(relativeReference.dimensions.find(row => row.id === dimension.id)!.score, " / 100"), text(dimension.summary_zh),
     ]) });
-    sections.push({ title: "逐卡视频实例与条件", paragraphs: ["每个结果绑定一个视频事件和同一连续窗口；以下条件数值及通过状态已经校验。人工标注的击球阶段保留来源与时间不确定性，不代表专家真值或自动定位完整十阶段。"], columns: ["评分卡 / 事件", "视频区间", formal ? "正式评分" : "视觉代理结果", "同窗有效帧", "条件明细", "原因", "阶段来源"], rows: cardExecution.cards.flatMap(card => card.instances.map(instance => [
-      `${card.indicator_id} / ${text(instance.event_id)}`, instance.window ? interval(instance.window) : "未定位",
-      instance.status === "scored" ? `${instance.grade} / ${instance.score}（正式评分）` : instance.status === "proxy_scored" ? `${instance.proxy_grade} / ${instance.score}（视觉代理）` : CARD_RUN_LABELS[instance.status],
-      `${instance.quality.valid_frame_count} / ${instance.quality.total_frame_count}`,
-      instance.conditions.map(condition => `${text(condition.metric)}：${numberText(condition.value)} ${text(condition.unit, "")}；${text(condition.operator)} ${Array.isArray(condition.threshold) ? condition.threshold.map(value => numberText(value)).join("–") : numberText(condition.threshold)}；${condition.passed === null ? "未判断" : condition.passed ? "满足" : "未满足"}`).join("；")  + preloadSummary(instance.auxiliary_validation) + (isRecoveryCard(instance.indicator_id) ? "；" + gsRecoverySummary(instance.recovery_validation ?? null, instance.indicator_id) : instance.scoring_revision_id ? "；" + handRacketAuxiliarySummary(instance) : ""),
-      [...instance.reason_codes, ...instance.advisory_reason_codes, ...instance.advisory_flags].map(code => text(cardReasonLabel(code, formal))).join("；"),
-      instance.source_window_annotation ? manualCardSourceLabel(instance) + (instance.directional_micro_validation ? "；" + directionalMicroSummary(instance.directional_micro_validation) : "") + (instance.micro_cycle_validation ? "；" + microCycleSummary(instance.micro_cycle_validation) : "") + (instance.step_motion_validation ? "；" + stepMotionSummary(instance.step_motion_validation) : "")
-        : instance.source_stage ? `${text(instance.source_stage.stage_code)}；人工估计 ±${numberText(instance.source_stage.binding.uncertainty_ms)} 毫秒；${text(instance.source_stage.binding.source)}；${text(instance.source_stage.binding.version)}${instance.racket_side_evidence ? `；${manualCardSourceLabel(instance)}` : ""}${preloadSourceSummary(instance.auxiliary_evidence, instance.auxiliary_validation)}`
-        : instance.foot_cycle ? `${instance.foot_cycle.step_window_binding.method === "manual_anchor" ? "人工步周期候选窗口" : "步周期来源未核验"}；非专家步型或触地真值${instance.source_cycle_annotation ? `；边界不确定性 ±${numberText(instance.source_cycle_annotation.binding.uncertainty_ms)} 毫秒` : ""}；${text(instance.foot_cycle.step_window_binding.evidence_reference)}；${text(instance.foot_cycle.step_window_binding.version)}`
-        : card.event_code.startsWith("GS") ? "未核验阶段来源" : ["FS03", "FS04"].includes(card.event_code) ? "未核验人工步周期窗口来源" : "由动作检测器定位的候选窗口",
-    ])) });
+    for (const dimension of processEvaluation.dimensions) sections.push({
+      title: `${dimension.name_zh} · 过程依据`, paragraphs: [dimension.score_scope_zh ?? "", dimension.status_reason_zh ?? "", ...(dimension.criteria_selection?.is_truncated ? [`展示部分测量：${dimension.returned_measured_criterion_count} / ${dimension.measured_criterion_count} 项。统计基于已读取事件，不代表全部动作。`] : []), ...(dimension.measurement_input_scope ? [`已读取 ${dimension.measurement_input_scope.returned_event_count} / ${dimension.measurement_input_scope.available_event_count} 个步伐候选事件，${dimension.sample_count} 个事件有有效测量。${dimension.measurement_input_scope.is_truncated ? "输入事件已截断，不代表全片。" : ""}`] : [])].filter(Boolean),
+      columns: ["过程测量", "测量值", "原始子项值或历史诊断", "视频区间", "规则与说明"],
+      rows: dimension.criteria.map(criterion => [
+        text(criterion.label_zh), criterion.status === "measured" && criterion.value !== null ? `${numberText(criterion.value)} ${text(criterion.unit, "")}` : "未测得",
+        criterion.legacy_diagnostic ? `${numberText(criterion.legacy_diagnostic.score)} 历史速度趋势；不参与当前分数` : criterion.score === null ? "未评分" : `${numberText(criterion.score, " / 100")}`, interval({ start_ms: criterion.start_ms, end_ms: criterion.end_ms }),
+        [text(criterion.rule_zh, ""), text(criterion.reason_zh, "")].filter(Boolean).join("；"),
+      ]),
+    });
   }
   const parsedMotion = motionAnalysisOf(input.evidence.result ?? null, input.evidence.assessment, summary);
   const explanationState = scoreExplanationOf(input.evidence.result ?? null);
@@ -265,20 +271,31 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     text(measurement.reason_zh), window.limitations_zh.map(note => text(note)).join("；"),
   ])));
   if (sourceRows.length) sections.push({ title: "测量与对应视频时段", paragraphs: ["以下是本次视频保存的二维测量。有效帧比例仅针对相应测量时段；画面中的测量值不等同于真实三维距离，也不直接代表技术水平。"], columns: ["指标", "测量", "结果", "计算时段", "所需关键点有效帧", "说明", "限制"], rows: sourceRows });
-  const focus = reportFocus(input.evidence.result ?? null, parsedMotion);
-  if (focus.length) sections.push({ title: "这次先关注", paragraphs: ["以下为证据关联的复核与拍摄建议，不是技术错误诊断。"], columns: ["重点", "建议", "回放区间"], rows: focus.map(item => [text(item.title), text(item.detail), item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
+  const hipRows = contextualHipMeasurements(input.evidence.result ?? null);
+  if (hipRows.length) sections.push({ title: "候选事件的髋中心二维测量", paragraphs: [
+    "路径长度是逐帧髋中心位移之和，净位移是起终点距离；比值为路径长度/净位移。像素不等同于米数，二维量测不产生技术等级。",
+    "计算定义来源：步伐卡 FS05-M02（T023 / P0827）；保留每条原事件分类，不确认 FS05 动作，不改变指标状态、数量或正式等级。",
+  ], columns: ["原候选事件", "完整候选窗口", "计算窗口 / 原帧", "路径长度（像素）", "净位移（像素）", "路径/净位移比", "状态与原因", "来源"], rows: hipRows.map(row => [
+    `${row.event_code} · ${text(row.event_id)}`, interval(row.parent_window_ms), row.measurement_window_video_ms && row.source_frame_bounds
+      ? `${interval(row.measurement_window_video_ms)} · 原帧 ${row.source_frame_bounds.start_source_frame}–${row.source_frame_bounds.end_source_frame}` : "完整计算窗口不可核验",
+    row.hip_path_length_px === null ? "不可用" : numberText(row.hip_path_length_px), row.hip_net_displacement_px === null ? "不可用" : numberText(row.hip_net_displacement_px),
+    row.hip_path_over_net_ratio === null ? "不可用" : numberText(row.hip_path_over_net_ratio), `${contextualHipReason(row.reason)}（${row.reason}）`,
+    `来源任务 ${text(row.source_id)} · 视频 ${text(row.video_id)} · SHA-256 ${row.video_sha256} · ${row.helper_version} · ${row.adapter.version}`,
+  ]) });
+  const focus = trainingGuidance(input.evidence.result ?? null, parsedMotion);
+  if (focus.length) sections.push({ title: "这次先关注", paragraphs: ["以下区分已有观察与通用练习；练习不是技术错误诊断，每次只选一个目标并用相同任务复测。"], columns: ["重点", "已有观察", "练习与复测", "依据及适用范围", "回放区间"], rows: focus.map(item => [text(item.title), text(item.detail), text(item.nextStep), `${text(item.limitation)}${item.source_links?.length ? ` 来源：${item.source_links.map(source => `${source.title} ${source.url}`).join("；")}` : ""}`, item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
   const analysisReport = analysisReportOf(result.analysis_report);
   if (analysisReport) sections.push({ title: "识别过程与测量范围", paragraphs: ["各层分别判断可用性。动作未分类不会清空可独立测量的指标。", analysisReport.measurement_summary.is_truncated ? "当前逐段记录经过截取，单项观测数量仅对应已返回片段。" : "单项观测数量对应已返回的回放片段。"], columns: ["分析层", "状态", "说明"], rows: analysisReport.layers.map(layer => [text(layer.label_zh), ({ available: "可用", partial: "部分可用", unavailable: "未提供", unknown: "未确认" } as Record<string, string>)[layer.status] ?? "未确认", text(layer.reason_zh)]) });
   if (input.evidence.result && measurementWarnings(input.evidence.result).length) sections.push({ title: "测量适用范围与历史结果提示", paragraphs: measurementWarnings(input.evidence.result).map(warning => text(warning)) });
-  sections.push({ title: "本次动作观察", paragraphs: [text(training.summary_zh, "分析已完成；以下只列出本次返回的观测。"), `实测指标：${measurementCounts(input.evidence.result).measured}/${measurementCounts(input.evidence.result).total} 项。测量证据参考分（Beta）：${numberText(evidenceReferenceScore(training), " / 100")}；高分不代表动作正确，技术评分待教练标定。`], columns: ["动作", "类别", "片段数（非击球次数）", "证据参考分", "观察"], rows: asArray(result.actions).map(raw => {
+  sections.push({ title: "本次动作观察", paragraphs: [text(training.summary_zh, "分析已完成；以下只列出本次返回的观测。"), `实测指标：${measurementCounts(input.evidence.result).measured}/${measurementCounts(input.evidence.result).total} 项。测量证据参考分（Beta）：${numberText(evidenceReferenceScore(training), " / 100")}；高分不代表动作正确，具体评分缺口见各项说明。`], columns: ["动作", "类别", "片段数（非击球次数）", "证据参考分", "观察"], rows: asArray(result.actions).map(raw => {
     const action = asRecord(raw);
     return [text(action.name_zh), actionFamilyName(action), numberText(action.detected_segments), numberText(evidenceReferenceScore(action.performance_assessment), " / 100"), text(action.summary_zh, "参见指标与证据限制")];
   }) });
   const techniques = asArray(assessment.techniques);
-  sections.push({ title: "技术证据覆盖", paragraphs: ["逐项展示证据状态；技术评分待教练标定。"], columns: ["技术", "类别", "观察状态", "技术评分", "限制"], rows: techniques.map(raw => {
+  sections.push({ title: "技术证据覆盖", paragraphs: ["逐项展示证据与实现状态；未观测、动作待确认和评分尚未实现分别说明。"], columns: ["技术", "类别", "观察状态", "技术评分", "限制"], rows: techniques.map(raw => {
     const technique = asRecord(raw);
     const observation = technique.recognition_status === "candidate" ? statusName("candidate") : technique.observed === true ? statusName(technique.status) : "未观测";
-    return [text(technique.name_zh), familyName(technique.family), observation, "待教练标定", textList(technique.limitations_zh).join("；") || "参见统一限制"];
+    return [text(technique.name_zh), familyName(technique.family), observation, technicalAssessmentState(technique).label_zh, textList(technique.limitations_zh).join("；") || "参见统一限制"];
   }) });
   const motion = asRecord(recognition.motion_analysis);
   const hasMotion = ["1.0.0", "1.1.0"].includes(String(motion.schema_version)) && motion.contact_confirmed === false;
@@ -309,20 +326,20 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     const candidate = asRecord(raw);
     return [candidate.family === "serve" ? "发球动作候选" : "底线挥拍候选", interval(candidate), finite(candidate.peak_ms) === null ? "未提供" : numberText((candidate.peak_ms as number) / 1000, " 秒"), candidateEvidence(candidate), ["未确认触球", ...textList(candidate.limitations_zh)].join("；")];
   }) });
-  sections.push({ title: "可测指标与练习提示", paragraphs: ["测量证据参考分（Beta）只描述证据完整程度；技术评分待教练标定，无有效数据的项目保持“未提供”。"], columns: ["指标", "证据参考分", "实际测量", "证据与样本", "指标限制"], rows: metricRows(result) });
+  sections.push({ title: "可测指标与练习提示", paragraphs: ["测量证据参考分（Beta）只描述证据完整程度，不是技术等级；无有效数据的项目保持“未提供”。"], columns: ["指标", "证据参考分", "实际测量", "证据与样本", "指标限制"], rows: metricRows(result) });
   const footwork = asRecord(result.footwork_review);
   const localRows = Object.entries(parsedMotion?.families ?? {}).flatMap(([family, data]) => data.episodes.flatMap(episode => [
     ...(episode.rotation_analysis?.local_windows ?? []).map(window => ({ ...window, windowType: "局部连续窗口" })),
     ...(episode.rotation_analysis?.phase_measurements ?? []).map(window => ({ ...window, windowType: `估计阶段：${window.label_zh || window.phase}` })),
   ].map(window => [familyName(family), text(window.windowType), interval(window), ROTATION_METRICS.filter(metric => window.metric_evidence[metric.key]?.status === "measured").map(metric => `${metric.label}：${numberText(window.metrics[metric.key])} ${metric.unit}`).join("；")])));
   if (localRows.length) sections.push({ title: "转体局部与阶段独立测量", paragraphs: ["仅描述对应连续区间的二维投影；局部值不替代整段覆盖，不作为三维转体或技术好坏的判断。"], columns: ["动作类别", "范围", "时间区间", "测量"], rows: localRows });
-  if (["1.0.0", "1.1.0"].includes(String(footwork.schema_version))) sections.push({ title: "步伐逐段复核", paragraphs: ["分腿、启动和制动是规则候选片段，非实际步数或击球次数；技术等级待教练标定。", ...(footwork.reason_zh ? [text(footwork.reason_zh)] : []), ...(footwork.is_truncated ? [`仅展示前 ${numberText(footwork.returned_episode_count)} 段，共 ${numberText(footwork.episode_count)} 段。`] : []), ...textList(footwork.limitations_zh)], columns: ["步伐", "时间区间", "指标", "测量值", "评分状态"], rows: footworkEpisodes(footwork).flatMap(raw => {
+  if (["1.0.0", "1.1.0"].includes(String(footwork.schema_version))) sections.push({ title: "步伐逐段复核", paragraphs: ["分腿、启动和制动是规则候选片段，非实际步数或击球次数；原卡正式阶段与完整等级条件仍需核实。", ...(footwork.reason_zh ? [text(footwork.reason_zh)] : []), ...(footwork.is_truncated ? [`仅展示前 ${numberText(footwork.returned_episode_count)} 段，共 ${numberText(footwork.episode_count)} 段。`] : []), ...textList(footwork.limitations_zh)], columns: ["步伐", "时间区间", "指标", "测量值", "评分状态"], rows: footworkEpisodes(footwork).flatMap(raw => {
     const event = asRecord(raw);
     if (!asArray(event.indicators).length) return [[text(event.name_zh), interval(event), "本段无有效指标", "没有通过质量门槛的测量值", "评分证据不足"]];
     return asArray(event.indicators).map(rawIndicator => {
       const item = asRecord(rawIndicator);
       const measurements = Array.isArray(item.measurements) ? item.measurements : asArray(item.features);
-      return [text(event.name_zh), interval(event), text(item.name_zh), measurements.map(rawFeature => { const feature = asRecord(rawFeature); return feature.status === "unavailable" ? `${text(feature.name_zh ?? feature.feature_name)}：未提供（${text(feature.reason_zh)}）` : `${text(feature.name_zh ?? feature.feature_name)}：${numberText(feature.value)} ${text(feature.unit, "")}`; }).join("；") || "没有通过质量门槛的测量值", item.scoring_status === "calibration_required" ? "技术等级待标定" : item.scoring_status === "scored" ? "另见正式标定记录" : "评分证据不足"];
+      return [text(event.name_zh), interval(event), text(item.name_zh), measurements.map(rawFeature => { const feature = asRecord(rawFeature); return feature.status === "unavailable" ? `${text(feature.name_zh ?? feature.feature_name)}：未提供（${text(feature.reason_zh)}）` : `${text(feature.name_zh ?? feature.feature_name)}：${numberText(feature.value)} ${text(feature.unit, "")}`; }).join("；") || "没有通过质量门槛的测量值", technicalAssessmentState(item, measurements.some(feature => asRecord(feature).status === "measured")).label_zh];
     });
   }) });
   const hitStats = asRecord(result.hit_statistics);
@@ -377,7 +394,18 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   const report = buildPracticeReport(input, exportedAt);
   if (report.isDemo) return report;
   if (input.evidence.result) input = { ...input, evidence: { ...input.evidence, result: normalizeMeasurementResult(input.evidence.result) } };
+  const originalProcess = input.evidence.result?.process_evaluation;
+  const processForExport = processEvaluationOf(originalProcess) ?? (originalProcess !== undefined && originalProcess !== null ? originalProcess : processEvaluationOf({
+    version: "process-evaluation-v2.0.0", semantics: "observable_motion_process_reference",
+    is_calibrated: false, overall_score: null, dimensions: [],
+  }));
   const selected = (root: unknown, fields: string[]): RecordValue => Object.fromEntries(fields.filter(key => Object.hasOwn(asRecord(root), key)).map(key => [key, asRecord(root)[key]]));
+  const primaryMotion = input.evidence.result?.action_recognition;
+  const omitDuplicatedMotion = (value: RecordValue): RecordValue => {
+    if (!primaryMotion || !value.action_recognition || JSON.stringify(value.action_recognition) !== JSON.stringify(primaryMotion)) return value;
+    // The embedded result is the importer and report viewer's primary source.
+    const copy = { ...value }; delete copy.action_recognition; return copy;
+  };
   const resultInput = asRecord(input.evidence.result?.input);
   const summaryInput = asRecord(summaryOf(input).input);
   const videoMetadata = asRecord(resultInput.video ?? resultInput.metadata ?? summaryInput.video ?? summaryInput.metadata);
@@ -392,6 +420,19 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
     const ledger = asRecord(input.evidence.result?.training_evaluation?.score_explanation);
     for (const row of asArray(ledger.indicator_scores)) if (row && typeof row === "object") trustedScoreRows.add(row);
   }
+  // Source IDs are opaque: preserve harmless whitespace exactly. A redacted
+  // value must never become a new, seemingly verified source identity.
+  const safeSourceIdentity = (value: unknown) => {
+    if (value === null) return null;
+    if (!isOpaqueSourceIdentity(value)) return undefined;
+    // Compare only formatting removal to the existing privacy scrubber. Harmless
+    // codepoints stay exact in the identity; any path/credential redaction rejects it.
+    const formatted = Array.from(value).filter(character => {
+      const code = character.charCodeAt(0);
+      return code === 9 || code === 10 || (code > 31 && code !== 127);
+    }).join("").replace(/\s+/g, " ").trim();
+    return text(value, "") === formatted ? value : undefined;
+  };
   const scrub = (value: unknown, depth = 0): unknown => {
     if (depth > 16) return null;
     if (value === undefined) return undefined;
@@ -399,15 +440,28 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
     if (typeof value === "number") return finite(value);
     if (value === null || typeof value === "boolean") return value;
     if (Array.isArray(value)) return value.map(item => scrub(item, depth + 1));
-    return Object.fromEntries(Object.entries(asRecord(value)).filter(([key, item]) => key === "wrist_path_torso" || ["path_length_torso", "moving_ankle_path_length_torso", "both_ankles_max_path_length_torso"].includes(key) && finite(item) !== null || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? trustedScoreRows.has(asRecord(value)) ? finite(item) : evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
+    // Only these exact numeric geometry fields (or explicit unavailable nulls)
+    // bypass the path-name filter. Strings/objects never gain an exception.
+    return Object.fromEntries(Object.entries(asRecord(value)).filter(([key, item]) => ["hip_path_length_px", "hip_net_displacement_px", "hip_path_over_net_ratio"].includes(key)
+      ? item === null || finite(item) !== null && Number(item) >= 0
+      : key === "wrist_path_torso"
+      || ["path_length_torso", "moving_ankle_path_length_torso", "both_ankles_max_path_length_torso"].includes(key) && finite(item) !== null && Number(item) >= 0
+      || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, key === "source_id" ? safeSourceIdentity(item) : /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? trustedScoreRows.has(asRecord(value)) ? finite(item) : evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
   };
-  return scrub({
+  return packReportBackup(scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
-    assessment: selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"]),
-    summary: selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"]),
-    trajectory: input.evidence.trajectory ? selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]) : null,
-  });
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    assessment: omitDuplicatedMotion(selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"])),
+    summary: omitDuplicatedMotion(selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"])),
+    trajectory: input.evidence.trajectory ? { ...selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]), court_projection: courtProjectionOf(input.evidence.trajectory) } : null,
+  }));
+}
+
+/** UI and QA use the identical compact wire format and unchanged file limit. */
+export function serializeReportBackup(input: ReportExportInput, exportedAt = new Date().toISOString()): string {
+  const content = JSON.stringify(buildReportBackup(input, exportedAt));
+  if (new TextEncoder().encode(content).byteLength > MAX_REPORT_FILE_BYTES) throw new Error("完整报告超过 128 MiB，暂无法导出为可重新导入的备份。");
+  return content;
 }
 
 export function reportDownloadName(report: PracticeReport, extension: "md" | "html" | "json"): string {

@@ -21,6 +21,33 @@
     "source": {"$ref": "#/$defs/source"},
     "ball": {"$ref": "#/$defs/ball"},
     "racket": {"$ref": "#/$defs/racket"},
+    "court_projection": {
+      "type": "object",
+      "required": ["version", "status", "coordinate_space", "semantics", "reason_zh", "points"],
+      "properties": {
+        "version": {"const": "court-projection-v1.0.0"},
+        "status": {"enum": ["calibrated", "unavailable"]},
+        "coordinate_space": {"const": "court_normalized"},
+        "semantics": {"const": "ground_plane_projection_not_ball_landing"},
+        "reason_zh": {"type": "string", "minLength": 1},
+        "points": {
+          "type": "array",
+          "maxItems": 12000,
+          "items": {
+            "type": "object",
+            "required": ["x", "y", "timestamp_ms", "source", "segment_id"],
+            "properties": {
+              "x": {"type": "number"},
+              "y": {"type": "number"},
+              "timestamp_ms": {"type": "integer", "minimum": 0},
+              "source": {"const": "observed"},
+              "segment_id": {"type": "string", "minLength": 1},
+              "track_id": {"type": ["integer", "null"], "minimum": 1}
+            }
+          }
+        }
+      }
+    },
     "limitations": {
       "type": "array",
       "minItems": 1,
@@ -57,6 +84,21 @@
         ,"is_partial": {"type": "boolean"}
         ,"start_timestamp_ms": {"type": ["integer", "null"], "minimum": 0}
         ,"end_timestamp_ms": {"type": ["integer", "null"], "minimum": 0}
+        ,"court_calibration_windows": {
+          "type": "array",
+          "maxItems": 1000,
+          "description": "Display-only local spans with verified reference/stationary camera transforms, original decoder timestamps and continuous frames. A newly captured polygon applies only inside its containing span; these are not historical court calibrations or scoring evidence.",
+          "items": {
+            "type": "object",
+            "required": ["start_timestamp_ms", "end_timestamp_ms"],
+            "properties": {
+              "start_timestamp_ms": {"type": "integer", "minimum": 0},
+              "end_timestamp_ms": {"type": "integer", "minimum": 0}
+            },
+            "additionalProperties": false
+          }
+        }
+        ,"court_calibration_windows_truncated": {"type": "boolean"}
       },
       "additionalProperties": true
     },

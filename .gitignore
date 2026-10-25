@@ -125,3 +125,8 @@ Thumbs.db
 **/.dev.vars
 **/.dev.vars.*
 _review_tmp/
+
+# Local scratch files and retained frontend build backups.
+/tmp/
+/scoring-demo-web/dist.*.backup/
+/1014.txt

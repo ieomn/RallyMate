@@ -118,7 +118,10 @@ def compute_directional_micro_adjustment(records, primary, source_events, decode
             if not reasons:
                 fraction = sum(condition["passed"] for condition in conditions)/len(conditions)
                 grade = "A" if fraction == 1 else "B" if fraction >= .75 else "C" if fraction >= .5 else "D" if fraction > 0 else "E"
-                result.update(status="scored", grade=grade, proxy_grade=grade, score=GRADE_POINTS[grade])
+                # The source-window template was already finalized unavailable;
+                # these freshly computed application conditions replace it.
+                result.pop("scoring_policy_version", None)
+                result.update(status="proxy_scored", proxy_grade=grade, score=GRADE_POINTS[grade])
             apply_scoring_policy(result)
         card["runtime_engine"] = VERSION if card["instances"] else None
         card["application_rule_version"] = RULE_VERSION

@@ -7,11 +7,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const compiled = new Map();
 function compiledUrl(file) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (file.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(file, "utf8")}`).toString("base64")}`;
   if (compiled.has(file.href)) return compiled.get(file.href);
   let js = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, file);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, file);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, file)) : import.meta.resolve(name))}`;
   });
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;

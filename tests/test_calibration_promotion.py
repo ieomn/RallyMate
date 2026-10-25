@@ -1378,7 +1378,7 @@ class CalibrationPromotionTests(unittest.TestCase):
                 verified_truth_authorization=_verified_truth_authorization(),
             )
 
-    def test_ledger_and_registry_authorization_still_requires_runtime_profile(self) -> None:
+    def test_legacy_promotion_metadata_does_not_gate_defined_mathematics(self) -> None:
         candidate = _candidate(synthetic=False)
         samples, requirements, report = _production_replay_fixture(candidate)
         registry = _registry(level="F4")
@@ -1515,13 +1515,9 @@ class CalibrationPromotionTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F4",
         )
-        self.assertEqual(result["status"], "calibration_required")
-        self.assertIsNone(result["grade"])
-        self.assertIn("runtime_profile_binding_required", result["reason_codes"])
-        self.assertEqual(
-            result["model_versions"]["maturity_evidence_bundle"],
-            asset["promotion_lineage"]["maturity_evidence"]["bundle_id"],
-        )
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["grade"], "C")
+        self.assertIn("explicit_threshold_rule", result["reason_codes"])
 
     def test_failed_or_preapproved_report_is_rejected(self) -> None:
         candidate = _candidate()

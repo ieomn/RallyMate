@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import os
 import platform
@@ -8,19 +9,12 @@ import subprocess
 import time
 from collections import Counter
 from collections.abc import Callable
+from contextlib import ExitStack
 from pathlib import Path
 
 import cv2
 
-from rallymate_scoring.calibration import (
-    validate_ordinal_model,
-    validate_threshold_calibration,
-)
-from rallymate_scoring.calibration_promotion import (
-    CalibrationPromotionError,
-    authorize_production_asset_with_trusted_ledger,
-    bind_trusted_production_calibration_to_registry,
-)
+from rallymate_scoring.scoring_rules import validate_scoring_rule
 from rallymate_scoring.granularity import analyze_scoring_readiness
 from rallymate_scoring.registry_lifecycle import (
     ResolvedRegistryArtifact,
@@ -34,11 +28,6 @@ from rallymate_scoring.measurement_portfolio import (
 )
 from rallymate_scoring.cycle_measurement import build_scoring_cycle_measurement
 from rallymate_scoring.loop import run_minimum_scoring_loop
-from rallymate_scoring.runtime_profile_binding import (
-    RuntimeProfileBindingError,
-    validate_runtime_view_evidence,
-    validate_trusted_runtime_binding_registry,
-)
 from rallymate_scoring.scoring_context import load_scoring_reference_context
 from rallymate_scoring.report import write_analysis_report
 from rallymate_scoring.scoring_loop_report import write_scoring_loop_report
@@ -57,6 +46,7 @@ from rallymate_vision.render import annotate_frame
 from rallymate_vision.tracking import SimpleMultiClassTracker
 from rallymate_vision.timebase import SourceVideoClock
 from rallymate_vision.camera_motion import CameraMotionGuard
+from rallymate_vision.manual_court import FixedManualCourtObservation
 from rallymate_vision.source_replay import export_source_replay
 from rallymate_vision.progress import postprocess_progress
 from rallymate_vision.utils import relative_or_absolute, resolve_device, safe_float
@@ -71,21 +61,6 @@ DEFAULT_REGISTRY_LIFECYCLE_MANIFEST = "registry-lifecycle.json"
 DEFAULT_TRUSTED_PROMOTION_LEDGER = (
     "calibration/trusted-calibration-promotion-ledger.json"
 )
-
-
-def _disabled_court_observation() -> dict:
-    """Return the explicit no-court contract used by pose/ball analysis."""
-    return {
-        "status": "disabled",
-        "method": "disabled_by_configuration",
-        "downstream_system": "S05",
-        "confidence": 0.0,
-        "region_usable": False,
-        "calibration_usable": False,
-        "polygon_px": [],
-        "polygon_normalized": [],
-        "line_segments_px": [],
-    }
 
 
 def _find_ffmpeg_executable() -> str | None:
@@ -193,24 +168,23 @@ def _load_runtime_authorization_json(path: Path, label: str) -> dict:
 
 
 def load_trusted_runtime_binding_registry(path: Path) -> dict:
-    payload = _load_runtime_authorization_json(
+    # Legacy release annotations are retained if explicitly supplied; their
+    # approval status has no role in evaluating a numeric scoring rule.
+    return _load_runtime_authorization_json(
         path, "trusted runtime-profile binding registry"
     )
-    try:
-        validate_trusted_runtime_binding_registry(payload)
-    except RuntimeProfileBindingError as exc:
-        raise ValueError(
-            f"trusted runtime-profile binding registry validation failed: {exc}"
-        ) from exc
-    return payload
 
 
 def load_runtime_view_evidence(path: Path) -> dict:
     payload = _load_runtime_authorization_json(path, "runtime view evidence")
-    try:
-        validate_runtime_view_evidence(payload)
-    except RuntimeProfileBindingError as exc:
-        raise ValueError(f"runtime view evidence validation failed: {exc}") from exc
+    # Optional evidence may supply a content identity, but cannot fabricate or
+    # mismatch the video identity merely because its review status says passed.
+    video_id, sha = payload.get("video_id"), payload.get("video_sha256")
+    if not isinstance(video_id, str) or not video_id.strip():
+        raise ValueError("runtime view evidence video_id must be non-empty")
+    if (not isinstance(sha, str) or len(sha) != 64
+            or any(char not in "0123456789abcdefABCDEF" for char in sha)):
+        raise ValueError("runtime view evidence video_sha256 must be a SHA256 digest")
     return payload
 
 
@@ -240,20 +214,15 @@ def _resolve_scoring_feasibility_registry_authority(
         if registry_lifecycle_manifest_path is not None
         else (root / DEFAULT_REGISTRY_LIFECYCLE_MANIFEST).resolve()
     )
-    authority = resolve_runtime_feasibility_registry(manifest_path)
-    requested_path = request.scoring.feasibility_registry
-    if requested_path is not None and requested_path.resolve() != authority.path:
-        raise ValueError(
-            "requested scoring feasibility registry is not authorized by "
-            "registry lifecycle role runtime_feasibility"
-        )
-    return authority
+    return resolve_runtime_feasibility_registry(
+        manifest_path, explicit_path=request.scoring.feasibility_registry)
 
 
 def _verify_scoring_registry_authority_unchanged(
     authority: ResolvedRegistryArtifact,
 ) -> None:
-    if sha256_file(authority.manifest_path).lower() != authority.manifest_sha256:
+    if (authority.manifest_path is not None
+            and sha256_file(authority.manifest_path).lower() != authority.manifest_sha256):
         raise RuntimeError(
             "registry lifecycle manifest changed after production preflight"
         )
@@ -263,24 +232,206 @@ def _verify_scoring_registry_authority_unchanged(
         )
 
 
+def _verify_recovery_artifacts(output_dir: Path, hashes: dict, *, finalized: bool = False) -> None:
+    mutable = {"summary.json", "scoring-readiness.json", "analysis-report.html"}
+    for name, expected in hashes.items():
+        relative = Path(name)
+        path = (output_dir / relative).resolve()
+        if relative.is_absolute() or output_dir.resolve() not in path.parents:
+            raise ValueError("recovery artifact must remain inside the recovery output directory")
+        if (not isinstance(expected, str) or len(expected) != 64
+                or any(character not in "0123456789abcdef" for character in expected.lower())):
+            raise ValueError(f"invalid recovery artifact SHA-256: {name}")
+        if finalized and relative.as_posix() in mutable:
+            continue
+        if not path.is_file() or sha256_file(path).lower() != expected.lower():
+            raise ValueError(f"recovery artifact SHA-256 mismatch: {name}")
+
+
+def finalize_pipeline_artifacts(
+    request: PipelineRequest,
+    summary: dict,
+    *,
+    registry_lifecycle_manifest_path: Path | None = None,
+    registry_authority: ResolvedRegistryArtifact | None = None,
+    report_postprocessing: Callable[[str], None] | None = None,
+    cancellation_callback: Callable[[], None] | None = None,
+    started_at: float | None = None,
+    timings: dict[str, float] | None = None,
+    recovery_metadata: dict | None = None,
+) -> dict:
+    """Finish already-written inference/scoring artifacts without loading a model.
+
+    Normal inference supplies its live clock and stage timings. CPU recovery
+    supplies the original provisional summary and a separately copied output
+    directory, plus source_failed_job_id, source_output_dir and
+    source_artifact_sha256 in recovery_metadata. Only the new summary/report
+    identity changes; immutable frame/event/feature provenance remains intact.
+    The caller owns the job lease, directory clone and database transition.
+    """
+    def check_cancelled() -> None:
+        if cancellation_callback is not None:
+            cancellation_callback()
+
+    check_cancelled()
+    cpu_started_at = time.perf_counter()
+    recovering = recovery_metadata is not None
+    if recovering:
+        if started_at is not None or timings is not None:
+            raise ValueError("CPU recovery must not replace the source inference clock")
+        summary = copy.deepcopy(summary)
+        recovery = copy.deepcopy(recovery_metadata)
+        source_id = recovery.get("source_failed_job_id")
+        if (not isinstance(source_id, str) or not source_id
+                or source_id != summary.get("job_id") or source_id == request.job_id):
+            raise ValueError("CPU recovery requires distinct recovery and original failed job IDs")
+        source_output = recovery.get("source_output_dir")
+        if not isinstance(source_output, str) or not source_output:
+            raise ValueError("CPU recovery requires source_output_dir")
+        source_dir = Path(source_output).resolve()
+        output_dir = request.output_dir.resolve()
+        if output_dir == source_dir or source_dir in output_dir.parents:
+            raise ValueError("CPU recovery must not write inside the original failed output directory")
+        hashes = recovery.get("source_artifact_sha256")
+        if not isinstance(hashes, dict) or not {
+            "frames.jsonl", "summary.json", "scoring-loop-summary.json"
+        }.issubset(hashes):
+            raise ValueError("CPU recovery requires hashes of frames, summary and scoring-loop summary")
+        _verify_recovery_artifacts(output_dir, hashes)
+        # A copied directory must not contain linked writable finalization files.
+        for name in ("summary.json", "scoring-readiness.json", "analysis-report.html"):
+            destination = output_dir / name
+            original = source_dir / name
+            if destination.is_symlink() or (destination.exists() and original.exists()
+                                           and destination.samefile(original)):
+                raise ValueError(f"CPU recovery output aliases the original artifact: {name}")
+        saved_summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
+        if summary != saved_summary:
+            raise ValueError("CPU recovery summary differs from the verified source snapshot")
+        summary["job_id"] = request.job_id
+        summary["reused_inference"] = True
+        summary["source_failed_job_id"] = source_id
+        for key, value in summary.get("artifacts", {}).items():
+            if isinstance(value, str) and Path(value).is_absolute():
+                try:
+                    relative = Path(value).resolve().relative_to(source_dir)
+                except ValueError:
+                    continue
+                summary["artifacts"][key] = relative.as_posix()
+        recovery["mode"] = "cpu_finalization"
+        recovery["status"] = "running"
+        summary["recovery"] = recovery
+        stage_timings: dict[str, float] = Counter()
+    else:
+        if started_at is None or timings is None:
+            raise ValueError("normal finalization requires the original pipeline clock and timings")
+        if summary.get("job_id") != request.job_id:
+            raise ValueError("pipeline summary job_id does not match its request")
+        stage_timings = timings
+
+    authority = registry_authority or _resolve_scoring_feasibility_registry_authority(
+        request, registry_lifecycle_manifest_path=registry_lifecycle_manifest_path,
+    )
+    _verify_scoring_registry_authority_unchanged(authority)
+    if recovering:
+        loop = json.loads((request.output_dir / "scoring-loop-summary.json").read_text(encoding="utf-8"))
+        expected_registry = {
+            "authority_version": authority.authority_version,
+            "role": authority.role,
+            "kind": authority.kind,
+            "lifecycle": authority.lifecycle,
+            "embedded_version": authority.embedded_version,
+            "manifest_sha256": authority.manifest_sha256,
+            "artifact_sha256": authority.file_sha256,
+        }
+        for source_loop in (loop, summary.get("minimum_scoring_loop", {})):
+            provenance = source_loop.get("provenance", {})
+            lifecycle = provenance.get("registry_lifecycle", {})
+            if (provenance.get("pipeline_job_id") != source_id
+                    or provenance.get("feasibility_registry_sha256") != authority.file_sha256
+                    or any(lifecycle.get(key) != value for key, value in expected_registry.items())):
+                raise ValueError("CPU recovery registry/source identity differs from production provenance")
+
+    frames_path = request.output_dir / "frames.jsonl"
+    summary_path = request.output_dir / "summary.json"
+    processed = summary["processing"]["processed_frames"]
+
+    def update_timing() -> None:
+        if recovering:
+            summary["recovery"].update(
+                cpu_finalization_elapsed_seconds=safe_float(time.perf_counter() - cpu_started_at, 3),
+                cpu_stage_seconds={key: safe_float(value, 3) for key, value in stage_timings.items()},
+            )
+        else:
+            elapsed = time.perf_counter() - started_at
+            summary["processing"].update(
+                elapsed_seconds=safe_float(elapsed, 3),
+                effective_processed_fps=safe_float(processed / max(elapsed, 1e-6), 3),
+                stage_seconds={key: safe_float(value, 3) for key, value in stage_timings.items()},
+            )
+
+    check_cancelled()
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    stage_started = time.perf_counter()
+    summary["validation"] = validate_run_artifacts(request.output_dir)
+    stage_timings["artifact_validation_seconds"] = stage_timings.get("artifact_validation_seconds", 0) + time.perf_counter() - stage_started
+    check_cancelled()
+    if report_postprocessing is not None:
+        report_postprocessing("scoring_readiness")
+    stage_started = time.perf_counter()
+    scoring_readiness_path = request.output_dir / "scoring-readiness.json"
+    scoring_readiness = analyze_scoring_readiness(summary, frames_path)
+    scoring_readiness_path.write_text(
+        json.dumps(scoring_readiness, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    summary["scoring_readiness"] = scoring_readiness["summary"]
+    summary["pose_assessment"] = scoring_readiness["pose_assessment"]
+    summary["artifacts"]["scoring_readiness_json"] = relative_or_absolute(scoring_readiness_path, request.output_dir)
+    stage_timings["report_validation_seconds"] = stage_timings.get("report_validation_seconds", 0) + time.perf_counter() - stage_started
+    update_timing()
+    check_cancelled()
+    stage_started = time.perf_counter()
+    analysis_report_path = request.output_dir / "analysis-report.html"
+    write_analysis_report(summary, scoring_readiness, analysis_report_path)
+    summary["artifacts"]["analysis_report_html"] = relative_or_absolute(analysis_report_path, request.output_dir)
+    _verify_scoring_registry_authority_unchanged(authority)
+    stage_timings["report_export_seconds"] = stage_timings.get("report_export_seconds", 0) + time.perf_counter() - stage_started
+    update_timing()
+    check_cancelled()
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    if recovering:
+        # Validate the completed summary, not just the provisional one. The
+        # existing run validator does not inspect the two newly written reports.
+        stage_started = time.perf_counter()
+        summary["validation"] = validate_run_artifacts(request.output_dir)
+        if (json.loads(scoring_readiness_path.read_text(encoding="utf-8")) != scoring_readiness
+                or not analysis_report_path.is_file() or analysis_report_path.stat().st_size == 0):
+            raise ValueError("CPU finalization report export is incomplete")
+        _verify_recovery_artifacts(request.output_dir, hashes, finalized=True)
+        _verify_scoring_registry_authority_unchanged(authority)
+        stage_timings["final_artifact_validation_seconds"] = time.perf_counter() - stage_started
+        check_cancelled()
+        summary["recovery"]["status"] = "completed"
+        update_timing()
+        summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    return summary
+
+
 def load_pipeline_calibrations(
     paths: list[Path] | tuple[Path, ...],
     *,
     trusted_ledger_path: Path | None = None,
     feasibility_registry: dict | None = None,
 ) -> tuple[dict[str, object], list[dict]]:
-    """Load only production assets authorized by an operator-controlled ledger.
+    """Load explicit scoring mathematics and retain its exact source identity.
 
-    A ``passed`` field inside an asset is never a trust root. The canonical asset
-    hash and its complete promotion lineage must match one active entry in a
-    versioned ledger whose path is selected by the deployment operator, outside
-    ordinary job request JSON.
+    Release ledgers and feasibility maturity are optional audit metadata. They
+    cannot turn a missing threshold into a score or veto otherwise valid math.
+    Legacy keyword arguments remain accepted for callers with saved settings.
     """
 
     calibrations: dict[str, object] = {}
     provenance: list[dict] = []
-    trusted_ledger: dict | None = None
-    resolved_ledger_path: Path | None = None
     for raw_path in paths:
         path = Path(raw_path).resolve()
         if not path.exists() or not path.is_file():
@@ -289,59 +440,13 @@ def load_pipeline_calibrations(
             payload = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             raise ValueError(f"invalid scoring calibration JSON {path}: {exc}") from exc
-        backend = payload.get("backend")
-        if backend == "threshold_rule":
-            validate_threshold_calibration(payload)
-        elif backend == "ordinal_regression":
-            validate_ordinal_model(payload)
-        else:
-            raise ValueError(f"unsupported scoring calibration backend in {path}")
-        if payload.get("artifact_scope") != "production":
-            raise ValueError(
-                "pipeline requests accept production-scoped calibration assets only"
-            )
-        if trusted_ledger is None:
-            if trusted_ledger_path is None:
-                raise ValueError(
-                    "production calibration requires an operator-configured trusted "
-                    "promotion ledger"
-                )
-            resolved_ledger_path = Path(trusted_ledger_path).resolve()
-            if not resolved_ledger_path.exists() or not resolved_ledger_path.is_file():
-                raise FileNotFoundError(
-                    "trusted calibration promotion ledger is missing: "
-                    f"{resolved_ledger_path}"
-                )
-            try:
-                trusted_ledger = json.loads(
-                    resolved_ledger_path.read_text(encoding="utf-8")
-                )
-            except json.JSONDecodeError as exc:
-                raise ValueError(
-                    f"invalid trusted promotion ledger JSON {resolved_ledger_path}: {exc}"
-                ) from exc
-        try:
-            trusted_calibration = authorize_production_asset_with_trusted_ledger(
-                payload, trusted_ledger
-            )
-            if feasibility_registry is None:
-                raise CalibrationPromotionError(
-                    "current runtime feasibility registry is required for production "
-                    "calibration"
-                )
-            trusted_calibration = bind_trusted_production_calibration_to_registry(
-                trusted_calibration,
-                feasibility_registry,
-            )
-            promotion_audit = trusted_calibration.authorization
-        except CalibrationPromotionError as exc:
-            raise ValueError(
-                f"production calibration promotion verification failed for {path}: {exc}"
-            ) from exc
+        validate_scoring_rule(payload)
+        backend = payload["backend"]
         indicator_id = str(payload["indicator_id"])
         if indicator_id in calibrations:
             raise ValueError(f"duplicate scoring calibration for {indicator_id}")
-        calibrations[indicator_id] = trusted_calibration
+        calibrations[indicator_id] = payload
+        independent_test = payload.get("independent_test")
         provenance.append(
             {
                 "indicator_id": indicator_id,
@@ -350,46 +455,10 @@ def load_pipeline_calibrations(
                 or payload.get("model_version"),
                 "path": str(path),
                 "sha256": sha256_file(path),
-                "ground_truth_dataset_version": payload[
-                    "ground_truth_dataset_version"
-                ],
-                "independent_test_status": payload["independent_test"]["status"],
-                "trusted_promotion_ledger_path": str(resolved_ledger_path),
-                "trusted_promotion_ledger_version": promotion_audit["ledger_version"],
-                "trusted_promotion_ledger_entry_id": promotion_audit["entry_id"],
-                "promotion_id": promotion_audit["promotion_id"],
-                "promotion_version": promotion_audit["promotion_version"],
-                "promotion_lineage_sha256": promotion_audit["lineage_sha256"],
-                "promotion_report_sha256": promotion_audit[
-                    "promotion_report_sha256"
-                ],
-                "promoted_registry_version": promotion_audit[
-                    "promoted_registry_version"
-                ],
-                "promoted_registry_content_sha256": promotion_audit[
-                    "promoted_registry_content_sha256"
-                ],
-                "runtime_registry_version": promotion_audit[
-                    "runtime_registry_version"
-                ],
-                "runtime_registry_content_sha256": promotion_audit[
-                    "runtime_registry_content_sha256"
-                ],
-                "runtime_registry_indicator_id": promotion_audit[
-                    "runtime_registry_indicator_id"
-                ],
-                "runtime_registry_indicator_level": promotion_audit[
-                    "runtime_registry_indicator_level"
-                ],
-                "maturity_evidence_bundle_id": promotion_audit[
-                    "maturity_evidence_bundle_id"
-                ],
-                "maturity_evidence_content_sha256": promotion_audit[
-                    "maturity_evidence_content_sha256"
-                ],
-                "maturity_evidence_final_transition_sha256": promotion_audit[
-                    "maturity_evidence_final_transition_sha256"
-                ],
+                "artifact_scope": payload.get("artifact_scope"),
+                "ground_truth_dataset_version": payload.get("ground_truth_dataset_version"),
+                "independent_test_status": independent_test.get("status") if isinstance(independent_test, dict) else None,
+                "validation_scope": "explicit_rule_mathematics_only_not_accuracy_or_release_approval",
             }
         )
     return calibrations, provenance
@@ -403,8 +472,34 @@ def run_pipeline(
     trusted_runtime_binding_registry_path: Path | None = None,
     runtime_view_evidence_path: Path | None = None,
     registry_lifecycle_manifest_path: Path | None = None,
+    cancellation_callback: Callable[[], None] | None = None,
 ) -> dict:
+    """Run with deterministic cleanup; cancellation callback exceptions propagate."""
+    with ExitStack() as cleanup:
+        return _run_pipeline(
+            request, perception, progress_callback, trusted_promotion_ledger_path,
+            trusted_runtime_binding_registry_path, runtime_view_evidence_path,
+            registry_lifecycle_manifest_path, cancellation_callback, cleanup,
+        )
+
+
+def _run_pipeline(
+    request: PipelineRequest,
+    perception: Yolo26Perception | None,
+    progress_callback: Callable[[dict], None] | None,
+    trusted_promotion_ledger_path: Path | None,
+    trusted_runtime_binding_registry_path: Path | None,
+    runtime_view_evidence_path: Path | None,
+    registry_lifecycle_manifest_path: Path | None,
+    cancellation_callback: Callable[[], None] | None,
+    cleanup: ExitStack,
+) -> dict:
+    def check_cancelled() -> None:
+        if cancellation_callback is not None:
+            cancellation_callback()
+
     def emit_progress(payload: dict) -> None:
+        check_cancelled()
         if progress_callback is None:
             return
         try:
@@ -415,6 +510,7 @@ def run_pipeline(
             return
 
     started_at = time.perf_counter()
+    check_cancelled()
     if not request.video_path.exists():
         raise FileNotFoundError(f"input video is missing: {request.video_path}")
     input_video_sha256 = sha256_file(request.video_path)
@@ -427,17 +523,12 @@ def run_pipeline(
     # feature-record assertion. Load and validate it before creating a run
     # directory, loading GPU models, or writing inference artifacts.
     feasibility_registry = registry_authority.payload
-    # Fail before expensive GPU work if a requested production calibration is
-    # malformed, duplicated, test-only or otherwise unsafe. Validation also
+    # Fail before expensive GPU work if explicit scoring mathematics are
+    # malformed or duplicated. Validation also
     # precedes output-directory creation so a rejected request leaves no run shell.
-    operator_ledger_path = trusted_promotion_ledger_path
-    if operator_ledger_path is None and request.scoring.calibration_assets:
-        operator_ledger_path = (
-            Path(__file__).resolve().parents[2] / DEFAULT_TRUSTED_PROMOTION_LEDGER
-        ).resolve()
     calibrations, calibration_provenance = load_pipeline_calibrations(
         request.scoring.calibration_assets,
-        trusted_ledger_path=operator_ledger_path,
+        trusted_ledger_path=trusted_promotion_ledger_path,
         feasibility_registry=feasibility_registry,
     )
     runtime_binding_registry: dict | None = None
@@ -469,24 +560,18 @@ def run_pipeline(
             expected_video_id=scoring_reference_video_id,
             expected_video_sha256=input_video_sha256,
         )
-    if calibrations:
-        if trusted_runtime_binding_registry_path is None:
-            raise ValueError(
-                "production calibration requires an operator-configured trusted "
-                "runtime-profile binding registry"
-            )
-        if runtime_view_evidence_path is None:
-            raise ValueError(
-                "production calibration requires operator-supplied accepted "
-                "per-video runtime view evidence"
-            )
+    if trusted_runtime_binding_registry_path is not None:
         resolved_binding_path = Path(
             trusted_runtime_binding_registry_path
         ).resolve()
-        resolved_view_path = Path(runtime_view_evidence_path).resolve()
         runtime_binding_registry = load_trusted_runtime_binding_registry(
             resolved_binding_path
         )
+        runtime_authorization_files["trusted_runtime_binding_registry"] = {
+            "path": str(resolved_binding_path), "sha256": sha256_file(resolved_binding_path),
+        }
+    if runtime_view_evidence_path is not None:
+        resolved_view_path = Path(runtime_view_evidence_path).resolve()
         runtime_view_evidence = load_runtime_view_evidence(resolved_view_path)
         if runtime_view_evidence["video_sha256"].lower() != input_video_sha256.lower():
             raise ValueError(
@@ -496,18 +581,12 @@ def run_pipeline(
         # request job_id remains execution provenance and may legitimately
         # change when the same reviewed video is reprocessed.
         scoring_video_id = runtime_view_evidence["video_id"]
-        runtime_authorization_files = {
-            "trusted_runtime_binding_registry": {
-                "path": str(resolved_binding_path),
-                "sha256": sha256_file(resolved_binding_path),
-            },
-            "runtime_view_evidence": {
+        runtime_authorization_files["runtime_view_evidence"] = {
                 "path": str(resolved_view_path),
                 "sha256": sha256_file(resolved_view_path),
-            },
         }
     if scoring_reference_video_id is not None:
-        if calibrations and scoring_video_id != scoring_reference_video_id:
+        if runtime_view_evidence is not None and scoring_video_id != scoring_reference_video_id:
             raise ValueError(
                 "scoring reference context video_id does not match trusted runtime "
                 "view evidence"
@@ -541,6 +620,8 @@ def run_pipeline(
             pose_config=request.models.pose_config,
             pose_native_keypoint_format=request.models.pose_native_keypoint_format,
         )
+        if callable(getattr(perception, "close", None)):
+            cleanup.callback(perception.close)
     else:
         loaded_pose = perception.pose_metadata()
         expected = (
@@ -573,7 +654,46 @@ def run_pipeline(
     video_path = request.output_dir / "annotated.mp4"
     preview_path = request.output_dir / "preview.jpg"
 
-    capture = cv2.VideoCapture(str(request.video_path))
+    sam_enabled = perception.pose_metadata()["backend"] == "sam3d"
+    sam_records: list[dict] = []
+    sam_frames_path = request.output_dir / "sam3d_frames.jsonl"
+    sam_evaluation_path = request.output_dir / "sam3d_evaluation.json"
+    sam_file = None
+    mesh_ledger = None
+    mesh_archiver = None
+    sam3d_mesh = None
+    if sam_enabled:
+        from rallymate_vision.sam3d_runner import PrefetchSourcePTSDecoder, SourcePTSDecoder
+        from rallymate_vision.sam3d_mesh import LEDGER_NAME, archive_mesh_records
+        sam_runtime_dir = Path(os.environ.get(
+            "RALLYMATE_SAM3D_RUNTIME", Path(__file__).resolve().parents[2] / "runtime" / "sam3d",
+        ))
+        mesh_ledger = cleanup.enter_context(
+            (request.output_dir / LEDGER_NAME).open("w", encoding="utf-8", newline="\n")
+        )
+        prefetch_depth = int(os.environ.get("RALLYMATE_SAM3D_PREFETCH_FRAMES", "0"))
+        if not 0 <= prefetch_depth <= 8:
+            raise ValueError("RALLYMATE_SAM3D_PREFETCH_FRAMES must be between 0 and 8")
+        capture = (PrefetchSourcePTSDecoder(request.video_path, depth=prefetch_depth)
+                   if prefetch_depth else SourcePTSDecoder(request.video_path))
+        cleanup.callback(capture.release)
+        backend = getattr(perception, "pose_backend", None)
+        if callable(getattr(backend, "reset_sequence", None)):
+            backend.reset_sequence()
+        sam_file = cleanup.enter_context(sam_frames_path.open("w", encoding="utf-8", newline="\n"))
+        archive_mode = os.environ.get("RALLYMATE_SAM3D_ASYNC_MESH_ARCHIVE", "0")
+        if archive_mode not in {"0", "1"}:
+            raise ValueError("RALLYMATE_SAM3D_ASYNC_MESH_ARCHIVE must be 0 or 1")
+        if archive_mode == "1":
+            from rallymate_vision.sam3d_mesh_archive import BoundedMeshArchiver
+            mesh_archiver = BoundedMeshArchiver(request.output_dir, sam_runtime_dir,
+                                               max_pending_frames=2)
+            # Registered after both output streams: join pending disk work
+            # before either stream can close, including failure/cancellation.
+            cleanup.callback(mesh_archiver.close)
+    else:
+        capture = cv2.VideoCapture(str(request.video_path))
+        cleanup.callback(capture.release)
     start_frame = int(request.processing.start_ms / 1000.0 * metadata.fps)
     end_frame = (
         int(request.processing.end_ms / 1000.0 * metadata.fps)
@@ -602,6 +722,7 @@ def run_pipeline(
     # for variable-frame-rate files. Frame-index/FPS seeking is only an estimate.
     clock = SourceVideoClock(metadata.fps)
     camera_guard = CameraMotionGuard()
+    manual_court = FixedManualCourtObservation(request.court)
     first_processed_source_frame = None
     last_processed_timestamp_ms = None
     last_processed_source_frame = None
@@ -617,6 +738,7 @@ def run_pipeline(
             max(output_fps, 1.0),
             (metadata.width, metadata.height),
         )
+        cleanup.callback(writer.release)
         if not writer.isOpened():
             capture.release()
             raise RuntimeError("could not initialize annotated MP4 writer")
@@ -631,9 +753,27 @@ def run_pipeline(
     timings = Counter()
     court_status_counts: Counter[str] = Counter()
 
+    def publish_sam_records(records, mesh_records):
+        # Only this control thread publishes verified native rows, in source
+        # order. The archive worker owns copies and never writes these streams.
+        for mesh_record in mesh_records:
+            mesh_ledger.write(json.dumps(mesh_record, ensure_ascii=False, allow_nan=False) + "\n")
+        sam_records.extend(records)
+        for sam_record in records:
+            sam_file.write(json.dumps(sam_record, ensure_ascii=False, allow_nan=False) + "\n")
+        sam_file.flush()
+
+    def publish_archived_batches(batches):
+        for batch in batches:
+            publish_sam_records(batch.records, batch.mesh_records)
+
     with frames_path.open("w", encoding="utf-8", newline="\n") as frames_file:
         while source_frame_index < metadata.frame_count:
+            check_cancelled()
+            stage_started = time.perf_counter()
             ok, frame = capture.read()
+            timings["decode_seconds"] += time.perf_counter() - stage_started
+            check_cancelled()
             if not ok:
                 break
             timestamp_ms, timestamp_source = clock.resolve(
@@ -652,15 +792,23 @@ def run_pipeline(
             last_processed_timestamp_ms = timestamp_ms
             last_processed_source_frame = source_frame_index
 
+            stage_started = time.perf_counter()
             quality = analyze_frame(frame)
             quality_samples.append(quality)
+            timings["frame_quality_seconds"] += time.perf_counter() - stage_started
 
             stage_started = time.perf_counter()
             detections = perception.detect(frame)
             timings["detection_seconds"] += time.perf_counter() - stage_started
+            detection_timing = getattr(perception, "last_detection_timing", None)
+            if isinstance(detection_timing, dict):
+                for key, value in detection_timing.items():
+                    timings[f"detection_component_{key.removesuffix('_ms')}_seconds"] += value / 1000
+            stage_started = time.perf_counter()
             detections = tracker.update(
                 detections, metadata.width, metadata.height, timestamp_ms=timestamp_ms
             )
+            timings["tracking_seconds"] += time.perf_counter() - stage_started
 
             players = [
                 detection
@@ -669,9 +817,11 @@ def run_pipeline(
             ]
             if players:
                 person_frame_count += 1
+            stage_started = time.perf_counter()
             camera_motion = camera_guard.update(
                 frame, [player["bbox_px"] for player in players], timestamp_ms
             )
+            timings["camera_motion_seconds"] += time.perf_counter() - stage_started
             if timestamp_source != "decoder_pts":
                 camera_motion.update(status="unavailable", fixed_camera_supported=False,
                                      compensation_valid=False, matrix_to_reference=None,
@@ -681,18 +831,46 @@ def run_pipeline(
             camera_compensated_frames += int(camera_motion["status"] == "moving"
                                              and camera_motion.get("compensation_valid") is True)
             stage_started = time.perf_counter()
-            poses = perception.estimate_poses(
-                frame, players, request.processing.max_players
-            )
+            check_cancelled()
+            if sam_enabled:
+                source_timestamp_ms = (round(capture.binding["timestamp_ms"])
+                                       if capture.binding.get("timestamp_ms") is not None else None)
+                source_binding = {
+                    **capture.binding, "video_sha256": input_video_sha256,
+                    "timestamp_ms": source_timestamp_ms,
+                    "frame_index": source_frame_index, "processed_index": processed,
+                    "camera_reference_epoch": camera_motion["reference_epoch"],
+                    "relative_timestamp_ms": timestamp_ms,
+                    "timestamp_source": timestamp_source,
+                }
+                poses = perception.estimate_poses(
+                    frame, players, request.processing.max_players, source_binding=source_binding,
+                )
+                frame_sam_records = perception.pose_frame_records()
+                mesh_started = time.perf_counter()
+                if mesh_archiver is not None:
+                    publish_archived_batches(mesh_archiver.submit(frame_sam_records))
+                    timings["mesh_archive_submit_collect_seconds"] += time.perf_counter() - mesh_started
+                else:
+                    mesh_records = archive_mesh_records(frame_sam_records, request.output_dir, sam_runtime_dir)
+                    timings["mesh_capture_archive_seconds"] += time.perf_counter() - mesh_started
+                    publish_sam_records(frame_sam_records, mesh_records)
+            else:
+                poses = perception.estimate_poses(
+                    frame, players, request.processing.max_players
+                )
+            check_cancelled()
             timings["pose_seconds"] += time.perf_counter() - stage_started
             if poses:
                 pose_frame_count += 1
 
-            # Court localization is deliberately disabled. Pose, ball and
-            # racket evidence remain image-coordinate based and do not depend
-            # on a guessed polygon.
-            court = _disabled_court_observation()
+            # Only an explicit manual outer-corner polygon can produce a
+            # display projection. Camera changes permanently invalidate it;
+            # default/automatic localization and court scoring stay disabled.
+            stage_started = time.perf_counter()
+            court = manual_court.observe(frame, camera_motion)
             court_status_counts[court["status"]] += 1
+            timings["court_projection_seconds"] += time.perf_counter() - stage_started
 
             seen_this_frame: set[str] = set()
             for detection in detections:
@@ -730,6 +908,16 @@ def run_pipeline(
                     },
                 },
             }
+            if sam_enabled:
+                record["frame"].update({**capture.binding, "timestamp_ms": timestamp_ms,
+                                        "source_timestamp_ms": source_timestamp_ms,
+                                        "video_sha256": input_video_sha256})
+                record["sam3d_requests"] = [
+                    {key: row.get(key) for key in ("person_track_id", "selection_epoch", "status", "reason",
+                                                  "inference_ms", "peak_memory_bytes")}
+                    for row in frame_sam_records
+                ]
+            stage_started = time.perf_counter()
             pose_diagnostics = bind_pose_association_diagnostics(
                 getattr(perception, "last_pose_association_diagnostics", None),
                 record["frame"],
@@ -738,8 +926,10 @@ def run_pipeline(
                 record["pose_association"] = pose_diagnostics
             validate_frame_observation(record)
             frames_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+            timings["frame_validation_serialization_seconds"] += time.perf_counter() - stage_started
 
             if writer is not None:
+                stage_started = time.perf_counter()
                 annotated = annotate_frame(
                     frame,
                     detections,
@@ -752,10 +942,12 @@ def run_pipeline(
                 writer.write(annotated)
                 if processed == 0:
                     cv2.imwrite(str(preview_path), annotated)
+                timings["replay_frame_write_seconds"] += time.perf_counter() - stage_started
 
             processed += 1
             source_frame_index += 1
             if processed == 1 or processed % progress_interval == 0:
+                stage_started = time.perf_counter()
                 # Let live trajectory readers see complete rows before the UI
                 # receives progress for those frames.
                 frames_file.flush()
@@ -773,6 +965,7 @@ def run_pipeline(
                         "message": f"正在推理第 {processed}/{planned_frames} 帧",
                     }
                 )
+                timings["progress_callback_seconds"] += time.perf_counter() - stage_started
             if (
                 request.processing.max_frames is not None
                 and processed >= request.processing.max_frames
@@ -780,12 +973,41 @@ def run_pipeline(
                 break
 
     capture.release()
+    decoder_timing = getattr(capture, "timing_seconds", None)
+    if isinstance(decoder_timing, dict):
+        for key, value in decoder_timing.items():
+            timings[f"decode_component_{key}"] += value
+    sam_evaluation = None
+    if sam_enabled:
+        check_cancelled()
+        if mesh_archiver is not None:
+            stage_started = time.perf_counter()
+            publish_archived_batches(mesh_archiver.finish())
+            mesh_ledger.flush()
+            timings["mesh_archive_drain_seconds"] += time.perf_counter() - stage_started
+            check_cancelled()
+        from rallymate_vision.sam3d_evaluation import evaluate_sam3d_records
+        sam_file.flush()
+        sam_evaluation = evaluate_sam3d_records(
+            sam_records, max_frame_gap=request.processing.frame_stride,
+            max_gap_ms=max(160, 1500 * request.processing.frame_stride / metadata.fps),
+        )
+        sam_evaluation["model"] = perception.pose_metadata()
+        sam_evaluation["runtime"].update(
+            warmup_or_model_load_included=any(row.get("first_model_call") for row in sam_records),
+            model_load_included=False,
+            first_call_may_include_cuda_warmup=any(row.get("first_model_call") for row in sam_records),
+            memory_scope="current_process_cuda_allocated_absolute_peak_includes_other_loaded_models",
+        )
+        sam_evaluation_path.write_text(json.dumps(sam_evaluation, ensure_ascii=False, indent=2, allow_nan=False),
+                                       encoding="utf-8")
     if processed == 0:
         if writer is not None:
             writer.release()
         raise RuntimeError("no frames were processed; check start/end/stride settings")
 
     def report_postprocessing(phase: str, **counts) -> None:
+        check_cancelled()
         emit_progress(postprocess_progress(
             phase, processed_frames=processed, total_frames=planned_frames, **counts,
         ))
@@ -820,6 +1042,25 @@ def run_pipeline(
                 "timing_warning": "constant_fps_fallback_replay_may_not_match_source_timing",
             }
     timings["replay_export_seconds"] += time.perf_counter() - stage_started
+    if sam_enabled and any(row.get("mesh_artifact") for row in sam_records):
+        from rallymate_vision.mesh_render_task import create_mesh_render_task
+        mesh_ledger.flush()
+        check_cancelled()
+        stage_started = time.perf_counter()
+        try:
+            sam3d_mesh = create_mesh_render_task(
+                job_id=request.job_id, source=request.video_path,
+                output_dir=request.output_dir, runtime_dir=sam_runtime_dir,
+                first_frame=first_processed_source_frame or 0,
+                last_frame=last_processed_source_frame or 0,
+                stride=request.processing.frame_stride,
+                source_sha256=input_video_sha256, model=perception.pose_metadata(),
+            )
+        except Exception as exc:
+            check_cancelled()
+            sam3d_mesh = {"status": "failed", "reason": "official_mesh_request_failed",
+                          "error_type": type(exc).__name__, "geometry_retained": True}
+        timings["official_mesh_request_seconds"] += time.perf_counter() - stage_started
 
     primary_timeline_path = request.output_dir / "primary-player.jsonl"
     primary_summary_path = request.output_dir / "primary-player-summary.json"
@@ -844,19 +1085,10 @@ def run_pipeline(
     # Fail closed if an operator replaces the registry while inference is in
     # progress. The preflight snapshot remains the authorization source.
     _verify_scoring_registry_authority_unchanged(registry_authority)
+    for label, evidence in runtime_authorization_files.items():
+        if sha256_file(Path(evidence["path"])) != evidence["sha256"]:
+            raise RuntimeError(f"{label} changed after preflight")
     if calibrations:
-        assert trusted_runtime_binding_registry_path is not None
-        assert runtime_view_evidence_path is not None
-        if sha256_file(Path(trusted_runtime_binding_registry_path).resolve()) != (
-            runtime_authorization_files["trusted_runtime_binding_registry"]["sha256"]
-        ):
-            raise RuntimeError(
-                "trusted runtime-profile binding registry changed after preflight"
-            )
-        if sha256_file(Path(runtime_view_evidence_path).resolve()) != (
-            runtime_authorization_files["runtime_view_evidence"]["sha256"]
-        ):
-            raise RuntimeError("runtime view evidence changed after preflight")
         if sha256_file(request.video_path).lower() != input_video_sha256.lower():
             raise RuntimeError("input video changed after production preflight")
     if scoring_reference_context_path is not None:
@@ -890,7 +1122,7 @@ def run_pipeline(
                 "kind": registry_authority.kind,
                 "lifecycle": registry_authority.lifecycle,
                 "embedded_version": registry_authority.embedded_version,
-                "manifest_path": str(registry_authority.manifest_path),
+                "manifest_path": str(registry_authority.manifest_path) if registry_authority.manifest_path is not None else None,
                 "manifest_sha256": registry_authority.manifest_sha256,
                 "artifact_path": str(registry_authority.path),
                 "artifact_sha256": registry_authority.file_sha256,
@@ -999,8 +1231,8 @@ def run_pipeline(
         "body_pose": coverage["pose_frame_fraction"] >= 0.75,
         "ball_observation": coverage["ball_frame_fraction"] >= 0.5,
         "racket_observation": coverage["racket_frame_fraction"] >= 0.5,
-        "court_region": coverage["court_detected_fraction"] >= 0.5,
-        "court_calibration": coverage["court_calibrated_fraction"] >= 0.5,
+        "court_region": False,  # Manual calibration is for display only.
+        "court_calibration": False,
     }
     hit_event_ready = all(
         capability_checks[name]
@@ -1086,8 +1318,8 @@ def run_pipeline(
                 point["downstream_joint_id"]
                 for point in native_pose_schema["keypoints"]
             ],
-            "court_detector": "disabled",
-            "court_refresh_policy": "disabled",
+            "court_detector": "manual_fixed_camera_display_only" if manual_court.enabled else "disabled",
+            "court_refresh_policy": "per_frame_camera_guard_no_reuse_after_break" if manual_court.enabled else "disabled",
         },
         "processing": {
             "processed_frames": processed,
@@ -1104,6 +1336,13 @@ def run_pipeline(
             "stage_seconds": {
                 key: safe_float(value, 3) for key, value in timings.items()
             },
+            "stage_timing_semantics": "wall_clock; stages are partial and residual orchestration is not separately assigned; component breakdowns must not be added to parent stages; with prefetch decoder producer work overlaps consumer stages; SAM CUDA event spans and IPC waits are retained per native record; first model call may include CUDA warmup while eager model loading precedes this pipeline",
+            "source_prefetch": ({"queue_capacity_frames": prefetch_depth,
+                                 "decoded_frames": getattr(capture, "produced_frames", None),
+                                 "consumed_frames": getattr(capture, "consumed_frames", None),
+                                 "semantics": "sequential_source_pixels_and_PTS_no_frame_skipping"}
+                                if sam_enabled else None),
+            **({"mesh_archive": mesh_archiver.receipt} if mesh_archiver is not None else {}),
         },
         "quality": quality_summary,
         "counts": {
@@ -1123,6 +1362,10 @@ def run_pipeline(
             "scoring_reference_context"
         ],
         "scoring_state": scoring_loop["summary"]["result_state"],
+        "sam3d_measurement": ({"status": sam_evaluation["status"], "counts": sam_evaluation["counts"],
+                                "accuracy_validated": False, "confidence_available": False,
+                                "camera_intrinsics": "official_default_fov_uncalibrated"}
+                               if sam_evaluation is not None else None),
         "next_stage": {
             "ready": hit_event_ready,
             "ready_for_hit_event_detection": hit_event_ready,
@@ -1143,7 +1386,7 @@ def run_pipeline(
             "contract": "frame observations keyed by timestamp_ms and track_id",
             "limitations": [
                 "COCO sports-ball and tennis-racket detections are generic baselines",
-                "court localization is disabled; court-dependent metrics remain unavailable",
+                "manual court calibration supports fixed-camera display only; court-dependent scoring remains unavailable",
                 "racket face and sweet-spot keypoints require a custom model",
             ],
             "requirements_gap": {
@@ -1155,6 +1398,9 @@ def run_pipeline(
         "runtime": runtime,
         "artifacts": {
             "frames_jsonl": relative_or_absolute(frames_path, request.output_dir),
+            "sam3d_frames_jsonl": "sam3d_frames.jsonl" if sam_enabled else None,
+            "sam3d_evaluation_json": "sam3d_evaluation.json" if sam_enabled else None,
+            "sam3d_mesh": sam3d_mesh,
             "summary_json": relative_or_absolute(summary_path, request.output_dir),
             "annotated_video": (
                 relative_or_absolute(video_path, request.output_dir)
@@ -1193,47 +1439,12 @@ def run_pipeline(
             ),
         },
     }
-    summary_path.write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    return finalize_pipeline_artifacts(
+        request,
+        summary,
+        registry_authority=registry_authority,
+        report_postprocessing=report_postprocessing,
+        cancellation_callback=check_cancelled,
+        started_at=started_at,
+        timings=timings,
     )
-    stage_started = time.perf_counter()
-    summary["validation"] = validate_run_artifacts(request.output_dir)
-    timings["artifact_validation_seconds"] += time.perf_counter() - stage_started
-    report_postprocessing("scoring_readiness")
-    stage_started = time.perf_counter()
-    scoring_readiness_path = request.output_dir / "scoring-readiness.json"
-    scoring_readiness = analyze_scoring_readiness(summary, frames_path)
-    scoring_readiness_path.write_text(
-        json.dumps(scoring_readiness, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    summary["scoring_readiness"] = scoring_readiness["summary"]
-    summary["pose_assessment"] = scoring_readiness["pose_assessment"]
-    summary["artifacts"]["scoring_readiness_json"] = relative_or_absolute(
-        scoring_readiness_path, request.output_dir
-    )
-    timings["report_validation_seconds"] += time.perf_counter() - stage_started
-    elapsed = time.perf_counter() - started_at
-    summary["processing"].update(
-        elapsed_seconds=safe_float(elapsed, 3),
-        effective_processed_fps=safe_float(processed / max(elapsed, 1e-6), 3),
-        stage_seconds={key: safe_float(value, 3) for key, value in timings.items()},
-    )
-    stage_started = time.perf_counter()
-    analysis_report_path = request.output_dir / "analysis-report.html"
-    write_analysis_report(summary, scoring_readiness, analysis_report_path)
-    summary["artifacts"]["analysis_report_html"] = relative_or_absolute(
-        analysis_report_path, request.output_dir
-    )
-    _verify_scoring_registry_authority_unchanged(registry_authority)
-    timings["report_export_seconds"] += time.perf_counter() - stage_started
-    elapsed = time.perf_counter() - started_at
-    summary["processing"].update(
-        elapsed_seconds=safe_float(elapsed, 3),
-        effective_processed_fps=safe_float(processed / max(elapsed, 1e-6), 3),
-        stage_seconds={key: safe_float(value, 3) for key, value in timings.items()},
-    )
-    summary_path.write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    return summary

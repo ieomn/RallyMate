@@ -70,7 +70,7 @@ async function withMocks(fetchMock, callback) {
   try { return await callback(); } finally { globalThis.fetch = originalFetch; globalThis.__env = originalEnv; }
 }
 const jobId = "job_12345678";
-const observedPayload = { status: "ready", job_id: jobId, technique_assessment: { family_summary: { footwork: { observed_count: 1 } }, techniques: [{ family: "footwork", name_zh: "回位", status: "ready", observed: true, phase_statuses: [] }] } };
+const observedPayload = { advice_context_version: "advice-context-v1", technique: "步伐", status: "ready", job_id: jobId, technique_assessment: { family_summary: { footwork: { observed_count: 1 } }, techniques: [{ family: "footwork", name_zh: "回位", status: "ready", observed: true, phase_statuses: [] }] } };
 
 test("no video does not spend a provider call or invent personalized analysis", async () => {
   await withMocks(async () => { throw new Error("no fetch expected"); }, async () => {
@@ -83,8 +83,8 @@ test("no video does not spend a provider call or invent personalized analysis", 
 test("high footwork evidence cannot trigger bottom-line advice or a provider call", async () => {
   let calls = 0;
   await withMocks(async url => {
-    calls += 1; assert.match(String(url), /demo-result$/);
-    return Response.json({ ...observedPayload, technique_assessment: { ...observedPayload.technique_assessment, overall_evidence_score_0_to_100: 99, family_summary: { baseline: { observed_count: 0, recognition_status: "motion_unavailable" } }, techniques: [...observedPayload.technique_assessment.techniques, { family: "baseline", name_zh: "正手", observed: false, status: "not_observed" }] } });
+    calls += 1; assert.match(String(url), /advice-evidence\?technique=/);
+    return Response.json({ ...observedPayload, technique: "底线击球", technique_assessment: { ...observedPayload.technique_assessment, overall_evidence_score_0_to_100: 99, family_summary: { baseline: { observed_count: 0, recognition_status: "motion_unavailable" } }, techniques: [...observedPayload.technique_assessment.techniques, { family: "baseline", name_zh: "正手", observed: false, status: "not_observed" }] } });
   }, async () => {
     const app = await route(); const body = await (await app.POST(request({ ...input, technique: "底线击球", jobId }))).json();
     assert.equal(body.evidenceStatus, "insufficient_evidence"); assert.equal(body.providerStatus, "not_requested_insufficient_evidence");
@@ -96,7 +96,7 @@ test("high footwork evidence cannot trigger bottom-line advice or a provider cal
 test("wrong jobs, missing artifacts and missing jobs yield explicit unavailable evidence", async () => {
   for (const [response, reason] of [
     [Response.json({ ...observedPayload, job_id: "different_job" }), "job_mismatch"],
-    [Response.json({ status: "ready", job_id: jobId }), "artifact_unavailable"],
+    [Response.json({ advice_context_version: "advice-context-v1", technique: "步伐", status: "ready", job_id: jobId }), "artifact_unavailable"],
     [Response.json({ error: "not found" }, { status: 404 }), "job_not_found"],
   ]) {
     let calls = 0;
@@ -108,11 +108,38 @@ test("wrong jobs, missing artifacts and missing jobs yield explicit unavailable 
   }
 });
 
+test("bounded advice endpoint rejects mismatched versions, families and oversized bodies without a provider call", async () => {
+  for (const response of [
+    Response.json({ ...observedPayload, advice_context_version: "future" }),
+    Response.json({ ...observedPayload, technique: "发球" }),
+    Response.json({ ...observedPayload, large: "x".repeat(512000) }),
+    new Response(JSON.stringify(observedPayload), { headers: { "content-length": "512001" } }),
+  ]) {
+    let calls = 0;
+    await withMocks(async (url, init) => {
+      calls += 1;
+      const target = new URL(url);
+      assert.equal(target.pathname, `/v1/jobs/${jobId}/advice-evidence`);
+      assert.equal(target.searchParams.get("technique"), "步伐");
+      assert.equal(init.redirect, "manual");
+      assert.equal(init.headers.Authorization, "Bearer test-backend");
+      return response;
+    }, async () => {
+      const app = await route();
+      const body = await (await app.POST(request({ ...input, jobId }))).json();
+      assert.equal(calls, 1);
+      assert.equal(body.evidenceStatus, "analysis_unavailable");
+      assert.equal(body.evidence.reasonCode, "artifact_unavailable");
+      assert.deepEqual(body.evidence.availableFacts, []);
+    });
+  }
+});
+
 test("provider outages stay visibly unavailable instead of posing as personalized analysis", async () => {
   let calls = 0;
   await withMocks(async url => {
     calls += 1;
-    return String(url).includes("demo-result") ? Response.json(observedPayload) : Response.json({ error: "unavailable" }, { status: 503 });
+    return String(url).includes("advice-evidence") ? Response.json(observedPayload) : Response.json({ error: "unavailable" }, { status: 503 });
   }, async () => {
     const app = await route(); const body = await (await app.POST(request({ ...input, jobId }))).json();
     assert.equal(calls, 2); assert.equal(body.evidenceStatus, "observed"); assert.equal(body.source, "fallback");
@@ -122,7 +149,7 @@ test("provider outages stay visibly unavailable instead of posing as personalize
 });
 
 test("provider free-form diagnosis is rejected even when family evidence is present", async () => {
-  await withMocks(async url => String(url).includes("demo-result") ? Response.json(observedPayload) : Response.json({ choices: [{ message: { content: JSON.stringify({ summary: "你的动作有问题，需要纠正。", nextStepIds: ["balance"] }) } }] }), async () => {
+  await withMocks(async url => String(url).includes("advice-evidence") ? Response.json(observedPayload) : Response.json({ choices: [{ message: { content: JSON.stringify({ summary: "你的动作有问题，需要纠正。", nextStepIds: ["balance"] }) } }] }), async () => {
     const app = await route(); const body = await (await app.POST(request({ ...input, jobId }))).json();
     assert.equal(body.providerStatus, "invalid_output"); assert.equal(body.source, "fallback");
     assert.doesNotMatch(body.advice.summary, /你的动作有问题/);
@@ -131,7 +158,7 @@ test("provider free-form diagnosis is rejected even when family evidence is pres
 
 test("valid provider IDs return only server-authored explanations and no raw scores", async () => {
   await withMocks(async (url, init) => {
-    if (String(url).includes("demo-result")) return Response.json(observedPayload);
+    if (String(url).includes("advice-evidence")) return Response.json(observedPayload);
     const outbound = JSON.parse(init.body);
     assert.match(JSON.stringify(outbound), /family|footwork|步伐/);
     assert.doesNotMatch(JSON.stringify(outbound), /overall_evidence_score|priorities_zh/);

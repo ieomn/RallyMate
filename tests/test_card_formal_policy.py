@@ -23,7 +23,7 @@ class CardFormalPolicyTests(unittest.TestCase):
             with self.subTest(grade=grade):
                 row = apply_scoring_policy(result(passed=tuple(i < count for i in range(4))))
                 self.assertEqual((row["status"], row["grade"], row["proxy_grade"], row["score"]),
-                                 ("scored", grade, grade, GRADE_POINTS[grade]))
+                                 ("scored", grade, grade, 100 * count / 4))
                 self.assertEqual(row["scoring_policy_version"], SCORING_POLICY_VERSION)
                 self.assertEqual(row["semantics"], FORMAL_SCORE_SEMANTICS)
                 self.assertIsNone(row["original_grade"])
@@ -66,7 +66,7 @@ class CardFormalPolicyTests(unittest.TestCase):
             {"indicator_id": "GS01-M01-01", "event_code": "GS01", "instances": [], "run_status": "review_required"},
         ], "coverage": {}, "observed_type_summary": {}, "input": {"observed_event_codes": ["FS01", "FS09"]}}
         converted = apply_report_scoring_policy(report)
-        self.assertEqual(converted["overall_score"], 70)
+        self.assertEqual(converted["overall_score"], 62.5)
         self.assertEqual(converted["summary"]["channels"]["formal"]["coverage"], 2 / 3)
         self.assertEqual(converted["summary"]["formal_scored_instances"], 3)
         self.assertEqual(converted["summary"]["formal_scored_cards"], 2)
@@ -83,7 +83,7 @@ class CardFormalPolicyTests(unittest.TestCase):
         summary = summarize_card_scores([first, first, conflicting, valid, historical],
                                         ["FS01-M02", "FS09-M03", "FS01-M05"])
         self.assertEqual(summary["conflicting_event_instances"], 1)
-        self.assertEqual(summary["overall_score"], 60)
+        self.assertEqual(summary["overall_score"], 50)
         self.assertEqual(summary["formal_scored_instances"], 1)
         self.assertEqual(summary["channels"]["visual_proxy"]["score"], 100)
 

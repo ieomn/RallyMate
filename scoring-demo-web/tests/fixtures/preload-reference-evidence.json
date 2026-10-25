@@ -1,0 +1,38 @@
+{
+  "source_frames": [1, 2, 3, 4],
+  "source_ref": "CARD-FS:word/document.xml:P0115",
+  "evidence": {
+    "measurement_version": "fs01-preload-reference-translation-v1.0.0",
+    "phase_semantics": "unvalidated_pose_candidate_not_ground_truth",
+    "source_phase": {
+      "phase_contract_version": "source-preload-turning-point-v1.0.0",
+      "status": "observed_candidate",
+      "is_ground_truth": false,
+      "original_event_modified": false,
+      "source_frames": [1, 2, 3, 4, 5],
+      "source_preload_start_ms": 40,
+      "source_preload_ms": 160,
+      "confirmation_end_ms": 200
+    },
+    "source_clause_complete": false,
+    "coordinate_system": "stable_camera_reference_image_x_right_y_down",
+    "normalization": "median_observed_full_torso_scale_fixed_per_candidate_window",
+    "formula": "dy_px=hip_y_reference_px[last]-hip_y_reference_px[first]; dy_torso=dy_px/median(norm(shoulder_midpoint_px-hip_midpoint_px))",
+    "minimum_samples": 3,
+    "minimum_duration_ms": 80,
+    "gate_origin": "existing_preparation_translation_measurement_policy_not_Word_grade_threshold",
+    "sign_convention": "image_down_positive",
+    "is_metric_or_3d": false,
+    "is_ground_truth": false,
+    "time_basis": "bound_source_pts",
+    "source_track_id": 0,
+    "selection_epoch": 0,
+    "camera_reference_epoch": 0,
+    "source_duration_ms": 120,
+    "source_timestamps_ms": [75040, 75080, 75120, 75160],
+    "fixed_torso_scale_px": 250,
+    "hip_reference_y_start_px": -120,
+    "hip_reference_y_end_px": -160,
+    "frame_dimensions_px": [1920, 1080]
+  }
+}

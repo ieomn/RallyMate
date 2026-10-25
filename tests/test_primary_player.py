@@ -71,6 +71,205 @@ def _record(index: int, players: list[tuple[int, list[float], bool]]) -> dict:
     }
 
 
+def _sam_record(index: int) -> dict:
+    """Constructed transport fixture; no model inference or accuracy claim."""
+    record = _record(index, [(1, [30, 15, 100, 115], True)])
+    record["frame"].update(timestamp_source="decoder_pts", source_timestamp_ms=index * 40,
+                           pts=index * 24, time_base_num=1, time_base_den=600, video_sha256="a" * 64)
+    record["camera_motion"] = {"reference_epoch": 0}
+    record["sam3d_requests"] = [{"person_track_id": 1, "selection_epoch": 0, "status": "ok"}]
+    binding = {"video_sha256": "a" * 64, "frame_index": index, "processed_index": index,
+               "pts": index * 24, "time_base_num": 1, "time_base_den": 600,
+               "timestamp_ms": index * 40, "person_track_id": 1,
+               "selection_epoch": 0, "camera_reference_epoch": 0}
+    points = [{**definition, "x_px": 50., "y_px": 25., "raw_x_px": 50., "raw_y_px": 25.,
+               "x_normalized": .25, "y_normalized": 25 / 120, "in_frame": True,
+               "confidence": None, "confidence_semantics": "not_provided_by_sam3d",
+               "source": "sam3d", "observation_semantics": "model_estimate",
+               "observed": None, "visibility": None}
+              for definition in keypoint_schema("mhr70")["keypoints"]]
+    record["poses"] = [{"person_track_id": 1, "source": "sam3d", "status": "ok",
+                         "keypoint_format": "mhr70", "coordinate_space": "original_frame",
+                         "confidence": None, "confidence_semantics": "not_provided_by_sam3d",
+                         "observation_semantics": "monocular_model_estimate",
+                         "source_binding": binding, "keypoints": points}]
+    return record
+
+
+class SamPrimaryGeometryTests(unittest.TestCase):
+    @staticmethod
+    def _diagnose(records, timeline=None):
+        if timeline is None:
+            timeline = select_primary_player_timeline(records)["timeline"]
+        return diagnose_primary_timeline(records, timeline)
+
+    def test_sam_geometry_is_separate_from_unchanged_confidence_and_selection(self):
+        records = [_sam_record(index) for index in range(3)]
+        original = copy.deepcopy(records)
+        selected = select_primary_player_timeline(records)
+        diagnostics = self._diagnose(records, selected["timeline"])
+        geometry = diagnostics["model_estimate_geometry"]
+        self.assertEqual(diagnostics["keypoint_valid_fraction"], 0.0)
+        self.assertEqual(geometry["geometry_coverage_fraction"], 1.0)
+        self.assertEqual(geometry["target_joint_geometry_fraction"], 1.0)
+        self.assertEqual(geometry["in_frame_joint_count"], 51)
+        self.assertFalse(geometry["confidence_available"])
+        self.assertFalse(geometry["visibility_verified"])
+        self.assertFalse(geometry["accuracy_validated"])
+        self.assertFalse(geometry["scoring_allowed"])
+        self.assertFalse(geometry["used_for_primary_selection"])
+        self.assertEqual(select_primary_player_timeline(records), selected)
+        self.assertEqual(records, original)
+        self.assertTrue(all(point["confidence"] is None for row in records for point in row["poses"][0]["keypoints"]))
+        self.assertEqual(geometry["frame_evidence"][1]["source_binding"], records[1]["poses"][0]["source_binding"])
+
+    def test_missing_invalid_and_off_image_points_stay_in_denominator(self):
+        records = [_sam_record(index) for index in range(3)]
+        point = records[1]["poses"][0]["keypoints"][5]  # left shoulder
+        point.update(raw_x_px=-1., x_px=0., x_normalized=0., in_frame=False)
+        records[2]["poses"] = []
+        geometry = self._diagnose(records)["model_estimate_geometry"]
+        self.assertEqual(geometry["status"], "partial")
+        self.assertEqual(geometry["interval_frame_count"], 3)
+        self.assertEqual(geometry["source_bound_frame_count"], 2)
+        self.assertEqual(geometry["in_frame_joint_count"], 33)
+        self.assertAlmostEqual(geometry["geometry_coverage_fraction"], 33 / 51, places=6)
+        self.assertEqual(geometry["target_joint_geometry_fraction"], 15 / 24)
+        self.assertEqual(geometry["joint_coverage"]["left_shoulder"]["in_frame_count"], 1)
+        self.assertEqual(geometry["reason_counts"]["selected_pose_missing_or_conflicting"], 1)
+
+    def test_source_decoder_camera_and_joint_contract_mismatches_fail_closed(self):
+        mutations = {
+            "frame_video": lambda r: r["frame"].update(video_sha256="b" * 64),
+            "bound_video": lambda r: r["poses"][0]["source_binding"].update(video_sha256="b" * 64),
+            "missing_video": lambda r: r["frame"].pop("video_sha256"),
+            "frame_pts": lambda r: r["frame"].update(pts=99),
+            "frame_timebase": lambda r: r["frame"].update(time_base_den=30),
+            "frame_boolean_pts": lambda r: r["frame"].update(pts=False),
+            "camera_epoch": lambda r: r["camera_motion"].update(reference_epoch=2),
+            "missing_camera": lambda r: r.pop("camera_motion"),
+            "non_decoder_clock": lambda r: r["frame"].update(timestamp_source="fps_fallback"),
+            "forged_joint_confidence": lambda r: r["poses"][0]["keypoints"][5].update(confidence=1.),
+            "duplicate_pose": lambda r: r["poses"].append(copy.deepcopy(r["poses"][0])),
+            "missing_detection": lambda r: r.update(detections=[]),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                records = [_sam_record(0)]
+                timeline = select_primary_player_timeline(records)["timeline"]
+                mutate(records[0])
+                geometry = self._diagnose(records, timeline)["model_estimate_geometry"]
+                self.assertEqual(geometry["source_bound_frame_count"], 0)
+                self.assertEqual(geometry["geometry_coverage_fraction"], 0.)
+                self.assertEqual(sum(geometry["reason_counts"].values()), 1)
+
+    def test_ambiguous_or_mismatched_primary_timeline_cannot_count_geometry(self):
+        for change in ({"identity_ambiguous": True}, {"selection_status": "missing"},
+                       {"source_frame_index": 42}, {"timestamp_ms": 100}):
+            with self.subTest(change=change):
+                records = [_sam_record(0)]
+                timeline = select_primary_player_timeline(records)["timeline"]
+                timeline[0].update(change)
+                geometry = self._diagnose(records, timeline)["model_estimate_geometry"]
+                self.assertEqual(geometry["source_bound_frame_count"], 0)
+
+    def test_nonzero_original_pts_and_unmapped_mesh_points_remain_distinct(self):
+        records = [_sam_record(0)]
+        records[0]["frame"].update(pts=60, source_timestamp_ms=100)
+        records[0]["poses"][0]["source_binding"].update(pts=60, timestamp_ms=100)
+        geometry = self._diagnose(records)["model_estimate_geometry"]
+        self.assertEqual(geometry["geometry_coverage_fraction"], 1.)
+        self.assertEqual(geometry["mapped_joint_count"], 17)
+        self.assertNotIn("left_big_toe_tip", geometry["joint_coverage"])
+        self.assertEqual(geometry["frame_evidence"][0]["timestamp_ms"], 0)
+        self.assertEqual(geometry["frame_evidence"][0]["source_binding"]["timestamp_ms"], 100)
+
+    def test_legacy_observations_have_no_sam_coverage_fraction(self):
+        records = [_record(0, [(1, [30, 15, 100, 115], True)])]
+        diagnostics = self._diagnose(records)
+        self.assertEqual(diagnostics["keypoint_valid_fraction"], 1.)
+        geometry = diagnostics["model_estimate_geometry"]
+        self.assertEqual(geometry["status"], "not_applicable")
+        self.assertIsNone(geometry["geometry_coverage_fraction"])
+        self.assertEqual(geometry["frame_evidence"], [])
+
+    def test_duplicate_source_frames_do_not_inflate_geometry_evidence(self):
+        records = [_sam_record(0), _sam_record(0)]
+        records[1]["frame"]["processed_index"] = 1
+        records[1]["poses"][0]["source_binding"]["processed_index"] = 1
+        geometry = self._diagnose(records)["model_estimate_geometry"]
+        self.assertEqual(geometry["source_bound_frame_count"], 0)
+        self.assertEqual(geometry["reason_counts"], {"duplicate_source_frame": 2})
+
+    def test_selection_epoch_requires_independent_successful_request_ledger(self):
+        mutations = {
+            "forged_pose_epoch": lambda r: r["poses"][0]["source_binding"].update(selection_epoch=999),
+            "missing_ledger": lambda r: r.pop("sam3d_requests"),
+            "wrong_request_track": lambda r: r["sam3d_requests"][0].update(person_track_id=2),
+            "boolean_request_epoch": lambda r: r["sam3d_requests"][0].update(selection_epoch=False),
+            "failed_request": lambda r: r["sam3d_requests"][0].update(status="failed"),
+            "wrong_optional_request_frame": lambda r: r["sam3d_requests"][0].update(frame_index=1),
+            "boolean_optional_request_pts": lambda r: r["sam3d_requests"][0].update(pts=False),
+            "wrong_optional_request_camera": lambda r: r["sam3d_requests"][0].update(camera_reference_epoch=9),
+            "duplicate_request": lambda r: r["sam3d_requests"].append(copy.deepcopy(r["sam3d_requests"][0])),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                record = _sam_record(0)
+                mutate(record)
+                geometry = self._diagnose([record])["model_estimate_geometry"]
+                self.assertEqual(geometry["source_bound_frame_count"], 0)
+                self.assertEqual(geometry["geometry_coverage_fraction"], 0.)
+                self.assertEqual(sum(geometry["reason_counts"].values()), 1)
+        record = _sam_record(0)
+        record["poses"][0]["source_binding"]["selection_epoch"] = 7
+        record["sam3d_requests"][0]["selection_epoch"] = 7
+        geometry = self._diagnose([record])["model_estimate_geometry"]
+        self.assertEqual(geometry["source_bound_frame_count"], 1)
+        self.assertEqual(geometry["frame_evidence"][0]["request_ledger"]["selection_epoch"], 7)
+
+    def test_same_source_frame_with_changed_track_is_still_duplicate(self):
+        records = [_sam_record(0), _sam_record(0)]
+        second = records[1]
+        second["frame"]["processed_index"] = 1
+        second["detections"][0]["track_id"] = 2
+        second["poses"][0]["person_track_id"] = 2
+        second["poses"][0]["source_binding"].update(person_track_id=2, processed_index=1)
+        second["sam3d_requests"][0]["person_track_id"] = 2
+        geometry = self._diagnose(records)["model_estimate_geometry"]
+        self.assertEqual(geometry["interval_frame_count"], 2)
+        self.assertEqual(geometry["independent_source_frame_count"], 1)
+        self.assertEqual(geometry["duplicate_source_frame_count"], 1)
+        self.assertEqual(geometry["source_bound_frame_count"], 0)
+        self.assertEqual(geometry["reason_counts"], {"duplicate_source_frame": 2})
+
+        independent = _sam_record(1)
+        independent["frame"]["processed_index"] = 2
+        independent["poses"][0]["source_binding"]["processed_index"] = 2
+        records.append(independent)
+        geometry = self._diagnose(records)["model_estimate_geometry"]
+        self.assertEqual(geometry["interval_frame_count"], 3)
+        self.assertEqual(geometry["independent_source_frame_count"], 2)
+        self.assertEqual(geometry["source_bound_frame_count"], 1)
+        self.assertEqual(geometry["source_bound_frame_fraction"], .5)
+        self.assertEqual(geometry["geometry_coverage_fraction"], .5)
+
+    def test_multiple_people_in_one_frame_are_not_duplicate_source_frames(self):
+        record = _sam_record(0)
+        timeline = select_primary_player_timeline([record])["timeline"]
+        other = copy.deepcopy(record["poses"][0])
+        other["person_track_id"] = 2
+        other["source_binding"]["person_track_id"] = 2
+        record["poses"].append(other)
+        record["sam3d_requests"].append({"person_track_id": 2, "selection_epoch": 0, "status": "ok"})
+        record["detections"].append({"class_name": "player", "track_id": 2,
+                                     "bbox_px": [110, 15, 130, 45], "confidence": .9})
+        geometry = self._diagnose([record], timeline)["model_estimate_geometry"]
+        self.assertEqual(geometry["independent_source_frame_count"], 1)
+        self.assertEqual(geometry["source_bound_frame_count"], 1)
+        self.assertEqual(geometry["duplicate_source_frame_count"], 0)
+
+
 class PrimaryPlayerTests(unittest.TestCase):
     def test_selection_threshold_preserves_020_boundary_without_lowering_measurement_gate(self) -> None:
         self.assertEqual(KEYPOINT_CONFIDENCE_MIN, 0.20)

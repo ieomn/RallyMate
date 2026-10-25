@@ -90,7 +90,7 @@ class CardExecutionApiTests(unittest.TestCase):
             self.assertEqual(len(result["cards"]), 298)
             self.assertEqual(result["summary"]["status_counts"], {"scored": 3})
             self.assertEqual(result["source_run_id"], self.job_id)
-            self.assertAlmostEqual(result["overall_score"], 200 / 3)
+            self.assertAlmostEqual(result["overall_score"], expected["overall_score"])
             self.assertEqual(result["scoring_policy_version"], SCORING_POLICY_VERSION)
             self.assertTrue(all(row["status"] != "review_required" for card in result["cards"] for row in card["instances"]))
             self.assertEqual((output / "summary.json").read_bytes(), before)
@@ -125,7 +125,11 @@ class CardExecutionApiTests(unittest.TestCase):
             with patch.object(execution, "_read_records", wraps=execution._read_records) as read, TestClient(app) as client:
                 url = f"/v1/jobs/{self.job_id}/demo-result?report_contract=current"
                 first = client.get(url).json()["card_execution"]
-                self.assertAlmostEqual(first["overall_score"], 200 / 3)
+                expected = execution.build_card_execution_from_records(
+                    deepcopy(self.fixture["records"]), deepcopy(self.fixture["events"]),
+                    deepcopy(self.fixture["timeline"]), source_run_id=self.job_id)
+                self.assertAlmostEqual(first["overall_score"], expected["overall_score"])
+                self.assertNotEqual(first["overall_score"], 100)
                 self.assertEqual(read.call_count, 3)
                 events = deepcopy(self.fixture["events"])
                 for event in events:

@@ -13,7 +13,7 @@
   --pw-line: var(--product-border);
   --pw-text: var(--product-text);
   --pw-muted: var(--product-muted);
-  --pw-dim: #717c86;
+  --pw-dim: #9aa6af;
   --pw-accent: var(--product-accent);
   --pw-accent-ink: #18200c;
   --pw-radius: 14px;
@@ -288,3 +288,37 @@
 @media (prefers-reduced-motion: reduce) {
   .product-app *, .product-app *::before, .product-app *::after { scroll-behavior: auto; transition-duration: 0s !important; animation-duration: 0s !important; }
 }
+
+/* Secondary tools remain reachable on both desktop and touch layouts. */
+.product-app .pw-tools { position: relative; }
+.product-app .pw-tools > summary { min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; list-style: none; cursor: pointer; color: #c1cbd2; border-radius: 8px; }
+.product-app .pw-tools > summary::-webkit-details-marker { display: none; }
+.product-app .pw-tools[open] > summary { background: #242c30; }
+.product-app .pw-tools-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 236px; padding: 7px; background: #1a2227; border: 1px solid #435149; border-radius: 12px; box-shadow: 0 14px 36px #0008; }
+.product-app .pw-tools-menu a, .product-app .pw-tools-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 10px; color: #d2dbdf; background: transparent; border: 0; border-radius: 7px; text-decoration: none; text-align: left; font-size: 14px; }
+.product-app .pw-tools-menu a:hover, .product-app .pw-tools-menu button:hover { background: #2a352b; color: #d8fc75; }
+.product-app .pw-capture-visuals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0 0 28px; }
+.product-app .pw-capture-visuals figure { min-width: 0; margin: 0; border: 1px solid #35413a; border-radius: 13px; overflow: hidden; background: #151e19; }
+.product-app .pw-capture-visuals svg { display: block; width: 100%; height: auto; }
+.product-app .pw-capture-visuals figcaption { padding: 0 18px 20px; }
+.product-app .pw-capture-visuals strong, .product-app .pw-capture-visuals span { display: block; }
+.product-app .pw-capture-visuals strong { color: #e8efdf; font-size: 15px; margin-bottom: 7px; }
+.product-app .pw-capture-visuals span { color: #b1bfb0; font-size: 14px; line-height: 1.8; }
+.product-app .pw-capture-visuals .is-bad { background: #201d1b; border-color: #574238; }
+.product-app .pw-capture-visuals .is-bad strong { color: #efc2ac; }
+.upload-video-preview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin: 20px 0; border: 1px solid #3d4a3a; border-radius: 14px; overflow: hidden; background: #151e19; }
+.uvp-media { display: flex; align-items: center; justify-content: center; background: #090e0c; min-height: 240px; }
+.uvp-media video { width: 100%; max-height: 460px; display: block; }
+.uvp-media > p { color: #c0cbbd; padding: 25px; max-width: 380px; line-height: 1.8; }
+.uvp-copy { padding: 23px; min-width: 0; }
+.uvp-copy h3 { margin: 0 0 10px; font-size: 18px; font-weight: 550; color: #e8f0e0; }
+.uvp-copy p { margin: 8px 0; line-height: 1.75; font-size: 14px; }
+.uvp-file-name { overflow-wrap: anywhere; color: #d1dbc9; }
+.uvp-meta { color: #d8fc75; font-variant-numeric: tabular-nums; }
+.uvp-scope, .uvp-help { color: #b5c0af; }
+.uvp-checks { display: grid; gap: 2px; margin-top: 13px; }
+.uvp-checks label { display: flex; align-items: center; min-height: 44px; gap: 11px; color: #d0d9ca; cursor: pointer; font-size: 14px; line-height: 1.7; }
+.uvp-checks input { flex: none; width: 18px; height: 18px; accent-color: #d8fc75; }
+.uvp-tip { padding-top: 13px; border-top: 1px solid #35422f; color: #c4cfbd; }
+@media (max-width: 960px) { .product-app .pw-capture-visuals { gap: 10px; } .product-app .pw-capture-visuals figcaption { padding: 0 12px 17px; } .upload-video-preview { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .product-app .pw-capture-visuals { grid-template-columns: 1fr; } .product-app .pw-capture-visuals svg { max-height: 215px; } .product-app .pw-capture-visuals figcaption { padding: 0 20px 20px; } .product-app .pw-topbar-action { min-height: 44px; } .uvp-copy { padding: 20px; } }

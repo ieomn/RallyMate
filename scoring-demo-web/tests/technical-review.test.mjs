@@ -7,11 +7,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const cache = new Map();
 function compiledUrl(file) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (file.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(file, "utf8")}`).toString("base64")}`;
   if (cache.has(file.href)) return cache.get(file.href);
   let js = ts.transpileModule(fs.readFileSync(file, "utf8"), { fileName: file.pathname, compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, file);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, file);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, file)) : import.meta.resolve(name))}`;
   });
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
@@ -21,8 +23,12 @@ const { parseTechnicalReview, technicalReviewError, sourceReviewWindows, sourceR
 const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { proxyAnalysis } = await import(compiledUrl(new URL("../worker/gateway.ts", import.meta.url)));
 const { buildReportBackup, buildPracticeReport } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
+const { readReportJson } = await import(compiledUrl(new URL("../app/lib/report-file.ts", import.meta.url)));
 const { default: Panel } = await import(compiledUrl(new URL("../app/SourceMeasurementPanel.tsx", import.meta.url)));
 const catalog = JSON.parse(fs.readFileSync(new URL("../app/data/scoring-reference.json", import.meta.url), "utf8"));
+const actualSource = JSON.parse(fs.readFileSync(new URL("./fixtures/fs01-fs02-source-observations.json", import.meta.url), "utf8"));
+const samSource = JSON.parse(fs.readFileSync(new URL("./fixtures/sam-source-observations.json", import.meta.url), "utf8"));
+const preloadDetails = JSON.parse(fs.readFileSync(new URL("./fixtures/preload-reference-evidence.json", import.meta.url), "utf8"));
 const jobId = "job-human-review-123";
 const sha = "a".repeat(64), contextSha = "b".repeat(64), referenceSha = "c".repeat(64);
 const mutation = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", reviewId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -118,6 +124,28 @@ test("source-aligned measured zero and cross-event computation windows remain ex
   assert.deepEqual(sourceReviewWindows(noDuration, "FS01-M02"), []);
 });
 
+test("candidate reference displacement source consumer and two backups retain negative, zero and exact calculation evidence", async () => {
+  const result = sourceResult(), source = result.source_aligned_assessment.indicators[0].windows[0];
+  result.actions = [{ event_code: "FS01", name_zh: "分腿垫步", detected_segments: 1 }];
+  source.measurements = [["preload_hip_reference_dy_px", "px", -40], ["preload_hip_reference_dy_torso", "torso", 0]].map(([feature_name, unit, value]) => ({
+    ...source.measurements[0], ...structuredClone(preloadDetails), feature_name, unit, value,
+    definition: "候选窗内稳定参考髋纵向位移，向下为正；不确认正式阶段。",
+  }));
+  const before = sourceReviewWindows(result, "FS01-M02");
+  for (const [index, row] of before[0].measurements.entries()) {
+    for (const key of ["value", "definition", "source_ref", "source_frames", "evidence"]) assert.deepEqual(row[key], source.measurements[index][key], key);
+    assert.equal(row.measurement_provenance, undefined); assert.equal(row.source_window, undefined);
+  }
+  let restored = result;
+  for (let pass = 0; pass < 2; pass++) {
+    const text = JSON.stringify(buildReportBackup({ mode: "live", uploadState: "complete", evidence: { result: restored, jobId } }));
+    restored = (await readReportJson({ size: Buffer.byteLength(text), text: async () => text })).result;
+    assert.deepEqual(sourceReviewWindows(restored, "FS01-M02"), before);
+  }
+  const html = renderToStaticMarkup(createElement(Panel, { result: restored, catalog }));
+  assert.match(html, /-40 像素/); assert.match(html, /0 固定躯干尺度/); assert.match(html, /向下为正/); assert.match(html, /不是原文等级阈值/);
+});
+
 test("only measured zero-duration transition quantities can carry a same-frame computation window", () => {
   const result = sourceResult(), measurement = result.source_aligned_assessment.indicators[0].windows[0].measurements[0];
   measurement.measurement_window = { start_ms: 3000, end_ms: 3000 };
@@ -172,6 +200,71 @@ test("source measurements retain evidence and replay without manual grading cont
   assert.match(html, /回看/);
   assert.match(html, /70%/);
   assert.doesNotMatch(html, /按原文评审|选择人工技术等级|身份（自行声明）|保存这条评审|导出评审|录入技术评审|人工等级|<textarea/);
+});
+
+test("actual head and launch source evidence remains inspectable and survives repeated portable backup", () => {
+  const before = new Map();
+  for (const id of ["FS01-M01", "FS02-M01"]) {
+    const windows = sourceReviewWindows(actualSource, id);
+    before.set(id, windows);
+    for (const window of windows) for (const measurement of window.measurements) {
+      const original = actualSource.source_aligned_assessment.indicators.find(row => row.indicator_id === id).windows.find(row => row.event_id === window.event_id).measurements.find(row => row.feature_name === measurement.feature_name);
+      for (const key of ["definition", "source_ref", "source_frames", "coverage", "evidence"]) assert.deepEqual(measurement[key], original[key], `${id}/${measurement.feature_name}/${key}`);
+      assert.equal(measurement.value, original.value);
+    }
+  }
+  const input = result => ({ mode: "live", uploadState: "complete", evidence: { result, jobId: actualSource.job_id } });
+  const once = JSON.parse(JSON.stringify(buildReportBackup(input(actualSource)))).result;
+  const twice = JSON.parse(JSON.stringify(buildReportBackup(input(once)))).result;
+  for (const id of ["FS01-M01", "FS02-M01"]) {
+    assert.deepEqual(sourceReviewWindows(once, id), before.get(id));
+    assert.deepEqual(sourceReviewWindows(twice, id), before.get(id));
+    assert.deepEqual(sourceReviewCoverage(twice, id), sourceReviewCoverage(actualSource, id));
+  }
+  const html = renderToStaticMarkup(createElement(Panel, { result: actualSource, catalog, initialIndicatorId: "FS01-M01" }));
+  assert.match(html, /计算与来源/); assert.match(html, /P0080/); assert.match(html, /180°/); assert.match(html, /不跨缺测补帧/);
+  assert.match(html, /29 \/ 41/); assert.match(html, /12 个未测得/); assert.doesNotMatch(html, /<details[^>]*open|"used_source_frames"/);
+});
+
+test("real SAM source windows and metric proof survive API normalization and two backup round trips", async () => {
+  const client = createApiClient({}, async () => Response.json(samSource));
+  const normalized = await client.getDemoResult(samSource.job_id);
+  const backup = async value => { const text = JSON.stringify(buildReportBackup({ mode: "live", uploadState: "complete", evidence: { result: value, jobId: value.job_id } }));
+    return (await readReportJson({ size: Buffer.byteLength(text), text: async () => text })).result; };
+  const restored = await backup(await backup(normalized));
+  for (const id of ["FS01-M01", "FS02-M01"]) {
+    const before = sourceReviewWindows(samSource, id), after = sourceReviewWindows(restored, id);
+    assert.equal(before.length, 1); assert.deepEqual(after, before);
+    assert.equal(after[0].visibility.valid_frame_ratio, null); assert.equal(after[0].visibility.visibility_verified, false);
+    for (const metric of after[0].measurements) {
+      assert.equal(metric.status, "measured"); assert.equal(metric.coverage, undefined);
+      assert.equal(metric.measurement_provenance.scoring_allowed, false);
+      assert.equal(metric.model_geometry_coverage.source_visibility_70_percent_verified, null);
+      assert.ok(metric.source_window.source_bindings.length > 2);
+    }
+  }
+  const html = renderToStaticMarkup(createElement(Panel, { result: restored, catalog, initialIndicatorId: "FS01-M01" }));
+  assert.match(html, /SAM 单目模型估计/); assert.match(html, /真实可见性未知/); assert.match(html, /模型几何覆盖/);
+  assert.doesNotMatch(html, /% 有效帧|达到门槛仍需/);
+});
+
+test("SAM source mutations cannot survive by dropping provenance on the next import", async () => {
+  for (const defect of ["parent_clock", "parent_track", "visibility", "mask", "bounds", "hash", "local_coverage"]) {
+    const result = structuredClone(samSource), row = result.source_aligned_assessment.indicators.find(row => row.indicator_id === "FS01-M01");
+    const window = row.windows[0], metric = window.measurements[0];
+    if (defect === "parent_clock") window.source_window.source_bindings[0].pts += 1;
+    if (defect === "parent_track") window.source_track_id += 1;
+    if (defect === "visibility") metric.model_geometry_coverage.source_visibility_70_percent_verified = true;
+    if (defect === "mask") metric.geometry_mask.nose[0] = !metric.geometry_mask.nose[0];
+    if (defect === "bounds") metric.measurement_window.end_ms += 1;
+    if (defect === "hash") result.source_aligned_assessment.video_sha256 = "b".repeat(64);
+    if (defect === "local_coverage") metric.model_geometry_coverage.fraction = .123;
+    const check = value => sourceReviewWindows(value, "FS01-M01")[0].measurements[0];
+    assert.equal(check(result).status, "unavailable", defect);
+    const text = JSON.stringify(buildReportBackup({ mode: "live", uploadState: "complete", evidence: { result, jobId: result.job_id } }));
+    const restored = (await readReportJson({ size: Buffer.byteLength(text), text: async () => text })).result;
+    assert.equal(check(restored).status, "unavailable", defect);
+  }
 });
 
 test("API client binds read, idempotent write and export to the same job", async () => {

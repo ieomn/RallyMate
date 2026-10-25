@@ -220,7 +220,6 @@ test("manual foot windows, raw clock evidence and foot order survive UI and port
   const input = { mode: "live", uploadState: "complete", job: { id: raw.source_run_id, status: "succeeded" }, evidence: { jobId: raw.source_run_id, result: { job_id: raw.source_run_id, card_execution: raw } } };
   const backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
   assert.deepEqual(cardExecutionOf(backup.result.card_execution), cardExecutionOf(raw));
-  const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-  assert.ok(section.rows.every(row => row.at(-1).includes("人工步周期候选窗口")));
-  assert.ok(section.rows.every(row => !row.at(-1).includes("由动作检测器")));
+  assert.equal(buildPracticeReport(input).sections.some(row => row.title.startsWith("逐卡")), false);
+  assert.deepEqual(backup.result.card_execution.cards, cardExecutionOf(raw).cards);
 });

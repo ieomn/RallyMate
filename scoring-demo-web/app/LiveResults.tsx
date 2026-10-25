@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import TrainingReportOverview from "./TrainingReportOverview";
+import TrainingReportOverview, { TrainingRecommendations } from "./TrainingReportOverview";
+import CourtSimulationPanel from "./CourtSimulationPanel";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
 import ActionTimeline from "./ActionTimeline";
 import { analysisReportOf } from "./lib/training-report";
@@ -11,7 +12,12 @@ import { motionAnalysisOf } from "./lib/motion-analysis";
 import MotionAnalysisPanel from "./MotionAnalysisPanel";
 import FootworkReviewPanel from "./FootworkReviewPanel";
 import MeasurementEvidence from "./MeasurementEvidence";
-import { evidenceReferenceScore, hasMeasurement, measurementWarnings, normalizeMeasurementResult } from "./lib/measurement-evidence";
+import { evidenceReferenceScore, hasMeasurement, measurementWarnings, normalizeMeasurementResult, technicalAssessmentState } from "./lib/measurement-evidence";
+import type { FootCrossingPanelContext } from "./FootCrossingCandidatesPanel";
+import type { TrainingFocusSelection } from "./lib/training-guidance";
+import { courtProjectionOf } from "./lib/court-simulation";
+import { processEvaluationOf } from "./lib/process-evaluation";
+import { RelativeScoreSummary } from "./ProcessScorePanel";
 
 const FAMILIES = { baseline: "底线", serve: "发球", return: "接发", net_attack: "网前", footwork: "步伐" };
 const scoreText = (value: number | null) => value === null ? "—" : value.toFixed(1);
@@ -81,7 +87,7 @@ function LiveStats({ result, trajectory, summary }: { result: DemoResultResponse
   </section>;
 }
 
-export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay }: { result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode }) {
+export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay, journal, candidateContext, onSaveFocus, replayAvailable = true }: { result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode; journal?: ReactNode; candidateContext?: FootCrossingPanelContext; onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean }) {
   result = result ? normalizeMeasurementResult(result) : null;
   const [chosenFamily, setFamily] = useState("");
   const [selected, setSelected] = useState("");
@@ -109,31 +115,41 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
   const searching = query.trim().length > 0;
   const emptyTitle = recognition.state === "motion_detected_unclassified" ? "已检测到挥拍运动，动作类型尚未分类" : recognition.state === "candidate_only" ? "已检测到发球式挥拍，尚待确认" : presentation.emptyTitle;
   const emptyDescription = recognition.reason || presentation.emptyDescription;
+  const court = courtProjectionOf(trajectory);
+  const courtStatus = court.points.length ? `已有 ${court.points.length} 个场地投影点，展开查看适用范围` : court.status === "calibrated" ? "球场已定位，暂缺可展示的球路；可先回看原片" : "本报告暂未提供场地投影；展开可手动定位球场或读取本浏览器标定";
+  const process = processEvaluationOf(result?.process_evaluation);
+
+  if (!result && !trajectory && !assessment && ["error", "cancelled"].includes(presentation.state)) return <div className="live-results" data-status={presentation.state}>{replay && <div className="report-replay-area">{replay}</div>}<section className="report-unavailable" aria-live="polite"><h2>{presentation.title}</h2><p>{presentation.description}</p><p>当前没有可查看的报告内容。可重新读取任务，或选择视频开始一次新分析。</p></section></div>;
 
   return <div className="live-results" aria-live="polite" data-status={presentation.state}>
-    <div className={`report-primary ${replay ? "" : "without-replay"}`}>{replay}<TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} /></div>
-    {result && !pending && <details className="report-disclosure" id="evidence-reference-details"><summary>了解本次参考分 <span>分数构成与视频依据</span></summary><ScoreExplanationPanel result={result} /></details>}
-    <ActionTimeline result={result} motion={motionAnalysis} />
+    <RelativeScoreSummary result={result} report={process} pending={pending || ["error", "cancelled"].includes(presentation.state)} />
+    <TrainingRecommendations result={result} motion={motionAnalysis} pending={pending} status={status} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
+    {journal}
+    {replay && <div className="report-replay-area">{replay}<details className="replay-segments"><summary>按动作片段定位回放</summary><ActionTimeline result={result} motion={motionAnalysis} /></details></div>}
+    {!replay && <ActionTimeline result={result} motion={motionAnalysis} />}
+    {(result || assessment || trajectory) && <div className="report-primary report-depth-layout"><div className="report-deep-heading"><h2>深入查看</h2><p>按需要展开场地、测量与逐项依据；已有观察和复盘问题都在上方。</p></div><details className="report-insight-details report-court-details"><summary><span>场地与球路</span><small>{courtStatus}</small></summary><CourtSimulationPanel key={result?.job_id ?? trajectory?.job_id ?? "pending"} trajectory={trajectory} pending={pending} /></details><TrainingReportOverview result={result} motion={motionAnalysis} pending={pending} title={presentation.title} description={presentation.description} candidateContext={candidateContext} preparedReport={process} showSummary={false}>
     <details className="report-disclosure" id="rules"><summary>测量详情 <span>步伐、转体与动作阶段</span></summary>
+    {result && !pending && <details className="report-disclosure" id="evidence-reference-details"><summary>查看测量证据参考分 <span>辅助判断测量是否充分 · 不参与过程评分</span></summary><ScoreExplanationPanel result={result} /></details>}
     {result && measurementWarnings(result).map(warning => <p className="measurement-warning" role="note" key={warning}>{warning}</p>)}
     <p className="report-detail-status">{presentation.title} · {presentation.description}</p>
     {analysisReport && <details className="report-layer-details"><summary>查看识别过程与指标适用性</summary><ol>{analysisReport.layers.map(layer => <li key={layer.id}><strong>{layer.label_zh}</strong><span>{({ available: "可用", partial: "部分可用", unavailable: "未提供", unknown: "未确认" } as Record<string, string>)[layer.status] ?? "未确认"}</span><p>{layer.reason_zh}</p></li>)}</ol></details>}
     <LiveStats result={result} trajectory={trajectory} summary={summary} />
     <section className="score-overview">
-      {!!result?.actions?.length && <div className="module-cards live-action-cards">{result.actions.map(action => <button key={action.event_code} className="module-card" onClick={() => { setFamily(action.family || eventFamily(action.event_code)); setSelected(action.indicator_evaluations?.[0]?.indicator_id ?? ""); document.getElementById("motion-details")?.scrollIntoView({ behavior: "smooth" }); }}><div className="module-head"><span>{action.name_zh}</span><i>{action.detected_segments} 个候选片段</i></div><strong>{evidenceReferenceScore(action.performance_assessment) === null ? `${action.indicator_evaluations?.filter(hasMeasurement).length ?? 0} / ${action.indicator_evaluations?.length ?? 0} 项可测` : `${scoreText(evidenceReferenceScore(action.performance_assessment))} / 100`}</strong><p>{evidenceReferenceScore(action.performance_assessment) === null ? "候选动作待复核 · 技术评分待标定" : "测量证据参考分 · 非技术评分"}</p></button>)}</div>}
+      {!!result?.actions?.length && <div className="module-cards live-action-cards">{result.actions.map(action => <button key={action.event_code} className="module-card" onClick={() => { setFamily(action.family || eventFamily(action.event_code)); setSelected(action.indicator_evaluations?.[0]?.indicator_id ?? ""); document.getElementById("motion-details")?.scrollIntoView({ behavior: "smooth" }); }}><div className="module-head"><span>{action.name_zh}</span><i>{action.detected_segments} 个候选片段</i></div><strong>{evidenceReferenceScore(action.performance_assessment) === null ? `${action.indicator_evaluations?.filter(hasMeasurement).length ?? 0} / ${action.indicator_evaluations?.length ?? 0} 项可测` : `${scoreText(evidenceReferenceScore(action.performance_assessment))} / 100`}</strong><p>{evidenceReferenceScore(action.performance_assessment) === null ? "候选动作待复核 · 尚缺完整评分依据" : "测量证据参考分 · 非技术评分"}</p></button>)}</div>}
     </section>
     <section className="workbench" id="motion-details"><div className="workbench-head"><div><div><h2>动作分析与证据回放</h2></div></div></div>
       <div className="event-rail" aria-label="选择动作类别">{Object.entries(FAMILIES).map(([key, name]) => { const info = familyRecognition(key, candidateSummary.candidates.some(item => item.family === key), assessment?.family_summary?.[key]); const motion = motionAnalysis?.families[key as "baseline" | "serve" | "return"]; return <button key={key} aria-pressed={key === family} className={key === family ? "active" : ""} onClick={() => { setFamily(key); setSelected(""); }}><strong>{name}</strong><small>{motion ? motion.episodes.length ? "运动已分析" : "证据不足" : info.label}</small></button>; })}</div>
       {isMotionFamily && motionAnalysis ? <MotionAnalysisPanel key={`${family}-${result?.job_id ?? ""}`} familyLabel={FAMILIES[family as keyof typeof FAMILIES]} data={motionFamily} jobId={result?.job_id} pending={pending} /> : <>
       <p className="score-disclosure">{recognition.reason || `当前类别已观测 ${assessment?.family_summary?.[family]?.observed_count ?? 0} / ${assessment?.family_summary?.[family]?.total_count ?? techniques.length} 类动作。`}{familyIndicators.length > 0 ? `当前可查看 ${familyIndicators.length} 项可测指标。` : "当前暂无可测指标。"}</p>
-      {family === "footwork" && <FootworkReviewPanel key={result?.job_id ?? ""} review={result?.footwork_review} jobId={result?.job_id} />}
+      {family === "footwork" && <FootworkReviewPanel key={result?.job_id ?? ""} review={result?.footwork_review} jobId={result?.job_id} sourceAssessment={result?.source_aligned_assessment} />}
       <div className="rules-layout"><div className="rules-list"><div className="rules-list-head"><h3>{FAMILIES[family as keyof typeof FAMILIES]} · 当前视频</h3><label className="search-box"><span>⌕</span><input aria-label="搜索当前视频的指标" placeholder="搜索指标" value={query} onChange={event => setQuery(event.target.value)} /></label></div>
         {familyIndicators.length > 0 && <><div className="table-head"><span>动作指标</span><span>测量</span><span>证据参考分</span></div><div className="result-rows">{familyIndicators.filter(item => item.name_zh.includes(query)).map(item => <button key={item.indicator_id} onClick={() => setSelected(item.indicator_id)} className={`result-row ${selectedIndicator?.indicator_id === item.indicator_id ? "active" : ""}`}><span className="result-name"><i className={`status-mark status-${hasMeasurement(item) ? "measured" : "partial"}`} /><strong>{item.name_zh}</strong></span><span className="status-pill">{item.measured_instance_count ?? 0} 次</span><span className="result-score">{evidenceReferenceScore(item) === null ? hasMeasurement(item) ? "可复核" : "证据不足" : scoreText(evidenceReferenceScore(item))}</span></button>)}</div></>}
-        <div className="table-head"><span>技术定义</span><span>状态</span><span>技术评分</span></div><div className="result-rows">{techniques.map(item => <button key={item.technique_id} onClick={() => setSelected(item.technique_id)} className={`result-row ${selected === item.technique_id ? "active" : ""}`}><span className="result-name"><strong>{item.name_zh}</strong></span><span className={`status-pill status-${item.status}`}>{techniqueStatusLabel(item, recognition.state)}</span><span className="result-score">待标定</span></button>)}{!techniques.length && <div className="empty-state"><strong>{searching ? "没有匹配的动作" : emptyTitle}</strong><span>{searching ? "可以切换类别或清除搜索词。" : emptyDescription}</span></div>}</div>
+        <div className="table-head"><span>技术定义</span><span>状态</span><span>技术评分</span></div><div className="result-rows">{techniques.map(item => <button key={item.technique_id} onClick={() => setSelected(item.technique_id)} className={`result-row ${selected === item.technique_id ? "active" : ""}`}><span className="result-name"><strong>{item.name_zh}</strong></span><span className={`status-pill status-${item.status}`}>{techniqueStatusLabel(item, recognition.state)}</span><span className="result-score">{technicalAssessmentState(item).label_zh}</span></button>)}{!techniques.length && <div className="empty-state"><strong>{searching ? "没有匹配的动作" : emptyTitle}</strong><span>{searching ? "可以切换类别或清除搜索词。" : emptyDescription}</span></div>}</div>
       </div><aside className="inspector" aria-label="当前视频评分详情">
         {familyIndicators.length > 0 && selectedIndicator && !techniques.some(item => item.technique_id === selected) ? <><span className="inspector-kicker">可测动作 · 证据复核</span><h3>{selectedIndicator.name_zh}</h3><p className="definition">{selectedIndicator.definition_zh}</p><div className="inspector-section"><div className="section-label"><span>测量证据参考分</span><strong>{scoreText(evidenceReferenceScore(selectedIndicator))} / 100</strong></div><p>{selectedIndicator.summary_zh}</p></div><div className="inspector-section"><div className="section-label">本次观察</div><p>{selectedIndicator.observation_zh || "暂无补充观察"}</p></div><div className="feedback-box"><span>复核建议</span><p>{selectedIndicator.suggestion_zh || "先保持低强度，关注一次完整动作。"}</p></div><MeasurementEvidence indicator={selectedIndicator} />{selectedIndicator.limitations_zh?.map(item => <p className="muted-small" key={item}>{item}</p>)}</> : selectedTechnique ? <><span className="inspector-kicker">最新动作定义 · {techniqueStatusLabel(selectedTechnique, recognition.state, true)}</span><h3>{selectedTechnique.name_zh}</h3><div className="inspector-section"><div className="section-label">视觉识别依据</div>{(selectedTechnique.core_visual_features ?? []).map(item => <p className="definition" key={item}>{item}</p>)}</div>{selectedTechnique.key_field_analysis && <div className="inspector-section key-field-analysis"><div className="section-label">关键字段证据底线</div>{[...selectedTechnique.key_field_analysis.required_fields, ...selectedTechnique.key_field_analysis.enhanced_fields].map(item => <div className="field-row" key={`${item.required ? "required" : "enhanced"}-${item.field}`}><span>{fieldLabel(item.field)}{item.required ? "" : "（增强）"}</span><small className={`field-status field-${item.status}`}>{item.status === "ready" || item.status === "available" ? "已观测" : item.status === "partial" ? "部分证据" : item.coverage_percent > 0 ? "阶段证据未关联" : item.status === "optional_missing" ? "未提供" : "缺失"} · 全片覆盖 {item.coverage_percent}%</small></div>)}{selectedTechnique.key_field_analysis.missing_required_fields.length > 0 && <p className="muted-small">缺少必需字段：{selectedTechnique.key_field_analysis.missing_required_fields.map(fieldLabel).join("、")}</p>}</div>}<div className="phase-list">{(selectedTechnique.phase_statuses ?? []).map(item => <div key={item.phase}><span>{item.phase}</span><small>{statusLabel(item.status, item.status === "ready")}</small></div>)}</div>{(selectedTechnique.limitations_zh ?? []).map(item => <p className="muted-small" key={item}>{item}</p>)}</> : <div className="empty-state"><strong>{emptyTitle}</strong><span>{emptyDescription}</span></div>}
       </aside></div></>}
     </section>
     </details>
+    </TrainingReportOverview></div>}
   </div>;
 }

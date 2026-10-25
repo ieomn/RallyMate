@@ -18,6 +18,7 @@ import math
 import statistics
 from typing import Any, Protocol
 from .pose_observations import MODEL_ESTIMATE, measurement_provenance, sample_source_reference, source_time_is_continuous
+from .vector_kinematics import WristKinematicsUnavailable, vector_trajectory
 
 
 CONTRACT_VERSION = "temporal-pose-window-v1.0.0"
@@ -158,15 +159,15 @@ class TemporalRecognitionBackend(Protocol):
 
 
 def wrist_kinematics(samples: Sequence[Any], side: str) -> tuple[list[tuple[float, float]], list[float]]:
-    wrists = []
-    for i in range(len(samples)):
-        nearby = [s.points[f"{side}_wrist"] for s in samples[max(0, i - 2):i + 3]]
-        wrists.append((statistics.median(p[0] for p in nearby), statistics.median(p[1] for p in nearby)))
-    speed = [0.0] * len(samples)
-    for i in range(1, len(samples) - 1):
-        before, after = max(0, i - 2), min(len(samples) - 1, i + 2)
-        speed[i] = _distance(wrists[before], wrists[after]) * 1000 / (samples[after].time - samples[before].time)
-    return wrists, speed
+    trajectory = vector_trajectory([s.time for s in samples], [s.points.get(f"{side}_wrist") for s in samples],
+        continuous=[samples_are_continuous(a,b) for a,b in zip(samples,samples[1:])],
+        frame_indices=[s.frame_index for s in samples])
+    if not trajectory.interval_speed or any(p is None for p in trajectory.points) or any(v is None for v in trajectory.interval_speed):
+        raise WristKinematicsUnavailable("Wrist kinematics requires a complete continuous observed window")
+    # The rule backend selects original frames. Associate each interval with
+    # its ending frame; the first frame uses the first observed interval.
+    # No endpoint is assigned an artificial zero velocity.
+    return trajectory.points, [trajectory.interval_speed[0], *trajectory.interval_speed]
 
 
 def _axis(sample: Any) -> tuple[float, float] | None:
@@ -310,7 +311,7 @@ class RuleTemporalBackend:
     """Honest runnable baseline until a tennis-trained adapter is validated."""
 
     def metadata(self) -> dict[str, Any]:
-        return {"backend_id": "pose-racket-temporal-rules", "version": "2.0.0", "kind": "deterministic_rules",
+        return {"backend_id": "pose-racket-temporal-rules", "version": "2.1.0", "kind": "deterministic_rules",
                 "trained_tennis_model": False, "weights": None, "accuracy_validation": "not_established",
                 "input_contract": CONTRACT_VERSION, "phase_comparison": "corresponding_observed_stage_only"}
 

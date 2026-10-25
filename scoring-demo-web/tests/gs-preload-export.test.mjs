@@ -25,11 +25,13 @@ test("all raw auxiliary source series survive backup and no synthetic case gains
     assert.equal(backup.result.card_execution.summary.proxy_scored_instances, 0);
   }
 });
-test("portable tables use recomputed auxiliary values, reference-only language and local uncertainty", () => {
-  const section = buildPracticeReport(completed(fixture.report)).sections.find(row => row.title === "逐卡视频实例与条件");
-  const row = section.rows[0].join(" ");
-  assert.match(row, /局部下降辅助观测/); assert.match(row, /12\/12 帧八关节共同有效/); assert.match(row, /工程参考/); assert.match(row, /不判通过/);
-  assert.match(row, /共同下降时间比=100.00%/); assert.match(row, /人工局部下降窗口 ±80 毫秒/); assert.match(row, /不是专家垫步真值/);
+test("auxiliary values and uncertainty remain complete in backup and never appear as internal score tables", () => {
+  const input = completed(fixture.report);
+  assert.equal(buildPracticeReport(input).sections.some(row => row.title.startsWith("逐卡")), false);
+  const backup = buildReportBackup(input), row = backup.result.card_execution.cards[0].instances[0];
+  assert.equal(row.score, null);
+  assert.deepEqual(row.auxiliary_evidence, fixture.report.cards[0].instances[0].auxiliary_evidence);
+  assert.equal(row.auxiliary_validation.status, "measured_auxiliary");
 });
 test("invalid raw scores stay in diagnostic backup but never appear as valid auxiliary table values", () => {
   const raw = structuredClone(fixture.report), auxiliary = raw.cards[0].instances[0].auxiliary_evidence;
@@ -38,6 +40,7 @@ test("invalid raw scores stay in diagnostic backup but never appear as valid aux
   assert.equal(backup.result.card_execution.cards[0].instances[0].auxiliary_evidence.score, 100);
   assert.equal(backup.result.card_execution.cards[0].instances[0].score, null);
   assert.equal(backup.result.card_execution.cards[0].instances[0].auxiliary_validation.status, "invalid");
-  const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-  assert.match(section.rows[0].join(" "), /输入未通过校验/); assert.doesNotMatch(section.rows[0].join(" "), /12345|100.00%/);
+  const report = buildPracticeReport(input);
+  assert.equal(report.sections.some(row => row.title.startsWith("逐卡")), false);
+  assert.doesNotMatch(JSON.stringify(report), /12345|100.00%/);
 });

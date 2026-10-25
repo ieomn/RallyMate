@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from rallymate_scoring.feasibility import measurement_feature_names
+from rallymate_scoring.model_measurement_contract import has_model_measurement_context, MODEL_MEASUREMENT_PROVENANCE
 
 
 ARTIFACT_VERSION = "scoring-cycle-measurement-v1.0.0"
@@ -37,8 +38,8 @@ def _cycle_id(video_id: str, track_id: Any, event_ids: list[str]) -> str:
     return "cycle-" + hashlib.sha256(payload).hexdigest()[:16]
 
 
-def _feature_confidences(record: dict[str, Any]) -> list[float]:
-    return [float(item["confidence"]) for item in record.get("features", [])]
+def _feature_confidences(record: dict[str, Any]) -> list[float | None]:
+    return [None if has_model_measurement_context(item) else float(item["confidence"]) for item in record.get("features", [])]
 
 
 def _compact_feature_vector(record: dict[str, Any]) -> list[dict[str, Any]]:
@@ -48,7 +49,8 @@ def _compact_feature_vector(record: dict[str, Any]) -> list[dict[str, Any]]:
             "feature_version": str(item["feature_version"]),
             "value": item.get("value"),
             "unit": str(item["unit"]),
-            "confidence": float(item["confidence"]),
+            "confidence": None if has_model_measurement_context(item) else float(item["confidence"]),
+            **{key: item[key] for key in ("measurement_provenance", "source_window", "geometry_mask", "required_joints_used", "selected_side") if key in item},
             "valid": item.get("valid") is True,
             "reason": str(item["reason"]),
             "source_frames": [int(value) for value in item.get("source_frames", [])],
@@ -64,6 +66,7 @@ def _event_ref(event: dict[str, Any]) -> dict[str, Any]:
         "start_ms": int(event["start_ms"]),
         "end_ms": int(event["end_ms"]),
         "confidence": float(event.get("confidence", 0.0)),
+        **{key: event[key] for key in ("measurement_provenance", "source_window", "geometry_mask", "confidence_semantics") if key in event},
         "boundary_uncertainty_ms": int(event.get("boundary_uncertainty_ms", 0)),
         "link_phases_ms": {
             "initiation_ms": _phase(event, "initiation_ms"),
@@ -155,8 +158,8 @@ def _cycle_rank(cycle: dict[str, Any]) -> tuple[Any, ...]:
     return (
         -int(cycle["measured_indicator_count"]),
         -int(cycle["scoring_gate_passed_indicator_count"]),
-        -float(quality["minimum_required_feature_confidence"]),
-        -float(quality["mean_required_feature_confidence"]),
+        float("inf") if quality["minimum_required_feature_confidence"] is None else -float(quality["minimum_required_feature_confidence"]),
+        float("inf") if quality["mean_required_feature_confidence"] is None else -float(quality["mean_required_feature_confidence"]),
         -float(quality["minimum_event_confidence"]),
         int(cycle["start_ms"]),
         str(cycle["cycle_id"]),
@@ -256,6 +259,7 @@ def build_scoring_cycle_measurement(
         if len(measured) + len(unavailable) != len(records):
             raise CycleMeasurementError("unexpected feature status in cycle")
         confidences = [value for item in measured for value in _feature_confidences(item)]
+        unknown_confidence = any(value is None for value in confidences) or any(has_model_measurement_context(item) for item in records)
         event_confidences = [float(item["confidence"]) for item in cycle["events"]]
         gate_counts = Counter(
             str(item.get("quality_gate", {}).get("status")) for item in records
@@ -267,6 +271,7 @@ def build_scoring_cycle_measurement(
         cycle_rows.append(
             {
                 **cycle,
+                **({"measurement_provenance": dict(MODEL_MEASUREMENT_PROVENANCE)} if unknown_confidence else {}),
                 "indicator_count": len(records),
                 "measured_indicator_count": len(measured),
                 "unavailable_indicator_count": len(unavailable),
@@ -280,9 +285,9 @@ def build_scoring_cycle_measurement(
                 ),
                 "quality_gate_status_counts": dict(sorted(gate_counts.items())),
                 "selection_quality": {
-                    "minimum_required_feature_confidence": min(confidences) if confidences else 0.0,
+                    "minimum_required_feature_confidence": None if unknown_confidence else min(confidences) if confidences else 0.0,
                     "mean_required_feature_confidence": (
-                        sum(confidences) / len(confidences) if confidences else 0.0
+                        None if unknown_confidence else sum(confidences) / len(confidences) if confidences else 0.0
                     ),
                     "minimum_event_confidence": min(event_confidences),
                     "mean_event_confidence": sum(event_confidences) / len(event_confidences),
@@ -309,6 +314,7 @@ def build_scoring_cycle_measurement(
                     "indicator_id": indicator_id,
                     "event_id": str(record["event_id"]),
                     "feature_status": str(record["feature_status"]),
+                    **{key: record[key] for key in ("measurement_provenance", "source_window", "geometry_mask") if key in record},
                     "scoring_status": str(record["scoring_status"]),
                     "feature_vector": _compact_feature_vector(record),
                     "reason_codes": [str(value) for value in record.get("reason_codes", [])],

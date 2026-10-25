@@ -53,8 +53,8 @@ class ResolvedRegistryArtifact:
     """
 
     authority_version: str
-    manifest_path: Path
-    manifest_sha256: str
+    manifest_path: Path | None
+    manifest_sha256: str | None
     authority_slot: str
     role: RegistryRole | None
     kind: str
@@ -508,7 +508,22 @@ def resolve_registry_role(
 
 def resolve_runtime_feasibility_registry(
     manifest_path: str | Path = DEFAULT_REGISTRY_LIFECYCLE_PATH,
+    *,
+    explicit_path: str | Path | None = None,
 ) -> ResolvedRegistryArtifact:
+    if explicit_path is not None:
+        path = Path(explicit_path).resolve(strict=True)
+        raw_bytes = path.read_bytes()
+        payload = _parse_json_bytes(raw_bytes, "explicit feasibility registry")
+        _validate_artifact_payload(payload, "metric_feasibility_registry")
+        version, source_version = _embedded_identity(payload, "metric_feasibility_registry")
+        return ResolvedRegistryArtifact(
+            authority_version="explicit-input-v1", manifest_path=None, manifest_sha256=None,
+            authority_slot="explicit_input", role="runtime_feasibility", kind="metric_feasibility_registry",
+            lifecycle="explicit_input", relative_path=path.name, path=path,
+            file_sha256=hashlib.sha256(raw_bytes).hexdigest(), embedded_version=version,
+            source_registry_version=source_version, payload=payload, raw_bytes=raw_bytes,
+        )
     return resolve_registry_role(manifest_path, "runtime_feasibility")
 
 

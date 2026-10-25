@@ -6,16 +6,18 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 
 function compiledUrl(fileUrl) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   let js = ts.transpileModule(fs.readFileSync(fileUrl, "utf8"), { fileName: fileUrl.pathname, compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, fileUrl);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;
   });
   return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
 }
-const { normalizeMeasurementResult, measurementCounts, measurementResultFromSummary } = await import(compiledUrl(new URL("../app/lib/measurement-evidence.ts", import.meta.url)));
+const { normalizeMeasurementResult, measurementCounts, measurementResultFromSummary, technicalAssessmentState } = await import(compiledUrl(new URL("../app/lib/measurement-evidence.ts", import.meta.url)));
 const { default: LiveResults } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
 const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { buildReportBackup, buildPracticeReport, getReportExportGate, renderReportMarkdown } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
@@ -37,10 +39,11 @@ test("historical scores are suppressed without discarding partial or single-samp
   assert.equal(JSON.stringify(source), snapshot);
   const html = renderToStaticMarkup(createElement(LiveResults, { result: source, assessment: null, catalog: null, pending: false, trajectory: null }));
   assert.match(html, /实测指标|1 \/ 1/);
-  assert.match(html, /技术评分待教练标定/);
+  assert.match(html, /完整评分依据/);
   assert.match(html, /分腿垫步（候选）/);
   assert.match(html, /12 % 身体尺度/);
-  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /97|score-ring/);
+  // Chart coordinates can contain any digits; retain SVG text but omit its geometry.
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<svg\b[\s\S]*?<\/svg>/g, svg => svg.replace(/<[^>]+>/g, "")), /97|score-ring/);
 });
 
 test("empty evidence stays readable, and missing metrics never turn into a new aggregate score", () => {
@@ -53,6 +56,35 @@ test("empty evidence stays readable, and missing metrics never turn into a new a
   assert.equal(empty.training_evaluation.available, false);
   assert.deepEqual(measurementCounts(empty), { measured: 0, total: 0 });
   assert.equal(empty.training_evaluation.score_0_to_100, null);
+});
+
+test("missing grades distinguish unobserved, candidate, unimplemented, model-only and incomplete evidence", () => {
+  const cases = [
+    [{ reason_codes: ["grade_rule_not_defined"], recognition_status: "candidate" }, true, "scoring_not_implemented", "计分规则尚未定义"],
+    [{ observed: false, status: "not_observed" }, undefined, "not_observed", "本次未观测"],
+    [{ observed: false, status: "not_observed", recognition_status: "candidate" }, undefined, "candidate_confirmation_required", "动作待确认"],
+    [{ observed: false, status_reason: "contact_control_rule_not_implemented" }, false, "scoring_not_implemented", "评分尚未实现"],
+    [{ technical_score_status: "calibration_required" }, true, "incomplete_scoring_evidence", "尚缺完整评分依据"],
+    [{ technical_score_status: "calibration_required" }, false, "evidence_insufficient", "测量证据不足"],
+    [{ measurement_provenance: { pose_source: "sam3d", observation_semantics: "monocular_model_estimate", scoring_allowed: false } }, true, "model_estimate_measurement_only", "模型估计，仅作测量"],
+  ];
+  for (const [value, measured, status, label_zh] of cases) assert.deepEqual(technicalAssessmentState(value, measured), { status, label_zh });
+});
+
+test("normalization preserves zero measurements and actual missing causes without claiming calibration is the only gap", () => {
+  const source = historical();
+  source.actions[0].indicator_evaluations[0].representative_measurements[0].median_value = 0;
+  source.training_evaluation.indicator_evaluations.push({ indicator_id: "GS01-M04-01", name_zh: "触球控制", available: false, status_reason: "contact_control_rule_not_implemented", measured_instance_count: 0, total_instance_count: 1 });
+  const result = normalizeMeasurementResult(source);
+  assert.equal(result.training_evaluation.indicator_evaluations[0].representative_measurements[0].median_value, 0);
+  assert.equal(result.training_evaluation.indicator_evaluations[0].technical_score_status, "incomplete_scoring_evidence");
+  assert.equal(result.training_evaluation.indicator_evaluations[1].technical_score_status, "scoring_not_implemented");
+  assert.match(result.training_evaluation.indicator_evaluations[1].summary_zh, /评分尚未实现/);
+  assert.doesNotMatch(result.training_evaluation.summary_zh, /待教练标定/);
+  assert.deepEqual(normalizeMeasurementResult(result), result);
+  const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
+  assert.match(html, /当前未提供可用的测量证据参考分；已保存的逐项测量仍可查看/);
+  assert.doesNotMatch(html, /未取得足够的可靠测量/);
 });
 
 test("API normalization accepts scoreless successful results and historical artifacts", async () => {
@@ -70,7 +102,7 @@ test("HTML/Markdown and JSON export preserve raw evidence but never revive histo
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   assert.equal(getReportExportGate(input).allowed, true);
   const report = buildPracticeReport(input), markdown = renderReportMarkdown(report), backup = buildReportBackup(input);
-  assert.match(markdown, /技术评分待教练标定|待教练标定/);
+  assert.match(markdown, /尚缺完整评分依据/);
   assert.match(markdown, /12|50%/);
   assert.doesNotMatch(markdown, /97/);
   assert.equal(backup.result.training_evaluation.score_0_to_100, null);
@@ -103,7 +135,7 @@ test("declared evidence reference scores survive API, screen and report round tr
   assert.match(html, /测量证据参考分（Beta）|非技术评分/);
   assert.match(html, /高分不代表动作正确/);
   assert.match(html, /<details class="inspector-section measurement-evidence"><summary/);
-  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /97|99/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<svg\b[\s\S]*?<\/svg>/g, svg => svg.replace(/<[^>]+>/g, "")), /97|99/);
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const markdown = renderReportMarkdown(buildPracticeReport(input));
   assert.match(markdown, /81 \/ 100/);

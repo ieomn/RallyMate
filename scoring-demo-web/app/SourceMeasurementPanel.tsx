@@ -6,6 +6,7 @@ import type { RuleReviewCatalog } from "./lib/rule-review";
 import { footworkFeatureText } from "./lib/footwork-review";
 import { replayMoment } from "./lib/training-report";
 import { sourceReviewCoverage, sourceReviewWindows, sourceWindowDisplay } from "./lib/technical-review";
+import { sourceMeasurementDetailLines } from "./lib/source-measurement-details";
 import "./source-measurements.css";
 
 const formatTime = (ms: number) => `${Number((ms / 1000).toFixed(3))} 秒`;
@@ -57,6 +58,7 @@ export default function SourceMeasurementPanel({ result, catalog, initialIndicat
           <span>{measurement.measurement_window.start_ms === measurement.measurement_window.end_ms ? "同帧衔接" : measurement.measurement_window.start_ms < window.start_ms || measurement.measurement_window.end_ms > window.end_ms ? "跨事件测量区间" : "实际测量区间"}：{formatTime(measurement.measurement_window.start_ms)}–{formatTime(measurement.measurement_window.end_ms)}</span>
           <button type="button" onClick={() => replayMoment({ startMs: measurement.measurement_window!.start_ms }, result.job_id)}>回看此测量</button>
         </div> : <p className="sm-note">未提供可核验的具体计算时段。</p>)}
+        {sourceMeasurementDetailLines(measurement).length > 0 && <details><summary>计算与来源</summary>{sourceMeasurementDetailLines(measurement).map((line, index) => <p key={index}>{line}</p>)}</details>}
       </div>)}</div>
       <details className="sm-visibility"><summary>关键点可见性与测量限制</summary>
         <strong>{window.visibility.valid_frame_ratio !== null ? `本项所需关键点：${Math.round(window.visibility.valid_frame_ratio * 100)}% 有效帧` : "本时段的关键点可见性待核实"}</strong>

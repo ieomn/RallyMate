@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Event, Thread
@@ -31,7 +32,7 @@ class CompletedMotionSourceScanner:
 
     def initialize(self, *, activated_at: str | None = None) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.path, timeout=30) as connection:
+        with closing(sqlite3.connect(self.path, timeout=30)) as connection, connection:
             connection.execute("CREATE TABLE IF NOT EXISTS cursor (id INTEGER PRIMARY KEY, completed_at TEXT NOT NULL, job_id TEXT NOT NULL)")
             connection.execute("CREATE TABLE IF NOT EXISTS skipped_sources (job_id TEXT PRIMARY KEY, reason TEXT NOT NULL)")
             connection.execute(
@@ -43,7 +44,7 @@ class CompletedMotionSourceScanner:
         from fastapi import HTTPException
         from rallymate_service.motion_replay_api import MotionReplayInputError
 
-        with sqlite3.connect(self.path, timeout=30) as connection:
+        with closing(sqlite3.connect(self.path, timeout=30)) as connection, connection:
             marker = connection.execute("SELECT completed_at, job_id FROM cursor WHERE id=1").fetchone()
         if marker is None:
             raise RuntimeError("Motion source scanner is not initialized")
@@ -64,7 +65,7 @@ class CompletedMotionSourceScanner:
                     raise
                 # Do not store paths or request contents in scheduler diagnostics.
                 skipped_reason = f"source_ineligible_{exc.status_code}"
-            with sqlite3.connect(self.path, timeout=30) as connection:
+            with closing(sqlite3.connect(self.path, timeout=30)) as connection, connection:
                 if skipped_reason:
                     connection.execute("INSERT OR REPLACE INTO skipped_sources VALUES (?, ?)", (row["id"], skipped_reason))
                 connection.execute(

@@ -76,7 +76,7 @@ class DirectionalUnifiedContracts(unittest.TestCase):
         self.assertEqual(len(self.report["cards"]), 298)
         self.assertEqual(other_cards(self.report), other_cards(self.baseline))
         self.assertEqual(self.report["version"], execution.VERSION)
-        self.assertEqual([i["score"] for i in owned_instances(self.report)], [60, 60])
+        self.assertEqual([i["score"] for i in owned_instances(self.report)], [200 / 3, 200 / 3])
         self.assertEqual(self.report["coverage"]["computed_card_instance_count"], self.baseline["coverage"]["computed_card_instance_count"]+2)
         formal = self.report["summary"]["channels"]["formal"]
         self.assertAlmostEqual(self.report["overall_score"], sum(formal["per_card"].values())/len(formal["per_card"]))
@@ -159,7 +159,7 @@ class DirectionalRealUnifiedIntegration(unittest.TestCase):
             merged = execution.build_card_execution_report(directory)
             self.assertEqual(other_cards(merged), other_cards(baseline))
             self.assertEqual(len(merged["cards"]), 298)
-            self.assertEqual([i["score"] for i in owned_instances(merged)], [60, 60])
+            self.assertEqual([i["score"] for i in owned_instances(merged)], [200 / 3, 200 / 3])
             self.assertEqual(merged["coverage"]["computed_card_instance_count"], baseline["coverage"]["computed_card_instance_count"]+2)
             self.assertEqual(merged["coverage"]["directional_executed_card_count"], 2)
             self.assertTrue(merged["input"]["directional_micro_adjustment_execution"]["service_eligible"])
@@ -186,7 +186,7 @@ class DirectionalRealUnifiedIntegration(unittest.TestCase):
                     "execution_artifact_sha256": document["input_artifact_sha256"],
                     "migration": "Only summary.input.video_path changed to the existing same-SHA local video; original frames/events/primary bytes and job identities remain unchanged",
                     "http_contracts": ["current", "legacy-v1"], "http_exact_report_roundtrip": True}, indent=2)+"\n", encoding="utf8")
-            # A same-length binding mutation must not retain the previous C60.
+            # A same-length binding mutation must not retain the previous completion score.
             stat = path.stat(); raw = path.read_bytes()
             modified = raw.replace(b'"derived_selection_epoch": 1', b'"derived_selection_epoch": 9')
             self.assertNotEqual(raw, modified); self.assertEqual(len(raw), len(modified))

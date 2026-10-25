@@ -16,6 +16,7 @@ from .rotation_analysis import analyze_rotation
 from .temporal_recognition import samples_are_continuous
 from .pose_observations import measurement_provenance
 from .preparation_translation import analyze_preparation_translation
+from .vector_kinematics import WristKinematicsUnavailable, vector_trajectory, measurement_contract
 
 
 VERSION = "process-motion-v1.1.0"
@@ -85,14 +86,12 @@ def _continuity_reasons(samples: list[Any], side: str, *, require_wrist: bool = 
 
 
 def _trajectory(samples: list[Any], side: str) -> tuple[list[tuple[float, float]], list[float]]:
-    points = [_point(sample, f"{side}_wrist") for sample in samples]
-    # Preserve observed endpoints. In particular, never manufacture zero speed
-    # at the final frame, which would fabricate a perfect follow-through stop.
-    filtered = [tuple(statistics.median(p[axis] for p in points[i - 1:i + 2]) for axis in (0, 1))
-                if 0 < i < len(points) - 1 else point for i, point in enumerate(points)]
-    speeds = [math.dist(a, b) * 1000 / (after.time - before.time)
-              for a, b, before, after in zip(filtered, filtered[1:], samples, samples[1:])]
-    return filtered, speeds
+    trajectory = vector_trajectory([s.time for s in samples], [_point(s,f"{side}_wrist") for s in samples],
+        continuous=[samples_are_continuous(a,b) for a,b in zip(samples,samples[1:])],
+        frame_indices=[s.frame_index for s in samples])
+    if not trajectory.interval_speed or any(p is None for p in trajectory.points) or any(v is None for v in trajectory.interval_speed):
+        raise WristKinematicsUnavailable("Wrist kinematics requires a complete continuous observed window")
+    return trajectory.points, trajectory.interval_speed
 
 
 def _wrist_measurements(samples: list[Any], side: str) -> dict[str, Any]:
@@ -232,9 +231,8 @@ def _sequence(samples: list[Any], side: str, reasons: list[str]) -> dict[str, An
     wrist_reasons = _continuity_reasons(samples, side)
     wrist_peak = None
     if not wrist_reasons:
-        points, _ = _trajectory(samples, side)
-        wrist_rows = [(samples[i].time, math.dist(points[i - 1], points[i + 1]) * 1000 / (samples[i + 1].time - samples[i - 1].time))
-                      for i in range(1, len(samples) - 1)]
+        _, speeds = _trajectory(samples, side)
+        wrist_rows = [((before.time+after.time)/2, speed) for before,after,speed in zip(samples,samples[1:],speeds)]
         wrist_peak, wrist_reasons = _peak(wrist_rows, minimum_speed=0.05)
     result["wrist_peak_ms"], result["peak_reason_codes"]["wrist"] = wrist_peak, wrist_reasons
     result["reason_codes"] = list(dict.fromkeys(code for codes in result["peak_reason_codes"].values() for code in codes))
@@ -290,6 +288,7 @@ def analyze_process_motion(samples: list[Any], phases: list[Mapping[str, Any]], 
         "version": VERSION, "status": "measured_2d" if complete else "partial" if measured or any(item["status"] in {"measured", "partial"} for item in components) else "unavailable",
         "coordinate_system": "body_relative_image_x_right_y_down", "coordinate_unit": "torso_length", "score": None, "is_formal_score": False,
         "measurement_provenance": measurement_provenance(samples),
+        "wrist_kinematics": measurement_contract(),
         "phases": phase_rows, "sequence": sequence, "direction": direction, "follow_through": follow_through,
         "source_observations": analyze_indicator_observations(samples, phases, side),
         "preparation_translation": analyze_preparation_translation(samples, phases),

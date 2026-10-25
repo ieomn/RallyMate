@@ -22,27 +22,36 @@ function completed(raw) {
   return { mode: "live", uploadState: "complete", job: { id: raw.source_run_id, status: "succeeded" },
     evidence: { jobId: raw.source_run_id, result: { job_id: raw.source_run_id, card_execution: raw } } };
 }
-test("manual FS provenance appears in portable tables and complete source bindings survive backup", () => {
+test("manual FS provenance stays in complete backups while internal windows are absent from readable tables", () => {
   const input = completed(fsUnit.report);
   const backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
   assert.deepEqual(cardExecutionOf(backup.result.card_execution), cardExecutionOf(fsUnit.report));
-  const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-  assert.equal(section.rows.length, 35);
-  assert.ok(section.rows.every(row => row.at(-1).includes("人工逐卡窗口") && row.at(-1).includes("非专家技术、触地或受力真值") && row.at(-1).includes("±100 毫秒")));
+  assert.equal(buildPracticeReport(input).sections.some(row => row.title.startsWith("逐卡")), false);
+  const instances = backup.result.card_execution.cards.flatMap(card => card.instances);
+  assert.equal(instances.length, 35);
+  for (const row of instances) {
+    assert.equal(row.source_window_annotation.binding.method, "manual_anchor");
+    assert.equal(row.source_window_annotation.binding.uncertainty_ms, 100);
+    assert.equal(row.source_window_annotation.binding.semantics, "manual_card_window_not_expert_technique_contact_or_force_truth");
+  }
 });
-test("sampled measurement wrist remains distinct from dominant hand in exports and full proof stays in backup", () => {
+test("sampled measurement wrist remains distinct from dominant hand in backups and is not exposed as a score", () => {
   for (const { report: raw } of gsReal.reports) {
     const input = completed(raw), backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
     assert.deepEqual(cardExecutionOf(backup.result.card_execution), cardExecutionOf(raw));
-    const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-    assert.ok(section.rows.every(row => row.at(-1).includes("测量腕") && row.at(-1).includes("非优势手判定") && row.at(-1).includes("非持续持拍证明")));
-    if (raw.source_run_id.includes("2-hand_backhand")) assert.ok(section.rows.every(row => row.at(-1).includes("双手")));
+    assert.equal(buildPracticeReport(input).sections.some(row => row.title.startsWith("逐卡")), false);
+    for (const row of backup.result.card_execution.cards.flatMap(card => card.instances)) {
+      assert.equal(row.racket_side_evidence.observation.dominant_hand_established, false);
+      assert.equal(row.racket_side_evidence.observation.continuous_racket_hold_established, false);
+      if (raw.source_run_id.includes("2-hand_backhand")) assert.equal(row.racket_side_evidence.observation.observed_racket_hands, "both");
+    }
   }
 });
 test("real FS review evidence survives portable backup with no proxy or original score", () => {
   const input = completed(fsReal.report), backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
   assert.deepEqual(cardExecutionOf(backup.result.card_execution), cardExecutionOf(fsReal.report));
   assert.equal(backup.result.card_execution.summary.proxy_scored_instances, 0);
-  const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-  assert.equal(section.rows.length, 3); assert.ok(section.rows.every(row => row.at(-1).includes("人工逐卡窗口")));
+  assert.equal(buildPracticeReport(input).sections.some(row => row.title.startsWith("逐卡")), false);
+  const rows = backup.result.card_execution.cards.flatMap(card => card.instances);
+  assert.equal(rows.length, 3); assert.ok(rows.every(row => row.source_window_annotation.binding.method === "manual_anchor"));
 });

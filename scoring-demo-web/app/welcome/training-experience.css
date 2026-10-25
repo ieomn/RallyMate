@@ -9,6 +9,74 @@
   scroll-margin-top: 88px;
 }
 .marketing-experience * { box-sizing: border-box; }
+.mx-sample-entry { display: grid; grid-template-columns: 1.2fr 1fr; gap: 50px; border: 1px solid #46533b; background: linear-gradient(120deg, #222d1b, #111b16); border-radius: 22px; padding: 40px; }
+.mx-sample-label { color: #d8fc75; font-size: 14px; }
+.mx-sample-entry h3 { font-size: 27px; font-weight: 550; line-height: 1.5; margin: 17px 0 14px; }
+.mx-sample-entry p { color: #bac8b2; font-size: 15px; line-height: 1.9; }
+.mx-sample-link { display: inline-flex; align-items: center; gap: 15px; min-height: 46px; padding: 11px 18px; color: #1a240c; background: #d8fc75; border-radius: 8px; margin-top: 16px; text-decoration: none; font-size: 15px; font-weight: 550; }
+.mx-sample-entry ol { display: grid; gap: 24px; margin: 0; padding: 8px 0; list-style: none; align-content: center; }
+.mx-sample-entry li { display: flex; align-items: flex-start; gap: 20px; }
+.mx-sample-entry li > span { color: #aec897; font-size: 15px; border: 1px solid #4d6042; border-radius: 50%; width: 36px; height: 36px; display: grid; place-items: center; flex: none; }
+.mx-sample-entry strong, .mx-sample-entry small { display: block; }
+.mx-sample-entry strong { font-size: 16px; font-weight: 500; color: #e8f0e1; margin-bottom: 5px; }
+.mx-sample-entry small { font-size: 14px; color: #bac8b2; line-height: 1.7; }
+.mx-extra-demo { margin-top: 28px; }
+.mx-extra-demo > summary { min-height: 48px; padding: 12px 2px; color: #bac8b2; cursor: pointer; font-size: 14px; }
+.mx-extra-demo .mx-explorer { margin-top: 12px; }
+.mx-extra-demo summary:focus-visible, .mx-sample-link:focus-visible { outline: 2px solid #d8fc75; outline-offset: 5px; }
+
+.sample-report { min-height: 100dvh; background: #0c120f; color: #e8eee4; font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; line-height: 1.7; color-scheme: dark; }
+.sample-report * { box-sizing: border-box; }
+.sample-report a, .sample-report button, .sample-report summary { -webkit-tap-highlight-color: transparent; }
+.sample-report a:focus-visible, .sample-report button:focus-visible, .sample-report summary:focus-visible, .sample-report [tabindex]:focus-visible { outline: 2px solid #d8fc75; outline-offset: 5px; }
+.sample-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1248px; padding: 26px 32px; margin: auto; border-bottom: 1px solid #29372b; }
+.sample-brand { display: flex; align-items: center; gap: 10px; color: #d8fc75; font-size: 23px; font-weight: 650; text-decoration: none; }
+.sample-primary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 46px; border-radius: 8px; padding: 10px 19px; background: #d8fc75; color: #1b250c; font-size: 14px; font-weight: 550; text-decoration: none; }
+.sample-main { max-width: 1184px; padding: 35px 32px 70px; margin: auto; }
+.sample-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: #b2c1a9; text-decoration: none; font-size: 14px; }
+.sample-heading { margin-top: 29px; max-width: 760px; }
+.sample-kicker { color: #d8fc75; font-size: 14px; }
+.sample-heading h1 { font-size: clamp(32px, 4vw, 48px); line-height: 1.3; font-weight: 550; margin: 16px 0 20px; letter-spacing: -.035em; }
+.sample-heading > p { color: #bccab4; font-size: 16px; max-width: 600px; }
+.sample-honesty { margin: 30px 0; padding: 18px 23px; background: #24271a; border: 1px solid #5a5d37; border-radius: 12px; color: #dedebc; }
+.sample-honesty strong { font-size: 15px; font-weight: 550; }
+.sample-honesty p { margin: 5px 0 0; font-size: 14px; line-height: 1.85; }
+.sample-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 25px; align-items: start; }
+.sample-layout > *, .sample-next > * { min-width: 0; }
+.sample-media { border: 1px solid #344831; border-radius: 15px; padding: 20px; background: #101b13; }
+.sample-no-video { aspect-ratio: 1.6; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: repeating-linear-gradient(-45deg, #151f17, #151f17 14px, #18231a 14px, #18231a 15px); border: 1px dashed #4b5f41; border-radius: 9px; padding: 22px; }
+.sample-no-video > svg { color: #a5bd8d; margin-bottom: 17px; }
+.sample-no-video strong { color: #e0ead6; font-size: 17px; }
+.sample-no-video p { font-size: 14px; color: #b5c5aa; margin: 11px 0 0; }
+.sample-timeline { height: 9px; background: #33452e; border-radius: 5px; position: relative; margin-top: 25px; overflow: hidden; }
+.sample-timeline span { display: block; position: absolute; top: 0; bottom: 0; background: #d8fc75; border-radius: 5px; }
+.sample-location { color: #dfedcf; font-size: 15px; margin: 14px 0 5px; font-variant-numeric: tabular-nums; }
+.sample-caption { color: #afc09f; font-size: 14px; margin: 0; }
+.sample-observations h2 { margin: 0 0 15px; font-size: 21px; font-weight: 550; }
+.sample-observations article { padding: 22px; border: 1px solid #34412d; border-radius: 12px; background: #172016; margin-bottom: 15px; }
+.sample-observations article.is-selected { border-color: #899e61; background: #1d2919; }
+.sample-card-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px; font-size: 14px; color: #d5e9b5; }
+.sample-card-top small { font-size: 13px; color: #c4c4a1; }
+.sample-observations h3 { font-weight: 550; font-size: 18px; margin: 13px 0 8px; }
+.sample-observations p { font-size: 14px; color: #beccb4; margin: 8px 0 15px; }
+.sample-observations button { display: flex; align-items: center; gap: 8px; padding: 8px 0; min-height: 44px; background: transparent; border: 0; color: #d8fc75; text-align: left; cursor: pointer; font: inherit; font-size: 14px; }
+.sample-next { display: grid; grid-template-columns: .8fr 1.2fr; gap: 45px; border-top: 1px solid #35412f; padding-top: 35px; margin-top: 30px; }
+.sample-next h2 { font-weight: 550; font-size: 26px; line-height: 1.4; margin: 10px 0 15px; }
+.sample-next p { font-size: 14px; line-height: 1.85; color: #becbb4; }
+.sample-question { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 50px; text-align: left; background: #21301d; border: 1px solid #516445; padding: 14px 16px; border-radius: 9px; color: #e0edcf; font: inherit; font-size: 15px; cursor: pointer; }
+.sample-question svg { flex: none; }
+.sample-answer { padding: 6px 17px; }
+.sample-next-action { padding: 20px 0; }
+.sample-next-action strong { color: #d8fc75; font-size: 15px; font-weight: 550; }
+.sample-next-action small { color: #b1bfa5; font-size: 14px; line-height: 1.85; }
+.sample-boundaries { border: 1px solid #35422e; border-radius: 10px; margin: 20px 0 30px; padding: 7px 20px; }
+.sample-boundaries summary { color: #c2cfb6; min-height: 44px; padding: 10px 0; cursor: pointer; font-size: 14px; }
+.sample-boundaries p { color: #b2c0a6; overflow-wrap: anywhere; font-size: 14px; }
+.sample-footer-cta { display: flex; align-items: center; gap: 24px; margin-top: 35px; }
+.sample-footer-cta > p { margin-right: auto; font-size: 17px; color: #dce8d2; }
+.sample-footer-cta > a:last-child { color: #bdcdb0; font-size: 14px; min-height: 44px; display: inline-flex; align-items: center; }
+@media (max-width: 760px) { .mx-sample-entry { grid-template-columns: 1fr; gap: 28px; padding: 25px; } .mx-sample-entry h3 { font-size: 23px; } .sample-layout, .sample-next { grid-template-columns: minmax(0, 1fr); gap: 25px; } .sample-header { padding: 20px; gap: 12px; } .sample-brand { font-size: 20px; gap: 7px; } .sample-header .sample-primary { padding-inline: 12px; } .sample-main { padding: 24px 20px 50px; } .sample-honesty { padding: 17px; } .sample-footer-cta { flex-wrap: wrap; gap: 15px; } .sample-footer-cta > p { width: 100%; } .sample-no-video { min-height: 230px; aspect-ratio: auto; } }
+@media (prefers-reduced-motion: reduce) { .sample-report *, .mx-sample-entry * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 .marketing-experience button, .marketing-experience input { font: inherit; }
 .mx-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-bottom: 48px; }
 .mx-heading h2 { margin: 0; font-size: clamp(36px, 4.5vw, 58px); line-height: 1.25; letter-spacing: -.055em; font-weight: 550; }

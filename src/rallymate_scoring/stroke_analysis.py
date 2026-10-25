@@ -15,11 +15,12 @@ from typing import Any
 from .rotation_analysis import analyze_rotation
 from .process_motion import analyze_motion_transition, analyze_process_motion
 from .pose_observations import measurement_provenance, sample_source_reference
+from .vector_kinematics import WristKinematicsUnavailable, measurement_contract
 from .temporal_recognition import (LABELS, RuleTemporalBackend, TemporalRecognitionBackend,
                                    _classification, build_temporal_window, samples_are_continuous,
                                    validate_recognition, wrist_kinematics)
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v2.4.0"
+ANALYSIS_VERSION = "stroke-motion-analysis-v2.5.1"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
     "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
@@ -97,7 +98,8 @@ def candidate_hand_evidence(candidate: Mapping[str, Any], samples: list[Any]) ->
 
 
 def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence: Mapping[str, Any] | None = None, *,
-             temporal_backend: TemporalRecognitionBackend | None = None) -> dict[str, Any] | None:
+             temporal_backend: TemporalRecognitionBackend | None = None,
+             unavailable_reasons: list[str] | None = None) -> dict[str, Any] | None:
     side = candidate["racket_hand_candidate"]
     samples = _episode_context(candidate, all_samples)
     if not samples:
@@ -114,6 +116,10 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         prediction = backend.recognize(window, candidate, hand_evidence)
         if prediction is not None:
             validate_recognition(prediction, window)
+    except WristKinematicsUnavailable as exc:
+        if unavailable_reasons is not None:
+            unavailable_reasons.append(exc.reason_code)
+        return None
     except (ValueError, TypeError, KeyError, RuntimeError, OSError):
         if type(backend) is RuleTemporalBackend:
             raise
@@ -124,20 +130,30 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         # motion. Report the actual fallback source, never pretend the model ran.
         fallback_reason = fallback_reason or "backend_unavailable"
         backend = RuleTemporalBackend()
-        prediction = backend.recognize(window, candidate, hand_evidence)
+        try:
+            prediction = backend.recognize(window, candidate, hand_evidence)
+        except WristKinematicsUnavailable as exc:
+            if unavailable_reasons is not None:
+                unavailable_reasons.append(exc.reason_code)
+            return None
     if prediction is None:
         return None
     validate_recognition(prediction, window)
-    wrists, speed = wrist_kinematics(samples, side)
     preparation_start = next(i for i, sample in enumerate(samples) if sample.time == prediction["start_ms"])
     follow_end = next(i for i, sample in enumerate(samples) if sample.time == prediction["end_ms"])
     phases = prediction["phases"]
     preparation_complete = phases[0]["status"] == "measured"
     follow_complete = phases[-1]["status"] == "measured"
     motion_peak_ms = prediction["peak_ms"]
-    analyzed_speed = speed[preparation_start:follow_end + 1]
-    wrists = wrists[preparation_start:follow_end + 1]
     samples = samples[preparation_start:follow_end + 1]
+    # Recompute on this exact reported source window, using the same helper
+    # as process_motion. Context outside the report cannot change its values.
+    try:
+        wrists, analyzed_speed = wrist_kinematics(samples, side)
+    except WristKinematicsUnavailable as exc:
+        if unavailable_reasons is not None:
+            unavailable_reasons.append(exc.reason_code)
+        return None
     elbow_angles = [_angle(sample.points[f"{side}_shoulder"], sample.points[f"{side}_elbow"], sample.points[f"{side}_wrist"])
                     if all(f"{side}_{joint}" in sample.points for joint in ("shoulder", "elbow", "wrist")) else None
                     for sample in samples]
@@ -176,6 +192,7 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "method": "rule_based" if backend.metadata().get("kind") == "deterministic_rules" else "temporal_backend",
         "contact_confirmed": False, "racket_hand": side,
         "measurement_provenance": measurement_provenance(samples),
+        "wrist_kinematics": measurement_contract(),
         "phases": phases,
         "metrics": {"duration_ms": samples[-1].time - samples[0].time,
                     "peak_wrist_speed_torso_per_s": round(max(analyzed_speed), 3),
@@ -249,8 +266,10 @@ def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapp
     families = {family: {"status": "insufficient_evidence", "reason_zh": "", "episodes": [], "summary": {}}
                 for family in ("baseline", "serve", "return")}
     backend = temporal_backend or RuleTemporalBackend()
+    unavailable_by_family: dict[str, list[str]] = defaultdict(list)
     for candidate in candidates:
-        episode = _episode(candidate, primary_tracks.get(candidate["person_track_id"], []), temporal_backend=backend)
+        episode = _episode(candidate, primary_tracks.get(candidate["person_track_id"], []), temporal_backend=backend,
+                           unavailable_reasons=unavailable_by_family[candidate["family"]])
         if episode is not None:
             episodes = families[episode["family"]]["episodes"]
             duplicate = next((i for i, other in enumerate(episodes)
@@ -301,6 +320,9 @@ def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapp
             value["reason_zh"] = "缺少可连续关联的对手发球、来球轨迹与主球员挥拍证据，暂不能判断接发；不代表没有接发。"
         else:
             value["reason_zh"] = "当前视频未获得足够连续的" + ("发球时序" if family == "serve" else "持拍挥拍") + "证据，暂不能测量；不代表没有该动作。"
+        skipped = len(unavailable_by_family[family])
+        if skipped:
+            value["reason_zh"] += f"已跳过 {skipped} 个手腕观测不连续的动作候选；未跨缺帧计算。"
     return {"schema_version": "1.1.0", "analysis_version": ANALYSIS_VERSION, "temporal_backend": dict(backend.metadata()),
             "method": "rule_based_pose_racket_temporal", "status": "available" if any(f["episodes"] for f in families.values()) else "insufficient_evidence",
             "contact_confirmed": False, "families": families, "limitations_zh": LIMITATIONS}

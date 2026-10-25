@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import copy
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,23 +9,10 @@ from rallymate_vision.contracts import ModelConfig, PipelineRequest, ScoringConf
 from rallymate_vision.pipeline import (
     DEFAULT_SCORING_FEASIBILITY_REGISTRY,
     load_pipeline_calibrations,
+    load_runtime_view_evidence,
+    load_trusted_runtime_binding_registry,
     resolve_scoring_feasibility_registry,
     run_pipeline,
-)
-from rallymate_scoring.calibration_promotion import (
-    build_trusted_promotion_ledger,
-    promote_calibration_candidate,
-)
-from rallymate_scoring.scoring import score_indicator
-from tests.test_calibration_promotion import (
-    _candidate,
-    _decision,
-    _independent_test_protocol,
-    _maturity_evidence,
-    _production_replay_fixture,
-    _registry,
-    _report,
-    _verified_truth_authorization,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,7 +40,7 @@ class PipelineScoringRegistryTests(unittest.TestCase):
                 (ROOT / DEFAULT_SCORING_FEASIBILITY_REGISTRY).resolve(),
             )
 
-    def test_request_can_only_pin_the_lifecycle_authorized_registry(self) -> None:
+    def test_request_can_pin_any_schema_valid_registry(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             explicit = ROOT / DEFAULT_SCORING_FEASIBILITY_REGISTRY
@@ -64,181 +50,77 @@ class PipelineScoringRegistryTests(unittest.TestCase):
             )
             self.assertEqual(resolved, explicit.resolve())
 
-            for rejected in (
+            for supplied in (
                 ROOT / "metric-feasibility.json",
                 root / "same-bytes-different-path.json",
             ):
-                if not rejected.exists():
-                    rejected.write_bytes(explicit.read_bytes())
-                with self.subTest(rejected=rejected), self.assertRaisesRegex(
-                    ValueError, "not authorized"
-                ):
-                    resolve_scoring_feasibility_registry(
-                        self._request(root, rejected),
-                        ROOT,
-                    )
+                if not supplied.exists():
+                    supplied.write_bytes(explicit.read_bytes())
+                with self.subTest(supplied=supplied):
+                    self.assertEqual(resolve_scoring_feasibility_registry(self._request(root, supplied), ROOT), supplied.resolve())
 
-    def test_historical_registry_is_rejected_before_run_directory_creation(self) -> None:
+    def test_invalid_registry_is_rejected_before_run_directory_creation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            request = self._request(root, ROOT / "metric-feasibility.json")
+            registry = root / "invalid.json"
+            registry.write_text('{}', encoding='utf-8')
+            request = self._request(root, registry)
             request.video_path.write_bytes(b"registry-rejected-before-decode")
-            with self.assertRaisesRegex(ValueError, "not authorized"):
+            with self.assertRaisesRegex(ValueError, "schema_version"):
                 run_pipeline(request)
             self.assertFalse(request.output_dir.exists())
 
-    def test_pipeline_loads_only_ledger_authorized_production_calibration(self) -> None:
+    def _explicit_rule(self):
+        # Constructed mathematics for execution tests, not measured accuracy.
+        return {"indicator_id": "FS01-M02", "backend": "threshold_rule",
+                "threshold_version": "fixture-v1", "primary_feature": "feature_a",
+                "primary_feature_version": "feature-a-v1", "unit": "body",
+                "direction": "higher_is_better", "thresholds": [5., 15., 25., 35.]}
+
+    def test_explicit_mathematics_load_without_release_or_truth_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            asset = root / "calibration.json"
-            candidate = _candidate(synthetic=False)
-            samples, requirements, independent_report = _production_replay_fixture(
-                candidate
-            )
-            registry = _registry(level="F4")
-            calibration, promotion_report = promote_calibration_candidate(
-                candidate=candidate,
-                independent_test_report=independent_report,
-                independent_test_protocol=_independent_test_protocol(candidate),
-                independent_test_samples=samples,
-                indicator_requirements=requirements,
-                decision=_decision(candidate, independent_report, registry),
-                feasibility_registry=registry,
-                promoted_at="2026-08-13T03:00:00Z",
-                maturity_evidence=_maturity_evidence(
-                    candidate, independent_report, registry
-                ),
-                verified_truth_authorization=_verified_truth_authorization(),
-            )
-            ledger = build_trusted_promotion_ledger(
-                promotions=[(calibration, promotion_report)],
-                ledger_id="operator-ledger",
-                ledger_version="v1",
-                authority_id="release-owner",
-                registered_at="2026-08-13T04:00:00Z",
-                verified_truth_authorizations={
-                    "FS01-M02": _verified_truth_authorization()
-                },
-            )
-            ledger_path = root / "trusted-ledger.json"
-            asset.write_text(json.dumps(calibration), encoding="utf-8")
-            ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
-            calibrations, provenance = load_pipeline_calibrations(
-                [asset],
-                trusted_ledger_path=ledger_path,
-                feasibility_registry=registry,
-            )
-            self.assertEqual(set(calibrations), {"FS01-M02"})
-            self.assertEqual(provenance[0]["independent_test_status"], "passed")
+            asset = Path(directory) / "rule.json"
+            rule = self._explicit_rule()
+            asset.write_text(json.dumps(rule), encoding="utf-8")
+            calibrations, provenance = load_pipeline_calibrations([asset])
+            self.assertEqual(calibrations, {"FS01-M02": rule})
             self.assertEqual(len(provenance[0]["sha256"]), 64)
-            self.assertEqual(
-                provenance[0]["trusted_promotion_ledger_version"], "v1"
-            )
-            self.assertEqual(
-                provenance[0]["runtime_registry_content_sha256"],
-                provenance[0]["promoted_registry_content_sha256"],
-            )
-            self.assertEqual(
-                provenance[0]["maturity_evidence_content_sha256"],
-                calibration["promotion_lineage"]["maturity_evidence"][
-                    "content_sha256"
-                ],
-            )
-            scored = score_indicator(
-                indicator_id="FS01-M02",
-                features=[
-                    {
-                        "feature_name": "feature_a",
-                        "feature_version": "feature-a-v1",
-                        "value": 20.0,
-                        "unit": "body",
-                        "confidence": 0.9,
-                        "valid": True,
-                        "reason": "valid",
-                        "source_frames": [1],
-                    }
-                ],
-                calibration=calibrations["FS01-M02"],
-                model_versions={
-                    "pose": "test",
-                    "event": "test",
-                    "feature": "test",
-                },
-                evidence=[],
-                feasibility_level="F4",
-            )
-            self.assertEqual(scored["status"], "calibration_required")
-            self.assertIsNone(scored["grade"])
-            self.assertIn(
-                "runtime_profile_binding_required", scored["reason_codes"]
-            )
+            self.assertIsNone(provenance[0]["independent_test_status"])
+            self.assertIn("not_accuracy", provenance[0]["validation_scope"])
+            # A legacy ledger path is metadata, not a required authorization.
+            self.assertEqual(load_pipeline_calibrations(
+                [asset], trusted_ledger_path=Path(directory) / "absent-ledger.json",
+                feasibility_registry={"version": "F0-fixture"})[0], calibrations)
 
-            payload = json.loads(asset.read_text(encoding="utf-8"))
-            payload["artifact_scope"] = "test_only"
-            payload["independent_test"]["status"] = "test_only"
-            payload["independent_test"]["approved_for_scoring"] = False
-            asset.write_text(json.dumps(payload), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "production-scoped"):
-                load_pipeline_calibrations(
-                    [asset],
-                    trusted_ledger_path=ledger_path,
-                    feasibility_registry=registry,
-                )
-
-    def test_handwritten_passed_asset_is_rejected_even_with_F4_lineage(self) -> None:
+    def test_release_labels_do_not_change_or_fill_explicit_thresholds(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            candidate = _candidate(synthetic=False)
-            samples, requirements, independent_report = _production_replay_fixture(
-                candidate
-            )
-            registry = _registry(level="F4")
-            calibration, promotion_report = promote_calibration_candidate(
-                candidate=candidate,
-                independent_test_report=independent_report,
-                independent_test_protocol=_independent_test_protocol(candidate),
-                independent_test_samples=samples,
-                indicator_requirements=requirements,
-                decision=_decision(candidate, independent_report, registry),
-                feasibility_registry=registry,
-                promoted_at="2026-08-13T03:00:00Z",
-                maturity_evidence=_maturity_evidence(
-                    candidate, independent_report, registry
-                ),
-                verified_truth_authorization=_verified_truth_authorization(),
-            )
-            ledger = build_trusted_promotion_ledger(
-                promotions=[(calibration, promotion_report)],
-                ledger_id="operator-ledger",
-                ledger_version="v1",
-                authority_id="release-owner",
-                registered_at="2026-08-13T04:00:00Z",
-                verified_truth_authorizations={
-                    "FS01-M02": _verified_truth_authorization()
-                },
-            )
-            ledger_path = root / "trusted-ledger.json"
-            ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+            asset = Path(directory) / "rule.json"
+            rule = self._explicit_rule()
+            rule.update(artifact_scope="test_only", independent_test={"status": "test_only"})
+            asset.write_text(json.dumps(rule), encoding="utf-8")
+            calibrations, provenance = load_pipeline_calibrations([asset])
+            self.assertEqual(calibrations["FS01-M02"]["thresholds"], rule["thresholds"])
+            self.assertEqual(provenance[0]["independent_test_status"], "test_only")
+            for bad in ([], [5., 15., 15., 35.], [5., 15., float("nan"), 35.]):
+                invalid = dict(rule, thresholds=bad)
+                asset.write_text(json.dumps(invalid), encoding="utf-8")
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    load_pipeline_calibrations([asset])
+            asset.write_text(json.dumps(rule), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                load_pipeline_calibrations([asset, asset])
 
-            no_lineage = copy.deepcopy(calibration)
-            no_lineage.pop("promotion_lineage")
-            fake_path = root / "handwritten-passed.json"
-            fake_path.write_text(json.dumps(no_lineage), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "promotion_lineage must be an object"):
-                load_pipeline_calibrations(
-                    [fake_path], trusted_ledger_path=ledger_path
-                )
-
-            tampered = copy.deepcopy(calibration)
-            tampered["thresholds"] = [6.0, 16.0, 26.0, 36.0]
-            fake_path.write_text(json.dumps(tampered), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "asset_content_sha256"):
-                load_pipeline_calibrations(
-                    [fake_path], trusted_ledger_path=ledger_path
-                )
-
-            with self.assertRaisesRegex(ValueError, "operator-configured"):
-                load_pipeline_calibrations([fake_path])
+    def test_optional_runtime_annotations_need_identity_but_not_human_approval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "view.json"
+            evidence = {"video_id": "actual-video", "video_sha256": "a" * 64}
+            path.write_text(json.dumps(evidence), encoding="utf-8")
+            self.assertEqual(load_runtime_view_evidence(path), evidence)
+            self.assertEqual(load_trusted_runtime_binding_registry(path), evidence)
+            for bad in (dict(evidence, video_sha256="bad"), dict(evidence, video_id="")):
+                path.write_text(json.dumps(bad), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    load_runtime_view_evidence(path)
 
     def test_invalid_calibration_is_rejected_before_run_directory_creation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -248,7 +130,7 @@ class PipelineScoringRegistryTests(unittest.TestCase):
             unsafe = root / "unsafe-calibration.json"
             unsafe.write_text("{}", encoding="utf-8")
             request.scoring.calibration_assets = [unsafe]
-            with self.assertRaisesRegex(ValueError, "unsupported scoring calibration"):
+            with self.assertRaisesRegex(ValueError, "unsupported scoring backend"):
                 run_pipeline(request)
             self.assertFalse(request.output_dir.exists())
 

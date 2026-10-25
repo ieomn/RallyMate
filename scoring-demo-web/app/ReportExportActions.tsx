@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { buildPracticeReport, buildReportBackup, getReportExportGate, renderReportHtml, renderReportMarkdown, reportDownloadName, type ReportExportInput } from "./lib/report-export";
+import { buildPracticeReport, serializeReportBackup, getReportExportGate, renderReportHtml, renderReportMarkdown, reportDownloadName, type ReportExportInput } from "./lib/report-export";
 
 export default function ReportExportActions({ input }: { input: ReportExportInput }) {
   const [error, setError] = useState("");
@@ -9,7 +9,7 @@ export default function ReportExportActions({ input }: { input: ReportExportInpu
   function download(extension: "md" | "html" | "json") {
     try {
       const report = buildPracticeReport(input);
-      const content = extension === "md" ? renderReportMarkdown(report) : extension === "html" ? renderReportHtml(report) : JSON.stringify(buildReportBackup(input, report.exportedAt), null, 2);
+      const content = extension === "md" ? renderReportMarkdown(report) : extension === "html" ? renderReportHtml(report) : serializeReportBackup(input, report.exportedAt);
       const type = extension === "html" ? "text/html;charset=utf-8" : extension === "md" ? "text/markdown;charset=utf-8" : "application/json;charset=utf-8";
       const url = URL.createObjectURL(new Blob([content], { type }));
       const anchor = document.createElement("a");

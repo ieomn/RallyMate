@@ -2,7 +2,12 @@ import contract from "./formal-card-scoring-contract";
 
 export const formalScoringPolicyVersion = contract.version;
 export const formalScoreSemantics = contract.semantics;
-export const isFormalScoringPolicy = (value: unknown) => value === contract.version;
+export const isFormalScoringPolicy = (value: unknown) => typeof value === "string" && (contract.supported_versions as readonly string[]).includes(value);
+export function formalConditionScore(policy: unknown, passed: number, total: number, grade: keyof typeof contract.grade_points): number | null {
+  if (!isFormalScoringPolicy(policy) || !Number.isSafeInteger(total) || total <= 0
+      || !Number.isSafeInteger(passed) || passed < 0 || passed > total) return null;
+  return policy === contract.version ? 100 * passed / total : contract.grade_points[grade];
+}
 export const isAdvisoryQualityFlag = (value: unknown) => typeof value === "string"
   && (contract.advisory_quality_flags as readonly string[]).includes(value);
 

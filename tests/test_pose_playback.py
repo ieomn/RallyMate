@@ -38,6 +38,20 @@ def write_rows(path, rows):
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
 
+def sam_pose(index):
+    from rallymate_vision.pose.metadata import keypoint_schema
+    points = [{**definition, "x_px": 160., "y_px": 90., "raw_x_px": 160., "raw_y_px": 90.,
+               "x_normalized": .25, "y_normalized": .25, "in_frame": True, "confidence": None,
+               "confidence_semantics": "not_provided_by_sam3d", "source": "sam3d",
+               "observation_semantics": "model_estimate", "observed": None, "visibility": None}
+              for definition in keypoint_schema("mhr70")["keypoints"]]
+    return pose(points=points, keypoint_format="mhr70", source="sam3d", status="ok", confidence=None,
+                confidence_semantics="not_provided_by_sam3d", observation_semantics="monocular_model_estimate",
+                source_binding={"video_sha256": "a" * 64, "frame_index": index, "processed_index": index,
+                                "pts": index, "time_base_num": 1, "time_base_den": 25, "timestamp_ms": index * 40,
+                                "person_track_id": 1, "selection_epoch": 0, "camera_reference_epoch": 0})
+
+
 class PosePlaybackTests(unittest.TestCase):
     def build(self, rows, *, timeline=None, **options):
         with tempfile.TemporaryDirectory() as directory:
@@ -47,6 +61,49 @@ class PosePlaybackTests(unittest.TestCase):
             if timeline is not None:
                 write_rows(primary_path, timeline)
             return build_pose_playback(path, primary_timeline_path=primary_path, **options)
+
+    def test_sam_preview_retains_model_source_and_null_confidence_without_interpolation(self):
+        rows = [frame(index, poses=[sam_pose(index)]) for index in range(3)]
+        rows[1]["poses"][0]["keypoints"][62]["in_frame"] = False
+        result = self.build(rows, timeline=[primary(index) for index in range(3)])
+        self.assertEqual(result["frames"][0]["pose_source"], "sam3d")
+        self.assertEqual(len(result["frames"][0]["keypoints"]), 17)
+        self.assertTrue(all(p["source"] == "model_estimate" and p["confidence"] is None for row in result["display_frames"] for p in row["keypoints"]))
+        self.assertFalse(any(p["name"] == "left_wrist" for p in result["display_frames"][1]["keypoints"]))
+        self.assertEqual(result["display_continuity"]["interpolated_keypoints"], 0)
+        self.assertEqual(result["frames"][0]["source_binding"]["video_sha256"], "a" * 64)
+
+    def test_sam_preview_rejects_clipped_offscreen_and_missing_original_pixels(self):
+        source = sam_pose(0)
+        # Clipped x=0 is not evidence for an original x=-5 wrist.
+        source["keypoints"][62].update(raw_x_px=-5, x_px=0, x_normalized=0, in_frame=False)
+        del source["keypoints"][41]["raw_x_px"]
+        source["keypoints"][13].update(raw_x_px=640, x_px=640, x_normalized=1, in_frame=True)
+        result = self.build([frame(0, poses=[source])])
+        names = [p["name"] for p in result["frames"][0]["keypoints"]]
+        self.assertNotIn("left_wrist", names)
+        self.assertNotIn("right_wrist", names)
+        self.assertNotIn("left_ankle", names)
+        self.assertIn("right_ankle", names)
+
+    def test_sam_preview_rejects_foreign_frame_or_missing_binding(self):
+        for change in ({"source_binding": {}}, {"source_binding": {**sam_pose(0)["source_binding"], "frame_index": 9}},
+                       {"confidence": 1}, {"coordinate_space": "camera_3d"}):
+            source = {**sam_pose(0), **change}
+            with self.subTest(change=change):
+                result = self.build([frame(0, poses=[source])])
+                self.assertEqual(result["frames"][0]["keypoints"], [])
+                self.assertEqual(result["display_frames"][0]["keypoints"], [])
+
+    def test_sam_preview_preserves_absolute_pts_and_relative_video_time(self):
+        source = sam_pose(0)
+        source["source_binding"].update(pts=300, timestamp_ms=12000)
+        row = frame(0, poses=[source], source_timestamp_ms=12000)
+        result = self.build([row])
+        self.assertEqual(len(result["frames"][0]["keypoints"]), 17)
+        self.assertEqual(result["frames"][0]["timestamp_ms"], 0)
+        self.assertEqual(result["frames"][0]["source_timestamp_ms"], 12000)
+        self.assertEqual(result["frames"][0]["source_binding"]["pts"], 300)
 
     def test_pixel_coordinates_use_each_source_dimension_and_never_boxes(self):
         result = self.build([frame(0), frame(1, width=320, height=720)])

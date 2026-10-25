@@ -235,7 +235,7 @@ class ScoringLoopTests(unittest.TestCase):
             self.assertIn("总等级：<code>未设计</code>", report_text)
             self.assertIn("truth missing", report_text)
             self.assertIn("独立目标方向上下文", report_text)
-            self.assertIn("上下文标量未进行时序平滑", report_text)
+            self.assertIn("A～E 数值规则未定义", report_text)
             self.assertNotIn("contract field missing", report_text)
 
     def test_report_renders_event_level_grade_without_aggregate_grade(self) -> None:
@@ -574,7 +574,7 @@ class ScoringLoopTests(unittest.TestCase):
         self.assertIn("view: <code>fixed_side</code>", rendered)
         self.assertIn("0.66666667", rendered)
         self.assertNotIn("truth missing", rendered)
-        self.assertIn("合法 F4 事件级 A～E 分布", rendered)
+        self.assertIn("按明确规则计算的事件级 A～E 分布", rendered)
         self.assertIn("总等级：<code>未设计</code>", rendered)
         self.assertNotIn("另有", rendered)
 

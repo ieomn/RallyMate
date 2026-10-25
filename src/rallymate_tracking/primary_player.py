@@ -504,6 +504,136 @@ def _longest_missing(values: list[bool], timestamps: list[int]) -> tuple[int, in
     return best_count, max(best_ms, 0)
 
 
+def _model_estimate_geometry(joined: list[tuple[dict, dict, dict | None]]) -> dict:
+    """Count source-bound SAM geometry without changing confidence or selection.
+
+    Every independent source frame remains in the denominator, including missing or
+    rejected poses. This is finite in-frame geometry coverage, not visibility,
+    keypoint confidence, identity accuracy, or a technique score.
+    """
+    from rallymate_scoring.pose_observations import sam_source_bound_points
+    from rallymate_vision.pose.metadata import keypoint_schema
+
+    names = [point["name"] for point in keypoint_schema("mhr70")["keypoints"]
+             if point["downstream_joint_id"] is not None]
+    has_sam = any(pose.get("source") == "sam3d" for record, _, _ in joined
+                  for pose in record.get("poses", []))
+    # One record represents one source frame even if it contains several poses.
+    # Changing the selected track cannot make a duplicate decoded frame new.
+    source_counts = Counter((str(record["frame"].get("video_sha256", "")).lower(),
+                             record["frame"].get("index")) for record, _, _ in joined)
+    counts: Counter[str] = Counter()
+    reasons: Counter[str] = Counter()
+    evidence = []
+    bound_frames = any_point_frames = all_point_frames = sam_pose_frames = 0
+    for record, selected, _ in joined if has_sam else []:
+        frame = record["frame"]
+        track = selected.get("source_track_id")
+        poses = [pose for pose in record.get("poses", []) if pose.get("person_track_id") == track]
+        sam_pose_frames += int(any(pose.get("source") == "sam3d" for pose in poses))
+        row = {"frame_index": frame["index"], "processed_index": frame["processed_index"],
+               "timestamp_ms": frame["timestamp_ms"], "person_track_id": track,
+               "status": "unavailable", "joint_names": []}
+        reason = None
+        if any(selected.get(key) != frame.get(frame_key) for key, frame_key in (
+            ("processed_index", "processed_index"), ("source_frame_index", "index"),
+            ("timestamp_ms", "timestamp_ms"),
+        )):
+            reason = "primary_frame_binding_mismatch"
+        elif selected.get("selection_status") != "selected" or selected.get("identity_ambiguous") is not False:
+            reason = "primary_identity_unverified"
+        elif source_counts[(str(frame.get("video_sha256", "")).lower(), frame.get("index"))] != 1:
+            reason = "duplicate_source_frame"
+        elif len(poses) != 1:
+            reason = "selected_pose_missing_or_conflicting"
+        elif poses[0].get("source") != "sam3d":
+            reason = "selected_pose_is_not_sam3d"
+        elif len([item for item in record.get("detections", [])
+                  if item.get("class_name") == "player" and item.get("track_id") == track]) != 1:
+            reason = "selected_detection_missing_or_conflicting"
+        if reason is None:
+            camera = record.get("camera_motion")
+            result = sam_source_bound_points(poses[0], {**frame, "camera_motion": camera})
+            if result is None:
+                reason = "sam_source_binding_or_joint_contract_invalid"
+            else:
+                points, binding = result
+                # The shared helper checks the pose envelope. Compare it to
+                # independently retained decoder fields and video identity too.
+                video_sha = frame.get("video_sha256")
+                if (not isinstance(video_sha, str) or video_sha.lower() != binding["video_sha256"].lower()
+                        or any(type(frame.get(key)) is not int or frame[key] != binding[key]
+                               for key in ("pts", "time_base_num", "time_base_den"))
+                        or not isinstance(camera, dict) or type(camera.get("reference_epoch")) is not int
+                        or camera["reference_epoch"] != binding["camera_reference_epoch"]):
+                    reason = "decoder_video_or_camera_binding_mismatch"
+                else:
+                    # The pose's own epoch is not independent evidence. Match
+                    # the request ledger retained beside poses in this frame.
+                    ledger = record.get("sam3d_requests")
+                    requests = [request for request in ledger if isinstance(request, dict)
+                                and type(request.get("person_track_id")) is int
+                                and request["person_track_id"] == track] if isinstance(ledger, list) else []
+                    if len(requests) != 1:
+                        reason = "sam_request_ledger_missing_or_conflicting"
+                    else:
+                        request = requests[0]
+                        optional_binding_fields = ("video_sha256", "frame_index", "processed_index", "pts",
+                                                   "time_base_num", "time_base_den", "timestamp_ms",
+                                                   "camera_reference_epoch")
+                        if (request.get("status") != "ok"
+                                or type(request.get("selection_epoch")) is not int
+                                or request["selection_epoch"] != binding["selection_epoch"]
+                                or any(key in request and (type(request[key]) is not type(binding[key])
+                                                           or request[key] != binding[key])
+                                       for key in optional_binding_fields)):
+                            reason = "sam_request_ledger_binding_mismatch"
+                if reason is None:
+                    bound_frames += 1
+                    present = [name for name in names if name in points]
+                    counts.update(present)
+                    any_point_frames += bool(present)
+                    all_point_frames += len(present) == len(names)
+                    row.update(status="ok", joint_names=present, source_binding=binding,
+                               request_ledger={key: request[key] for key in
+                                               ("person_track_id", "selection_epoch", "status")})
+        if reason is not None:
+            reasons[reason] += 1
+            row["reason"] = reason
+        evidence.append(row)
+    frame_count = len(joined)
+    source_frame_count = len(source_counts)
+
+    def fraction(numerator: int, denominator: int) -> float | None:
+        return safe_float(numerator / denominator, 6) if has_sam and denominator else None
+
+    return {
+        "version": "sam-primary-geometry-v1.1",
+        "status": ("not_applicable" if not has_sam else "unavailable" if not bound_frames
+                   else "available" if bound_frames == source_frame_count else "partial"),
+        "observation_semantics": "source_bound_in_frame_monocular_model_estimate",
+        "confidence_available": False, "visibility_verified": False,
+        "accuracy_validated": False, "scoring_allowed": False, "used_for_primary_selection": False,
+        "interval_frame_count": frame_count, "sam_pose_frame_count": sam_pose_frames,
+        "independent_source_frame_count": source_frame_count,
+        "duplicate_source_frame_count": sum(count > 1 for count in source_counts.values()),
+        "source_bound_frame_count": bound_frames,
+        "source_bound_frame_fraction": fraction(bound_frames, source_frame_count),
+        "frames_with_any_mapped_joint": any_point_frames,
+        "frames_with_all_mapped_joints": all_point_frames,
+        "mapped_joint_names": names, "mapped_joint_count": len(names),
+        "in_frame_joint_count": sum(counts.values()),
+        "geometry_coverage_fraction": fraction(sum(counts.values()), source_frame_count * len(names)),
+        "target_joint_names": list(TARGET_JOINTS),
+        "target_joint_geometry_fraction": fraction(sum(counts[name] for name in TARGET_JOINTS),
+                                                   source_frame_count * len(TARGET_JOINTS)),
+        "coverage_denominator": "independent_video_sha256_and_frame_index_times_joint_count_including_missing_and_rejected_frames",
+        "joint_coverage": {name: {"in_frame_count": counts[name],
+                                   "fraction_over_interval": fraction(counts[name], source_frame_count)} for name in names},
+        "reason_counts": dict(reasons), "frame_evidence": evidence,
+    }
+
+
 def diagnose_primary_timeline(
     records: list[dict[str, Any]],
     timeline: list[dict[str, Any]],
@@ -677,6 +807,8 @@ def diagnose_primary_timeline(
         "keypoint_valid_fraction": (
             safe_float(statistics.mean(valid_values), 6) if valid_values else None
         ),
+        "keypoint_valid_fraction_semantics": "confidence_qualified_target_joints_sam_confidence_unavailable_not_geometry_coverage",
+        "model_estimate_geometry": _model_estimate_geometry(joined),
         "left_right_swap_candidate_frames": sorted(swap_frames),
         "left_right_swap_candidate_joint_pairs": [
             {
@@ -698,7 +830,9 @@ def diagnose_primary_timeline(
         "diagnostic_semantics": (
             "score_tie_is_selector_ambiguity_not_identity_accuracy;"
             "heuristic_candidates_not_identity_or_keypoint_accuracy;"
-            "jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates"
+            "jump_and_swap_evidence_is_joint_scoped_for_indicator_quality_gates;"
+            "jump_and_swap_require_numeric_confidence_sam_not_assessed;"
+            "model_estimate_geometry_is_coverage_not_confidence_visibility_or_accuracy"
         ),
     }
 

@@ -7,28 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from rallymate_scoring.batch import score_indicator_records
-from rallymate_scoring.calibration import (
-    validate_ordinal_model,
-    validate_threshold_calibration,
-)
 from rallymate_scoring.calibration_fitting import canonical_sha256
 from rallymate_scoring.registry_lifecycle import (
     DEFAULT_REGISTRY_LIFECYCLE_PATH,
     ResolvedRegistryArtifact,
     resolve_runtime_feasibility_registry,
 )
-from rallymate_scoring.runtime_profile_binding import (
-    bind_production_calibrations_for_runtime,
-)
 from rallymate_scoring.run_bundle_binding import (
     REQUIRED_SCORING_ARTIFACTS,
-    authorize_scoring_run_bundle,
-    load_trusted_scoring_run_bundle_ledger,
 )
 from rallymate_vision.pipeline import (
     load_pipeline_calibrations,
     load_runtime_view_evidence,
-    load_trusted_runtime_binding_registry,
 )
 from rallymate_vision.pose.metadata import sha256_file
 
@@ -76,21 +66,8 @@ def _resolve_pinned_runtime_feasibility_registry(
     manifest_path: Path,
     pinned_registry_path: Path,
 ) -> ResolvedRegistryArtifact:
-    artifact = resolve_runtime_feasibility_registry(manifest_path)
-    try:
-        resolved_pin = pinned_registry_path.resolve(strict=True)
-    except FileNotFoundError as exc:
-        raise ValueError(
-            "--feasibility-registry path pin is missing: "
-            f"{pinned_registry_path}"
-        ) from exc
-    if resolved_pin != artifact.path:
-        raise ValueError(
-            "--feasibility-registry must exactly match the lifecycle-authorized "
-            "runtime feasibility registry path; copies, historical registries, "
-            f"and unregistered paths are rejected (authorized: {artifact.path})"
-        )
-    return artifact
+    return resolve_runtime_feasibility_registry(manifest_path, explicit_path=pinned_registry_path)
+
 
 
 def _recheck_runtime_registry_authority(
@@ -116,51 +93,6 @@ def _recheck_runtime_registry_authority(
         raise ValueError(
             "registry lifecycle manifest or authorized feasibility registry "
             "changed during scoring; refusing to write outputs"
-        )
-
-
-def _require_summary_registry_lifecycle_binding(
-    summary: dict,
-    artifact: ResolvedRegistryArtifact,
-) -> None:
-    provenance = summary.get("provenance")
-    if not isinstance(provenance, dict):
-        raise ValueError(
-            "production scoring summary must contain registry lifecycle provenance"
-        )
-    binding = provenance.get("registry_lifecycle")
-    if not isinstance(binding, dict):
-        raise ValueError(
-            "production scoring summary must contain registry lifecycle provenance"
-        )
-    expected = {
-        "authority_version": artifact.authority_version,
-        "role": artifact.role,
-        "kind": artifact.kind,
-        "lifecycle": artifact.lifecycle,
-        "embedded_version": artifact.embedded_version,
-        "manifest_sha256": artifact.manifest_sha256,
-        "artifact_sha256": artifact.file_sha256,
-    }
-    mismatches = [
-        key for key, expected_value in expected.items() if binding.get(key) != expected_value
-    ]
-    if mismatches:
-        raise ValueError(
-            "production scoring summary registry lifecycle binding mismatch: "
-            f"{sorted(mismatches)}"
-        )
-    if provenance.get("feasibility_registry_sha256") != artifact.file_sha256:
-        raise ValueError(
-            "production scoring summary feasibility registry raw SHA-256 mismatch"
-        )
-    model_versions = summary.get("model_versions")
-    if (
-        not isinstance(model_versions, dict)
-        or model_versions.get("feasibility_registry") != artifact.embedded_version
-    ):
-        raise ValueError(
-            "production scoring summary feasibility registry version mismatch"
         )
 
 
@@ -256,37 +188,8 @@ def _load_calibrations(
     trusted_promotion_ledger: Path | None,
     feasibility_registry: dict | None,
 ) -> dict[str, object]:
-    calibrations = {}
-    production_paths = []
-    for path in paths:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        backend = payload.get("backend")
-        if backend == "threshold_rule":
-            validate_threshold_calibration(payload)
-        elif backend == "ordinal_regression":
-            validate_ordinal_model(payload)
-        else:
-            raise ValueError(f"unsupported calibration backend in {path}")
-        if payload.get("artifact_scope") == "production":
-            production_paths.append(path)
-            continue
-        indicator_id = payload["indicator_id"]
-        if indicator_id in calibrations:
-            raise ValueError(f"duplicate calibration for {indicator_id}")
-        calibrations[indicator_id] = payload
-    if production_paths:
-        trusted, _ = load_pipeline_calibrations(
-            production_paths,
-            trusted_ledger_path=trusted_promotion_ledger,
-            feasibility_registry=feasibility_registry,
-        )
-        overlap = set(calibrations) & set(trusted)
-        if overlap:
-            raise ValueError(
-                f"duplicate calibration for indicators: {sorted(overlap)}"
-            )
-        calibrations.update(trusted)
-    return calibrations
+    return load_pipeline_calibrations(paths, trusted_ledger_path=trusted_promotion_ledger,
+                                      feasibility_registry=feasibility_registry)[0]
 
 
 def main() -> None:
@@ -305,8 +208,7 @@ def main() -> None:
         "--trusted-promotion-ledger",
         type=Path,
         help=(
-            "Operator-controlled ledger required for every production asset. "
-            "The CLI caller and this local path form the filesystem trust boundary."
+            "Legacy metadata path retained for compatibility; not required for mathematical scoring."
         ),
     )
     parser.add_argument(
@@ -314,48 +216,41 @@ def main() -> None:
         type=Path,
         default=DEFAULT_REGISTRY_LIFECYCLE_PATH,
         help=(
-            "Operator-controlled lifecycle authority whose runtime_feasibility "
-            "role selects and content-addresses the only accepted registry"
+            "Legacy default-registry manifest; an explicit registry is validated directly."
         ),
     )
     parser.add_argument(
         "--feasibility-registry",
         type=Path,
         help=(
-            "Exact path pin for the lifecycle-authorized runtime feasibility "
-            "registry. Required for production calibrations; this path is an "
-            "assertion and is never loaded as an independent source of truth."
+            "Optional explicit feature/event definition registry; schema, content and runtime changes are checked."
         ),
     )
     parser.add_argument(
         "--trusted-runtime-profile-bindings",
         type=Path,
         help=(
-            "Operator-controlled allow-list that binds each production "
-            "calibration to one exact pose/pipeline/view profile."
+            "Legacy profile metadata path retained for compatibility; no allow-list admission gate."
         ),
     )
     parser.add_argument(
         "--runtime-view-evidence",
         type=Path,
         help=(
-            "Accepted per-video view evidence whose video_id and SHA-256 must "
-            "match every production-scored indicator record."
+            "Optional input-video identity annotation; when supplied, video_id and SHA-256 must match the records."
         ),
     )
     parser.add_argument(
         "--trusted-scoring-run-bundles",
         type=Path,
         help=(
-            "Operator-controlled allow-list for immutable scoring-loop bundles. "
-            "Required for production offline rescoring and selected outside the "
-            "bundle or ordinary job request."
+            "Legacy bundle metadata path retained for compatibility; source artifacts are checked directly."
         ),
     )
     parser.add_argument(
         "--allow-test-only",
         action="store_true",
-        help="Explicit synthetic-test override; never use for production scoring",
+        help="Legacy compatibility flag; explicit mathematical rules use the same computation path.",
     )
     args = parser.parse_args()
     report_path = args.report or args.output.with_suffix(".report.json")
@@ -375,6 +270,9 @@ def main() -> None:
         ],
     )
 
+    original_input_hashes = {path.resolve(): sha256_file(path) for path in
+        [args.indicator_features, args.scoring_summary, *args.calibration,
+         *([args.runtime_view_evidence] if args.runtime_view_evidence is not None else [])]}
     summary, scoring_summary_sha256 = _load_json_document(
         args.scoring_summary, label="scoring summary"
     )
@@ -398,169 +296,55 @@ def main() -> None:
         trusted_promotion_ledger=args.trusted_promotion_ledger,
         feasibility_registry=feasibility_registry,
     )
-    production_calibrations = {
-        indicator_id: calibration
-        for indicator_id, calibration in calibrations.items()
-        if calibration.get("artifact_scope") == "production"
-    }
-    runtime_binding_registry = None
+    # Release labels and historical ledgers do not gate explicit mathematics.
+    # Recheck any supplied source artifacts and their actual identity instead.
     runtime_view_evidence = None
     authoritative_events = None
-    authoritative_indicators = None
+    authoritative_indicators = feasibility_registry["indicators"] if feasibility_registry is not None else None
     run_bundle_ledger = None
     run_bundle_authorization = None
-    if production_calibrations:
-        if args.trusted_runtime_profile_bindings is None:
-            raise ValueError(
-                "production calibration requires --trusted-runtime-profile-bindings"
-            )
-        if args.runtime_view_evidence is None:
-            raise ValueError(
-                "production calibration requires --runtime-view-evidence"
-            )
-        if feasibility_registry is None:
-            raise ValueError(
-                "production calibration requires --feasibility-registry"
-            )
-        assert feasibility_registry_artifact is not None
-        _require_summary_registry_lifecycle_binding(
-            summary,
-            feasibility_registry_artifact,
-        )
-        if args.trusted_scoring_run_bundles is None:
-            raise ValueError(
-                "production calibration requires --trusted-scoring-run-bundles"
-            )
-        run_bundle_ledger = load_trusted_scoring_run_bundle_ledger(
-            args.trusted_scoring_run_bundles
-        )
-        run_bundle_authorization = authorize_scoring_run_bundle(
-            summary=summary,
-            scoring_summary_sha256=scoring_summary_sha256,
-            ledger=run_bundle_ledger,
-        )
-        model_versions = {
-            **model_versions,
-            "trusted_scoring_run_bundle_ledger": run_bundle_authorization[
-                "ledger_version"
-            ],
-            "trusted_scoring_run_bundle_entry": run_bundle_authorization["entry_id"],
-            "scoring_run_bundle_root_sha256": run_bundle_authorization[
-                "bundle_root_sha256"
-            ],
-        }
-        bound_artifacts: dict[str, tuple[Path, str]] = {}
-        for artifact_name in sorted(REQUIRED_SCORING_ARTIFACTS):
-            exact_input_path = None
-            if artifact_name == "indicator_features_jsonl":
-                exact_input_path = args.indicator_features
-            elif artifact_name == "events_jsonl":
-                exact_input_path = args.indicator_features.resolve().with_name(
-                    "events.jsonl"
-                )
-            bound_artifacts[artifact_name] = _require_bound_production_artifact(
-                summary=summary,
-                summary_path=args.scoring_summary,
-                artifact_name=artifact_name,
-                expected_path=exact_input_path,
-            )
-        for artifact_name in sorted(
-            REQUIRED_SCORING_ARTIFACTS
-            - {"events_jsonl", "indicator_features_jsonl"}
-        ):
-            artifact_path, expected_sha256 = bound_artifacts[artifact_name]
-            if sha256_file(artifact_path) != expected_sha256:
-                raise ValueError(
-                    "production rescoring artifact SHA-256 mismatch: "
-                    f"{artifact_name}"
-                )
-        _reject_output_path_overlap(
-            output_path=args.output,
-            report_path=report_path,
-            protected_paths=[path for path, _ in bound_artifacts.values()],
-        )
-        indicator_features_path, indicator_features_sha256 = bound_artifacts[
-            "indicator_features_jsonl"
-        ]
-        events_path, events_sha256 = bound_artifacts["events_jsonl"]
-        records = _load_jsonl(
-            indicator_features_path,
-            expected_sha256=indicator_features_sha256,
-        )
-        authoritative_events = _load_jsonl(
-            events_path,
-            expected_sha256=events_sha256,
-        )
-        authoritative_indicators = feasibility_registry["indicators"]
-        runtime_binding_registry = load_trusted_runtime_binding_registry(
-            args.trusted_runtime_profile_bindings
-        )
-        runtime_view_evidence = load_runtime_view_evidence(
-            args.runtime_view_evidence
-        )
-        if (
-            run_bundle_authorization["video_id"]
-            != runtime_view_evidence["video_id"]
-        ):
-            raise ValueError(
-                "trusted scoring run-bundle video_id does not exactly match "
-                "runtime view evidence"
-            )
-        if (
-            run_bundle_authorization["video_sha256"]
-            != runtime_view_evidence["video_sha256"].lower()
-        ):
-            raise ValueError(
-                "trusted scoring run-bundle video_sha256 does not exactly match "
-                "runtime view evidence"
-            )
-        record_video_ids = {record.get("video_id") for record in records}
-        if record_video_ids != {runtime_view_evidence["video_id"]}:
-            raise ValueError(
-                "indicator feature video_id values do not exactly match runtime "
-                "view evidence"
-            )
-        expected_video_sha = runtime_view_evidence["video_sha256"].lower()
-        for index, record in enumerate(records):
-            provenance = record.get("provenance")
-            actual_sha = (
-                provenance.get("video_sha256")
-                if isinstance(provenance, dict)
-                else None
-            )
-            if (
-                not isinstance(actual_sha, str)
-                or actual_sha.lower() != expected_video_sha
-            ):
-                raise ValueError(
-                    "indicator feature provenance video_sha256 does not exactly "
-                    f"match runtime view evidence at record {index}"
-                )
-        summary_provenance = summary.get("provenance")
-        summary_video_sha = (
-            summary_provenance.get("video_sha256")
-            if isinstance(summary_provenance, dict)
-            else None
-        )
-        if (
-            not isinstance(summary_video_sha, str)
-            or summary_video_sha.lower() != expected_video_sha
-        ):
-            raise ValueError(
-                "scoring summary provenance.video_sha256 does not exactly match "
-                "runtime view evidence"
-            )
-        calibrations.update(
-            bind_production_calibrations_for_runtime(
-                production_calibrations,
-                binding_registry=runtime_binding_registry,
-                view_evidence=runtime_view_evidence,
-                feasibility_registry=feasibility_registry,
-                model_versions=model_versions,
-            )
-        )
-    else:
-        records = _load_jsonl(args.indicator_features)
+    bound_artifacts = {}
+    declared = summary.get("artifacts", {})
+    if isinstance(declared, dict):
+        for name in sorted(REQUIRED_SCORING_ARTIFACTS & declared.keys()):
+            exact = args.indicator_features if name == "indicator_features_jsonl" else None
+            path, digest = _require_bound_production_artifact(summary=summary, summary_path=args.scoring_summary,
+                artifact_name=name, expected_path=exact)
+            if sha256_file(path) != digest:
+                raise ValueError(f"rescoring artifact SHA-256 mismatch: {name}")
+            bound_artifacts[name] = (path, digest)
+    _reject_output_path_overlap(output_path=args.output, report_path=report_path,
+                                protected_paths=[path for path, _ in bound_artifacts.values()])
+    feature_digest = bound_artifacts.get("indicator_features_jsonl", (None, None))[1]
+    records = _load_jsonl(args.indicator_features, expected_sha256=feature_digest)
+    events_path, events_digest = bound_artifacts.get("events_jsonl", (args.indicator_features.with_name("events.jsonl"), None))
+    if events_path.is_file():
+        events_digest = events_digest or sha256_file(events_path)
+        authoritative_events = _load_jsonl(events_path, expected_sha256=events_digest)
+    expected_video = {"video_id": summary.get("video_id"),
+                      "video_sha256": summary.get("provenance", {}).get("video_sha256")}
+    if args.runtime_view_evidence is not None:
+        runtime_view_evidence = load_runtime_view_evidence(args.runtime_view_evidence)
+        for field in expected_video:
+            expected = expected_video[field]
+            supplied = runtime_view_evidence[field]
+            if expected is not None and str(expected).lower() != str(supplied).lower():
+                raise ValueError(f"scoring summary {field} does not match runtime view evidence")
+            expected_video[field] = supplied
+    for index, record in enumerate(records):
+        for field, expected in expected_video.items():
+            if expected is None:
+                continue
+            actual = record.get("provenance", {}).get(field) if field == "video_sha256" else record.get(field)
+            if actual is None or str(actual).lower() != str(expected).lower():
+                raise ValueError(f"indicator feature {field} differs from source video at record {index}")
+    source_hashes = {path.resolve(): sha256_file(path) for path in
+        [args.indicator_features, args.scoring_summary, *args.calibration,
+         *([events_path] if authoritative_events is not None else []),
+         *([args.runtime_view_evidence] if args.runtime_view_evidence is not None else [])]}
+    source_hashes.update(original_input_hashes)
+    if authoritative_events is not None:
+        source_hashes[events_path.resolve()] = events_digest
     if feasibility_registry is not None:
         model_versions = {
             **model_versions,
@@ -584,6 +368,12 @@ def main() -> None:
             feasibility_registry_artifact,
             pinned_registry_path=args.feasibility_registry,
         )
+    for path, digest in source_hashes.items():
+        if sha256_file(path) != digest:
+            raise ValueError(f"scoring input changed during computation: {path.name}")
+    for path, digest in bound_artifacts.values():
+        if sha256_file(path) != digest:
+            raise ValueError(f"scoring source artifact changed during computation: {path.name}")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in outputs),
@@ -596,7 +386,7 @@ def main() -> None:
                 "indicator_features": str(args.indicator_features.resolve()),
                 "events": (
                     str(args.indicator_features.resolve().with_name("events.jsonl"))
-                    if production_calibrations
+                    if authoritative_events is not None
                     else None
                 ),
                 "scoring_summary": str(args.scoring_summary.resolve()),
@@ -648,7 +438,7 @@ def main() -> None:
                 ),
                 "registry_lifecycle_manifest": (
                     str(feasibility_registry_artifact.manifest_path)
-                    if feasibility_registry_artifact is not None
+                    if feasibility_registry_artifact is not None and feasibility_registry_artifact.manifest_path is not None
                     else None
                 ),
                 "registry_lifecycle_manifest_sha256": (
@@ -678,7 +468,7 @@ def main() -> None:
                 ),
                 "trusted_runtime_profile_bindings_sha256": (
                     sha256_file(args.trusted_runtime_profile_bindings.resolve())
-                    if args.trusted_runtime_profile_bindings is not None
+                    if args.trusted_runtime_profile_bindings is not None and args.trusted_runtime_profile_bindings.is_file()
                     else None
                 ),
                 "runtime_view_evidence": (

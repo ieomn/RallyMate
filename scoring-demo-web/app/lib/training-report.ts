@@ -66,8 +66,9 @@ export function reportFocus(result: DemoResultResponse | null, motion?: MotionAn
 }
 
 export function replayMoment(moment: Pick<ReportMoment, "startMs">, jobId?: string) {
-  window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs: moment.startMs, jobId } }));
-  document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs: moment.startMs, jobId, preferOriginal: true } }));
+  const reduceMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById("evidence")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 export type RecentReport = { id: string; name: string; viewedAt: string };

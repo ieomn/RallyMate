@@ -83,7 +83,7 @@ class MicroAdjustmentCycleTests(unittest.TestCase):
         self.assertEqual(args, before)
         self.assertFalse(report['input']['artifact_files_verified'])
         self.assertEqual(result['status'], 'scored')
-        self.assertEqual(result['score'], 60)
+        self.assertEqual(result['score'], 50)
         self.assertEqual([c['passed'] for c in result['conditions']], [False, True])
         self.assertEqual(result['conditions'][0]['value'], 1)
         self.assertAlmostEqual(result['conditions'][1]['value'], .30026233094030963)
@@ -107,7 +107,7 @@ class MicroAdjustmentCycleTests(unittest.TestCase):
         json.dumps(report, allow_nan=False)
 
     def test_sequential_both_feet_and_same_foot_count_twice_but_simultaneous_counts_once(self):
-        for mode, count, score in (('sequential', 2, 100), ('same_foot', 2, 100), ('simultaneous', 1, 60)):
+        for mode, count, score in (('sequential', 2, 100), ('same_foot', 2, 100), ('simultaneous', 1, 50)):
             with self.subTest(mode=mode):
                 result = instance(compute(synthetic(mode)))
                 self.assertEqual(result['score'], score, result['reason_codes'])
@@ -129,7 +129,7 @@ class MicroAdjustmentCycleTests(unittest.TestCase):
     def test_static_complete_geometry_is_zero_episodes_and_failed_conditions(self):
         result = instance(compute(synthetic('static')))
         self.assertEqual(result['status'], 'scored')
-        self.assertEqual(result['score'], 20)
+        self.assertEqual(result['score'], 0)
         self.assertEqual([c['value'] for c in result['conditions']], [0, 0])
         self.assertEqual([c['passed'] for c in result['conditions']], [False, False])
 
@@ -171,7 +171,7 @@ class MicroAdjustmentCycleTests(unittest.TestCase):
                 if request['person_track_id']==1:
                     request['selection_epoch'] = 7
         result = instance(compute(args))
-        self.assertEqual(result['score'], 60)
+        self.assertEqual(result['score'], 50)
         self.assertEqual({r['source_binding']['selection_epoch'] for r in evidence(result)['source_geometry_series']}, {7})
         self.assertEqual({r['selection_epoch'] for r in evidence(result)['source_geometry_series']}, {0})
 
@@ -251,7 +251,7 @@ class MicroAdjustmentCycleTests(unittest.TestCase):
         self.assertTrue(report['input']['decoder_verified_from_original_video'])
         self.assertEqual(report['input']['source_frame_count'], 2911)
         result = instance(report)
-        self.assertEqual(result['score'], 60)
+        self.assertEqual(result['score'], 50)
         self.assertEqual(evidence(result)['source_frames'], list(range(112, 137)))
         self.assertEqual({p['input_geometry']['normalization_basis'] for p in evidence(result)['local_normalization']}, {'right_shoulder_right_torso'})
         production = artifact/'.codex_tmp/local-migration-20261019/local-data/runs/0a3df3a3-2629-4dd5-80a1-54e4b11f7341'

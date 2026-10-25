@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -229,7 +230,7 @@ class TechnicalReviewTests(unittest.TestCase):
 
     def test_history_cannot_be_updated_or_deleted(self):
         self.save(self.submission())
-        with sqlite3.connect(str(self.store.path)) as conn:
+        with closing(sqlite3.connect(str(self.store.path))) as conn, conn:
             for query in ["DELETE FROM technical_review_revisions", "UPDATE technical_review_revisions SET record_json='{}'"]:
                 with self.assertRaises(sqlite3.IntegrityError):
                     conn.execute(query)

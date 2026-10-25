@@ -1,4 +1,4 @@
-import type { PoseDisplayAnchors, PoseIdentityRepair, PosePreviewFrame, PosePreviewResponse } from "./api-types";
+import type { PoseDisplayAnchors, PoseIdentityRepair, PoseModelSourceBinding, PosePreviewFrame, PosePreviewResponse } from "./api-types";
 
 export const POSE_WINDOW_MS = 10000;
 export const POSE_MAX_HOLD_MS = 100;
@@ -7,6 +7,21 @@ const JOINTS = new Set(["nose", "left_eye", "right_eye", "left_ear", "right_ear"
 const object = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const positive = (value: unknown): number | null => finite(value) && value > 0 ? value : null;
+const BODY_JOINTS = new Set([...JOINTS].slice(0, 17));
+
+function modelSourceBinding(row: Record<string, unknown>): PoseModelSourceBinding | null {
+  const binding = object(row.source_binding);
+  if (row.pose_source !== "sam3d" || row.source_keypoint_format !== "mhr70" || row.observation_semantics !== "monocular_model_estimate"
+    || typeof binding.video_sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(binding.video_sha256)
+    || !positive(row.width) || !positive(row.height)) return null;
+  for (const key of ["frame_index", "processed_index", "pts", "timestamp_ms", "person_track_id", "selection_epoch", "camera_reference_epoch", "time_base_num", "time_base_den"]) {
+    if (!Number.isSafeInteger(binding[key]) || Number(binding[key]) < (["time_base_num", "time_base_den", "person_track_id"].includes(key) ? 1 : 0)) return null;
+  }
+  const sourceTimestamp = Object.hasOwn(row, "source_timestamp_ms") ? row.source_timestamp_ms : row.timestamp_ms;
+  if (binding.frame_index !== row.frame_index || binding.processed_index !== row.processed_index || binding.timestamp_ms !== sourceTimestamp || binding.person_track_id !== row.person_track_id
+    || Math.abs(Number(binding.pts) * Number(binding.time_base_num) * 1000 / Number(binding.time_base_den) - Number(binding.timestamp_ms)) > .51) return null;
+  return binding as unknown as PoseModelSourceBinding;
+}
 export const poseWindowStart = (timestampMs: number) => Math.floor(Math.max(0, Number.isFinite(timestampMs) ? timestampMs : 0) / POSE_WINDOW_MS) * POSE_WINDOW_MS;
 
 /** Source PTS can only drive the original video or an explicitly preserved replay. */
@@ -29,17 +44,30 @@ export function normalizePosePreview(value: unknown, jobId?: string): PosePrevie
     const epoch = Number.isSafeInteger(row.selection_epoch) && Number(row.selection_epoch) >= 0 ? Number(row.selection_epoch) : -1;
     const selected = epoch >= 0 && (row.selection_status === "selected" && track !== null || row.selection_status === "single_visible_person");
     const points = new Map<string, PosePreviewFrame["keypoints"][number]>();
+    const modelBinding = modelSourceBinding(row);
+    const isEstimate = row.pose_source === "sam3d" || row.observation_semantics === "monocular_model_estimate";
     const duplicates = new Set<string>();
     for (const value of selected && Array.isArray(row.keypoints) ? row.keypoints.slice(0, 26) : []) {
       const point = object(value);
       if (typeof point.name !== "string" || !JOINTS.has(point.name)) continue;
-      if (point.source !== undefined && point.source !== "observed") continue;
       if (points.has(point.name)) { duplicates.add(point.name); continue; }
+      if (isEstimate) {
+        if (!modelBinding || !BODY_JOINTS.has(point.name) || point.source !== "model_estimate" || point.observation_semantics !== "model_estimate"
+          || point.confidence !== null || point.confidence_semantics !== "not_provided_by_sam3d" || point.in_frame !== true
+          || !finite(point.raw_x_px) || !finite(point.raw_y_px) || point.raw_x_px < 0 || point.raw_x_px >= Number(row.width) || point.raw_y_px < 0 || point.raw_y_px >= Number(row.height)
+          || !finite(point.x) || !finite(point.y) || Math.abs(point.x - point.raw_x_px / Number(row.width)) > .000001 || Math.abs(point.y - point.raw_y_px / Number(row.height)) > .000001) continue;
+        points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: null, source: "model_estimate", observation_semantics: "model_estimate",
+          confidence_semantics: "not_provided_by_sam3d", in_frame: true, raw_x_px: point.raw_x_px, raw_y_px: point.raw_y_px });
+        continue;
+      }
+      if (point.source !== undefined && point.source !== "observed") continue;
       if (!finite(point.x) || point.x < 0 || point.x > 1 || !finite(point.y) || point.y < 0 || point.y > 1 || !finite(point.confidence) || point.confidence < minConfidence || point.confidence > 1) continue;
       points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: point.confidence, source: "observed" });
     }
     for (const name of duplicates) points.delete(name);
-    frames.push({ frame_index: Number.isSafeInteger(row.frame_index) ? Number(row.frame_index) : -1, timestamp_ms: row.timestamp_ms, valid_until_ms: validUntil, person_track_id: track, selection_epoch: epoch, selection_status: selected ? row.selection_status as "selected" | "single_visible_person" : "unavailable", width: positive(row.width), height: positive(row.height), keypoints: [...points.values()] });
+    frames.push({ frame_index: Number.isSafeInteger(row.frame_index) ? Number(row.frame_index) : -1, timestamp_ms: row.timestamp_ms, valid_until_ms: validUntil, person_track_id: track, selection_epoch: epoch, selection_status: selected ? row.selection_status as "selected" | "single_visible_person" : "unavailable", width: positive(row.width), height: positive(row.height), keypoints: [...points.values()],
+      ...(modelBinding ? { processed_index: Number(row.processed_index), pose_source: "sam3d", source_keypoint_format: "mhr70", observation_semantics: "monocular_model_estimate", source_binding: modelBinding,
+        ...(finite(row.source_timestamp_ms) ? { source_timestamp_ms: row.source_timestamp_ms } : {}) } as const : {}) });
   }
   frames.sort((a, b) => a.timestamp_ms - b.timestamp_ms);
   for (let index = 0; index < frames.length; index++) {
@@ -58,6 +86,8 @@ export function normalizePosePreview(value: unknown, jobId?: string): PosePrevie
 }
 
 function normalizeDisplayFrames(raw: Record<string, unknown>, frames: PosePreviewFrame[], minimumConfidence: number): Pick<PosePreviewResponse, "display_frames" | "display_continuity"> {
+  // Legacy interpolation/score recovery cannot rewrite model estimates as observations.
+  if (Array.isArray(raw.frames) && raw.frames.some(row => object(row).pose_source === "sam3d" || object(row).observation_semantics === "monocular_model_estimate")) return {};
   const continuity = object(raw.display_continuity);
   const nonnegativeInteger = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
   if (!Array.isArray(raw.display_frames) || continuity.version !== "short-joint-gap-v1.0.0" || continuity.used_for_scoring !== false

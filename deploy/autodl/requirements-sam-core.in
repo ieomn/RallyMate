@@ -1,0 +1,17 @@
+# Minimal bbox-driven inference; intentionally excludes optional detector,
+# segmentor, FOV estimator and training-only packages.
+# PyTorch is installed separately from the official CUDA 12.8 index.
+numpy<2
+networkx==3.2.1
+pytorch-lightning
+pyrender
+opencv-python
+yacs
+omegaconf
+einops
+timm
+termcolor
+roma
+braceexpand
+huggingface_hub
+pytest

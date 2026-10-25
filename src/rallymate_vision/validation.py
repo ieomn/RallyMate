@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,10 @@ COMPACT_FEATURE_FIELDS = (
     "confidence",
     "reason",
     "source_frames",
+)
+MODEL_FEATURE_FIELDS = (
+    "measurement_provenance", "source_window", "geometry_mask",
+    "required_joints_used", "selected_side",
 )
 LEGACY_SCORING_LOOP_VERSIONS_WITHOUT_ARTIFACT_HASHES = {
     "minimum-scoring-loop-v0.1.0",
@@ -171,14 +176,6 @@ def _validate_feature_result(record: dict[str, Any], prefix: str) -> None:
         isinstance(record["unit"], str) and record["unit"],
         f"{prefix}.unit must be non-empty",
     )
-    confidence = record["confidence"]
-    _require(
-        isinstance(confidence, (int, float))
-        and not isinstance(confidence, bool)
-        and math.isfinite(float(confidence))
-        and 0 <= confidence <= 1,
-        f"{prefix}.confidence must be finite and in 0..1",
-    )
     _require(isinstance(record["valid"], bool), f"{prefix}.valid must be boolean")
     _require(
         isinstance(record["reason"], str) and record["reason"],
@@ -186,13 +183,102 @@ def _validate_feature_result(record: dict[str, Any], prefix: str) -> None:
     )
     _require(
         isinstance(record["source_frames"], list)
-        and all(isinstance(frame, int) and frame >= 0 for frame in record["source_frames"]),
+        and all(type(frame) is int and frame >= 0 for frame in record["source_frames"]),
         f"{prefix}.source_frames must be non-negative integers",
     )
+    from rallymate_scoring.model_measurement_contract import (
+        has_model_measurement_context, model_measurement_provenance,
+        validated_geometry_mask, validated_model_window,
+    )
+    confidence = record["confidence"]
+    if has_model_measurement_context(record):
+        _require(model_measurement_provenance(record.get("measurement_provenance")),
+                 f"{prefix}.measurement_provenance must preserve the SAM measurement-only contract")
+        _require(confidence is None, f"{prefix}.confidence must remain unknown for SAM geometry")
+        if "source_window" in record or "geometry_mask" in record:
+            window = validated_model_window(record)
+            _require(window is not None, f"{prefix}.source_window is invalid")
+            masks = validated_geometry_mask(record.get("geometry_mask"), window)
+            _require(masks is not None, f"{prefix}.geometry_mask is invalid")
+            _require(set(record["source_frames"]).issubset(window["source_frames"]),
+                     f"{prefix}.source_frames exceed model source_window")
+            _require(not record["valid"] or bool(record["source_frames"]),
+                     f"{prefix}.valid model measurement requires source frames")
+        else:
+            # Missing geometry can describe an unavailable feature, never a
+            # measured value. It still retains explicit unknown-confidence provenance.
+            _require(record["valid"] is False and record["value"] is None and not record["source_frames"],
+                     f"{prefix}.model measurement without source evidence must be unavailable")
+    else:
+        _require(
+            isinstance(confidence, (int, float))
+            and not isinstance(confidence, bool)
+            and 0 <= confidence <= 1,
+            f"{prefix}.confidence must be finite and in 0..1",
+        )
 
 
 def _compact_feature(record: dict[str, Any]) -> dict[str, Any]:
-    return {field: record[field] for field in COMPACT_FEATURE_FIELDS}
+    return {**{field: record[field] for field in COMPACT_FEATURE_FIELDS},
+            **{field: record[field] for field in MODEL_FEATURE_FIELDS if field in record}}
+
+
+def _model_source_index(frames_path: Path, primary: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    """Bind exported feature proof to independently validated frame/selection records."""
+    from rallymate_features.coordinates import _bound_model_points
+
+    selected = {}
+    for item in primary:
+        index = item["processed_index"]
+        selected[index] = item if index not in selected else None
+    result = {}
+    with frames_path.open(encoding="utf-8") as handle:
+        for line in handle:
+            record = json.loads(line)
+            frame = record["frame"]
+            is_sam = any(pose.get("source") == "sam3d" for pose in record.get("poses", []))
+            if not is_sam:
+                continue
+            # Frame uniqueness has already been checked by validate_run_artifacts.
+            bound = _bound_model_points(record, selected.get(frame["processed_index"]), unique_source=True)
+            result[frame["index"]] = {"timestamp_ms": frame["timestamp_ms"],
+                "binding": bound[1] if bound is not None else None,
+                "joints": set(bound[0]) if bound is not None else set()}
+    return result
+
+
+def _validate_model_feature_source(record, event, model_sources, prefix):
+    from rallymate_scoring.model_measurement_contract import has_model_measurement_context, SOURCE_BINDING_FIELDS
+
+    is_model = has_model_measurement_context(record)
+    _require(not (model_sources or has_model_measurement_context(event)) or is_model,
+             f"{prefix}.SAM source feature cannot discard model provenance")
+    if not is_model:
+        return
+    window = record.get("source_window")
+    if window is None:
+        _require(any(event["start_ms"] <= source["timestamp_ms"] <= event["end_ms"]
+                     for source in model_sources.values()),
+                 f"{prefix}.SAM provenance has no corresponding source observations")
+        return
+    _require(event["start_ms"] <= window["start_ms"] <= window["end_ms"] <= event["end_ms"],
+             f"{prefix}.source_window exceeds event")
+    # compute_feature exports the complete native joint mask, including false
+    # entries. Omitting joints must not turn missing proof into an accepted value.
+    expected_joints = {point["name"] for point in keypoint_schema("mhr70")["keypoints"]}
+    _require(set(record["geometry_mask"]) == expected_joints,
+             f"{prefix}.geometry_mask must retain the complete native joint set")
+    for index, frame in enumerate(window["source_frames"]):
+        source = model_sources.get(frame)
+        _require(source is not None and source["binding"] is not None,
+                 f"{prefix}.source_window has unverified model frame {frame}")
+        binding = window["source_bindings"][index]
+        _require(all(binding[key] == source["binding"][key] for key in SOURCE_BINDING_FIELDS)
+                 and window["video_timestamps_ms"][index] == source["timestamp_ms"],
+                 f"{prefix}.source_window differs from decoder/selection evidence")
+        _require(all(mask[index] == (name in source["joints"])
+                     for name, mask in record["geometry_mask"].items()),
+                 f"{prefix}.geometry_mask differs from source geometry")
 
 
 def _validate_indicator_quality_gate(
@@ -386,6 +472,10 @@ def _validate_scoring_artifacts(
 
     frame_indexes = set(frame_timestamps)
     features = _load_jsonl(paths["features"])
+    from rallymate_scoring.model_measurement_contract import (
+        has_model_measurement_context, model_measurement_provenance,
+    )
+    model_sources = _model_source_index(frames_path, primary) if features else {}
     feature_by_key: dict[tuple[str, str], dict[str, Any]] = {}
     for index, item in enumerate(features):
         prefix = f"features[{index}]"
@@ -393,6 +483,7 @@ def _validate_scoring_artifacts(
         _require(item.get("video_id") == video_id, f"{prefix}.video_id mismatch")
         event = event_by_id.get(item.get("event_id"))
         _require(event is not None, f"{prefix} references unknown event")
+        _validate_model_feature_source(item, event, model_sources, prefix)
         _require(item.get("event_code") == event["event_code"], f"{prefix}.event_code mismatch")
         _require(item.get("person_track_id") == 1, f"{prefix}.person_track_id mismatch")
         key = (item["event_id"], item["feature_name"])
@@ -532,7 +623,8 @@ def _validate_scoring_artifacts(
                 f"{prefix} contains duplicate scoring feature {name}",
             )
             scoring_feature_names.append(name)
-        if indicator_id == TARGET_DIRECTION_INDICATOR_ID and scoring_contract_declared:
+        if (indicator_id == TARGET_DIRECTION_INDICATOR_ID and scoring_contract_declared
+                and TARGET_DIRECTION_ALIGNMENT_FEATURE_NAME in scoring_feature_names):
             _require(
                 scoring_feature_names
                 == [*compact_feature_order, TARGET_DIRECTION_ALIGNMENT_FEATURE_NAME],
@@ -595,6 +687,12 @@ def _validate_scoring_artifacts(
             and all(isinstance(reason, str) and reason for reason in reason_codes),
             f"{prefix}.reason_codes must be a string list",
         )
+        model_only = any(has_model_measurement_context(feature) for feature in scoring_features)
+        if model_only:
+            # Model provenance validates geometry and unknown confidence; it is
+            # not an administrative prohibition on evaluating supplied rules.
+            _require(model_measurement_provenance(item.get("measurement_provenance")),
+                     f"{prefix}.model geometry provenance is invalid")
         if loop_summary.get("loop_version") not in (
             LEGACY_SCORING_LOOP_VERSIONS_WITHOUT_COMPLETE_BLOCK_REASONS
         ):
@@ -628,11 +726,34 @@ def _validate_scoring_artifacts(
         _require(item.get("person_track_id") == 1, f"{prefix}.person_track_id mismatch")
         _require(item.get("status") == indicator["scoring_status"], f"{prefix}.status mismatch")
         _require(item.get("grade") == indicator["grade"], f"{prefix}.grade mismatch")
+        if has_model_measurement_context(indicator):
+            source = item.get("measurement_provenance", {})
+            _require(source.get("pose_source") == "sam3d"
+                     and source.get("observation_semantics") == "monocular_model_estimate"
+                     and source.get("confidence_available") is False
+                     and source.get("visibility_verified") is False
+                     and "confidence" in item and item["confidence"] is None,
+                     f"{prefix}.model result must preserve unknown confidence and visibility")
         score_feature = item.get("feature")
+        if item.get("status") == "scored":
+            from rallymate_scoring.scoring import score_indicator
+            try:
+                recomputed = score_indicator(indicator_id=item["indicator_id"],
+                    features=indicator.get("scoring_features", indicator["features"]),
+                    calibration=item.get("grade_rule"), model_versions=item.get("model_versions", {}),
+                    evidence=item.get("evidence", []), feasibility_level=indicator.get("feasibility_level"),
+                    event_quality_flags=indicator.get("quality_gate", {}).get("input_quality_flags", []))
+            except (ValueError, TypeError, KeyError, OverflowError) as exc:
+                raise OutputValidationError(f"{prefix}.explicit scoring rule is invalid") from exc
+            _require(recomputed["status"] == "scored" and recomputed["grade"] == item.get("grade")
+                     and recomputed["feature"] == score_feature,
+                     f"{prefix}.grade does not match its supplied mathematical rule")
+            expected_score_features = score_feature
+        else:
+            expected_score_features = {"items": indicator.get("scoring_features", indicator.get("features"))}
         _require(
             isinstance(score_feature, dict)
-            and score_feature.get("items")
-            == indicator.get("scoring_features", indicator.get("features")),
+            and score_feature == expected_score_features,
             f"{prefix}.feature.items does not exactly match indicator-features.jsonl",
         )
         _require(
@@ -747,6 +868,74 @@ def _validate_scoring_artifacts(
     }
 
 
+def _validate_sam_pose(pose: dict, frame: dict, prefix: str) -> None:
+    """Validate SAM provenance without pretending its estimates have confidence.
+
+    Off-image estimates may remain in the native evidence. They must retain the
+    original coordinates and a false in_frame flag; measurement consumers must
+    exclude them instead of using the clipped compatibility coordinates.
+    """
+    _require(pose.get("source") == "sam3d" and pose.get("confidence") is None
+             and "confidence" in pose and pose.get("confidence_semantics") == "not_provided_by_sam3d"
+             and pose.get("observation_semantics") == "monocular_model_estimate"
+             and pose.get("coordinate_space") == "original_frame" and pose.get("status") == "ok",
+             f"{prefix} invalid SAM estimate semantics")
+    binding = pose.get("source_binding")
+    _require(isinstance(binding, dict), f"{prefix}.source_binding required")
+    _require(isinstance(binding.get("video_sha256"), str)
+             and re.fullmatch(r"[0-9a-fA-F]{64}", binding["video_sha256"]) is not None,
+             f"{prefix}.source_binding.video_sha256 invalid")
+    for key in ("frame_index", "processed_index", "pts", "timestamp_ms", "person_track_id",
+                "selection_epoch", "camera_reference_epoch", "time_base_num", "time_base_den"):
+        value = binding.get(key)
+        minimum = 1 if key in {"person_track_id", "time_base_num", "time_base_den"} else 0
+        _require(isinstance(value, int) and not isinstance(value, bool) and value >= minimum,
+                 f"{prefix}.source_binding.{key} invalid")
+    for key, expected in (("frame_index", frame.get("index")), ("processed_index", frame.get("processed_index")),
+                          ("timestamp_ms", frame.get("source_timestamp_ms", frame.get("timestamp_ms"))), ("person_track_id", pose.get("person_track_id"))):
+        _require(binding[key] == expected, f"{prefix}.source_binding.{key} does not match frame/person")
+    for key in ("pts", "time_base_num", "time_base_den"):
+        if key in frame:
+            _require(type(frame[key]) is int and frame[key] == binding[key],
+                     f"{prefix}.source_binding.{key} does not match retained decoder metadata")
+    if "video_sha256" in frame:
+        _require(isinstance(frame["video_sha256"], str)
+                 and frame["video_sha256"].lower() == binding["video_sha256"].lower(),
+                 f"{prefix}.source_binding.video_sha256 does not match retained video identity")
+    # A millisecond integer is a rounded presentation timestamp, never frame/fps.
+    timestamp = binding["pts"] * binding["time_base_num"] * 1000 / binding["time_base_den"]
+    _require(math.isfinite(timestamp) and abs(timestamp - binding["timestamp_ms"]) <= .51,
+             f"{prefix}.source_binding timestamp does not match PTS time base")
+    _require(frame.get("timestamp_source") == "decoder_pts", f"{prefix} needs actual decoder PTS")
+    camera = frame.get("camera_motion")
+    if isinstance(camera, dict):
+        _require(camera.get("reference_epoch") == binding["camera_reference_epoch"],
+                 f"{prefix}.source_binding.camera_reference_epoch does not match frame")
+    for index, point in enumerate(pose.get("keypoints", [])):
+        name = f"{prefix}.keypoints[{index}]"
+        _require(point.get("source") == "sam3d" and point.get("observation_semantics") == "model_estimate"
+                 and point.get("confidence_semantics") == "not_provided_by_sam3d"
+                 and point.get("confidence") is None and "confidence" in point
+                 and point.get("observed") is None and "observed" in point
+                 and point.get("visibility") is None and "visibility" in point,
+                 f"{name} must preserve unobserved confidence/visibility semantics")
+        raw = [point.get("raw_x_px"), point.get("raw_y_px")]
+        _require(all(isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) for value in raw),
+                 f"{name} requires finite original image pixels")
+        inside = 0 <= raw[0] < frame["width"] and 0 <= raw[1] < frame["height"]
+        _require(isinstance(point.get("in_frame"), bool) and point["in_frame"] == inside,
+                 f"{name}.in_frame disagrees with raw coordinates")
+        for axis, extent, value in (("x", frame["width"], raw[0]), ("y", frame["height"], raw[1])):
+            compatibility = point.get(f"{axis}_px")
+            normalized = point.get(f"{axis}_normalized")
+            _require(isinstance(compatibility, (int, float)) and not isinstance(compatibility, bool)
+                     and math.isfinite(compatibility) and abs(compatibility - min(extent, max(0, value))) <= .00051,
+                     f"{name} compatibility coordinate inconsistent with raw pixels")
+            _require(isinstance(normalized, (int, float)) and not isinstance(normalized, bool)
+                     and math.isfinite(normalized) and abs(normalized - compatibility / extent) <= .00051 / extent + .00000051,
+                     f"{name} normalized coordinate inconsistent with pixels")
+
+
 def validate_frame_observation(record: dict[str, Any]) -> None:
     _require(
         record.get("schema_version") in {SCHEMA_VERSION, FRAME_SCHEMA_VERSION},
@@ -834,11 +1023,11 @@ def validate_frame_observation(record: dict[str, Any]) -> None:
         keypoints = pose.get("keypoints", [])
         format_name = pose.get("keypoint_format")
         _require(
-            format_name in {"coco17", "halpe26", "coco_wholebody133"}
+            format_name in {"coco17", "halpe26", "coco_wholebody133", "mhr70"}
             and isinstance(keypoints, list),
             (
                 f"{prefix}.keypoint_format must be coco17, halpe26 "
-                "or coco_wholebody133"
+                "or coco_wholebody133 or mhr70"
             ),
         )
         definition = keypoint_schema(format_name)
@@ -846,12 +1035,17 @@ def validate_frame_observation(record: dict[str, Any]) -> None:
             len(keypoints) == definition["count"],
             f"{prefix} must contain {definition['count']} {format_name} keypoints",
         )
+        if format_name == "mhr70":
+            _validate_sam_pose(pose, {**frame, "camera_motion": record.get("camera_motion")}, prefix)
+        else:
+            _require(pose.get("source") != "sam3d", f"{prefix} SAM must preserve native mhr70 format")
         for point_index, point in enumerate(keypoints):
             point_prefix = f"{prefix}.keypoints[{point_index}]"
             expected = definition["keypoints"][point_index]
             _require(
-                point.get("index") in {None, point_index}
-                and point.get("name") in {None, expected["name"]},
+                (point.get("index") == point_index and point.get("name") == expected["name"]
+                 if format_name == "mhr70" else
+                 point.get("index") in {None, point_index} and point.get("name") in {None, expected["name"]}),
                 f"{point_prefix} index/name does not match {format_name}",
             )
             _require(
@@ -869,7 +1063,7 @@ def validate_frame_observation(record: dict[str, Any]) -> None:
                     [
                         point.get("x_normalized"),
                         point.get("y_normalized"),
-                        point.get("confidence"),
+                        *([] if format_name == "mhr70" else [point.get("confidence")]),
                     ],
                     0.0,
                     1.0,

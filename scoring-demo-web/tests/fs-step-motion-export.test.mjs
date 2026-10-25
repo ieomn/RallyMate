@@ -26,11 +26,13 @@ test("all synthetic step source and geometry records survive portable backup wit
   }
 });
 
-test("exports explain the observed moving foot and timing without calling it front foot or contact truth", () => {
+test("step timing and moving-foot proof stay in backup without displaying an internal card table", () => {
   const raw = fixture.cases[0].report;
-  const row = buildPracticeReport(completed(raw)).sections.find(s => s.title === "逐卡视频实例与条件").rows[0].join(" ");
-  assert.match(row, /人工观察的移动脚：右脚/); assert.match(row, /18\/18 原帧六关节共同有效/);
-  assert.match(row, /不是前脚、触地、目标方向或技术步法确认/); assert.match(row, /低速—移动—低速/);
+  const report = buildPracticeReport(completed(raw));
+  assert.equal(report.sections.some(s => s.title.startsWith("逐卡")), false);
+  const backup = buildReportBackup(completed(raw));
+  assert.deepEqual(instance(backup.result.card_execution).source_window_evidence.step_motion, instance(raw).source_window_evidence.step_motion);
+  assert.equal(instance(backup.result.card_execution).original_grade, null);
 });
 
 test("a forged displacement stays diagnostic, loses its score and is not exported as an effective condition value", () => {
@@ -39,8 +41,10 @@ test("a forged displacement stays diagnostic, loses its score and is not exporte
   const backup = JSON.parse(JSON.stringify(buildReportBackup(completed(raw))));
   assert.equal(instance(backup.result.card_execution).score, null);
   assert.equal(instance(backup.result.card_execution).source_window_evidence.step_motion.feet.right.net_displacement_torso, 12345);
-  const row = buildPracticeReport(completed(raw)).sections.find(s => s.title === "逐卡视频实例与条件").rows[0].join(" ");
-  assert.match(row, /未通过独立复算/); assert.doesNotMatch(row, /12345/);
+  const report = buildPracticeReport(completed(raw));
+  assert.equal(report.sections.some(s => s.title.startsWith("逐卡")), false);
+  assert.doesNotMatch(JSON.stringify(report), /12345/);
+  assert.equal(instance(backup.result.card_execution).step_motion_validation.status, "invalid");
 });
 
 test("the numeric path-length exception does not expose strings or unrelated private path fields", () => {

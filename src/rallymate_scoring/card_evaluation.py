@@ -247,8 +247,11 @@ def summarize_card_scores(results, applicable_card_ids):
         if key in unique and unique[key] != row:
             conflicts.add(key)
         unique[key] = row
-    from .card_scoring_policy import SCORING_POLICY_VERSION, FORMAL_SCORE_SEMANTICS
-    has_formal_policy = any(row.get("scoring_policy_version") == SCORING_POLICY_VERSION for row in unique.values())
+    from .card_scoring_policy import SUPPORTED_SCORING_POLICY_VERSIONS, formal_score_matches
+    formal_versions = {row.get("scoring_policy_version") for row in unique.values()
+                       if row.get("scoring_policy_version") in SUPPORTED_SCORING_POLICY_VERSIONS}
+    has_formal_policy = bool(formal_versions)
+    formal_policy = next(iter(formal_versions)) if len(formal_versions) == 1 else None
     channels = {}
     channel_specs = [("original", "source_scored", "original_grade"),
                      ("visual_proxy", "proxy_scored", "proxy_grade"),
@@ -260,11 +263,11 @@ def summarize_card_scores(results, applicable_card_ids):
         for key, row in unique.items():
             if key in conflicts or row.get("status") != status:
                 continue
-            if channel == "formal" and (row.get("scoring_policy_version") != SCORING_POLICY_VERSION
-                    or row.get("semantics") != FORMAL_SCORE_SEMANTICS):
+            if channel == "formal" and (row.get("scoring_policy_version") != formal_policy
+                    or not formal_score_matches(row)):
                 continue
             grade, score = row.get(grade_field), row.get("score")
-            if grade not in GRADE_POINTS or not finite(score) or GRADE_POINTS[grade] != score:
+            if grade not in GRADE_POINTS or not finite(score) or channel != "formal" and GRADE_POINTS[grade] != score:
                 continue
             if not isinstance(row.get("event_id"), str) or not row["event_id"]:
                 continue
@@ -282,7 +285,7 @@ def summarize_card_scores(results, applicable_card_ids):
             "weight_policy": "equal_card_weight_after_event_mean",
             "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"}
     if has_formal_policy:
-        result.update(scoring_policy_version=SCORING_POLICY_VERSION,
+        result.update(scoring_policy_version=formal_policy,
                       formal_scored_cards=channels["formal"]["scored_cards"],
                       formal_scored_instances=channels["formal"]["scored_event_instances"])
     return result

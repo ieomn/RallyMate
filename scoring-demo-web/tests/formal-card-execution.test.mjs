@@ -86,9 +86,12 @@ test("formal totals are equal-card means and duplicate instances never inflate c
   assert.equal(parsed.overall_score, 80);
 });
 
-test("formal score panel is open in the real overview entry and does not wait for legacy review guidance",()=>{
+test("real overview shows the validated formal total without rendering internal card detail",()=>{
  const raw=original("bound_synthetic_model");const html=renderToStaticMarkup(createElement(Overview,{result:{job_id:raw.source_run_id,card_execution:raw},motion:null,pending:false,title:"ready",description:"ready"}));
- assert.match(html,/class="indicator-assessment card-execution-panel" open=""/);assert.match(html,/正式总分/);assert.match(html,/A · 100/);assert.doesNotMatch(html,/逐卡计算与复核|测量证据参考分|待教练标定/);
+ assert.match(html,/class="process-overall-reference"><strong>100<small>\/ 100/);
+ assert.equal((html.match(/class="process-overall-reference"/g)??[]).length,1);
+ assert.ok(html.indexOf('class="process-overall-reference"')<html.indexOf('<details'));
+ assert.doesNotMatch(html,/card-execution-panel|逐卡计算|A · 100|FS08-M02|原卡技术等级/);
 });
 
 test("model detector epochs and primary selection epochs remain distinct and independently bound",()=>{

@@ -19,8 +19,14 @@ const completed=raw=>({mode:"live",uploadState:"complete",job:{id:raw.source_run
 test("every formal report preserves all validated state and source proof across backup re-reading",()=>{
  for(const raw of reports){const backup=JSON.parse(JSON.stringify(buildReportBackup(completed(raw))));assert.deepEqual(cardExecutionOf(backup.result.card_execution),cardExecutionOf(raw));}
 });
-test("readable exports use recomputed formal totals and grades, not legacy review or stored summaries",()=>{
+test("readable exports show one recomputed formal total and keep internal rows only in backup",()=>{
  const raw=structuredClone(fixtures.at(-1).report);raw.overall_score=999;raw.summary.formal_scored_cards=999;
- const report=buildPracticeReport(completed(raw));const summary=report.sections.find(s=>s.title==="逐卡计算结果");assert.match(summary.paragraphs.join(" "),/正式总分：68/);assert.doesNotMatch(summary.paragraphs.join(" "),/待复核|999/);
- const row=report.sections.find(s=>s.title==="逐卡视频实例与条件").rows.find(r=>r[0].startsWith("FS01-M02"));assert.match(row[2],/D \/ 40（正式评分）/);
+ const report=buildPracticeReport(completed(raw)),totals=report.sections.filter(s=>s.title.startsWith("训练评分："));
+ assert.equal(totals.length,1);assert.equal(totals[0].title,"训练评分：68 / 100");
+ assert.doesNotMatch(totals[0].paragraphs.join(" "),/待复核|999/);
+ assert.equal(report.sections.some(s=>s.title.startsWith("逐卡")),false);
+ assert.doesNotMatch(JSON.stringify(report),/FS01-M02|D \/ 40|原卡技术等级/);
+ const backup=buildReportBackup(completed(raw)),row=backup.result.card_execution.cards.find(c=>c.indicator_id==="FS01-M02").instances[0];
+ assert.equal(row.grade,"D");assert.equal(row.score,40);
+ assert.deepEqual(backup.result.card_execution,cardExecutionOf(raw));
 });

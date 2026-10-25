@@ -1,34 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import MotionReplayPanel from "./MotionReplayPanel";
+import { useEffect, useRef, type ReactNode } from "react";
 
-type ReplayView = "original" | "comparison";
+export function originalReplayHash(hash: string): "#evidence" | null {
+  return ["#evidence", "#motion-replay", "#skeleton-replay"].includes(hash) ? "#evidence" : null;
+}
 
-export default function TrainingReplayPanel({ jobId, allowComparison, children }: { jobId?: string; allowComparison: boolean; children: ReactNode }) {
-  const [view, setView] = useState<ReplayView>("original");
+export default function TrainingReplayPanel({ jobId, children, mediaKind }: { jobId?: string; children: ReactNode; mediaKind?: "annotated" | "original" | null }) {
   const root = useRef<HTMLElement>(null);
-  const comparison = allowComparison && view === "comparison";
-  const activate = useCallback((next: ReplayView) => {
-    root.current?.querySelectorAll("video").forEach(video => video.pause());
-    setView(next);
-  }, []);
 
   useEffect(() => {
     let scrollFrame = 0;
-    const reveal = (next: ReplayView) => {
-      activate(next);
+    const reveal = () => {
       cancelAnimationFrame(scrollFrame);
       scrollFrame = requestAnimationFrame(() => root.current?.scrollIntoView({ block: "start", behavior: "instant" }));
     };
     const onHash = () => {
-      if (window.location.hash === "#motion-replay" && allowComparison) reveal("comparison");
-      else if (window.location.hash === "#evidence") reveal("original");
+      const originalHash = originalReplayHash(window.location.hash);
+      if (!originalHash) return;
+      if (window.location.hash !== originalHash) window.history.replaceState(null, "", originalHash);
+      reveal();
     };
     const onSeek = (event: Event) => {
       const detail = (event as CustomEvent<{ timestampMs?: number; jobId?: string }>).detail;
       if (!Number.isFinite(detail?.timestampMs) || detail?.jobId && jobId && detail.jobId !== jobId) return;
-      reveal("original");
+      reveal();
       window.history.replaceState(null, "", "#evidence");
     };
     onHash();
@@ -41,24 +37,10 @@ export default function TrainingReplayPanel({ jobId, allowComparison, children }
       window.removeEventListener("popstate", onHash);
       window.removeEventListener("rallymate:seek-video", onSeek);
     };
-  }, [activate, allowComparison, jobId]);
+  }, [jobId]);
 
-  const select = (next: ReplayView) => {
-    activate(next);
-    window.history.replaceState(null, "", next === "comparison" ? "#motion-replay" : "#evidence");
-  };
-  return <section ref={root} className="report-replay" id="evidence" aria-labelledby="evidence-title" data-view={comparison ? "comparison" : "original"}>
-    <div className="report-section-heading"><h2 id="evidence-title">训练回放</h2></div>
-    {allowComparison && <div className="training-replay-tabs" role="tablist" aria-label="训练回放方式">
-      {(["original", "comparison"] as const).map(mode => <button key={mode} id={`replay-tab-${mode}`} role="tab" type="button" aria-selected={comparison === (mode === "comparison")} aria-controls={`replay-view-${mode}`} tabIndex={comparison === (mode === "comparison") ? 0 : -1} onClick={() => select(mode)} onKeyDown={event => {
-        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-        event.preventDefault();
-        const next = event.key === "Home" ? "original" : event.key === "End" ? "comparison" : mode === "original" ? "comparison" : "original";
-        select(next);
-        document.getElementById(`replay-tab-${next}`)?.focus();
-      }}>{mode === "original" ? "原视频" : "白模与 AI 对比"}</button>)}
-    </div>}
-    <div id="replay-view-original" role={allowComparison ? "tabpanel" : undefined} aria-labelledby={allowComparison ? "replay-tab-original" : undefined} hidden={comparison}>{children}</div>
-    {allowComparison && <div id="replay-view-comparison" role="tabpanel" aria-labelledby="replay-tab-comparison" hidden={!comparison}><MotionReplayPanel jobId={jobId} enabled active={comparison} /></div>}
+  return <section ref={root} className="report-replay" id="evidence" aria-labelledby="evidence-title" data-job-id={jobId}>
+    <div className="report-section-heading"><div><h2 id="evidence-title">{mediaKind === "annotated" ? "标注回放" : mediaKind === null ? "训练回放" : "原视频"} · 动作识别</h2><p className="training-replay-intro">{mediaKind === "annotated" ? "当前为服务器生成的标注回放，支持慢放查看。" : mediaKind === null ? "选择可用的视频回放查看动作。" : "结合动作标记复看原片，支持慢放与动作片段定位。"}</p></div></div>
+    <div id="replay-view-original">{children}</div>
   </section>;
 }

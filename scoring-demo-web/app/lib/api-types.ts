@@ -117,10 +117,21 @@ export type JobStatus =
   | "failed"
   | "cancelled";
 
+/** File identity validated by the service; no report-clock mapping is implied. */
+export interface OriginalVideo {
+  url: string;
+  sha256: string;
+  bytes: number;
+  source_job_id: string;
+}
+
 /** Shape used by the production /v1/jobs endpoint. Unknown additions are kept. */
 export interface JobSubmission {
   id: string;
   status: JobStatus | string;
+  cancel_requested?: boolean;
+  cancel_requested_at?: string | null;
+  cancelled_at?: string | null;
   error?: string | null;
   progress?: number | {
     phase?: string;
@@ -132,6 +143,7 @@ export interface JobSubmission {
   technique_assessment_url?: string | null;
   demo_result_url?: string | null;
   artifact_urls?: Record<string, string>;
+  original_video?: OriginalVideo | null;
   createdAt?: string;
   created_at?: string;
   [key: string]: unknown;
@@ -153,16 +165,38 @@ export interface JobProgress extends JobSubmission {
   total_frames?: number;
 }
 
+export interface Sam3dMeshPreview {
+  status: "ready";
+  video_url: string;
+  side_video_url: string;
+  preview_image_url: string;
+  manifest_url: string;
+  source_video_sha256: string;
+  source_frame_start: number;
+  /** Exclusive source frame boundary. */
+  source_frame_end: number;
+  frame_count: number;
+  source_timestamp_origin_ms: number;
+  source_relative_origin_ms: number;
+  timing_preserved: true;
+  renderer: "official-sam3d-pyrender-persistent-context";
+}
+
 export interface DemoResultResponse {
-  card_execution?: unknown;
+  original_video?: OriginalVideo | null;
+  sam3d_mesh?: Sam3dMeshPreview | null;
+  sam3d_mesh_status?: "ready" | "pending" | "failed" | "unavailable";
   runtime?: {
     annotated_video_compatibility?: { timing_preserved?: boolean; timebase?: string; timing_warning?: string; [key: string]: unknown } | null;
     [key: string]: unknown;
   };
   analysis_report?: AnalysisReport;
   footwork_review?: FootworkReview;
+  source_aligned_assessment?: { contextual_measurements?: HipContextualMeasurement[]; [key: string]: unknown };
   action_recognition?: { motion_analysis?: MotionAnalysis; [key: string]: unknown };
   training_evaluation?: TrainingEvaluation;
+  process_evaluation?: ProcessEvaluation;
+  card_execution?: unknown;
   actions?: ActionEvaluation[];
   technique_assessment?: TechniqueAssessmentResponse;
   artifact_urls?: Record<string, string>;
@@ -191,6 +225,148 @@ export interface DemoResultResponse {
   [key: string]: unknown;
 }
 
+export type ProcessDimensionId = "movement" | "preparation" | "swing" | "contact" | "follow_through" | "transition";
+
+export interface ProcessCriterion {
+  legacy_diagnostic?: { version: "relative-reference-v1.0.0"; score: number | null; semantics: "selection_biased_motion_curve_diagnostic"; is_technical_quality: false; contributes_to_current_score: false; exclusion_reason: "selection_biased_proxy_excluded" };
+  id: string;
+  label_zh: string;
+  status: "measured" | "unavailable";
+  source_conflict?: true;
+  value: number | null;
+  unit: string | null;
+  score: number | null;
+  reason_zh: string;
+  rule_zh: string;
+  source: string;
+  start_ms: number | null;
+  end_ms: number | null;
+  episode_id: string | null;
+  related_episode_id?: string | null;
+  sample_count?: number;
+  timing_resolution_ms?: number | null;
+  ordering_resolved?: boolean;
+  indicator_id?: string;
+  feature_name?: string;
+  video_id?: string;
+  person_track_id?: number;
+  source_frames?: number[];
+  feature_version?: string;
+  window_scope?: "event_interval" | "continuous_window_in_estimated_preparation" | "continuous_local_window_in_estimated_preparation";
+  measurement_semantics?: "image_plane_proxy_not_source_card_grade" | "preparation_candidate_2d_not_formal_stage_or_grade" | "joint_specific_2d_measurements_not_technical_grade";
+  reference?: Record<string, unknown>;
+  source_timestamps_ms?: number[];
+  related_source_cards?: string[];
+  source_refs?: string[];
+  source_card_applicability?: "unconfirmed";
+  assessment_status?: "measurement_only" | "mathematical_reference";
+  full_source_rule_satisfied?: false;
+  original_metric_evidence?: Record<string, unknown>;
+  measurement_provenance?: Record<string, unknown>;
+  source_window?: Record<string, unknown>;
+  geometry_mask?: Record<string, boolean[]>;
+  source_track_id?: number;
+  phase?: "preparation";
+  phase_window?: { start_ms: number; end_ms: number };
+  statistics?: Record<string, unknown>;
+  applicability_missing?: string[];
+  source_binding_start?: Record<string, unknown>;
+  source_binding_end?: Record<string, unknown>;
+  source_time_origin_ms?: number;
+  video_timestamps_ms?: number[];
+  time_basis?: "decoder_timestamp_ms" | "bound_source_pts";
+  fixed_scale_px?: number;
+  source_duration_ms?: number;
+  full_phase_coverage?: boolean;
+  quality?: { measurement_status: "measured"; confidence: number | null; reason_codes: string[]; aggregate_feature_status: "measured" | "unavailable"; required_joints: string[]; review_version: string };
+}
+
+export interface ProcessDimension {
+  id: ProcessDimensionId;
+  name_zh: string;
+  score: number | null;
+  status: "measured" | "partial" | "unavailable";
+  summary_zh: string;
+  criteria: ProcessCriterion[];
+  scoring_audit?: RelativeScoringAudit;
+  gap?: RelativeScoringGap;
+  scored_rule_count?: number;
+  total_rule_count?: number;
+  sample_count?: number;
+  measured_criterion_count?: number;
+  returned_measured_criterion_count?: number;
+  scored_sample_count?: number;
+  total_sample_count?: number;
+  aggregation?: "mean_of_independent_samples_for_one_explicit_rule" | "none";
+  score_scope?: "engineering_subcriterion_reference" | "observation_only";
+  score_scope_zh?: string;
+  score_covers_all_source_cards?: false;
+  status_reason?: string;
+  status_reason_zh?: string;
+  criteria_selection?: { full_count: number; returned_count: number; is_truncated: boolean; policy: "all_scoring_criteria_and_uniform_time_ordered_unscored_footwork_per_feature" | "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature"; max_footwork_observations_per_feature: 12; count_scope: "all_validated_input_episodes_before_display_sampling" };
+  measurement_input_scope?: { source: "footwork_review"; available_event_count: number; returned_event_count: number; is_truncated: boolean; reason_zh: string };
+  source_basis?: {
+    version: string;
+    card_ids: string[];
+    card_count: number;
+    grouping_origin: "proposed_source_stage_grouping";
+    proposed_not_original: true;
+    grouping_rule_zh: string;
+    source_reference_version: string;
+    source_reference_sha256: string;
+    source_anchors: unknown[];
+    source_blockers: unknown[];
+    source_documents: unknown[];
+  };
+}
+
+export interface RelativeReferenceRule {
+  id: string; name_zh: string; raw_mean: number | null; score: number | null; sample_count: number;
+  model_estimate_sample_count: number; measurement_weight: number; formula_zh: string; source: string;
+  excluded_conflicting_episode_count: number;
+}
+export interface RelativeReferenceDimension {
+  id: ProcessDimensionId; name_zh: string; score: number | null; basis: "observed_reference" | "unavailable" | "neutral_prior";
+  observed_rule_count: number; implemented_rule_count: number; sample_count: number; rules: RelativeReferenceRule[];
+  scoring_audit: RelativeScoringAudit; gap: RelativeScoringGap;
+}
+export interface RelativeScoringAudit {
+  measured_criterion_count: number; measured_episode_count: number; scored_rule_count: number;
+  scored_episode_count: number; implemented_rule_count: number; excluded_legacy_rule_ids: string[];
+  excluded_conflicting_episode_count: number;
+  count_scope: "validated_returned_criteria";
+}
+export interface RelativeScoringGap {
+  type: "none" | "independent_reference_missing" | "valid_measurement_missing" | "rule_not_implemented" | "selection_biased_proxy_excluded" | "source_conflict";
+  reason_zh: string;
+  rule_version: "relative-reference-v3.0.0"; measurement_status: "measured" | "unavailable";
+}
+export interface LegacyMotionDiagnostic {
+  version: "relative-reference-v1.0.0"; semantics: "selection_biased_motion_curve_diagnostic";
+  is_technical_quality: false; contributes_to_current_score: false; overall_score: number;
+  dimensions: Omit<RelativeReferenceDimension, "scoring_audit" | "gap">[]; observed_dimension_count: number; reason_zh: string;
+}
+export interface RelativeReference {
+  version: "relative-reference-v3.0.0"; semantics: "observed_measurement_reference";
+  overall_score: number | null; is_calibrated: false;
+  aggregation: "independent_episode_mean_then_rule_mean_then_observed_dimension_mean";
+  observed_dimension_count: number; total_dimension_count: 5; dimensions: RelativeReferenceDimension[];
+  summary_zh: string; formula_zh: string; limitations_zh: string[];
+  legacy_diagnostic: LegacyMotionDiagnostic;
+  legacy_relative_reference: { version: "relative-reference-v2.0.0"; semantics: "neutral_prior_relative_reference"; is_technical_quality: false; contributes_to_current_score: false; neutral_score: 50; prior_sample_weight: 3; overall_score: number; dimensions: Omit<RelativeReferenceDimension, "scoring_audit" | "gap">[]; observed_dimension_count: number; aggregation: "independent_episode_mean_then_rule_mean_then_five_equal_dimensions"; formula_zh: string; reason_zh: string };
+  recalculation: { from_version: "relative-reference-v2.0.0"; to_version: "relative-reference-v3.0.0"; source: "validated_process_measurements"; cached_scores_used: false; reason_zh: string };
+}
+export interface ProcessEvaluation {
+  version: "process-evaluation-v1.0.0" | "process-evaluation-v1.1.0" | "process-evaluation-v1.2.0" | "process-evaluation-v2.0.0";
+  semantics: "observable_motion_process_reference";
+  is_calibrated: false;
+  overall_score: null;
+  relative_reference?: RelativeReference;
+  dimensions: ProcessDimension[];
+  display_dimension_ids?: ProcessDimensionId[];
+  validation_issues?: string[];
+}
+
 export interface AnalysisReport {
   version: "training-report-v1.0.0";
   headline_zh: string;
@@ -204,6 +380,9 @@ export interface AnalysisReport {
 }
 
 export interface IndependentFootworkMeasurement {
+  measurement_provenance?: Record<string, unknown>; source_window?: Record<string, unknown>;
+  geometry_mask?: Record<string, boolean[]>; source_track_id?: number;
+  source_frames?: number[];
   feature_name: string; name_zh: string; value: number | null; unit: string | null; confidence: number | null;
   status: "measured" | "unavailable"; reason_codes: string[]; reason_zh: string; review_hint_zh: string;
   window: { start_ms: number; end_ms: number; scope: "event_interval" };
@@ -257,13 +436,40 @@ export interface FootworkReview {
   returned_episode_count?: number;
   is_truncated?: boolean;
   episodes: Array<{
-    event_id: string; event_code: string; name_zh: string; person_track_id: number;
+    event_id: string; event_code: string; name_zh: string; person_track_id: number; video_id?: string;
+    source_id?: string;
     start_ms: number; end_ms: number;
     indicators: Array<{ indicator_id: string; name_zh: string; feature_status: string; scoring_status: string;
       measurements?: IndependentFootworkMeasurement[]; measurement_status?: "measured" | "partial" | "unavailable";
-      features: Array<{ feature_name: string; name_zh?: string; value: number | null; unit: string | null; confidence: number | null }>;
+      features: Array<{ feature_name: string; name_zh?: string; value: number | null; unit: string | null; confidence: number | null;
+        measurement_provenance?: Record<string, unknown>; source_window?: Record<string, unknown>; geometry_mask?: Record<string, boolean[]>; source_track_id?: number }>;
     }>;
   }>;
+}
+
+/** Independent whole-window image geometry, never an event classification or grade. */
+export interface HipContextualMeasurement {
+  type: "hip_path_ratio_2d";
+  version: "hip-contextual-measurement-v1.0.0";
+  helper_version: "bounded-hip-path-ratio-v1.0.0";
+  event_id: string; event_code: "FS01" | "FS02" | "FS09";
+  video_id: string; source_id: string; video_sha256: string;
+  person_track_id: number;
+  status: "measured" | "unavailable"; reason: string;
+  hip_path_length_px: number | null; hip_net_displacement_px: number | null; hip_path_over_net_ratio: number | null;
+  parent_window_ms: { start_ms: number; end_ms: number };
+  measurement_window_video_ms: { start_ms: number; end_ms: number } | null;
+  source_frame_bounds: { start_source_frame: number; end_source_frame: number } | null;
+  source_window: Record<string, unknown> | null;
+  source_bindings: Array<Record<string, unknown>>;
+  source_reference: { video_sha256: string; primary_player_id: number; person_track_id: number; selection_epoch: number; camera_reference_epoch: number } | null;
+  adapter: { version: "native-sam-primary-epochs-v1.0.0"; provenance: "unique_same_frame_selected_track_SAM_request_and_pose_binding_and_camera"; source_files_changed: false };
+  input_sha256: { frames: string; primary_timeline: string; events: string };
+  window_input_sha256: { records: string | null; original_primary: string | null; adapted_primary: string | null; event: string };
+  score: null; grade: null; formal_event_verified: false; scoring_allowed: false;
+  assessment_status: "measurement_only";
+  coordinate_system: "stable_camera_reference_image_pixels";
+  sampling_protocol: "original_source_frames";
 }
 
 export interface MotionFamily {
@@ -372,8 +578,16 @@ export interface PoseIdentityRepair {
   primary_player_id: number;
 }
 
+export interface PoseModelSourceBinding {
+  video_sha256: string; frame_index: number; processed_index: number;
+  pts: number; time_base_num: number; time_base_den: number; timestamp_ms: number;
+  person_track_id: number; selection_epoch: number; camera_reference_epoch: number;
+}
+
 export interface PosePreviewFrame {
   frame_index: number;
+  processed_index?: number;
+  source_timestamp_ms?: number;
   timestamp_ms: number;
   valid_until_ms: number;
   person_track_id: number | null;
@@ -381,8 +595,14 @@ export interface PosePreviewFrame {
   selection_status: "selected" | "single_visible_person" | "unavailable" | "display_interpolated";
   width?: number | null;
   height?: number | null;
-  keypoints: Array<{ name: string; x: number; y: number; confidence: number; source?: "observed" | "interpolated"; anchors?: PoseDisplayAnchors;
+  pose_source?: "sam3d";
+  source_keypoint_format?: "mhr70";
+  observation_semantics?: "monocular_model_estimate";
+  source_binding?: PoseModelSourceBinding;
+  keypoints: Array<{ name: string; x: number; y: number; confidence: number | null; source?: "observed" | "interpolated" | "model_estimate"; anchors?: PoseDisplayAnchors;
     score_semantics?: "rtmpose_simcc_response_clipped_for_display"; raw_confidence?: number;
+    confidence_semantics?: "not_provided_by_sam3d"; observation_semantics?: "model_estimate";
+    in_frame?: boolean; raw_x_px?: number; raw_y_px?: number;
   }>;
   observed_person_track_id?: number | null;
   observed_selection_epoch?: number;
@@ -492,6 +712,13 @@ export interface TrajectoryTrack {
 }
 
 export interface TrajectoryPreviewResponse {
+  court_projection?: {
+    status: "calibrated" | "unavailable";
+    coordinate_space: "court_normalized";
+    semantics: "ground_plane_projection_not_ball_landing";
+    reason_zh: string;
+    points: Array<{ x: number; y: number; timestamp_ms: number; source: "observed" | "interpolated"; segment_id: string; track_id?: number }>;
+  };
   schema_version: string;
   result_kind: string;
   job_id?: string;
@@ -503,6 +730,7 @@ export interface TrajectoryPreviewResponse {
     height: number | null;
     coordinate_space: string;
     timebase: string;
+    court_calibration_windows?: Array<{ start_timestamp_ms: number; end_timestamp_ms: number }>;
     is_partial?: boolean;
     start_timestamp_ms?: number;
     end_timestamp_ms?: number;
@@ -656,8 +884,8 @@ export class RallyMateApiError extends Error {
   readonly status: number;
   readonly payload: unknown;
 
-  constructor(message: string, status: number, payload?: unknown) {
-    super(message);
+  constructor(message: string, status: number, payload?: unknown, options?: ErrorOptions) {
+    super(message, options);
     this.name = "RallyMateApiError";
     this.status = status;
     this.payload = payload;

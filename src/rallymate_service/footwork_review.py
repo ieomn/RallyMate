@@ -8,11 +8,17 @@ from __future__ import annotations
 
 import json
 import math
+import copy
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from rallymate_features.event_features import FEATURE_DEFINITIONS
+from rallymate_features.event_features import FEATURE_DEFINITIONS, MIN_VALID_FRACTION
+from rallymate_scoring.model_measurement_contract import (
+    MODEL_MEASUREMENT_PROVENANCE,
+    has_model_measurement_context, model_measurement_provenance,
+    validated_model_window, validated_geometry_mask,
+)
 from rallymate_service.training_evaluation import (
     _FEATURE_LABELS,
     _INDICATOR_FEATURES,
@@ -20,7 +26,7 @@ from rallymate_service.training_evaluation import (
 )
 
 
-MAX_EVENT_FILE_BYTES = 16 * 1024 * 1024
+MAX_EVENT_FILE_BYTES = 64 * 1024 * 1024
 MAX_EVENTS = 5000
 MAX_INDICATOR_RECORDS = MAX_EVENTS * 13
 MAX_RETURNED_EPISODES = 300
@@ -138,7 +144,78 @@ def _feature_candidates(record: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return [item for item in candidates if isinstance(item, Mapping)]
 
 
-def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, Any]]:
+_SINGLE_ANKLE_FEATURES = frozenset({
+    "first_step_displacement_body", "launch_foot_motion_duration_ms",
+    "launch_foot_slowdown_to_post_hip_direction_ms", "launch_foot_speed_drop_body_s",
+    "launch_foot_speed_peak_body_s", "post_step_hip_direction_consistency",
+})
+
+
+def _model_required_joints(feature):
+    name = feature.get("feature_name")
+    required = FEATURE_DEFINITIONS.get(name, {}).get("required_joints", [])
+    used = feature.get("required_joints_used")
+    if used is None:
+        return required
+    if used == required:
+        return required
+    side = feature.get("selected_side")
+    if name in _SINGLE_ANKLE_FEATURES and side in ("left", "right"):
+        selected = ["left_hip", "right_hip", f"{side}_ankle"]
+        if used == selected:
+            return selected
+    return None
+
+
+def _model_feature_evidence(record, feature, event):
+    """Preserve strict model evidence without replacing unknown confidence."""
+    tracks = event.get("track_diagnostics", {}).get("source_track_ids") if isinstance(event.get("track_diagnostics"), Mapping) else None
+    diagnostics = event.get("track_diagnostics", {})
+    provenance = record.get("provenance", {})
+    video_sha = provenance.get("video_sha256") if isinstance(provenance, Mapping) else None
+    if (not isinstance(tracks, list) or len(tracks) != 1 or not _integer(tracks[0])
+            or "primary_player_id" in diagnostics and diagnostics["primary_player_id"] != event.get("person_track_id")
+            or not model_measurement_provenance(record.get("measurement_provenance"))
+            or not isinstance(feature, Mapping) or "confidence" not in feature or feature["confidence"] is not None
+            or not isinstance(record.get("quality_gate"), Mapping)
+            or record["quality_gate"].get("measurement_allowed") is not True):
+        return None
+    # A source-bound raw measurement remains displayable when a separate
+    # mathematical rule is eligible to grade it. That eligibility neither
+    # changes raw model provenance nor establishes confidence or visibility.
+    parent = validated_model_window(event, person_track_id=tracks[0])
+    if parent is None or parent["start_ms"] != event.get("start_ms") or parent["end_ms"] != event.get("end_ms"):
+        return None
+    if not isinstance(video_sha, str) or parent["video_sha256"].lower() != video_sha.lower():
+        return None
+    window = validated_model_window(feature, person_track_id=tracks[0], parent_window=parent)
+    if window is None:
+        return None
+    required = _model_required_joints(feature)
+    if not required:
+        return None
+    masks = validated_geometry_mask(feature.get("geometry_mask"), window, required_joints=required)
+    parent_masks = validated_geometry_mask(event.get("geometry_mask"), parent, required_joints=required)
+    frames = feature.get("source_frames")
+    if (masks is None or parent_masks is None or not any(any(mask) for mask in masks.values())
+            or any(not any(masks[name]) for name in required)
+            or not isinstance(frames, list) or not frames
+            or any(not _integer(frame) or frame not in window["source_frames"] for frame in frames)
+            or (any(b <= a for a, b in zip(frames, frames[1:]))
+                and not (feature.get("feature_name") == "stability_duration_ms" and len(frames) == 2 and frames[0] == frames[1]))):
+        return None
+    coverage = sum(all(masks[name][i] for name in required) for i in range(len(window["source_frames"]))) / len(window["source_frames"])
+    if coverage < MIN_VALID_FRACTION:
+        return None
+    positions = {frame: index for index, frame in enumerate(parent["source_frames"])}
+    if any(mask[i] and (name not in parent_masks or not parent_masks[name][positions[frame]])
+           for name, mask in masks.items() for i, frame in enumerate(window["source_frames"])):
+        return None
+    return {"measurement_provenance": dict(MODEL_MEASUREMENT_PROVENANCE),
+            "source_window": window, "geometry_mask": masks, "source_track_id": tracks[0], "required_joints": list(required)}
+
+
+def _features(record: Mapping[str, Any], indicator_id: str, event: Mapping[str, Any]) -> list[dict[str, Any]]:
     candidates = _feature_candidates(record)
     allowed = _INDICATOR_FEATURES[indicator_id][1]
     selected, _ = _unique_by_key(
@@ -150,7 +227,9 @@ def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, An
         if feature is None or feature.get("valid") is not True:
             continue
         value, confidence, unit = feature.get("value"), feature.get("confidence"), feature.get("unit")
-        if not _finite(value) or not _finite(confidence) or not 0 <= confidence <= 1:
+        model = has_model_measurement_context(event, record, feature)
+        evidence = _model_feature_evidence(record, feature, event) if model else None
+        if not _finite(value) or (model and evidence is None) or (not model and (not _finite(confidence) or not 0 <= confidence <= 1)):
             continue
         expected_unit = FEATURE_DEFINITIONS.get(name, {}).get("unit")
         if name == "target_direction_alignment_error_deg":
@@ -163,6 +242,7 @@ def _features(record: Mapping[str, Any], indicator_id: str) -> list[dict[str, An
             "value": value,
             "unit": unit,
             "confidence": confidence,
+            **(evidence or {}),
         })
     return result
 
@@ -206,6 +286,8 @@ def _measurements(record: Mapping[str, Any], indicator_id: str, event: Mapping[s
     result = []
     for name in _INDICATOR_FEATURES[indicator_id][1]:
         feature = selected.get(name)
+        model = has_model_measurement_context(event, record, feature)
+        model_evidence = _model_feature_evidence(record, feature, event) if model else None
         definition = FEATURE_DEFINITIONS.get(name, {})
         expected_unit = "deg" if name == "target_direction_alignment_error_deg" else definition.get("unit")
         reasons = []
@@ -222,13 +304,15 @@ def _measurements(record: Mapping[str, Any], indicator_id: str, event: Mapping[s
         else:
             if feature.get("valid") is not True:
                 reasons.append(_identity(feature.get("reason")) or "required_feature_missing")
-            elif (not _finite(feature.get("value")) or not _finite(feature.get("confidence"))
-                    or not 0 <= feature["confidence"] <= 1 or feature.get("unit") != expected_unit):
+            elif (not _finite(feature.get("value")) or feature.get("unit") != expected_unit
+                    or model and model_evidence is None
+                    or not model and (not _finite(feature.get("confidence")) or not 0 <= feature["confidence"] <= 1)):
                 reasons.append("invalid_feature_payload")
         if name == "target_direction_alignment_error_deg" and feature is None:
             reasons.append("target_direction_not_observed")
         measured = not reasons
         reason_zh, hint = _reason_text(reasons[0]) if reasons else (
+            "单目模型估计的二维几何；关键点置信度与可见性未知，仅作候选测量，不判断技术等级。" if model else
             "该特征通过自身测量检查，可独立查看；数值不表示动作好坏。", None,
         )
         source_frames = feature.get("source_frames", []) if feature else []
@@ -246,6 +330,7 @@ def _measurements(record: Mapping[str, Any], indicator_id: str, event: Mapping[s
             "view_semantics": "independent_target_context" if name == "target_direction_alignment_error_deg" else "image_plane_proxy",
             "view_label_required": False,
             "aggregate_feature_status": record.get("feature_status"),
+            **(model_evidence or {}),
         })
     return result
 
@@ -255,6 +340,7 @@ def build_footwork_review(
     indicator_records: Iterable[Mapping[str, Any]],
     *,
     video_id: str | None = None,
+    video_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Join records only on matching video, event, person and event code."""
     try:
@@ -290,6 +376,12 @@ def build_footwork_review(
     for record in records:
         event = valid_events.get(record.get("event_id")) if isinstance(record.get("event_id"), str) else None
         indicator_id = record.get("indicator_id")
+        if has_model_measurement_context(record) and video_sha256 is not None:
+            provenance = record.get("provenance", {})
+            recorded_sha = provenance.get("video_sha256") if isinstance(provenance, Mapping) else None
+            if not isinstance(recorded_sha, str) or recorded_sha.lower() != video_sha256.lower():
+                rejected_records += 1
+                continue
         if (event is None or not isinstance(indicator_id, str) or indicator_id not in _INDICATOR_FEATURES
                 or not _integer(record.get("person_track_id"), 1)
                 or any(record.get(key) != event.get(key) for key in ("video_id", "event_id", "event_code", "person_track_id"))
@@ -308,7 +400,7 @@ def build_footwork_review(
             gate = raw_gate if isinstance(raw_gate, Mapping) else {}
             gate_valid = raw_gate is None or (isinstance(raw_gate, Mapping) and gate.get("measurement_allowed") is True)
             measured = record.get("feature_status") == "measured" and gate_valid
-            features = _features(record, indicator_id) if measured else []
+            features = _features(record, indicator_id, event) if measured else []
             status = record.get("scoring_status")
             scoring_status = status if isinstance(status, str) and status in {"scored", "calibration_required", "unavailable"} else "unavailable"
             if not measured or not features or gate.get("scoring_allowed") is False:
@@ -327,15 +419,20 @@ def build_footwork_review(
                 "measured_feature_count": measured_count,
                 "expected_feature_count": len(measurements),
             })
+        provenance = event.get("provenance")
+        source_id = _identity(provenance.get("source_id")) if isinstance(provenance, Mapping) else None
         episodes.append({
             "event_id": event_id,
             "video_id": video_id,
+            **({"source_id": source_id} if source_id is not None else {}),
             "event_code": event["event_code"],
             "name_zh": _EVENT_NAMES[event["event_code"]],
             "person_track_id": event["person_track_id"],
             "start_ms": event["start_ms"],
             "end_ms": event["end_ms"],
             "indicators": indicators,
+            **({key: copy.deepcopy(event[key]) for key in ("measurement_provenance", "source_window", "geometry_mask", "track_diagnostics") if key in event}
+               if has_model_measurement_context(event) else {}),
         })
     episodes.sort(key=lambda event: (event["start_ms"], event["end_ms"], event["event_id"]))
     result = _empty("no_valid_event_intervals")
@@ -384,22 +481,13 @@ def load_footwork_review(
     try:
         if not events_path.is_file():
             return _empty("events_artifact_missing")
-        if events_path.stat().st_size > MAX_EVENT_FILE_BYTES:
+        from rallymate_service.artifact_jsonl import ArtifactRecordLimit, read_event_records
+        try:
+            rows = read_event_records(events_path, max_bytes=MAX_EVENT_FILE_BYTES,
+                                      max_lines=MAX_EVENTS, object_pairs_hook=_strict_object,
+                                      parse_constant=_reject_nonfinite)
+        except ArtifactRecordLimit:
             return _empty("events_artifact_limit_exceeded")
-        with events_path.open("rb") as handle:
-            contents = handle.read(MAX_EVENT_FILE_BYTES + 1)
-        if len(contents) > MAX_EVENT_FILE_BYTES:
-            return _empty("events_artifact_limit_exceeded")
-        rows = []
-        for line_number, line in enumerate(contents.splitlines(), 1):
-            if line_number > MAX_EVENTS:
-                return _empty("events_artifact_limit_exceeded")
-            if not line.strip():
-                continue
-            row = json.loads(line, object_pairs_hook=_strict_object, parse_constant=_reject_nonfinite)
-            if not isinstance(row, dict):
-                return _empty("events_artifact_invalid")
-            rows.append(row)
         return build_footwork_review(rows, indicator_records, video_id=video_id)
     except (OSError, ValueError, UnicodeError):
         return _empty("events_artifact_invalid")

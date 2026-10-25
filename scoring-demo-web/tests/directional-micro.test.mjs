@@ -162,15 +162,16 @@ test("formal source notes preserve raw codes but do not ask for review; legacy l
   const html=renderToStaticMarkup(createElement(Panel,{value:report})).replace(/<pre[\s\S]*?<\/pre>/g,"");assert.doesNotMatch(html,/复核/);assert.match(html,/局部髋部下降|局部下降/);
 });
 
-test("portable JSON backup keeps complete new sources and readable export preserves the three condition meanings", async () => {
+test("portable JSON backup keeps complete directional sources while readable export exposes only the aggregate", async () => {
   const {buildReportBackup,buildPracticeReport,renderReportMarkdown}=await import(compiledUrl(new URL("../app/lib/report-export.ts",import.meta.url)));
   const input={mode:"live",uploadState:"complete",job:{id:full.source_run_id,status:"completed",original_filename:"native-e420.mp4"},
     evidence:{jobId:full.source_run_id,error:null,result:{job_id:full.source_run_id,card_execution:full}},summary:null};
   const backup=JSON.parse(JSON.stringify(buildReportBackup(input,"2026-10-24T00:00:00Z")));
   const parsed=cardExecutionOf(full);assert.deepEqual(backup.result.card_execution,parsed);
   assert.deepEqual(cardExecutionOf(backup.result.card_execution),parsed);
-  const report=buildPracticeReport(input,"2026-10-24T00:00:00Z"),section=report.sections.find(s=>s.title==="逐卡视频实例与条件");
-  const lines=section.rows.filter(r=>r[0].startsWith("FS05-M0"));assert.equal(lines.length,2);
-  for(const row of lines){assert.match(row[2],/C \/ 60/);assert.match(row.at(-1),/沿轴接近可见球 -0\./);assert.match(row.at(-1),/双脚路程最大值/);assert.match(row.at(-1),/轴向一致比例/);assert.match(row.at(-1),/不是预测击球点/);}
-  const markdown=renderReportMarkdown(report);assert.match(markdown,/113 条实例/);assert.match(markdown,/原卡技术等级/);
+  const report=buildPracticeReport(input,"2026-10-24T00:00:00Z");
+  assert.equal(report.sections.some(s=>s.title.startsWith("逐卡")),false);
+  const rows=backup.result.card_execution.cards.filter(c=>["FS05-M03","FS05-M04"].includes(c.indicator_id)).flatMap(c=>c.instances);assert.equal(rows.length,2);
+  for(const row of rows){assert.equal(row.grade,"C");assert.equal(row.score,60);assert.equal(row.conditions.length,3);}
+  const markdown=renderReportMarkdown(report);assert.match(markdown,/训练评分/);assert.doesNotMatch(markdown,/113 条实例|原卡技术等级|FS05\\-M0/);
 });

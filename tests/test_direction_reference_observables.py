@@ -74,8 +74,11 @@ class DirectionReferenceTests(unittest.TestCase):
         for card in report["cards"]:
             result = card["instances"][0]
             for key, expected in data["expected"][card["indicator_id"]].items():
-                self.assertEqual(result[key], expected)
-            self.assertEqual(result["score"], 60)
+                if key == "score":
+                    self.assertEqual(expected, 60)  # Frozen v1 fixture remains unchanged.
+                else:
+                    self.assertEqual(result[key], expected)
+            self.assertEqual(result["score"], 200 / 3)
             self.assertEqual([condition["passed"] for condition in result["conditions"]], [False, True, True])
             self.assertEqual(result["quality"]["valid_frame_count"], 25)
             self.assertLess(result["measurements"]["hip_axis_target_error_reduction_torso"], 0)
@@ -109,7 +112,7 @@ class DirectionReferenceTests(unittest.TestCase):
         self.assertEqual(report["input"]["source_frame_count"], 2911)
         for card in report["cards"]:
             result = card["instances"][0]
-            self.assertEqual(result["score"], 60)
+            self.assertEqual(result["score"], 200 / 3)
             self.assertEqual(result["measurements"], data["expected"][card["indicator_id"]]["measurements"])
             proof = result["source_window_evidence"]["directional_micro_adjustment"]["local_normalization"]
             self.assertEqual(len(proof), 25)
@@ -171,7 +174,7 @@ class DirectionReferenceTests(unittest.TestCase):
         self.assertFalse(result["conditions"][1]["passed"])
         self.assertGreater(result["measurements"]["both_ankles_max_path_length_torso"], .5)
         self.assertLess(result["measurements"]["both_ankles_max_net_displacement_torso"], .5)
-        self.assertEqual(result["score"], 60)
+        self.assertEqual(result["score"], 200 / 3)
 
     def test_raw_record_two_card_entry_computes_values_not_pass_flags(self):
         for identifier, axis in (("FS05-M03", (1, 0)), ("FS05-M04", (0, 1))):

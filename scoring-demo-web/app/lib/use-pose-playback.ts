@@ -33,7 +33,7 @@ export function usePosePlayback({ atMs, jobId, loadWindow, initialPreview, enabl
       // Prefetch just one following window; no full-video pose download.
       void read(start + POSE_WINDOW_MS).catch(() => {});
     }).catch(error => {
-      if (!controller.signal.aborted) setState({ jobId, start, preview: null, error: error instanceof Error ? error.message : "人体骨架暂时无法读取。" });
+      if (!controller.signal.aborted) setState({ jobId, start, preview: null, error: error instanceof Error ? error.message : "动作标记暂时无法读取。" });
     });
     return () => controller.abort();
   }, [start, jobId, loadWindow, enabled]);

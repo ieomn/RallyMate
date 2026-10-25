@@ -10,7 +10,9 @@ from collections.abc import Mapping
 from collections import Counter
 import math
 
-SCORING_POLICY_VERSION = "automatic-formal-card-scoring-v1.0.0"
+SCORING_POLICY_VERSION = "automatic-formal-card-scoring-v2.0.0"
+LEGACY_SCORING_POLICY_VERSION = "automatic-formal-card-scoring-v1.0.0"
+SUPPORTED_SCORING_POLICY_VERSIONS = (LEGACY_SCORING_POLICY_VERSION, SCORING_POLICY_VERSION)
 FORMAL_SCORE_SEMANTICS = "application_condition_completion_score"
 GRADE_POINTS = {"A": 100, "B": 80, "C": 60, "D": 40, "E": 20}
 ADVISORY_QUALITY_FLAGS = frozenset({
@@ -27,6 +29,31 @@ def _finite(value):
         return False
 
 
+def condition_completion(conditions):
+    if not (isinstance(conditions, list) and conditions
+            and all(isinstance(c, Mapping) and type(c.get("passed")) is bool
+                    and _finite(c.get("value")) for c in conditions)):
+        return None
+    passed = sum(c["passed"] for c in conditions)
+    fraction = passed / len(conditions)
+    grade = ("A" if fraction == 1 else "B" if fraction >= .75 else
+             "C" if fraction >= .5 else "D" if fraction > 0 else "E")
+    return grade, fraction, 100 * passed / len(conditions)
+
+
+def formal_score_matches(result: Mapping) -> bool:
+    """Validate the score against its declared policy, never relabel history."""
+    measured = condition_completion(result.get("conditions"))
+    version = result.get("scoring_policy_version")
+    if measured is None or version not in SUPPORTED_SCORING_POLICY_VERSIONS:
+        return False
+    grade, fraction, completion_score = measured
+    expected = completion_score if version == SCORING_POLICY_VERSION else GRADE_POINTS[grade]
+    return (result.get("grade") == grade and _finite(result.get("score"))
+            and result["score"] == expected and not result.get("reason_codes")
+            and result.get("semantics") == FORMAL_SCORE_SEMANTICS)
+
+
 def apply_scoring_policy(result: dict) -> dict:
     """Finalize an internal result in place; serialized grades are not inputs.
 
@@ -34,25 +61,26 @@ def apply_scoring_policy(result: dict) -> dict:
     outputs without those observations remain unavailable. A second call after
     an adapter rejects a source binding also removes any previously set grade.
     """
-    result["scoring_policy_version"] = SCORING_POLICY_VERSION
+    previous_policy = result.get("scoring_policy_version")
+    policy = previous_policy or SCORING_POLICY_VERSION
+    result["scoring_policy_version"] = policy
     result["original_grade"] = None
     result["source_grade_supported"] = False
     if result.get("status") in {"proxy_scored", "scored"}:
-        conditions = result.get("conditions")
-        valid = (isinstance(conditions, list) and bool(conditions)
-                 and all(isinstance(c, Mapping) and type(c.get("passed")) is bool
-                         and _finite(c.get("value")) for c in conditions))
+        measured = condition_completion(result.get("conditions"))
+        valid = measured is not None and policy in SUPPORTED_SCORING_POLICY_VERSIONS
         if valid:
-            fraction = sum(c["passed"] for c in conditions) / len(conditions)
-            grade = ("A" if fraction == 1 else "B" if fraction >= .75 else
-                     "C" if fraction >= .5 else "D" if fraction > 0 else "E")
-            supplied_grade = result.get("grade") if result["status"] == "scored" else result.get("proxy_grade")
-            valid = (supplied_grade == grade and _finite(result.get("score"))
-                     and result["score"] == GRADE_POINTS[grade]
-                     and not result.get("reason_codes"))
+            grade, fraction, completion_score = measured
+            # Fresh evaluators emit the catalogue's internal proxy grade. Once
+            # finalized, each policy verifies its own score on repeated calls.
+            if result["status"] == "proxy_scored" and previous_policy is None:
+                valid = (result.get("proxy_grade") == grade and _finite(result.get("score"))
+                         and result["score"] == GRADE_POINTS[grade] and not result.get("reason_codes"))
+            else:
+                valid = result["status"] == "scored" and formal_score_matches(result)
         if valid:
             result.update(status="scored", grade=grade, proxy_grade=grade,
-                          score=GRADE_POINTS[grade], condition_completion_fraction=fraction,
+                          score=completion_score if policy == SCORING_POLICY_VERSION else GRADE_POINTS[grade], condition_completion_fraction=fraction,
                           semantics=FORMAL_SCORE_SEMANTICS)
             return result
         result["reason_codes"] = sorted(set(result.get("reason_codes", [])
@@ -75,10 +103,22 @@ def apply_report_scoring_policy(report: dict) -> dict:
     from .card_evaluation import summarize_card_scores
 
     cards = report["cards"]
+    declared_policy = report.get("scoring_policy_version")
+    instance_policies = {row.get("scoring_policy_version") or SCORING_POLICY_VERSION
+                         for card in cards for row in card["instances"]}
+    policy_conflict = (len(instance_policies) > 1 or bool(declared_policy and instance_policies
+                        and instance_policies != {declared_policy})
+                       or any("mixed_scoring_policy_versions" in row.get("reason_codes", [])
+                              for card in cards for row in card["instances"]))
+    report_policy = (None if policy_conflict else declared_policy
+                     or next(iter(instance_policies), SCORING_POLICY_VERSION))
     instances = []
     for card in cards:
         actual = card["instances"]
         for instance in actual:
+            if policy_conflict:
+                instance.update(status="unavailable", reason_codes=sorted(set(instance.get("reason_codes", [])
+                    + ["mixed_scoring_policy_versions"])))
             apply_scoring_policy(instance)
         instances.extend(actual)
         if actual:
@@ -97,7 +137,7 @@ def apply_report_scoring_policy(report: dict) -> dict:
                 "applicable_cards": len(scope), "coverage": 0.0 if scope else None,
                 "scored_event_instances": 0, "per_card": {}}
         formal = summary["channels"]["formal"]
-        summary.update(scoring_policy_version=SCORING_POLICY_VERSION,
+        summary.update(scoring_policy_version=report_policy,
                        formal_scored_cards=formal["scored_cards"],
                        formal_scored_instances=formal["scored_event_instances"],
                        overall_score=formal["score"])
@@ -108,7 +148,7 @@ def apply_report_scoring_policy(report: dict) -> dict:
         observed = set(report.get("input", {}).get("observed_event_codes", []))
         observed.update(row.get("event_code") for row in cards if row["instances"])
         report["observed_type_summary"] = summary_for([row["indicator_id"] for row in cards if row["event_code"] in observed])
-    report.update(scoring_policy_version=SCORING_POLICY_VERSION,
+    report.update(scoring_policy_version=report_policy,
                   score_semantics=FORMAL_SCORE_SEMANTICS,
                   overall_score=report["summary"]["overall_score"])
     coverage = report.get("coverage")

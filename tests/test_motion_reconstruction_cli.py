@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from contextlib import ExitStack
 import json
 import tempfile
 import unittest
@@ -55,9 +56,11 @@ class ReconstructionCLITests(unittest.TestCase):
                                       appearance_image=None, subject="", evidence_hint="", source_manifest=None,
                                       data_root=self.root, allow_proxy_dns=False)
         self.provider = FakeProvider()
-        self.key = self.enterContext(patch.object(cli, "load_minimax_key", return_value="test-only-key"))
-        self.factory = self.enterContext(patch.object(cli, "MiniMaxVideoProvider", return_value=self.provider))
-        self.validator = self.enterContext(patch.object(cli, "_validate_output", return_value={"frame_count": 144}))
+        contexts = ExitStack()
+        self.addCleanup(contexts.close)
+        self.key = contexts.enter_context(patch.object(cli, "load_minimax_key", return_value="test-only-key"))
+        self.factory = contexts.enter_context(patch.object(cli, "MiniMaxVideoProvider", return_value=self.provider))
+        self.validator = contexts.enter_context(patch.object(cli, "_validate_output", return_value={"frame_count": 144}))
 
     @property
     def state_path(self):

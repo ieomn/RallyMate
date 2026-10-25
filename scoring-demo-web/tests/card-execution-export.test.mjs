@@ -27,13 +27,14 @@ test("card-only analysis exports real proxy instances and null review states wit
   const expected = cardExecutionOf(real);
   const backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
   assert.deepEqual(cardExecutionOf(backup.result.card_execution), expected);
-  const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡计算结果");
-  assert.equal(section.rows.length, 3);
-  assert.ok(section.paragraphs.some(value => value.includes("不补零")));
-  assert.ok(section.paragraphs.some(value => value.includes("完整技术评分：0")));
-  const instances = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-  assert.ok(instances.rows.some(row => row.includes("需要复核")));
-  assert.ok(instances.rows.some(row => row.includes("D / 40（视觉代理）")));
+  const report = buildPracticeReport(input);
+  assert.equal(report.sections.some(row => row.title.startsWith("逐卡")), false);
+  assert.ok(report.sections.some(row => row.title === "训练评分：未评分"));
+  assert.doesNotMatch(JSON.stringify(report), /D \/ 40（视觉代理）|FS\d{2}-M\d{2}/);
+  assert.equal(backup.result.card_execution.cards.length, 3);
+  const instances = backup.result.card_execution.cards.flatMap(card => card.instances);
+  assert.ok(instances.some(row => row.status === "review_required" && row.score === null));
+  assert.ok(instances.some(row => row.proxy_grade === "D" && row.score === 40));
 });
 
 test("backup rejects a changed score and does not turn missing raw evidence into an empty completed analysis", () => {

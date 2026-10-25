@@ -7,6 +7,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const compiled = new Map();
 function compiledUrl(fileUrl) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   if (compiled.has(fileUrl.href)) return compiled.get(fileUrl.href);
   let js = ts.transpileModule(fs.readFileSync(fileUrl, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
@@ -14,7 +16,7 @@ function compiledUrl(fileUrl) {
   // SSR assertions concern component output; CSS is bundled by the production test.
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, fileUrl);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;
   });
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;

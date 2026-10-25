@@ -6,9 +6,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 
 function compiledUrl(fileUrl) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   let js = ts.transpileModule(fs.readFileSync(fileUrl, "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, fileUrl);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;
   });
   return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
@@ -32,7 +34,7 @@ test("step panel renders measured values, timestamp replay and calibration limit
   assert.match(html, /1\.20–1\.90 秒/);
   assert.match(html, /定位回放/);
   assert.match(html, /1\.25 身体尺度\/秒/);
-  assert.match(html, /技术等级待标定/);
+  assert.match(html, /尚缺可执行计分规则/);
   assert.doesNotMatch(html, /100 分|表现较稳定/);
 });
 

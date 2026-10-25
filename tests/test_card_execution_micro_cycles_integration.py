@@ -80,7 +80,7 @@ class MicroCycleUnifiedContracts(unittest.TestCase):
         self.assertEqual(len(self.report["cards"]), 298)
         self.assertEqual(others(self.report), others(self.baseline))
         row, = owned(self.report)["instances"]
-        self.assertEqual((row["status"], row["grade"], row["score"]), ("scored", "C", 60))
+        self.assertEqual((row["status"], row["grade"], row["score"]), ("scored", "C", 50))
         self.assertEqual([c["passed"] for c in row["conditions"]], [False, True])
         self.assertEqual(self.report["input"][EXECUTION]["replaced_card_ids"], [micro.CARD])
         self.assertEqual(self.report[TOP_WINDOWS], self.result["fs_card_windows"])
@@ -233,7 +233,7 @@ class MicroCycleActualUnifiedIntegration(unittest.TestCase):
             self.assertEqual(merged["directional_micro_adjustment_windows"], baseline["directional_micro_adjustment_windows"])
             for identifier in ("FS05-M02", "FS05-M03", "FS05-M04"):
                 row, = next(c for c in merged["cards"] if c["indicator_id"] == identifier)["instances"]
-                self.assertEqual((row["status"], row["grade"], row["score"]), ("scored", "C", 60))
+                self.assertEqual((row["status"], row["grade"], row["score"]), ("scored", "C", 50 if identifier == "FS05-M02" else 200 / 3))
             self.assertEqual(merged["coverage"]["computed_card_instance_count"], baseline["coverage"]["computed_card_instance_count"]+1)
             self.assertTrue(merged["input"][EXECUTION]["decoder_verified_from_original_video"])
             execution.clear_card_execution_cache()
@@ -264,7 +264,7 @@ class MicroCycleActualUnifiedIntegration(unittest.TestCase):
                     "migration": "Only the copied summary.input.video_path was relocated to the same SHA original media; source records and identities are unchanged",
                     "pose_inference_rerun": False, "raw_media_decoder_executed": True}
                 (output/"migration-proof.json").write_text(json.dumps(proof, ensure_ascii=False, indent=2)+"\n", encoding="utf8")
-            # Same-size/same-mtime invalid annotation must clear C60, even after
+            # Same-size/same-mtime invalid annotation must clear the completion score, even after
             # a successful cached HTTP request. The other 297 rows stay intact.
             stat = annotation.stat(); raw = annotation.read_bytes()
             bad = raw.replace(b'"person_track_id": 1', b'"person_track_id": 9')

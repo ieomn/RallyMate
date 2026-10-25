@@ -16,9 +16,10 @@ from typing import Any
 from rallymate_vision.pose.metadata import keypoint_schema
 from rallymate_vision.display_continuity import MAX_DISPLAY_GAP_MS, build_display_frames, display_statistics
 from rallymate_vision.display_score import load_display_score_policy, recover_rtmpose_display_points
+from rallymate_scoring.pose_observations import sam_source_bound_points
 
 
-POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.1.0"
+POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.2.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_WINDOW_MS = 10_000
 MAX_SAMPLE_LIMIT = 600
@@ -109,7 +110,16 @@ def _primary_rows(path: Path, *, allow_partial: bool) -> Iterator[Mapping[str, A
         yield row
 
 
-def _keypoints(pose: Mapping[str, Any], width: int, height: int) -> list[dict[str, Any]]:
+def _keypoints(pose: Mapping[str, Any], width: int, height: int, frame: Mapping | None = None) -> list[dict[str, Any]]:
+    if pose.get("source") == "sam3d" or pose.get("keypoint_format") == "mhr70":
+        estimate = sam_source_bound_points(pose, frame or {})
+        if estimate is None:
+            return []
+        points, _ = estimate
+        return [{"name": name, "x": round(x / width, 6), "y": round(y / height, 6),
+                 "raw_x_px": x, "raw_y_px": y, "in_frame": True, "confidence": None,
+                 "confidence_semantics": "not_provided_by_sam3d", "source": "model_estimate",
+                 "observation_semantics": "model_estimate"} for name, (x, y) in points.items()]
     if pose.get("coordinate_space") is not None and pose.get("coordinate_space") != "original_frame":
         return []
     points = pose.get("keypoints")
@@ -220,7 +230,8 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
             pose, selection, reason = _select_pose(record, frame, primary, has_primary)
             width, height = frame.get("width"), frame.get("height")
             valid_dimensions = _integer(width, 1) and _integer(height, 1) and max(width, height) <= 65_536
-            points = _keypoints(pose, width, height) if pose is not None and valid_dimensions else []
+            model_frame = {**frame, "camera_motion": record.get("camera_motion")}
+            points = _keypoints(pose, width, height, model_frame) if pose is not None and valid_dimensions else []
             if frame.get("timestamp_source") == "fps_fallback":
                 points, reason = [], "source_timestamp_unverified"
             elif not valid_dimensions:
@@ -239,6 +250,15 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 "source_keypoint_format": pose.get("keypoint_format") if pose is not None and isinstance(pose.get("keypoint_format"), str) else None,
                 "keypoints": points, "reason_code": reason,
             }
+            if pose is not None and (pose.get("source") == "sam3d" or pose.get("keypoint_format") == "mhr70"):
+                # Preserve the source label even for invalid/empty estimates so
+                # downstream display repair cannot fill them as observations.
+                observed.update(pose_source="sam3d", observation_semantics="monocular_model_estimate")
+                estimate = sam_source_bound_points(pose, model_frame)
+                if estimate is not None:
+                    observed["source_binding"] = estimate[1]
+                    if "source_timestamp_ms" in frame:
+                        observed["source_timestamp_ms"] = frame["source_timestamp_ms"]
             if start_ms - MAX_DISPLAY_GAP_MS <= timestamp <= end_ms + MAX_DISPLAY_GAP_MS:
                 if len(context) >= MAX_WINDOW_FRAMES + MAX_SAMPLE_LIMIT:
                     raise PosePlaybackError("pose display context exceeds the bounded frame limit")
@@ -285,8 +305,13 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     if display_count > sample_limit:
         indexes = {round(index * (display_count - 1) / (sample_limit - 1)) for index in range(sample_limit)} if sample_limit > 1 else {0}
         frames = [frame for index, frame in enumerate(frames) if index in indexes]
-    display_context, _ = build_display_frames(context, verified_frame_indexes=verified_indexes,
-                                               recovered_points=recovered_points, identity_evidence=identity_evidence)
+    if any(row.get("pose_source") == "sam3d" for row in context):
+        # Legacy score recovery and gap interpolation require observed numeric
+        # confidence. Neither applies to unverified monocular model estimates.
+        display_context = context
+    else:
+        display_context, _ = build_display_frames(context, verified_frame_indexes=verified_indexes,
+                                                  recovered_points=recovered_points, identity_evidence=identity_evidence)
     requested_indexes = {frame["frame_index"] for frame in frames}
     display_frames = [row for row in display_context if row["frame_index"] in requested_indexes]
     display_continuity = display_statistics(display_frames)

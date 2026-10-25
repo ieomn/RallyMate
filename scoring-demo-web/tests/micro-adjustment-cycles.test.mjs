@@ -171,7 +171,9 @@ test("portable export preserves complete M02 sources, phases and episodes and is
     evidence:{jobId:full.source_run_id,error:null,result:{job_id:full.source_run_id,card_execution:full}},summary:null};
   const expected=cardExecutionOf(full),backup=JSON.parse(JSON.stringify(buildReportBackup(input,"2026-10-24T00:00:00Z")));
   assert.deepEqual(backup.result.card_execution,expected); assert.deepEqual(cardExecutionOf(backup.result.card_execution),expected);
-  const report=buildPracticeReport(input,"2026-10-24T00:00:00Z"), section=report.sections.find(s=>s.title==="逐卡视频实例与条件");
-  const row=section.rows.find(r=>r[0].startsWith("FS05-M02")); assert.match(row[2],/C \/ 60/);
-  assert.match(row.at(-1),/完整视觉运动片段 1 个/); assert.match(row.at(-1),/双脚全窗路径最大值/);
+  const report=buildPracticeReport(input,"2026-10-24T00:00:00Z");
+  assert.equal(report.sections.some(s=>s.title.startsWith("逐卡")),false);
+  const row=backup.result.card_execution.cards.find(c=>c.indicator_id==="FS05-M02").instances[0];
+  assert.equal(row.grade,"C");assert.equal(row.score,60);
+  assert.deepEqual(row.source_window_evidence,expected.cards.find(c=>c.indicator_id==="FS05-M02").instances[0].source_window_evidence);
 });

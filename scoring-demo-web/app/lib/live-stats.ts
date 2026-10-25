@@ -95,7 +95,7 @@ export function analysisPresentation({ result, pending, status, error }: { resul
   if (pending && !result && ["completed", "succeeded"].includes(state ?? "")) return { state: "pending", title: "正在读取训练报告", description: "视频分析已完成，正在整理回放与测量结果。", emptyTitle: "正在读取动作结果", emptyDescription: "任务已经完成，当前正在读取报告内容。" };
   if ((pending || state === "running" || state === "processing") && !["completed", "succeeded", "unsupported"].includes(state ?? "")) return { state: "pending", title: "正在分析这一段视频", description: "可先回放视频。结果会随任务进度更新，刷新页面后可继续读取。", emptyTitle: "动作分析进行中", emptyDescription: "已有视频可先回放；动作结果仍在计算。" };
   if (state === "unsupported") return { state: "unsupported", title: "本次未提供动作评分", description: "当前输入或分析配置不支持动作评分，已有视频和观测结果仍可查看。", emptyTitle: "暂不支持此动作分析", emptyDescription: "本次不会生成该项动作评分。" };
-  if (result) return { state: "complete", title: "分析已完成 · 技术评分待标定", description: "查看证据参考分与动作测量；参考分描述证据完整程度，不能用于比较技术水平。", emptyTitle: "本次未提供该类动作证据", emptyDescription: "分析已完成，可切换动作类别；缺少证据不代表动作未发生。" };
+  if (result) return { state: "complete", title: "分析已完成 · 查看评分与具体缺项", description: "相对参考分、实测项目和未计分原因分别显示；测量证据参考分不代表技术水平。", emptyTitle: "本次未提供该类动作证据", emptyDescription: "分析已完成，可切换动作类别；缺少证据不代表动作未发生。" };
   if (["completed", "succeeded"].includes(state ?? "")) return { state: "unavailable", title: "分析已完成，结果暂不可用", description: "任务已结束，但动作结果尚未成功读取。请重新读取当前任务结果。", emptyTitle: "动作结果暂不可用", emptyDescription: "任务已结束，无需继续等待识别。" };
   return { state: "idle", title: "上传视频后查看动作分析", description: "选择一段练习视频，分析完成后查看当前视频的动作证据。", emptyTitle: "尚未开始分析", emptyDescription: "上传视频或导入已有报告后查看动作结果。" };
 }

@@ -156,18 +156,10 @@ class ServiceSettings:
 
     @property
     def resolved_scoring_registry_authority(self) -> ResolvedRegistryArtifact:
-        authority = resolve_runtime_feasibility_registry(
-            self.resolved_scoring_registry_lifecycle_manifest
+        return resolve_runtime_feasibility_registry(
+            self.resolved_scoring_registry_lifecycle_manifest,
+            explicit_path=self.scoring_feasibility_registry,
         )
-        if (
-            self.scoring_feasibility_registry is not None
-            and self.scoring_feasibility_registry.resolve() != authority.path
-        ):
-            raise ServiceConfigError(
-                "RALLYMATE_SCORING_FEASIBILITY_REGISTRY is not authorized by "
-                "registry lifecycle role runtime_feasibility"
-            )
-        return authority
 
     @property
     def resolved_technique_registry(self) -> Path | None:
@@ -224,8 +216,8 @@ class ServiceSettings:
             raise ServiceConfigError(
                 "production cannot start with a development-only model license"
             )
-        if self.pose_backend not in {"yolo", "rtmpose"}:
-            raise ServiceConfigError("RALLYMATE_POSE_BACKEND must be yolo or rtmpose")
+        if self.pose_backend not in {"yolo", "rtmpose", "sam3d"}:
+            raise ServiceConfigError("RALLYMATE_POSE_BACKEND must be yolo, rtmpose or sam3d")
         if self.pose_runtime not in {"pytorch", "onnxruntime", "tensorrt"}:
             raise ServiceConfigError(
                 "RALLYMATE_POSE_RUNTIME must be pytorch, onnxruntime or tensorrt"
@@ -239,16 +231,22 @@ class ServiceSettings:
             "coco17",
             "halpe26",
             "coco_wholebody133",
+            "mhr70",
         }:
             raise ServiceConfigError(
                 "RALLYMATE_POSE_NATIVE_KEYPOINT_FORMAT must be coco17, "
-                "halpe26 or coco_wholebody133"
+                "halpe26, coco_wholebody133 or mhr70"
             )
         if (
             self.pose_backend == "yolo"
             and self.pose_native_keypoint_format not in {None, "coco17"}
         ):
             raise ServiceConfigError("YOLO pose backend requires coco17 topology")
+        if self.pose_backend == "sam3d":
+            if self.pose_runtime != "pytorch":
+                raise ServiceConfigError("SAM 3D Body requires the pytorch runtime")
+            if self.pose_native_keypoint_format not in {None, "mhr70"}:
+                raise ServiceConfigError("SAM 3D Body requires mhr70 topology")
         if (
             isinstance(self.cpu_threads, bool)
             or not isinstance(self.cpu_threads, int)
@@ -263,30 +261,9 @@ class ServiceSettings:
             raise ServiceConfigError(
                 "RALLYMATE_SCORING_CALIBRATION_ASSETS contains duplicates"
             )
-        if (
-            self.scoring_calibration_assets
-            and self.scoring_trusted_promotion_ledger is None
-        ):
-            raise ServiceConfigError(
-                "production calibration assets require "
-                "RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER"
-            )
-        if (
-            self.scoring_calibration_assets
-            and self.scoring_trusted_runtime_profile_bindings is None
-        ):
-            raise ServiceConfigError(
-                "production calibration assets require "
-                "RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS"
-            )
-        if (
-            self.scoring_calibration_assets
-            and self.scoring_runtime_view_evidence_dir is None
-        ):
-            raise ServiceConfigError(
-                "production calibration assets require "
-                "RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR"
-            )
+        # Explicit numerical rules are validated by the scoring loader. Legacy
+        # promotion ledgers and manual runtime approvals are optional metadata,
+        # not prerequisites for evaluating a mathematically valid rule.
         protected_paths = [
             (
                 "RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST",
@@ -410,10 +387,15 @@ def load_settings() -> ServiceSettings:
     database = Path(
         os.getenv("RALLYMATE_DATABASE_PATH", str(data_root / "jobs.sqlite3"))
     ).resolve()
-    pose_preset_name = os.getenv("RALLYMATE_POSE_PRESET") or (
-        default_pose_deployment_preset_id(workspace)
+    # An explicit backend must not be silently overridden by the registry's
+    # RTMPose default. Explicit named presets still retain their authority.
+    pose_preset_name = os.getenv("RALLYMATE_POSE_PRESET")
+    if not pose_preset_name and not os.getenv("RALLYMATE_POSE_BACKEND"):
+        pose_preset_name = default_pose_deployment_preset_id(workspace)
+    pose_preset = (
+        resolve_pose_deployment_preset(pose_preset_name, workspace)
+        if pose_preset_name else None
     )
-    pose_preset = resolve_pose_deployment_preset(pose_preset_name, workspace)
     settings = ServiceSettings(
         data_root=data_root,
         database_path=database,
@@ -478,32 +460,18 @@ def load_settings() -> ServiceSettings:
             ).split(os.pathsep)
             if value.strip()
         ),
-        scoring_trusted_promotion_ledger=Path(
-            os.getenv(
-                "RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER",
-                str(
-                    workspace
-                    / "calibration"
-                    / "trusted-calibration-promotion-ledger.json"
-                ),
-            )
-        ).resolve(),
-        scoring_trusted_runtime_profile_bindings=Path(
-            os.getenv(
-                "RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS",
-                str(
-                    workspace
-                    / "calibration"
-                    / "trusted-runtime-profile-bindings.json"
-                ),
-            )
-        ).resolve(),
-        scoring_runtime_view_evidence_dir=Path(
-            os.getenv(
-                "RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR",
-                str(workspace / "calibration" / "runtime-view-evidence"),
-            )
-        ).resolve(),
+        scoring_trusted_promotion_ledger=(
+            Path(os.environ["RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER"]).resolve()
+            if os.getenv("RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER") else None
+        ),
+        scoring_trusted_runtime_profile_bindings=(
+            Path(os.environ["RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS"]).resolve()
+            if os.getenv("RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS") else None
+        ),
+        scoring_runtime_view_evidence_dir=(
+            Path(os.environ["RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR"]).resolve()
+            if os.getenv("RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR") else None
+        ),
         technique_registry=(
             Path(os.environ["RALLYMATE_TECHNIQUE_REGISTRY"]).resolve()
             if os.getenv("RALLYMATE_TECHNIQUE_REGISTRY")
@@ -532,8 +500,10 @@ def load_settings() -> ServiceSettings:
         ),
         lease_seconds=_int_env("RALLYMATE_JOB_LEASE_SECONDS", 60 * 60),
         max_attempts=_int_env("RALLYMATE_MAX_ATTEMPTS", 2),
-        motion_replay_enabled=_bool_env("RALLYMATE_MOTION_REPLAY_ENABLED", True),
-        motion_replay_auto_generate=_bool_env("RALLYMATE_MOTION_REPLAY_AUTO_GENERATE", True),
+        # Kept for explicit offline maintenance; the product API no longer
+        # creates a replay runtime or mounts generated-replay routes.
+        motion_replay_enabled=_bool_env("RALLYMATE_MOTION_REPLAY_ENABLED", False),
+        motion_replay_auto_generate=_bool_env("RALLYMATE_MOTION_REPLAY_AUTO_GENERATE", False),
     )
     settings.validate_license()
     settings.ensure_directories()

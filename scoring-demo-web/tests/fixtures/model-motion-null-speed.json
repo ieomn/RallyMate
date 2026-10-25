@@ -1,0 +1,595 @@
+{
+  "basis": "read-only final-v2 diagnostic fixtures for transport semantics, not grading or final acceptance",
+  "sha256": {
+    "dinov3_indicator": "0a9fd0ee13d7cf2ae88693a42d15cbd0e5268b899569a358f6ea20f340732a10",
+    "rtmpose_source": "89945bcd36f36ed7cce5b709651e3f5863e8bf8db4e6e9ac983a60479bfa9d9d"
+  },
+  "motion": {
+    "observation_id": "motion:aa405ec7db42df93a1e0:preparation:left_knee_flexion_deg",
+    "source": "motion_joint_measurement",
+    "scope": "contextual_motion_phase",
+    "status": "measured",
+    "feature_name": "left_knee_flexion_deg",
+    "label_zh": "左膝屈曲角",
+    "value": 12.20599,
+    "unit": "deg",
+    "episode_id": "aa405ec7db42df93a1e0",
+    "person_track_id": 1,
+    "phase": "preparation",
+    "phase_label_zh": "估计准备段",
+    "start_ms": 2333,
+    "end_ms": 2600,
+    "statistics": {
+      "start": 20.25685,
+      "end": 7.9442,
+      "delta": -12.31265,
+      "min": 7.9442,
+      "max": 20.25685,
+      "median": 12.20599,
+      "mean": 13.10725,
+      "range": 12.31265
+    },
+    "windows": [
+      {
+        "reference": {
+          "person_track_id": 1,
+          "selection_epoch": 1,
+          "camera_reference_epoch": 0,
+          "camera_compensated": true,
+          "normalization_basis": "right_shoulder_right_torso",
+          "pose_source": "sam3d",
+          "observation_semantics": "monocular_model_estimate",
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "source_selection_epoch": 0
+        },
+        "source_frames": [
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78
+        ],
+        "sample_count": 9,
+        "start_ms": 2333,
+        "end_ms": 2600,
+        "start": 20.25685,
+        "end": 7.9442,
+        "delta": -12.31265,
+        "min": 7.9442,
+        "max": 20.25685,
+        "median": 12.20599,
+        "mean": 13.10725,
+        "range": 12.31265,
+        "source_binding_start": {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 70,
+          "processed_index": 70,
+          "pts": 1400,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 2333,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0,
+          "video_timestamp_ms": 2333
+        },
+        "source_binding_end": {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 78,
+          "processed_index": 78,
+          "pts": 1560,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 2600,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0,
+          "video_timestamp_ms": 2600
+        },
+        "source_time_origin_ms": 0
+      }
+    ],
+    "coverage": 1.0,
+    "definition_zh": "180°减去髋—膝—踝的二维夹角；正变化表示画面中屈膝增加。",
+    "condition": {
+      "status": "observed_decrease",
+      "label_zh": "该连续段的左膝屈曲角减少",
+      "semantics": "arithmetic_observation_not_technical_grade",
+      "reason_zh": "仅比较实测起止值；没有测量误差标定，不能据此确认技术动作达到要求。"
+    },
+    "full_source_rule_satisfied": false,
+    "measurement_provenance": {
+      "pose_source": "sam3d",
+      "observation_semantics": "monocular_model_estimate",
+      "assessment_status": "measurement_only",
+      "scoring_allowed": false,
+      "confidence_available": false,
+      "visibility_verified": false,
+      "model_estimate_sample_count": 20,
+      "reason_zh": "基于单目模型估计的二维关节几何；模型未提供关键点置信度或可见性，保留测量但不用于技术计分。"
+    },
+    "candidate_event_code": null,
+    "rule_motion_type": "unclassified"
+  },
+  "nullable_speed": {
+    "feature_name": "preload_body_speed_change_rate_body_s2",
+    "label_zh": "预加载速度变化率",
+    "value": null,
+    "unit": "body/s2",
+    "status": "unavailable",
+    "reason_zh": "本指标所需关节在该时段同时有效的帧不足 70%。",
+    "source_requirement_zh": "原文要求髋中心下降幅度、膝角变化以及身体中心速度的连续性。",
+    "source_ref": "CARD-FS:word/document.xml:P0115",
+    "measurement_window": {
+      "start_ms": 18667,
+      "end_ms": 19000
+    },
+    "source_frames": [
+      560,
+      561,
+      562,
+      563,
+      564,
+      565,
+      566,
+      567,
+      568,
+      569,
+      570
+    ],
+    "definition": "median absolute change in adjacent observed image-plane body-center interval speeds divided by interval-midpoint time difference; not a calibrated continuity score",
+    "coverage": {
+      "scope": "inclusive_window_all_sampled_source_frames",
+      "groups": [
+        {
+          "joint_names": [
+            "left_shoulder",
+            "right_shoulder",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 9,
+          "total_frame_count": 11,
+          "fraction": 0.8181818181818182,
+          "meets_70_percent": true
+        }
+      ],
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip"
+      ],
+      "valid_frame_count": 9,
+      "total_frame_count": 11,
+      "fraction": 0.8181818181818182,
+      "passes": true,
+      "threshold": 0.7,
+      "operator": ">=",
+      "source_rule": "below_70_percent_is_unavailable",
+      "point_validity": {
+        "minimum_confidence": 0.25,
+        "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+      },
+      "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+      "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+    },
+    "evidence": {
+      "phase_key": "preload_ms",
+      "phase_semantics": "unvalidated_pose_candidate_not_ground_truth",
+      "source_phase": {
+        "phase_contract_version": "source-preload-turning-point-v1.0.0",
+        "original_preload_ms": 18667.0,
+        "source_preload_ms": null,
+        "source_preload_start_ms": null,
+        "status": "unavailable",
+        "repair_reason": "phase_not_observed_or_outside_event:takeoff_proxy_ms",
+        "source_frames": [],
+        "selection_semantics": "deepest_observed_pre_takeoff_hip_y_turn_with_two_descent_and_two_ascent_changes; plateau_allowed_no_interpolation",
+        "is_ground_truth": false,
+        "original_event_modified": false,
+        "minimum_directional_changes_each_side": 2,
+        "support_rule_semantics": "engineering_observation_support_not_Word_technical_threshold"
+      },
+      "body_scale": 0.026458404447636825,
+      "speed_continuity_observations": {
+        "std": 1.7380776286480264,
+        "rate": 43.20698116831233,
+        "valid_interval_count": 7,
+        "total_interval_count": 10,
+        "timestamps_ms": [
+          18683.500000000004,
+          18716.5,
+          18750.0,
+          18783.5,
+          18816.499999999996,
+          18850.0,
+          18883.499999999996,
+          18916.5,
+          18950.0,
+          18983.5
+        ],
+        "speed_body_s": [
+          null,
+          null,
+          null,
+          4.503060730342873,
+          4.825408420295483,
+          0.7148155689707747,
+          1.4710909966638508,
+          3.5099060395314603,
+          2.6847444811352084,
+          5.939013283096673
+        ],
+        "derivative_policy": "adjacent_observed_intervals_only_no_interpolation_no_cross_gap_stencil"
+      }
+    }
+  },
+  "event_quality": {
+    "feature_name": "stable_control_proxy_to_next_fs10_or_fs02_ms",
+    "label_zh": "稳定候选到后续事件间隔",
+    "value": null,
+    "unit": "ms",
+    "status": "unavailable",
+    "reason_zh": "该事件未满足测量所需的证据条件，暂不能形成可靠测量。",
+    "source_requirement_zh": "原文要求制动完成后恢复稳定控制，并衔接同一人的回位或第一步启动。",
+    "source_ref": "CARD-FS:word/document.xml:P1644",
+    "measurement_window": null,
+    "source_frames": [
+      2322,
+      2323,
+      2324,
+      2325,
+      2326,
+      2327,
+      2328,
+      2329,
+      2330,
+      2331,
+      2332,
+      2333,
+      2334,
+      2335,
+      2336,
+      2337,
+      2338,
+      2339,
+      2340,
+      2341,
+      2342,
+      2343,
+      2344,
+      2345,
+      2346,
+      2347,
+      2348,
+      2349,
+      2350,
+      2351,
+      2352,
+      2353,
+      2354,
+      2355,
+      2356,
+      2357,
+      2358,
+      2359,
+      2360,
+      2361
+    ],
+    "definition": "next observed same-video same-player allowed event start minus current observed phase candidate; no successor means missing evidence, not zero or E",
+    "coverage": {
+      "scope": "inclusive_window_all_sampled_source_frames",
+      "groups": [
+        {
+          "joint_names": [
+            "left_shoulder",
+            "right_shoulder",
+            "left_hip",
+            "right_hip",
+            "left_knee",
+            "right_knee",
+            "left_ankle",
+            "right_ankle"
+          ],
+          "valid_frame_count": 1,
+          "total_frame_count": 40,
+          "fraction": 0.025,
+          "meets_70_percent": false
+        }
+      ],
+      "required_joint_names": [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip",
+        "left_knee",
+        "right_knee",
+        "left_ankle",
+        "right_ankle"
+      ],
+      "valid_frame_count": 1,
+      "total_frame_count": 40,
+      "fraction": 0.025,
+      "passes": false,
+      "threshold": 0.7,
+      "operator": ">=",
+      "source_rule": "below_70_percent_is_unavailable",
+      "point_validity": {
+        "minimum_confidence": 0.25,
+        "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+      },
+      "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+      "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+    },
+    "evidence": {
+      "source_event_id": "fs09-031-6189db68320a",
+      "successor_event_id": "fs02-032-09352fedaefe",
+      "anchor_phase_key": "stable_control_onset_ms",
+      "candidates_remain_unvalidated": true,
+      "source_event_quality_gate": {
+        "policy_version": "indicator-event-quality-v1.6.0",
+        "hard_fail_flags": [
+          "restabilization_not_observed"
+        ],
+        "semantics": "existing_measurement_evidence_gate_not_technical_fault_penalty"
+      }
+    }
+  },
+  "preload_confirmation": {
+    "feature_name": "preload_hip_height_drop_body",
+    "label_zh": "预加载髋高度下降量",
+    "value": 0.01556988636245249,
+    "unit": "body",
+    "status": "measured",
+    "reason_zh": "已从该时段计算；完整动作、阶段和等级条件尚未核验。",
+    "source_requirement_zh": "原文要求髋中心下降幅度、膝角变化以及身体中心速度的连续性。",
+    "source_ref": "CARD-FS:word/document.xml:P0115",
+    "measurement_window": {
+      "start_ms": 9033.0,
+      "end_ms": 9167.0
+    },
+    "source_frames": [
+      271,
+      272,
+      273,
+      274,
+      275
+    ],
+    "definition": "ankle-midpoint-relative hip height at observed descent start minus height at independently supported pre-takeoff turn; divided by window median body scale; image-up positive height",
+    "coverage": null,
+    "evidence": {
+      "phase_key": "preload_ms",
+      "phase_semantics": "unvalidated_pose_candidate_not_ground_truth",
+      "source_phase": {
+        "phase_contract_version": "source-preload-turning-point-v1.0.0",
+        "original_preload_ms": 8767.0,
+        "source_preload_ms": 9167.0,
+        "source_preload_start_ms": 9033.0,
+        "status": "observed_candidate",
+        "repair_reason": "independent_pre_takeoff_turn_observed",
+        "source_frames": [
+          271,
+          272,
+          273,
+          274,
+          275,
+          276,
+          277,
+          278,
+          279,
+          280
+        ],
+        "selection_semantics": "deepest_observed_pre_takeoff_hip_y_turn_with_two_descent_and_two_ascent_changes; plateau_allowed_no_interpolation",
+        "is_ground_truth": false,
+        "original_event_modified": false,
+        "minimum_directional_changes_each_side": 2,
+        "support_rule_semantics": "engineering_observation_support_not_Word_technical_threshold",
+        "takeoff_proxy_ms": 9600.0,
+        "confirmation_end_ms": 9333.0,
+        "numerical_coordinate_epsilon": 1e-12
+      },
+      "body_scale": 0.04388694463909846
+    },
+    "measurement_provenance": {
+      "pose_source": "sam3d",
+      "observation_semantics": "monocular_model_estimate",
+      "assessment_status": "measurement_only",
+      "scoring_allowed": false,
+      "confidence_available": false,
+      "visibility_verified": false
+    },
+    "source_window": {
+      "start_ms": 9033,
+      "end_ms": 9167,
+      "source_frames": [
+        271,
+        272,
+        273,
+        274,
+        275
+      ],
+      "video_timestamps_ms": [
+        9033,
+        9067,
+        9100,
+        9133,
+        9167
+      ],
+      "source_timestamps_ms": [
+        9033.333333333334,
+        9066.666666666666,
+        9100.0,
+        9133.333333333332,
+        9166.666666666666
+      ],
+      "person_track_id": 1,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "source_bindings": [
+        {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 271,
+          "processed_index": 271,
+          "pts": 5420,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 9033,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0
+        },
+        {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 272,
+          "processed_index": 272,
+          "pts": 5440,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 9067,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0
+        },
+        {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 273,
+          "processed_index": 273,
+          "pts": 5460,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 9100,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0
+        },
+        {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 274,
+          "processed_index": 274,
+          "pts": 5480,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 9133,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0
+        },
+        {
+          "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "frame_index": 275,
+          "processed_index": 275,
+          "pts": 5500,
+          "time_base_num": 1,
+          "time_base_den": 600,
+          "timestamp_ms": 9167,
+          "person_track_id": 1,
+          "selection_epoch": 0,
+          "camera_reference_epoch": 0
+        }
+      ]
+    },
+    "geometry_mask": {
+      "left_shoulder": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "right_shoulder": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "left_hip": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "right_hip": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "left_knee": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "right_knee": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "left_ankle": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "right_ankle": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "nose": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "left_ear": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "right_ear": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "source_track_id": 1,
+    "model_geometry_coverage": {
+      "semantics": "model_estimate_geometry_not_verified_visibility",
+      "required_joint_names": [
+        "left_hip",
+        "right_hip",
+        "left_ankle",
+        "right_ankle"
+      ],
+      "valid_frame_count": 5,
+      "total_frame_count": 5,
+      "fraction": 1.0,
+      "passes": true,
+      "threshold": 0.7,
+      "operator": ">=",
+      "visibility_verified": false,
+      "source_visibility_70_percent_verified": null
+    }
+  }
+}

@@ -24,6 +24,9 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
+from rallymate_features.coordinates import validated_camera_transform
+from rallymate_vision.court_projection import FixedCameraReferenceGuard, build_court_projection
+
 
 TRAJECTORY_SCHEMA_VERSION = "1.0.0"
 TRAJECTORY_RESULT_KIND = "trajectory_and_racket_observability_preview"
@@ -34,8 +37,11 @@ MAX_VELOCITY_SEGMENT_GAP_MS = 500
 # A trajectory preview is a read-only convenience endpoint, so it must not
 # become an unbounded JSONL ingestion surface.  These caps are deliberately
 # independent of the much larger video upload limit: a corrupt or malicious
-# frames artifact should fail closed before its points are materialized.
-MAX_FRAMES_ARTIFACT_BYTES = 256 * 1024 * 1024
+# frames artifact should fail closed before its points are materialized. Match
+# pose_playback's capacity for this same frames.jsonl artifact; dense SAM pose
+# fields can exceed the former 256 MiB cap even when ball/racket counts are small.
+MAX_FRAMES_ARTIFACT_BYTES = 1024 * 1024 * 1024
+MAX_FRAMES_LINE_BYTES = 1024 * 1024
 MAX_FRAMES_ARTIFACT_LINES = 2_000_000
 MAX_OBSERVATION_POINTS = 500_000
 # These are conservative image-plane association gates, not calibrated ball
@@ -51,10 +57,106 @@ MAX_RECONSTRUCTION_SPEED = 3.0
 MAX_RECONSTRUCTION_SEGMENTS = 1000
 MAX_RECONSTRUCTION_POINTS = 12_000
 MIN_RECONSTRUCTION_CONFIDENCE = 0.15
+MAX_COURT_CALIBRATION_GAP_MS = 160
+MAX_COURT_CALIBRATION_WINDOWS = 1000
 
 
 class TrajectoryExtractionError(ValueError):
     """Raised when a frame artifact cannot be safely converted to a preview."""
+
+
+def _strict_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key in frames artifact")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError("nonfinite JSON number in frames artifact")
+
+
+def _finite_json_float(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError("nonfinite JSON number in frames artifact")
+    return number
+
+
+class _LocalCourtCalibrationWindows:
+    """Read-only eligibility for a polygon captured inside a local stable span.
+
+    This does not revive the first-frame polygon in FixedCameraReferenceGuard.
+    Each new span has its own image reference; moving or unverified frames are
+    excluded. A reference frame may start a span, but is not itself proof of
+    continued camera stability. No ball detections or scores are changed.
+    """
+
+    def __init__(self):
+        self.windows = []
+        self.truncated = False
+        self.current = None
+        self.previous = None
+        self.reference_transform = None
+        self.highest_timestamp = None
+
+    def _finish(self):
+        if self.current is not None:
+            if len(self.windows) < MAX_COURT_CALIBRATION_WINDOWS:
+                self.windows.append(self.current)
+            else:
+                self.truncated = True
+        self.current = self.previous = self.reference_transform = None
+
+    def _within_reference(self, transform, width, height):
+        # inverse(first -> epoch) @ (current -> epoch), in first-frame pixels.
+        a, b, tx = self.reference_transform[0]
+        c, d, ty = self.reference_transform[1]
+        determinant = a * d - b * c
+        tolerance = max(1.0, math.hypot(width, height) * .003)
+        for x, y in ((0, 0), (width, 0), (width, height), (0, height)):
+            u = transform[0, 0] * x + transform[0, 1] * y + transform[0, 2] - tx
+            v = transform[1, 0] * x + transform[1, 1] * y + transform[1, 2] - ty
+            dx, dy = (d * u - b * v) / determinant - x, (-c * u + a * v) / determinant - y
+            if not math.isfinite(dx + dy) or math.hypot(dx, dy) > tolerance:
+                return False
+        return True
+
+    def observe(self, frame, camera):
+        timestamp = _positive_int(frame.get("timestamp_ms"))
+        increasing = timestamp is not None and (self.highest_timestamp is None or timestamp > self.highest_timestamp)
+        if timestamp is not None:
+            self.highest_timestamp = max(timestamp, self.highest_timestamp if self.highest_timestamp is not None else timestamp)
+        camera = camera if isinstance(camera, dict) else {}
+        index, processed = _positive_int(frame.get("index")), _positive_int(frame.get("processed_index"))
+        width, height = _positive_int(frame.get("width")), _positive_int(frame.get("height"))
+        epoch = _positive_int(camera.get("reference_epoch"))
+        transform = validated_camera_transform(camera)
+        if (not increasing or frame.get("timestamp_source") != "decoder_pts"
+                or index is None or processed is None or not width or not height
+                or epoch is None or transform is None or camera.get("status") not in {"reference", "stationary"}):
+            self._finish()
+            return
+        reference = (width, height, epoch)
+        if self.previous is not None:
+            previous_index, previous_processed, previous_time, previous_reference = self.previous
+            if (index != previous_index + 1 or processed != previous_processed + 1
+                    or not 0 < timestamp - previous_time <= MAX_COURT_CALIBRATION_GAP_MS
+                    or reference != previous_reference or camera["status"] == "reference"
+                    or not self._within_reference(transform, width, height)):
+                self._finish()
+        if self.current is None:
+            self.reference_transform = transform
+            self.current = {"start_timestamp_ms": timestamp, "end_timestamp_ms": timestamp}
+        else:
+            self.current["end_timestamp_ms"] = timestamp
+        self.previous = (index, processed, timestamp, reference)
+
+    def finish(self):
+        self._finish()
+        return self.windows
 
 
 def _finite(value: Any) -> float | None:
@@ -248,7 +350,7 @@ def _read_observations(
     allow_partial: bool = False,
 ) -> tuple[
     int,
-    dict[str, set[str]],
+    dict[str, Any],
     dict[str, dict[Any, list[dict[str, Any]]]],
     dict[str, Any],
 ]:
@@ -270,6 +372,9 @@ def _read_observations(
 
     frame_count = 0
     schema_versions: set[str] = set()
+    calibrations = {}
+    camera_guard = FixedCameraReferenceGuard()
+    local_court_windows = _LocalCourtCalibrationWindows()
     tracks: dict[str, dict[Any, list[dict[str, Any]]]] = {
         "ball": defaultdict(list),
         "racket": defaultdict(list),
@@ -292,11 +397,18 @@ def _read_observations(
         remaining_bytes = artifact_bytes
         line_number = 0
         while remaining_bytes > 0:
-            raw_line = handle.readline(remaining_bytes)
+            # Bound individual allocation before parsing, independently of the
+            # total snapshot size and retained observation budget.
+            raw_line = handle.readline(min(remaining_bytes, MAX_FRAMES_LINE_BYTES + 1))
             if not raw_line:
                 break
             remaining_bytes -= len(raw_line)
             line_number += 1
+            if len(raw_line) > MAX_FRAMES_LINE_BYTES:
+                raise TrajectoryExtractionError(
+                    "frames artifact exceeds the trajectory preview single-line "
+                    f"byte limit ({MAX_FRAMES_LINE_BYTES} bytes) at line {line_number}"
+                )
             if line_number > MAX_FRAMES_ARTIFACT_LINES:
                 raise TrajectoryExtractionError(
                     "frames artifact exceeds the trajectory preview line limit "
@@ -310,8 +422,10 @@ def _read_observations(
             if not raw_line.strip():
                 continue
             try:
-                record = json.loads(raw_line)
-            except (json.JSONDecodeError, UnicodeError) as exc:
+                record = json.loads(raw_line, object_pairs_hook=_strict_json_object,
+                                    parse_constant=_reject_json_constant,
+                                    parse_float=_finite_json_float)
+            except (ValueError, UnicodeError, RecursionError) as exc:
                 raise TrajectoryExtractionError(
                     f"invalid frames JSON at line {line_number}: {exc}"
                 ) from exc
@@ -341,6 +455,10 @@ def _read_observations(
                 dimensions["start_timestamp_ms"] = timestamp_ms if start is None else min(start, timestamp_ms)
                 dimensions["end_timestamp_ms"] = timestamp_ms if end is None else max(end, timestamp_ms)
             detections = record.get("detections", [])
+            # Camera continuity must be checked even when no ball was found.
+            local_court_windows.observe(frame, record.get("camera_motion"))
+            camera_guard.observe(record.get("camera_motion"), width, height)
+            calibration = camera_guard.calibration(record.get("court"), width, height)
             if not isinstance(detections, list):
                 continue
             for raw_detection in detections:
@@ -358,6 +476,8 @@ def _read_observations(
                 )
                 if point is None:
                     continue
+                if class_name == "ball" and calibration is not None:
+                    calibrations[(point["frame_index"], point["processed_index"], point["timestamp_ms"])] = calibration
                 observation_count += 1
                 if observation_count > MAX_OBSERVATION_POINTS:
                     raise TrajectoryExtractionError(
@@ -370,7 +490,9 @@ def _read_observations(
                     # that disconnected observations form a verified track.
                     track_key = "untracked"
                 tracks[class_name][track_key].append(point)
-    return frame_count, {"schema_version": schema_versions}, tracks, dimensions
+    return frame_count, {"schema_version": schema_versions, "calibrations": calibrations,
+                         "court_calibration_windows": local_court_windows.finish(),
+                         "court_calibration_windows_truncated": local_court_windows.truncated}, tracks, dimensions
 
 
 def _select_track(
@@ -1057,9 +1179,12 @@ def build_trajectory_preview(
             "is_partial": allow_partial,
             "start_timestamp_ms": dimensions["start_timestamp_ms"],
             "end_timestamp_ms": dimensions["end_timestamp_ms"],
+            "court_calibration_windows": metadata["court_calibration_windows"],
+            "court_calibration_windows_truncated": metadata["court_calibration_windows_truncated"],
         },
         "ball": ball,
         "racket": racket,
+        "court_projection": build_court_projection(ball["reconstruction"], metadata["calibrations"]),
         "limitations": limitations,
     }
 
@@ -1068,6 +1193,7 @@ __all__ = [
     "DEFAULT_PREDICTION_HORIZON_MS",
     "DEFAULT_SAMPLE_LIMIT",
     "MAX_FRAMES_ARTIFACT_BYTES",
+    "MAX_FRAMES_LINE_BYTES",
     "MAX_FRAMES_ARTIFACT_LINES",
     "MAX_OBSERVATION_POINTS",
     "TRAJECTORY_RESULT_KIND",

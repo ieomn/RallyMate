@@ -46,6 +46,26 @@ KNOWN_RAW_SHA256 = {
 
 
 class RegistryLifecycleTests(unittest.TestCase):
+    def test_explicit_registry_needs_content_validity_not_manifest_permission(self):
+        from rallymate_vision.pipeline import _verify_scoring_registry_authority_unchanged
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "custom.json"
+            path.write_bytes((ROOT / "metric-feasibility-pose-wave-v2.json").read_bytes())
+            resolved = resolve_runtime_feasibility_registry(root / "absent-manifest.json", explicit_path=path)
+            self.assertEqual(resolved.path, path.resolve())
+            self.assertIsNone(resolved.manifest_path)
+            self.assertEqual(resolved.file_sha256, hashlib.sha256(resolved.raw_bytes).hexdigest())
+            _verify_scoring_registry_authority_unchanged(resolved)
+            path.write_bytes(path.read_bytes()+b'\n')
+            with self.assertRaisesRegex(RuntimeError, "registry changed"):
+                _verify_scoring_registry_authority_unchanged(resolved)
+            payload = copy.deepcopy(resolved.payload)
+            payload['indicators'].append(copy.deepcopy(payload['indicators'][0]))
+            path.write_text(json.dumps(payload), encoding='utf-8')
+            with self.assertRaisesRegex(RegistryLifecycleError, "unique"):
+                resolve_runtime_feasibility_registry(explicit_path=path)
+
     def _copy_authority(self, root: Path) -> Path:
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
         for section in ("roles", "non_runtime_artifacts"):

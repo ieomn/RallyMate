@@ -116,7 +116,6 @@ test("GS display and portable exports preserve manual stage uncertainty without 
   assert.match(html, /回看计算片段/);
   const backup = JSON.parse(JSON.stringify(buildReportBackup(input)));
   assert.deepEqual(cardExecutionOf(backup.result.card_execution), cardExecutionOf(raw));
-  const section = buildPracticeReport(input).sections.find(row => row.title === "逐卡视频实例与条件");
-  assert.ok(section.columns.includes("阶段来源"));
-  assert.ok(section.rows.every(row => row.at(-1).includes("人工估计 ±150 毫秒")));
+  assert.equal(buildPracticeReport(input).sections.some(row => row.title.startsWith("逐卡")), false);
+  assert.deepEqual(backup.result.card_execution.cards, cardExecutionOf(raw).cards);
 });

@@ -9,7 +9,7 @@ import { footworkCycleOf, validFootworkCycle, footworkValuesAgree, type Footwork
 import { evidenceObject, racketSideOf, validRacketSide, validFsWindow, validFormalGsStageSource, type EvidenceObject, type RacketSideEvidence } from "./manual-card-evidence";
 import { validateGsPreload, type PreloadValidation } from "./gs-preload-evidence";
 import { validateFsStepMotion, type StepMotionValidation } from "./fs-step-motion-evidence";
-import { formalScoreSemantics, isFormalScoringPolicy } from "./formal-card-scoring-policy";
+import { formalScoreSemantics, isFormalScoringPolicy, formalConditionScore } from "./formal-card-scoring-policy";
 import { validateTemporalLocalDip, validFormalTemporalSource, type LocalDipValidation } from "./temporal-local-dip-evidence";
 import microContract from "./directional-micro-display-contract";
 import microCycleContract from "./micro-cycle-display-contract";
@@ -323,9 +323,10 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   });
   const fraction = conditions.length ? conditions.filter(c => c.passed === true).length / conditions.length : 0;
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
+  const expectedScore = formal ? formalConditionScore(policy, conditions.filter(c => c.passed === true).length, conditions.length, grade) : gradePoints[grade];
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected && (!formal || validateTemporalLocalDip(result.temporal_evidence, result)?.status !== "measured_local_dip")
       || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (microCycles ? microCycleContract.measurement_version : micro ? microContract.measurement_version : isRecoveryBodyCard(id) ? recoveryPolicy.version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
-      || formal && row.grade !== grade || row.proxy_grade !== grade || row.score !== gradePoints[grade]
+      || formal && row.grade !== grade || row.proxy_grade !== grade || expectedScore === null || row.score !== expectedScore
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
         || formal && !validFormalGsStageSource(result.source_stage_evidence, result.source_stage_context, result)
         || !validRacketSide(result.racket_side_evidence, result, result.source_stage, conditions.some(c => c.metric === "wrist_speed_increase_torso_s")))
@@ -360,7 +361,7 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
       || !/^CARD-(?:FS|GS)$/.test(result.source.document_id) || !/^[a-fA-F0-9]{64}$/.test(result.source.document_sha256) || !/^[a-fA-F0-9]{64}$/.test(result.source.rubric_sha256)) {
     return invalidate(result, "proxy_report_evidence_invalid_recompute_required");
   }
-  return withPreloadValidation({ ...result, grade: formal ? grade : null, proxy_grade: grade, score: gradePoints[grade] });
+  return withPreloadValidation({ ...result, grade: formal ? grade : null, proxy_grade: grade, score: expectedScore });
 }
 
 export function cardExecutionOf(value: unknown): CardExecutionReport | null {

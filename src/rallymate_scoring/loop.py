@@ -47,9 +47,6 @@ from rallymate_scoring.scoring_context import (
 )
 from rallymate_scoring.scoring import score_indicator
 from rallymate_scoring.source_assessment import write_source_aligned_assessment
-from rallymate_scoring.runtime_profile_binding import (
-    bind_production_calibrations_for_runtime,
-)
 from rallymate_tracking import (
     PRIMARY_PLAYER_ALGORITHM_VERSION,
     diagnose_primary_timeline,
@@ -58,7 +55,7 @@ from rallymate_tracking import (
 )
 
 
-SCORING_LOOP_VERSION = "minimum-scoring-loop-v0.8.0"
+SCORING_LOOP_VERSION = "minimum-scoring-loop-v0.9.0"
 EVENT_CONTRACT_VERSION = "events.1.0.0"
 PRIMARY_PLAYER_VERSION = PRIMARY_PLAYER_ALGORITHM_VERSION
 SUPPLEMENTAL_FINE_FOOT_SEMANTICS = (
@@ -245,6 +242,13 @@ def run_minimum_scoring_loop(
         expected_version=required_primary_version,
         require_declared=required_primary_version is not None,
     )
+    native_primary_binding = None
+    if (source_provenance or {}).get("video_sha256") and any(
+        pose.get("source") == "sam3d" for record in records for pose in record.get("poses", [])
+    ):
+        from rallymate_features.native_primary import adapt_native_primary_timeline
+        timeline, native_primary_binding = adapt_native_primary_timeline(
+            records, timeline, video_sha256=source_provenance["video_sha256"])
     sequence = pose_sequence_from_records(records, timeline)
     canonical_video_id = video_id or source_id
     provenance = {
@@ -259,47 +263,6 @@ def run_minimum_scoring_loop(
         calibrations,
     )
     effective_calibrations = dict(calibrations or {})
-    production_calibrations = {
-        indicator_id: calibration
-        for indicator_id, calibration in effective_calibrations.items()
-        if calibration.get("artifact_scope") == "production"
-    }
-    if production_calibrations:
-        if runtime_binding_registry is None or runtime_view_evidence is None:
-            raise ValueError(
-                "production scoring requires trusted runtime-profile bindings and "
-                "accepted per-video view evidence"
-            )
-        video_sha256 = provenance.get("video_sha256")
-        if not isinstance(video_sha256, str) or len(video_sha256) != 64:
-            raise ValueError(
-                "production scoring source_provenance.video_sha256 is required"
-            )
-        if runtime_view_evidence.get("video_id") != canonical_video_id:
-            raise ValueError(
-                "runtime view evidence video_id does not match the scoring video"
-            )
-        if str(runtime_view_evidence.get("video_sha256", "")).lower() != (
-            video_sha256.lower()
-        ):
-            raise ValueError(
-                "runtime view evidence video_sha256 does not match source provenance"
-            )
-        video_path = provenance.get("video_path")
-        if isinstance(video_path, str) and Path(video_path).is_file():
-            if _sha256(Path(video_path)).lower() != video_sha256.lower():
-                raise ValueError(
-                    "source video content changed or provenance SHA-256 is invalid"
-                )
-        effective_calibrations.update(
-            bind_production_calibrations_for_runtime(
-                production_calibrations,
-                binding_registry=runtime_binding_registry,
-                view_evidence=runtime_view_evidence,
-                feasibility_registry=registry,
-                model_versions=versions,
-            )
-        )
     output_dir.mkdir(parents=True, exist_ok=True)
     events = detect_pose_events(
         sequence, source_id=source_id, video_id=canonical_video_id
@@ -455,6 +418,7 @@ def run_minimum_scoring_loop(
                     "confidence": item["confidence"],
                     "reason": item["reason"],
                     "source_frames": item["source_frames"],
+                    **{key: item[key] for key in ("measurement_provenance", "source_window", "geometry_mask", "required_joints_used", "selected_side") if key in item},
                 }
                 for item in features
             ]
@@ -474,6 +438,7 @@ def run_minimum_scoring_loop(
                     "confidence": item["confidence"],
                     "reason": item["reason"],
                     "source_frames": item["source_frames"],
+                    **{key: item[key] for key in ("measurement_provenance", "source_window", "geometry_mask", "required_joints_used", "selected_side") if key in item},
                     "semantics": SUPPLEMENTAL_FINE_FOOT_SEMANTICS,
                 }
                 for item in supplemental_features
@@ -518,9 +483,19 @@ def run_minimum_scoring_loop(
                         launch_direction_feature=launch_direction_feature,
                     )
                 )
+            scoring_feature_names = indicator["required_features"]
+            if indicator["indicator_id"] == TARGET_DIRECTION_INDICATOR_ID:
+                rule_features = ((calibration or {}).get("feature_order", [])
+                    + [(calibration or {}).get("primary_feature")])
+                if (TARGET_DIRECTION_ALIGNMENT_FEATURE_NAME not in rule_features
+                        and (scoring_context or {}).get("status") != "available"):
+                    # FS02-M02's Word calculation is body-direction continuity.
+                    # Its legacy ball-target extension is optional unless the
+                    # supplied numerical rule explicitly consumes that value.
+                    scoring_feature_names = measurement_feature_names(indicator)
             scoring_features = [
                 scoring_feature_by_name[name]
-                for name in indicator["required_features"]
+                for name in scoring_feature_names
             ]
             scoring_features_valid = all(item["valid"] for item in scoring_features)
             score_evidence = [
@@ -570,6 +545,7 @@ def run_minimum_scoring_loop(
                     "schema_version": "1.0.0",
                     **common,
                     "feature_status": "measured" if measurement_allowed else "unavailable",
+                    **({**{key: event[key] for key in ("measurement_provenance", "source_window", "geometry_mask") if key in event}, "track_diagnostics": dict(event.get("track_diagnostics", {}))} if "measurement_provenance" in event else {}),
                     "features": compact_features,
                     "scoring_feature_status": (
                         "measured" if scoring_features_valid else "unavailable"
@@ -585,6 +561,7 @@ def run_minimum_scoring_loop(
                     ),
                     "scoring_status": score["status"],
                     "grade": score["grade"],
+                    "score_result": score,
                     "reason_codes": score["reason_codes"],
                     "quality_gate": quality_gate,
                     **(
@@ -607,6 +584,7 @@ def run_minimum_scoring_loop(
         video_sha256=provenance.get("video_sha256"),
         frames_sha256=provenance.get("frames_sha256"), frames_path=frames_path,
         primary_timeline_path=primary_timeline_path, primary_timeline=timeline,
+        raw_records=records, source_id=source_id,
     )
 
     # Truth interfaces are executable, but absent truth must never appear as a
@@ -669,6 +647,7 @@ def run_minimum_scoring_loop(
         "schema_version": "1.0.0",
         "loop_version": SCORING_LOOP_VERSION,
         "coordinate_contract": sequence.coordinate_metadata,
+        "native_primary_binding": native_primary_binding,
         "video_id": canonical_video_id,
         "status": loop_status,
         "scope": registry["scope"],
@@ -702,15 +681,15 @@ def run_minimum_scoring_loop(
             "aggregate_grade_status": "not_designed",
             "semantics": (
                 "measured means at least one valid event-level feature set exists; "
-                "A-E may be emitted only per event and indicator after F4 plus trusted "
-                "promotion-ledger authorization; no aggregate grade is defined"
+                "A-E is evaluated per event and indicator when an explicit mathematical "
+                "rule exists; maturity and authorization metadata do not gate computation; no aggregate grade is defined"
             ),
             "ui_message_zh": (
-                f"{target_label_zh}特征已测量，正式 A～E 待教练标定"
+                f"{measured_indicator_count}/{len(indicators)}项特征已计算；A～E 数值规则未定义"
                 if scoring_status == "calibration_required"
                 else f"当前观测不足，{target_label_zh}不可评价"
                 if scoring_status == "unavailable"
-                else f"{target_label_zh}已通过版本化标定输出等级"
+                else f"{target_label_zh}已按明确数学规则输出事件等级"
             ),
         },
         "indicator_feature_validity": {

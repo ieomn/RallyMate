@@ -6,12 +6,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 
 function compiledUrl(fileUrl) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   const source = fs.readFileSync(fileUrl, "utf8");
   let js = ts.transpileModule(source, { fileName: fileUrl.pathname, compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, fileUrl);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl);
     const url = name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name);
     return `from ${JSON.stringify(url)}`;
   });
@@ -37,7 +39,7 @@ test("video replay starts clean with independent overlay tools folded away", () 
   const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4" }));
   assert.match(html, /<video/);
   assert.match(html, /data-overlay="off"/);
-  assert.doesNotMatch(html, /ball-trajectory-overlay|pose-skeleton-overlay|<circle|<polyline/);
+  assert.doesNotMatch(html, /ball-trajectory-overlay|motion-focus-overlay|<circle|<polyline/);
   assert.match(html, /<details class="ball-trajectory-options"><summary><span>分析工具/);
   assert.match(html, /显示识别点/);
   assert.match(html, /<input type="checkbox" disabled=""\s*\/>显示识别点/);
@@ -51,6 +53,47 @@ test("enabling ball replay draws only the current reliable ball path", () => {
   const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/video.mp4", videoTimeOriginMs: 840, initialOverlays: { ball: true } }));
   assert.equal((html.match(/<polyline /g) ?? []).length, 1);
   assert.doesNotMatch(html, /<circle|30,40|player-skeleton|pose-overlay/);
+});
+
+test("report replay keeps overlay controls visible and validates pose timing before enabling", () => {
+  const props = { trajectory: null, videoSrc: "/source.mp4", videoKind: "original", jobId: "job-test", loadPoseWindow: async () => null, initialOverlays: { pose: true }, quickAnalysisTools: true };
+  const html = renderToStaticMarkup(createElement(Viewer, { ...props, poseTimingPreserved: true }));
+  assert.match(html, /data-pose="on"/);
+  assert.match(html, /data-replay-role="original"/);
+  assert.ok(html.indexOf('aria-label="回放显示设置"') < html.indexOf('<details'));
+  assert.equal((html.match(/>动作标记<\/label>/g) ?? []).length, 1);
+  const unverified = renderToStaticMarkup(createElement(Viewer, { ...props, poseTimingPreserved: false }));
+  assert.match(unverified, /data-pose="paused"/);
+  assert.match(unverified, /动作标记已暂停/);
+  assert.doesNotMatch(unverified, /motion-focus-overlay/);
+});
+
+test("annotated and unidentified players cannot present themselves as a court-capture original", () => {
+  const annotated = renderToStaticMarkup(createElement(Viewer, { trajectory: null, videoSrc: "/annotated.mp4", videoKind: "annotated" }));
+  assert.match(annotated, /data-replay-role="annotated"/);
+  assert.doesNotMatch(annotated, /data-replay-role="original"/);
+  const unknown = renderToStaticMarkup(createElement(Viewer, { trajectory: null, videoSrc: "/unknown.mp4" }));
+  assert.doesNotMatch(unknown, /data-replay-role=/);
+});
+
+test("ball overlay preserves the source aspect inside a height-limited video stage", () => {
+  const trajectory = { status: "ready", source: { width: 1080, height: 1920, start_timestamp_ms: 0, end_timestamp_ms: 1000 }, ball: { observed: [{ timestamp_ms: 0, x: .1, y: .4, confidence: .9 }, { timestamp_ms: 33, x: .2, y: .4, confidence: .9 }] } };
+  const html = renderToStaticMarkup(createElement(Viewer, { trajectory, videoSrc: "/portrait.mp4", videoTimeOriginMs: 33, initialOverlays: { ball: true } }));
+  assert.match(html, /viewBox="0 0 56.25 100" preserveAspectRatio="xMidYMid meet"/);
+  assert.match(html, /transform="scale\(0.5625 1\)"/);
+  assert.match(html, /points="10,40 20,40"/);
+});
+
+test("report observations lead, source replay remains visible and the court starts folded", () => {
+  const html = renderToStaticMarkup(createElement(LiveResults, { result: { job_id: "review-test-job", status: "ready" }, assessment: null, pending: false, trajectory: null, replay: createElement("section", { id: "source-visible" }, "原片回放") }));
+  assert.ok(html.indexOf('id="recommendations"') < html.indexOf('id="source-visible"'));
+  assert.ok(html.indexOf('id="source-visible"') < html.indexOf('id="court"'));
+  assert.match(html, /<div class="report-replay-area"><section id="source-visible">/);
+  assert.match(html, /<details class="report-insight-details report-court-details"><summary>/);
+  assert.match(html, /按动作片段定位回放/);
+  const empty = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, pending: false, trajectory: null, replay: createElement("section", { id: "source-visible" }, "原片回放") }));
+  assert.match(empty, /id="source-visible"/);
+  assert.doesNotMatch(empty, /id="court"|process-radar/);
 });
 
 test("replay keeps multiple current candidates separate and clears old paths", () => {
@@ -141,7 +184,7 @@ test("many baseline candidates are summarized without counts or unconfirmed hit 
   assert.equal((html.match(/status-pill status-not_observed">未分类<\/span>/g) ?? []).length, 5);
   assert.match(html, /最新动作定义 · 未分类/);
   for (const item of assessmentRows("baseline")) assert.ok(html.includes(item.name_zh));
-  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /57|action-candidates|action-candidate-list|已定位|<span>已确认触球<\/span>/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<svg\b[\s\S]*?<\/svg>/g, svg => svg.replace(/<[^>]+>/g, "")), /57|action-candidates|action-candidate-list|已定位|<span>已确认触球<\/span>/);
 });
 
 test("unavailable classification keeps all five baseline rows explicit", () => {
@@ -163,7 +206,7 @@ test("a truly observed technique keeps its ready status even when other types ar
   assert.match(html, /status-pill status-ready">证据就绪<\/span>/);
   assert.match(html, /最新动作定义 · 证据就绪/);
   assert.doesNotMatch(html, /85\.0%/);
-  assert.match(html, /待标定/);
+  assert.match(html, /尚缺完整评分依据/);
   assert.equal((html.match(/status-pill status-not_observed">未分类<\/span>/g) ?? []).length, 4);
 });
 
@@ -193,7 +236,7 @@ test("motion results show one measured episode and phases without restoring the 
   assert.match(html, /触球未确认/);
   assert.match(html, /下一片段/);
   assert.equal((html.match(/motion-episode-heading/g) ?? []).length, 1);
-  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /57|已定位|status-pill status-not_observed/);
+  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<svg\b[\s\S]*?<\/svg>/g, svg => svg.replace(/<[^>]+>/g, "")), /57|已定位|status-pill status-not_observed/);
 });
 
 test("return analysis explains missing context and never fills it with a zero score", () => {

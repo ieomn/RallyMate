@@ -127,5 +127,5 @@ test("auxiliary source records and revision survive complete JSON backup, while 
     assert.match(html, /双腕/); assert.match(html, /未评分/); assert.doesNotMatch(html, /需要复核|人工复核/);
     assert.match(handRacketAuxiliarySummary(i), /-0.084695/);
   }
-  const readable = JSON.stringify(buildPracticeReport(input)); assert.match(readable, /双腕距离变化记录/); assert.doesNotMatch(readable, /待复核|需要复核/);
+  const readable = JSON.stringify(buildPracticeReport(input)); assert.doesNotMatch(readable, /逐卡计算结果|逐卡视频实例|双腕距离变化记录/); assert.doesNotMatch(readable, /待复核|需要复核/);
 });

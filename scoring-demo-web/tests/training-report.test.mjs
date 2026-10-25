@@ -1,16 +1,19 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { gunzipSync } from "node:zlib";
 import test from "node:test";
 import ts from "typescript";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 function compiledUrl(fileUrl) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   let js = ts.transpileModule(fs.readFileSync(fileUrl, "utf8"), { fileName: fileUrl.pathname, compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/import (\w+) from "([^"\n]+\.json)";?/g, (_match, binding, name) => `const ${binding} = ${fs.readFileSync(new URL(name, fileUrl), "utf8")};`);
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, fileUrl);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;
   });
   return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
@@ -20,6 +23,8 @@ const { footworkEpisodes } = await import(compiledUrl(new URL("../app/lib/footwo
 const { motionAnalysisOf } = await import(compiledUrl(new URL("../app/lib/motion-analysis.ts", import.meta.url)));
 const { buildPracticeReport, buildReportBackup, renderReportMarkdown } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
 const { default: LiveResults } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
+const { cardExecutionOf } = await import(compiledUrl(new URL("../app/lib/card-execution.ts", import.meta.url)));
+const { readReportJson } = await import(compiledUrl(new URL("../app/lib/report-file.ts", import.meta.url)));
 
 const measure = overrides => ({ feature_name: "travel", name_zh: "移动距离", value: .2, unit: "body", confidence: .9, status: "measured", reason_codes: [], reason_zh: "连续测量", review_hint_zh: "对照起止画面", window: { start_ms: 1000, end_ms: 1600, scope: "event_interval" }, feature_version: "test-v1", required_joints: ["left_hip", "right_hip"], view_semantics: "image_plane_proxy", ...overrides });
 const footwork = () => ({ schema_version: "1.1.0", status: "available", episodes: [{ event_id: "step-1", event_code: "FS02", name_zh: "第一步启动", start_ms: 1000, end_ms: 1600, indicators: [{ indicator_id: "FS02-M01", name_zh: "启动", feature_status: "unavailable", scoring_status: "unavailable", features: [], measurements: [measure(), measure({ feature_name: "target", name_zh: "目标方向", status: "unavailable", value: 77, confidence: null, reason_zh: "来球方向未确认" })] }] }] });
@@ -100,10 +105,49 @@ test("readable export and JSON preserve new report context and independent measu
   assert.equal(analysisReportOf(restored.analysis_report).focus_areas[0].title_zh, "先回看启动");
 });
 
+test("actual 298-card evidence supplies one validated total without exposing internal cards", async () => {
+  // Historical full HTTP report, not a synthetic expansion of the catalogue.
+  const rawCards = JSON.parse(gunzipSync(fs.readFileSync(new URL("./fixtures/micro-cycle-native-e420-unified.json.gz", import.meta.url))));
+  const process = JSON.parse(fs.readFileSync(new URL("./fixtures/process-v1.1-real.json", import.meta.url), "utf8"));
+  const expected = cardExecutionOf(rawCards);
+  assert.equal(rawCards.cards.length, 298);
+  assert.equal(expected.cards.length, 298);
+  assert.ok(expected.summary.formal_scored_instances > 0);
+  // This transport-only test pairs independent historical fields to verify UI
+  // isolation. It is not a claim that these two source runs describe one video.
+  const result = { status: "ready", job_id: rawCards.source_run_id, card_execution: rawCards, process_evaluation: process };
+  const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
+  assert.match(html, /本次训练评分/);
+  assert.ok(Number.isFinite(expected.overall_score));
+  assert.match(html, new RegExp(`class="process-overall-reference"><strong>${expected.overall_score.toFixed(1).replace(/\.0$/, "").replace(".", "\\.")}<small>\\/ 100`));
+  assert.equal((html.match(/class="process-overall-reference"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /card-execution-panel|逐卡计算|正式逐卡|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}|全部原文指标/);
+  const input = { mode: "live", uploadState: "complete", evidence: { result } };
+  const readable = buildPracticeReport(input), markdown = renderReportMarkdown(readable);
+  assert.doesNotMatch(markdown, /逐卡计算|逐卡视频实例|原文目录|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}/);
+  assert.ok(readable.sections.some(row => row.title === `训练评分：${Number(expected.overall_score.toFixed(3))} / 100`));
+  const serialized = JSON.stringify(buildReportBackup(input));
+  const restored = await readReportJson({ size: Buffer.byteLength(serialized), text: async () => serialized });
+  assert.equal(restored.result.card_execution.cards.length, 298);
+  assert.deepEqual(cardExecutionOf(restored.result.card_execution), expected);
+  assert.deepEqual(restored.result.card_execution.cards, expected.cards);
+  assert.equal(restored.result.process_evaluation.relative_reference.overall_score, null);
+  assert.equal(restored.result.process_evaluation.relative_reference.legacy_relative_reference.overall_score, 50);
+  assert.equal(new Set(restored.result.process_evaluation.dimensions.flatMap(row => row.source_basis?.card_ids ?? [])).size, 298);
+});
+
 test("replay uses source milliseconds and keeps the task boundary", () => {
   const events = []; const oldWindow = globalThis.window, oldDocument = globalThis.document;
   globalThis.window = { dispatchEvent: event => events.push(event) }; globalThis.document = { getElementById: () => null };
-  try { replayMoment({ startMs: 1234 }, "report-job-1"); assert.deepEqual(events[0].detail, { timestampMs: 1234, jobId: "report-job-1" }); } finally { globalThis.window = oldWindow; globalThis.document = oldDocument; }
+  try { replayMoment({ startMs: 1234 }, "report-job-1"); assert.deepEqual(events[0].detail, { timestampMs: 1234, jobId: "report-job-1", preferOriginal: true }); } finally { globalThis.window = oldWindow; globalThis.document = oldDocument; }
+});
+
+test("replay navigation respects reduced motion", () => {
+  const calls = []; const oldWindow = globalThis.window, oldDocument = globalThis.document;
+  globalThis.window = { dispatchEvent() {}, matchMedia: () => ({ matches: true }) };
+  globalThis.document = { getElementById: () => ({ scrollIntoView: options => calls.push(options) }) };
+  try { replayMoment({ startMs: 0 }, "report-job-1"); assert.deepEqual(calls, [{ behavior: "auto", block: "start" }]); }
+  finally { globalThis.window = oldWindow; globalThis.document = oldDocument; }
 });
 
 test("recent reports reject corrupt entries and retain only bounded local labels", () => {

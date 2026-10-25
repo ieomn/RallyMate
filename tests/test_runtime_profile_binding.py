@@ -298,7 +298,7 @@ class RuntimeProfileBindingTests(unittest.TestCase):
                     evidence=evidence,
                     feasibility_level="F4",
                 )
-                self.assertEqual(blocked["status"], "calibration_required")
+                self.assertEqual(blocked["status"], "unavailable")
                 self.assertIsNone(blocked["grade"])
 
     def test_pose_backend_model_sha_and_native_topology_are_exact(self) -> None:

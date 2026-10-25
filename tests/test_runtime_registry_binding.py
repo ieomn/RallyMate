@@ -121,7 +121,7 @@ class RuntimeRegistryBindingTests(unittest.TestCase):
         with self.assertRaisesRegex(CalibrationPromotionError, "is not F4"):
             bind_trusted_production_calibration_to_registry(trusted, changed)
 
-    def test_ledger_authorized_but_registry_unbound_asset_cannot_score(self) -> None:
+    def test_legacy_registry_binding_is_not_required_for_explicit_math(self) -> None:
         asset, ledger, _ = _promoted_fixture()
         trusted = authorize_production_asset_with_trusted_ledger(asset, ledger)
         result = score_indicator(
@@ -132,13 +132,13 @@ class RuntimeRegistryBindingTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F4",
         )
-        self.assertEqual(result["status"], "calibration_required")
+        self.assertEqual(result["status"], "scored")
         self.assertIn(
-            "runtime_feasibility_registry_binding_required",
+            "explicit_threshold_rule",
             result["reason_codes"],
         )
 
-    def test_trusted_asset_requires_exact_promoted_feature_contract(self) -> None:
+    def test_unused_valid_feature_does_not_veto_rule_inputs(self) -> None:
         asset, ledger, registry = _promoted_fixture()
         trusted = bind_trusted_production_calibration_to_registry(
             authorize_production_asset_with_trusted_ledger(asset, ledger),
@@ -164,11 +164,11 @@ class RuntimeRegistryBindingTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F4",
         )
-        self.assertEqual(result["status"], "unavailable")
-        self.assertIsNone(result["grade"])
-        self.assertIn("required_feature_contract_mismatch", result["reason_codes"])
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["grade"], "C")
+        self.assertIn("explicit_threshold_rule", result["reason_codes"])
 
-    def test_pipeline_rejects_unregistered_calibration_registry_before_creating_run_dir(self) -> None:
+    def test_pipeline_accepts_unregistered_schema_valid_registry_without_inference(self) -> None:
         asset, ledger, registry = _promoted_fixture()
         changed = copy.deepcopy(registry)
         changed["updated_at"] = "2026-08-13T05:00:00Z"
@@ -195,11 +195,11 @@ class RuntimeRegistryBindingTests(unittest.TestCase):
                     calibration_assets=[calibration_path],
                 ),
             )
-            with self.assertRaisesRegex(ValueError, "not authorized"):
-                run_pipeline(
-                    request, trusted_promotion_ledger_path=ledger_path
-                )
+            from rallymate_vision.pipeline import resolve_scoring_feasibility_registry
+            self.assertEqual(resolve_scoring_feasibility_registry(request), registry_path.resolve())
+            # No inference is needed to demonstrate acceptance of valid input.
             self.assertFalse(output_dir.exists())
+
 
 
 if __name__ == "__main__":

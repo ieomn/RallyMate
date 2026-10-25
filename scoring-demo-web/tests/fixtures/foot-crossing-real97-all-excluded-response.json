@@ -1,0 +1,119 @@
+{
+  "schema_version": "foot-crossing-candidates-response-v1",
+  "job_id": "66883aeb-e0c3-4065-80fd-f67aa108b208",
+  "status": "available",
+  "reason_code": "available_zero_candidates",
+  "identity": {
+    "input_bundle_sha256": "d8380a569ed7f357606840557679c18bb0a8b655d4b5c171e87f14eae9558226",
+    "source_job_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+    "video_id": "e4204ec3-7d84-4a90-a961-9dad01b43c2e",
+    "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+    "job_summary_sha256": "05f0596f88497aa2f20ba7043c4c83193095ab202c83119029cae477c2a0d6fe",
+    "source_binding": {
+      "document": {
+        "id": "CARD-FS",
+        "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+      },
+      "reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+      "reference_version": "scoring-reference-20261004"
+    },
+    "input_binding_mode": "verified_publication_snapshot",
+    "producer": {
+      "algorithm_version": "projected-ankle-order-candidates-v1.0.1",
+      "code": [
+        {
+          "name": "scripts/publish_foot_crossing_candidates.py",
+          "bytes": 19831,
+          "sha256": "c9c8177f9e8d791b68bc6e8fdc747394ca6d510464247c370efaeee7cf366c59"
+        },
+        {
+          "name": "src/rallymate_features/coordinates.py",
+          "bytes": 23658,
+          "sha256": "8b402e204cf9eb4357dcc5b174b3e3930d244fd0869de133434a7d8fed330e53"
+        },
+        {
+          "name": "src/rallymate_features/foot_crossing.py",
+          "bytes": 37126,
+          "sha256": "41f150d0141e9ca30dab9fee35e2a38b8d7453e1b8455ef11ccb0c6feee75934"
+        },
+        {
+          "name": "src/rallymate_features/schemas.py",
+          "bytes": 14148,
+          "sha256": "98dea8643591adb6e3cad5af67d2f8c9ad3a168930c971eec50cd1cddaaedff9"
+        },
+        {
+          "name": "src/rallymate_features/validity.py",
+          "bytes": 2116,
+          "sha256": "baee5cccdb5112d84d7a398df8ee00ed74060a7d7d9222795e763e944f1aecbe"
+        },
+        {
+          "name": "src/rallymate_scoring/data/technical_review_rules.json",
+          "bytes": 513143,
+          "sha256": "ec1d66b763222716c62774246f87508648eafa02b44120b4f1c7e765c1de8176"
+        },
+        {
+          "name": "src/rallymate_scoring/pose_observations.py",
+          "bytes": 6298,
+          "sha256": "981caaefab9686570ae233080983895eb37e2a22d15c427ed4690783f802b46d"
+        },
+        {
+          "name": "src/rallymate_scoring/source_assessment.py",
+          "bytes": 9111,
+          "sha256": "81ceaf31c8d76332c17b42ed279f1019267870ec8975c3cffaf83856b2732ad6"
+        },
+        {
+          "name": "src/rallymate_service/foot_crossing_candidates.py",
+          "bytes": 34270,
+          "sha256": "af3a6b0f10283e0bffb6b6d7f695e1c19ff2adba5ab4e108bc7d8fa654a65420"
+        },
+        {
+          "name": "src/rallymate_vision/pose/metadata.py",
+          "bytes": 5815,
+          "sha256": "b5725ab6466baf65adedf8c39e9386d35d0af5d8620d13f8bb0cbea9867b95f9"
+        }
+      ]
+    },
+    "artifact_sha256": "bc529a4ee3106eae2c92d649023f4f07e90d9ae675cce68b0daf7c348b999cd5",
+    "artifact_version": "foot-crossing-candidates-artifact-v1.0.1",
+    "algorithm_version": "projected-ankle-order-candidates-v1.0.1",
+    "inputs": {
+      "frames": {
+        "bytes": 138799669,
+        "sha256": "6fee1cf13414306ea8019960d777b6849c7d6a0dcb80701625bff9100fccafd7"
+      },
+      "events": {
+        "bytes": 6576156,
+        "sha256": "040c8ffdaeb02b207f792adf2203a6e2b2b9a25dd1f8ff3a5c1d172589cf4a7d"
+      },
+      "primary": {
+        "bytes": 1891825,
+        "sha256": "09a27e0fa7e67f7b55d336eb5c9f8c1e35ce030d137f7987b5d2bdbf6947bdeb"
+      }
+    },
+    "manifest_sha256": "ce986c6597dc482e2cdc4996d869fbd531f28b8557f30c14c65b7eea756580a7"
+  },
+  "counts": {
+    "frames": 2911,
+    "adjacent_sequence_pairs": 2910,
+    "candidates": 0,
+    "no_exchange": 0,
+    "excluded": 2910,
+    "candidate_quality": {},
+    "reasons": {
+      "source_time_binding_unavailable": 2910
+    }
+  },
+  "output_limits": {
+    "candidate_limit": 64,
+    "exclusion_limit": 16,
+    "retention": "first_in_source_sequence_order",
+    "candidates_truncated": false,
+    "exclusions_truncated": true,
+    "stored_candidate_count": 0,
+    "total_candidate_count": 0
+  },
+  "candidates": [],
+  "scoring_allowed": false,
+  "formal_step_verified": false,
+  "technical_grade": null
+}

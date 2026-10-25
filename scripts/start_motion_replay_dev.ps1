@@ -22,8 +22,10 @@ New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
 
 $env:PYTHONPATH = Join-Path $projectRoot 'src'
 $env:RALLYMATE_DATA_ROOT = Join-Path $projectRoot 'service_data'
-$env:RALLYMATE_MOTION_REPLAY_ENABLED = '1'
-$env:RALLYMATE_MOTION_REPLAY_AUTO_GENERATE = if ($NoAutoGeneration) { '0' } else { '1' }
+# Legacy entry point retained for local preview. Generated mannequin replay
+# has been retired; NoAutoGeneration remains accepted for old invocations.
+$env:RALLYMATE_MOTION_REPLAY_ENABLED = '0'
+$env:RALLYMATE_MOTION_REPLAY_AUTO_GENERATE = '0'
 # This local machine routes public CDN traffic through a fake-IP DNS proxy.
 # The provider only permits benchmark addresses for its exact official CDN.
 $env:RALLYMATE_MINIMAX_ALLOW_FAKEIP = '1'
@@ -53,6 +55,6 @@ for ($attempt = 0; $attempt -lt 30; $attempt++) {
 if (-not $ready) { throw 'The API has not become ready. Check the API log before retrying.' }
 $frontend = Start-Process -FilePath $nodeExecutable -ArgumentList @('node_modules/vinext/dist/cli.js', 'dev', '--hostname', '127.0.0.1', '--port', "$FrontendPort") -WorkingDirectory $webRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logRoot 'web.stdout.log') -RedirectStandardError (Join-Path $logRoot 'web.stderr.log')
 @{ apiPid = $backend.Id; frontendPid = $frontend.Id; apiPort = $ApiPort; frontendPort = $FrontendPort } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $logRoot 'processes.json') -Encoding utf8
-Write-Output "Motion replay API: http://127.0.0.1:$ApiPort"
+Write-Output "Training analysis API: http://127.0.0.1:$ApiPort"
 Write-Output "Development preview: http://127.0.0.1:$FrontendPort"
-Write-Output 'Existing analysis workers continue to handle uploaded videos; this preview runs the persistent motion-replay worker.'
+Write-Output 'Generated mannequin replay is retired. This preview starts no replay worker or automatic generation; existing analysis workers continue handling uploads.'
