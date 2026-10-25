@@ -27,34 +27,40 @@ function motion(label, options = {}) {
 }
 const first = (value = report(), movement = null) => trainingGuidance(value, movement)[0];
 
-test("unknown motion gets a usable general drill, not a forehand diagnosis", () => {
-  const row = first();
-  assert.match(row.nextStep, /通用练习（并非已诊断的缺陷）/);
-  assert.match(row.nextStep, /动作类型待确认/);
-  assert.match(row.nextStep, /小场地.*低速球.*目标区.*2 组.*5 球/);
-  assert.match(row.nextStep, /这组只关注/);
-  assert.match(row.nextStep, /同样来球和目标复测 10 球/);
-  assert.doesNotMatch(row.nextStep, /你的正手|正手存在|需要增加转体|最大屈膝|强拧手腕/);
+test("ungraded observations produce a concrete drill and comparable retest without a diagnosis", () => {
+  const row = first(report({ feature: "unmapped_measurement" }));
+  assert.match(row.drill, /小场地.*低速球.*目标区.*2 组.*5 球/);
+  assert.match(row.retest, /同样来球和目标复测 10 球/);
+  assert.ok(row.goal && row.observation);
+  assert.doesNotMatch(row.nextStep, /你的正手|正手存在|需要增加转体|最大屈膝|强拧手腕|原文|Word|候选|P0080/);
   assert.equal(row.evidenceState, "observation");
-  assert.match(row.limitation, /不能单独判定技术好坏/);
+  assert.match(row.limitation, /不据此认定动作缺陷/);
 });
 
-test("known stroke candidates select conditional matching demonstrations without changing evidence", () => {
+test("head height and speed never select arm correction or a swing-speed conclusion", () => {
+  for (const feature of ["head_center_speed_body_s", "head_to_shoulders_distance_torso", "head_center_y_body"]) {
+    const row = first(report({ feature }));
+    assert.match(row.title, /看球/);
+    assert.match(row.drill, /抛接慢球/);
+    assert.doesNotMatch(row.title + row.goal + row.drill + row.observation, /手臂|挥拍速度|伸肘|甩腕/);
+  }
+});
+
+test("known stroke labels select a conditional matching drill without asserting a diagnosis", () => {
   for (const [label, name, source] of [["forehand", "正手", "forehand"], ["two_handed_backhand", "双手反手", "backhand"], ["backhand", "单手反手", "backhand"]]) {
-    const row = first(report(), motion(label));
-    assert.match(row.nextStep, new RegExp(`若原片确认是${name}`));
-    assert.match(row.nextStep, new RegExp(`熟悉的${name}握拍`));
+    const row = first(report({ feature: "left_elbow_angle_deg" }), motion(label));
+    assert.match(row.drill, new RegExp(`如果本段练的是${name}`));
+    assert.match(row.drill, new RegExp(`熟悉的${name}握拍`));
     assert.ok(row.source_links.some(item => item.url.endsWith(`learning-the-basics--${source}.html`)));
-    assert.match(row.nextStep, /记录落入目标区的次数/);
+    assert.match(row.retest, /记录落入目标区的次数/);
     assert.equal(row.evidenceState, "observation");
   }
 });
 
-test("serve practice is toss-first and does not prescribe a groundstroke or forced wrist action", () => {
+test("serve practice is toss-first with its own retest", () => {
   const row = first(report(), motion("serve_motion"));
-  assert.match(row.nextStep, /若原片确认是在练发球/);
-  assert.match(row.nextStep, /先不挥拍.*2 组.*5 次抛球/);
-  assert.match(row.nextStep, /同一站位再做 10 次/);
+  assert.match(row.drill, /如果本段在练发球.*先不挥拍.*2 组.*5 次抛球/);
+  assert.match(row.retest, /同一站位再做 10 次/);
   assert.doesNotMatch(row.nextStep, /小场地|正手|反手|甩腕|压腕|强拧|最大/);
   assert.equal(row.source_links[0].url, "https://www.lta.org.uk/play/tennis-tips-and-techniques/how-to-hit-a-serve-for-beginners/");
 });
@@ -63,28 +69,38 @@ test("unclassified, unrelated and conflicting episodes never borrow a stroke lab
   const mixed = motion("forehand");
   mixed.families.baseline.episodes.push(motion("backhand").families.baseline.episodes[0]);
   for (const data of [motion("forehand", { classification: { label: "forehand", status: "unclassified", label_zh: "正手？" } }), motion("forehand", { start_ms: 2500, end_ms: 3500 }), mixed, motion("return_motion")]) {
-    assert.match(first(report(), data).nextStep, /动作类型待确认/);
+    assert.doesNotMatch(first(report({ feature: "left_elbow_angle_deg" }), data).nextStep, /正手|反手|发球/);
   }
 });
 
-test("footwork practice has one recovery target and same-task retest without penalizing open stance", () => {
+test("footwork keeps a measurable recovery target without prescribing closed stance", () => {
   const row = first(report({ event: "FS02", feature: "stance_width_body" }));
-  assert.match(row.nextStep, /这组只关注“回到标记等下一球”/);
-  assert.match(row.nextStep, /不追求站死不动/);
-  assert.match(row.nextStep, /同样喂球与标记复测 10 球/);
+  assert.match(row.drill, /小步调整.*回到标记/);
+  assert.match(row.drill, /不要求双脚站死/);
+  assert.match(row.retest, /复测 10 球.*次数/);
   assert.doesNotMatch(row.nextStep, /站距不足|开放式站姿错误|站距必须|屈膝不足/);
 });
 
-test("no measurement adds practice and capture instructions without converting missingness to a defect", () => {
+test("no measurement offers a baseline practice and keeps missingness separate from defects", () => {
   const rows = trainingGuidance(report({ measured: false }));
   assert.ok(rows.length > 0);
   for (const row of rows) {
     assert.equal(row.evidenceState, "unavailable");
-    assert.match(row.nextStep, /通用练习.*复测.*复拍时/);
-    assert.match(row.limitation, /缺少证据不代表动作没有发生/);
-    assert.match(row.nextStep, /起步安排/);
+    assert.match(row.drill, /2 组.*5 球/);
+    assert.match(row.retest, /10 球/);
+    assert.match(row.limitation, /当前测量不足/);
+    assert.match(row.detail, /固定机位/);
   }
   assert.deepEqual(trainingGuidance(null), []);
+});
+
+test("forged cached low scores cannot produce a personal shortfall", () => {
+  const value = report({ feature: "head_center_speed_body_s" });
+  value.card_execution = { version: "card-execution-v1.0.0", source_run_id: value.job_id, scoring_policy_version: "automatic-formal-card-scoring-v2.0.0", overall_score: 0,
+    cards: [{ indicator_id: "FS01-M02", event_code: "FS01", instances: [{ status: "scored", score: 0, conditions: [{ metric: "hip_drop_torso", value: 0, threshold: .03, passed: false }] }] }] };
+  const row = first(value);
+  assert.doesNotMatch(row.observation, /低于|高于|未达/);
+  assert.match(row.title, /看球/);
 });
 
 test("only allowlisted static official links are returned and callers cannot mutate later suggestions", () => {
@@ -93,6 +109,7 @@ test("only allowlisted static official links are returned and callers cannot mut
     "https://www.usta.com/en/home/improve/tips-and-instruction/national/learning-the-basics--forehand.html",
     "https://www.usta.com/en/home/improve/tips-and-instruction/national/learning-the-basics--backhand.html",
     "https://www.lta.org.uk/play/tennis-tips-and-techniques/how-to-hit-a-serve-for-beginners/",
+    "https://www.lta.org.uk/play/tennis-tips-and-techniques/improve-your-tennis-footwork-on-court-with-these-simple-tips/",
   ]);
   const value = report(); value.source_links = [{ title: "untrusted", url: "javascript:alert(1)" }];
   for (const label of ["unclassified", "forehand", "backhand", "two_handed_backhand", "serve_motion"]) {
@@ -102,4 +119,19 @@ test("only allowlisted static official links are returned and callers cannot mut
     row.source_links[0].url = "https://not-official.invalid/";
     assert.ok(permitted.has(first(value, motion(label)).source_links[0].url));
   }
+});
+
+test("validated real scored shortfalls drive practice while cross-job or corrupted scores cannot", () => {
+  const raw = JSON.parse(fs.readFileSync(new URL("./fixtures/temporal-formal-real-0a3-contract.json", import.meta.url), "utf8")).report;
+  const value = { job_id: raw.source_run_id, input: { video: { duration_ms: 1000000 } }, card_execution: raw };
+  const rows = trainingGuidance(value);
+  assert.ok(rows.some(row => row.id.startsWith("scored:")));
+  assert.match(rows.map(row => row.observation).join(""), /低于本项参考/);
+  assert.ok(rows.every(row => row.drill && row.retest && row.goal));
+  assert.ok(rows.every(row => row.moment));
+  assert.doesNotMatch(rows.map(row => row.observation).join(""), /技术错误|屈膝不足|你的动作有问题|原文|Word/);
+  assert.ok(trainingGuidance({ ...value, job_id: "different-job" }).every(row => !row.id.startsWith("scored:")));
+  const corrupt = structuredClone(value);
+  for (const card of corrupt.card_execution.cards) for (const instance of card.instances) instance.score = 0;
+  assert.ok(trainingGuidance(corrupt).every(row => !row.id.startsWith("scored:")));
 });

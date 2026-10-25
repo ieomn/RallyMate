@@ -85265,7 +85265,7 @@
         "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
         "extractor_status": "registry_and_runtime_evidence_required",
         "engine": "rallymate_scoring.temporal_card_evidence.compute_temporal_card_evidence",
-        "engine_version": "temporal-card-evidence-v1.0.0",
+        "engine_version": "temporal-card-evidence-v1.0.1",
         "requires_joint_subwindow": true
       },
       "quality_policy": {
@@ -86182,7 +86182,7 @@
         "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
         "extractor_status": "registry_and_runtime_evidence_required",
         "engine": "rallymate_scoring.temporal_card_evidence.compute_temporal_card_evidence",
-        "engine_version": "temporal-card-evidence-v1.0.0",
+        "engine_version": "temporal-card-evidence-v1.0.1",
         "requires_joint_subwindow": true
       },
       "quality_policy": {
@@ -97170,7 +97170,7 @@
         "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
         "extractor_status": "registry_and_runtime_evidence_required",
         "engine": "rallymate_scoring.temporal_card_evidence.compute_temporal_card_evidence",
-        "engine_version": "temporal-card-evidence-v1.0.0",
+        "engine_version": "temporal-card-evidence-v1.0.1",
         "requires_joint_subwindow": true
       },
       "quality_policy": {
@@ -97492,7 +97492,7 @@
         "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
         "extractor_status": "registry_and_runtime_evidence_required",
         "engine": "rallymate_scoring.temporal_card_evidence.compute_temporal_card_evidence",
-        "engine_version": "temporal-card-evidence-v1.0.0",
+        "engine_version": "temporal-card-evidence-v1.0.1",
         "requires_joint_subwindow": true
       },
       "quality_policy": {
@@ -97825,7 +97825,7 @@
         "limitation": "只评价所列二维运动条件，不等于完整原文行为或技术质量。",
         "extractor_status": "registry_and_runtime_evidence_required",
         "engine": "rallymate_scoring.temporal_card_evidence.compute_temporal_card_evidence",
-        "engine_version": "temporal-card-evidence-v1.0.0",
+        "engine_version": "temporal-card-evidence-v1.0.1",
         "requires_joint_subwindow": true
       },
       "quality_policy": {

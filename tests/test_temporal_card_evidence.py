@@ -68,6 +68,41 @@ class TemporalCardEvidenceTests(unittest.TestCase):
         clear_source_aligned_feature_cache()
         self.addCleanup(clear_source_aligned_feature_cache)
 
+    def test_stability_axis_endpoint_reversal_cannot_manufacture_angular_braking(self):
+        sequence, events, timeline = fixture()
+        before = card(compute_temporal_card_evidence(sequence, events[2], events=events,
+                      primary_timeline=timeline), "FS09-M04")
+        # Same image-plane line and centre, opposite endpoint labels in the
+        # first source frame. The old directed unwrap invented 4500 deg/s.
+        index = int(np.flatnonzero(sequence.timestamp_ms == events[2]["key_phases_ms"]["deceleration_peak_ms"])[0])
+        for name in ("shoulder", "hip"):
+            left, right = sequence.keypoints_xy[f"left_{name}"], sequence.keypoints_xy[f"right_{name}"]
+            left[index], right[index] = right[index].copy(), left[index].copy()
+        clear_source_aligned_feature_cache()
+        after = card(compute_temporal_card_evidence(sequence, events[2], events=events,
+                     primary_timeline=timeline), "FS09-M04")
+        self.assertEqual(before["status"], "measured_visual_proxy")
+        self.assertEqual(after["status"], "measured_visual_proxy")
+        self.assertAlmostEqual(before["measurements"]["shoulder_hip_angular_speed_drop_deg_s"], 0)
+        self.assertAlmostEqual(after["measurements"]["shoulder_hip_angular_speed_drop_deg_s"], 0)
+        self.assertEqual([c["passed"] for c in before["conditions"]], [c["passed"] for c in after["conditions"]])
+
+    def test_real_axis_rotation_and_180_degree_wrap_preserve_observed_angular_drop(self):
+        for offset in (0, 80):
+            with self.subTest(offset=offset):
+                sequence, events, timeline = fixture()
+                for index, degrees in zip(range(24, 31), (0, 20, 35, 45, 50, 54, 57)):
+                    center = (sequence.keypoints_xy["left_shoulder"][index] + sequence.keypoints_xy["right_shoulder"][index]) / 2
+                    radians = np.deg2rad(offset + degrees)
+                    half_axis = .2 * np.array([np.cos(radians), np.sin(radians)])
+                    sequence.keypoints_xy["left_shoulder"][index] = center - half_axis
+                    sequence.keypoints_xy["right_shoulder"][index] = center + half_axis
+                clear_source_aligned_feature_cache()
+                row = card(compute_temporal_card_evidence(sequence, events[2], events=events,
+                           primary_timeline=timeline), "FS09-M04")
+                self.assertEqual(row["status"], "measured_visual_proxy")
+                self.assertAlmostEqual(row["measurements"]["shoulder_hip_angular_speed_drop_deg_s"], 425)
+
     def test_interval_thresholds_survive_report_evidence_transport(self):
         from rallymate_service.report_evidence_transport import pack_report_evidence, unpack_report_evidence
 

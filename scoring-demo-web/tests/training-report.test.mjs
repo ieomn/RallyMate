@@ -71,10 +71,10 @@ test("server focus keeps its evidence semantics and only links a validated repla
 test("report overview and timeline remain visible while calculations and process start folded", () => {
   const result = { ...motionResult(), analysis_report: serverReport(), footwork_review: footwork() };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /这次先关注/);
+  assert.match(html, /下一次怎么练/);
   assert.match(html, /训练时间线/);
   assert.match(html, /class="report-timeline" id="timeline"/);
-  assert.match(html, /先回看启动/);
+  assert.match(html, /本次观察/); assert.match(html, /复测标准/);
   assert.match(html, /<details class="report-disclosure" id="rules"><summary>/);
   assert.match(html, /<details class="report-layer-details"><summary>/);
   assert.match(html, /查看局部连续测量/);
@@ -93,7 +93,7 @@ test("readable export and JSON preserve new report context and independent measu
   const result = { ...motionResult(), job_id: "report-job-1", analysis_report: serverReport(), footwork_review: footwork() };
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const markdown = renderReportMarkdown(buildPracticeReport(input));
-  assert.match(markdown, /先回看启动/);
+  assert.match(markdown, /已有观察.*练习.*复测/);
   assert.match(markdown, /移动距离：0\\.2 body/);
   assert.match(markdown, /目标方向：未提供/);
   assert.match(markdown, /24 °/);
@@ -125,7 +125,7 @@ test("actual 298-card evidence supplies one validated total without exposing int
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const readable = buildPracticeReport(input), markdown = renderReportMarkdown(readable);
   assert.doesNotMatch(markdown, /逐卡计算|逐卡视频实例|原文目录|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}/);
-  assert.ok(readable.sections.some(row => row.title === `训练评分：${Number(expected.overall_score.toFixed(3))} / 100`));
+  assert.ok(readable.sections.some(row => row.title === `步伐动作得分：${Number(expected.overall_score.toFixed(3))} / 100`));
   const serialized = JSON.stringify(buildReportBackup(input));
   const restored = await readReportJson({ size: Buffer.byteLength(serialized), text: async () => serialized });
   assert.equal(restored.result.card_execution.cards.length, 298);

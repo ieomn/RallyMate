@@ -6,6 +6,7 @@ import "./product-report.css";
 import "./product-analysis.css";
 import "./product-motion.css";
 import "./training-replay.css";
+import "./replay-clips.css";
 import "./process-score.css";
 import "./training-summary.css";
 import "./welcome/marketing.css";

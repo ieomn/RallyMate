@@ -117,12 +117,22 @@ export type JobStatus =
   | "failed"
   | "cancelled";
 
-/** File identity validated by the service; no report-clock mapping is implied. */
+export interface OriginalPoseTimeBinding {
+  version: "original-video-decoder-pts-v1";
+  job_id: string; source_job_id: string; video_sha256: string; frames_sha256: string;
+  timestamp_semantics: "source_relative_decoder_pts";
+  source_pts_origin_ms: number; media_time_origin_ms: 0;
+  anchor: { index: number; processed_index: number; pts: number; time_base_num: number;
+    time_base_den: number; source_timestamp_ms: number; timestamp_ms: number };
+}
+
+/** File identity; source-clock authorization requires the separate PTS binding. */
 export interface OriginalVideo {
   url: string;
   sha256: string;
   bytes: number;
   source_job_id: string;
+  pose_time_binding?: OriginalPoseTimeBinding;
 }
 
 /** Shape used by the production /v1/jobs endpoint. Unknown additions are kept. */
@@ -182,7 +192,51 @@ export interface Sam3dMeshPreview {
   renderer: "official-sam3d-pyrender-persistent-context";
 }
 
+export interface SwingKinematicsMetric {
+  value: number | null;
+  unit: "deg" | "deg/s" | "torso/s";
+  timestamp_ms: number | null;
+  source_frames: number[];
+  window_start_ms: number | null;
+  window_end_ms: number | null;
+  status: "estimated" | "unavailable";
+}
+
+export interface SwingKinematicsEpisode {
+  episode_id: string;
+  start_ms: number;
+  end_ms: number;
+  person_track_id: number;
+  racket_hand: "left" | "right" | null;
+  frame_count: number;
+  valid_frame_count: number;
+  coverage: number;
+  reason_zh: string;
+  quality_reason_counts: Record<string, number>;
+  metrics: Record<"shoulder_hip_separation_deg" | "hip_angular_speed_deg_s" | "shoulder_angular_speed_deg_s" | "wrist_speed_torso_s", SwingKinematicsMetric>;
+}
+
+export interface SwingKinematicsReport {
+  version: "sam3d-swing-kinematics-v1";
+  status: "available" | "partial" | "unavailable";
+  source_run_id: string | null;
+  source_video_sha256: string | null;
+  source_timestamp_semantics: "original_decoder_pts";
+  coordinate_system: "sam3d_pred_keypoints_3d";
+  coordinate_units: "model_units";
+  wrist_reference: "midhip_relative_fixed_median_torso_per_continuous_window";
+  camera_reference: "same_camera_epoch_uncalibrated_monocular_estimate";
+  camera_rotation_compensated: false;
+  cross_video_absolute_speed_comparable: false;
+  measurement_semantics: "monocular_3d_model_estimate";
+  score: null;
+  reason_zh: string;
+  episodes: SwingKinematicsEpisode[];
+  limitations_zh: string[];
+}
+
 export interface DemoResultResponse {
+  swing_kinematics?: SwingKinematicsReport;
   original_video?: OriginalVideo | null;
   sam3d_mesh?: Sam3dMeshPreview | null;
   sam3d_mesh_status?: "ready" | "pending" | "failed" | "unavailable";
@@ -602,7 +656,7 @@ export interface PosePreviewFrame {
   keypoints: Array<{ name: string; x: number; y: number; confidence: number | null; source?: "observed" | "interpolated" | "model_estimate"; anchors?: PoseDisplayAnchors;
     score_semantics?: "rtmpose_simcc_response_clipped_for_display"; raw_confidence?: number;
     confidence_semantics?: "not_provided_by_sam3d"; observation_semantics?: "model_estimate";
-    in_frame?: boolean; raw_x_px?: number; raw_y_px?: number;
+    in_frame?: boolean; raw_x_px?: number; raw_y_px?: number; native_index?: number;
   }>;
   observed_person_track_id?: number | null;
   observed_selection_epoch?: number;
@@ -616,7 +670,7 @@ export interface PosePreviewResponse {
   status?: string;
   reason_zh?: string;
   coordinate_space: "normalized_frame_0_1";
-  joint_schema: "halpe26_named";
+  joint_schema: "halpe26_named" | "mhr70_named";
   min_keypoint_confidence?: number;
   skeleton_edges: Array<[string, string]>;
   source: {

@@ -1,0 +1,95 @@
+{
+  "schema_version": "scoring-ranking-audit-v1.0.0",
+  "recorded_on": "2026-10-26",
+  "purpose": "Reproducible counterexample audit. These labels are evaluation metadata and never scoring inputs.",
+  "acceptance_target": "Professional performance should outrank ordinary play on a matched, independently validated technique benchmark.",
+  "acceptance_status": "not_met",
+  "professional_skill_ranking_verified": false,
+  "current_score_semantics": "automatic-formal-card-scoring-v2.0.0 condition completion on five footwork cards; no swing-power score",
+  "matched_indicator_ids": [
+    "FS01-M02",
+    "FS01-M05",
+    "FS09-M03",
+    "FS09-M04",
+    "FS09-M05"
+  ],
+  "ordinary_labels_source": "User explicitly identified the provided reference and FULL-TEST videos as ordinary players with mixed skill.",
+  "ordinary_runs": [
+    {
+      "job_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "current_condition_score": 52.18228772990678
+    },
+    {
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "current_condition_score": 44.54497354497355
+    }
+  ],
+  "professional_runs": [
+    {
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "processed_frames": 601,
+      "elapsed_seconds": 147.911,
+      "overall_condition_completion": 43.523809523809526,
+      "scored_cards": 5,
+      "scored_instances": 28,
+      "per_card": {
+        "FS01-M02": 40.0,
+        "FS01-M05": 60.0,
+        "FS09-M03": 64.28571428571429,
+        "FS09-M04": 33.333333333333336,
+        "FS09-M05": 20.0
+      },
+      "swing_3d_measured_episode_count": 2,
+      "player": "Maria Sharapova",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Maria_Sharapova_on_Amelia_Island.ogv",
+      "author": "javajoba (Jack Kennard)",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "original_sha256": "c3a0f0ebf448c0a1ee4352b75aef8b1cf7bc500bbbeef524c90c7524207eaa63",
+      "source_interval_seconds": [
+        0,
+        20.053367
+      ],
+      "source_dimensions": [
+        500,
+        375
+      ]
+    },
+    {
+      "job_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "processed_frames": 575,
+      "elapsed_seconds": 159.424,
+      "overall_condition_completion": 39.198412698412696,
+      "scored_cards": 5,
+      "scored_instances": 35,
+      "per_card": {
+        "FS01-M02": 53.333333333333336,
+        "FS01-M05": 44.44444444444445,
+        "FS09-M03": 60.714285714285715,
+        "FS09-M04": 37.5,
+        "FS09-M05": 0.0
+      },
+      "swing_3d_measured_episode_count": 2,
+      "player": "Rafael Nadal",
+      "source_url": "https://www.youtube.com/watch?v=W8JJJ2j5hOM",
+      "publisher": "ATP Tour",
+      "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+      "source_interval_seconds": [
+        8,
+        31
+      ],
+      "prior_download_provenance": "tests/fixtures/card-video-cases-heldout-20261022.json"
+    }
+  ],
+  "limits": [
+    "No matched camera, stroke, exercise intensity or player-size controls.",
+    "Two short professional clips are not a skill-labelled independent validation set.",
+    "Current five footwork conditions favor some low-motion and short-transition windows; they do not measure stroke power.",
+    "3D observations reuse monocular model output and cannot establish physical force or cross-camera absolute-speed ranks."
+  ],
+  "reproduction": {
+    "command": "python scripts/compare_scoring_runs.py LEFT_RUN RIGHT_RUN --output OUTPUT.json",
+    "gpu_inference_required_for_rescoring": false
+  }
+}

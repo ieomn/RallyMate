@@ -14,6 +14,7 @@ function compiledUrl(fileUrl) {
   js = js.replace(/from "([^"]+)"/g, (_match, name) => { const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl); return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`; });
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`; cache.set(fileUrl.href, url); return url;
 }
+const { productText } = await import(compiledUrl(new URL("../app/lib/presentation-text.ts", import.meta.url)));
 const { indicatorAssessmentOf } = await import(compiledUrl(new URL("../app/lib/indicator-assessment.ts", import.meta.url)));
 const { default: IndicatorAssessmentPanel } = await import(compiledUrl(new URL("../app/IndicatorAssessmentPanel.tsx", import.meta.url)));
 const { trainingGuidance } = await import(compiledUrl(new URL("../app/lib/training-guidance.ts", import.meta.url)));
@@ -147,7 +148,8 @@ test("implementation reasons remain in internal UI and JSON without leaking card
   assert.equal(parsed.indicators[0].status, "event_type_unresolved");
   assert.deepEqual(parsed.indicators[0].blockers, blockers);
   assert.match(render(raw), /算法尚未支持该类型/);
-  assert.match(render(raw), /完整原文动作条件及 A～E 自动判定尚未实现并验证/);
+  assert.match(render(raw), /完整动作条件及 A～E 自动判定尚未实现并验证/);
+  assert.doesNotMatch(render(raw), /原文/);
   const result = { ...samSource, indicator_assessment: raw };
   const input = { mode: "live", uploadState: "complete", evidence: { result, jobId: result.job_id } };
   const report = buildPracticeReport(input);
@@ -161,7 +163,7 @@ test("implementation reasons remain in internal UI and JSON without leaking card
 
 test("unsupported labels preserve source conflicts, missing boundaries and existing measurement states", () => {
   const gap = { code: "event_type_recognizer_not_implemented", message_zh: "当前自动识别尚未实现。" };
-  for (const [status, label] of [["source_rule_conflict", "原文规则待修订"], ["source_boundaries_missing", "原文阶段边界缺失"], ["legacy_proxy_measured", "已有历史代理测量"]]) {
+  for (const [status, label] of [["source_rule_conflict", "动作要求待明确"], ["source_boundaries_missing", "阶段边界不完整"], ["legacy_proxy_measured", "已有历史代理测量"]]) {
     const parsed = indicatorAssessmentOf(assessment({ indicators: [indicator({ status, blockers: [gap] })] }));
     assert.equal(parsed.indicators[0].status_label_zh, label);
     assert.deepEqual(parsed.indicators[0].observation_ids, ["motion:one"]);
@@ -191,7 +193,7 @@ test("an observed candidate with insufficient evidence keeps its reason through 
   const html = render(raw);
   assert.match(html, /class="indicator-state">当前证据不足<\/span>/);
   assert.ok(html.includes(explanation));
-  for (const blocker of blockers) assert.ok(html.includes(blocker.message_zh));
+  for (const blocker of blockers) assert.ok(html.includes(productText(blocker.message_zh)));
   assert.doesNotMatch(html, /class="indicator-state">算法尚未支持该类型|class="indicator-observation"/);
   const result = { job_id: "test-job-12345678", input: { video: { duration_ms: 3000 } }, indicator_assessment: raw };
   const input = { mode: "live", uploadState: "complete", job: { id: result.job_id, status: "completed" }, evidence: { result, jobId: result.job_id } };
@@ -246,17 +248,17 @@ test("display sampling preserves full counts and explicitly labels representativ
 test("guidance and portable exports retain partial evidence without assigning full-stage values or technical errors", () => {
   const result = { job_id: "test-job-12345678", input: { video: { duration_ms: 3000 } }, indicator_assessment: assessment() };
   const guidance = trainingGuidance(result);
-  assert.match(guidance[0].detail, /1 段局部测量/); assert.equal(guidance[0].moment.startMs, 1100); assert.equal(guidance[0].moment.endMs, 1400);
+  assert.match(guidance[0].detail, /1 段测量/); assert.equal(guidance[0].moment.startMs, 1100); assert.equal(guidance[0].moment.endMs, 1400);
   assert.doesNotMatch(guidance[0].detail, /动作错误|动作正确|技术好|NaN|null/);
   const input = { mode: "live", uploadState: "complete", job: { id: result.job_id, status: "completed" }, evidence: { jobId: result.job_id, result } };
   const report = buildPracticeReport(input);
   assert.ok(report.sections.every(item => !["完整指标判定", "指标观测与视频依据", "局部连续测量片段"].includes(item.title)));
-  assert.match(JSON.stringify(report.sections), /1 段局部测量/);
+  assert.match(JSON.stringify(report.sections), /1 段测量/);
   const backup = buildReportBackup(input);
   assert.deepEqual(indicatorAssessmentOf(backup.result.indicator_assessment), indicatorAssessmentOf(result.indicator_assessment));
 });
 
-test("training suggestions translate feature keys and body-scale units while unknown keys use the indicator name", () => {
+test("training suggestions translate feature keys and body-scale units while unknown keys retain an honest generic label", () => {
   const describe = overrides => trainingGuidance({ indicator_assessment: assessment({ observations: [observation({ value: 4.67, ...overrides })] }) })[0].detail;
   const speed = describe({ feature_name: "body_center_speed_body_s", label_zh: "body_center_speed_body_s", unit: "body/s" });
   assert.match(speed, /身体中心移动速度为 4.67 身体尺度\/秒/); assert.doesNotMatch(speed, /body_center|body\/s/);
@@ -265,11 +267,11 @@ test("training suggestions translate feature keys and body-scale units while unk
   const stance = describe({ feature_name: "stance_width_body", label_zh: "stance_width_body", unit: "body" });
   assert.match(stance, /双脚站距为 4.67 身体尺度/);
   const unknown = describe({ feature_name: "unknown_future_feature", label_zh: "unknown_future_feature", unit: "unknown_unit" });
-  assert.match(unknown, /双手持拍测量值为 4.67/); assert.doesNotMatch(unknown, /unknown_future_feature|unknown_unit/);
+  assert.match(unknown, /动作测量值为 4.67/); assert.doesNotMatch(unknown, /unknown_future_feature|unknown_unit/);
   const localized = describe({ feature_name: "new_measure", label_zh: "已有中文测量名称", unit: "毫秒" });
   assert.match(localized, /已有中文测量名称为 4.67 毫秒/);
   const partial = describe({ feature_name: "unknown_future_feature", label_zh: "unknown_future_feature", value: null });
-  assert.match(partial, /双手持拍测量值取得 1 段局部测量/); assert.doesNotMatch(partial, /unknown_future_feature/);
+  assert.match(partial, /动作测量值取得 1 段测量/); assert.doesNotMatch(partial, /unknown_future_feature/);
 });
 
 test("actual FS01 and FS02 samples retain calculation, paragraph, frames and local evidence through parsing and backup", () => {
@@ -284,7 +286,7 @@ test("actual FS01 and FS02 samples retain calculation, paragraph, frames and loc
   const restored = JSON.parse(JSON.stringify(buildReportBackup(input))).result;
   assert.deepEqual(indicatorAssessmentOf(restored.indicator_assessment), parsed);
   const html = render(actualSource.indicator_assessment, { durationMs: 98000 });
-  assert.match(html, /计算与来源/); assert.match(html, /P0080/); assert.match(html, /相邻有效帧累计路程/);
+  assert.match(html, /计算说明/); assert.doesNotMatch(html, /P0080|原文/); assert.match(html, /相邻有效帧累计路程/);
   assert.match(html, /未确认正式垫步前阶段/); assert.match(html, /24 \/ 58 条代表观测/);
   assert.match(html, /技术等级尚未判定/); assert.doesNotMatch(html, /<details[^>]*open|技术等级暂未标定|"used_adjacent_source_frame_pairs"/);
 });
@@ -336,7 +338,7 @@ test("real SAM source observations retain source clocks, geometry and unknown vi
     return (await readReportJson({ size: Buffer.byteLength(text), text: async () => text })).result; };
   assert.deepEqual(indicatorAssessmentOf((await backup(await backup(samSource))).indicator_assessment), parsed);
   const html = render(samSource.indicator_assessment, { durationMs: 97033 });
-  assert.match(html, /SAM 单目模型估计/); assert.match(html, /模型几何覆盖/); assert.match(html, /原文可见性已验证/);
+  assert.match(html, /SAM 单目模型估计/); assert.match(html, /模型几何覆盖/); assert.match(html, /不代表真实可见性已验证/);
   assert.doesNotMatch(html, /局部窗口关节.*仅为可见性门槛/);
 });
 
@@ -381,7 +383,7 @@ test("recomputed numeric proxy grades remain visible without becoming source gra
     indicators: [indicator({ grade: { status: "proxy_scored", semantics: "explicit_numeric_proxy_not_complete_source_grade", events } })], observations: [] }),
   }));
   assert.match(html, /B 级 1 次/);
-  assert.match(html, /不计入原卡完整判级/);
+  assert.match(html, /仅描述本次可计算项目/);
 });
 
 test("proxy event conflicts or missing semantics never produce a displayed grade", () => {

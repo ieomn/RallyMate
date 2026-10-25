@@ -31,10 +31,10 @@ export function footCrossingCandidateKey(candidate: FootCrossingCandidate): stri
 export function footCrossingParentSourceNotes(candidate: FootCrossingCandidate): string[] {
   const counts = candidate.parent_source_association_counts;
   const notes: string[] = [];
-  if (counts.weak_source_track_association) notes.push(`${counts.weak_source_track_association} 个父事件仅弱来源关联；局部疑点供复核，未完成双帧来源验证。`);
-  if (counts.mismatch) notes.push(`${counts.mismatch} 个父事件来源不一致，已排除其否决和疑点判定作用；当前候选仍保留。`);
-  if (counts.unverified) notes.push(`${counts.unverified} 个父事件缺少可用来源关联，未用于否决或疑点判定。`);
-  if (counts.pair_source_bindings_verified) notes.push(`${counts.pair_source_bindings_verified} 个父事件的双帧来源绑定核对一致；这不证明实际身份或动作正确。`);
+  if (counts.weak_source_track_association) notes.push(`${counts.weak_source_track_association} 个关联片段尚未完成双帧来源验证，仅保留局部提示。`);
+  if (counts.mismatch) notes.push(`${counts.mismatch} 个关联片段来源不一致，已排除其判断影响；当前换序线索仍保留。`);
+  if (counts.unverified) notes.push(`${counts.unverified} 个关联片段缺少可用来源，未参与异常判断。`);
+  if (counts.pair_source_bindings_verified) notes.push(`${counts.pair_source_bindings_verified} 个关联片段的双帧来源核对一致；来源校验不代替动作判定。`);
   return notes;
 }
 
@@ -120,7 +120,7 @@ export function createFootCrossingPanelController(initialContext?: FootCrossingP
         identityKey: footCrossingIdentityKey(response.identity), candidateKey: footCrossingCandidateKey(candidate),
         videoSha256: response.identity.video_sha256, videoTimestampMs: candidate.source_bindings[0].video_timestamp_ms }, controller.signal);
       publish({ ...state, message: result.status === "rejected" ? "当前媒体无法可靠定位到此原帧。"
-        : result.status === "pending" ? "等待当前回放就绪；切换候选或收起依据会取消定位。"
+        : result.status === "pending" ? "等待当前回放就绪；切换区间或收起依据会取消定位。"
           : "已定位到该区间起点。" });
     } catch {
       cancelSeek();
@@ -135,11 +135,11 @@ export function createFootCrossingPanelController(initialContext?: FootCrossingP
 
 const unavailableText: Record<string, string> = {
   not_computed: "这份任务未保存此独立计算，不能据此判断有无交叉步。",
-  artifact_unavailable: "已登记的候选文件暂时不可读取。",
-  binding_conflict: "候选来源与当前报告不一致，已停止展示。",
-  unsupported_version: "这份候选的版本暂不受支持。",
-  invalid_artifact: "候选文件未通过完整性核对，已停止展示。",
-  limit_exceeded: "候选文件超出按需读取上限，暂不展示。",
+  artifact_unavailable: "已登记的换序记录暂时不可读取。",
+  binding_conflict: "换序记录来源与当前报告不一致，已停止展示。",
+  unsupported_version: "这份记录的版本暂不受支持。",
+  invalid_artifact: "换序记录未通过完整性核对，已停止展示。",
+  limit_exceeded: "换序记录超出按需读取上限，暂不展示。",
 };
 /** Display the saved coverage only; excluded pairs never imply a negative finding. */
 export function FootCrossingCoverageSummary({ response }: {
@@ -151,14 +151,14 @@ export function FootCrossingCoverageSummary({ response }: {
     && reason !== "strict_projected_order_exchange" && reason !== "same_projected_order");
   return <>
     <p>帧数 {counts.frames} · 相邻帧对 {counts.adjacent_sequence_pairs} 对 · 可判定帧对 {assessablePairs} 对
-      （候选 {counts.candidates} 对 + 未换序 {counts.no_exchange} 对）· 排除 {counts.excluded} 对。</p>
-    <p>已保存 {response.candidates.length} 条 / 原始候选 {counts.candidates} 条
+      （换序线索 {counts.candidates} 对 + 未换序 {counts.no_exchange} 对）· 排除 {counts.excluded} 对。</p>
+    <p>已保存 {response.candidates.length} 条 / 全部换序线索 {counts.candidates} 条
       {response.output_limits.candidates_truncated ? "（按原帧顺序截断）" : ""}。计数不是准确率或实际步数。</p>
     {assessablePairs === 0
       ? <p role="status">本次无法判断图像换序：{counts.adjacent_sequence_pairs === 0 ? "没有相邻帧对。" : "所有相邻帧对均被排除。"}不能据此认定没有实际交叉步。</p>
       : counts.candidates === 0
-        ? <p>可判定部分未发现换序候选；不能据此认定没有实际交叉步。</p>
-        : response.candidates.length === 0 && <p>此工件未保存可展开的候选明细。</p>}
+        ? <p>可判定部分未发现脚踝换序；不能据此认定没有实际交叉步。</p>
+        : response.candidates.length === 0 && <p>本次未保存可展开的换序明细。</p>}
     {counts.excluded > 0 && <>
       <p>排除部分未参与图像换序判断。</p>
       <p>排除明细保存上限为 {response.output_limits.exclusion_limit} 条，
@@ -192,8 +192,8 @@ export default function FootCrossingCandidatesPanel({ context }: { context?: Foo
     {!context && <p className="motion-analysis-note">查看此依据需要打开对应的在线报告。</p>}
     {state.open && <div>
       <p className="motion-analysis-note">两帧内同一图像轴上的脚踝顺序变化；不确认正式交叉步，不产生等级或成绩。</p>
-      {state.phase === "loading" && <p role="status">正在按需读取候选依据…</p>}
-      {state.phase === "offline" && <p>离线报告没有这份独立候选文件。</p>}
+      {state.phase === "loading" && <p role="status">正在读取换序片段…</p>}
+      {state.phase === "offline" && <p>离线报告没有这份独立换序记录。</p>}
       {state.phase === "error" && <p role="status">{state.message}</p>}
       {response && response.status !== "available" && <p role="status">{unavailableText[response.status] ?? "此独立计算暂不可用。"}</p>}
       {available && <>
@@ -208,7 +208,7 @@ export default function FootCrossingCandidatesPanel({ context }: { context?: Foo
             原生 PTS {candidate.source_bindings.map(binding => binding.pts).join(" → ")}，时间基 {candidate.source_bindings[0].time_base_num}/{candidate.source_bindings[0].time_base_den} 秒。</p>
           <p><strong>同轴前后：{candidate.signed_ankle_order_px.map(value => decimal(value)).join(" → ")} 像素</strong><br />
             轴取这两帧髋中点在同一相机参考图像中的位移，全程固定；方向 ({candidate.axis.unit_vector?.map(value => decimal(value, 5)).join(", ") ?? "不可用"})，位移 {decimal(candidate.axis.hip_displacement_length_px)} 像素。方向可靠性仍未知。</p>
-          <p>{candidate.candidate_quality_status === "suspect" ? "有局部疑点，保留候选供核对。" : "局部风险未知；未提供异常标记不代表没有异常。"}
+          <p>{candidate.candidate_quality_status === "suspect" ? "此处有位置异常提示，可回看相邻两帧。" : "本段没有可用的位置异常标记。"}
             {footCrossingParentSourceNotes(candidate).map(note => <span key={note}> {note}</span>)}
             {candidate.local_joint_diagnostics.assessment_status === "sam_confidence_diagnostics_not_assessed"
               && " SAM 置信度、可见性及这些局部诊断未评估。"}

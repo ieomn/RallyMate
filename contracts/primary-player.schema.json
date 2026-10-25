@@ -10,10 +10,24 @@
     "timestamp_ms": {"type": "integer", "minimum": 0},
     "primary_player_id": {"const": 1},
     "selection_status": {"enum": ["selected", "missing"]},
+    "selection_reason_code": {"type": ["string", "null"]},
+    "selection_identity_guard": {"enum": ["same_detected_track", "overlapping_anchor_tracklet", "retained_identity_anchor", null]},
+    "selection_score_uses_model_geometry": {"type": "boolean"},
     "source_track_id": {"type": ["integer", "null"], "minimum": 1},
     "bbox_px": {"type": ["array", "null"], "minItems": 4, "maxItems": 4},
     "pose_present": {"type": "boolean"},
     "keypoint_valid_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "pose_selection_fraction": {
+      "type": ["number", "null"], "minimum": 0, "maximum": 1,
+      "description": "Target-joint support for primary selection only; interpreted by pose_selection_semantics, never a technique score or inferred confidence."
+    },
+    "pose_selection_semantics": {"enum": ["confidence_qualified_target_joint_coverage", "model_geometry_coverage", null]},
+    "model_geometry_coverage": {
+      "type": ["number", "null"], "minimum": 0, "maximum": 1,
+      "description": "Fraction of eight target body joints with strictly source-bound native in-frame model pixels; null when binding is unavailable."
+    },
+    "model_geometry_reason": {"type": ["string", "null"]},
+    "selection_evidence_version": {"type": "string"},
     "selection_prior_score": {"type": ["number", "null"]},
     "selection_candidate_count": {"type": "integer", "minimum": 0},
     "selection_best_score": {

@@ -1,3 +1,4 @@
+import { productText } from "./presentation-text";
 import { hasModelMeasurementContext, modelMeasurementEvidenceOf, type ModelMeasurementEvidence } from "./model-measurement";
 
 /** Bounded display evidence only. These fields never authorize a grade. */
@@ -186,15 +187,14 @@ export function sourceMeasurementDetailLines(value: SourceMeasurementDetails): s
   const lines: string[] = [];
   const definition = value.measurement_definition || value.definition;
   if (definition) lines.push(`实际计算：${definition}`);
-  if (value.source_ref) lines.push(`原文段落：${value.source_ref}`);
   if (value.source_frames?.length) lines.push(`来源帧：${value.source_frames.length} 条引用，首帧 ${value.source_frames[0]}，末帧 ${value.source_frames.at(-1)}；仅使用已记录帧。`);
   if (value.measurement_provenance?.pose_source === "sam3d") {
-    lines.push("SAM 单目模型估计；未提供关节置信度，真实可见性未知，不能据此判定原文等级。");
+    lines.push("SAM 单目模型估计；未提供关节置信度，真实可见性未知，不能据此判定技术等级。");
     const coverage = value.model_geometry_coverage;
-    if (coverage) lines.push(`模型几何覆盖：${coverage.valid_frame_count}/${coverage.total_frame_count} 帧具备所需坐标；70% 为计算支持门槛，不代表原文可见性已验证。`);
+    if (coverage) lines.push(`模型几何覆盖：${coverage.valid_frame_count}/${coverage.total_frame_count} 帧具备所需坐标；70% 为计算支持门槛，不代表真实可见性已验证。`);
   }
   if (value.coverage && typeof value.coverage === "object") lines.push(`局部窗口关节：${value.coverage.valid_frame_count}/${value.coverage.total_frame_count} 帧同时有效；70% 仅为可见性门槛，不代表技术合格。`);
-  if (typeof value.coverage === "number" && value.coverage_semantics === "model_estimate_sample_coverage_not_verified_visibility") lines.push(`模型样本覆盖：${Number((value.coverage * 100).toFixed(2))}%；真实可见性未知，未提供原文卡逐帧窗口证明。`);
+  if (typeof value.coverage === "number" && value.coverage_semantics === "model_estimate_sample_coverage_not_verified_visibility") lines.push(`模型样本覆盖：${Number((value.coverage * 100).toFixed(2))}%；真实可见性未知，未提供技术指标逐帧窗口证明。`);
   const evidence = value.evidence;
   if (evidence?.window_scope === "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage") lines.push("窗口为候选起点至起跳代理；未确认正式垫步前阶段，不判断实际视线、时机或稳定达标。");
   if (evidence?.scope === "FS02_candidate_event_direction_only") lines.push("仅为候选事件的图像启动方向；未评价与来球方向是否一致。");
@@ -203,10 +203,10 @@ export function sourceMeasurementDetailLines(value: SourceMeasurementDetails): s
   if (evidence?.coordinate_system === "stable_camera_reference_image_x_right_y_down" && evidence.sign_convention === "image_down_positive"
     && evidence.normalization === "median_observed_full_torso_scale_fixed_per_candidate_window"
     && evidence.source_clause_complete === false && evidence.is_ground_truth === false && evidence.is_metric_or_3d === false) {
-    lines.push("仅测量预加载候选窗内稳定相机参考中的髋纵向位移，向下为正；躯干尺度使用同窗双肩、双髋的固定中位数，与相对踝的身体尺度量独立。未确认正式阶段或完整原文条件，不生成等级。");
+    lines.push("仅测量预加载候选窗内稳定相机参考中的髋纵向位移，向下为正；躯干尺度使用同窗双肩、双髋的固定中位数，与相对踝的身体尺度量独立。未确认正式阶段或完整动作条件，不生成等级。");
     if (typeof evidence.fixed_torso_scale_px === "number") lines.push(`固定躯干尺度：${Number(evidence.fixed_torso_scale_px.toFixed(3))} 像素。`);
     if (evidence.time_basis === "bound_source_pts" && typeof evidence.source_duration_ms === "number")
-      lines.push(`源帧精确时间跨度：${Number(evidence.source_duration_ms.toFixed(3))} 毫秒；时长门槛用于计算支持，不是原文等级阈值。`);
+      lines.push(`源帧精确时间跨度：${Number(evidence.source_duration_ms.toFixed(3))} 毫秒；时长门槛用于计算支持，不是技术等级阈值。`);
   }
-  return lines;
+  return lines.map(productText).filter(Boolean);
 }

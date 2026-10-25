@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
 
+const compiledModules = new Map();
 function compiledUrl(fileUrl) {
+  if (compiledModules.has(fileUrl.href)) return compiledModules.get(fileUrl.href);
   // Keep source JSON imports shared with production, without a generated copy.
   if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   const source = fs.readFileSync(fileUrl, "utf8");
@@ -12,7 +14,9 @@ function compiledUrl(fileUrl) {
     const url = name.startsWith(".") ? compiledUrl(new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl)) : import.meta.resolve(name);
     return `from ${JSON.stringify(url)}`;
   });
-  return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
+  const compiled = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
+  compiledModules.set(fileUrl.href, compiled);
+  return compiled;
 }
 const { getReportExportGate, buildPracticeReport, renderReportMarkdown, renderReportHtml, buildReportBackup, reportDownloadName } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
 const { reportVideoDurationMs } = await import(compiledUrl(new URL("../app/lib/workspace-navigation.ts", import.meta.url)));

@@ -77,7 +77,7 @@ test("save validation rejects wrong person, event, revision, source and immutabl
 test("source conflicts allow an explanation of inability but no invented A-E", () => {
   const ledger = ledgerOf();
   const blocked = { ...inputOf(), indicator_id: "GS01-M10-04", event_source: "manual_interval", event_id: null };
-  assert.match(technicalReviewError(blocked, ledger), /原文条件不足/);
+  assert.match(technicalReviewError(blocked, ledger), /动作条件不足/);
   assert.equal(technicalReviewError({ ...blocked, status: "unassessable", grade: null, reason_zh: "原文混入下一节标题，待确认。" }, ledger), null);
   assert.match(technicalReviewError({ ...blocked, status: "unassessable", grade: "E" }, ledger), /不能附带/);
 });
@@ -143,7 +143,7 @@ test("candidate reference displacement source consumer and two backups retain ne
     assert.deepEqual(sourceReviewWindows(restored, "FS01-M02"), before);
   }
   const html = renderToStaticMarkup(createElement(Panel, { result: restored, catalog }));
-  assert.match(html, /-40 像素/); assert.match(html, /0 固定躯干尺度/); assert.match(html, /向下为正/); assert.match(html, /不是原文等级阈值/);
+  assert.match(html, /-40 像素/); assert.match(html, /0 固定躯干尺度/); assert.match(html, /向下为正/); assert.match(html, /不是技术等级阈值/);
 });
 
 test("only measured zero-duration transition quantities can carry a same-frame computation window", () => {
@@ -194,7 +194,7 @@ test("API normalization and portable backup keep validated source measurements, 
 
 test("source measurements retain evidence and replay without manual grading controls", () => {
   const html = renderToStaticMarkup(createElement(Panel, { result: sourceResult(), catalog }));
-  assert.match(html, /与原文对应的实际测量/);
+  assert.match(html, /逐项动作测量/);
   assert.match(html, /髋部下降幅度/);
   assert.match(html, /跨事件测量区间/);
   assert.match(html, /回看/);
@@ -222,7 +222,7 @@ test("actual head and launch source evidence remains inspectable and survives re
     assert.deepEqual(sourceReviewCoverage(twice, id), sourceReviewCoverage(actualSource, id));
   }
   const html = renderToStaticMarkup(createElement(Panel, { result: actualSource, catalog, initialIndicatorId: "FS01-M01" }));
-  assert.match(html, /计算与来源/); assert.match(html, /P0080/); assert.match(html, /180°/); assert.match(html, /不跨缺测补帧/);
+  assert.match(html, /计算说明/); assert.doesNotMatch(html, /P0080|原文|word\/document\.xml/i); assert.match(html, /180°/); assert.match(html, /不跨缺测补帧/);
   assert.match(html, /29 \/ 41/); assert.match(html, /12 个未测得/); assert.doesNotMatch(html, /<details[^>]*open|"used_source_frames"/);
 });
 

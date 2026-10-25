@@ -36,12 +36,12 @@ UNSUPPORTED_AUTOMATIC_EVENT_CODES = frozenset({
     "FS03", "FS04", "FS05", "FS06", "FS07", "FS08", "FS10", "GS04", "GS05",
 })
 COMPLETE_GRADE_IMPLEMENTATION_MESSAGE = (
-    "当前尚未实现并验证本项完整原文动作条件、阶段时序及 A～E 等级的自动判定；"
+    "当前尚未实现并验证本项完整动作条件、阶段时序及 A～E 等级的自动判定；"
     "已有局部测量不能替代完整判定。"
 )
 STATUS_LABELS = {
-    "source_rule_conflict": "原文规则待修订", "source_boundaries_missing": "原文阶段边界缺失",
-    "measured_partial_rule": "已取得部分原文测量", "legacy_proxy_measured": "已有历史代理测量",
+    "source_rule_conflict": "动作要求待明确", "source_boundaries_missing": "动作阶段边界不完整",
+    "measured_partial_rule": "已取得部分动作测量", "legacy_proxy_measured": "已有历史代理测量",
     "contextual_measurement": "已有相关动作测量", "event_type_unresolved": "动作类型待确认",
     "evidence_insufficient": "当前证据不足", "not_observed": "本次未观测",
 }
@@ -383,7 +383,7 @@ def _source_observations(source):
                     "indicator_id": identifier, "feature_name": name, "label_zh": measurement.get("label_zh", name),
                     "value": measurement["value"], "unit": measurement.get("unit", ""), "event_id": window.get("event_id"),
                     "person_track_id": window.get("person_track_id"), "start_ms": bounds["start_ms"], "end_ms": bounds["end_ms"],
-                    "definition_zh": measurement.get("source_requirement_zh", "原文对应的局部测量。"),
+                    "definition_zh": measurement.get("source_requirement_zh", "动作局部测量。"),
                     "source_ref": measurement.get("source_ref"), "windows": [], "full_source_rule_satisfied": False,
                     "source_frames": measurement.get("source_frames", []), "measurement_definition": measurement.get("definition"),
                     "coverage": measurement.get("coverage"), "evidence": measurement.get("evidence", {}),
@@ -471,7 +471,7 @@ def _legacy_observations(records, summary, known):
                 "scope": "legacy_event_feature", "status": "measured", "indicator_id": identifier,
                 "feature_name": name, "label_zh": LABELS.get(name, name), "value": metric["value"],
                 "unit": metric.get("unit", ""), "event_id": event, "source_frames": frames,
-                "definition_zh": "历史事件内代理特征；单位、阶段或定义可能只覆盖原文的一部分，不替代源对齐测量。",
+                "definition_zh": "历史事件内代理特征；单位、阶段或定义可能只覆盖动作要求的一部分，不替代源对齐测量。",
                 "windows": [], "full_source_rule_satisfied": False, "condition": condition, **model_details})
     return output, observed
 
@@ -650,16 +650,16 @@ def build_indicator_assessment(summary: Mapping[str, Any], indicator_feature_rec
         context_rows = [o for o in linked if o["scope"] == "contextual_motion_phase"]
         if source_conflict:
             status = "source_rule_conflict"
-            explanation = "名称、定义或相邻标题存在原文冲突，保留来源并停止自动技术结论。"
+            explanation = "名称、定义或相邻标题存在定义冲突，暂不据此生成自动技术结论。"
         elif boundary_missing:
             status = "source_boundaries_missing"
-            explanation = "原文未给该阶段完整起止定义；相关局部测量可参考，不能补写成已完成正式阶段。"
+            explanation = "该动作阶段的起止定义不完整；相关局部测量可参考，不能补写成已完成正式阶段。"
         elif source_rows:
             status = "measured_partial_rule"
-            explanation = f"已取得 {len(source_rows)} 项次原文对应的局部测量；全部动作条件和等级尚未验证。"
+            explanation = f"已取得 {len(source_rows)} 项次局部动作测量；全部动作条件和等级尚未验证。"
         elif legacy_rows:
             status = "legacy_proxy_measured"
-            explanation = f"已有 {len(legacy_rows)} 项次历史事件代理测量；原文要求的完整时序、真实接触或数值等级尚未满足。"
+            explanation = f"已有 {len(legacy_rows)} 项次历史事件代理测量；动作所需的完整时序、真实接触或数值等级尚未满足。"
         elif context_rows:
             status = "contextual_measurement"
             explanation = "同类挥拍中已有相关二维测量；动作类型为算法候选，三段运动估计不等同于本卡的正式阶段。"
@@ -683,11 +683,11 @@ def build_indicator_assessment(summary: Mapping[str, Any], indicator_feature_rec
                 explanation += unsupported_message
         blockers.extend(_measurement_blockers(rule))
         if context_rows:
-            blockers.append({"code": "formal_stage_not_confirmed", "message_zh": "原文十阶段尚未逐一确认，相关测量只对应实际估计运动段。"})
+            blockers.append({"code": "formal_stage_not_confirmed", "message_zh": "完整动作的各阶段尚未逐一确认，相关测量只对应实际估计运动段。"})
         grades = evaluated_grades[identifier]
         if not grades:
             blockers.append({"code": "complete_grade_verifier_not_implemented", "message_zh": COMPLETE_GRADE_IMPLEMENTATION_MESSAGE})
-            blockers.append({"code": "qualitative_rubric_uncalibrated", "message_zh": "原文 A～E 为定性标准，尚无可执行数值分界；已有测量与二元条件直接计算，不以人工真值或审批作为计算前提。"})
+            blockers.append({"code": "qualitative_rubric_uncalibrated", "message_zh": "A～E 等级定义为定性标准，尚无可执行数值分界；已有测量与二元条件直接计算，不以人工真值或审批作为计算前提。"})
         indicators.append({"indicator_id": identifier, "name_zh": rule["name_zh"], "event_code": rule["event_code"],
             "stage_code": rule["stage_code"], "status": status,
             "status_label_zh": "算法尚未支持该类型" if unsupported_type and status in {"event_type_unresolved", "not_observed"} else STATUS_LABELS[status],
@@ -701,8 +701,8 @@ def build_indicator_assessment(summary: Mapping[str, Any], indicator_feature_rec
                       "scope": "supplied_mathematical_rule_not_automatic_full_word_rubric_verification",
                       "reason_zh": "已从原始特征独立重算数值代理规则；该等级不证明原卡全部动作、阶段与可见性条件，不计入原卡完整判级。"} if grades else
                      {"status": "source_rule_conflict" if source_conflict else "calibration_required",
-                      "label_zh": "待核对原文" if source_conflict else "暂不生成等级",
-                      "reason_zh": ("原文冲突需先核对；" if source_conflict else "")
+                      "label_zh": "动作要求待明确" if source_conflict else "暂不生成等级",
+                      "reason_zh": ("动作要求存在不一致，需先明确；" if source_conflict else "")
                                    + COMPLETE_GRADE_IMPLEMENTATION_MESSAGE + "缺测不等于 E 级或零分。"}})
     counts = {"total": len(indicators), "statuses": dict(Counter(i["status"] for i in indicators)),
               "source_aligned_measured": len({o["indicator_id"] for o in observations if o["source"] == "source_aligned"}),
@@ -734,7 +734,7 @@ def build_indicator_assessment(summary: Mapping[str, Any], indicator_feature_rec
                 "count_scope": "validated_input_observations_before_display_sampling",
                 "source_input_already_truncated": any(i.get("is_truncated") is True for i in _rows(_obj(source_assessment).get("indicators"))),
                 "reason_zh": "每项测量按时间均匀展示代表窗口并保留首尾；不按数值高低挑选。完整已接收计数保留，完整时序仍在原始分析产物中。"},
-            "summary_zh": f"已逐项核对 {len(indicators)} 项 Word 标准，保留 {len(observations)} 项次真实测量与各项不能判断的具体原因。",
+            "summary_zh": f"已逐项核对 {len(indicators)} 项技术指标，保留 {len(observations)} 项次真实测量与各项不能判断的具体原因。",
             "limitations_zh": ["相关测量数量不等于已通过或完整可评分的指标数量；同一测量可支持多张卡，但不重复当成独立证据。",
                                "有值仅说明观察到该数值；二维方向变化、覆盖率和模型置信度都不是技术准确率。",
                                "普通视频无法保证看见真实视线、足底受力、拍面角度或触球；缺少这些证据时不填常量，也不自动判为 E。"]}

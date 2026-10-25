@@ -6,6 +6,7 @@ import { parseTechnicalReview, type TechnicalReviewInput, type TechnicalReviewLe
 import type {
   DemoResultResponse,
   Sam3dMeshPreview,
+  SwingKinematicsReport,
   JobProgress,
   JobSubmission,
   RallyMateApiConfig,
@@ -97,6 +98,7 @@ export function getApiConfig(): RallyMateApiConfig {
 }
 
 export interface RallyMateApiClient {
+  getSwingKinematics(jobId: string, signal?: AbortSignal): Promise<SwingKinematicsReport>;
   getMeshPreview(jobId: string, signal?: AbortSignal): Promise<{ job_id: string; status: "ready" | "pending" | "failed" | "unavailable"; sam3d_mesh: Sam3dMeshPreview | null }>;
   readonly config: RallyMateApiConfig;
   getCapabilities(signal?: AbortSignal): Promise<ScorecardCapabilities>;
@@ -387,6 +389,7 @@ export function createApiClient(
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(reportPath(jobId), signal, "current"),
     getMeshPreview: (jobId, signal) => get(reportPath(jobId, "/mesh-preview"), signal),
+    getSwingKinematics: (jobId, signal) => get(reportPath(jobId, "/swing-kinematics"), signal),
     cancelJob: (jobId, signal) => fetchImpl(urlFor(reportPath(jobId, "/cancel")), {
       method: "POST", cache: "no-store", headers: { "X-Request-ID": requestId() },
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),

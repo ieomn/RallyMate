@@ -173,5 +173,5 @@ test("portable JSON backup keeps complete directional sources while readable exp
   assert.equal(report.sections.some(s=>s.title.startsWith("逐卡")),false);
   const rows=backup.result.card_execution.cards.filter(c=>["FS05-M03","FS05-M04"].includes(c.indicator_id)).flatMap(c=>c.instances);assert.equal(rows.length,2);
   for(const row of rows){assert.equal(row.grade,"C");assert.equal(row.score,60);assert.equal(row.conditions.length,3);}
-  const markdown=renderReportMarkdown(report);assert.match(markdown,/训练评分/);assert.doesNotMatch(markdown,/113 条实例|原卡技术等级|FS05\\-M0/);
+  const markdown=renderReportMarkdown(report);assert.match(markdown,/步伐动作得分/);assert.doesNotMatch(markdown,/113 条实例|原卡技术等级|FS05\\-M0/);
 });

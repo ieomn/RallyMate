@@ -112,7 +112,7 @@ export function technicalReviewError(input: TechnicalReviewInput, ledger: Techni
   if (!uuid(input.mutation_id) || input.expected_revision !== ledger.revision || input.source_sha256 !== ledger.source_sha256 || input.artifact_context_sha256 !== ledger.artifact_context_sha256
     || input.source_reference_sha256 !== ledger.source_reference_sha256 || input.source_reference_version !== ledger.source_reference_version) return "来源或评审版本已改变，请重新读取后保存。";
   if ((input.target_kind === "indicator" ? !rule || input.visual_rule_id !== null : !visual || input.indicator_id !== null)
-    || !ledger.players.some(player => player.player_id === input.player_id)) return "请选择这段视频中的人物和原文指标。";
+    || !ledger.players.some(player => player.player_id === input.player_id)) return "请选择这段视频中的人物和技术指标。";
   if (!count(input.start_ms) || !count(input.end_ms) || input.start_ms < ledger.video.review_start_ms
     || input.end_ms > ledger.video.review_end_ms || input.end_ms <= input.start_ms) return "评审时段必须位于本次实际分析的视频范围内。";
   const player = ledger.players.find(player => player.player_id === input.player_id);
@@ -126,7 +126,7 @@ export function technicalReviewError(input: TechnicalReviewInput, ledger: Techni
     || !["observed", "not_observed", "unassessable"].includes(input.status) || input.status !== "unassessable" && input.observability !== "observable")) return "视觉要点不产生技术等级；只有能够清楚判断时，才能记录观察到或未观察到。";
   if (input.target_kind === "indicator" && !["graded", "unassessable"].includes(input.status)) return "评分指标请选择 A～E 或无法评价。";
   if (input.status === "graded" && (!rule?.manual_grading_allowed || input.observability !== "observable"
-    || !TECHNICAL_GRADES.includes(input.grade as TechnicalGrade))) return "这项证据或原文条件不足，请选择无法评价并说明原因。";
+    || !TECHNICAL_GRADES.includes(input.grade as TechnicalGrade))) return "这项证据或动作条件不足，请选择无法评价并说明原因。";
   if (input.status === "unassessable" && input.grade !== null) return "无法评价的记录不能附带 A～E 等级。";
   if (input.review_id) {
     const previous = ledger.entries.find(entry => entry.review_id === input.review_id);

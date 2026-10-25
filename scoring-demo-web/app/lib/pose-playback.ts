@@ -1,4 +1,5 @@
 import type { PoseDisplayAnchors, PoseIdentityRepair, PoseModelSourceBinding, PosePreviewFrame, PosePreviewResponse } from "./api-types";
+import mhr70Display from "../../../src/rallymate_vision/pose/data/mhr70_display.json";
 
 export const POSE_WINDOW_MS = 10000;
 export const POSE_MAX_HOLD_MS = 100;
@@ -8,6 +9,9 @@ const object = (value: unknown): Record<string, unknown> => value && typeof valu
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const positive = (value: unknown): number | null => finite(value) && value > 0 ? value : null;
 const BODY_JOINTS = new Set([...JOINTS].slice(0, 17));
+const MHR_JOINTS = new Set(mhr70Display.keypoint_names);
+const MHR_INDEXES = new Map(mhr70Display.keypoint_names.map((name, index) => [name, index]));
+const MHR_EDGES = new Set(mhr70Display.skeleton_edges.map(pair => [...pair].sort().join("/")));
 
 function modelSourceBinding(row: Record<string, unknown>): PoseModelSourceBinding | null {
   const binding = object(row.source_binding);
@@ -32,7 +36,8 @@ export function poseReplayTimingAllowed(isLocalOriginal: boolean, result: unknow
 /** Raw observations remain intact; only bounded, explicitly marked display points can supplement them. */
 export function normalizePosePreview(value: unknown, jobId?: string): PosePreviewResponse | null {
   const raw = object(value), source = object(raw.source);
-  if (raw.schema_version !== "1.0.0" || raw.result_kind !== "observed_pose_playback" || raw.coordinate_space !== "normalized_frame_0_1" || raw.joint_schema !== "halpe26_named" || typeof raw.job_id !== "string" || jobId && raw.job_id !== jobId || source.timestamp_semantics !== "source_frame_timestamp_ms" || !Array.isArray(raw.frames)) return null;
+  if (raw.schema_version !== "1.0.0" || raw.result_kind !== "observed_pose_playback" || raw.coordinate_space !== "normalized_frame_0_1" || !["halpe26_named", "mhr70_named"].includes(String(raw.joint_schema)) || typeof raw.job_id !== "string" || jobId && raw.job_id !== jobId || source.timestamp_semantics !== "source_frame_timestamp_ms" || !Array.isArray(raw.frames)) return null;
+  const nativeMhr = raw.joint_schema === "mhr70_named", allowedJoints = nativeMhr ? MHR_JOINTS : JOINTS;
   if (!finite(source.requested_start_ms) || !finite(source.requested_end_ms) || source.requested_start_ms < 0 || source.requested_end_ms <= source.requested_start_ms || source.requested_end_ms - source.requested_start_ms > POSE_WINDOW_MS) return null;
   const minConfidence = finite(raw.min_keypoint_confidence) && raw.min_keypoint_confidence <= 1 ? Math.max(POSE_MIN_CONFIDENCE, raw.min_keypoint_confidence) : POSE_MIN_CONFIDENCE;
   const frames: PosePreviewFrame[] = [];
@@ -47,20 +52,21 @@ export function normalizePosePreview(value: unknown, jobId?: string): PosePrevie
     const modelBinding = modelSourceBinding(row);
     const isEstimate = row.pose_source === "sam3d" || row.observation_semantics === "monocular_model_estimate";
     const duplicates = new Set<string>();
-    for (const value of selected && Array.isArray(row.keypoints) ? row.keypoints.slice(0, 26) : []) {
+    for (const value of selected && Array.isArray(row.keypoints) && row.keypoints.length <= (nativeMhr ? 70 : 26) ? row.keypoints : []) {
       const point = object(value);
-      if (typeof point.name !== "string" || !JOINTS.has(point.name)) continue;
+      if (typeof point.name !== "string" || !allowedJoints.has(point.name)) continue;
       if (points.has(point.name)) { duplicates.add(point.name); continue; }
       if (isEstimate) {
-        if (!modelBinding || !BODY_JOINTS.has(point.name) || point.source !== "model_estimate" || point.observation_semantics !== "model_estimate"
+        if (!modelBinding || (nativeMhr ? point.native_index !== MHR_INDEXES.get(point.name) : !BODY_JOINTS.has(point.name)) || point.source !== "model_estimate" || point.observation_semantics !== "model_estimate"
           || point.confidence !== null || point.confidence_semantics !== "not_provided_by_sam3d" || point.in_frame !== true
           || !finite(point.raw_x_px) || !finite(point.raw_y_px) || point.raw_x_px < 0 || point.raw_x_px >= Number(row.width) || point.raw_y_px < 0 || point.raw_y_px >= Number(row.height)
           || !finite(point.x) || !finite(point.y) || Math.abs(point.x - point.raw_x_px / Number(row.width)) > .000001 || Math.abs(point.y - point.raw_y_px / Number(row.height)) > .000001) continue;
         points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: null, source: "model_estimate", observation_semantics: "model_estimate",
-          confidence_semantics: "not_provided_by_sam3d", in_frame: true, raw_x_px: point.raw_x_px, raw_y_px: point.raw_y_px });
+          confidence_semantics: "not_provided_by_sam3d", in_frame: true, raw_x_px: point.raw_x_px, raw_y_px: point.raw_y_px,
+          ...(nativeMhr ? { native_index: Number(point.native_index) } : {}) });
         continue;
       }
-      if (point.source !== undefined && point.source !== "observed") continue;
+      if (nativeMhr || point.source !== undefined && point.source !== "observed") continue;
       if (!finite(point.x) || point.x < 0 || point.x > 1 || !finite(point.y) || point.y < 0 || point.y > 1 || !finite(point.confidence) || point.confidence < minConfidence || point.confidence > 1) continue;
       points.set(point.name, { name: point.name, x: point.x, y: point.y, confidence: point.confidence, source: "observed" });
     }
@@ -76,13 +82,14 @@ export function normalizePosePreview(value: unknown, jobId?: string): PosePrevie
     if (next?.timestamp_ms === frames[index].timestamp_ms || frames[index - 1]?.timestamp_ms === frames[index].timestamp_ms) frames[index].keypoints = [];
   }
   const edges = new Map<string, [string, string]>();
-  for (const pair of Array.isArray(raw.skeleton_edges) ? raw.skeleton_edges.slice(0, 60) : []) {
-    if (!Array.isArray(pair) || pair.length !== 2 || !JOINTS.has(pair[0]) || !JOINTS.has(pair[1]) || pair[0] === pair[1]) continue;
+  for (const pair of Array.isArray(raw.skeleton_edges) ? raw.skeleton_edges.slice(0, nativeMhr ? 65 : 60) : []) {
+    if (!Array.isArray(pair) || pair.length !== 2 || !allowedJoints.has(pair[0]) || !allowedJoints.has(pair[1]) || pair[0] === pair[1]
+      || nativeMhr && !MHR_EDGES.has([...pair].sort().join("/"))) continue;
     edges.set([...pair].sort().join("/"), [pair[0], pair[1]]);
   }
-  const display = normalizeDisplayFrames(raw, frames, minConfidence);
+  const display = nativeMhr ? {} : normalizeDisplayFrames(raw, frames, minConfidence);
   const roundingTolerance = finite(source.timestamp_rounding_tolerance_ms) && source.timestamp_rounding_tolerance_ms >= 0 && source.timestamp_rounding_tolerance_ms <= .5 ? source.timestamp_rounding_tolerance_ms : 0;
-  return { schema_version: "1.0.0", result_kind: "observed_pose_playback", job_id: raw.job_id, coordinate_space: "normalized_frame_0_1", joint_schema: "halpe26_named", min_keypoint_confidence: minConfidence, status: typeof raw.status === "string" ? raw.status : undefined, reason_zh: typeof raw.reason_zh === "string" ? raw.reason_zh : undefined, skeleton_edges: [...edges.values()], source: { requested_start_ms: source.requested_start_ms, requested_end_ms: source.requested_end_ms, width: positive(source.width), height: positive(source.height), returned_frames: frames.length, is_sampled: source.is_sampled === true, is_partial: source.is_partial === true, timestamp_semantics: "source_frame_timestamp_ms", timestamp_rounding_tolerance_ms: roundingTolerance }, frames, ...display };
+  return { schema_version: "1.0.0", result_kind: "observed_pose_playback", job_id: raw.job_id, coordinate_space: "normalized_frame_0_1", joint_schema: nativeMhr ? "mhr70_named" : "halpe26_named", min_keypoint_confidence: minConfidence, status: typeof raw.status === "string" ? raw.status : undefined, reason_zh: typeof raw.reason_zh === "string" ? raw.reason_zh : undefined, skeleton_edges: [...edges.values()], source: { requested_start_ms: source.requested_start_ms, requested_end_ms: source.requested_end_ms, width: positive(source.width), height: positive(source.height), returned_frames: frames.length, is_sampled: source.is_sampled === true, is_partial: source.is_partial === true, timestamp_semantics: "source_frame_timestamp_ms", timestamp_rounding_tolerance_ms: roundingTolerance }, frames, ...display };
 }
 
 function normalizeDisplayFrames(raw: Record<string, unknown>, frames: PosePreviewFrame[], minimumConfidence: number): Pick<PosePreviewResponse, "display_frames" | "display_continuity"> {

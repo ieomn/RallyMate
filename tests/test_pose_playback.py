@@ -67,7 +67,11 @@ class PosePlaybackTests(unittest.TestCase):
         rows[1]["poses"][0]["keypoints"][62]["in_frame"] = False
         result = self.build(rows, timeline=[primary(index) for index in range(3)])
         self.assertEqual(result["frames"][0]["pose_source"], "sam3d")
-        self.assertEqual(len(result["frames"][0]["keypoints"]), 17)
+        self.assertEqual(len(result["frames"][0]["keypoints"]), 70)
+        self.assertEqual(result["joint_schema"], "mhr70_named")
+        self.assertEqual(result["keypoint_names"][62], "left_wrist")
+        self.assertEqual(result["frames"][0]["keypoints"][62]["native_index"], 62)
+        self.assertEqual(len(result["skeleton_edges"]), 65)
         self.assertTrue(all(p["source"] == "model_estimate" and p["confidence"] is None for row in result["display_frames"] for p in row["keypoints"]))
         self.assertFalse(any(p["name"] == "left_wrist" for p in result["display_frames"][1]["keypoints"]))
         self.assertEqual(result["display_continuity"]["interpolated_keypoints"], 0)
@@ -100,10 +104,49 @@ class PosePlaybackTests(unittest.TestCase):
         source["source_binding"].update(pts=300, timestamp_ms=12000)
         row = frame(0, poses=[source], source_timestamp_ms=12000)
         result = self.build([row])
-        self.assertEqual(len(result["frames"][0]["keypoints"]), 17)
+        self.assertEqual(len(result["frames"][0]["keypoints"]), 70)
         self.assertEqual(result["frames"][0]["timestamp_ms"], 0)
         self.assertEqual(result["frames"][0]["source_timestamp_ms"], 12000)
         self.assertEqual(result["frames"][0]["source_binding"]["pts"], 300)
+
+    def test_native_display_metadata_preserves_pinned_names_and_scoring_mapping(self):
+        from rallymate_scoring.pose_observations import sam_source_bound_points
+        from rallymate_vision.pose.metadata import MHR70_NAMES
+        source = sam_pose(0)
+        row = frame(0, poses=[source])
+        before = json.dumps(row, sort_keys=True)
+        result = self.build([row])
+        self.assertEqual(result["keypoint_names"], list(MHR70_NAMES))
+        self.assertIn(["left_ankle", "left_big_toe_tip"], result["skeleton_edges"])
+        self.assertIn(["left_wrist", "left_index_third_joint"], result["skeleton_edges"])
+        self.assertIn(["right_pinky_first_joint", "right_pinky_tip"], result["skeleton_edges"])
+        self.assertNotIn("left_big_toe", result["keypoint_names"])
+        points, _ = sam_source_bound_points(source, row["frame"])
+        self.assertEqual(len(points), 17)
+        self.assertNotIn("left_big_toe_tip", points)
+        self.assertEqual(json.dumps(row, sort_keys=True), before)
+
+    def test_native_auxiliary_points_require_raw_pixels_null_confidence_and_exact_index(self):
+        for change in ({"raw_x_px": -1, "x_px": 0}, {"raw_y_px": None}, {"in_frame": False},
+                       {"confidence": .9}, {"observed": True}, {"visibility": 1},
+                       {"source": "observed"}, {"confidence_semantics": "model_confidence"}):
+            source = sam_pose(0)
+            source["keypoints"][42].update(change)
+            with self.subTest(change=change):
+                result = self.build([frame(0, poses=[source])])
+                names = {point["name"] for point in result["frames"][0]["keypoints"]}
+                self.assertNotIn("left_thumb_tip", names)
+                self.assertIn("left_ankle", names)
+        source = sam_pose(0)
+        source["keypoints"][42]["index"] = 43
+        self.assertEqual(self.build([frame(0, poses=[source])])["frames"][0]["keypoints"], [])
+
+    def test_native_preview_does_not_relabel_mixed_detector_frames(self):
+        result = self.build([frame(0, poses=[sam_pose(0)]), frame(1)])
+        self.assertEqual(result["joint_schema"], "mhr70_named")
+        self.assertEqual(len(result["frames"][0]["keypoints"]), 70)
+        self.assertEqual(result["frames"][1]["keypoints"], [])
+        self.assertEqual(result["display_frames"][1]["keypoints"], [])
 
     def test_pixel_coordinates_use_each_source_dimension_and_never_boxes(self):
         result = self.build([frame(0), frame(1, width=320, height=720)])

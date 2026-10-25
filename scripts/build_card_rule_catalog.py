@@ -323,7 +323,7 @@ def fs_evaluation(rule):
         }
         result = evaluation("temporal_" + code.lower().replace("-", "_"), [c(k, op, v, METRICS[k]["definition"]) for k, op, v in checks[code]])
         result.update(engine="rallymate_scoring.temporal_card_evidence.compute_temporal_card_evidence",
-                      engine_version="temporal-card-evidence-v1.0.0", requires_joint_subwindow=True)
+                      engine_version="temporal-card-evidence-v1.0.1", requires_joint_subwindow=True)
         if code == "FS09-M04":
             for condition in result["conditions"]:
                 condition["required_joint_names"] = FEET

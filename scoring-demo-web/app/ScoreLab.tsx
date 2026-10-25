@@ -10,6 +10,7 @@ import { analysisViewState } from "./lib/analysis-view-state";
 import { recentReports, type RecentReport } from "./lib/training-report";
 import { readWorkspaceLocation, workspaceHref } from "./lib/workspace-navigation";
 import { poseReplayTimingAllowed } from "./lib/pose-playback";
+import { originalPoseTimeBinding, poseWindowMatchesOriginal } from "./lib/original-video-timing";
 import { adviceContextKey, adviceForContext, adviceNotice as describeAdvice, type AdviceResponse, type ScopedAdvice } from "./lib/advice-display";
 import type { UploadProgress } from "./lib/resumable-upload";
 import type { TechniqueAssessmentResponse, DemoResultResponse, TrajectoryPreviewResponse } from "./lib/api-types";
@@ -22,6 +23,9 @@ import BallTrajectorySummary from "./BallTrajectorySummary";
 import AdviceResult from "./AdviceResult";
 import TrainingReplayPanel from "./TrainingReplayPanel";
 import OfficialMeshReplay from "./OfficialMeshReplay";
+import ReplayClipNavigator from "./ReplayClipNavigator";
+import SwingKinematicsPanel from "./SwingKinematicsPanel";
+import { swingVideoDurationMs } from "./lib/swing-kinematics";
 import { verifiedMeshMedia, watchMeshPreview, type OfficialMeshMedia } from "./lib/official-mesh-media";
 import { readReportJson } from "./lib/report-file";
 import { reportReadStage, safeRequestDiagnostic, type RequestDiagnostic } from "./lib/request-diagnostics";
@@ -87,8 +91,9 @@ function extractTechniqueAssessment(value: unknown): TechniqueAssessmentResponse
   return candidates.find(isTechniqueAssessment) ?? (isTechniqueAssessment(value) ? value : null);
 }
 
-function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = false, error, candidateSessionKey, onCandidateReplayHandle }: { api: Pick<RallyMateApiClient, "getPosePreview" | "getMeshPreview">; replaySignal: AbortSignal; evidence: LiveEvidence; localVideoSrc?: string | null; pending?: boolean; error?: string | null; candidateSessionKey: string; onCandidateReplayHandle: (handle: CandidateReplayHandle | null) => void }) {
-  const loadPoseWindow = useCallback((startMs: number, signal: AbortSignal) => api.getPosePreview(evidence.jobId!, { startMs, durationMs: 10000, sampleLimit: 600, signal: AbortSignal.any([signal, replaySignal]) }), [api, replaySignal, evidence.jobId]);
+function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = false, error, candidateSessionKey, onCandidateReplayHandle }: { api: Pick<RallyMateApiClient, "getPosePreview" | "getMeshPreview" | "getSwingKinematics">; replaySignal: AbortSignal; evidence: LiveEvidence; localVideoSrc?: string | null; pending?: boolean; error?: string | null; candidateSessionKey: string; onCandidateReplayHandle: (handle: CandidateReplayHandle | null) => void }) {
+  const replayContainer = useRef<HTMLDivElement>(null);
+  const clipMotion = useMemo(() => motionAnalysisOf(evidence.result ?? null, evidence.assessment), [evidence.result, evidence.assessment]);
   const trajectory = evidence.trajectory;
   const mediaBase = evidence.jobId ? `/v1/jobs/${encodeURIComponent(evidence.jobId)}/artifacts` : "";
   const original = evidence.result?.original_video;
@@ -101,6 +106,7 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
     && !originalUrl.search && !originalUrl.hash && !originalUrl.username && !originalUrl.password && /^[a-f0-9]{64}$/i.test(original.sha256)
     && Number.isSafeInteger(original.bytes) && original.bytes > 0 && typeof original.source_job_id === "string" && original.source_job_id
     ? original : null;
+  const originalTimeBinding = serverOriginal ? originalPoseTimeBinding(evidence.result, evidence.jobId, true) : null;
   // public_base_url may be stale after migration; media still travels through
   // this site's authenticated gateway, never the origin supplied in the JSON.
   const originalSrc = localVideoSrc || (serverOriginal ? originalPath : null);
@@ -114,7 +120,7 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
   const meshMedia = verifiedMeshMedia(evidence.result?.sam3d_mesh, evidence.jobId, meshOnline) ?? currentMeshUpdate?.media ?? null;
   const meshStatus = meshMedia ? "ready" : currentMeshUpdate?.status ?? initialMeshStatus;
   const meshAvailable = Boolean(meshMedia);
-  const [showSurface, setShowSurface] = useState(false);
+  const [showSurface, setShowSurface] = useState(true);
   useEffect(() => {
     if (!meshOnline || !evidence.jobId || initialMeshStatus !== "pending" && meshReadAttempt === 0) return;
     const controller = new AbortController();
@@ -128,6 +134,13 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
   const selectedKind: "original" | "annotated" = (preferredKind === "original" && originalSrc) || !annotatedSrc ? "original" : "annotated";
   const usingOriginal = selectedKind === "original";
   const usingLocalVideo = usingOriginal && Boolean(localVideoSrc);
+  const loadPoseWindow = useCallback(async (startMs: number, signal: AbortSignal) => {
+    const preview = await api.getPosePreview(evidence.jobId!, { startMs, durationMs: 10000, sampleLimit: 600, signal: AbortSignal.any([signal, replaySignal]) });
+    if (usingOriginal && !usingLocalVideo && originalTimeBinding && !poseWindowMatchesOriginal(preview, originalTimeBinding)) {
+      throw new Error("原片与动作关键点的时间来源不一致。");
+    }
+    return preview;
+  }, [api, replaySignal, evidence.jobId, usingOriginal, usingLocalVideo, originalTimeBinding]);
   const selectedVideoSrc = usingOriginal ? originalSrc : annotatedSrc;
   const [videoFailed, setVideoFailed] = useState<string | null>(null);
   const [originalSeek, setOriginalSeek] = useState<number | null>(null);
@@ -161,7 +174,7 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
   useEffect(() => {
     if (meshAvailable && showSurface) onCandidateReplayHandle(null);
   }, [meshAvailable, showSurface, onCandidateReplayHandle]);
-  return <>
+  return <div className="replay-media-scope" ref={replayContainer}>
     {meshOnline && meshStatus === "pending" && <p className="replay-caption" role="status">人体表面生成中，评分可先查看。完成后会自动显示官方预览。</p>}
     {meshOnline && meshStatus === "failed" && <p className="replay-caption" role="status">人体表面预览暂未生成成功；本次评分和原片回放仍可查看。</p>}
     {meshOnline && meshStatus === "read-error" && <p className="replay-caption" role="status">暂未读取到人体表面预览状态，已停止本次等待。报告和原片回放仍可查看。</p>}
@@ -179,7 +192,7 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
     <BallTrajectoryViewer key={selectedVideoSrc ?? "coordinates"} trajectory={trajectory} pending={pending} error={error}
       initialOverlays={{ pose: true }} quickAnalysisTools
       jobId={evidence.jobId} loadPoseWindow={onlineEvidence && evidence.jobId && !pending ? loadPoseWindow : undefined}
-      poseTimingPreserved={usingOriginal ? usingLocalVideo : poseReplayTimingAllowed(false, evidence.result)}
+      poseTimingPreserved={usingOriginal ? usingLocalVideo || Boolean(originalTimeBinding) : poseReplayTimingAllowed(false, evidence.result)}
       videoKind={selectedVideoSrc ? selectedKind : null}
       videoSrc={videoFailed !== selectedVideoSrc ? selectedVideoSrc : null}
       poster={onlineEvidence && evidence.result?.artifact_urls?.["preview.jpg"] ? `${mediaBase}/preview.jpg` : null}
@@ -193,7 +206,13 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
       {evidence.error && <p className="upload-error" role="status">部分增强证据暂不可用：{evidence.error}</p>}
     </details>
     </>}
-  </>;
+    <ReplayClipNavigator key={candidateSessionKey} containerRef={replayContainer} result={evidence.result ?? null} motion={clipMotion}
+      jobId={evidence.jobId}
+      mediaKey={meshMedia && showSurface ? meshMedia.video_url : selectedVideoSrc ?? "no-video"} />
+    {onlineEvidence && evidence.jobId && serverOriginal && !pending && <SwingKinematicsPanel key={`swing:${candidateSessionKey}`}
+      context={{ jobId: evidence.jobId, videoSha256: serverOriginal.sha256, motion: clipMotion, durationMs: swingVideoDurationMs(evidence.result) }}
+      initialData={evidence.result?.swing_kinematics} load={api.getSwingKinematics} signal={replaySignal} />}
+  </div>;
 }
 
 export default function ScoreLab() {

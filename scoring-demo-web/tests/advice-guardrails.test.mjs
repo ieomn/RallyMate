@@ -89,7 +89,7 @@ test("high footwork evidence cannot trigger bottom-line advice or a provider cal
     const app = await route(); const body = await (await app.POST(request({ ...input, technique: "底线击球", jobId }))).json();
     assert.equal(body.evidenceStatus, "insufficient_evidence"); assert.equal(body.providerStatus, "not_requested_insufficient_evidence");
     assert.equal(calls, 1); assert.deepEqual(body.evidence.availableFacts, []);
-    assert.match(body.advice.summary, /未识别不代表没有该动作/);
+    assert.match(body.advice.summary, /没有足够.*测量/);
   });
 });
 
@@ -166,7 +166,7 @@ test("valid provider IDs return only server-authored explanations and no raw sco
   }, async () => {
     const app = await route(); const body = await (await app.POST(request({ ...input, jobId }))).json();
     assert.equal(body.source, "mimo"); assert.equal(body.providerStatus, "ready");
-    assert.match(body.advice.summary, /已关联候选事件：回位/);
+    assert.match(body.advice.summary, /已定位回位相关片段/);
     assert.ok(body.evidence.limitations.some(text => text.includes("不等于确认球拍触球")));
   });
 });

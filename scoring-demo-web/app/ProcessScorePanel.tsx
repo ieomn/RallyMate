@@ -56,10 +56,11 @@ export function RelativeScoreSummary({ result, report, pending }: { result: Demo
   const current = trainingScoreOf(result, report);
   const formal = current.source === "validated_card_execution";
   return <section className="process-score-panel process-relative-summary" aria-label="本次训练评分">
-    <div className="process-score-heading"><div><span className="process-eyebrow">本次训练结果</span><h2>动作评分</h2></div><span className="process-trial">{formal ? `${current.measuredIndicatorCount} 项动作指标已评分` : `${observed} / 5 维有评分依据`}</span></div>
+    <div className="process-score-heading"><div><span className="process-eyebrow">本次训练结果</span><h2>{current.scoreLabel}</h2></div><span className="process-trial">{formal ? `${current.measuredIndicatorCount} 项动作指标已评分` : `${observed} / 5 维有评分依据`}</span></div>
     <div className="process-overall-reference"><strong>{processScoreText(current.score)}{current.score !== null && <small>/ 100</small>}</strong>
       <p>{current.score !== null ? "根据本次已测得的动作项目计算，未测得的项目不计入平均分。" : "当前识别结果还不足以计算动作得分，已测得的关节运动仍可在下方查看。"}</p>
     </div>
+    {formal && <p className="process-score-contract">依据 {current.measuredIndicatorCount} 项指标、{current.scoredInstanceCount} 次有效测量计算条件完成率。{current.onlyFootwork ? "本次计分范围为步伐，挥拍与发力表现另见下方测量。" : "比较两次训练时，请使用相同动作、指标和拍摄条件。"}</p>}
     {!formal && validation.status === "invalid" && <p role="alert">{validation.reason_zh}</p>}
     {!formal && <div className="process-reference-method" aria-label="各维度评分">{reference.dimensions.map(item => <section key={item.id}>
       <h3>{item.name_zh} <strong>{item.score === null ? "未评分" : `${processScoreText(item.score)} / 100`}</strong></h3>
@@ -70,6 +71,7 @@ export function RelativeScoreSummary({ result, report, pending }: { result: Demo
 export default function ProcessScorePanel({ result, motion, pending, title, description, preparedReport, showSummary = true }: { result: DemoResultResponse | null; motion: MotionAnalysis | null; pending: boolean; title: string; description: string; preparedReport?: ProcessEvaluation | null; showSummary?: boolean }) {
   const [selectedId, setSelectedId] = useState<ProcessDimensionId>("swing");
   const [selectedEpisodeId, setSelectedEpisodeId] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const id = useId();
   const report = preparedReport === undefined ? processEvaluationOf(result?.process_evaluation) : preparedReport;
   const completed = !!result && !pending && !["failed", "error", "cancelled", "queued", "pending", "running", "processing"].includes(result.status ?? "");
@@ -83,20 +85,21 @@ export default function ProcessScorePanel({ result, motion, pending, title, desc
   const group = groups.find(item => item.id === selectedEpisodeId) ?? groups[0];
   const criteria = [...(group?.criteria ?? [])].sort((a, b) => Number(b.status === "measured") - Number(a.status === "measured"));
   const sequence = processPeakSequence(criteria);
-  return <>{showSummary && <RelativeScoreSummary result={result} report={report} pending={pending} />}<section className="process-score-panel" aria-labelledby={`${id}-heading`} aria-busy={pending}>
-    <div className="process-score-heading"><div><span className="process-eyebrow">深入查看 · 测量与适用范围</span><h2 id={`${id}-heading`}>五维过程测量</h2></div><span className="process-trial">{measuredCount} / 5 维有测量</span></div>
-    {completed ? <><p className="process-score-contract">图表展示已有过程观测对应的分项得分，缺测维度留空。</p><ProcessRadar dimensions={dimensions} selected={selectedId} reference={reference} /><p className="process-radar-caption"><i aria-hidden="true" />{reference.observed_dimension_count} / 5 维有计分方向 · {measuredCount} / 5 维有过程测量<span>分数反映本次可测的动作项目。</span></p></> : <div className="process-empty" role="status"><strong>{pending ? title : "本次暂无有效动作测量"}</strong><p>{pending ? description : "尚未读取有效报告。"}</p></div>}
-    <details className="process-explanation">
-    <summary>查看评分依据与动作细节</summary>
+  return <>{showSummary && <RelativeScoreSummary result={result} report={report} pending={pending} />}<section className="process-score-panel process-dimensions-panel" aria-labelledby={`${id}-heading`} aria-busy={pending}>
+    <div className="process-score-heading"><div><span className="process-eyebrow">本次训练 · 分项表现</span><h2 id={`${id}-heading`}>五维评分图</h2></div><span className="process-trial">{measuredCount} / 5 维有测量</span></div>
+    {completed ? <><p className="process-score-contract">查看移动、准备、挥拍、触球和随挥的分项表现。</p><ProcessRadar dimensions={dimensions} selected={selectedId} reference={reference} /><p className="process-radar-caption"><i aria-hidden="true" />{reference.observed_dimension_count} / 5 维可评分 · {measuredCount} / 5 维有测量<span>{reference.observed_dimension_count ? "未评分的维度留空，不计作低分。" : measuredCount ? "已测到动作数据，但还不足以判断各维表现，暂不生成分数。" : "本次尚无足够数据，五个维度暂未评分。"}</span></p></> : <div className="process-empty" role="status"><strong>{pending ? title : "本次暂无有效动作测量"}</strong><p>{pending ? description : "尚未读取有效报告。"}</p></div>}
+    <p className="process-dimension-prompt">选择一个维度，查看动作测量和对应片段。</p>
     <div className="process-dimension-options" role="group" aria-label="选择过程评价维度">
-      {dimensions.map(item => { const score = reference.dimensions.find(row => row.id === item.id)!; return <button key={item.id} type="button" aria-pressed={item.id === selectedId} aria-controls={`${id}-detail`} onClick={() => setSelectedId(item.id)}><span>{item.name_zh}<small>{completed ? score.score === null ? "未评分" : "已评分" : "报告尚未就绪"} · {processDimensionState(item)}</small></span><strong>{completed ? processScoreText(score.score) : "—"}</strong></button>; })}
+      {dimensions.map(item => { const score = reference.dimensions.find(row => row.id === item.id)!; return <button key={item.id} type="button" aria-pressed={item.id === selectedId} aria-controls={`${id}-detail`} aria-expanded={detailsOpen && item.id === selectedId} onClick={() => { setSelectedId(item.id); setSelectedEpisodeId(""); setDetailsOpen(true); }}><span>{item.name_zh}<small>{completed ? score.score === null ? "未评分" : "已评分" : "报告尚未就绪"} · {processDimensionState(item)}</small></span><strong>{completed ? processScoreText(score.score) : "—"}</strong></button>; })}
     </div>
+    <details className="process-explanation" open={detailsOpen} onToggle={event => setDetailsOpen(event.currentTarget.open)}>
+    <summary>查看评分依据与动作细节</summary>
     <section id={`${id}-detail`} className="process-dimension-detail" aria-labelledby={`${id}-detail-heading`}>
       <div className="process-detail-heading"><h3 id={`${id}-detail-heading`}>{selected.name_zh}<span>{completed ? selectedReference.score === null ? "未评分" : "已评分" : "报告尚未就绪"}</span></h3><strong>{completed ? processScoreText(selectedReference.score) : "—"}<small>{completed ? "/ 100" : "待完成"}</small></strong></div>
       <p>{selectedReference.gap.reason_zh}</p>
       <p className="process-dimension-summary">{selected.summary_zh}</p>
       {selected.criteria_selection?.is_truncated && <p className="process-source-scope">展示部分测量，统计基于已读取事件；每类动作测量按时间保留最多 12 条，所有计分子项完整保留。</p>}
-      {selected.measurement_input_scope && <p className="process-source-scope">已读取 {selected.measurement_input_scope.returned_event_count} / {selected.measurement_input_scope.available_event_count} 个候选步伐事件，{selected.sample_count ?? 0} 个事件有有效测量。{selected.measurement_input_scope.is_truncated ? "尚有事件未读入，此统计不代表全片。" : ""}</p>}
+      {selected.measurement_input_scope && <p className="process-source-scope">已读取 {selected.measurement_input_scope.returned_event_count} / {selected.measurement_input_scope.available_event_count} 段步伐，{selected.sample_count ?? 0} 段有有效测量。{selected.measurement_input_scope.is_truncated ? "还有片段尚未读取，此处未包含全片。" : ""}</p>}
       {selected.id === "swing" && <p className="process-proxy-note">重点查看肩、髋、腕的二维运动时序与动作方向。画面中的速度峰值先后不能代表真实受力或三维动力链。</p>}
       {groups.length > 1 && <label className="process-episode-picker"><span>查看动作片段 <small>{groups.filter(item => item.id !== "unassigned").length} 段</small></span><select value={group.id} onChange={event => setSelectedEpisodeId(event.target.value)}>{groups.map((item, index) => <option key={item.id} value={item.id}>{item.id === "unassigned" ? "尚缺依据的项目" : `片段 ${index + 1}${item.startMs === null ? "" : ` · ${(item.startMs / 1000).toFixed(2)} 秒`}`}</option>)}</select></label>}
       {sequence && <div className="process-peak-sequence"><span>本片段 · 二维运动峰值先后</span><strong>{sequence}</strong><small>这是画面中的运动顺序，不是真实发力顺序。</small></div>}

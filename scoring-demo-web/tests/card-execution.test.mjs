@@ -18,6 +18,19 @@ const { default: CardExecutionPanel } = await import(compiledUrl(new URL("../app
 const real = JSON.parse(fs.readFileSync(new URL("./fixtures/card-execution-real.json", import.meta.url), "utf8"));
 const catalogue = JSON.parse(fs.readFileSync(new URL("../../src/rallymate_scoring/data/card_rules_v1.json", import.meta.url), "utf8"));
 
+test("temporal axis patch preserves explicit old and new versions without mixing their engines", () => {
+  const updated = structuredClone(real);
+  for (const card of updated.cards) {
+    if (card.runtime_engine === "temporal-card-evidence-v1.0.0") card.runtime_engine = "temporal-card-evidence-v1.0.1";
+    for (const instance of card.instances) if (instance.measurement_version === "temporal-card-evidence-v1.0.0") instance.measurement_version = "temporal-card-evidence-v1.0.1";
+  }
+  assert.deepEqual(cardExecutionOf(updated).cards.map(c => c.instances.map(i => i.score)), cardExecutionOf(real).cards.map(c => c.instances.map(i => i.score)));
+  const scoredCard = updated.cards.find(c => c.instances.some(i => i.status === "proxy_scored"));
+  scoredCard.runtime_engine = "temporal-card-evidence-v1.0.0";
+  const parsed = cardExecutionOf(updated).cards.find(c => c.indicator_id === scoredCard.indicator_id);
+  assert.ok(parsed.instances.every(i => i.score === null));
+});
+
 test("three real instances preserve 40/100 proxies and a null fallback without importing full-run counts", () => {
   const report = cardExecutionOf(real);
   assert.equal(report.summary.catalogue_cards, 3);

@@ -2,8 +2,8 @@ import { sourceMeasurementDetailsOf, type SourceMeasurementDetails } from "./sou
 import { hasModelMeasurementContext } from "./model-measurement";
 
 export const INDICATOR_STATUSES: Record<string, string> = {
-  source_rule_conflict: "原文规则待修订", source_boundaries_missing: "原文阶段边界缺失",
-  measured_partial_rule: "已取得部分原文测量", legacy_proxy_measured: "已有历史代理测量",
+  source_rule_conflict: "动作要求待明确", source_boundaries_missing: "阶段边界不完整",
+  measured_partial_rule: "已取得部分动作测量", legacy_proxy_measured: "已有历史代理测量",
   contextual_measurement: "已有相关动作测量", event_type_unresolved: "动作类型待确认",
   evidence_insufficient: "当前证据不足", not_observed: "本次未观测",
 };

@@ -17,7 +17,7 @@ export default function TrainingReportOverview({ result, motion, pending, title,
   const process = preparedReport === undefined ? processEvaluationOf(result?.process_evaluation) : preparedReport;
   return <aside className="training-overview" id="scoreboard" aria-label="训练报告概览">
     {showSummary && <RelativeScoreSummary result={result} report={process} pending={pending} />}
-    <details className="report-insight-details"><summary><span>五维测量与参考图</span><small>查看适用范围、缺失依据与已有参考分</small></summary><ProcessScorePanel result={result} motion={motion} pending={pending} title={title} description={description} preparedReport={process} showSummary={false} /></details>
+    <ProcessScorePanel result={result} motion={motion} pending={pending} title={title} description={description} preparedReport={process} showSummary={false} />
     <details className="report-score report-process-auxiliary">
       <summary>测量情况 · 辅助查看</summary>
       <div className="report-score-heading"><h2 id="report-overview-title">本次测量概览</h2><span className="report-state">{pending ? result ? "部分结果可用" : "整理中" : result ? "已读取结果" : "暂无结果"}</span></div>
@@ -34,25 +34,25 @@ export default function TrainingReportOverview({ result, motion, pending, title,
 export function TrainingRecommendations({ result, motion, pending, status, onSaveFocus, replayAvailable = true }: { result: DemoResultResponse | null; motion: MotionAnalysis | null; pending: boolean; status?: string; onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean }) {
   const focus = trainingGuidance(result, motion).sort((a, b) => Number(a.evidenceState === "unavailable") - Number(b.evidenceState === "unavailable")).slice(0, 2);
   const available = focus.filter(item => item.evidenceState !== "unavailable");
-  const emptyMessage = pending ? "完成后会在这里显示有依据的训练重点。"
+  const emptyMessage = pending ? "分析完成后会显示本次观察和对应练习。"
     : status === "failed" || status === "error" ? "本次分析未完成，暂时无法形成训练建议。"
     : status === "cancelled" ? "本次分析已取消，暂时没有训练建议。"
-    : result || status === "succeeded" || status === "completed" ? "本次分析已完成，但现有证据不足以形成训练建议。可先回看原视频中的动作片段。"
-    : "上传一段训练视频，从步伐与转体开始复盘。";
+    : result || status === "succeeded" || status === "completed" ? "本次没有足够的动作测量。下次保留准备、挥拍和回位的完整画面，再比较同一项练习。"
+    : "上传一段训练视频，获得动作观察、练习步骤和复测方法。";
   const clock = (value: number) => `${(value / 1000).toFixed(2)} 秒`;
   return <section className="report-focus report-recommendations report-first-look" id="recommendations" aria-labelledby="report-focus-title">
-    <div className="report-section-heading"><div><span className="process-eyebrow">这次先关注</span><h2 id="report-focus-title">{available.length ? focus.length === 1 ? "先看这一项" : "先看这两项" : result ? "先保留一个下次能验证的问题" : "本次复盘重点"}</h2></div><span className="report-evidence-status">{pending ? result ? "部分结果可用" : "等待分析结果" : available.length ? "依据当前可用证据" : "暂不能判断动作"}</span></div>
-    {!!focus.length && <p className="report-first-look-intro">根据动作观察选择一个练习目标，再用相同任务复测。通用练习不代表已诊断出你的动作错误。</p>}
+    <div className="report-section-heading"><div><span className="process-eyebrow">下一次怎么练</span><h2 id="report-focus-title">{focus.length ? focus.length === 1 ? "先练这一项" : "从这两项中选一项开始" : "本次训练建议"}</h2></div><span className="report-evidence-status">{pending ? result ? "部分结果可用" : "等待分析结果" : available.length ? "结合本次测量" : "基础练习"}</span></div>
+    {!!focus.length && <p className="report-first-look-intro">每次只练一个目标，先用慢球完成，再用相同任务记录进步。</p>}
     <div className="report-recommendation-grid">{focus.length ? focus.map((item, index) => <article key={item.id} className={`report-focus-item focus-${item.evidenceState}`}>
       <span className="focus-index" aria-hidden="true">0{index + 1}</span><div className="report-focus-body">
-        <span className="focus-evidence-label">{item.evidenceState === "observation" ? "已有观察" : item.evidenceState === "review" ? "动作观察" : "无法判断"} · {item.label}</span>
+        <span className="focus-evidence-label">{item.label}</span>
         <h3>{item.title}</h3>
-        <p className="focus-observation">{item.observation}</p>
-        <dl className="focus-review-steps"><div><dt>看哪段</dt><dd>{item.moment ? `${clock(item.moment.startMs)} – ${clock(item.moment.endMs)} · ${item.moment.kind === "footwork" ? "步伐候选区间" : "挥拍运动区间"}` : "暂无可靠时间定位，可先手动回看原片。"}</dd></div><div><dt>观察什么</dt><dd>{item.question}</dd></div><div><dt>下一步</dt><dd>{item.nextStep}</dd></div></dl>
-        {!replayAvailable && item.moment && <p className="focus-media-unavailable">此报告未附可用原片，请保留时间并在原片中核对。</p>}
-        <div className="focus-actions">{item.moment && replayAvailable && <button type="button" className="focus-replay" onClick={() => replayMoment(item.moment!, result?.job_id)}>回看这段原片 <span aria-hidden="true">↗</span></button>}{onSaveFocus && <button type="button" className="focus-save" onClick={() => onSaveFocus(focusSelection(item))}>保存为关注点</button>}</div>
-        <details className="focus-evidence-detail"><summary>依据与判断边界</summary><p>{item.detail}</p><p>{item.limitation}</p>{item.source_links?.map(source => <p key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a></p>)}</details>
+        <p className="focus-observation"><strong>本次观察：</strong>{item.observation}</p>
+        <dl className="focus-review-steps"><div><dt>练习目标</dt><dd>{item.goal}</dd></div><div><dt>怎么练</dt><dd>{item.drill}</dd></div><div><dt>复测标准</dt><dd>{item.retest}</dd></div>{item.moment && <div><dt>对应片段</dt><dd>{clock(item.moment.startMs)} – {clock(item.moment.endMs)}</dd></div>}</dl>
+        {!replayAvailable && item.moment && <p className="focus-media-unavailable">此报告未附可用原片，可按上方时间在自己的视频中查看。</p>}
+        <div className="focus-actions">{item.moment && replayAvailable && <button type="button" className="focus-replay" onClick={() => replayMoment(item.moment!, result?.job_id)}>回看这段原片 <span aria-hidden="true">↗</span></button>}{onSaveFocus && <button type="button" className="focus-save" onClick={() => onSaveFocus(focusSelection(item))}>保存练习目标</button>}</div>
+        <details className="focus-evidence-detail"><summary>测量说明与练习参考</summary><p>{item.detail}</p><p>{item.limitation}</p>{item.source_links?.map(source => <p key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a></p>)}</details>
       </div></article>) : <p className="report-status-copy">{emptyMessage}</p>}</div>
-    {available.length > 0 && <p className="report-judgment-boundary"><strong>暂时无法判断</strong>这些观察不能单独说明技术好坏或真实发力效率；缺少测量的项目不会按低分处理。</p>}
+    {!!focus.length && <p className="report-judgment-boundary">建议从舒适、低强度的节奏开始；出现不适时停止。</p>}
   </section>;
 }

@@ -19,7 +19,7 @@ from rallymate_vision.display_score import load_display_score_policy, recover_rt
 from rallymate_scoring.pose_observations import sam_source_bound_points
 
 
-POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.2.0"
+POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.3.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_WINDOW_MS = 10_000
 MAX_SAMPLE_LIMIT = 600
@@ -30,6 +30,7 @@ MAX_PRIMARY_BYTES = 256 * 1024 * 1024
 MAX_ARTIFACT_LINES = 2_000_000
 MAX_LINE_BYTES = 1024 * 1024
 JOINT_NAMES = tuple(item["name"] for item in keypoint_schema("halpe26")["keypoints"])
+MHR70_DISPLAY = json.loads((Path(__file__).parent / "pose" / "data" / "mhr70_display.json").read_text(encoding="utf-8"))
 SKELETON_EDGES = [
     ["nose", "left_eye"], ["nose", "right_eye"], ["left_eye", "left_ear"], ["right_eye", "right_ear"],
     ["head", "neck"], ["neck", "left_shoulder"], ["neck", "right_shoulder"],
@@ -115,11 +116,24 @@ def _keypoints(pose: Mapping[str, Any], width: int, height: int, frame: Mapping 
         estimate = sam_source_bound_points(pose, frame or {})
         if estimate is None:
             return []
-        points, _ = estimate
-        return [{"name": name, "x": round(x / width, 6), "y": round(y / height, 6),
-                 "raw_x_px": x, "raw_y_px": y, "in_frame": True, "confidence": None,
-                 "confidence_semantics": "not_provided_by_sam3d", "source": "model_estimate",
-                 "observation_semantics": "model_estimate"} for name, (x, y) in points.items()]
+        # The scoring validator verifies the complete native index/name contract
+        # and source binding, but intentionally maps only 17 body landmarks.
+        # Display all native points without extending that scoring mapping.
+        result = []
+        for point in pose["keypoints"]:
+            if (point.get("source") != "sam3d" or point.get("observation_semantics") != "model_estimate"
+                    or point.get("confidence_semantics") != "not_provided_by_sam3d"
+                    or any(key not in point or point[key] is not None for key in ("confidence", "observed", "visibility"))):
+                continue
+            x, y = _finite(point.get("raw_x_px")), _finite(point.get("raw_y_px"))
+            if point.get("in_frame") is not True or x is None or y is None or not (0 <= x < width and 0 <= y < height):
+                continue
+            result.append({"name": point["name"], "native_index": point["index"],
+                           "x": round(x / width, 6), "y": round(y / height, 6),
+                           "raw_x_px": x, "raw_y_px": y, "in_frame": True, "confidence": None,
+                           "confidence_semantics": "not_provided_by_sam3d", "source": "model_estimate",
+                           "observation_semantics": "model_estimate"})
+        return result
     if pose.get("coordinate_space") is not None and pose.get("coordinate_space") != "original_frame":
         return []
     points = pose.get("keypoints")
@@ -305,9 +319,15 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     if display_count > sample_limit:
         indexes = {round(index * (display_count - 1) / (sample_limit - 1)) for index in range(sample_limit)} if sample_limit > 1 else {0}
         frames = [frame for index, frame in enumerate(frames) if index in indexes]
-    if any(row.get("pose_source") == "sam3d" for row in context):
+    native_mhr = any(row.get("pose_source") == "sam3d" for row in context)
+    if native_mhr:
         # Legacy score recovery and gap interpolation require observed numeric
         # confidence. Neither applies to unverified monocular model estimates.
+        # A window has one named schema. Do not relabel detector landmarks as
+        # native MHR points if a malformed artifact mixes model families.
+        for row in context:
+            if row.get("pose_source") != "sam3d":
+                row["keypoints"] = []
         display_context = context
     else:
         display_context, _ = build_display_frames(context, verified_frame_indexes=verified_indexes,
@@ -318,8 +338,9 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     width, height = next(iter(dimensions)) if len(dimensions) == 1 else (None, None)
     return {
         "schema_version": "1.0.0", "version": POSE_PLAYBACK_VERSION, "result_kind": "observed_pose_playback",
-        "coordinate_space": "normalized_frame_0_1", "joint_schema": "halpe26_named",
-        "keypoint_names": list(JOINT_NAMES), "skeleton_edges": [edge[:] for edge in SKELETON_EDGES],
+        "coordinate_space": "normalized_frame_0_1", "joint_schema": "mhr70_named" if native_mhr else "halpe26_named",
+        "keypoint_names": MHR70_DISPLAY["keypoint_names"][:] if native_mhr else list(JOINT_NAMES),
+        "skeleton_edges": [edge[:] for edge in (MHR70_DISPLAY["skeleton_edges"] if native_mhr else SKELETON_EDGES)],
         "min_keypoint_confidence": MIN_KEYPOINT_CONFIDENCE, "interpolation": "none",
         "frames": frames,
         "display_frames": display_frames, "display_continuity": display_continuity,

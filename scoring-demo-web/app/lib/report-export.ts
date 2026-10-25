@@ -1,3 +1,4 @@
+import { productText } from "./presentation-text";
 import { evidenceReferenceScore, measurementCounts, measurementWarnings, normalizeMeasurementResult, technicalAssessmentState } from "./measurement-evidence";
 import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./api-types";
 import type { ScoreReport } from "../scoring/engine";
@@ -5,6 +6,7 @@ import { footworkEpisodes } from "./footwork-review";
 import { analysisReportOf } from "./training-report";
 import { trainingGuidance } from "./training-guidance";
 import { motionAnalysisOf, ROTATION_METRICS } from "./motion-analysis";
+import { validatedSwingKinematicsReport } from "./swing-kinematics";
 import { scoreExplanationOf } from "./score-explanation";
 import { contextualHipMeasurements, contextualHipReason, isOpaqueSourceIdentity, sourceAssessmentForExport, sourceReviewWindows } from "./technical-review";
 import { processEvaluationOf, processEvaluationValidationOf, trainingDimensions } from "./process-evaluation";
@@ -53,7 +55,7 @@ const idText = (value: unknown): string | null => typeof value === "string" && /
 const FAMILY_NAMES: Record<string, string> = { baseline: "底线", serve: "发球", return: "接发", net_attack: "网前进攻", footwork: "步伐" };
 
 /** Export only user-facing text. Links, filesystem locations and credentials are not report evidence. */
-function text(value: unknown, fallback = "未提供"): string {
+function safeText(value: unknown, fallback = "未提供"): string {
   if (typeof value !== "string" || !value.trim()) return fallback;
   return Array.from(value).filter(character => {
     const code = character.charCodeAt(0);
@@ -68,6 +70,9 @@ function text(value: unknown, fallback = "未提供"): string {
     .replace(/\s+/g, " ")
     .trim().slice(0, 4000);
 }
+
+// Presentation copy must never rewrite strings in portable evidence contracts.
+const text = (value: unknown, fallback = "未提供"): string => safeText(typeof value === "string" ? productText(value) : value, fallback);
 
 const textList = (value: unknown): string[] => asArray(value).filter((item): item is string => typeof item === "string" && Boolean(item.trim())).map(item => text(item));
 const familyName = (value: unknown): string => typeof value === "string" ? FAMILY_NAMES[value] ?? text(value) : "未分类";
@@ -222,8 +227,9 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
   const processValidation = processEvaluationValidationOf(result.process_evaluation, processEvaluation);
   const currentScore = trainingScoreOf(input.evidence.result ?? null, processEvaluation);
   if (currentScore.source === "validated_card_execution") {
-    sections.push({ title: `训练评分：${numberText(currentScore.score)} / 100`, paragraphs: [
-      `${currentScore.measuredIndicatorCount} 项动作指标已评分。根据本次已测得的动作项目计算，未测得的项目不计入平均分。`,
+    sections.push({ title: `${currentScore.scoreLabel}：${numberText(currentScore.score)} / 100`, paragraphs: [
+      `${currentScore.measuredIndicatorCount} 项动作指标、${currentScore.scoredInstanceCount} 条有效测量参与评分。根据本次已测得的动作项目计算，未测得的项目不计入平均分。`,
+      currentScore.onlyFootwork ? "本次得分只覆盖步伐动作条件，不代表挥拍发力、触球控制或完整技术水平；跨视频应在相同项目和评分规则下比较。" : "本次得分只覆盖已测动作条件；跨视频应在相同项目和评分规则下比较。",
     ] });
   } else sections.push({ title: currentScore.score === null ? "训练评分：未评分" : `训练评分：${numberText(currentScore.score)} / 100`, paragraphs: [
     `${relativeReference.observed_dimension_count} / 5 维有评分依据。仅对已测项目汇总，缺测不填分。`,
@@ -274,7 +280,7 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
   const hipRows = contextualHipMeasurements(input.evidence.result ?? null);
   if (hipRows.length) sections.push({ title: "候选事件的髋中心二维测量", paragraphs: [
     "路径长度是逐帧髋中心位移之和，净位移是起终点距离；比值为路径长度/净位移。像素不等同于米数，二维量测不产生技术等级。",
-    "计算定义来源：步伐卡 FS05-M02（T023 / P0827）；保留每条原事件分类，不确认 FS05 动作，不改变指标状态、数量或正式等级。",
+    "计算髋部路径长度与起终点直线距离的比值。这里保留各运动时段的测量，不单独判定动作类型或技术等级。",
   ], columns: ["原候选事件", "完整候选窗口", "计算窗口 / 原帧", "路径长度（像素）", "净位移（像素）", "路径/净位移比", "状态与原因", "来源"], rows: hipRows.map(row => [
     `${row.event_code} · ${text(row.event_id)}`, interval(row.parent_window_ms), row.measurement_window_video_ms && row.source_frame_bounds
       ? `${interval(row.measurement_window_video_ms)} · 原帧 ${row.source_frame_bounds.start_source_frame}–${row.source_frame_bounds.end_source_frame}` : "完整计算窗口不可核验",
@@ -283,7 +289,7 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
     `来源任务 ${text(row.source_id)} · 视频 ${text(row.video_id)} · SHA-256 ${row.video_sha256} · ${row.helper_version} · ${row.adapter.version}`,
   ]) });
   const focus = trainingGuidance(input.evidence.result ?? null, parsedMotion);
-  if (focus.length) sections.push({ title: "这次先关注", paragraphs: ["以下区分已有观察与通用练习；练习不是技术错误诊断，每次只选一个目标并用相同任务复测。"], columns: ["重点", "已有观察", "练习与复测", "依据及适用范围", "回放区间"], rows: focus.map(item => [text(item.title), text(item.detail), text(item.nextStep), `${text(item.limitation)}${item.source_links?.length ? ` 来源：${item.source_links.map(source => `${source.title} ${source.url}`).join("；")}` : ""}`, item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
+  if (focus.length) sections.push({ title: "这次先关注", paragraphs: [], columns: ["重点", "已有观察", "练习", "复测", "适用范围", "回放区间"], rows: focus.map(item => [text(item.goal || item.title), text(item.observation), text(item.drill), text(item.retest), `${text(item.limitation)}${item.source_links?.length ? ` 来源：${item.source_links.map(source => `${source.title} ${source.url}`).join("；")}` : ""}`, item.moment ? `${numberText(item.moment.startMs / 1000)}–${numberText(item.moment.endMs / 1000)} 秒` : "未提供定位区间"]) });
   const analysisReport = analysisReportOf(result.analysis_report);
   if (analysisReport) sections.push({ title: "识别过程与测量范围", paragraphs: ["各层分别判断可用性。动作未分类不会清空可独立测量的指标。", analysisReport.measurement_summary.is_truncated ? "当前逐段记录经过截取，单项观测数量仅对应已返回片段。" : "单项观测数量对应已返回的回放片段。"], columns: ["分析层", "状态", "说明"], rows: analysisReport.layers.map(layer => [text(layer.label_zh), ({ available: "可用", partial: "部分可用", unavailable: "未提供", unknown: "未确认" } as Record<string, string>)[layer.status] ?? "未确认", text(layer.reason_zh)]) });
   if (input.evidence.result && measurementWarnings(input.evidence.result).length) sections.push({ title: "测量适用范围与历史结果提示", paragraphs: measurementWarnings(input.evidence.result).map(warning => text(warning)) });
@@ -409,10 +415,17 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   const resultInput = asRecord(input.evidence.result?.input);
   const summaryInput = asRecord(summaryOf(input).input);
   const videoMetadata = asRecord(resultInput.video ?? resultInput.metadata ?? summaryInput.video ?? summaryInput.metadata);
-  const safeVideoMetadata = Object.fromEntries(["duration_ms", "width", "height", "frame_count"].flatMap(key => {
+  const safeVideoMetadata: RecordValue = Object.fromEntries(["duration_ms", "width", "height", "frame_count"].flatMap(key => {
     const value = finite(videoMetadata[key]);
     return value !== null && value >= 0 ? [[key, value]] : [];
   }));
+  const sourceHashes = [input.evidence.result?.original_video?.sha256, videoMetadata.sha256]
+    .filter((value): value is string => typeof value === "string" && /^[a-f\d]{64}$/i.test(value)).map(value => value.toLowerCase());
+  const sourceSha = sourceHashes.length && sourceHashes.every(value => value === sourceHashes[0]) ? sourceHashes[0] : null;
+  if (sourceSha) safeVideoMetadata.sha256 = sourceSha;
+  const swingForExport = input.evidence.result?.swing_kinematics && sourceSha && report.jobId
+    ? validatedSwingKinematicsReport(input.evidence.result.swing_kinematics, { jobId: report.jobId, videoSha256: sourceSha,
+      motion: motionAnalysisOf(input.evidence.result, input.evidence.assessment, summaryOf(input)), durationMs: finite(videoMetadata.duration_ms) }) : null;
   // The ledger's child score rows omit score_semantics. Preserve only these exact
   // objects after the complete ledger has passed arithmetic and parent checks.
   const trustedScoreRows = new WeakSet<object>();
@@ -431,12 +444,12 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
       const code = character.charCodeAt(0);
       return code === 9 || code === 10 || (code > 31 && code !== 127);
     }).join("").replace(/\s+/g, " ").trim();
-    return text(value, "") === formatted ? value : undefined;
+    return safeText(value, "") === formatted ? value : undefined;
   };
   const scrub = (value: unknown, depth = 0): unknown => {
     if (depth > 16) return null;
     if (value === undefined) return undefined;
-    if (typeof value === "string") return text(value, "");
+    if (typeof value === "string") return safeText(value, "");
     if (typeof value === "number") return finite(value);
     if (value === null || typeof value === "boolean") return value;
     if (Array.isArray(value)) return value.map(item => scrub(item, depth + 1));
@@ -450,7 +463,7 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
   };
   return packReportBackup(scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), ...(swingForExport ? { swing_kinematics: swingForExport } : {}), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
     assessment: omitDuplicatedMotion(selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"])),
     summary: omitDuplicatedMotion(selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"])),
     trajectory: input.evidence.trajectory ? { ...selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]), court_projection: courtProjectionOf(input.evidence.trajectory) } : null,

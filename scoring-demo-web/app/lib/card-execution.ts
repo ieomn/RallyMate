@@ -19,7 +19,7 @@ import { recoveryPolicy, isRecoveryCard, isRecoveryBodyCard, validateGsRecovery,
 
 export const CARD_EXECUTION_VERSION = "card-execution-v1.0.0";
 export const CARD_RULE_VERSION = "card-rules-v1.0.0";
-const MEASUREMENT_VERSION = "temporal-card-evidence-v1.0.0";
+const MEASUREMENT_VERSIONS = ["temporal-card-evidence-v1.0.0", "temporal-card-evidence-v1.0.1"];
 export const SOURCE_CARD_COUNT = 298;
 export const CARD_RUN_LABELS = { scored: "已评分", proxy_scored: "有视觉代理结果", review_required: "需要复核", unavailable: "证据不足", not_executed: "尚未接入计算", not_observed: "未观察到此类动作" } as const;
 export type CardRunStatus = keyof typeof CARD_RUN_LABELS;
@@ -325,7 +325,7 @@ function instanceOf(value: unknown, id: string, sourceRunId: string, reportPolic
   const grade: Grade = fraction === 1 ? "A" : fraction >= .75 ? "B" : fraction >= .5 ? "C" : fraction > 0 ? "D" : "E";
   const expectedScore = formal ? formalConditionScore(policy, conditions.filter(c => c.passed === true).length, conditions.length, grade) : gradePoints[grade];
   if (!sourceRunId || !specs || conditions.length !== specs.length || byMetric.size !== specs.length || !expected || !result.window || fallback?.selected && (!formal || validateTemporalLocalDip(result.temporal_evidence, result)?.status !== "measured_local_dip")
-      || result.rule_version !== CARD_RULE_VERSION || result.measurement_version !== (microCycles ? microCycleContract.measurement_version : micro ? microContract.measurement_version : isRecoveryBodyCard(id) ? recoveryPolicy.version : gsSpec ? gsContract.measurement_version : footworkSpec ? footworkContract.measurement_version : fsWindowSpec ? fsWindowContract.measurement_version : MEASUREMENT_VERSION)
+      || result.rule_version !== CARD_RULE_VERSION || !(microCycles ? [microCycleContract.measurement_version] : micro ? [microContract.measurement_version] : isRecoveryBodyCard(id) ? [recoveryPolicy.version] : gsSpec ? [gsContract.measurement_version] : footworkSpec ? [footworkContract.measurement_version] : fsWindowSpec ? [fsWindowContract.measurement_version] : MEASUREMENT_VERSIONS).includes(result.measurement_version)
       || formal && row.grade !== grade || row.proxy_grade !== grade || expectedScore === null || row.score !== expectedScore
       || gsSpec && (gsSpec.rule_kind !== "visual_proxy" || !validGsEvidence(result, gsSpec)
         || formal && !validFormalGsStageSource(result.source_stage_evidence, result.source_stage_context, result)
@@ -385,7 +385,8 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     if (!CARD_IDS.has(id) || row.event_code !== id.split("-")[0] || row.rule_version !== CARD_RULE_VERSION || !text(row.name_zh) || !["visual_proxy", "manual_review"].includes(text(row.rule_kind))) { rejected++; continue; }
     const micro = id in microContract.cards && row.application_rule_version === microContract.application_rule_version && row.runtime_engine === microContract.runtime_engine;
     const microCycles = id === microCycleContract.card_id && row.application_rule_version === microCycleContract.application_rule_version && row.runtime_engine === microCycleContract.runtime_engine;
-    const runtimeEngine = microCycles ? microCycleContract.runtime_engine : micro ? microContract.runtime_engine : GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSION;
+    const runtimeEngine = microCycles ? microCycleContract.runtime_engine : micro ? microContract.runtime_engine : GS_CARD_CONTRACTS[id] ? gsContract.runtime_engine : FOOTWORK_CARD_CONTRACTS[id] ? footworkContract.runtime_engine : FS_WINDOW_CONTRACTS[id] ? fsWindowContract.runtime_engine : MEASUREMENT_VERSIONS.includes(text(row.runtime_engine)) ? text(row.runtime_engine) : MEASUREMENT_VERSIONS[1];
+    const temporalEngine = !microCycles && !micro && !GS_CARD_CONTRACTS[id] && !FOOTWORK_CARD_CONTRACTS[id] && !FS_WINDOW_CONTRACTS[id];
     const revisedGs = GS_CARD_CONTRACTS[id]?.scoring_revision_id ? GS_CARD_CONTRACTS[id] : null;
     const retiredGsKind = Boolean(revisedGs && row.rule_kind === "visual_proxy" && revisedGs.rule_kind === "manual_review");
     if (GS_CARD_CONTRACTS[id] && row.rule_kind !== GS_CARD_CONTRACTS[id].rule_kind && !retiredGsKind) { rejected++; continue; }
@@ -403,6 +404,8 @@ export function cardExecutionOf(value: unknown): CardExecutionReport | null {
     }
     conflicts += conflicting.size;
     const instances = [...seenInstances].map(([key, instance]) => conflicting.has(key) ? invalidate(instance, "conflicting_duplicate_event_instance") : instance)
+      .map(instance => temporalEngine && ["scored", "proxy_scored"].includes(instance.status) && instance.measurement_version !== row.runtime_engine
+        ? invalidate(instance, "temporal_measurement_engine_mismatch") : instance)
       .map(instance => raw.status === "unavailable" ? invalidate(instance, "card_execution_report_unavailable") : instance)
       .map(instance => instance.status === "scored" && instance.directional_micro_validation && (microExecutionConflict || !validMicroReportCopies(instance, microExecution, microWindows))
         ? invalidate(instance, "directional_micro_report_source_mismatch") : instance)

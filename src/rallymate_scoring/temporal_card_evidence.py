@@ -25,7 +25,7 @@ from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 from rallymate_scoring.joint_quality_scope import known_joint_names
 from rallymate_scoring.card_scoring_policy import ADVISORY_QUALITY_FLAGS
 
-VERSION = "temporal-card-evidence-v1.0.0"
+VERSION = "temporal-card-evidence-v1.0.1"
 SOURCE_BINDING_EVIDENCE_VERSION = "temporal-source-frame-bindings-v1.0.0"
 POSE_ASSOCIATION_GATE_VERSION = "temporal-pose-person-association-gate-v1.0.0"
 MIN_DURATION_MS = 80
@@ -390,7 +390,10 @@ def _measure(context: SourceAlignedContext, indexes: np.ndarray) -> tuple[dict, 
     angular = []
     for names in (("left_shoulder", "right_shoulder"), HIPS):
         vector = points[names[1]][indexes] - points[names[0]][indexes]
-        angle = np.degrees(np.unwrap(np.arctan2(vector[:, 1], vector[:, 0])))
+        # Shoulder/hip lines are undirected axes, as in rotation_analysis.
+        # Reversing the two endpoint labels must not manufacture a 180-degree
+        # turn and a false angular-speed drop in the stability condition.
+        angle = np.degrees(np.unwrap(2 * np.arctan2(vector[:, 1], vector[:, 0])) / 2)
         angular.append(np.abs(np.diff(angle) / dt))
     # No arbitrary event quartiles: compare first/last adjacent physical pair.
     angular_speed = np.maximum(angular[0], angular[1])

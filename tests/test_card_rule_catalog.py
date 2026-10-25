@@ -167,7 +167,7 @@ class CardRuleCatalogueTests(unittest.TestCase):
 
     def test_temporal_braking_has_joint_condition_and_nonnegative_successor(self):
         braking = get_card_rule("FS09-M03")["evaluation"]
-        self.assertEqual(braking["engine_version"], "temporal-card-evidence-v1.0.0")
+        self.assertEqual(braking["engine_version"], "temporal-card-evidence-v1.0.1")
         self.assertIn("temporal_card_evidence", braking["engine"])
         self.assertIn("joint_braking_fraction", {c["metric"] for c in braking["conditions"]})
         for identifier in ("FS01-M05", "FS09-M05"):

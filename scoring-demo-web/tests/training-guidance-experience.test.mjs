@@ -47,18 +47,18 @@ test("completed report puts one honest score state before recommendations, journ
   }
 });
 
-test("height and speed observations produce different review questions and keep raw values in collapsed details", () => {
+test("height and speed observations produce distinct practice goals with visible observation and retest", () => {
   const rows = trainingGuidance(result());
   assert.equal(rows.filter(row => row.evidenceState !== "unavailable").length, 2);
   assert.notEqual(rows[0].question, rows[1].question);
-  assert.match(rows[0].question, /髋部高度/); assert.match(rows[1].question, /移动变慢/);
-  assert.deepEqual(focusSelection(rows[0]), { title: rows[0].title, question: rows[0].question, timestampMs: 1000 });
+  assert.match(rows[0].goal, /膝髋/); assert.match(rows[1].goal, /来球方向/);
+  assert.deepEqual(focusSelection(rows[0]), { title: rows[0].title, question: `${rows[0].goal} 复测：${rows[0].retest}`, timestampMs: 1000 });
   const html = recommendations(result());
   const visible = html.replace(/<details class="focus-evidence-detail">[\s\S]*?<\/details>/g, "");
-  assert.doesNotMatch(visible, /2\.66|5\.94|身体尺度/);
+  assert.match(visible, /本次观察/);
   assert.match(html, /2\.66 身体尺度/); assert.match(html, /5\.94 身体尺度\/秒/);
-  assert.match(visible, /看哪段/); assert.match(visible, /观察什么/); assert.match(visible, /下一步/);
-  assert.match(visible, /通用练习不代表已诊断出你的动作错误/);
+  assert.match(visible, /练习目标/); assert.match(visible, /怎么练/); assert.match(visible, /复测标准/);
+  assert.doesNotMatch(visible, /原文|Word|P0080|候选|待复核|观察什么/);
   assert.doesNotMatch(visible, /你的动作错误是|判断为动作错误|技术较差|合格/);
 });
 
@@ -75,11 +75,11 @@ test("an unverified or out-of-duration interval never offers a replay or saves a
 test("missing media retains a valid interval and focus action without offering an unusable playback", () => {
   const html = recommendations(result(), { replayAvailable: false, onSaveFocus: () => {} });
   assert.match(html, /1\.00 秒 – 1\.80 秒/);
-  assert.match(html, /未附可用原片/); assert.match(html, /保存为关注点/);
+  assert.match(html, /未附可用原片/); assert.match(html, /保存练习目标/);
   assert.doesNotMatch(html, /回看这段原片/);
 });
 
-test("valid model estimates stay review questions and never become confirmed visible facts", () => {
+test("valid model estimates are identified once and never become confirmed visible facts", () => {
   const fixture = JSON.parse(fs.readFileSync(new URL("./fixtures/model-motion-null-speed.json", import.meta.url), "utf8"));
   const value = result();
   value.input.video.duration_ms = 100000;
@@ -88,11 +88,11 @@ test("valid model estimates stay review questions and never become confirmed vis
   const rows = trainingGuidance(value);
   assert.equal(rows[0].evidenceState, "review");
   assert.match(rows[0].observation, /模型估计/);
-  assert.match(rows[0].limitation, /可见性已验证/);
+  assert.match(rows[0].limitation, /单目估计/);
   assert.doesNotMatch(rows[0].observation, /已确认|技术水平/);
 });
 
-test("the report leads with review questions, keeps the journal before playback and starts deep details folded", () => {
+test("the report leads with practice actions, keeps the journal before playback and starts deep details folded", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, journal: createElement("section", { id: "test-journal" }, "训练记录"), replay: createElement("video", { id: "test-original" }) }));
   assert.ok(html.indexOf('id="recommendations"') < html.indexOf('id="test-journal"'));
   assert.ok(html.indexOf('id="test-journal"') < html.indexOf('id="test-original"'));

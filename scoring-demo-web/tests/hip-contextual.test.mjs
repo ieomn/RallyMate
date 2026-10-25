@@ -84,7 +84,7 @@ test("contextual geometry joins exact event/source while canonical and native su
   assert.deepEqual(contextualHipForEpisode(rows, getEpisode(result)), rows[0]);
   const html = panel(result);
   assert.match(html, /路径长度：12 像素/); assert.match(html, /起终点净位移：8 像素/); assert.match(html, /路径\/净位移比：1.5/);
-  assert.match(html, /原事件 FS02/); assert.match(html, /原帧 12–14，共 3 帧/);
+  assert.match(html, /测量片段/); assert.match(html, /原帧 12–14，共 3 帧/);
   assert.deepEqual(result, before, "render and parser must not relabel events or change grade/count/state");
 });
 
@@ -105,7 +105,7 @@ test("legacy missing-field and missing container identity remain compatible with
     r => { r.source_aligned_assessment.video_sha256 = inputSha; }]) {
     const result = fixture(); change(result);
     assert.deepEqual(contextualHipMeasurements(result), []);
-    assert.match(panel(result), /步伐逐段复核/); assert.doesNotMatch(panel(result), /路径长度：12/);
+    assert.match(panel(result), /步伐逐段回放/); assert.doesNotMatch(panel(result), /路径长度：12/);
   }
 });
 
@@ -356,7 +356,7 @@ test("actual local native41 service/footwork projection joins its original FS02 
   const html = panel(result);
   assert.match(html, /路径长度：194.526 像素/); assert.match(html, /起终点净位移：178.129 像素/);
   assert.match(html, /路径\/净位移比：1.092/); assert.match(html, /原帧 159–199，共 41 帧/);
-  assert.match(html, /原事件 FS02/); assert.match(html, /原生 PTS 3180–3980/);
+  assert.match(html, /测量片段/); assert.match(html, /原生 PTS 3180–3980/);
   const swapped = structuredClone(result); getEpisode(swapped).source_id = result.job_id;
   assert.equal(contextualHipForEpisode([row], getEpisode(swapped)), null, "display job must never replace source identity");
   for (let round = 0; round < 2; round++) {

@@ -87,7 +87,7 @@ class IndicatorAssessmentTests(unittest.TestCase):
                 self.assertIn("当前算法尚未支持该动作类型识别", row["explanation_zh"])
                 self.assertFalse(row["observation_ids"])
                 if row["status"] == "source_boundaries_missing":
-                    self.assertEqual(row["status_label_zh"], "原文阶段边界缺失")
+                    self.assertEqual(row["status_label_zh"], "动作阶段边界不完整")
                 else:
                     self.assertEqual(row["status_label_zh"], "算法尚未支持该类型")
             rows = {row["indicator_id"]: row for row in result["indicators"]}
@@ -100,7 +100,7 @@ class IndicatorAssessmentTests(unittest.TestCase):
         for row in result["indicators"]:
             codes = {b["code"] for b in row["blockers"]}
             self.assertIn("complete_grade_verifier_not_implemented", codes)
-            self.assertIn("尚未实现并验证本项完整原文", row["grade"]["reason_zh"])
+            self.assertIn("尚未实现并验证本项完整动作条件", row["grade"]["reason_zh"])
             self.assertNotIn("value", row["grade"])
         self.assertEqual(result["counts"]["formal_graded"], 0)
         self.assertEqual(result["counts"]["statuses"]["source_rule_conflict"], 3)

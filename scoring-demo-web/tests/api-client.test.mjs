@@ -36,6 +36,7 @@ test("report streamed bytes cannot bypass the bound with a missing or forged len
   // same streaming reader without allocating a 128 MiB synthetic response.
   const local = new Map();
   function limitedUrl(file) {
+    if (file.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(file, "utf8")}`).toString("base64")}`;
     if (local.has(file.href)) return local.get(file.href);
     let source = fs.readFileSync(file, "utf8");
     if (file.pathname.endsWith("/report-limits.ts")) source = source.replace("128 * 1024 * 1024", "32");

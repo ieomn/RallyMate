@@ -26,6 +26,26 @@ BODY = b"test original footage bytes: 0123456789"
 
 
 class OriginalVideoApiTests(unittest.TestCase):
+    @staticmethod
+    def timed_job(settings, database, *, origin=12000, start=8000):
+        job = database.get_job(JOB)
+        source_id = job["summary"]["minimum_scoring_loop"]["provenance"]["pipeline_job_id"]
+        video_sha = hashlib.sha256(BODY).hexdigest()
+        first_index = start // 40
+        rows = [{"job_id": source_id, "frame": {"index": first_index + i, "processed_index": i,
+                 "timestamp_ms": start + i * 40, "source_timestamp_ms": origin + start + i * 40,
+                 "timestamp_source": "decoder_pts", "video_sha256": video_sha,
+                 "pts": (origin + start) // 40 + i, "time_base_num": 1, "time_base_den": 25}}
+                for i in range(2)]
+        frames = Path(job["output_dir"]) / "frames.jsonl"
+        frames.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+        job["summary"]["processing"] = {"processed_frames": 2, "source_start_frame": first_index,
+            "source_timing": {"method": "decoder_presentation_timestamps", "timing_verified": True,
+                              "fallback_timestamp_frames": 0, "decoder_timestamp_frames": first_index + 2,
+                              "source_origin_ms": origin}}
+        job["summary"]["minimum_scoring_loop"]["provenance"]["frames_sha256"] = hashlib.sha256(frames.read_bytes()).hexdigest()
+        return job, frames, rows
+
     def setup_job(self, root: Path, *, recovered=False):
         settings = ServiceSettings(data_root=root / "data", database_path=root / "data/jobs.sqlite3",
                                    detect_model=root / "detect.pt", pose_model=root / "pose.pt",
@@ -119,6 +139,62 @@ class OriginalVideoApiTests(unittest.TestCase):
                 job["summary"]["input"]["video_path"] = historical
                 job["summary"]["minimum_scoring_loop"]["provenance"]["video_path"] = historical
                 self.assertEqual(verify_original_video(job, settings).source_job_id, JOB)
+
+    def test_original_pose_binding_uses_decoder_origin_including_recovery_and_later_analysis_start(self):
+        for recovered in (False, True):
+            with self.subTest(recovered=recovered), tempfile.TemporaryDirectory() as directory:
+                settings, database, _, _ = self.setup_job(Path(directory), recovered=recovered)
+                job, frames, _ = self.timed_job(settings, database)
+                before = frames.read_bytes()
+                result = original_video_descriptor(job, settings)
+                binding = result["pose_time_binding"]
+                self.assertEqual(binding["job_id"], JOB)
+                self.assertEqual(binding["source_job_id"], SOURCE if recovered else JOB)
+                self.assertEqual(binding["source_pts_origin_ms"], 12000)
+                self.assertEqual(binding["media_time_origin_ms"], 0)
+                self.assertEqual(binding["anchor"]["timestamp_ms"], 8000)
+                self.assertEqual(binding["anchor"]["pts"], 500)
+                self.assertEqual(binding["anchor"]["source_timestamp_ms"], 20000)
+                self.assertEqual(binding["video_sha256"], result["sha256"])
+                self.assertNotIn(str(frames), json.dumps(binding))
+                with database.connect() as connection:
+                    connection.execute("UPDATE jobs SET summary_json = ? WHERE id = ?", (json.dumps(job["summary"]), JOB))
+                    connection.commit()
+                with TestClient(api.create_app(settings, database)) as client:
+                    response = client.get(f"/v1/jobs/{JOB}", headers={"Authorization": f"Bearer {settings.api_key}"})
+                    self.assertEqual(response.json()["original_video"]["pose_time_binding"], binding)
+                self.assertEqual(frames.read_bytes(), before)
+
+    def test_missing_or_conflicting_pose_clock_evidence_preserves_video_without_authorizing_overlay(self):
+        with tempfile.TemporaryDirectory() as directory:
+            settings, database, _, _ = self.setup_job(Path(directory))
+            for mutate in (
+                lambda job: job["summary"]["processing"].pop("source_timing"),
+                lambda job: job["summary"]["processing"]["source_timing"].update(timing_verified=False),
+                lambda job: job["summary"]["processing"]["source_timing"].update(fallback_timestamp_frames=1),
+                lambda job: job["summary"]["processing"]["source_timing"].update(method="average_fps"),
+                lambda job: job["summary"]["processing"]["source_timing"].update(source_origin_ms=0),
+                lambda job: job["summary"]["processing"].update(source_start_frame=0),
+                lambda job: job["summary"]["minimum_scoring_loop"]["provenance"].update(frames_sha256="f" * 64),
+            ):
+                job, _, _ = self.timed_job(settings, database)
+                mutate(job)
+                result = original_video_descriptor(job, settings)
+                self.assertIsNotNone(result)
+                self.assertNotIn("pose_time_binding", result)
+            for change in ({"video_sha256": "b" * 64}, {"pts": 499}, {"timestamp_ms": 0},
+                           {"time_base_den": 24}, {"timestamp_source": "fps_fallback"}, {"processed_index": 1}):
+                job, frames, rows = self.timed_job(settings, database)
+                rows[0]["frame"].update(change)
+                frames.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+                job["summary"]["minimum_scoring_loop"]["provenance"]["frames_sha256"] = hashlib.sha256(frames.read_bytes()).hexdigest()
+                self.assertNotIn("pose_time_binding", original_video_descriptor(job, settings))
+            job, frames, rows = self.timed_job(settings, database)
+            before = frames.stat()
+            raw = frames.read_bytes().replace(b'"pts": 500', b'"pts": 499')
+            frames.write_bytes(raw)
+            os.utime(frames, ns=(before.st_atime_ns, before.st_mtime_ns))
+            self.assertNotIn("pose_time_binding", original_video_descriptor(job, settings))
 
     def test_conflicting_identity_missing_evidence_and_unsafe_paths_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:

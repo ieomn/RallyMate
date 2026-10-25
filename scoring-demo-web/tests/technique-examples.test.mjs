@@ -60,7 +60,7 @@ test("the selected card exposes teaching links without changing its formal score
     if (unavailable) raw.cards[0].instances[0].conditions[0].value = null;
     const snapshot = structuredClone(raw), before = cardExecutionOf(raw);
     const html = renderToStaticMarkup(createElement(Panel, { value: raw }));
-    assert.match(html, /官方教学示范/); assert.match(html, /查看 USTA 教学原文与示范/);
+    assert.match(html, /官方教学示范/); assert.match(html, /查看 USTA 教学示范/);
     assert.deepEqual(raw, snapshot); assert.deepEqual(cardExecutionOf(raw), before);
     if (unavailable) { assert.equal(before.cards[0].instances[0].score, null); assert.match(html, /未评分/); }
     else assert.equal(before.cards[0].instances[0].status, "scored");

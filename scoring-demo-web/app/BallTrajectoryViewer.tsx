@@ -320,6 +320,16 @@ export default function BallTrajectoryViewer({
       animationRef.current = null;
       return;
     }
+    const decodedVideo = videoRef.current;
+    if (decodedVideo && typeof decodedVideo.requestVideoFrameCallback === "function") {
+      let callbackId: number;
+      const onDecodedFrame: VideoFrameRequestCallback = (_now, metadata) => {
+        setCurrentMs(timestampForVideoTime(metadata.mediaTime, videoTimeOriginMs));
+        callbackId = decodedVideo.requestVideoFrameCallback(onDecodedFrame);
+      };
+      callbackId = decodedVideo.requestVideoFrameCallback(onDecodedFrame);
+      return () => decodedVideo.cancelVideoFrameCallback(callbackId);
+    }
     const tick = () => {
       const video = videoRef.current;
       if (video) setCurrentMs(timestampForVideoTime(video.currentTime, videoTimeOriginMs));
@@ -402,7 +412,7 @@ export default function BallTrajectoryViewer({
   const currentTimeLabel = formatReplayTime(Math.max(0, atMs - videoTimeOriginMs));
   const durationLabel = durationMs > 0 ? formatReplayTime(durationMs) : "—:—";
   const hasPoseSource = Boolean(loadPoseWindow || posePreview);
-  const overlayControls = <div className={`replay-overlay-switches${quickAnalysisTools ? " is-prominent" : ""}`} aria-label="回放显示设置"><label><input type="checkbox" checked={showPose && poseTimingPreserved} disabled={!poseTimingPreserved || !canPlayVideo || !hasPoseSource} onChange={event => setShowPose(event.target.checked)} />动作标记</label><label><input type="checkbox" checked={showOverlay} disabled={!hasData} onChange={event => setShowOverlay(event.target.checked)} />球路</label><span role="status">{!canPlayVideo ? "当前没有可回放的视频。" : !poseTimingPreserved ? "回放时间对应尚未确认，动作标记已暂停。" : !hasPoseSource ? "此报告未提供姿态观测，视频仍可回放。" : !showPose ? "动作标记已隐藏" : seeking ? "正在定位画面…" : pose.pending ? "正在读取动作标记…" : pose.error ? "动作标记暂时无法读取，视频仍可回放。" : motionFocus ? "手部轨迹 · 脚部位置" : pending ? "人体姿态识别中" : "当前时刻暂无可靠动作标记"}</span></div>;
+  const overlayControls = <div className={`replay-overlay-switches${quickAnalysisTools ? " is-prominent" : ""}`} aria-label="回放显示设置"><label><input type="checkbox" checked={showPose && poseTimingPreserved} disabled={!poseTimingPreserved || !canPlayVideo || !hasPoseSource} onChange={event => setShowPose(event.target.checked)} />动作标记</label><label><input type="checkbox" checked={showOverlay} disabled={!hasData} onChange={event => setShowOverlay(event.target.checked)} />球路</label><span role="status">{!canPlayVideo ? "当前没有可回放的视频。" : !poseTimingPreserved ? "回放时间对应尚未确认，动作标记已暂停。" : !hasPoseSource ? "此报告未提供姿态观测，视频仍可回放。" : !showPose ? "动作标记已隐藏" : seeking ? "正在定位画面…" : pose.pending ? "正在读取动作标记…" : pose.error ? "动作标记暂时无法读取，视频仍可回放。" : motionFocus ? "全身关节 · 手部轨迹" : pending ? "人体姿态识别中" : "当前时刻暂无可靠动作标记"}</span></div>;
 
   return (
     <div ref={viewerRef} className="ball-trajectory-viewer" data-status={availability.state} data-overlay={showOverlay ? "on" : "off"} data-pose={poseTimingPreserved ? showPose ? "on" : "off" : "paused"}>

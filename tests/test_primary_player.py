@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -12,6 +13,7 @@ except ModuleNotFoundError:  # Runtime selection does not depend on jsonschema.
 
 from rallymate_tracking.primary_player import (
     KEYPOINT_CONFIDENCE_MIN,
+    build_primary_player_artifacts,
     diagnose_primary_timeline,
     primary_timeline_algorithm_version,
     registry_required_primary_player_version,
@@ -97,13 +99,37 @@ def _sam_record(index: int) -> dict:
 
 
 class SamPrimaryGeometryTests(unittest.TestCase):
+    def test_full_artifact_writer_serializes_model_and_detector_metadata(self):
+        for model in (True, False):
+            with self.subTest(model=model), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                records = ([_sam_record(index) for index in range(3)] if model else
+                           [_record(index, [(1, [30, 15, 100, 115], True)]) for index in range(3)])
+                frames, timeline, summary = (root / name for name in ("frames.jsonl", "primary-player.jsonl", "primary-player-summary.json"))
+                frames.write_text("".join(json.dumps(row) + "\n" for row in records), encoding="utf-8")
+                before = frames.read_bytes()
+                result = build_primary_player_artifacts(frames, timeline, summary)
+                saved = json.loads(summary.read_text(encoding="utf-8"))
+                self.assertEqual(saved, result)
+                self.assertEqual(len([json.loads(line) for line in timeline.read_text(encoding="utf-8").splitlines()]), 3)
+                prior = saved["track_priors"]["1"]
+                expected = "model_geometry_coverage" if model else "confidence_qualified_target_joint_coverage"
+                self.assertEqual(prior["pose_selection_semantics"], [expected])
+                self.assertEqual(prior["mean_pose_selection_fraction"], 1.)
+                self.assertEqual(prior["mean_pose_valid_fraction"], 0. if model else 1.)
+                self.assertEqual(frames.read_bytes(), before)
+                if Draft202012Validator is not None:
+                    schema = json.loads((Path(__file__).parents[1] / "contracts/primary-player.schema.json").read_text(encoding="utf-8"))
+                    for line in timeline.read_text(encoding="utf-8").splitlines():
+                        Draft202012Validator(schema).validate(json.loads(line))
+
     @staticmethod
     def _diagnose(records, timeline=None):
         if timeline is None:
             timeline = select_primary_player_timeline(records)["timeline"]
         return diagnose_primary_timeline(records, timeline)
 
-    def test_sam_geometry_is_separate_from_unchanged_confidence_and_selection(self):
+    def test_sam_geometry_selection_support_is_separate_from_unchanged_confidence(self):
         records = [_sam_record(index) for index in range(3)]
         original = copy.deepcopy(records)
         selected = select_primary_player_timeline(records)
@@ -117,11 +143,132 @@ class SamPrimaryGeometryTests(unittest.TestCase):
         self.assertFalse(geometry["visibility_verified"])
         self.assertFalse(geometry["accuracy_validated"])
         self.assertFalse(geometry["scoring_allowed"])
-        self.assertFalse(geometry["used_for_primary_selection"])
+        self.assertTrue(geometry["used_for_primary_selection"])
+        self.assertEqual(selected["timeline"][0]["keypoint_valid_fraction"], 0.)
+        self.assertEqual(selected["timeline"][0]["model_geometry_coverage"], 1.)
+        self.assertEqual(selected["timeline"][0]["pose_selection_semantics"], "model_geometry_coverage")
+        self.assertEqual(selected["track_priors"][1]["mean_pose_valid_fraction"], 0.)
+        self.assertEqual(selected["track_priors"][1]["mean_pose_selection_fraction"], 1.)
         self.assertEqual(select_primary_player_timeline(records), selected)
         self.assertEqual(records, original)
         self.assertTrue(all(point["confidence"] is None for row in records for point in row["poses"][0]["keypoints"]))
         self.assertEqual(geometry["frame_evidence"][1]["source_binding"], records[1]["poses"][0]["source_binding"])
+
+    def test_geometry_support_stays_distinct_without_replacing_a_separate_identity_anchor(self):
+        records = [_sam_record(index) for index in range(4)]
+        for record in records:
+            other = copy.deepcopy(record["poses"][0])
+            other["person_track_id"] = 2
+            other["source_binding"]["person_track_id"] = 2
+            # A larger detected person has no in-frame model geometry. This is
+            # a transport/selection regression, not a claim of identity accuracy.
+            for point in other["keypoints"]:
+                point.update(raw_x_px=-1., x_px=0., x_normalized=0., in_frame=False)
+            record["poses"].append(other)
+            record["sam3d_requests"].append({"person_track_id": 2, "selection_epoch": 0, "status": "ok"})
+            record["detections"].append({"class_name": "player", "track_id": 2,
+                                         "bbox_px": [0, 0, 150, 120], "confidence": .9})
+        before = copy.deepcopy(records)
+        selected = select_primary_player_timeline(records)
+        self.assertEqual({row["source_track_id"] for row in selected["timeline"]}, {2})
+        self.assertTrue(all(row["selection_identity_guard"] == "retained_identity_anchor" for row in selected["timeline"]))
+        self.assertEqual(selected["track_priors"][2]["mean_pose_selection_fraction"], 0.)
+        self.assertEqual(selected["track_priors"][1]["mean_pose_selection_fraction"], 1.)
+        self.assertEqual(records, before)
+        # Removing independent provenance removes the geometry preference.
+        for record in records:
+            record["sam3d_requests"] = []
+        missing = select_primary_player_timeline(records)
+        self.assertEqual({row["source_track_id"] for row in missing["timeline"]}, {2})
+        self.assertTrue(all(row["model_geometry_coverage"] is None for row in missing["timeline"]))
+
+    def test_short_target_dropout_is_missing_instead_of_borrowing_a_spectator(self):
+        records = [_sam_record(index) for index in range(3)]
+        middle = records[1]
+        middle["detections"][0].update(track_id=2, bbox_px=[120, 5, 135, 30])
+        middle["poses"][0]["person_track_id"] = 2
+        middle["poses"][0]["source_binding"]["person_track_id"] = 2
+        middle["sam3d_requests"][0]["person_track_id"] = 2
+        original = copy.deepcopy(records)
+        timeline = select_primary_player_timeline(records)["timeline"]
+        self.assertEqual([row["source_track_id"] for row in timeline], [1, None, 1])
+        self.assertEqual(timeline[1]["selection_status"], "missing")
+        self.assertEqual(timeline[1]["selection_reason_code"], "short_target_detection_dropout")
+        self.assertIsNone(timeline[1]["bbox_px"])
+        self.assertFalse(timeline[1]["pose_present"])
+        self.assertEqual(records, original)
+        # A changed camera reference does not justify maintaining subject identity.
+        records[2]["camera_motion"]["reference_epoch"] = 1
+        records[2]["poses"][0]["source_binding"]["camera_reference_epoch"] = 1
+        self.assertEqual(select_primary_player_timeline(records)["timeline"][1]["source_track_id"], 2)
+
+    def test_geometry_may_compare_only_an_overlapping_neighbor_anchor_tracklet(self):
+        from rallymate_tracking.primary_player import _frame_candidates, _guard_model_identity
+        records = [_sam_record(index) for index in range(3)]
+        for record in records:
+            other = copy.deepcopy(record["poses"][0])
+            other["person_track_id"] = 2
+            other["source_binding"]["person_track_id"] = 2
+            record["poses"].append(other)
+            record["sam3d_requests"].append({"person_track_id": 2, "selection_epoch": 0, "status": "ok"})
+            record["detections"].append({"class_name": "player", "track_id": 2,
+                                         "bbox_px": [32, 15, 102, 115], "confidence": .9})
+        frames = [{"timestamp_ms": index * 40, "candidates": _frame_candidates(record)} for index, record in enumerate(records)]
+        anchors = [{"candidate": frames[i]["candidates"][track]} for i, track in enumerate([0, 0, 1])]
+        proposed = [{"candidate": frames[i]["candidates"][track]} for i, track in enumerate([0, 1, 1])]
+        accepted = _guard_model_identity(frames, proposed, anchors)
+        self.assertEqual(accepted[1]["identity_guard"], "overlapping_anchor_tracklet")
+        self.assertEqual(accepted[1]["candidate"]["source_track_id"], 2)
+        frames[1]["candidates"][1]["bbox_px"] = [120, 5, 135, 30]
+        rejected = _guard_model_identity(frames, proposed, anchors)
+        self.assertEqual(rejected[1]["candidate"]["source_track_id"], 1)
+        self.assertEqual(rejected[1]["identity_guard"], "retained_identity_anchor")
+
+    def test_model_selection_coverage_uses_original_in_frame_target_points_only(self):
+        record = _sam_record(0)
+        record["poses"][0]["keypoints"][13].update(raw_x_px=-10, x_px=0, x_normalized=0, in_frame=True)
+        row = select_primary_player_timeline([record])["timeline"][0]
+        self.assertEqual(row["model_geometry_coverage"], 7 / 8)
+        self.assertEqual(row["pose_selection_fraction"], 7 / 8)
+        self.assertEqual(row["keypoint_valid_fraction"], 0.)
+
+    def test_model_selection_rejects_unverified_provenance_and_duplicate_sources(self):
+        changes = [
+            lambda r: r["frame"].update(video_sha256="b" * 64),
+            lambda r: r["frame"].update(pts=10),
+            lambda r: r["frame"].update(time_base_den=30),
+            lambda r: r["camera_motion"].update(reference_epoch=1),
+            lambda r: r["sam3d_requests"][0].update(selection_epoch=1),
+            lambda r: r["sam3d_requests"][0].update(status="failed"),
+            lambda r: r["poses"][0]["keypoints"][5].update(confidence=1.),
+            lambda r: r["poses"].append(copy.deepcopy(r["poses"][0])),
+            lambda r: r["poses"].append(_pose(1)),
+        ]
+        for mutate in changes:
+            record = _sam_record(0)
+            mutate(record)
+            row = select_primary_player_timeline([record])["timeline"][0]
+            self.assertIsNone(row["model_geometry_coverage"])
+            self.assertEqual(row["pose_selection_fraction"], 0.)
+            self.assertTrue(row["model_geometry_reason"])
+        records = [_sam_record(0), _sam_record(0)]
+        records[1]["frame"]["processed_index"] = 1
+        records[1]["poses"][0]["source_binding"]["processed_index"] = 1
+        self.assertTrue(all(row["model_geometry_reason"] == "duplicate_source_frame"
+                            for row in select_primary_player_timeline(records)["timeline"]))
+        record = _sam_record(0)
+        record["poses"] = []
+        row = select_primary_player_timeline([record])["timeline"][0]
+        self.assertEqual(row["pose_selection_semantics"], "model_geometry_coverage")
+        self.assertIsNone(row["model_geometry_coverage"])
+        self.assertEqual(row["model_geometry_reason"], "selected_pose_missing_or_conflicting")
+        record = _sam_record(0)
+        for point in record["poses"][0]["keypoints"]:
+            point["confidence"] = 1.
+        row = select_primary_player_timeline([record])["timeline"][0]
+        self.assertEqual(row["keypoint_valid_fraction"], 0.)
+        self.assertEqual(row["pose_selection_fraction"], 0.)
+        self.assertIsNone(row["model_geometry_coverage"])
 
     def test_missing_invalid_and_off_image_points_stay_in_denominator(self):
         records = [_sam_record(index) for index in range(3)]

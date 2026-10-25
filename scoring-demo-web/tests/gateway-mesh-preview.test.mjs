@@ -48,3 +48,21 @@ test("background mesh status uses its small authenticated endpoint", async t => 
   assert.equal(response.status, 200);
   assert.equal((await response.json()).status, "pending");
 });
+
+test("stored swing observations use an authenticated read-only endpoint", async t => {
+  const path = "/v1/jobs/66883aeb-e0c3-4065-80fd-f67aa108b208/swing-kinematics";
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    calls++;
+    assert.equal(String(url), `http://127.0.0.1:8001${path}`);
+    assert.equal(init.headers.get("authorization"), "Bearer fixture-key");
+    return Response.json({ version: "sam3d-swing-kinematics-v1", status: "unavailable", score: null, episodes: [] });
+  });
+  const response = await proxyAnalysis(new Request(`http://localhost${path}`), env);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).score, null);
+  for (const method of ["POST", "PUT", "DELETE"]) {
+    assert.equal((await proxyAnalysis(new Request(`http://localhost${path}`, { method }), env)).status, 404);
+  }
+  assert.equal(calls, 1);
+});

@@ -1,0 +1,20 @@
+.replay-clips { margin-top:16px; padding:18px; border:1px solid var(--product-border,#dce4d7); border-radius:12px; background:var(--product-panel,#fffefa); color:var(--product-text,#1b2920); }
+.replay-clips-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+.replay-clips-heading span { color:var(--product-muted,#637166); font-size:12px; }
+.replay-clips-heading h3 { margin:4px 0 0; font-size:17px; font-weight:600; }
+.replay-clips-controls { display:flex; align-items:end; flex-wrap:wrap; gap:9px; }
+.replay-clips-controls label { flex:1 1 260px; min-width:0; }
+.replay-clips-controls label > span { display:block; margin-bottom:6px; font-size:12px; }
+.replay-clips select, .replay-clips button { min-height:42px; border:1px solid var(--product-border,#dce4d7); border-radius:7px; background:var(--product-panel,#fffefa); color:inherit; font:inherit; font-size:13px; padding:9px 12px; }
+.replay-clips select { width:100%; }
+.replay-clips button { cursor:pointer; }
+.replay-clips button[aria-pressed="true"] { color:var(--product-accent,#446f28); border-color:var(--product-accent,#446f28); background:var(--product-panel-soft,#f3f6ef); }
+.replay-clips :is(button,select):disabled { opacity:.5; cursor:default; }
+.replay-clips :is(button,select):focus-visible { outline:2px solid var(--product-accent,#446f28); outline-offset:3px; }
+.replay-clips-scope, .replay-clips-note, .replay-clips-notice { color:var(--product-muted,#637166); font-size:12px; line-height:1.8; margin:12px 0 0; }
+.replay-clips-anchors { display:flex; gap:7px; flex-wrap:wrap; margin-top:12px; }
+.replay-clips-anchors button { text-align:left; }
+.replay-clips-anchors span, .replay-clips-anchors time { display:block; }
+.replay-clips-anchors time { margin-top:3px; color:var(--product-muted,#637166); font-size:11px; font-variant-numeric:tabular-nums; }
+.replay-clips-notice { color:var(--product-text,#1b2920); }
+@media (max-width:640px) { .replay-clips { padding:14px; } .replay-clips-controls label { flex-basis:100%; } .replay-clips-controls > button { flex:1; } }

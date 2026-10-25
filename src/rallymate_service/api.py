@@ -63,6 +63,7 @@ from rallymate_service.technical_review import (
 from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.analysis_report import build_analysis_report
 from rallymate_service.process_evaluation import build_process_evaluation
+from rallymate_service.swing_kinematics import build_swing_kinematics
 from rallymate_scoring.indicator_assessment import build_indicator_assessment
 from rallymate_service.card_execution import VERSION as CARD_EXECUTION_VERSION, build_card_execution_report
 from rallymate_scoring.card_rule_catalog import VERSION as CARD_RULE_VERSION
@@ -1249,6 +1250,7 @@ def create_app(
         result["process_evaluation"] = build_process_evaluation(
             summary, records, footwork_review=result["footwork_review"],
         )
+        result["swing_kinematics"] = build_swing_kinematics(Path(job["output_dir"]), summary)
         result["indicator_assessment"] = build_indicator_assessment(
             summary, records, source_assessment=result["source_aligned_assessment"],
             process_evaluation=result["process_evaluation"],
@@ -1443,6 +1445,16 @@ def create_app(
                     "message": _public_error_detail(str(exc), service_settings),
                 },
             ) from exc
+
+    @app.get("/v1/jobs/{job_id}/swing-kinematics")
+    def get_swing_kinematics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] != "succeeded":
+            raise HTTPException(409, "swing measurements require a succeeded job")
+        response.headers["Cache-Control"] = "no-store"
+        return build_swing_kinematics(Path(job["output_dir"]), job.get("summary") or {})
 
     @app.get("/v1/jobs/{job_id}/pose-preview")
     def get_pose_preview(

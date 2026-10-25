@@ -1,7 +1,8 @@
 import type { PosePreviewFrame, PosePreviewResponse } from "./api-types";
 import { POSE_MIN_CONFIDENCE, poseFrameAt } from "./pose-playback";
 
-const FOCUS_JOINTS = ["left_wrist", "right_wrist", "left_ankle", "right_ankle"] as const;
+const FOCUS_JOINTS = ["nose", "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+  "left_wrist", "right_wrist", "left_hip", "right_hip", "left_knee", "right_knee", "left_ankle", "right_ankle"] as const;
 const TRAIL_MS = 500;
 type Joint = PosePreviewFrame["keypoints"][number];
 
@@ -18,6 +19,7 @@ export type MotionFocus = {
   width: number;
   height: number;
   markers: Joint[];
+  bones: Array<{ from: Joint; to: Joint }>;
   trails: Array<{ name: string; points: Array<Joint & { timestamp_ms: number }> }>;
 };
 
@@ -31,7 +33,35 @@ function observedJoint(frame: PosePreviewFrame, name: string): Joint | undefined
     && point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1);
 }
 
-/** Display only: a short, past-only wrist path. Never consumed by scoring. */
+function sameSequence(a: PosePreviewFrame, b: PosePreviewFrame): boolean {
+  return a.person_track_id !== null && a.person_track_id === b.person_track_id
+    && a.selection_epoch === b.selection_epoch && a.selection_status === b.selection_status
+    && !a.identity_repair && !b.identity_repair && a.pose_source === b.pose_source
+    && a.source_binding?.video_sha256 === b.source_binding?.video_sha256
+    && a.source_binding?.camera_reference_epoch === b.source_binding?.camera_reference_epoch
+    && a.source_binding?.selection_epoch === b.source_binding?.selection_epoch
+    && modelSourceTimeContinuous(a, b);
+}
+
+/** Suppress an isolated display spike only when both adjacent frames agree.
+ * Missing points, identities and source gaps are never interpolated or repaired.
+ */
+function isolatedSpike(frames: PosePreviewFrame[], index: number, joint: Joint, width: number, height: number): boolean {
+  const before = frames[index - 1], current = frames[index], after = frames[index + 1];
+  if (!before || !after || !sameSequence(before, current) || !sameSequence(current, after)
+    || current.timestamp_ms - before.timestamp_ms <= 0 || current.timestamp_ms - before.timestamp_ms > 80
+    || after.timestamp_ms - current.timestamp_ms <= 0 || after.timestamp_ms - current.timestamp_ms > 80
+    || before.valid_until_ms < current.timestamp_ms || current.valid_until_ms < after.timestamp_ms
+    || before.width !== current.width || after.width !== current.width
+    || before.height !== current.height || after.height !== current.height) return false;
+  const a = observedJoint(before, joint.name), b = observedJoint(after, joint.name);
+  if (!a || !b) return false;
+  const distance = (p: Joint, q: Joint) => Math.hypot((p.x - q.x) * width, (p.y - q.y) * height) / Math.hypot(width, height);
+  const threshold = joint.name.endsWith("wrist") || joint.name.endsWith("ankle") ? .24 : .12;
+  return distance(a, b) < .015 && distance(a, joint) > threshold && distance(joint, b) > threshold;
+}
+
+/** Display only: connected body joints and a short, past-only wrist path. */
 export function motionFocusAt(preview: PosePreviewResponse | null, timestampMs: number, aspectRatio = 16 / 9): MotionFocus | null {
   if (!preview) return null;
   // The normalized display stream also carries verified observed response scores
@@ -41,13 +71,16 @@ export function motionFocusAt(preview: PosePreviewResponse | null, timestampMs: 
   if (!current || current.identity_repair) return null;
   const width = current.width || preview.source.width || aspectRatio * 1000;
   const height = current.height || preview.source.height || 1000;
-  const markers = FOCUS_JOINTS.flatMap(name => {
+  const currentIndex = frames.indexOf(current);
+  // Include every validated native joint (face, feet and fingers as provided),
+  // keeping major body joints first. The normalizer owns the schema allowlist.
+  const jointNames = [...new Set<string>([...FOCUS_JOINTS, ...current.keypoints.map(point => point.name)])];
+  const markers = jointNames.flatMap(name => {
     const joint = observedJoint(current, name);
-    return joint ? [joint] : [];
+    return joint && !isolatedSpike(frames, currentIndex, joint, width, height) ? [joint] : [];
   });
   if (!markers.length) return null;
   const trails: MotionFocus["trails"] = [];
-  const currentIndex = frames.indexOf(current);
   for (const marker of markers.filter(point => point.name.endsWith("wrist"))) {
     // A single visible person without a persistent ID supports a marker, not a path.
     if (current.person_track_id === null) continue;
@@ -78,5 +111,10 @@ export function motionFocusAt(preview: PosePreviewResponse | null, timestampMs: 
     }
     if (points.length > 1) trails.push({ name: marker.name, points: points.reverse() });
   }
-  return { width, height, markers, trails };
+  const byName = new Map(markers.map(point => [point.name, point]));
+  const bones = preview.skeleton_edges.flatMap(([a, b]) => {
+    const from = byName.get(a), to = byName.get(b);
+    return from && to ? [{ from, to }] : [];
+  });
+  return { width, height, markers, bones, trails };
 }

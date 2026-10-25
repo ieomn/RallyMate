@@ -38,12 +38,12 @@ FEATURES = {
 TRANSITIONS = {"landing_proxy_to_next_fs02_ms": ("landing_proxy_ms", {"FS02"}),
                "stable_control_proxy_to_next_fs10_or_fs02_ms": ("stable_control_onset_ms", {"FS02", "FS10"})}
 REQUIREMENTS = {
-    "FS01-M02": "原文要求髋中心下降幅度、膝角变化以及身体中心速度的连续性。",
-    "FS01-M04": "原文要求落地后双踝横向距离与髋宽的比值；当前窗口仍以脚部减速候选定位。",
-    "FS01-M05": "原文要求落地后重心稳定，并连续衔接同一人的第一步启动。",
-    "FS09-M05": "原文要求制动完成后恢复稳定控制，并衔接同一人的回位或第一步启动。",
-    "FS02-M01": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
-    "FS01-M01": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+    "FS01-M02": "观察髋部下沉幅度、膝部弯曲变化，以及身体移动速度是否连续。",
+    "FS01-M04": "比较落地后双脚间距与髋宽；测量时段根据脚部减速位置估计，不能代替真实落地判定。",
+    "FS01-M05": "观察落地后的身体稳定情况，以及同一人衔接第一步启动的过程。",
+    "FS09-M05": "观察减速后的身体稳定情况，以及同一人衔接回位或再次启动的过程。",
+    "FS02-M01": "通过髋部移动轨迹估计画面中的启动方向。缺少来球轨迹时，不能判断启动方向是否合适。",
+    "FS01-M01": "观察准备时段的头部移动速度和朝向变化。这些测量不能确定实际视线、是否盯球或启动时机是否合适。",
 }
 REASONS = {
     "source_required_joint_coverage_below_70_percent": "本指标所需关节在该时段同时有效的帧不足 70%。",
@@ -596,7 +596,7 @@ def project_source_assessment(artifact: dict, events: list[dict], *, video_id: s
                     "valid_frame_ratio": ratio, "valid_frame_count": valid if valid_counts else None,
                     "total_frame_count": total if valid_counts else None, "required_joint_ids": joints,
                     "threshold_ratio": .7, "scope": "indicator_window",
-                    "reason_zh": ("SAM 单目模型几何可计算不等于真实可见；原文 70% 可见性未知，未判定技术等级。" if record_model else
+                    "reason_zh": ("模型给出了关节位置，但无法确认所需关节是否有 70% 的画面真实可见，因此未据此判定技术等级。" if record_model else
                         "统计该时段所有已分析帧中，本指标所需人体关节同时有效的帧。达到 70% 仅通过可见性检查，不代表技术合格。"),
                     **({'visibility_verified': False, 'source_visibility_70_percent_verified': None} if record_model else {})},
                 "limitations_zh": item.get("limitations_zh", []), "association": item.get("event_association"),
@@ -622,7 +622,7 @@ def project_source_assessment(artifact: dict, events: list[dict], *, video_id: s
             "contextual_measurements": [value for key, value in contextual.items() if key not in contextual_duplicates],
             "measurement_artifact_version": ARTIFACT_VERSION,
             "source_binding": source_binding(),
-            "reason_zh": ("与原文子条件对应的局部测量；完整动作条件尚未验证，没有自动转换为等级或百分制。" if has_windows else
+            "reason_zh": ("已测量这一动作的部分条件；完整动作条件尚未验证，因此不将这些局部测量直接换算成等级或分数。" if has_windows else
                           "没有可绑定到本次视频的相应步伐候选；可人工选择时段核验，未定位到候选不代表没有动作。")}
 
 
@@ -652,4 +652,4 @@ def load_source_aligned_assessment(output_dir: Path, *, video_id: str, duration_
                                   _signature(output_dir / "primary-player.jsonl"), _signature(output_dir / "frames.jsonl"),
                                   video_id, duration_ms, video_sha256, frames_sha256))
     except (OSError, ValueError, TypeError, AttributeError, KeyError):
-        return _empty("本次任务暂未生成可核验的原文测量记录。")
+        return _empty("本次分析暂未生成可核验的逐项测量记录。")

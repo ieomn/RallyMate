@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
+import math
 from pathlib import Path, PurePosixPath
 import re
 
@@ -120,6 +122,79 @@ def verify_original_video(job: dict, settings: ServiceSettings) -> VerifiedOrigi
 
 def original_video_descriptor(job: dict, settings: ServiceSettings) -> dict | None:
     try:
-        return verify_original_video(job, settings).public(job["id"])
+        original = verify_original_video(job, settings)
+        result = original.public(job["id"])
+        binding = original_pose_time_binding(job, settings, original)
+        if binding is not None:
+            result["pose_time_binding"] = binding
+        return result
     except OriginalVideoUnavailable:
+        return None
+
+
+def original_pose_time_binding(job: dict, settings: ServiceSettings, original: VerifiedOriginalVideo) -> dict | None:
+    """Bind original playback to retained decoder PTS, never average FPS.
+
+    SourceVideoClock subtracts the first decoded frame's PTS even when analysis
+    starts later. Validate that declared origin against the hashed source-frame
+    artifact. Legacy reports without this evidence retain file-only playback.
+    """
+    summary = _object(job.get("summary"))
+    processing = _object(summary.get("processing"))
+    timing = _object(processing.get("source_timing"))
+    origin = timing.get("source_origin_ms")
+    count = processing.get("processed_frames")
+    if (timing.get("method") != "decoder_presentation_timestamps" or timing.get("timing_verified") is not True
+            or type(timing.get("fallback_timestamp_frames")) is not int or timing["fallback_timestamp_frames"] != 0
+            or type(count) is not int or count < 1
+            or type(timing.get("decoder_timestamp_frames")) is not int or timing["decoder_timestamp_frames"] < max(count, 2)
+            or type(origin) not in (int, float) or not math.isfinite(origin) or origin < 0):
+        return None
+    provenance = _object(_object(summary.get("minimum_scoring_loop")).get("provenance"))
+    frames_sha = provenance.get("frames_sha256")
+    if not isinstance(frames_sha, str) or _SHA.fullmatch(frames_sha) is None:
+        return None
+    try:
+        output = Path(job["output_dir"]).resolve(strict=True)
+        expected = (settings.runs_dir / job["id"]).resolve(strict=True)
+        path = output / "frames.jsonl"
+        if output != expected or path.is_symlink() or path.resolve().parent != output:
+            return None
+        before = path.stat()
+        if not 0 < before.st_size <= 1024 * 1024 * 1024:
+            return None
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            first = stream.readline(1024 * 1024 + 1)
+            if len(first) > 1024 * 1024 or not first.endswith(b"\n"):
+                return None
+            digest.update(first)
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        after = path.stat()
+        if ((before.st_size, before.st_mtime_ns, before.st_ctime_ns, before.st_ino)
+                != (after.st_size, after.st_mtime_ns, after.st_ctime_ns, after.st_ino)
+                or digest.hexdigest() != frames_sha.lower()):
+            return None
+        record = json.loads(first)
+        frame = _object(_object(record).get("frame"))
+        if (_object(record).get("job_id") != original.source_job_id
+                or frame.get("timestamp_source") != "decoder_pts"
+                or str(frame.get("video_sha256", "")).lower() != original.sha256
+                or any(type(frame.get(key)) is not int or frame[key] < minimum for key, minimum in (
+                    ("index", 0), ("processed_index", 0), ("pts", 0), ("time_base_num", 1),
+                    ("time_base_den", 1), ("source_timestamp_ms", 0), ("timestamp_ms", 0)))
+                or frame["processed_index"] != 0 or frame["index"] != processing.get("source_start_frame")):
+            return None
+        pts_ms = frame["pts"] * frame["time_base_num"] / frame["time_base_den"] * 1000
+        if (not math.isfinite(pts_ms) or abs(pts_ms - frame["source_timestamp_ms"]) > .51
+                or round(pts_ms - origin) != frame["timestamp_ms"]):
+            return None
+        return {"version": "original-video-decoder-pts-v1", "job_id": job["id"],
+                "source_job_id": original.source_job_id, "video_sha256": original.sha256,
+                "frames_sha256": frames_sha.lower(), "timestamp_semantics": "source_relative_decoder_pts",
+                "source_pts_origin_ms": origin, "media_time_origin_ms": 0,
+                "anchor": {key: frame[key] for key in ("index", "processed_index", "pts", "time_base_num",
+                                                       "time_base_den", "source_timestamp_ms", "timestamp_ms")}}
+    except (OSError, KeyError, ValueError, TypeError, OverflowError):
         return None

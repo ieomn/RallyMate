@@ -35,6 +35,57 @@ const modelFrame = (index = 0) => frame(index * 40, {
     confidence: null, confidence_semantics: "not_provided_by_sam3d", source: "model_estimate", observation_semantics: "model_estimate" }],
 });
 
+const mhr70 = JSON.parse(fs.readFileSync(new URL("../../src/rallymate_vision/pose/data/mhr70_display.json", import.meta.url), "utf8"));
+const nativePayload = () => {
+  const row = modelFrame();
+  row.keypoints = mhr70.keypoint_names.map((name, native_index) => ({ ...row.keypoints[0], name, native_index }));
+  return { ...payload([row]), joint_schema: "mhr70_named", skeleton_edges: mhr70.skeleton_edges };
+};
+
+test("native MHR preview retains all 70 source-bound names and 65 official edges without remapping", () => {
+  const raw = nativePayload(), before = structuredClone(raw), parsed = normalizePosePreview(raw);
+  assert.equal(parsed.joint_schema, "mhr70_named");
+  assert.equal(parsed.frames[0].keypoints.length, 70);
+  assert.equal(parsed.skeleton_edges.length, 65);
+  assert.deepEqual(parsed.frames[0].keypoints.map(point => point.name), mhr70.keypoint_names);
+  assert.equal(parsed.frames[0].keypoints[62].name, "left_wrist");
+  assert.equal(parsed.frames[0].keypoints[62].native_index, 62);
+  assert.ok(parsed.frames[0].keypoints.every(point => point.confidence === null));
+  assert.ok(parsed.skeleton_edges.some(([a, b]) => a === "left_ankle" && b === "left_big_toe_tip"));
+  assert.equal(poseEdges(parsed.frames[0], parsed.skeleton_edges).length, 65);
+  assert.deepEqual(normalizePosePreview(parsed), parsed);
+  assert.deepEqual(raw, before);
+});
+
+test("native points reject wrong indexes, source bindings, clipped pixels and false certainty", () => {
+  for (const change of [{ native_index: 43 }, { native_index: undefined }, { name: "left_big_toe" },
+    { raw_x_px: -1, x: 0 }, { raw_x_px: 1080, x: 1 }, { in_frame: false }, { confidence: 1 },
+    { source: "observed" }, { confidence_semantics: undefined }, { x: .9 }]) {
+    const raw = nativePayload(); raw.frames[0].keypoints = [{ ...raw.frames[0].keypoints[42], ...change }];
+    assert.deepEqual(normalizePosePreview(raw).frames[0].keypoints, [], JSON.stringify(change));
+  }
+  for (const change of [{ source_binding: {} }, { source_binding: { ...modelFrame().source_binding, pts: 3 } },
+    { person_track_id: 9 }, { processed_index: 2 }, { selection_status: "unavailable" },
+    { pose_source: undefined, observation_semantics: undefined }]) {
+    const raw = nativePayload(); Object.assign(raw.frames[0], change);
+    assert.deepEqual(normalizePosePreview(raw).frames[0].keypoints, []);
+  }
+  const raw = nativePayload(); raw.frames[0].keypoints.push({ ...raw.frames[0].keypoints[0] });
+  assert.deepEqual(normalizePosePreview(raw).frames[0].keypoints, []);
+});
+
+test("native skeleton only accepts official edges and never restores missing model points", () => {
+  const raw = nativePayload();
+  raw.skeleton_edges = [["left_wrist", "right_big_toe_tip"], ["left_ankle", "left_big_toe_tip"]];
+  raw.frames[0].keypoints = raw.frames[0].keypoints.filter(point => point.name !== "left_big_toe_tip");
+  raw.display_frames = nativePayload().frames;
+  const parsed = normalizePosePreview(raw);
+  assert.deepEqual(parsed.skeleton_edges, [["left_ankle", "left_big_toe_tip"]]);
+  assert.deepEqual(poseEdges(parsed.frames[0], parsed.skeleton_edges), []);
+  assert.equal(parsed.display_frames, undefined);
+  assert.equal(parsed.frames[0].keypoints.length, 69);
+});
+
 test("explicit source-bound model estimates draw with null confidence and no legacy recovery", () => {
   const raw = payload([modelFrame(0), modelFrame(1), modelFrame(2)]);
   raw.frames[1].keypoints = [];
@@ -146,7 +197,7 @@ test("sampled windows never extend pose validity through discarded frames", () =
   assert.deepEqual([0, 9999, 10000, 19999, 20000, -3, NaN].map(poseWindowStart), [0, 0, 10000, 10000, 20000, 0, 0]);
 });
 
-test("portrait and landscape motion markers retain source coordinates without drawing the body skeleton", () => {
+test("portrait and landscape body joints and connections retain source coordinates", () => {
   for (const [width, height] of [[1080, 1920], [1920, 1080]]) {
     const parsed = normalizePosePreview(payload([frame(0, { width, height })]));
     const html = renderToStaticMarkup(createElement(FocusOverlay, { focus: motionFocusAt(parsed, 0, width / height) }));
@@ -154,8 +205,8 @@ test("portrait and landscape motion markers retain source coordinates without dr
     // Matches the video's object-fit:contain when the stage's max-height letterboxes it.
     assert.match(html, /preserveAspectRatio="xMidYMid meet"/);
     assert.match(html, /vector-effect="non-scaling-stroke"/);
-    assert.equal((html.match(/<circle /g) ?? []).length, 2);
-    assert.equal((html.match(/<line /g) ?? []).length, 0);
+    assert.equal((html.match(/<circle /g) ?? []).length, 4);
+    assert.equal((html.match(/<line /g) ?? []).length, 2);
     assert.match(html, new RegExp(`cx="${.4 * width}" cy="${.5 * height}"`));
     assert.doesNotMatch(html, /<rect|<text|person_track_id|track.?8|bbox/);
   }
@@ -207,12 +258,12 @@ test("pose API requests are capped to a ten-second window with at most 600 frame
   assert.equal(requested, "/v1/jobs/pose-job-123/pose-preview?start_ms=12345&duration_ms=10000&sample_limit=600");
 });
 
-test("motion trails show only recent observed wrists, with sparse hand and ankle markers", () => {
+test("body joints remain visible while trails show only recent observed wrists", () => {
   const frames = Array.from({ length: 25 }, (_, index) => frame(index * 33, { keypoints: [point("left_wrist", .3 + index * .004), point("right_wrist", .7 - index * .004), point("left_ankle", .4, .9), point("left_shoulder")] }));
   const parsed = normalizePosePreview(payload(frames));
   const before = structuredClone(parsed);
   const focus = motionFocusAt(parsed, 660);
-  assert.deepEqual(focus.markers.map(point => point.name), ["left_wrist", "right_wrist", "left_ankle"]);
+  assert.deepEqual(focus.markers.map(point => point.name), ["left_shoulder", "left_wrist", "right_wrist", "left_ankle"]);
   assert.equal(focus.trails.length, 2);
   for (const trail of focus.trails) {
     assert.equal(trail.points.at(-1).timestamp_ms, 660);
@@ -221,6 +272,22 @@ test("motion trails show only recent observed wrists, with sparse hand and ankle
   assert.deepEqual(parsed, before);
   assert.equal(motionFocusAt(parsed, 900), null);
   assert.equal(motionFocusAt(null, 0), null);
+});
+
+test("body display rejects isolated joint spikes without inventing coordinates or changing measurements", () => {
+  const frames = [0, 33, 66].map(t => frame(t, { keypoints: [point("left_shoulder", .35, .3), point("left_elbow", .3, t === 33 ? .95 : .45), point("left_wrist", .4, .5)] }));
+  const parsed = normalizePosePreview(payload(frames)), before = structuredClone(parsed);
+  const focus = motionFocusAt(parsed, 33);
+  assert.ok(focus.markers.some(point => point.name === "left_shoulder"));
+  assert.ok(focus.markers.every(point => point.name !== "left_elbow"));
+  assert.equal(focus.bones.length, 0);
+  assert.deepEqual(parsed, before);
+  // A real continuous change and an unbound neighbour are not treated as spikes.
+  frames[2].keypoints[1].y = .9;
+  assert.ok(motionFocusAt(normalizePosePreview(payload(frames)), 33).markers.some(point => point.name === "left_elbow"));
+  frames[2].keypoints[1].y = .45;
+  frames[2].person_track_id = 9;
+  assert.ok(motionFocusAt(normalizePosePreview(payload(frames)), 33).markers.some(point => point.name === "left_elbow"));
 });
 
 test("motion trails break at identity, time, resolution, visibility and sudden-position discontinuities", () => {
@@ -238,15 +305,15 @@ test("motion trails break at identity, time, resolution, visibility and sudden-p
   const gap = normalizePosePreview(payload([frame(0, { valid_until_ms: 999 }), frame(200)]));
   assert.equal(motionFocusAt(gap, 200).trails.length, 0);
   const unidentified = normalizePosePreview(payload([frame(0, { person_track_id: null, selection_status: "single_visible_person" }), frame(33, { person_track_id: null, selection_status: "single_visible_person" })]));
-  assert.equal(motionFocusAt(unidentified, 33).markers.length, 1);
+  assert.equal(motionFocusAt(unidentified, 33).markers.length, 3);
   assert.equal(motionFocusAt(unidentified, 33).trails.length, 0);
 });
 
 test("display-only interpolation cannot supply a hand marker or connect its motion path", () => {
   const parsed = normalizePosePreview(displayGap());
-  assert.equal(motionFocusAt(parsed, 40), null);
+  assert.ok(motionFocusAt(parsed, 40).markers.every(point => point.name !== "left_wrist"));
   assert.equal(motionFocusAt(parsed, 80).trails.length, 0);
-  assert.equal(motionFocusAt(parsed, 79), null);
+  assert.ok(motionFocusAt(parsed, 79).markers.every(point => point.name !== "left_wrist"));
 });
 
 test("motion markers respect declared sub-millisecond source-PTS rounding but never a later frame", () => {
@@ -254,7 +321,7 @@ test("motion markers respect declared sub-millisecond source-PTS rounding but ne
   raw.source.timestamp_rounding_tolerance_ms = .5;
   const parsed = normalizePosePreview(raw);
   assert.equal(motionFocusAt(parsed, 41), null);
-  assert.equal(motionFocusAt(parsed, 1000 / 24).markers.length, 1);
+  assert.equal(motionFocusAt(parsed, 1000 / 24).markers.length, 3);
 });
 
 test("gateway adds only the bounded pose-preview read endpoint without forwarding browser credentials", async () => {
@@ -290,8 +357,8 @@ test("bounded display-only points reconnect a joint without changing raw observa
   assert.deepEqual(raw, before);
   assert.equal(normalizePosePreview(parsed).display_continuity.interpolated_keypoints, 1);
   const html = renderToStaticMarkup(createElement(Viewer, { videoSrc: "/video.mp4", videoTimeOriginMs: 40, trajectory: null, posePreview: raw, jobId: "pose-job-123", poseTimingPreserved: true, initialOverlays: { pose: true } }));
-  assert.doesNotMatch(html, /短暂缺点已平滑衔接|motion-focus-overlay/);
-  assert.match(html, /当前时刻暂无可靠动作标记/);
+  assert.doesNotMatch(html, /短暂缺点已平滑衔接|class="motion-focus-hand"/);
+  assert.match(html, /motion-focus-overlay/);
 });
 
 test("display points with long gaps, foreign identity, missing anchors or promoted scoring are rejected", () => {
@@ -346,12 +413,12 @@ test("only explicit SimCC response provenance can restore a filtered observed jo
   assert.equal(poseFrameAt(parsed, 40).keypoints.at(-1).source, "observed");
   assert.equal(poseFrameAt(parsed, 40).keypoints.at(-1).raw_confidence, 1.15);
   assert.equal(parsed.display_continuity.response_score_recovered_keypoints, 1);
-  assert.equal(motionFocusAt(parsed, 40).markers[0].raw_confidence, 1.15);
+  assert.equal(motionFocusAt(parsed, 40).markers.find(point => point.name === "left_wrist").raw_confidence, 1.15);
   assert.deepEqual(motionFocusAt(parsed, 80).trails[0].points.map(point => point.timestamp_ms), [0, 40, 80]);
   for (const change of [{ score_semantics: "guessed" }, { raw_confidence: .9 }, { raw_confidence: Infinity }, { confidence: .9 }]) {
     const invalid = structuredClone(raw); Object.assign(invalid.display_frames[1].keypoints.at(-1), change);
     assert.equal(poseFrameAt(normalizePosePreview(invalid), 40).keypoints.length, 2);
-    assert.equal(motionFocusAt(normalizePosePreview(invalid), 40), null);
+    assert.ok(motionFocusAt(normalizePosePreview(invalid), 40).markers.every(point => point.name !== "left_wrist"));
   }
 });
 

@@ -61,7 +61,7 @@ test("default collapsed and offline rendering make no GET", async () => {
   const ctx = context(async () => { calls++; return available(); });
   const html = renderToStaticMarkup(createElement(Panel, { context: ctx }));
   assert.match(html, /aria-expanded="false"/);
-  assert.doesNotMatch(html, /原帧 170|原始候选/);
+  assert.doesNotMatch(html, /原帧 170|全部换序线索/);
   assert.equal(calls, 0);
   const offline = createFootCrossingPanelController();
   await offline.open();
@@ -225,15 +225,15 @@ test("parent source notes distinguish weak RTM evidence, excluded conflicts and 
   row.local_joint_diagnostics.keypoint_jump_candidate_frames_by_joint = { right_ankle: [171] };
   const original = structuredClone(row);
   const weak = footCrossingParentSourceNotes(row).join("");
-  assert.match(weak, /1 个父事件仅弱来源关联/);
-  assert.match(weak, /局部疑点供复核，未完成双帧来源验证/);
+  assert.match(weak, /1 个关联片段尚未完成双帧来源验证/);
+  assert.match(weak, /仅保留局部提示/);
   assert.deepEqual(row, original, "wording must not change the candidate or its local risk");
   row.parent_source_association_counts = { mismatch: 1 };
-  assert.match(footCrossingParentSourceNotes(row).join(""), /已排除其否决和疑点判定作用；当前候选仍保留/);
+  assert.match(footCrossingParentSourceNotes(row).join(""), /已排除其判断影响；当前换序线索仍保留/);
   row.parent_source_association_counts = { unverified: 1 };
-  assert.match(footCrossingParentSourceNotes(row).join(""), /缺少可用来源关联，未用于否决或疑点判定/);
+  assert.match(footCrossingParentSourceNotes(row).join(""), /缺少可用来源，未参与异常判断/);
   row.parent_source_association_counts = { pair_source_bindings_verified: 1 };
-  assert.match(footCrossingParentSourceNotes(row).join(""), /来源绑定核对一致；这不证明实际身份或动作正确/);
+  assert.match(footCrossingParentSourceNotes(row).join(""), /来源核对一致；来源校验不代替动作判定/);
   assert.deepEqual(footCrossingParentSourceNotes(candidate()), []);
 });
 
@@ -288,7 +288,7 @@ test("coverage display: genuine no-exchange zero applies only to assessable pair
   assert.match(html, /可判定帧对 5 对/);
   assert.match(html, /未换序 5 对/);
   assert.match(html, /排除 0 对/);
-  assert.match(html, /可判定部分未发现换序候选；不能据此认定没有实际交叉步/);
+  assert.match(html, /可判定部分未发现脚踝换序；不能据此认定没有实际交叉步/);
   assert.doesNotMatch(html, /本次无法判断|排除原因|未保存可展开/);
 });
 
@@ -297,7 +297,7 @@ test("coverage display: partial exclusion retains reason counts alongside assess
     reasons: { same_projected_order: 4, source_time_binding_unavailable: 1, future_exclusion_reason: 1 } }));
   assert.match(html, /可判定帧对 4 对/);
   assert.match(html, /排除 2 对/);
-  assert.match(html, /可判定部分未发现换序候选/);
+  assert.match(html, /可判定部分未发现脚踝换序/);
   assert.match(html, /排除部分未参与图像换序判断/);
   assert.match(html, /原帧与视频时间绑定不可用（source_time_binding_unavailable）：1 对/);
   assert.match(html, /其他排除原因（future_exclusion_reason）：1 对/);
@@ -318,9 +318,9 @@ test("coverage display: nonzero candidates with zero retention keep missing-deta
   const html = renderCoverageWithoutMutation(syntheticCoverage({ frames: 3, candidates: 2,
     reasons: { strict_projected_order_exchange: 2 }, quality: { unvalidated: 2 } }));
   assert.match(html, /可判定帧对 2 对/);
-  assert.match(html, /已保存 0 条 \/ 原始候选 2 条/);
+  assert.match(html, /已保存 0 条 \/ 全部换序线索 2 条/);
   assert.match(html, /按原帧顺序截断/);
-  assert.match(html, /此工件未保存可展开的候选明细/);
+  assert.match(html, /本次未保存可展开的换序明细/);
   assert.doesNotMatch(html, /本次无法判断|未发现换序候选/);
 });
 
@@ -331,7 +331,7 @@ test("coverage display: retained suspect candidate and partial exclusions preser
     rows: [structuredClone(savedPair.candidate)], quality: { suspect: 1 } });
   const html = renderCoverageWithoutMutation(response);
   assert.match(html, /可判定帧对 2 对/);
-  assert.match(html, /已保存 1 条 \/ 原始候选 1 条/);
+  assert.match(html, /已保存 1 条 \/ 全部换序线索 1 条/);
   assert.match(html, /原帧与视频时间绑定不可用（source_time_binding_unavailable）：1 对/);
   assert.doesNotMatch(html, /本次无法判断|未发现换序候选|未保存可展开/);
   assert.deepEqual(response.candidates[0], savedPair.candidate);

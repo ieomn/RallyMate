@@ -42,9 +42,9 @@ export function reviewRuleResult(rule: ReviewRule, result: DemoResultResponse | 
   return {
     indicator, windows,
     status: conflict ? "source_needs_review" : !implemented ? "not_implemented" : hasEvidence ? "related_measurements" : "unavailable",
-    statusLabel: conflict ? "原文待核实" : !implemented ? "尚未接入逐项测量" : hasEvidence ? "有相关二维测量" : "本次证据不足",
-    reason: conflict ? "该项原文存在待澄清内容，保留原文供核对；在确认前不能据此给出技术评级。" : !implemented ? "当前分析没有这项原文指标的独立计算与判级结果，不能判为未完成或 E 级。"
-      : hasEvidence ? "已保存相关数值，但这些二维测量尚不能完整判定原文中的幅度、时序和技术合理性。"
+    statusLabel: conflict ? "动作要求待明确" : !implemented ? "尚未接入逐项测量" : hasEvidence ? "有相关二维测量" : "本次证据不足",
+    reason: conflict ? "该项动作要求存在待澄清内容，保留相关说明供核对；在确认前不能据此给出技术评级。" : !implemented ? "当前分析没有这项技术指标的独立计算与判级结果，不能判为未完成或 E 级。"
+      : hasEvidence ? "已保存相关数值，但这些二维测量尚不能完整判定动作中的幅度、时序和技术合理性。"
       : "本次没有取得这项指标所需的可靠测量。缺少证据不会记作 0 分或 E 级。",
   };
 }

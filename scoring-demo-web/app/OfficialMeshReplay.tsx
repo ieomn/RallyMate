@@ -41,6 +41,7 @@ export default function OfficialMeshReplay({ media, jobId }: { media: OfficialMe
       }}>{[0.25, 0.5, 1, 1.5, 2].map(value => <option key={value} value={value}>{value}×</option>)}</select></label>
     </div>
     <video ref={video} key={readiness.key} controls muted playsInline preload="metadata"
+      data-replay-role="mesh" data-time-origin-ms={media.source_relative_origin_ms}
       style={{ width: "100%", maxHeight: "72vh", background: side ? "#fff" : "#101820", borderRadius: 12 }}
       src={source} poster={!side ? media.preview_image_url : undefined}
       aria-label={side ? "SAM 3D Body 官方人体网格侧面回放" : "SAM 3D Body 官方人体网格原片叠加回放"}
@@ -58,6 +59,7 @@ export default function OfficialMeshReplay({ media, jobId }: { media: OfficialMe
       resume.current = { time: video.current?.currentTime ?? 0, paused: video.current?.paused ?? true };
       setFailed(false); readiness.retry();
     }}>重新读取官方回放</button></div>}
-    <p className="replay-caption">SAM 3D Body 输出的真实人体网格，采用官方淡蓝材质与光照。{side ? "当前为模型估计人体的 90° 侧视。" : "当前叠加在同一帧原视频上。"} 单目估计；遮挡处外形由模型推断。</p>
+    <p className="replay-caption">{side ? "侧面视角，便于看清躯干与四肢的动作关系。" : "人体表面与原视频逐帧同步，直接查看完整动作。"}</p>
+    <details className="report-replay-details"><summary>人体回放说明</summary><p>SAM 3D Body 根据本次视频重建人体；遮挡处外形为模型估计。片段切换和慢放直接复用已生成的视频。</p></details>
   </div>;
 }

@@ -2,8 +2,15 @@ import type { DemoResultResponse, MotionAnalysis } from "./api-types";
 import { indicatorAssessmentOf, type IndicatorObservation } from "./indicator-assessment";
 import { reportFocus, type ReportFocus } from "./training-report";
 import { reportVideoDurationMs } from "./workspace-navigation";
+import { cardExecutionOf, type CardCondition } from "./card-execution";
+import { isFormalScoringPolicy } from "./formal-card-scoring-policy";
 
 const FEATURE_LABELS: Record<string, string> = {
+  head_center_speed_body_s: "头部移动速度", head_center_y_body: "头部高度", head_center_vertical_velocity_body_s: "头部上下移动速度",
+  hip_drop_torso: "髋部下降幅度", body_speed_std_torso_s: "身体移动速度波动", hip_inside_support_fraction: "髋投影位于双脚之间的比例",
+  supported_low_motion_duration_ms: "减速后的支撑时长", successor_interval_ms: "衔接下一动作的间隔",
+  hip_speed_drop_torso_s: "髋部速度下降量", hip_speed_drop_fraction: "髋部速度下降比例", trunk_tilt_std_deg: "躯干倾角波动",
+  shoulder_hip_angular_speed_drop_deg_s: "肩髋转动减速量",
   bilateral_foot_rise_min_body: "双脚共同上升幅度", bilateral_foot_rise_proxy_duration_ms: "双脚上升候选持续时间",
   bilateral_foot_rise_synchrony_ms: "双脚上升时间差", bilateral_foot_vertical_slowdown_time_offset_ms: "双脚垂直减速时间差",
   body_center_speed_body_s: "身体中心移动速度", braking_ankle_slowdown_to_hip_deceleration_ms: "制动脚减速到髋部减速的间隔",
@@ -34,7 +41,8 @@ const FEATURE_LABELS: Record<string, string> = {
   trunk_tilt_deg: "躯干投影倾角", wrist_separation_torso: "双腕距离",
 };
 const UNIT_LABELS: Record<string, string> = { body: "身体尺度", "body/s": "身体尺度/秒", "body/s2": "身体尺度/秒²", torso: "躯干长度", "torso/s": "躯干长度/秒", deg: "度", "deg/s": "度/秒", ms: "毫秒", s: "秒", ratio: "倍", fraction: "（比例）", count: "次", code: "（侧别标记）", "%": "%" };
-const guidanceLabel = (feature: string, label: string, indicator: string) => FEATURE_LABELS[feature] ?? (/[\u3400-\u9fff]/u.test(label) && !/[a-z]+_[a-z0-9_]+/iu.test(label) ? label : `${indicator}测量值`);
+const publicLabel = (value: string) => value.replace(/(?:原文|Word|P\d{3,}|\b(?:FS|GS)\d{2}(?:-M\d{2})?(?:-\d{2})?\b)/giu, "").replace(/候选(?:前段|后段)?|尚待复核|待原片复核/g, "").trim();
+const guidanceLabel = (feature: string, label: string) => publicLabel(FEATURE_LABELS[feature] ?? (/[\u3400-\u9fff]/u.test(label) && !/[a-z]+_[a-z0-9_]+/iu.test(label) ? label : "动作测量值"));
 const guidanceUnit = (unit: string) => UNIT_LABELS[unit] ?? (/[\u3400-\u9fff]/u.test(unit) ? unit : unit ? "（单位见指标详情）" : "");
 
 export type TrainingFocusSelection = { title: string; question: string; timestampMs?: number };
@@ -42,71 +50,75 @@ export type TrainingGuidance = ReportFocus & {
   evidenceState: "observation" | "review" | "unavailable";
   observation: string;
   question: string;
+  goal: string;
+  drill: string;
+  retest: string;
   nextStep: string;
   limitation: string;
   source_links?: Array<{ title: string; url: string }>;
 };
 
-// These links are deliberately static: imported report text cannot supply a URL.
+type PracticeGroup = "head" | "posture" | "movement" | "balance" | "rotation" | "swing" | "general";
+type PracticePlan = Pick<TrainingGuidance, "title" | "goal" | "drill" | "retest" | "nextStep" | "source_links">;
+// Sources are allowlisted; imported report content never supplies links or drills.
 const PRACTICE_SOURCES = {
-  general: { title: "USTA 成人入门课表：示范、慢球与目标练习", url: "https://www.usta.com/content/dam/usta/content-fragments/tennis-service-center/assets/pdfs/USTA-Tennis-101-for-Adults.pdf" },
-  forehand: { title: "USTA 正手入门示范与分级提示", url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/learning-the-basics--forehand.html" },
-  backhand: { title: "USTA 反手入门示范与分级提示", url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/learning-the-basics--backhand.html" },
-  serve: { title: "LTA 发球入门：抛球与逐步衔接挥拍", url: "https://www.lta.org.uk/play/tennis-tips-and-techniques/how-to-hit-a-serve-for-beginners/" },
+  general: { title: "USTA 成人入门练习", url: "https://www.usta.com/content/dam/usta/content-fragments/tennis-service-center/assets/pdfs/USTA-Tennis-101-for-Adults.pdf" },
+  footwork: { title: "LTA 移动与回位练习", url: "https://www.lta.org.uk/play/tennis-tips-and-techniques/improve-your-tennis-footwork-on-court-with-these-simple-tips/" },
+  forehand: { title: "USTA 正手示范", url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/learning-the-basics--forehand.html" },
+  backhand: { title: "USTA 反手示范", url: "https://www.usta.com/en/home/improve/tips-and-instruction/national/learning-the-basics--backhand.html" },
+  serve: { title: "LTA 发球抛球练习", url: "https://www.lta.org.uk/play/tennis-tips-and-techniques/how-to-hit-a-serve-for-beginners/" },
 } satisfies Record<string, { title: string; url: string }>;
 
-/** A rule-inferred label only selects a conditional drill, never a confirmed diagnosis. */
-function practiceStep(moment: ReportFocus["moment"], motion: MotionAnalysis | null | undefined, footwork: boolean) {
+/** Classify anatomy before motion words: head speed must never select an arm drill. */
+function practiceGroup(feature: string, footwork: boolean): PracticeGroup {
+  if (/(?:^|_)head(?:_|$)/.test(feature)) return "head";
+  if (/knee|hip.*(?:height|_y_|vertical|drop|reference_dy)|preload.*hip/.test(feature)) return "posture";
+  if (/stance|ankle.*(?:width|distance)|support|hip_to_ankle|trunk_tilt_std|torso_lean_variability/.test(feature)) return "balance";
+  if (/shoulder|hip_axis|separation|torso_lean|trunk_tilt/.test(feature)) return "rotation";
+  if (/wrist|elbow|racket/.test(feature)) return "swing";
+  if (/ankle|foot|step|launch|body_center|body_speed|hip_center|hip_speed|successor|braking/.test(feature)) return "movement";
+  return footwork ? "movement" : "general";
+}
+
+function motionLabel(moment: ReportFocus["moment"], motion?: MotionAnalysis | null) {
   const labels = new Set(Object.values(motion?.families ?? {}).flatMap(family => family?.episodes ?? [])
     .filter(episode => moment && Number.isFinite(episode.start_ms) && Number.isFinite(episode.end_ms)
       && episode.start_ms <= moment.startMs && episode.end_ms >= moment.endMs)
     .map(episode => episode.classification?.status === "rule_inferred" ? episode.classification.label : "unclassified"));
-  const label = labels.size === 1 ? [...labels][0] : "unclassified";
-  const prefix = "通用练习（并非已诊断的缺陷）：";
-  const dosage = "以下次数只是起步安排，可按舒适程度减少。";
-  const source_links = [{ ...PRACTICE_SOURCES.general }];
-  if (label === "serve_motion") return {
-    nextStep: `${prefix}若原片确认是在练发球，先看发球示范，只选“把球抛到同一片舒适击球区域”一个目标。先不挥拍，做 2 组、每组 5 次抛球，组间休息，记录需要追球的次数；熟悉后再衔接轻松挥拍。下次同一站位再做 10 次，只比较抛球是否更集中。${dosage}`,
-    source_links: [{ ...PRACTICE_SOURCES.serve }],
-  };
-  const stroke = label === "forehand" ? "正手" : label === "two_handed_backhand" ? "双手反手" : label === "backhand" ? "单手反手" : null;
-  if (stroke) source_links.push({ ...(label === "forehand" ? PRACTICE_SOURCES.forehand : PRACTICE_SOURCES.backhand) });
-  const introduction = stroke ? `若原片确认是${stroke}，先看对应示范，保留自己熟悉的${stroke}握拍。` : "动作类型待确认，先看入门课表示范，自选一种熟悉的击球，不据此指定正手或反手。";
-  const drill = footwork
-    ? "在小场地用低速球与同伴合作，每次击球后回到预先选好的准备标记；这组只关注“回到标记等下一球”，不追求站死不动。做 2 组、每组 5 球，组间休息。下次用同样喂球与标记复测 10 球，记录能回到准备位置接下一球的次数。"
-    : "在小场地用低速球向较大的目标区打 2 组、每组 5 球，组间休息；这组只关注“把球送进目标区”，不追求加速。下次用同样来球和目标复测 10 球，记录落入目标区的次数；稳定后再逐步增加距离或移动。";
-  return { nextStep: `${prefix}${introduction}${drill}${dosage}`, source_links };
+  return labels.size === 1 ? [...labels][0] : "unclassified";
 }
 
-/** Questions describe what to check, never prescribe a correction or infer a defect. */
-function reviewPrompt(feature: string, footwork: boolean) {
-  if (/hip.*(?:height|_y_|vertical|reference_dy)|preload.*hip/.test(feature)) return {
-    title: "看看身体高度怎样变化", question: "这段里，髋部高度在什么时刻开始变化？双脚当时在移动还是支撑？",
-    nextStep: "先暂停在片段起点，再慢放到终点，记下高度变化与脚步发生的先后；下次保留同样的完整构图。",
-  };
-  if (/speed|acceleration|deceleration|slowdown/.test(feature)) return {
-    title: footwork ? "回看移动与停稳的顺序" : "回看挥拍速度的变化区间", question: footwork ? "身体移动变慢前后，两只脚分别在什么位置？画面里能看清停稳的过程吗？" : "挥拍由快到慢的这段，肩、髋与手腕分别在怎样移动？",
-    nextStep: footwork ? "先完整回放一次，再慢放检查双脚与身体停稳的顺序；下次录下动作结束后的恢复画面。" : "对照片段起止帧检查肩、髋与手腕；下次用同一机位保留完整准备与恢复，便于再次回看。",
-  };
-  if (/stance|ankle.*(?:width|distance)|support|hip_to_ankle/.test(feature)) return {
-    title: "对照双脚与身体的位置", question: "片段前后，双脚间距和髋部相对双脚的位置怎样变化？是否有脚被遮挡？",
-    nextStep: "暂停比较片段起点与终点，记录看得清的位置变化；下次让双脚和髋部持续留在画面内。",
-  };
-  if (/shoulder|hip_axis|separation|torso|trunk/.test(feature)) return {
-    title: "对照肩髋的画面变化", question: "从片段起点到终点，肩线与髋线在画面中的方向怎样变化？两侧身体是否始终可见？",
-    nextStep: "慢放这一段并各暂停一次起止帧，记录可看清的先后变化；下次保持相机固定，方便对照。",
-  };
-  if (/knee|elbow/.test(feature)) return {
-    title: /knee/.test(feature) ? "回看膝部弯曲的变化" : "回看手臂展开的过程", question: /knee/.test(feature) ? "膝部在片段前后怎样弯曲和伸展？两条腿是否都能看清？" : "手臂在准备、挥拍与恢复时怎样变化？是否有身体遮挡？",
-    nextStep: "先慢放对应区间，再记录一个能看清的变化；下次保持相同机位并保留动作前后的画面。",
-  };
-  return footwork ? {
-    title: "先复盘这段脚步", question: "这段里，哪只脚先移动，身体什么时候跟上？开始和结束是否都能看清？",
-    nextStep: "回看片段起止之间的双脚移动，只记下看得清的顺序；下次保留启动前与恢复后的画面。",
-  } : {
-    title: "先复盘这段挥拍", question: "这段准备、挥拍与恢复是否连贯可见？哪一个阶段需要再次暂停观察？",
-    nextStep: "完整回放一次，再暂停到想复核的阶段；下次用同一机位记录同类动作，继续观察这个问题。",
-  };
+/** Short, low-intensity practice progressions, not inferred diagnoses or angle prescriptions. */
+function practicePlan(group: PracticeGroup, moment?: ReportFocus["moment"], motion?: MotionAnalysis | null): PracticePlan {
+  const label = motionLabel(moment, motion);
+  const make = (title: string, goal: string, drill: string, retest: string, source: keyof typeof PRACTICE_SOURCES = "general"): PracticePlan => ({
+    title, goal, drill, retest, nextStep: `${drill} 复测：${retest}`, source_links: [{ ...PRACTICE_SOURCES[source] }],
+  });
+  if (group === "head") return make("移动中保持看球节奏", "移动时继续跟踪来球，接球后自然回到准备位置。",
+    "与同伴近距离抛接慢球：左右各移动一小步后接住球，再回到起点。做 2 组、每组 5 次，头部随来球自然转动，组间休息。",
+    "保持相同抛球距离做 10 次，记录接住球并顺畅回位的次数；同机位录像比较头部移动，不以头部完全不动为目标。");
+  if (group === "posture") return make("把准备姿势接到下一步", "用舒适的膝髋弯曲连接准备、移动和回位。",
+    "在起点与左右两个近距离标记之间慢速往返。每次从自然准备姿势出发，到标记后回位；做 2 组、每组 5 次，组间休息，不刻意深蹲。",
+    "保持同样标记与节奏做 10 次，记录连续完成准备、移动、回位的次数；同机位比较髋部高度与膝部变化。", "footwork");
+  if (group === "movement") return make("练好启动后的调整与回位", "先朝来球方向移动，接近落点时用小步调整，随后回位。",
+    "让同伴在左右近距离交替喂慢球，移动到球旁轻击，再回到准备标记。做 2 组、每组 5 球，组间休息，保持能从容完成的节奏。",
+    "用同样喂球与标记复测 10 球，记录下一球发出前已回到准备位置的次数，先增加完成次数，再增加移动距离。", "footwork");
+  if (group === "balance") return make("到位后顺畅接上下一球", "接近来球时调整脚步，保持能继续移动的准备姿势。",
+    "从准备标记出发接同伴的近距离慢球，到球旁用小步调整后轻击，再回到标记。做 2 组、每组 5 球；站姿顺应来球，不要求双脚站死。",
+    "用相同来球复测 10 球，记录能轻松击球并衔接回位的次数；录像对比到位后的双脚位置。", "footwork");
+  if (label === "serve_motion" && (group === "swing" || group === "general" || group === "rotation")) return make("先把发球抛球练集中", "把抛球送到稳定、舒适的击球区域，再接上轻松挥拍。",
+    "如果本段在练发球，先不挥拍，做 2 组、每组 5 次抛球，组间休息；保留自然站位，熟悉后再接轻松挥拍。",
+    "同一站位再做 10 次，记录无需追球即可衔接挥拍的次数；稳定后再增加发球动作。", "serve");
+  if (group === "rotation") return make("把转身与挥拍连起来", "让准备转身、轻松挥拍和回位形成连续节奏。",
+    "先慢速空挥 5 次，再用熟悉的击球方式接近距离慢球，轻送到大目标区，做 2 组、每组 5 球。保持舒适转动幅度，组间休息。",
+    "同样来球做 10 球，记录进入目标区的次数；同机位比较准备至回位是否更连贯，不追求更大的转体角度。");
+  const stroke = label === "forehand" ? "正手" : label === "two_handed_backhand" ? "双手反手" : label === "backhand" ? "单手反手" : null;
+  const opening = stroke ? `如果本段练的是${stroke}，使用熟悉的${stroke}握拍。` : "自选一种熟悉的击球方式。";
+  const plan = make(group === "swing" ? "用小挥拍提高落点控制" : "先把慢球送进目标区", "用轻松、可重复的挥拍把球送到预先选定的目标。",
+    `${opening}在小场地用低速球向大目标区轻打 2 组、每组 5 球，组间休息。先缩短距离和挥拍幅度，保持能连续对打的节奏。`,
+    "用同样来球和目标复测 10 球，记录落入目标区的次数；连续完成后再稍微增加距离。");
+  if (stroke) plan.source_links!.push({ ...(label === "forehand" ? PRACTICE_SOURCES.forehand : PRACTICE_SOURCES.backhand) });
+  return plan;
 }
 
 function observationMoment(observation: IndicatorObservation, duration: number | null) {
@@ -117,57 +129,79 @@ function observationMoment(observation: IndicatorObservation, duration: number |
 function fallbackGuidance(focus: ReportFocus, duration: number | null, motion?: MotionAnalysis | null): TrainingGuidance {
   const capture = focus.label === "下次拍摄建议";
   const footwork = focus.moment?.kind === "footwork" || /步伐|脚/.test(focus.title);
-  const prompt = reviewPrompt("", footwork);
-  // Historical reports may omit duration; existing validated episode bounds remain usable.
   const moment = focus.moment && (duration === null || focus.moment.endMs <= duration) ? focus.moment : undefined;
-  const practice = practiceStep(moment, motion, footwork);
-  return {
-    ...focus, moment, evidenceState: capture ? "unavailable" : "review",
-    observation: capture ? "当前缺少足够的连续画面或适用测量，暂时无法形成这一项动作判断。" : moment ? `已定位一段${footwork ? "步伐候选" : "挥拍运动"}区间，可回到原片核对。` : "报告保留了复核重点；当前没有可验证的片段定位。",
-    question: capture ? footwork ? "下次是否能让双脚与身体在动作前后持续可见？" : "下次是否能让两侧肩、髋在固定机位中持续可见？" : prompt.question,
-    nextStep: `${practice.nextStep}${capture ? ` 复拍时：${focus.detail}` : ""}`,
-    source_links: practice.source_links,
-    limitation: capture ? "缺少证据不代表动作没有发生，也不代表技术较差。" : "动作类型与技术好坏仍需复核；运动候选不等于已确认触球。",
+  const plan = practicePlan(footwork ? "movement" : "general", moment, motion);
+  return { ...focus, ...plan, moment, evidenceState: capture ? "unavailable" : "review", label: "基础练习",
+    observation: capture ? "本次还没有这项动作的完整测量，可先建立一组自己的练习基线。" : moment ? `已定位${footwork ? "脚步移动" : "挥拍"}片段，可结合回放完成下面的练习。` : "本次已保留训练关注点，可先完成一组固定任务并记录结果。",
+    detail: capture ? `下次固定机位，让${footwork ? "全身与双脚" : "肩髋与球拍"}持续入镜，并保留准备到恢复的完整过程。` : "练习目标按本次动作主题选择；下次使用相同任务与拍摄方式进行比较。",
+    question: plan.goal, limitation: "这是基础技能练习；当前测量不足以给出这项动作的个体技术结论。",
   };
 }
 
 export function focusSelection(item: TrainingGuidance): TrainingFocusSelection {
-  return { title: item.title, question: item.question, ...(item.moment ? { timestampMs: item.moment.startMs } : {}) };
+  return { title: item.title, question: `${item.goal} 复测：${item.retest}`, ...(item.moment ? { timestampMs: item.moment.startMs } : {}) };
 }
 
-/** Suggestions explain observed motion, never infer a technical error from coverage. */
+function conditionDifference(condition: CardCondition): string | null {
+  if (condition.value === null || condition.passed !== false || condition.threshold === null) return null;
+  if (Array.isArray(condition.threshold)) return condition.value < condition.threshold[0] ? "低于本项参考区间" : condition.value > condition.threshold[1] ? "高于本项参考区间" : null;
+  return condition.operator === "gte" && condition.value < condition.threshold ? "低于本项参考值"
+    : condition.operator === "lte" && condition.value > condition.threshold ? "高于本项参考值" : null;
+}
+
+/** Only recomputed, source-bound scored conditions can describe a measured shortfall. */
+function scoredGuidance(result: DemoResultResponse, duration: number | null, motion?: MotionAnalysis | null) {
+  const report = cardExecutionOf(result.card_execution);
+  if (!report || !result.job_id || report.source_run_id !== result.job_id || !isFormalScoringPolicy(report.scoring_policy_version)) return [];
+  return report.cards.flatMap(card => card.instances.flatMap(instance => {
+    if (instance.status !== "scored" || instance.score === null || !instance.window) return [];
+    const condition = instance.conditions.find(row => FEATURE_LABELS[row.metric] && conditionDifference(row));
+    if (!condition) return [];
+    const footwork = card.event_code.startsWith("FS"), group = practiceGroup(condition.metric, footwork);
+    const { start_ms: startMs, end_ms: endMs } = instance.window;
+    const moment: ReportFocus["moment"] = duration !== null && startMs >= 0 && endMs <= duration ? { id: instance.event_id, label: "本次计分片段", kind: footwork ? "footwork" : "rotation", startMs, endMs, note: "本次计分片段" } : undefined;
+    const plan = practicePlan(group, moment, motion), label = guidanceLabel(condition.metric, "");
+    const measured = `${label}为 ${Number(condition.value!.toFixed(2)).toLocaleString("zh-CN")} ${guidanceUnit(condition.unit)}`.trimEnd();
+    const row: TrainingGuidance = { id: `scored:${card.indicator_id}:${instance.event_id}`, ...plan, moment,
+      evidenceState: "observation", label: "本次评分重点", observation: `${measured}，${conditionDifference(condition)}。可以把${plan.goal.replace(/。$/, "")}作为本次练习目标。`,
+      detail: `${measured}；当前计算参考值：${Array.isArray(condition.threshold) ? condition.threshold.join("–") : condition.threshold} ${guidanceUnit(condition.unit)}。本项得分 ${Number(instance.score.toFixed(1))}/100。`,
+      question: plan.goal, limitation: "该结论针对本次测量片段与计算参考，不代表整场表现或动作问题的成因。" };
+    return [{ row, group, score: instance.score }];
+  })).sort((a, b) => a.score - b.score);
+}
+
+/** Observations choose a relevant skill; absent grades never become diagnoses. */
 export function trainingGuidance(result: DemoResultResponse | null, motion?: MotionAnalysis | null): TrainingGuidance[] {
-  const assessment = indicatorAssessmentOf(result?.indicator_assessment);
+  if (!result) return [];
+  const assessment = indicatorAssessmentOf(result.indicator_assessment);
   const duration = reportVideoDurationMs(result);
   const fallback = reportFocus(result, motion).map(item => fallbackGuidance(item, duration, motion));
-  if (!assessment?.observations.length) return fallback;
-  const seen = new Set<string>();
-  const guidance: TrainingGuidance[] = [];
-  for (const indicator of assessment.indicators) {
-    const observation = assessment.observations.filter(item => indicator.observation_ids.includes(item.observation_id))
-      .sort((a, b) => Number(!!observationMoment(b, duration)) - Number(!!observationMoment(a, duration)))[0];
-    if (!observation || seen.has(indicator.event_code)) continue;
-    seen.add(indicator.event_code);
+  const seen = new Set<PracticeGroup>(), guidance: TrainingGuidance[] = [];
+  for (const { row, group } of scoredGuidance(result, duration, motion)) {
+    if (seen.has(group)) continue;
+    seen.add(group); guidance.push(row);
+    if (guidance.length === 2) return guidance;
+  }
+  for (const indicator of assessment?.indicators ?? []) {
+    const observations = assessment!.observations.filter(item => indicator.observation_ids.includes(item.observation_id))
+      .sort((a, b) => Number(!!observationMoment(b, duration)) - Number(!!observationMoment(a, duration)));
     const footwork = indicator.event_code.startsWith("FS");
-    const motionName = footwork ? "脚步" : "挥拍";
-    const label = guidanceLabel(observation.feature_name, observation.label_zh, indicator.name_zh);
-    const measured = observation.value === null ? `${label}取得 ${observation.windows.length} 段局部测量，尚不足以汇总整个阶段` : `${label}为 ${Number(observation.value.toFixed(2)).toLocaleString("zh-CN")} ${guidanceUnit(observation.unit)}`.trimEnd();
-    const prompt = reviewPrompt(observation.feature_name, footwork);
+    const observation = observations.find(row => !seen.has(practiceGroup(row.feature_name, footwork)));
+    if (!observation) continue;
+    const group = practiceGroup(observation.feature_name, footwork);
+    seen.add(group);
+    const label = guidanceLabel(observation.feature_name, observation.label_zh);
+    const measured = observation.value === null ? `${label}取得 ${observation.windows.length} 段测量` : `${label}为 ${Number(observation.value.toFixed(2)).toLocaleString("zh-CN")} ${guidanceUnit(observation.unit)}`.trimEnd();
     const replay = observationMoment(observation, duration);
-    const moment: ReportFocus["moment"] = replay ? { id: observation.observation_id, label: indicator.name_zh, kind: footwork ? "footwork" : "rotation", startMs: replay.start_ms!, endMs: replay.end_ms!, note: observation.definition_zh } : undefined;
-    const practice = practiceStep(moment, motion, footwork);
+    const moment: ReportFocus["moment"] = replay ? { id: observation.observation_id, label, kind: footwork ? "footwork" : "rotation", startMs: replay.start_ms!, endMs: replay.end_ms!, note: "本次视频测量区间" } : undefined;
+    const plan = practicePlan(group, moment, motion);
     const modelEstimate = observation.measurement_provenance?.observation_semantics === "monocular_model_estimate" || observation.measurement_provenance?.pose_source === "sam3d";
-    guidance.push({
-      id: `observation:${indicator.indicator_id}`, title: prompt.title, label: modelEstimate ? "模型估计 · 待原片复核" : "已取得局部测量",
-      // Keep the precise value available to exports and the collapsed evidence detail.
-      detail: `本次${measured}。对应${motionName}指标：${indicator.name_zh}。${observation.definition_zh}`,
-      evidenceState: modelEstimate ? "review" : "observation",
-      observation: modelEstimate ? `本段提供了${label}的模型估计，可对照原片查看。` : observation.value === null ? `本段取得了${label}的 ${observation.windows.length} 段局部测量，尚未覆盖整个阶段。` : `本段已取得${label}的画面测量，可回到对应区间核对。`,
-      question: prompt.question, nextStep: practice.nextStep, source_links: practice.source_links,
-      limitation: modelEstimate ? "模型估计不等于可见性已验证；不能据此判断动作好坏或真实发力。" : "画面测量不能单独判定技术好坏；动作类型、完整阶段与触球仍需复核。",
-      moment,
+    guidance.push({ id: `observation:${indicator.indicator_id}`, ...plan, moment, label: "相关技能练习",
+      detail: `本次${measured}。${observation.value === null ? "各局部片段分别保留，未合并为整段结论。" : "数值对应上方标注的测量区间。"}`,
+      evidenceState: modelEstimate ? "review" : "observation", observation: `${modelEstimate ? "视频模型估计：" : "本段测量："}${measured}。先练下面这项技能，并记录自己的完成次数。`,
+      question: plan.goal, limitation: "此测量用于选择练习主题，尚无适用判级时，不据此认定动作缺陷。单目估计受视角与遮挡影响。",
     });
     if (guidance.length === 2) break;
   }
-  return guidance.length ? [...guidance, ...fallback.filter(item => item.evidenceState === "unavailable")].slice(0, 3) : fallback;
+  return guidance.length ? guidance : fallback;
 }

@@ -21,8 +21,8 @@ test("every formal report preserves all validated state and source proof across 
 });
 test("readable exports show one recomputed formal total and keep internal rows only in backup",()=>{
  const raw=structuredClone(fixtures.at(-1).report);raw.overall_score=999;raw.summary.formal_scored_cards=999;
- const report=buildPracticeReport(completed(raw)),totals=report.sections.filter(s=>s.title.startsWith("训练评分："));
- assert.equal(totals.length,1);assert.equal(totals[0].title,"训练评分：68 / 100");
+ const report=buildPracticeReport(completed(raw)),totals=report.sections.filter(s=>s.title.startsWith("步伐动作得分："));
+ assert.equal(totals.length,1);assert.equal(totals[0].title,"步伐动作得分：68 / 100");
  assert.doesNotMatch(totals[0].paragraphs.join(" "),/待复核|999/);
  assert.equal(report.sections.some(s=>s.title.startsWith("逐卡")),false);
  assert.doesNotMatch(JSON.stringify(report),/FS01-M02|D \/ 40|原卡技术等级/);

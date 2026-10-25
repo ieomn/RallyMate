@@ -125,17 +125,18 @@ test("preparation measurements reject foreign reference, fabricated score and de
 test("empty recommendations distinguish no job, pending, failed, cancelled and completed evidence", () => {
   const render = options => renderToStaticMarkup(createElement(TrainingRecommendations, { result: null, motion: null, pending: false, ...options }));
   assert.match(render({}), /上传一段训练视频/);
-  assert.match(render({ pending: true }), /完成后会在这里显示/);
+  assert.match(render({ pending: true }), /分析完成后会显示本次观察和对应练习/);
   assert.match(render({ status: "failed" }), /本次分析未完成/);
   assert.match(render({ status: "cancelled" }), /本次分析已取消/);
   for (const options of [{ status: "succeeded" }, { status: "completed" }]) {
     const html = render(options);
-    assert.match(html, /本次分析已完成，但现有证据不足以形成训练建议/);
+    assert.match(html, /本次没有足够的动作测量/);
     assert.doesNotMatch(html, /上传一段训练视频/);
   }
   const existingGuidance = render({ status: "succeeded", result: { job_id: "completed-job", indicators: [] } });
-  assert.match(existingGuidance, /下次拍摄建议/);
-  assert.doesNotMatch(existingGuidance, /上传一段训练视频|本次分析已完成，但现有证据不足以形成训练建议/);
+  assert.match(existingGuidance, /基础练习/);
+  assert.match(existingGuidance, /怎么练/); assert.match(existingGuidance, /复测标准/);
+  assert.doesNotMatch(existingGuidance, /上传一段训练视频|本次没有足够的动作测量/);
 });
 const realProcess = JSON.parse(fs.readFileSync(new URL("./fixtures/process-v1.1-real.json", import.meta.url), "utf8"));
 const source = "action_recognition.motion_analysis.episodes.process_motion";
@@ -270,7 +271,7 @@ test("real v1.1 report retains all 298 source memberships and full versus sample
   }
   assert.deepEqual(processEvaluationOf(JSON.parse(JSON.stringify(parsed))), parsed);
   const html = render(realProcess);
-  assert.match(html, /缺测维度留空/);
+  assert.match(html, /缺少评分依据的维度留空/);
   assert.match(html, /未评分/);
   assert.match(html, /完整技术规则尚未实现/);
   assert.doesNotMatch(html, /原文目录|298|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}/);
@@ -446,7 +447,7 @@ test("long reports render one selected episode instead of hundreds of evidence c
   assert.equal((html.match(/class="process-criterion"/g) ?? []).length, 1);
   assert.equal((html.match(/<option /g) ?? []).length, 73);
   assert.match(html, /选择过程评价维度/); assert.match(html, /aria-pressed="true"[^>]*><span>挥拍/);
-  assert.match(html, /缺测维度留空/); assert.match(html, /本次训练评分/);
+  assert.match(html, /未评分的维度留空|已测到动作数据，但还不足以判断各维表现/); assert.match(html, /本次训练评分/);
 });
 
 test("completed empty and historical reports stay unscored while pending preserves evidence", () => {
@@ -457,7 +458,7 @@ test("completed empty and historical reports stay unscored while pending preserv
     assert.doesNotMatch(html, /中性起点|显示 50 中性暂估|补为 50/);
     assert.match(html, /0 \/ 5 维有评分依据/);
     assert.match(html, /当前识别结果还不足以计算动作得分/);
-    assert.match(html, /0 \/ 5 维有过程测量/);
+    assert.match(html, /0 \/ 5 维有测量/);
     assert.match(html, /未评分/);
   }
   const pending = render(null, { pending: true });
@@ -647,6 +648,9 @@ test("one user total selects validated formal evidence then valid process scores
   raw.overall_score = 999;
   assert.equal(trainingScoreOf(result).source, "validated_card_execution");
   assert.equal(trainingScoreOf(result).score, 68);
+  assert.equal(trainingScoreOf(result).scoreLabel, "步伐动作得分");
+  assert.equal(trainingScoreOf(result).onlyFootwork, true);
+  assert.ok(trainingScoreOf(result).scoredInstanceCount > 0);
   const foreign = { ...result, job_id: "another-source-job" };
   assert.equal(trainingScoreOf(foreign).source, "observed_process_reference");
   assert.equal(trainingScoreOf(foreign).score, 0);
@@ -658,4 +662,24 @@ test("one user total selects validated formal evidence then valid process scores
   const legacy = JSON.parse(fs.readFileSync(new URL("./fixtures/card-execution-real.json", import.meta.url), "utf8"));
   assert.equal(trainingScoreOf({ job_id: legacy.source_run_id, card_execution: legacy, process_evaluation: process }).score, 0);
   assert.equal(trainingScoreOf({ job_id: legacy.source_run_id, card_execution: legacy }).score, null);
+});
+
+test("overview keeps the five-dimensional chart and dimension controls outside collapsed details", () => {
+  const html = renderToStaticMarkup(createElement(TrainingReportOverview, {
+    result: { process_evaluation: report() }, motion: null, pending: false, title: "", description: "",
+  }));
+  const radar = html.indexOf('<svg class="process-radar"');
+  const controls = html.indexOf('<div class="process-dimension-options"');
+  const explanation = html.indexOf('<details class="process-explanation"');
+  assert.ok(radar > 0 && controls > radar && explanation > controls);
+  for (const position of [radar, controls]) {
+    const ancestors = (html.slice(0, position).match(/<\/?details\b[^>]*>/g) ?? [])
+      .reduce((depth, tag) => depth + (tag.startsWith("</") ? -1 : 1), 0);
+    assert.equal(ancestors, 0, "the chart and controls must not require expanding a disclosure");
+  }
+  const visibleControls = html.slice(controls, explanation);
+  assert.equal((visibleControls.match(/aria-pressed=/g) ?? []).length, 5);
+  assert.equal((visibleControls.match(/aria-expanded="false"/g) ?? []).length, 5);
+  assert.doesNotMatch(html.slice(explanation), /<details[^>]*\bopen/);
+  assert.equal((html.match(/class="process-radar-point/g) ?? []).length, 0);
 });

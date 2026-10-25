@@ -359,17 +359,17 @@ def _formation_assessment(
     )
     if detected_segments == 0:
         status = "not_observed"
-        label_zh = "未提供候选片段"
+        label_zh = "尚未定位运动片段"
     elif measured_indicator_count == expected_indicator_count and amplitude_count == expected_amplitude_count:
         status = "well_formed_information"
-        label_zh = "候选片段有可复核测量"
+        label_zh = "运动片段已有测量"
     elif measured_indicator_count:
         status = "partially_formed_information"
-        label_zh = "候选片段部分可测"
+        label_zh = "部分运动片段可测"
     else:
         status = "limited_information"
-        label_zh = "候选片段待复核，测量不足"
-    explanation_zh = f"{detected_segments} 个候选片段；{measured_indicator_count}/{expected_indicator_count} 项有测量。"
+        label_zh = "运动片段的测量信息不足"
+    explanation_zh = f"{detected_segments} 个运动片段；{measured_indicator_count}/{expected_indicator_count} 项有测量。"
 
     return {
         "status": status,
@@ -490,7 +490,7 @@ def build_user_demo_result(
             summary_zh = "已找到候选片段及可复核的幅度测量；动作类型仍待人工复核。"
         else:
             status = "partially_measured"
-            summary_zh = "已找到部分候选证据，但仍有指标无法稳定测量；动作类型待复核。"
+            summary_zh = "已取得部分运动测量；仍有指标无法稳定测量，动作类型尚未确认。"
 
         amplitudes = _friendly_amplitudes(
             validated_records,
