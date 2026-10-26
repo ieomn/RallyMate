@@ -6883,5 +6883,37 @@
     },
     "passed": true,
     "browser_interaction_qa": "not_asserted; separate browser QA was pending at documentation handoff"
+  },
+  "final_browser_validation": {
+    "completed_at_utc": "2026-10-26T12:29:38.588Z",
+    "local_strict_pass": true,
+    "public_functional_sections_pass": true,
+    "public_strict_pass": false,
+    "public_report_read_attempts": 1,
+    "public_report_retries": 0,
+    "public_errors": [
+      {
+        "resource": "sam3d-mesh.mp4",
+        "error": "net::ERR_HTTP2_PROTOCOL_ERROR"
+      }
+    ],
+    "verified": [
+      "five_dimension_scores",
+      "14_detected_clip_navigation",
+      "2.833_second_seek",
+      "original_mesh_side_switch_at_12_seconds",
+      "practice_seek_at_43.733_seconds",
+      "390px_no_document_overflow",
+      "25_record_evaluation_filters",
+      "invalid_measurements_do_not_show_training"
+    ],
+    "visual_limitations": [
+      "Side view includes two people and makes the main model too small for detailed review."
+    ],
+    "full_report_size_observed_local": {
+      "gzip_bytes": 3400682,
+      "decoded_bytes": 51363250
+    },
+    "note": "API consistency, functional UI assertions and error-free transport are separate outcomes. The public strict error gate remains failed."
   }
 }
