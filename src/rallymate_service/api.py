@@ -453,10 +453,10 @@ def create_app(
         # Stat-only identities cannot detect same-size rewrites with restored
         # mtime (Windows ctime is creation time). Hash every body dependency.
         body_dependencies = {"summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl",
-                             "indicator-features.jsonl", "source-aligned-measurements.json", "sam3d_frames.jsonl"}
+                             "indicator-features.jsonl", "source-aligned-measurements.json", "sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}
         artifacts = tuple(artifact_signature(Path(job["output_dir"]) / name,
                                             content_hash=name in body_dependencies)
-                          for name in sorted((ALLOWED_ARTIFACTS - MESH_ARTIFACTS) | {"sam3d_frames.jsonl"}))
+                          for name in sorted((ALLOWED_ARTIFACTS - MESH_ARTIFACTS) | {"sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}))
         registry = service_settings.resolved_technique_registry
         # These small resources are content-addressed, including an external
         # registry whose operator might preserve file size/modification time.

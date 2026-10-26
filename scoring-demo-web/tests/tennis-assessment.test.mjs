@@ -4,7 +4,7 @@ import test from "node:test";
 import ts from "typescript";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { tennisFixture, tennisHash, tennisResult } from "./fixtures/tennis-assessment.mjs";
+import { tennisFixture, tennisScopedFixture, tennisHash, tennisResult } from "./fixtures/tennis-assessment.mjs";
 
 const cache = new Map();
 function compiledUrl(url) {
@@ -20,7 +20,7 @@ function compiledUrl(url) {
   cache.set(url.href, output); return output;
 }
 const { validatedTennisAssessment, tennisAssessmentOf, retainTennisAssessment } = await import(compiledUrl(new URL("../app/lib/tennis-assessment.ts", import.meta.url)));
-const { default: Summary, tennisImprovementFocus } = await import(compiledUrl(new URL("../app/TennisAssessmentSummary.tsx", import.meta.url)));
+const { default: Summary, TennisAssessmentDetails, tennisImprovementFocus } = await import(compiledUrl(new URL("../app/TennisAssessmentSummary.tsx", import.meta.url)));
 const { default: LiveResults } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
 const context = { jobId: "tennis-test", videoSha256: tennisHash, durationMs: 9000 };
 const parse = report => validatedTennisAssessment(report, context);
@@ -160,4 +160,57 @@ test("complete episode navigation is source-bound, strictly timed and reduced to
   const legacy = tennisFixture(); delete legacy.episodes; assert.equal(parse(legacy).episodes, undefined);
   assert.deepEqual(parse({ ...report, episodes: "untrusted" }).episodes, []);
   assert.deepEqual(tennisAssessmentOf({ ...tennisResult(), tennis_assessment: parsed }).episodes, parsed.episodes, "the lightweight response retains canonical navigation when merged");
+});
+
+test("v1.2 validates one subject and recomputes contributions while v1.1 remains readable as history", () => {
+  const report = tennisScopedFixture(), parsed = parse(report);
+  assert.ok(parsed); assert.equal(parsed.version, "tennis-action-assessment-v1.2.0");
+  assert.equal(parsed.episodes[0].subject_id, "subject-1");
+  assert.equal(parsed.subject_scope.cross_subject_aggregation, false);
+  assert.deepEqual(parse(parsed), parsed, "canonical data survives retention and backups");
+  assert.ok(parse(tennisFixture()));
+  assert.equal(validatedTennisAssessment(report, { ...context, durationMs: undefined }), null);
+  for (const mutate of [r => { delete r.subject_scope; }, r => { r.subject_scope.cross_subject_aggregation = true; },
+    r => { r.episodes[1].subject_id = "legacy-track-2-epoch-0"; }, r => { r.episodes[1].person_track_id = 2; },
+    r => { r.subject_scope.subjects[1].included_in_report = true; }, r => { r.subject_scope.selected_subject_id = null; },
+    r => { r.episode_validity[1].subject_id = "legacy-track-2-epoch-0"; }, r => { r.episode_validity.pop(); r.episode_validity.pop(); },
+    r => { r.subject_scope.subjects[0].measured_episode_count = 4; }, r => { r.dimensions[0].observation_count = 4; },
+    r => { r.dimensions[0].metrics[0].observation_count = 4; }, r => { r.episodes[0].metrics.movement_metric.score = 100; },
+    r => { r.rubric.version = "tennis-action-rubric-v1.1.0"; }]) {
+    const invalid = tennisScopedFixture(); mutate(invalid); assert.equal(parse(invalid), null);
+  }
+});
+
+test("v1.2 coverage is checked against measured episode requirements and actual scoring contributions", () => {
+  for (const mutate of [r => { r.pattern_coverage.measured_requirements = 4; }, r => { r.pattern_coverage.fraction = 1; },
+    r => { r.pattern_coverage.verified_technique_episodes = 2; }, r => { r.pattern_coverage.profiles = ["serve"]; },
+    r => { r.episodes[0].motion_pattern.coverage.measured_requirements = 2; }, r => { r.episodes[0].motion_pattern.profile_id = "serve"; },
+    r => { r.episodes[0].motion_pattern.requirements[0].metric_ids = ["unmeasured_feature"]; },
+    r => { r.dimensions[4].metrics[0].id = "unrelated"; }]) {
+    const invalid = tennisScopedFixture(); mutate(invalid); assert.equal(parse(invalid), null);
+  }
+});
+
+test("v1.2 main view names the scoped target and measurement gaps without claiming complete force analysis", () => {
+  const report = parse(tennisScopedFixture());
+  const html = render(report);
+  assert.match(html, /本次锁定目标，汇总 2 段动作/);
+  assert.match(html, /另有 1 段属于其他轨迹，未混入评分/);
+  assert.match(html, /2 \/ 4 项次有可测依据/);
+  assert.match(html, /不是动作合格率/);
+  assert.match(html, /不表示整套发力模式已被验证/);
+  const detail = renderToStaticMarkup(createElement(TennisAssessmentDetails, { report }));
+  assert.match(detail, /仅使用通用动作指标/); assert.match(detail, /不要求击后立即减速/);
+  assert.doesNotMatch(html + detail, /VIS-GS|P0097|source_binding|legacy-track-2/);
+  assert.match(render(parse(tennisFixture())), /历史版本：没有逐目标归属记录/);
+});
+
+test("v1.2 empty measurement retains a subject scope without manufacturing episodes or coverage", () => {
+  const report = tennisScopedFixture(); report.status = "unavailable"; report.overall_score = null;
+  report.episodes = []; report.episode_validity = []; report.strengths = []; report.improvements = [];
+  report.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics = []; });
+  report.subject_scope.subjects.forEach(s => { s.measured_episode_count = 0; });
+  report.pattern_coverage = { measured_requirements: 0, applicable_requirements: 0, fraction: null, verified_technique_episodes: 0, generic_episodes: 0, full_source_technique_covered: false, profiles: [] };
+  assert.ok(parse(report)); assert.match(render(parse(report)), /汇总 0 段动作/);
+  assert.doesNotMatch(render(parse(report)), /tennis-radar|tennis-score-number/);
 });

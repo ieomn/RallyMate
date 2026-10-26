@@ -1,0 +1,570 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+  "sample_id": "djokovic-usopen-2012",
+  "source_group": "2012-usopen-jc-demiace",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "eea908aec21f9097f302",
+      "person_track_id": 1,
+      "start_ms": 3420,
+      "peak_ms": 4004,
+      "end_ms": 4379,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_two_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "djokovic-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 3795,
+      "evidence": {
+        "contact_sheet": "action-sheets/djokovic-usopen-2012-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 3086.417,
+            "nearest_primary_timestamp_ms": 3086,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3607.771,
+            "nearest_primary_timestamp_ms": 3587,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3979.125,
+            "nearest_primary_timestamp_ms": 3962,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4129.125,
+            "nearest_primary_timestamp_ms": 4129,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4279.125,
+            "nearest_primary_timestamp_ms": 4296,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4525.354,
+            "nearest_primary_timestamp_ms": 4546,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4841.583,
+            "nearest_primary_timestamp_ms": 4838,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4920.583,
+            "nearest_primary_timestamp_ms": 4922,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "白帽灰上衣蓝短裤目标；双手共同握拍反手准备并共同向前随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 3086.417,
+          "peak_ms": 4129.125,
+          "end_ms": 4921.583
+        },
+        "limitations": [
+          "source_caption_identity_not_face_recognition"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        0.98,
+        -0.2
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 3086,
+            "requested_sheet_timestamp_ms": 3086.417,
+            "source_frame_index": 74,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4129.125
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4921.583
+          }
+        ],
+        "forward_observation_zh": "可见底线斜边与沿球场向右上延伸的纵向边线，右上侧可见球网；用纵向场线投影估计朝网方向约[0.98,-0.20]。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 3086
+    },
+    {
+      "episode_id": "7549dec002f775d57c4c",
+      "person_track_id": 1,
+      "start_ms": 7090,
+      "peak_ms": 7424,
+      "end_ms": 7799,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "djokovic-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 7424,
+      "evidence": {
+        "contact_sheet": "action-sheets/djokovic-usopen-2012-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 6756.75,
+            "nearest_primary_timestamp_ms": 6757,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7111.271,
+            "nearest_primary_timestamp_ms": 7132,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7315.792,
+            "nearest_primary_timestamp_ms": 7299,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7465.792,
+            "nearest_primary_timestamp_ms": 7466,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7615.792,
+            "nearest_primary_timestamp_ms": 7633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7903.729,
+            "nearest_primary_timestamp_ms": 7883,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 8261.667,
+            "nearest_primary_timestamp_ms": 8258,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 8340.667,
+            "nearest_primary_timestamp_ms": 8342,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；右手单手正手引拍、前挥与对侧随挥可见。",
+        "reviewed_window_ms": {
+          "start_ms": 6756.75,
+          "peak_ms": 7465.792,
+          "end_ms": 8341.667
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        0.98,
+        -0.2
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 3086,
+            "requested_sheet_timestamp_ms": 3086.417,
+            "source_frame_index": 74,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4129.125
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4921.583
+          }
+        ],
+        "forward_observation_zh": "可见底线斜边与沿球场向右上延伸的纵向边线，右上侧可见球网；用纵向场线投影估计朝网方向约[0.98,-0.20]。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 3086
+    },
+    {
+      "episode_id": "2c3e2cf399f94cb8ffe4",
+      "person_track_id": 1,
+      "start_ms": 9551,
+      "peak_ms": 9885,
+      "end_ms": 10219,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "backhand_slice",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "djokovic-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 10302,
+      "evidence": {
+        "contact_sheet": "action-sheets/djokovic-usopen-2012-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 9217.542,
+            "nearest_primary_timestamp_ms": 9218,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 9551.209,
+            "nearest_primary_timestamp_ms": 9551,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 9734.875,
+            "nearest_primary_timestamp_ms": 9718,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 9884.875,
+            "nearest_primary_timestamp_ms": 9885,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10034.875,
+            "nearest_primary_timestamp_ms": 10052,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10322.812,
+            "nearest_primary_timestamp_ms": 10302,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10680.75,
+            "nearest_primary_timestamp_ms": 10677,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10759.75,
+            "nearest_primary_timestamp_ms": 10761,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "9.551–9.735s反手侧高拍头；9.885–10.035s单手向前下方挥出、非持拍臂打开，随后回拍。判断切削动作模式，不声称测到球旋转。",
+        "reviewed_window_ms": {
+          "start_ms": 9217.542,
+          "peak_ms": 9884.875,
+          "end_ms": 10760.75
+        },
+        "limitations": [
+          "ball_spin_and_exact_contact_unverified"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        0.98,
+        -0.2
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 3086,
+            "requested_sheet_timestamp_ms": 3086.417,
+            "source_frame_index": 74,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4129.125
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4921.583
+          }
+        ],
+        "forward_observation_zh": "可见底线斜边与沿球场向右上延伸的纵向边线，右上侧可见球网；用纵向场线投影估计朝网方向约[0.98,-0.20]。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 3086
+    },
+    {
+      "episode_id": "08f8c3e0bd41f8f50cdd",
+      "person_track_id": 1,
+      "start_ms": 12429,
+      "peak_ms": 12763,
+      "end_ms": 13222,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_two_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "djokovic-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 12346,
+      "evidence": {
+        "contact_sheet": "action-sheets/djokovic-usopen-2012-e04.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 12095.417,
+            "nearest_primary_timestamp_ms": 12095,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12429.084,
+            "nearest_primary_timestamp_ms": 12429,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12612.75,
+            "nearest_primary_timestamp_ms": 12596,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12762.75,
+            "nearest_primary_timestamp_ms": 12763,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12912.75,
+            "nearest_primary_timestamp_ms": 12930,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13263.25,
+            "nearest_primary_timestamp_ms": 13263,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13683.75,
+            "nearest_primary_timestamp_ms": 13680,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13762.75,
+            "nearest_primary_timestamp_ms": 13764,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；反手侧双手共同握拍前挥。",
+        "reviewed_window_ms": {
+          "start_ms": 12095.417,
+          "peak_ms": 12762.75,
+          "end_ms": 13763.75
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        0.98,
+        -0.2
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 3086,
+            "requested_sheet_timestamp_ms": 3086.417,
+            "source_frame_index": 74,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4129.125
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4921.583
+          }
+        ],
+        "forward_observation_zh": "可见底线斜边与沿球场向右上延伸的纵向边线，右上侧可见球网；用纵向场线投影估计朝网方向约[0.98,-0.20]。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 3086
+    },
+    {
+      "episode_id": "ed54c83fdf4e8c5e51f7",
+      "person_track_id": 1,
+      "start_ms": 17476,
+      "peak_ms": 17851,
+      "end_ms": 18185,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_two_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 17,
+      "human_subject_id": "djokovic-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 17017,
+      "evidence": {
+        "contact_sheet": "action-sheets/djokovic-usopen-2012-e05.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 17142.125,
+            "nearest_primary_timestamp_ms": 17142,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17475.791,
+            "nearest_primary_timestamp_ms": 17476,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17659.458,
+            "nearest_primary_timestamp_ms": 17643,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17809.458,
+            "nearest_primary_timestamp_ms": 17809,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17959.458,
+            "nearest_primary_timestamp_ms": 17976,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 18268.25,
+            "nearest_primary_timestamp_ms": 18268,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 18647.042,
+            "nearest_primary_timestamp_ms": 18644,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 18726.042,
+            "nearest_primary_timestamp_ms": 18727,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "17.476–17.959s双手共同握拍跨身前挥，之后放开辅助手恢复。",
+        "reviewed_window_ms": {
+          "start_ms": 17142.125,
+          "peak_ms": 17809.458,
+          "end_ms": 18727.042
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        0.98,
+        -0.2
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 3086,
+            "requested_sheet_timestamp_ms": 3086.417,
+            "source_frame_index": 74,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4129.125
+          },
+          {
+            "contact_sheet": "action-sheets/djokovic-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 4921.583
+          }
+        ],
+        "forward_observation_zh": "可见底线斜边与沿球场向右上延伸的纵向边线，右上侧可见球网；用纵向场线投影估计朝网方向约[0.98,-0.20]。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 17,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 3086
+    }
+  ]
+}

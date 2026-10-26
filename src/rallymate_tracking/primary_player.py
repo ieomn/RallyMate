@@ -10,9 +10,10 @@ from typing import Any
 import numpy as np
 
 from rallymate_vision.utils import box_iou, safe_float
+from rallymate_tracking.subject_lock import SUBJECT_IDENTITY_VERSION, SubjectLock, valid_subject_identity
 
 
-PRIMARY_PLAYER_ALGORITHM_VERSION = "primary-player-v0.3.0"
+PRIMARY_PLAYER_ALGORITHM_VERSION = "primary-player-v0.4.0"
 MODEL_SELECTION_EVIDENCE_VERSION = "sam-source-geometry-identity-guard-v1.0.0"
 KEYPOINT_CONFIDENCE_MIN = 0.20
 # This is only a floating-point equality tolerance for detecting tied selector
@@ -506,7 +507,49 @@ def _short_model_dropouts(frames: list[dict], selected: dict[int, dict]) -> set[
     return missing
 
 
-def select_primary_player_timeline(records: list[dict[str, Any]]) -> dict[str, Any]:
+def _source_images(records: list[dict], source_video_path: str | Path | None):
+    """Read source-bound pixels for clothing evidence; never use annotated video."""
+    if source_video_path is None:
+        yield from (None for _ in records)
+        return
+    import cv2
+    import hashlib
+
+    source = Path(source_video_path)
+    hasher = hashlib.sha256()
+    with source.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    digest = hasher.hexdigest()
+    declared = {str(record["frame"].get("video_sha256", "")).lower() for record in records}
+    if declared != {digest}:
+        raise ValueError("subject appearance source video SHA does not match frame records")
+    capture = cv2.VideoCapture(str(source))
+    next_index = 0
+    try:
+        for record in records:
+            frame = record["frame"]
+            target = frame["index"]
+            if target < next_index:
+                # Duplicate/nonmonotonic sources are not new identity evidence.
+                yield None
+                continue
+            while next_index < target:
+                if not capture.grab():
+                    break
+                next_index += 1
+            ok, image = capture.read()
+            next_index += 1
+            if not ok or image.shape[:2] != (frame["height"], frame["width"]):
+                yield None
+            else:
+                yield image
+    finally:
+        capture.release()
+
+
+def select_primary_player_timeline(records: list[dict[str, Any]], *,
+                                   source_video_path: str | Path | None = None) -> dict[str, Any]:
     source_counts = Counter((str(record["frame"].get("video_sha256", "")).lower(),
                              record["frame"].get("index")) for record in records)
     frames = [
@@ -536,10 +579,43 @@ def select_primary_player_timeline(records: list[dict[str, Any]]) -> dict[str, A
     short_dropouts = _short_model_dropouts(frames, selected_by_index)
     for index in short_dropouts:
         selected_by_index.pop(index, None)
+    lock = SubjectLock()
     timeline = []
-    for frame in frames:
+    # Native pipeline decisions take precedence over a later heuristic path.
+    # An old artifact can be repaired from the exact source pixels, without
+    # changing any native request's original track ID or selection epoch.
+    need_pixels = any(not isinstance(record.get("subject_identity"), dict)
+                      or record["subject_identity"].get("version") != SUBJECT_IDENTITY_VERSION for record in records)
+    images = _source_images(records, source_video_path if need_pixels else None)
+    for record, frame, image in zip(records, frames, images):
         selection = selected_by_index.get(frame["processed_index"])
-        selected = selection["candidate"] if selection is not None else None
+        proposal = selection["candidate"] if selection is not None else None
+        saved_identity = record.get("subject_identity")
+        if isinstance(saved_identity, dict) and saved_identity.get("version") == SUBJECT_IDENTITY_VERSION:
+            identity = (dict(saved_identity) if valid_subject_identity(saved_identity, {c["source_track_id"] for c in frame["candidates"]})
+                        else lock.unknown("saved_subject_identity_invalid"))
+        elif source_video_path is not None and image is None:
+            identity = lock.unknown("source_pixels_unavailable")
+        else:
+            identity = lock.update(record.get("detections", []), timestamp_ms=frame["timestamp_ms"],
+                                   width=record["frame"]["width"], height=record["frame"]["height"], image=image,
+                                   camera_epoch=record.get("camera_motion", {}).get("reference_epoch"),
+                                   camera_motion=record.get("camera_motion"),
+                                   preferred_track_id=proposal["source_track_id"] if proposal else None,
+                                   initial_ambiguous=bool(selection and selection["identity_ambiguous"]))
+        matching = [candidate for candidate in frame["candidates"]
+                    if candidate["source_track_id"] == identity.get("source_track_id")]
+        selected = (matching[0] if len(matching) == 1 and identity.get("subject_id")
+                    and identity.get("status") in {"locked", "reidentified"} else None)
+        if selected is None and identity.get("subject_id"):
+            identity = lock.unknown("saved_subject_detection_missing_or_conflicting")
+        if selected is not None and (proposal is None or proposal["source_track_id"] != selected["source_track_id"]):
+            # The max-marginal score describes a different path. Do not expose
+            # it as confidence in the independently locked subject.
+            selection = {"candidate": selected, "candidate_count": len(frame["candidates"]),
+                         "best_score": None, "second_best_score": None, "score_margin": None,
+                         "competing_source_track_id": None, "identity_ambiguous": False,
+                         "identity_ambiguity_status": "single_candidate" if len(frame["candidates"]) == 1 else "distinct_score"}
         timeline.append(
             {
                 "schema_version": "1.0.0",
@@ -547,9 +623,16 @@ def select_primary_player_timeline(records: list[dict[str, Any]]) -> dict[str, A
                 "source_frame_index": frame["source_frame_index"],
                 "timestamp_ms": frame["timestamp_ms"],
                 "primary_player_id": 1,
+                "subject_identity": identity,
+                # These are copied only from the independently checked native
+                # pose/request ledger; source-track changes never invent epochs.
+                "selection_epoch": (selected["model_source_binding"]["selection_epoch"]
+                                    if selected and selected.get("model_source_binding") else None),
+                "camera_reference_epoch": (selected["model_source_binding"]["camera_reference_epoch"]
+                                           if selected and selected.get("model_source_binding") else None),
                 "selection_status": "selected" if selected is not None else "missing",
                 "selection_reason_code": ("short_target_detection_dropout" if frame["processed_index"] in short_dropouts
-                                          else None),
+                                          else identity.get("reason_code")),
                 "selection_identity_guard": selection.get("identity_guard") if selection else None,
                 "selection_score_uses_model_geometry": selection.get("score_uses_model_geometry", False) if selection else False,
                 "source_track_id": (
@@ -581,7 +664,7 @@ def select_primary_player_timeline(records: list[dict[str, Any]]) -> dict[str, A
                 ),
                 "selection_best_score": (
                     safe_float(selection["best_score"], 9)
-                    if selection is not None
+                    if selection is not None and selection["best_score"] is not None
                     else None
                 ),
                 "selection_second_best_score": (
@@ -958,6 +1041,8 @@ def build_primary_player_artifacts(
     frames_path: str | Path,
     timeline_path: str | Path,
     summary_path: str | Path,
+    *,
+    source_video_path: str | Path | None = None,
 ) -> dict[str, Any]:
     frames_file = Path(frames_path)
     records = [
@@ -965,7 +1050,7 @@ def build_primary_player_artifacts(
         for line in frames_file.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
-    result = select_primary_player_timeline(records)
+    result = select_primary_player_timeline(records, source_video_path=source_video_path)
     timeline = result["timeline"]
     timeline_file = Path(timeline_path)
     timeline_file.write_text(

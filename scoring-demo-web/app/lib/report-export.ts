@@ -14,7 +14,7 @@ import { relativeReferenceOf } from "./relative-score";
 import { indicatorAssessmentOf } from "./indicator-assessment";
 import { cardExecutionOf } from "./card-execution";
 import { trainingScoreOf } from "./training-score";
-import { tennisAssessmentOf } from "./tennis-assessment";
+import { tennisAssessmentOf, TENNIS_PATTERN_NAMES } from "./tennis-assessment";
 import { courtProjectionOf } from "./court-simulation";
 import { packReportBackup } from "./report-backup-codec";
 import { MAX_REPORT_FILE_BYTES } from "./report-file";
@@ -225,6 +225,29 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
         text(dimension.label), dimension.score === null ? "画面不足" : numberText(dimension.score, " / 100"),
       ]),
     }];
+    const selected = tennis.subject_scope?.subjects.find(subject => subject.subject_id === tennis.subject_scope?.selected_subject_id);
+    if (tennis.subject_scope && tennis.pattern_coverage) {
+      const coverage = tennis.pattern_coverage;
+      const otherCount = tennis.episode_validity?.filter(episode => episode.status === "other_subject").length ?? 0;
+      sections.push({ title: "评分对象与动作要求覆盖", paragraphs: [
+        selected ? `本次只汇总${selected.identity_basis === "target_lock" ? "锁定目标" : "首个独立轨迹"}的 ${selected.measured_episode_count} 段动作；其他轨迹的 ${otherCount} 段没有混入评分。` : "尚无可确认的评分对象。",
+        `已测 ${coverage.measured_requirements}/${coverage.applicable_requirements} 项次动作要求；${coverage.verified_technique_episodes} 段确认了具体技术，${coverage.generic_episodes} 段使用通用指标。`,
+        "覆盖表示测到了哪些要求，不是动作合格率；缺测不填零分，不代表整套发力模式或真实动力链已被验证。",
+      ] });
+      for (const episode of tennis.episodes ?? []) {
+        const pattern = episode.motion_pattern;
+        if (!pattern) continue;
+        const measured = pattern.requirements.filter(req => req.status === "measured_proxy").map(req => text(req.label));
+        const missing = pattern.requirements.filter(req => req.status === "not_measured").map(req => text(req.label));
+        sections.push({ title: `${interval(episode)} · ${TENNIS_PATTERN_NAMES[pattern.profile_id]}`, paragraphs: [
+          `已计入评分：${measured.length ? measured.join("、") : "暂无可测项目"}。`,
+          `尚未测量：${missing.length ? missing.join("、") : "本组要求没有缺测"}。`,
+          ...(pattern.classification_provenance.method.includes("agent") ? ["技术类别来自辅助画面复核，尚未经过专家标注确认。"] : []),
+        ] });
+      }
+    } else {
+      sections[0].paragraphs.push("历史版本没有逐目标归属记录，不能据此确认整片始终为同一人。");
+    }
     if (tennis.strengths.length) sections.push({ title: "继续保持", paragraphs: tennis.strengths.map(item => `${text(item.title)}：${text(item.observation)}`) });
     for (const item of tennis.improvements) sections.push({ title: text(item.title), paragraphs: [
       text(item.observation), `练习目标：${text(item.action)}`, `怎么练：${text(item.drill)}`, `复测标准：${text(item.retest)}`,

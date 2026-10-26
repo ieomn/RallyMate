@@ -1,0 +1,162 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+  "sample_id": "development-sharapova",
+  "source_group": "sharapova",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "a553b913e06021702061",
+      "person_track_id": 1,
+      "start_ms": 13647,
+      "peak_ms": 13981,
+      "end_ms": 14314,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_two_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "development-sharapova:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 13947,
+      "evidence": {
+        "contact_sheet": "action-sheets/development-sharapova-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 13313.3,
+            "nearest_primary_timestamp_ms": 13313,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13630.283,
+            "nearest_primary_timestamp_ms": 13614,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13797.267,
+            "nearest_primary_timestamp_ms": 13814,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13947.267,
+            "nearest_primary_timestamp_ms": 13947,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14097.267,
+            "nearest_primary_timestamp_ms": 14081,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14397.717,
+            "nearest_primary_timestamp_ms": 14414,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14768.167,
+            "nearest_primary_timestamp_ms": 14781,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14847.167,
+            "nearest_primary_timestamp_ms": 14848,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "白帽白上衣浅蓝裙目标；两手握拍的反手准备、前挥和高随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 13313.3,
+          "peak_ms": 13947.267,
+          "end_ms": 14848.167
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      }
+    },
+    {
+      "episode_id": "efb62ba4021a4f2c8480",
+      "person_track_id": 1,
+      "start_ms": 15849,
+      "peak_ms": 16116,
+      "end_ms": 16550,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "development-sharapova:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 16950,
+      "evidence": {
+        "contact_sheet": "action-sheets/development-sharapova-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 15515.5,
+            "nearest_primary_timestamp_ms": 15516,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 15982.633,
+            "nearest_primary_timestamp_ms": 15983,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 16299.767,
+            "nearest_primary_timestamp_ms": 16316,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 16449.767,
+            "nearest_primary_timestamp_ms": 16450,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 16599.767,
+            "nearest_primary_timestamp_ms": 16583,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 16766.75,
+            "nearest_primary_timestamp_ms": 16783,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17003.733,
+            "nearest_primary_timestamp_ms": 17017,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17082.733,
+            "nearest_primary_timestamp_ms": 17084,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；背身侧向正手准备、单手前挥后对侧随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 15515.5,
+          "peak_ms": 16449.767,
+          "end_ms": 17083.733
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      }
+    }
+  ]
+}

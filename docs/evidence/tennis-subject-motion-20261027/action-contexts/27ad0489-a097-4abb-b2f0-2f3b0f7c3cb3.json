@@ -1,0 +1,108 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+  "sample_id": "mendeley-outdoor-side-view-OCS01",
+  "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "9c5e87a2ea6513a72c7f",
+      "person_track_id": 1,
+      "start_ms": 601,
+      "peak_ms": 968,
+      "end_ms": 1201,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "mendeley-outdoor-side-view-OCS01:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 567,
+      "evidence": {
+        "contact_sheet": "action-sheets/mendeley-outdoor-side-view-OCS01-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 266.933,
+            "nearest_primary_timestamp_ms": 267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 492.158,
+            "nearest_primary_timestamp_ms": 500,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 567.383,
+            "nearest_primary_timestamp_ms": 567,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 717.383,
+            "nearest_primary_timestamp_ms": 717,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 867.383,
+            "nearest_primary_timestamp_ms": 868,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1034.367,
+            "nearest_primary_timestamp_ms": 1034,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1271.35,
+            "nearest_primary_timestamp_ms": 1268,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1350.35,
+            "nearest_primary_timestamp_ms": 1351,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "灰衣粉袖黑短裤目标；右手正手低位前挥至对侧随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 266.933,
+          "peak_ms": 717.383,
+          "end_ms": 1351.35
+        },
+        "limitations": [
+          "short_source_clip_clips_recovery"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/mendeley-outdoor-side-view-OCS01-direction-reference.jpg",
+            "timestamp_ms": 267,
+            "requested_sheet_timestamp_ms": 266.933,
+            "source_frame_index": 16,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          }
+        ],
+        "up_observation_zh": "建筑柱、围网立柱或球网柱在参考画面中竖直，未见画面滚转；只核验屏幕向上，未提供无法可靠确定的向网投影方向。",
+        "direction_accuracy": "manual image up reference only; no 3D gravity calibration",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 267
+    }
+  ]
+}

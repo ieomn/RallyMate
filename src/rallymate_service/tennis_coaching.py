@@ -8,6 +8,50 @@ from __future__ import annotations
 import math
 
 
+_PATTERN_TEXT = {
+    "pattern_phase_continuity": (
+        "把挥出与随挥连起来", "这段挥出与随挥中，持续运动的时段比例较低。",
+        "挥出与随挥较连续", "挥出和随挥的大部分时段保持了连续运动。",
+        "顺势完成挥出和随挥，允许手臂继续加速，不刻意提前刹停。", "准备、连续挥出、完整随挥、恢复准备"),
+    "pattern_preparation_coupling": (
+        "让转体与引拍进程配合", "这段肩线转动与手腕引拍的相对进程有差异。",
+        "转体与引拍进程接近", "肩线转动与手腕引拍的相对进程较接近。",
+        "用舒适转体衔接引拍，让身体和手臂一起进入准备，不追求额外大幅度。", "转体带动引拍，再连续挥出"),
+    "pattern_projected_sequence": (
+        "复核髋肩与手臂的衔接", "这段画面内髋线、肩线和手腕的运动峰先后与当前动作要求存在差异。",
+        "髋肩腕可见时序相接", "画面内髋线、肩线与手腕的运动峰先后符合这项可见时序要求。",
+        "慢速练习身体转动接上手臂挥出，不刻意把髋、肩、手臂逐段停住；结合原片核对时序。", "自然伸展转动、连续挥出、完整随挥"),
+    "pattern_center_transfer": (
+        "复核挥出时的身体移动", "这段髋中心的画面内移动，沿已确认击球方向的前移比例较低。",
+        "观察到身体向前移动", "髋中心的画面内移动主要沿已确认击球方向展开。",
+        "在稳定站姿下自然衔接身体移动和挥出，不刻意向前扑；这项观察不能证明真实重心或蹬地力量。", "舒适准备、身体与挥出衔接、重新站稳"),
+    "pattern_two_hand_coupling": (
+        "配合双腕共同挥出", "这段双腕的运动方向或相对进程配合不足；该测量不确认握拍。",
+        "双腕运动配合较一致", "挥出时双腕的运动方向与相对进程较一致。",
+        "双手配合完成引拍与挥出，保持自然连接，不强拉两只手保持相同速度。", "双手转体引拍、共同挥出、保持完整随挥"),
+    "pattern_forward_swing": (
+        "复核向前挥出的路径", "这段持拍手沿已确认击球方向的前向运动比例较低。",
+        "持拍手有向前挥出", "持拍手主要沿已确认击球方向向前运行。",
+        "慢速沿预定击球方向向前舒展挥出，再顺势随挥，不强行走成直线。", "转体引拍、向前舒展挥出、自然随挥"),
+    "pattern_slice_path": (
+        "练习切削的前下延展", "这段手腕轨迹的前下延展配合不足；尚未测到真实拍面或球拍轨迹。",
+        "观察到切削前下延展", "这段手腕轨迹体现了前下延展的可见要求。",
+        "从舒适高位向前下方延展，反手切削保留向前运行，不只向下砍；再连续收拍。", "高位准备、前下延展、连续收拍"),
+    "pattern_serve_upward_path": (
+        "连贯完成发球上挥", "这段持拍手沿已核验画面向上方向的运动比例较低。",
+        "持拍手上挥方向连续", "持拍手在上挥阶段主要沿已核验的向上方向运行。",
+        "从舒适蓄势连续向上挥出，再顺势随挥，不强行后仰或额外抬高手臂。", "蓄势、连续向上挥出、顺势随挥"),
+    "pattern_serve_arm_sequence": (
+        "复核发球上下臂衔接", "这段画面中上臂转动与前臂相对转动的运动峰先后需要复核。",
+        "发球上下臂可见时序相接", "上臂转动与前臂相对转动的运动峰先后符合这项可见衔接要求。",
+        "用舒适节奏完成上臂带动和前臂随挥，不刻意锁肘或强行甩腕；结合原片检查衔接。", "上挥、上臂带动自然随挥、前臂顺势收拍"),
+    "pattern_one_hand_reversal": (
+        "衔接单反前向延展与收拍", "在已确认完整的恢复窗内，手腕先前向延展再向后收拍的顺序不够清晰。",
+        "单反前后收拍顺序清晰", "完整恢复窗内观察到手腕先向前延展、再向后收拍。",
+        "单反挥出后先保留向前延展，再随身体自然打开收拍，不刻意急停折返。", "单手挥出、向前延展、自然打开收拍"),
+}
+
+
 def _measurement(metric_id: str, value: float, *, aggregate: bool = False) -> str:
     """Describe the measured quantity, never an unobserved cause or ball event."""
     if type(value) not in (int, float) or not math.isfinite(value):
@@ -27,6 +71,16 @@ def _measurement(metric_id: str, value: float, *, aggregate: bool = False) -> st
         "serve_arm_extension": f"肩到手腕距离约为手臂长度的 {value:.0%}",
         "leg_extension_continuity": f"下肢伸展连贯性为 {value:.0%}，微小角度变化已作保守处理",
         "follow_deceleration": f"主挥拍到首次恢复前，净降速占手腕总速度变化约 {value:.0%}",
+        "pattern_phase_continuity": f"挥出与随挥两阶段的持续运动时间比例均值约 {value:.0%}",
+        "pattern_preparation_coupling": f"转体与引拍的相对进程一致度约 {value:.0%}",
+        "pattern_projected_sequence": f"超出时间分辨率的逆序时差约占动作时长 {value:.0%}",
+        "pattern_center_transfer": f"髋中心前向运动占该方向总移动约 {value:.0%}",
+        "pattern_two_hand_coupling": f"双腕方向与相对进程的综合一致度约 {value:.0%}",
+        "pattern_forward_swing": f"持拍手前向运动占该方向总路径约 {value:.0%}",
+        "pattern_slice_path": f"手腕前下延展的综合比例约 {value:.0%}",
+        "pattern_serve_upward_path": f"持拍手向上运动占该方向总路径约 {value:.0%}",
+        "pattern_serve_arm_sequence": f"上下臂运动峰的逆序时差约占随挥时长 {value:.0%}",
+        "pattern_one_hand_reversal": f"符合先前向后收拍顺序的路径比例约 {value:.0%}",
     }
     detail = measures.get(metric_id)
     return f"{'测量汇总' if aggregate else '姿态估计'}：{detail}。" if detail else ""
@@ -53,6 +107,7 @@ _STRENGTHS = {
     "leg_extension_continuity": ("下肢伸展连续", "准备后同侧膝部的伸展较连贯，反复屈伸较少。", "保持准备后自然伸展并接上挥出，不强行锁膝。"),
     "follow_deceleration": ("首次恢复前降速连续", "主挥拍到首次恢复前，手腕速度较连续地下降。", "保持顺势随挥，让手臂自然减速，再自然接回恢复动作，不刻意停拍。"),
 }
+_STRENGTHS.update({key: (text[2], text[3], text[4]) for key, text in _PATTERN_TEXT.items()})
 
 
 def strength_for_metric(metric_id: str, value: float, *, family: str = "baseline", score: float | None = None, aggregate: bool = True) -> dict[str, str] | None:
@@ -190,6 +245,10 @@ def coaching_for_metric(metric_id: str, value: float, *, family: str = "baseline
                 "做 2 组、每组 8 次：发球空挥、自然随挥、小步调整、重新准备，再开始下一次。",
                 "同机位复测 8 次，检查发球后是否能够从容接上下一次移动。"),
         })
+    for key, text in _PATTERN_TEXT.items():
+        plans[key] = (text[0], text[1], text[4],
+                      f"做 2 组、每组 8 次半速空挥：{text[5]}；组间休息 30 秒。",
+                      f"同机位录 8 次同类动作，逐次复核{text[5]}，比较这一项可见运动表现。")
     fallback = ("连贯完成这段动作", "这段动作是本次优先练习的环节。", f"用较慢节奏连续完成准备、{action}和随挥。",
                 f"做 2 组、每组 8 次半速{action}，每次都完成随挥与恢复。", "用相同机位复测 8 次，比较这一环节的连续性。")
     plan = plans.get(metric_id, fallback)

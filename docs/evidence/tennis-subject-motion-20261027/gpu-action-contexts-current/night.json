@@ -1,0 +1,454 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+  "source_run_id": "identity-final-fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+  "original_job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+  "candidate_artifact_sha256": "c17a41bae95577d390c8c6013239a3b7af5ab2b6b3ec57e997e666cac1b4d52e",
+  "labels_from_new_candidates": true,
+  "actions": [
+    {
+      "episode_id": "a1021b7a050884c12af5",
+      "person_track_id": 1,
+      "start_ms": 3133,
+      "peak_ms": 3400,
+      "end_ms": 3933,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "黄衣人物A；单手正手前挥及高随挥可见，低光模糊仍可辨握拍侧。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-night-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 2783,
+            "nearest_primary_timestamp_ms": 2767,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3091.5,
+            "nearest_primary_timestamp_ms": 3100,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3250,
+            "nearest_primary_timestamp_ms": 3233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3400,
+            "nearest_primary_timestamp_ms": 3400,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3550,
+            "nearest_primary_timestamp_ms": 3533,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3941.5,
+            "nearest_primary_timestamp_ms": 3933,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4403,
+            "nearest_primary_timestamp_ms": 4400,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4482,
+            "nearest_primary_timestamp_ms": 4467,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 2783,
+          "peak_ms": 3400,
+          "end_ms": 4483
+        },
+        "observation_zh": "黄衣人物A；单手正手前挥及高随挥可见，低光模糊仍可辨握拍侧。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "c24fcdd1258b22af89cb",
+      "person_track_id": 1,
+      "start_ms": 10833,
+      "peak_ms": 11233,
+      "end_ms": 11500,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "preparation_only_no_complete_swing"
+        ],
+        "explanation": "黄衣A只由准备姿势转入后引拍；原候选10.833–11.500s无完整前挥/随挥，真正前挥为下一候选约12.2s。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-night-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 10483,
+            "nearest_primary_timestamp_ms": 10467,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10858.0,
+            "nearest_primary_timestamp_ms": 10867,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11083,
+            "nearest_primary_timestamp_ms": 11067,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11233,
+            "nearest_primary_timestamp_ms": 11233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11383,
+            "nearest_primary_timestamp_ms": 11367,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11641.5,
+            "nearest_primary_timestamp_ms": 11633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11970,
+            "nearest_primary_timestamp_ms": 11967,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12049,
+            "nearest_primary_timestamp_ms": 12033,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 10483,
+          "peak_ms": 11233,
+          "end_ms": 12050
+        },
+        "observation_zh": "黄衣A只由准备姿势转入后引拍；原候选10.833–11.500s无完整前挥/随挥，真正前挥为下一候选约12.2s。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      }
+    },
+    {
+      "episode_id": "d8c45df52b772d0dba5c",
+      "person_track_id": 1,
+      "start_ms": 11933,
+      "peak_ms": 12200,
+      "end_ms": 12500,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "同一黄衣A；约12.2s右手单手前挥，12.6s后高随挥。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-night-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 11583,
+            "nearest_primary_timestamp_ms": 11567,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11891.5,
+            "nearest_primary_timestamp_ms": 11900,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12050,
+            "nearest_primary_timestamp_ms": 12033,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12200,
+            "nearest_primary_timestamp_ms": 12200,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12350,
+            "nearest_primary_timestamp_ms": 12333,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12625.0,
+            "nearest_primary_timestamp_ms": 12633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12970,
+            "nearest_primary_timestamp_ms": 12967,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13049,
+            "nearest_primary_timestamp_ms": 13033,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 11583,
+          "peak_ms": 12200,
+          "end_ms": 13050
+        },
+        "observation_zh": "同一黄衣A；约12.2s右手单手前挥，12.6s后高随挥。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "532117da5e532cf55aa6",
+      "person_track_id": 86,
+      "start_ms": 20200,
+      "peak_ms": 20600,
+      "end_ms": 20933,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "preparation_only_no_complete_swing"
+        ],
+        "explanation": "相机转回黄衣A；原候选20.233–20.933s主要是准备并向后引拍，21.4s仍在引拍低位，真正前挥在下一候选约21.867s。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-night-e04.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 19883,
+            "nearest_primary_timestamp_ms": 19867,
+            "old_source_track_id": null
+          },
+          {
+            "requested_timestamp_ms": 20241.5,
+            "nearest_primary_timestamp_ms": 20233,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20450,
+            "nearest_primary_timestamp_ms": 20433,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20600,
+            "nearest_primary_timestamp_ms": 20600,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20750,
+            "nearest_primary_timestamp_ms": 20733,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21041.5,
+            "nearest_primary_timestamp_ms": 21033,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21403,
+            "nearest_primary_timestamp_ms": 21400,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21482,
+            "nearest_primary_timestamp_ms": 21467,
+            "old_source_track_id": 86
+          }
+        ],
+        "review_window": {
+          "start_ms": 19883,
+          "peak_ms": 20600,
+          "end_ms": 21483
+        },
+        "observation_zh": "相机转回黄衣A；原候选20.233–20.933s主要是准备并向后引拍，21.4s仍在引拍低位，真正前挥在下一候选约21.867s。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ],
+        "additional_frame": {
+          "timestamp_ms": 20200,
+          "image": "action-sheets/gpu-final-night-added-frame.jpg",
+          "observation_zh": "相机已返回原黄衣A，全身可见且正在准备。额外一帧未改变此候选只是准备/引拍的审计结论。"
+        }
+      },
+      "candidate_binding_update": {
+        "start_ms": {
+          "before": 20233,
+          "after": 20200
+        }
+      }
+    },
+    {
+      "episode_id": "c0ee3f106cc66db66c35",
+      "person_track_id": 86,
+      "start_ms": 21533,
+      "peak_ms": 21867,
+      "end_ms": 22133,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "同一黄衣A，21.867s单手前挥，22.275–22.682s明显高随挥。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-night-e05.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 21183,
+            "nearest_primary_timestamp_ms": 21167,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21525.0,
+            "nearest_primary_timestamp_ms": 21533,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21717,
+            "nearest_primary_timestamp_ms": 21733,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21867,
+            "nearest_primary_timestamp_ms": 21867,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 22017,
+            "nearest_primary_timestamp_ms": 22033,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 22275.0,
+            "nearest_primary_timestamp_ms": 22267,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 22603,
+            "nearest_primary_timestamp_ms": 22600,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 22682,
+            "nearest_primary_timestamp_ms": 22667,
+            "old_source_track_id": 86
+          }
+        ],
+        "review_window": {
+          "start_ms": 21183,
+          "peak_ms": 21867,
+          "end_ms": 22683
+        },
+        "observation_zh": "同一黄衣A，21.867s单手前挥，22.275–22.682s明显高随挥。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "910e9d3c38fe1764ac02",
+      "person_track_id": 86,
+      "start_ms": 24767,
+      "peak_ms": 25400,
+      "end_ms": 25633,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "同一黄衣A连续完整挥拍可见；手数与反手/正手侧受模糊限制，类别保持unknown，不强行贴双反。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-night-e06.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 24417,
+            "nearest_primary_timestamp_ms": 24433,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 24908.5,
+            "nearest_primary_timestamp_ms": 24900,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 25250,
+            "nearest_primary_timestamp_ms": 25233,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 25400,
+            "nearest_primary_timestamp_ms": 25400,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 25550,
+            "nearest_primary_timestamp_ms": 25533,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 25791.5,
+            "nearest_primary_timestamp_ms": 25800,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 26103,
+            "nearest_primary_timestamp_ms": 26100,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 26182,
+            "nearest_primary_timestamp_ms": 26167,
+            "old_source_track_id": 86
+          }
+        ],
+        "review_window": {
+          "start_ms": 24417,
+          "peak_ms": 25400,
+          "end_ms": 26183
+        },
+        "observation_zh": "同一黄衣A连续完整挥拍可见；手数与反手/正手侧受模糊限制，类别保持unknown，不强行贴双反。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      }
+    }
+  ]
+}

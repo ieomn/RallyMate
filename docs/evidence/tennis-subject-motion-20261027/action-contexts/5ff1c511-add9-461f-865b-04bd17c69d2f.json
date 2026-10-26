@@ -1,0 +1,162 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+  "sample_id": "holdout-ordinary-indoor-pink",
+  "source_group": "c2485607c23646e706d9c4aae89e668e",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "02bc2476e80edab352e5",
+      "person_track_id": 1,
+      "start_ms": 167,
+      "peak_ms": 633,
+      "end_ms": 867,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "holdout-ordinary-indoor-pink:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 500,
+      "evidence": {
+        "contact_sheet": "action-sheets/holdout-ordinary-indoor-pink-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 0.0,
+            "nearest_primary_timestamp_ms": 0,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 300.0,
+            "nearest_primary_timestamp_ms": 300,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 450.0,
+            "nearest_primary_timestamp_ms": 433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 600.0,
+            "nearest_primary_timestamp_ms": 600,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 750.0,
+            "nearest_primary_timestamp_ms": 733,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1000.0,
+            "nearest_primary_timestamp_ms": 1000,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1320.0,
+            "nearest_primary_timestamp_ms": 1333,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1399.0,
+            "nearest_primary_timestamp_ms": 1400,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "粉衣戴帽目标A；单右手由低位向前挥出并绕至对侧。",
+        "reviewed_window_ms": {
+          "start_ms": 0.0,
+          "peak_ms": 600.0,
+          "end_ms": 1400.0
+        },
+        "limitations": [
+          "source_start_clips_preparation"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      }
+    },
+    {
+      "episode_id": "fefa868c764e18331698",
+      "person_track_id": 1,
+      "start_ms": 10967,
+      "peak_ms": 11400,
+      "end_ms": 11667,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "holdout-ordinary-indoor-pink:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 11300,
+      "evidence": {
+        "contact_sheet": "action-sheets/holdout-ordinary-indoor-pink-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 10633.333,
+            "nearest_primary_timestamp_ms": 10633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11033.333,
+            "nearest_primary_timestamp_ms": 11033,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11283.333,
+            "nearest_primary_timestamp_ms": 11267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11433.333,
+            "nearest_primary_timestamp_ms": 11433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11583.333,
+            "nearest_primary_timestamp_ms": 11567,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11816.666,
+            "nearest_primary_timestamp_ms": 11833,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12120.0,
+            "nearest_primary_timestamp_ms": 12133,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12199.0,
+            "nearest_primary_timestamp_ms": 12200,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "粉衣戴帽目标A；低位引拍、单手前挥、对侧高随挥可见。",
+        "reviewed_window_ms": {
+          "start_ms": 10633.333,
+          "peak_ms": 11433.333,
+          "end_ms": 12200.0
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      }
+    }
+  ]
+}

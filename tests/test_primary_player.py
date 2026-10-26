@@ -200,7 +200,7 @@ class SamPrimaryGeometryTests(unittest.TestCase):
         # A changed camera reference does not justify maintaining subject identity.
         records[2]["camera_motion"]["reference_epoch"] = 1
         records[2]["poses"][0]["source_binding"]["camera_reference_epoch"] = 1
-        self.assertEqual(select_primary_player_timeline(records)["timeline"][1]["source_track_id"], 2)
+        self.assertIsNone(select_primary_player_timeline(records)["timeline"][1]["source_track_id"])
 
     def test_geometry_may_compare_only_an_overlapping_neighbor_anchor_tracklet(self):
         from rallymate_tracking.primary_player import _frame_candidates, _guard_model_identity
@@ -473,16 +473,16 @@ class PrimaryPlayerTests(unittest.TestCase):
         )["timeline"]
         self.assertEqual(
             primary_timeline_algorithm_version(
-                timeline, expected_version="primary-player-v0.3.0"
+                timeline, expected_version="primary-player-v0.4.0"
             ),
-            "primary-player-v0.3.0",
+            "primary-player-v0.4.0",
         )
         legacy = copy.deepcopy(timeline)
         for item in legacy:
             item["selection_algorithm_version"] = "primary-player-v0.2.0"
         with self.assertRaisesRegex(ValueError, "does not match feasibility registry"):
             primary_timeline_algorithm_version(
-                legacy, expected_version="primary-player-v0.3.0"
+                legacy, expected_version="primary-player-v0.4.0"
             )
         mixed = copy.deepcopy(timeline)
         mixed[-1]["selection_algorithm_version"] = "primary-player-v0.2.0"
@@ -541,7 +541,7 @@ class PrimaryPlayerTests(unittest.TestCase):
         self.assertEqual(forward, reversed_result)
         self.assertEqual(
             [item["source_track_id"] for item in forward["timeline"]],
-            [3] * 6,
+            [None] * 6,
         )
         for item in forward["timeline"]:
             self.assertEqual(item["selection_candidate_count"], 2)

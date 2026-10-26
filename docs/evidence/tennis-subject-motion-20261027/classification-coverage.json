@@ -1,0 +1,706 @@
+{
+  "schema_version": "tennis-real-technique-coverage-v1",
+  "prior_results_seen": true,
+  "not_independent_holdout": true,
+  "sample_records": 25,
+  "old_scored_windows": 80,
+  "visually_reviewed_scored_windows": 37,
+  "context_action_count": 23,
+  "context_validity_counts": {
+    "valid": 19,
+    "invalid": 4
+  },
+  "context_type_counts": {
+    "baseline_two_hand_backhand": 5,
+    "baseline_forehand": 10,
+    "backhand_slice": 2,
+    "serve": 2,
+    "baseline_one_hand_backhand": 2,
+    "unclassified": 2
+  },
+  "valid_context_type_counts": {
+    "baseline_two_hand_backhand": 5,
+    "baseline_forehand": 10,
+    "backhand_slice": 2,
+    "baseline_one_hand_backhand": 2
+  },
+  "independent_direction_context_actions": 8,
+  "up_direction_context_actions": 16,
+  "gaps": [
+    {
+      "technique": "forehand_slice",
+      "status": "no_confident_source_bound_action_found",
+      "scope": "reviewed windows only; not proof absent from every unreviewed frame"
+    },
+    {
+      "technique": "return_forehand/return_two_hand_backhand/return_one_hand_backhand/return_backhand_slice/return_forehand_slice",
+      "status": "no_confident_contextual_return_label",
+      "reason": "A groundstroke alone cannot establish it followed an opponent serve. No context label inferred from an ordinary baseline swing."
+    },
+    {
+      "technique": "serve",
+      "status": "complete_source_motion_available_but_old_candidate_phase_incomplete",
+      "reason": "Two visually clear serve-type candidates were invalidated for phase completeness, so valid bound serve scoring is not demonstrated. Source-window repair is needed before more downloads."
+    },
+    {
+      "technique": "baseline_one_hand_backhand/backhand_slice",
+      "status": "narrow_source_diversity",
+      "reason": "Best clear professional references share JC/demiace photographer source; multiple clips are not independent source groups."
+    }
+  ],
+  "samples": [
+    {
+      "sample_id": "development-ordinary-a",
+      "job_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "source_group": "ordinary-850cb",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "old_candidate_count": 24,
+      "old_candidate_families": {
+        "baseline": 24
+      },
+      "old_automatic_labels": {
+        "unclassified": 23,
+        "forehand": 1
+      },
+      "old_scored_windows": 14,
+      "action_windows_visually_reviewed": 5,
+      "visually_reviewed_labels": {
+        "unclassified": 1,
+        "baseline_forehand": 4
+      },
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 9
+    },
+    {
+      "sample_id": "development-sharapova",
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "source_group": "sharapova",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "old_candidate_count": 2,
+      "old_candidate_families": {
+        "baseline": 2
+      },
+      "old_automatic_labels": {
+        "unclassified": 2
+      },
+      "old_scored_windows": 2,
+      "action_windows_visually_reviewed": 2,
+      "visually_reviewed_labels": {
+        "baseline_two_hand_backhand": 1,
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "baseline_two_hand_backhand": 1,
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "baseline_two_hand_backhand": 1,
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "source_group": "ordinary-ece12",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "old_candidate_count": 6,
+      "old_candidate_families": {
+        "baseline": 6
+      },
+      "old_automatic_labels": {
+        "unclassified": 6
+      },
+      "old_scored_windows": 5,
+      "action_windows_visually_reviewed": 3,
+      "visually_reviewed_labels": {
+        "serve": 1,
+        "backhand_slice": 1,
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "serve": 1,
+        "backhand_slice": 1,
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "backhand_slice": 1,
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 2
+    },
+    {
+      "sample_id": "regression-nadal",
+      "job_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "source_group": "nadal",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+      "old_candidate_count": 2,
+      "old_candidate_families": {
+        "baseline": 2
+      },
+      "old_automatic_labels": {
+        "unclassified": 2
+      },
+      "old_scored_windows": 2,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "baseline_two_hand_backhand": 1
+      },
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 1
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "job_id": "7e166b3a-5a2c-4820-92a4-8bec782bd775",
+      "source_group": "ordinary-850cb",
+      "evaluation_label": "ordinary",
+      "split": "robustness",
+      "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "old_candidate_count": 24,
+      "old_candidate_families": {
+        "baseline": 24
+      },
+      "old_automatic_labels": {
+        "unclassified": 23,
+        "forehand": 1
+      },
+      "old_scored_windows": 14,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 14
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "old_candidate_count": 7,
+      "old_candidate_families": {
+        "baseline": 7
+      },
+      "old_automatic_labels": {
+        "forehand": 1,
+        "unclassified": 6
+      },
+      "old_scored_windows": 5,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 4
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+      "old_candidate_count": 2,
+      "old_candidate_families": {
+        "baseline": 2
+      },
+      "old_automatic_labels": {
+        "unclassified": 2
+      },
+      "old_scored_windows": 2,
+      "action_windows_visually_reviewed": 2,
+      "visually_reviewed_labels": {
+        "baseline_two_hand_backhand": 2
+      },
+      "context_types": {
+        "baseline_two_hand_backhand": 1
+      },
+      "valid_context_types": {
+        "baseline_two_hand_backhand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "old_candidate_count": 4,
+      "old_candidate_families": {
+        "baseline": 4
+      },
+      "old_automatic_labels": {
+        "unclassified": 4
+      },
+      "old_scored_windows": 4,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 3
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "source_group": "c235227fffcd3290b60572d0c3f9cc85",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "old_candidate_count": 6,
+      "old_candidate_families": {
+        "baseline": 6
+      },
+      "old_automatic_labels": {
+        "unclassified": 6
+      },
+      "old_scored_windows": 4,
+      "action_windows_visually_reviewed": 4,
+      "visually_reviewed_labels": {
+        "unclassified": 3,
+        "baseline_forehand": 1
+      },
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "source_group": "c2485607c23646e706d9c4aae89e668e",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "old_candidate_count": 7,
+      "old_candidate_families": {
+        "baseline": 7
+      },
+      "old_automatic_labels": {
+        "unclassified": 7
+      },
+      "old_scored_windows": 6,
+      "action_windows_visually_reviewed": 6,
+      "visually_reviewed_labels": {
+        "baseline_forehand": 4,
+        "baseline_two_hand_backhand": 2
+      },
+      "context_types": {
+        "baseline_forehand": 2
+      },
+      "valid_context_types": {
+        "baseline_forehand": 2
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "job_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "source_group": "user-video-01e86002f21704680103700397b8352743",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+      "old_candidate_count": 6,
+      "old_candidate_families": {
+        "baseline": 6
+      },
+      "old_automatic_labels": {
+        "unclassified": 6
+      },
+      "old_scored_windows": 4,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "backhand_slice": 1
+      },
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 3
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "job_id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "evaluation_label": "ordinary",
+      "split": "robustness",
+      "source_video_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+      "old_candidate_count": 2,
+      "old_candidate_families": {
+        "baseline": 2
+      },
+      "old_automatic_labels": {
+        "unclassified": 2
+      },
+      "old_scored_windows": 1,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 1
+    },
+    {
+      "sample_id": "white-mirror",
+      "job_id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "evaluation_label": "ordinary",
+      "split": "robustness",
+      "source_video_sha256": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+      "old_candidate_count": 6,
+      "old_candidate_families": {
+        "baseline": 6
+      },
+      "old_automatic_labels": {
+        "unclassified": 6
+      },
+      "old_scored_windows": 6,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 6
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "job_id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+      "source_group": "blaz-rola-ncaa-2013-zootennis",
+      "evaluation_label": "unknown",
+      "split": "regression",
+      "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+      "old_candidate_count": 1,
+      "old_candidate_families": {
+        "baseline": 1
+      },
+      "old_automatic_labels": {
+        "unclassified": 1
+      },
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "job_id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+      "source_group": "tsitsipas-alcaraz-french-open-2023-hameltion",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "03e5c94cead59642f851a5899453d1bba6ec8afab36439d005e2345b082e9c5b",
+      "old_candidate_count": 0,
+      "old_candidate_families": {},
+      "old_automatic_labels": {},
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "davis-cup-2018-04",
+      "job_id": "e0a62ad9-9422-4635-a254-e375819a971c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "a2b0d27fcdcdab2652a2b92c2bb22ad19ddcab06b32501a636622ce90f0da31a",
+      "old_candidate_count": 0,
+      "old_candidate_families": {},
+      "old_automatic_labels": {},
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "old_candidate_count": 1,
+      "old_candidate_families": {
+        "baseline": 1
+      },
+      "old_automatic_labels": {
+        "unclassified": 1
+      },
+      "old_scored_windows": 1,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "serve": 1
+      },
+      "context_types": {
+        "serve": 1
+      },
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+      "old_candidate_count": 1,
+      "old_candidate_families": {
+        "baseline": 1
+      },
+      "old_automatic_labels": {
+        "unclassified": 1
+      },
+      "old_scored_windows": 1,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "job_id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+      "old_candidate_count": 0,
+      "old_candidate_families": {},
+      "old_automatic_labels": {},
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "old_candidate_count": 1,
+      "old_candidate_families": {
+        "baseline": 1
+      },
+      "old_automatic_labels": {
+        "unclassified": 1
+      },
+      "old_scored_windows": 1,
+      "action_windows_visually_reviewed": 1,
+      "visually_reviewed_labels": {
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "job_id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+      "old_candidate_count": 0,
+      "old_candidate_families": {},
+      "old_automatic_labels": {},
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "source_group": "2012-usopen-jc-demiace",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "old_candidate_count": 8,
+      "old_candidate_families": {
+        "baseline": 8
+      },
+      "old_automatic_labels": {
+        "unclassified": 8
+      },
+      "old_scored_windows": 5,
+      "action_windows_visually_reviewed": 5,
+      "visually_reviewed_labels": {
+        "baseline_two_hand_backhand": 3,
+        "baseline_forehand": 1,
+        "backhand_slice": 1
+      },
+      "context_types": {
+        "baseline_two_hand_backhand": 3,
+        "baseline_forehand": 1,
+        "backhand_slice": 1
+      },
+      "valid_context_types": {
+        "baseline_two_hand_backhand": 3,
+        "baseline_forehand": 1,
+        "backhand_slice": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "source_group": "2012-usopen-jc-demiace",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+      "old_candidate_count": 4,
+      "old_candidate_families": {
+        "baseline": 4
+      },
+      "old_automatic_labels": {
+        "unclassified": 4
+      },
+      "old_scored_windows": 3,
+      "action_windows_visually_reviewed": 3,
+      "visually_reviewed_labels": {
+        "baseline_one_hand_backhand": 2,
+        "baseline_forehand": 1
+      },
+      "context_types": {
+        "baseline_one_hand_backhand": 2,
+        "baseline_forehand": 1
+      },
+      "valid_context_types": {
+        "baseline_one_hand_backhand": 2,
+        "baseline_forehand": 1
+      },
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "source_group": "2012-usopen-jc-demiace",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+      "old_candidate_count": 0,
+      "old_candidate_families": {},
+      "old_automatic_labels": {},
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "source_group": "2024-usopen-dimitrov-tiafoe-oleg-yunakov",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "old_candidate_count": 0,
+      "old_candidate_families": {},
+      "old_automatic_labels": {},
+      "old_scored_windows": 0,
+      "action_windows_visually_reviewed": 0,
+      "visually_reviewed_labels": {},
+      "context_types": {},
+      "valid_context_types": {},
+      "review_scope": "selected source action frames; not an exhaustive frame-by-frame stroke inventory",
+      "unreviewed_scored_windows": 0
+    }
+  ],
+  "real_evidence_status": {
+    "baseline_forehand": "source-bound real visual labels and measured profiles",
+    "baseline_two_hand_backhand": "source-bound real visual labels and measured profiles",
+    "baseline_one_hand_backhand": "source-bound real visual labels and measured profiles; narrow source diversity",
+    "backhand_slice": "source-bound real visual labels and measured profiles; spin not measured",
+    "serve": "source motion present; original candidates invalid for phase coverage; separate manual complete window validates only observed metrics",
+    "forehand_slice": "code/synthetic validation only; no reliable real source-bound reference established",
+    "all_return_variants": "code/synthetic validation only; no independently verified serve-then-return context established",
+    "projected_hip_thorax_sequence": "no real measured validation established in current pass3; do not claim temporal chain verified"
+  },
+  "gpu_reviews_separate_from_original_windows": {
+    "pink_candidates": 3,
+    "night_candidates": 6,
+    "white_candidates": 7,
+    "note": "Re-inference of existing sources; overlapping movements must not be counted as new independent examples."
+  },
+  "final_measured_profile_counts": {
+    "generic": 53,
+    "baseline_two_hand_backhand": 5,
+    "baseline_forehand": 10,
+    "backhand_slice": 2,
+    "baseline_one_hand_backhand": 2
+  },
+  "final_measured_pattern_metric_counts": {
+    "pattern_phase_continuity": 72,
+    "pattern_two_hand_coupling": 5,
+    "pattern_center_transfer": 5,
+    "pattern_forward_swing": 4,
+    "pattern_preparation_coupling": 2,
+    "pattern_slice_path": 1
+  },
+  "final_real_projected_sequence_measurements": 0
+}

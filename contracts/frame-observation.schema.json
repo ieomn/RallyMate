@@ -14,6 +14,7 @@
     "handoff"
   ],
   "properties": {
+    "subject_identity": {"type": "object","required": ["version","subject_id","status","source_track_id","evidence","reason_code"],"properties": {"version": {"const": "subject-lock-v1"},"subject_id": {"enum": ["subject-1",null]},"status": {"enum": ["locked","reidentified","unknown"]},"source_track_id": {"type": ["integer","null"],"minimum": 1},"evidence": {"type": "array","items": {"type": "string"}},"reason_code": {"type": ["string","null"]},"appearance_distance": {"type": ["number","null"],"minimum": 0,"maximum": 1}},"allOf": [{"if": {"properties": {"status": {"const": "unknown"}}},"then": {"properties": {"subject_id": {"type": "null"},"source_track_id": {"type": "null"},"reason_code": {"type": "string","minLength": 1}}},"else": {"properties": {"subject_id": {"const": "subject-1"},"source_track_id": {"type": "integer","minimum": 1},"evidence": {"minItems": 1},"reason_code": {"type": "null"}}}}],"description": "Sequence-local target association, not a verified real-world person identity. Unknown frames must not be grouped under legacy primary_player_id=1."},
     "schema_version": {"enum": ["1.0.0", "1.1.0"]},
     "job_id": {"type": "string"},
     "frame": {

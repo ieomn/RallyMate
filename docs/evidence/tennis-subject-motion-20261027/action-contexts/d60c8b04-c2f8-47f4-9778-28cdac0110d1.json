@@ -1,0 +1,346 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+  "sample_id": "schiavone-usopen-2012",
+  "source_group": "2012-usopen-jc-demiace",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "34d5a0fd93f05ef3be25",
+      "person_track_id": 1,
+      "start_ms": 959,
+      "peak_ms": 1293,
+      "end_ms": 1627,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_one_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 1,
+      "human_subject_id": "schiavone-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 1251,
+      "evidence": {
+        "contact_sheet": "action-sheets/schiavone-usopen-2012-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 625.625,
+            "nearest_primary_timestamp_ms": 626,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 959.292,
+            "nearest_primary_timestamp_ms": 959,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1142.958,
+            "nearest_primary_timestamp_ms": 1126,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1292.958,
+            "nearest_primary_timestamp_ms": 1293,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1442.958,
+            "nearest_primary_timestamp_ms": 1460,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1730.896,
+            "nearest_primary_timestamp_ms": 1710,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 2088.833,
+            "nearest_primary_timestamp_ms": 2085,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 2167.833,
+            "nearest_primary_timestamp_ms": 2169,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "白上衣黑短裤目标；反手侧准备后单右臂向前上方伸出，非持拍臂反向打开。",
+        "reviewed_window_ms": {
+          "start_ms": 625.625,
+          "peak_ms": 1292.958,
+          "end_ms": 2168.833
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        1.0,
+        0.0
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 626,
+            "requested_sheet_timestamp_ms": 625.625,
+            "source_frame_index": 15,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 1292.958
+          },
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 2168.833
+          }
+        ],
+        "forward_observation_zh": "底线是从左上角向右下延伸的斜边；纵向场地边线从底线角近水平向右延伸，朝场内/球网方向为屏幕右；球网不在此近景，依据明确底线角与场地线确定轴的朝向。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 1,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 626
+    },
+    {
+      "episode_id": "43b46b2fb3c034bd37d3",
+      "person_track_id": 1,
+      "start_ms": 6757,
+      "peak_ms": 7132,
+      "end_ms": 7549,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_one_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 6,
+      "human_subject_id": "schiavone-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 7674,
+      "evidence": {
+        "contact_sheet": "action-sheets/schiavone-usopen-2012-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 6715.042,
+            "nearest_primary_timestamp_ms": 6715,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 6840.167,
+            "nearest_primary_timestamp_ms": 6840,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 6815.292,
+            "nearest_primary_timestamp_ms": 6798,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 6965.292,
+            "nearest_primary_timestamp_ms": 6965,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7115.292,
+            "nearest_primary_timestamp_ms": 7132,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 7528.355,
+            "nearest_primary_timestamp_ms": 7508,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 8011.417,
+            "nearest_primary_timestamp_ms": 8008,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 8090.417,
+            "nearest_primary_timestamp_ms": 8091,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；单手反手由低到高前挥，非持拍臂打开，区别于高拍头向前下切削。",
+        "reviewed_window_ms": {
+          "start_ms": 6715.042,
+          "peak_ms": 6965.292,
+          "end_ms": 8091.417
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        1.0,
+        0.0
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 626,
+            "requested_sheet_timestamp_ms": 625.625,
+            "source_frame_index": 15,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 1292.958
+          },
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 2168.833
+          }
+        ],
+        "forward_observation_zh": "底线是从左上角向右下延伸的斜边；纵向场地边线从底线角近水平向右延伸，朝场内/球网方向为屏幕右；球网不在此近景，依据明确底线角与场地线确定轴的朝向。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 6,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 626
+    },
+    {
+      "episode_id": "a17248cad9bea5eb6088",
+      "person_track_id": 1,
+      "start_ms": 9760,
+      "peak_ms": 10135,
+      "end_ms": 10677,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 14,
+      "human_subject_id": "schiavone-usopen-2012:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 10093,
+      "evidence": {
+        "contact_sheet": "action-sheets/schiavone-usopen-2012-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 9426.083,
+            "nearest_primary_timestamp_ms": 9426,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 9780.604,
+            "nearest_primary_timestamp_ms": 9801,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 9985.125,
+            "nearest_primary_timestamp_ms": 9968,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10135.125,
+            "nearest_primary_timestamp_ms": 10135,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10285.125,
+            "nearest_primary_timestamp_ms": 10302,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10677.334,
+            "nearest_primary_timestamp_ms": 10677,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11139.542,
+            "nearest_primary_timestamp_ms": 11136,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11218.542,
+            "nearest_primary_timestamp_ms": 11220,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；右手单手正手准备、前挥及随挥可见。",
+        "reviewed_window_ms": {
+          "start_ms": 9426.083,
+          "peak_ms": 10135.125,
+          "end_ms": 11219.542
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "forward_direction_2d": [
+        1.0,
+        0.0
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 626,
+            "requested_sheet_timestamp_ms": 625.625,
+            "source_frame_index": 15,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          },
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 1292.958
+          },
+          {
+            "contact_sheet": "action-sheets/schiavone-usopen-2012-direction-reference.jpg",
+            "timestamp_ms": 2168.833
+          }
+        ],
+        "forward_observation_zh": "底线是从左上角向右下延伸的斜边；纵向场地边线从底线角近水平向右延伸，朝场内/球网方向为屏幕右；球网不在此近景，依据明确底线角与场地线确定轴的朝向。",
+        "up_observation_zh": "看台立柱/栏杆竖线与屏幕竖直一致；相应窗口只有小幅平移取景，未见滚转。",
+        "direction_accuracy": "manual approximate 2D sign/axis, not camera calibration or 3D forward truth",
+        "camera_reference_epoch": 14,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 626
+    }
+  ]
+}

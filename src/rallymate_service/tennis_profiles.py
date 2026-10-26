@@ -21,8 +21,7 @@ SERVE_METRICS = {
     "striking": (("serve_overhead_position", "向上挥拍位置", "torso", "手臂向身体上方舒展挥出"),
                  ("serve_arm_extension", "向上伸展空间", "arm_length", "保留舒展空间，不强行锁直肘部")),
     "follow_through": (("follow_path", "发球随挥延展", "ratio", "向上挥出后继续完成自然随挥"),
-                       ("serve_recovery_control", "发球后再准备", "ratio", "随挥后连贯恢复可启动准备"),
-                       ("follow_deceleration", "随挥速度衔接", "ratio", "主挥拍之后自然减速，减少短时反复加速，不要求停住球拍")),
+                       ("serve_recovery_control", "发球后再准备", "ratio", "随挥后连贯恢复可启动准备")),
 }
 SERVE_DRILLS = {
     "movement": ("连贯完成屈膝蓄势", "沿用自己的发球站姿，以屈膝蓄势衔接向上伸展。",
@@ -42,7 +41,7 @@ SERVE_DRILLS = {
                        "同机位录连续发球与恢复过程，对比随挥延展和发球后再准备。"),
 }
 SERVE_RUBRIC = {
-    "version": "tennis-serve-profile-v1.2.0",
+    "version": "tennis-serve-profile-v1.3.0",
     "threshold_origin": "engineering_initial_values_not_document_numeric_grades",
     "classification_required": "source_bound_serve_phase_not_arm_height",
     "ball_toss_quality_assumed": False,
@@ -55,7 +54,6 @@ SERVE_RUBRIC = {
         "knee_load": {"curve": "time_mean_saturating_ramp", "knots": [0, 25],
                       "measurement": "best_per_leg_time_mean_over_complete_preparation", "deeper_flexion_penalized": False},
         "leg_extension_continuity": {"curve": "shared_net_same_leg_extension_divided_by_total_angle_variation", "weight": "equal_with_other_observed_movement_metrics"},
-        "follow_deceleration": {"curve": "shared_net_wrist_speed_reduction_divided_by_total_speed_variation", "weight": "equal_with_other_observed_follow_through_metrics"},
         "serve_trophy": {"curve": "trapezoid", "knots": [35, 65, 115, 155], "unit": "deg_upper_arm_to_torso_up"},
         "serve_arm_coordination": {"curve": "mean_simultaneous_arm_geometry", "support_arm_up_angle_good_max_deg": 45,
                                    "support_arm_up_angle_bad_deg": 95, "support_arm_height_saturation_torso": .35},
@@ -151,7 +149,9 @@ def apply_serve_profile(rows, *, prep_end, peak, side, wrist, values, recovery_c
     ``recovery_continuity`` is an optional caller-measured (ratio, score) pair;
     no torso-up projection is interpreted as gravity or balance.
     """
-    shared = {"follow_path", "leg_extension_continuity", "follow_deceleration"}
+    # The source permits continued acceleration during early follow-through;
+    # a requirement to decelerate immediately must never re-enter via a profile.
+    shared = {"follow_path", "leg_extension_continuity"}
     out = {key: tuple(value) for key, value in values.items() if key in shared}
     if side not in {"left", "right"} or not 0 < prep_end <= peak < len(rows) or len(rows) < 6:
         return {}

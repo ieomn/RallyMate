@@ -16,3 +16,27 @@ export function tennisFixture() {
       identity_labels_used: false, confidence_used_in_score: false, aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" } };
 }
 export function tennisResult() { return { job_id: "tennis-test", input: { video: { sha256: tennisHash, duration_ms: 9000 } }, tennis_assessment: tennisFixture() }; }
+
+export function tennisScopedFixture() {
+  const report = tennisFixture();
+  report.version = "tennis-action-assessment-v1.2.0";
+  report.rubric.version = "tennis-action-rubric-v1.2.0";
+  report.dimensions.forEach(d => { d.observation_count = 2; d.metrics.forEach(m => { m.observation_count = 2; }); });
+  const follow = report.dimensions[4].metrics[0]; follow.id = "pattern_phase_continuity"; follow.value = .9;
+  report.subject_scope = { version: "subject-scoped-assessment-v1", selected_subject_id: "subject-1", selection_basis: "first_locked_target", cross_subject_aggregation: false,
+    subjects: [{ subject_id: "subject-1", identity_basis: "target_lock", start_ms: 0, end_ms: 5000, observed_frames: 150, source_track_ids: [1], measured_episode_count: 2, included_in_report: true },
+      { subject_id: "legacy-track-2-epoch-0", identity_basis: "unlinked_source_track", start_ms: 6000, end_ms: 8000, observed_frames: 60, source_track_ids: [2], measured_episode_count: 1, included_in_report: false }] };
+  report.episodes.forEach(e => {
+    e.subject_id = "subject-1"; e.person_track_id = 1;
+    e.metrics = Object.fromEntries(report.dimensions.flatMap(d => d.metrics.map(m => [m.id, { value: m.value, score: m.score }])));
+    e.motion_pattern = { version: "tennis-motion-patterns-v1.0.0", profile_id: "generic", classification_status: "technique_unverified",
+      classification_provenance: { method: "unverified" },
+      requirements: [{ id: "phase_continuity", label: "挥出和随挥连续", status: "measured_proxy", metric_ids: ["pattern_phase_continuity"], reason: null },
+        { id: "technique_classification", label: "具体技术类型未确认", status: "not_measured", metric_ids: [], reason: "no_technique_specific_rules_applied" }],
+      coverage: { measured_requirements: 1, applicable_requirements: 2, fraction: .5, full_source_technique_covered: false } };
+  });
+  report.episode_validity = [...report.episodes.map(e => ({ episode_id: e.episode_id, subject_id: e.subject_id, status: "scored", reason_codes: [], person_track_id: 1, start_ms: e.start_ms, end_ms: e.end_ms })),
+    { episode_id: "other-target", subject_id: "legacy-track-2-epoch-0", status: "other_subject", reason_codes: ["different_subject_not_aggregated"], person_track_id: 2, start_ms: 6000, end_ms: 8000 }];
+  report.pattern_coverage = { measured_requirements: 2, applicable_requirements: 4, fraction: .5, verified_technique_episodes: 0, generic_episodes: 2, full_source_technique_covered: false, profiles: ["generic"] };
+  return report;
+}

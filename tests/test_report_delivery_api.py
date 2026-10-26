@@ -107,6 +107,24 @@ class ReportDeliveryApiTests(unittest.TestCase):
                     time.sleep(.005)
                 self.assertEqual(app.state.report_delivery_cache.stats()["bytes"], 0)
 
+    def test_reviewed_action_context_invalidates_cached_report(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            app, settings, database, job = setup_report(Path(directory))
+            supplied = native_fixture(); supplied["job_id"] = job
+            context = settings.runs_dir / job / "action-context.json"
+            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)) as build, TestClient(app) as client:
+                url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
+                self.assertEqual(poll(client, url).status_code, 200)
+                context.write_text('{"review":1}', encoding="utf-8")
+                self.assertEqual(poll(client, url).status_code, 200)
+                self.assertEqual(build.call_count, 2)
+                saved = context.stat()
+                context.write_text('{"review":2}', encoding="utf-8")
+                os.utime(context, ns=(saved.st_atime_ns, saved.st_mtime_ns))
+                self.assertEqual(poll(client, url).status_code, 200)
+                self.assertEqual(build.call_count, 3)
+
     def test_standalone_default_derived_results_unchanged_optional_skip_has_no_duplicates(self):
         summary = test_user_demo.UserDemoResultTests()._summary()
         expected = user_demo.build_user_demo_result(summary, [])

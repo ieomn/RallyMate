@@ -722,6 +722,8 @@ def _run_pipeline(
     # for variable-frame-rate files. Frame-index/FPS seeking is only an estimate.
     clock = SourceVideoClock(metadata.fps)
     camera_guard = CameraMotionGuard()
+    from rallymate_tracking.subject_lock import SubjectLock
+    subject_lock = SubjectLock()
     manual_court = FixedManualCourtObservation(request.court)
     first_processed_source_frame = None
     last_processed_timestamp_ms = None
@@ -833,6 +835,18 @@ def _run_pipeline(
             stage_started = time.perf_counter()
             check_cancelled()
             if sam_enabled:
+                subject_identity = subject_lock.update(
+                    detections, timestamp_ms=timestamp_ms, width=metadata.width,
+                    height=metadata.height, image=frame,
+                    camera_epoch=camera_motion["reference_epoch"],
+                    camera_motion=camera_motion,
+                )
+                target_track = subject_identity.get("source_track_id")
+                target_players = [player for player in players if player["track_id"] == target_track]
+                if target_players and request.processing.max_players > 1:
+                    others = sorted((player for player in players if player["track_id"] != target_track),
+                                    key=lambda p: -(p["bbox_px"][2] - p["bbox_px"][0]) * (p["bbox_px"][3] - p["bbox_px"][1]))
+                    target_players += others[:request.processing.max_players - 1]
                 source_timestamp_ms = (round(capture.binding["timestamp_ms"])
                                        if capture.binding.get("timestamp_ms") is not None else None)
                 source_binding = {
@@ -844,7 +858,7 @@ def _run_pipeline(
                     "timestamp_source": timestamp_source,
                 }
                 poses = perception.estimate_poses(
-                    frame, players, request.processing.max_players, source_binding=source_binding,
+                    frame, target_players, request.processing.max_players, source_binding=source_binding,
                 )
                 frame_sam_records = perception.pose_frame_records()
                 mesh_started = time.perf_counter()
@@ -909,6 +923,7 @@ def _run_pipeline(
                 },
             }
             if sam_enabled:
+                record["subject_identity"] = subject_identity
                 record["frame"].update({**capture.binding, "timestamp_ms": timestamp_ms,
                                         "source_timestamp_ms": source_timestamp_ms,
                                         "video_sha256": input_video_sha256})
@@ -1070,6 +1085,7 @@ def _run_pipeline(
         frames_path,
         primary_timeline_path,
         primary_summary_path,
+        source_video_path=request.video_path if sam_enabled else None,
     )
     timings["primary_player_seconds"] += time.perf_counter() - stage_started
 

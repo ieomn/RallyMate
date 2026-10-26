@@ -1,0 +1,515 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+  "source_run_id": "identity-lock-20261027-white",
+  "original_job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+  "candidate_artifact_sha256": "2e17a05af391c63c19b4b4c83241f4aa20989870c5a46bf35b9a5ead6323030e",
+  "labels_from_new_candidates": true,
+  "actions": [
+    {
+      "episode_id": "e67754f8fae9419d2ba7",
+      "person_track_id": 1,
+      "start_ms": 633,
+      "peak_ms": 1167,
+      "end_ms": 1467,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 283,
+            "nearest_primary_timestamp_ms": 267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 725.0,
+            "nearest_primary_timestamp_ms": 733,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1017,
+            "nearest_primary_timestamp_ms": 1033,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1167,
+            "nearest_primary_timestamp_ms": 1167,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1317,
+            "nearest_primary_timestamp_ms": 1333,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1592.0,
+            "nearest_primary_timestamp_ms": 1600,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1937,
+            "nearest_primary_timestamp_ms": 1933,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 2016,
+            "nearest_primary_timestamp_ms": 2000,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 283,
+          "peak_ms": 1167,
+          "end_ms": 2017
+        },
+        "observation_zh": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "4bb491f2e1c1fb6fda9f",
+      "person_track_id": 1,
+      "start_ms": 5433,
+      "peak_ms": 5833,
+      "end_ms": 6067,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 5083,
+            "nearest_primary_timestamp_ms": 5067,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 5458.0,
+            "nearest_primary_timestamp_ms": 5467,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 5683,
+            "nearest_primary_timestamp_ms": 5667,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 5833,
+            "nearest_primary_timestamp_ms": 5833,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 5983,
+            "nearest_primary_timestamp_ms": 5967,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 6225.0,
+            "nearest_primary_timestamp_ms": 6233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 6537,
+            "nearest_primary_timestamp_ms": 6533,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 6616,
+            "nearest_primary_timestamp_ms": 6600,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 5083,
+          "peak_ms": 5833,
+          "end_ms": 6617
+        },
+        "observation_zh": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "d8c45df52b772d0dba5c",
+      "person_track_id": 1,
+      "start_ms": 12267,
+      "peak_ms": 12600,
+      "end_ms": 13133,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 11917,
+            "nearest_primary_timestamp_ms": 11933,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12258.5,
+            "nearest_primary_timestamp_ms": 12267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12450,
+            "nearest_primary_timestamp_ms": 12433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12600,
+            "nearest_primary_timestamp_ms": 12600,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12750,
+            "nearest_primary_timestamp_ms": 12733,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13141.5,
+            "nearest_primary_timestamp_ms": 13133,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13603,
+            "nearest_primary_timestamp_ms": 13600,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 13682,
+            "nearest_primary_timestamp_ms": 13667,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 11917,
+          "peak_ms": 12600,
+          "end_ms": 13683
+        },
+        "observation_zh": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "7f69fc9a9d8eacc3041a",
+      "person_track_id": 1,
+      "start_ms": 17033,
+      "peak_ms": 17367,
+      "end_ms": 18167,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e04.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 16683,
+            "nearest_primary_timestamp_ms": 16667,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17025.0,
+            "nearest_primary_timestamp_ms": 17033,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17217,
+            "nearest_primary_timestamp_ms": 17233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17367,
+            "nearest_primary_timestamp_ms": 17367,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 17517,
+            "nearest_primary_timestamp_ms": 17533,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 18042.0,
+            "nearest_primary_timestamp_ms": 18033,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 18637,
+            "nearest_primary_timestamp_ms": 18633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 18716,
+            "nearest_primary_timestamp_ms": 18700,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 16683,
+          "peak_ms": 17367,
+          "end_ms": 18717
+        },
+        "observation_zh": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "bbb4c9d6adf5876e2ae6",
+      "person_track_id": 1,
+      "start_ms": 22167,
+      "peak_ms": 22600,
+      "end_ms": 23433,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e05.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 21817,
+            "nearest_primary_timestamp_ms": 21833,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 22208.5,
+            "nearest_primary_timestamp_ms": 22200,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 22450,
+            "nearest_primary_timestamp_ms": 22433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 22600,
+            "nearest_primary_timestamp_ms": 22600,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 22750,
+            "nearest_primary_timestamp_ms": 22733,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23291.5,
+            "nearest_primary_timestamp_ms": 23300,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23903,
+            "nearest_primary_timestamp_ms": 23900,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23982,
+            "nearest_primary_timestamp_ms": 23967,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 21817,
+          "peak_ms": 22600,
+          "end_ms": 23983
+        },
+        "observation_zh": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "c2ff3c565211f56b2ba9",
+      "person_track_id": 1,
+      "start_ms": 22933,
+      "peak_ms": 23800,
+      "end_ms": 24167,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "duplicate_recovery_or_ball_retrieval"
+        ],
+        "explanation": "22.933–24.167s是前一次正手后的转身/走向反弹球；23.65s之后右手拍头自然下垂，未出现第二次完整挥拍。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e06.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 22583,
+            "nearest_primary_timestamp_ms": 22567,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23191.5,
+            "nearest_primary_timestamp_ms": 23200,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23650,
+            "nearest_primary_timestamp_ms": 23633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23800,
+            "nearest_primary_timestamp_ms": 23800,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 23950,
+            "nearest_primary_timestamp_ms": 23933,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 24258.5,
+            "nearest_primary_timestamp_ms": 24267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 24637,
+            "nearest_primary_timestamp_ms": 24633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 24716,
+            "nearest_primary_timestamp_ms": 24700,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 22583,
+          "peak_ms": 23800,
+          "end_ms": 24717
+        },
+        "observation_zh": "22.933–24.167s是前一次正手后的转身/走向反弹球；23.65s之后右手拍头自然下垂，未出现第二次完整挥拍。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      }
+    },
+    {
+      "episode_id": "dd5737dc1e6ee709d056",
+      "person_track_id": 1,
+      "start_ms": 28567,
+      "peak_ms": 29400,
+      "end_ms": 29633,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "racket_hand": "right",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-white-e07.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 28217,
+            "nearest_primary_timestamp_ms": 28233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 28808.5,
+            "nearest_primary_timestamp_ms": 28800,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 29250,
+            "nearest_primary_timestamp_ms": 29233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 29400,
+            "nearest_primary_timestamp_ms": 29400,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 29550,
+            "nearest_primary_timestamp_ms": 29533,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 29683.0,
+            "nearest_primary_timestamp_ms": 29667,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 29886,
+            "nearest_primary_timestamp_ms": 29900,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 29965,
+            "nearest_primary_timestamp_ms": 29967,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 28217,
+          "peak_ms": 29400,
+          "end_ms": 29966
+        },
+        "observation_zh": "白帽白衣目标A，右手正手准备、前挥及随挥可辨；局部窗口主体一致。",
+        "limitations": [
+          "sparse_source_frame_review_not_coach_truth",
+          "no_exact_ball_contact_claim"
+        ]
+      },
+      "technique": "baseline_forehand"
+    }
+  ]
+}

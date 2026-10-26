@@ -44,9 +44,9 @@ class TennisServeProfileTests(unittest.TestCase):
         result = calculate(serve_rows())
         expected = {metric[0] for metrics in SERVE_METRICS.values() for metric in metrics}
         self.assertEqual(set(result), expected)
-        self.assertEqual(len(result), 11)
+        self.assertEqual(len(result), 10)
         self.assertEqual(result["leg_extension_continuity"], (.8, 80.))
-        self.assertEqual(result["follow_deceleration"], (.9, 90.))
+        self.assertNotIn("follow_deceleration", result)
         self.assertNotIn("coil", result)
         self.assertNotIn("coil_release", result)
         for value, score in result.values():

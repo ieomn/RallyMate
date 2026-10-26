@@ -1013,6 +1013,11 @@ def validate_frame_observation(record: dict[str, Any]) -> None:
             f"{prefix}.center_normalized must be in the 0..1 range",
         )
 
+    if "subject_identity" in record:
+        from rallymate_tracking.subject_lock import valid_subject_identity
+        _require(valid_subject_identity(record["subject_identity"], player_track_ids),
+                 "subject_identity must bind a detected target or explicitly declare unknown")
+
     for pose_index, pose in enumerate(record.get("poses", [])):
         prefix = f"poses[{pose_index}]"
         person_track_id = pose.get("person_track_id")

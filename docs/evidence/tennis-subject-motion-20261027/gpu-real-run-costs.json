@@ -1,0 +1,38 @@
+{
+  "actual_gpu_pipeline_runs": 6,
+  "wall_seconds_sum": 574.761,
+  "native_inference_seconds_sum": 250.274,
+  "native_records_including_repeated_runs": 2932,
+  "runs": [
+    {
+      "name": "federer",
+      "native_ok": 77,
+      "duration_seconds": 35.462
+    },
+    {
+      "name": "night",
+      "native_ok": 709,
+      "duration_seconds": 117.159
+    },
+    {
+      "name": "pink",
+      "native_ok": 458,
+      "duration_seconds": 127.655
+    },
+    {
+      "name": "white",
+      "native_ok": 900,
+      "duration_seconds": 143.746
+    },
+    {
+      "name": "identity-final-7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "native_ok": 78,
+      "duration_seconds": 36.104
+    },
+    {
+      "name": "identity-final-fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "native_ok": 710,
+      "duration_seconds": 114.635
+    }
+  ]
+}

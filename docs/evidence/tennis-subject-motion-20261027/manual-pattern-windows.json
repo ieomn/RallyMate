@@ -1,0 +1,102 @@
+{
+  "version": "manual-reviewed-window-v1",
+  "scope": "separate real motion-pattern validation; never merged into automatic candidate counts or scores",
+  "windows": [
+    {
+      "window_id": "ordinary-b-serve-manual-0000-2400",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "person_track_id": 1,
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "subject_id": "subject-1",
+      "start_ms": 0,
+      "prep_end_ms": 1050,
+      "overhead_peak_ms": 1300,
+      "peak_ms": 1300,
+      "end_ms": 2400,
+      "technique": "serve",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "forward_direction_2d": [
+        -0.2,
+        -0.98
+      ],
+      "forward_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/regression-ordinary-b-manual-serve.jpg",
+            "timestamp_ms": 0
+          },
+          {
+            "contact_sheet": "action-sheets/regression-ordinary-b-manual-serve.jpg",
+            "timestamp_ms": 1300
+          }
+        ],
+        "observation_zh": "近端底线至球网/远场方向在图中向上略左；网柱竖直，无滚转。向网轴为场地线估计的二维近似，不从腕或髋轨迹倒推，不是标定后的三维向前。",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "evidence": {
+        "frames": [
+          {
+            "timestamp_ms": 700,
+            "observation": "抛球臂上举，持拍臂后置"
+          },
+          {
+            "timestamp_ms": 950,
+            "observation": "屈膝、持拍臂位于背后/举拍准备"
+          },
+          {
+            "timestamp_ms": 1050,
+            "observation": "准备屈膝末段；此处作为人工近似prep_end"
+          },
+          {
+            "timestamp_ms": 1200,
+            "observation": "双脚向上伸展，右臂上伸"
+          },
+          {
+            "timestamp_ms": 1300,
+            "observation": "头顶伸臂挥出附近；此为视觉近似overhead_peak，不是真实触球时间"
+          },
+          {
+            "timestamp_ms": 1450,
+            "observation": "击后躯干前倾随挥"
+          },
+          {
+            "timestamp_ms": 1850,
+            "observation": "落地恢复"
+          },
+          {
+            "timestamp_ms": 2320,
+            "observation": "回到准备姿态"
+          }
+        ],
+        "contact_sheets": [
+          "action-sheets/regression-ordinary-b-manual-serve.jpg",
+          "action-sheets/regression-ordinary-b-serve-peak.jpg"
+        ],
+        "limitations": [
+          "phase_boundaries_are_visual_estimates",
+          "exact_ball_contact_unverified",
+          "single_monocular_view",
+          "ordinary_user_label_preserved",
+          "not_automatic_segmentation_success"
+        ]
+      },
+      "direction_reference_timestamp_ms": 0
+    }
+  ]
+}

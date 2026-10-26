@@ -1,0 +1,228 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+  "source_run_id": "identity-lock-20261027-pink",
+  "original_job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+  "candidate_artifact_sha256": "5922b3fc984a338f30f702e306adb00877d01649d89332b20242226d2c5ca683",
+  "labels_from_new_candidates": true,
+  "actions": [
+    {
+      "episode_id": "02bc2476e80edab352e5",
+      "person_track_id": 1,
+      "start_ms": 167,
+      "peak_ms": 633,
+      "end_ms": 867,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "粉衣戴帽人物A单手正手，准备/前挥/随挥可见；视频起点附近准备有截取限制。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-pink-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 0,
+            "nearest_primary_timestamp_ms": 0,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 316.5,
+            "nearest_primary_timestamp_ms": 300,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 483,
+            "nearest_primary_timestamp_ms": 467,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 633,
+            "nearest_primary_timestamp_ms": 633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 783,
+            "nearest_primary_timestamp_ms": 767,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1075.0,
+            "nearest_primary_timestamp_ms": 1067,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1437,
+            "nearest_primary_timestamp_ms": 1433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1516,
+            "nearest_primary_timestamp_ms": 1500,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 0,
+          "peak_ms": 633,
+          "end_ms": 1517
+        },
+        "observation_zh": "粉衣戴帽人物A单手正手，准备/前挥/随挥可见；视频起点附近准备有截取限制。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "fefa868c764e18331698",
+      "person_track_id": 1,
+      "start_ms": 10967,
+      "peak_ms": 11400,
+      "end_ms": 11667,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "同一粉衣人物A；正手引拍、前挥与随挥可见。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-pink-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 10567,
+            "nearest_primary_timestamp_ms": 10567,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10983.5,
+            "nearest_primary_timestamp_ms": 10967,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11250,
+            "nearest_primary_timestamp_ms": 11233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11400,
+            "nearest_primary_timestamp_ms": 11400,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11550,
+            "nearest_primary_timestamp_ms": 11533,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11858.5,
+            "nearest_primary_timestamp_ms": 11867,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12237,
+            "nearest_primary_timestamp_ms": 12233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12316,
+            "nearest_primary_timestamp_ms": 12300,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 10567,
+          "peak_ms": 11400,
+          "end_ms": 12317
+        },
+        "observation_zh": "同一粉衣人物A；正手引拍、前挥与随挥可见。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      },
+      "technique": "baseline_forehand"
+    },
+    {
+      "episode_id": "e69a66190671b02b0d92",
+      "person_track_id": 1,
+      "start_ms": 14433,
+      "peak_ms": 14767,
+      "end_ms": 15100,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_gpu_window_audit_20261027",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "follow_recovery_clipped_by_camera_pan"
+        ],
+        "explanation": "新增窗确是粉衣A正手，不是误选他人。14.917s随挥可见；15.000s后相机突然向右移、模糊，15.233s目标裁边，完整恢复末段无法确认。"
+      },
+      "racket_hand": "right",
+      "evidence": {
+        "contact_sheet": "action-sheets/gpu-pink-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 14033,
+            "nearest_primary_timestamp_ms": 14033,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14400.0,
+            "nearest_primary_timestamp_ms": 14400,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14617,
+            "nearest_primary_timestamp_ms": 14633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14767,
+            "nearest_primary_timestamp_ms": 14767,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 14917,
+            "nearest_primary_timestamp_ms": 14933,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 15000.0,
+            "nearest_primary_timestamp_ms": 15000,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 15153,
+            "nearest_primary_timestamp_ms": 15167,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 15232,
+            "nearest_primary_timestamp_ms": 15233,
+            "old_source_track_id": 1
+          }
+        ],
+        "review_window": {
+          "start_ms": 14033,
+          "peak_ms": 14767,
+          "end_ms": 15233
+        },
+        "observation_zh": "新增窗确是粉衣A正手，不是误选他人。14.917s随挥可见；15.000s后相机突然向右移、模糊，15.233s目标裁边，完整恢复末段无法确认。",
+        "limitations": [
+          "sparse_source_frame_visual_review_not_coach_ground_truth",
+          "exact_ball_contact_unverified"
+        ]
+      },
+      "technique": "baseline_forehand"
+    }
+  ]
+}

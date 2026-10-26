@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
+import { tennisScopedFixture } from "./fixtures/tennis-assessment.mjs";
 
 const cache = new Map();
 function compiledUrl(file) {
@@ -109,4 +110,22 @@ test("a measured zero remains zero and a missing dimension stays null after roun
   assert.equal(restored.dimensions[0].score, 0);
   assert.equal(restored.dimensions[4].score, null);
   assert.equal(restored.overall_score, 52.5);
+});
+
+test("v1.2 subject boundaries, motion coverage and measured contributions survive export and revalidation", async () => {
+  const source = input(), scoped = tennisScopedFixture();
+  source.job.id = source.evidence.jobId = source.evidence.result.job_id = scoped.source_run_id;
+  source.evidence.result.tennis_assessment = scoped;
+  const expected = tennisAssessmentOf(source.evidence.result);
+  assert.ok(expected);
+  const markdown = renderReportMarkdown(buildPracticeReport(source));
+  assert.match(markdown, /只汇总锁定目标的 2 段动作/);
+  assert.match(markdown, /其他轨迹的 1 段没有混入评分/);
+  assert.match(markdown, /已测 2\/4 项次动作要求/);
+  assert.match(markdown, /尚未测量：具体技术类型未确认/);
+  assert.doesNotMatch(markdown, /VIS-GS|P0097|legacy-track-2-epoch/);
+  const encoded = JSON.stringify(buildReportBackup(source));
+  const restored = await readReportJson({ size: Buffer.byteLength(encoded), text: async () => encoded });
+  assert.deepEqual(tennisAssessmentOf(restored.result), expected);
+  assert.equal(trainingScoreOf(restored.result).score, 70);
 });

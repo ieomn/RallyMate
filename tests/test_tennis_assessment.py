@@ -132,8 +132,9 @@ class TennisAssessmentTests(unittest.TestCase):
             actual = analyze_tennis_assessment(timeline, records, video_sha256="a" * 64, source_run_id="test-run", motion_episodes=[bad] + episodes())
             self.assertEqual(actual["candidate_accounting"]["rejected_count"], 1)
             self.assertEqual(actual["candidate_accounting"]["rejection_counts"], {"candidate_source_or_complete_phase_unverified": 1})
-            self.assertEqual({k: v for k, v in actual.items() if k != "candidate_accounting"},
-                             {k: v for k, v in expected.items() if k != "candidate_accounting"})
+            self.assertEqual({k: v for k, v in actual.items() if k not in {"candidate_accounting", "episode_validity"}},
+                             {k: v for k, v in expected.items() if k not in {"candidate_accounting", "episode_validity"}})
+            self.assertEqual(sum(e["status"] == "rejected" for e in actual["episode_validity"]), 1)
 
     def test_nonzero_source_pts_origin_preserves_media_time_and_score(self):
         timeline, records = inputs()
@@ -467,7 +468,7 @@ class TennisAssessmentTests(unittest.TestCase):
         report = calculate(timeline, records)
         self.assertIsNone(report["overall_score"])
         self.assertEqual(report["candidate_accounting"], {
-            "proposed_count": 3, "accepted_count": 0, "rejected_count": 3,
+            "proposed_count": 3, "accepted_count": 0, "other_subject_count": 0, "rejected_count": 3,
             "rejection_counts": {"candidate_lacks_continuous_complete_motion": 3}})
         self.assertIn("3", report["reason_zh"])
         self.assertEqual(report["improvements"], [])

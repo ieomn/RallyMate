@@ -1,0 +1,231 @@
+{
+  "samples": [
+    {
+      "sample_id": "development-ordinary-a",
+      "source_run_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 87.43,
+      "episodes": 14
+    },
+    {
+      "sample_id": "development-sharapova",
+      "source_run_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 95.38,
+      "episodes": 2
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "source_run_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 91.56,
+      "episodes": 4
+    },
+    {
+      "sample_id": "regression-nadal",
+      "source_run_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 92.44,
+      "episodes": 2
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "source_run_id": "7e166b3a-5a2c-4820-92a4-8bec782bd775",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 87.43,
+      "episodes": 14
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "source_run_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 75.12,
+      "episodes": 5
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "source_run_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 92.02,
+      "episodes": 2
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "source_run_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 88.05,
+      "episodes": 4
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "source_run_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 82.8,
+      "episodes": 2
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "source_run_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 85.63,
+      "episodes": 2
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "source_run_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 93.31,
+      "episodes": 4
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "source_run_id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 80.89,
+      "episodes": 1
+    },
+    {
+      "sample_id": "white-mirror",
+      "source_run_id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 74.99,
+      "episodes": 6
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "source_run_id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "source_run_id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "davis-cup-2018-04",
+      "source_run_id": "e0a62ad9-9422-4635-a254-e375819a971c",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "source_run_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "source_run_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 92.09,
+      "episodes": 1
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "source_run_id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "source_run_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 81.32,
+      "episodes": 1
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "source_run_id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "source_run_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 84.04,
+      "episodes": 5
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "source_run_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": 87.94,
+      "episodes": 3
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "source_run_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "source_run_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "version": "tennis-action-assessment-v1.2.0",
+      "matching": true,
+      "different_fields": [],
+      "score": null,
+      "episodes": 0
+    }
+  ],
+  "passed": 25,
+  "total": 25
+}

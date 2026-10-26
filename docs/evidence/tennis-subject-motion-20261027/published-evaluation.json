@@ -1,0 +1,3169 @@
+{
+  "schema_version": "tennis-round3-offline-regression-v1",
+  "assessment_version": "tennis-action-assessment-v1.2.0",
+  "not_independent_holdout": true,
+  "gpu_requested": false,
+  "frozen_native_only": true,
+  "selector_recomputed": false,
+  "python_version": "3.10.18",
+  "selector_parent_evaluation_sha256": "5acd34a841558ad144ae11116753e075c78076744e4077cc21c64c43d81fc90b",
+  "selector_parent_code_verified": true,
+  "started_at_utc": "2026-10-26T19:10:03.554806+00:00",
+  "completed_at_utc": "2026-10-26T19:10:49.614099+00:00",
+  "manifest_sha256": "dfd6cecc612347ed7706d3c5081965684ee5bce0a6f0b57462972783104157e9",
+  "inventory_sha256": "637bd4c0df0809f873f5d47db77978bfeb13e4cf1f35ae6342971c2d16c4e081",
+  "before_evaluation_sha256": "f53922f3b864d1151af348ea4edbc86ac5c5c88ab4f6b28b864179f4304b366b",
+  "code_hashes_at_start": {
+    "src/rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+    "src/rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+    "scripts/evaluate_tennis_subject_regression.py": "18b1c3cebb11fbe12fa8e945994c18fb17cb15d1026bc86ef6deafeede63ab72"
+  },
+  "code_hashes_at_end": {
+    "src/rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+    "src/rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+    "scripts/evaluate_tennis_subject_regression.py": "18b1c3cebb11fbe12fa8e945994c18fb17cb15d1026bc86ef6deafeede63ab72"
+  },
+  "code_changed_during_execution": false,
+  "sample_count": 25,
+  "error_count": 0,
+  "samples": [
+    {
+      "sample_id": "development-ordinary-a",
+      "job_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "source_group": "ordinary-850cb",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "old_score": 88.36,
+      "old_scored_actions": 14,
+      "started_at_utc": "2026-10-26T19:10:03.558806+00:00",
+      "reused_timeline_sha256": "0da365b245ea041e89143a542c91b9c8b13075a6c648630030a4c25d9e7e7860",
+      "status": "scored",
+      "score": 87.43,
+      "episodes": 14,
+      "candidate_accounting": {
+        "proposed_count": 24,
+        "accepted_count": 14,
+        "other_subject_count": 0,
+        "rejected_count": 10,
+        "rejection_counts": {
+          "candidate_overlap_duplicate": 1,
+          "candidate_source_or_complete_phase_unverified": 9
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "a4ad6c56937715dcc8e4",
+          "start_ms": 5933,
+          "end_ms": 6933,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_overlap_duplicate"
+          ]
+        },
+        {
+          "episode_id": "af270b5666077da8603a",
+          "start_ms": 20433,
+          "end_ms": 20967,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "8bfe6128239d97952b39",
+          "start_ms": 26333,
+          "end_ms": 27067,
+          "person_track_id": 70,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "a938d8edff1114cec718",
+          "start_ms": 34400,
+          "end_ms": 35400,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "b98ed3bfff886c7aff63",
+          "start_ms": 40933,
+          "end_ms": 41900,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "8cdd67c3a5fde7812b6f",
+          "start_ms": 49533,
+          "end_ms": 51233,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "3beef5b754a8a1f3fcb8",
+          "start_ms": 63233,
+          "end_ms": 64100,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "bcb0689cc2dee06a4233",
+          "start_ms": 73800,
+          "end_ms": 74900,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "54d0107cca0f8702c025",
+          "start_ms": 76567,
+          "end_ms": 77133,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "a3f4e32c15712a2f6ae9",
+          "start_ms": 94000,
+          "end_ms": 94467,
+          "person_track_id": 231,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "aa405ec7db42df93a1e0",
+          "start_ms": 2033.333,
+          "end_ms": 3666.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bfc354bd9e949f3d5060",
+          "start_ms": 4633.333,
+          "end_ms": 7166.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "9e1ea3767d3b4d6a627a",
+          "start_ms": 9833.333,
+          "end_ms": 11700.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "d157f2cd1f909fab36d8",
+          "start_ms": 14300.0,
+          "end_ms": 16066.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bdad188205f683a88d45",
+          "start_ms": 23800.0,
+          "end_ms": 25600.0,
+          "person_track_id": 70,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "f3d3a75483416dc64edc",
+          "start_ms": 31033.333,
+          "end_ms": 32733.333,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "5b9e83e1145f8cbd42aa",
+          "start_ms": 37900.0,
+          "end_ms": 39366.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "1736974c810539ba0486",
+          "start_ms": 43733.333,
+          "end_ms": 45166.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "54f60aaba08284697cbb",
+          "start_ms": 46900.0,
+          "end_ms": 48566.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "35bd5afac9db445261f8",
+          "start_ms": 54100.0,
+          "end_ms": 55666.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "9dc61d4ad386442b5690",
+          "start_ms": 57200.0,
+          "end_ms": 58933.333,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "9700bde5f55a99d5ed62",
+          "start_ms": 59400.0,
+          "end_ms": 60966.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "14521a1461ce4b190d84",
+          "start_ms": 69200.0,
+          "end_ms": 70833.333,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "d681e9ff2467b6aef0ba",
+          "start_ms": 89200.0,
+          "end_ms": 90900.0,
+          "person_track_id": 231,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 97000.0,
+            "observed_frames": 2424,
+            "source_track_ids": [
+              1,
+              70,
+              89,
+              231
+            ],
+            "measured_episode_count": 14,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 14,
+        "applicable_requirements": 28,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 14,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 487
+      },
+      "selected_frames": 2424,
+      "selected_frames_with_saved_native": 2424,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 5581,
+      "selected_tracks": {
+        "1": 636,
+        "70": 129,
+        "89": 1354,
+        "231": 305
+      },
+      "selector_reason_counts": {
+        "None": 2424,
+        "target_identity_unmatched": 462,
+        "target_not_detected": 10,
+        "appearance_match_awaiting_temporal_support": 15
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+        "frames.jsonl": "db77e85af24a36548205424f1d53e0798a6963d43becf9c086b6082242aecf78",
+        "sam3d_frames.jsonl": "341aab8eb9dabfc2a17072645b5fce6e35c61b06cbf288cbc2c985f3679ddbea",
+        "summary.json": "cbe6d3ef7f36fbda86767f927e1c27872fb6091024de39ae49e3a08e6be0d9ea",
+        "action_context": null
+      },
+      "output_timeline_sha256": "0da365b245ea041e89143a542c91b9c8b13075a6c648630030a4c25d9e7e7860",
+      "elapsed_seconds": 8.047,
+      "completed_at_utc": "2026-10-26T19:10:11.614997+00:00"
+    },
+    {
+      "sample_id": "development-sharapova",
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "source_group": "sharapova",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "old_score": 95.77,
+      "old_scored_actions": 2,
+      "started_at_utc": "2026-10-26T19:10:11.615997+00:00",
+      "reused_timeline_sha256": "07bd506191647d4e84d20a79214c057fa6bcc6ef445c8510487894dc084418b9",
+      "status": "scored",
+      "score": 95.38,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "a553b913e06021702061",
+          "start_ms": 13313.3,
+          "end_ms": 14848.167,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "efb62ba4021a4f2c8480",
+          "start_ms": 15515.5,
+          "end_ms": 17083.733,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 20020.0,
+            "observed_frames": 599,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 2,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 3,
+        "applicable_requirements": 15,
+        "fraction": 0.2,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "baseline_two_hand_backhand"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 2
+      },
+      "selected_frames": 599,
+      "selected_frames_with_saved_native": 599,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 1202,
+      "selected_tracks": {
+        "1": 599
+      },
+      "selector_reason_counts": {
+        "None": 599,
+        "target_identity_unmatched": 2
+      },
+      "context_actions": 2,
+      "input_sha256": {
+        "video": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+        "frames.jsonl": "507b90dd16df22637754719f0b9b4f6fdd8c718e4e20a3b9970b253c7b03ccfd",
+        "sam3d_frames.jsonl": "cc71056080f701ffd82d92c8e7fa784d3b49531660e308951dc2813033acc397",
+        "summary.json": "4799e4436d402adf9f9d098e7f0161cd9aea0862af9f9a2c27b579d35bc3551d",
+        "action_context": "80d1c27525d9a9bb7eff27aeaa2ee6cdcbecc572a36d154da59bcbe92a5a06c9"
+      },
+      "output_timeline_sha256": "07bd506191647d4e84d20a79214c057fa6bcc6ef445c8510487894dc084418b9",
+      "elapsed_seconds": 2.094,
+      "completed_at_utc": "2026-10-26T19:10:13.711756+00:00"
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "source_group": "ordinary-ece12",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "old_score": 85.32,
+      "old_scored_actions": 5,
+      "started_at_utc": "2026-10-26T19:10:13.713757+00:00",
+      "reused_timeline_sha256": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+      "status": "scored",
+      "score": 91.56,
+      "episodes": 4,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 4,
+        "other_subject_count": 0,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "reviewed_action_incomplete_or_invalid": 1,
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "1abe4817405d7eb4974c",
+          "start_ms": 67,
+          "end_ms": 800,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "incomplete_serve_follow_through_unobserved"
+          ]
+        },
+        {
+          "episode_id": "5bdebd2588a9ce6e7dda",
+          "start_ms": 5533,
+          "end_ms": 6000,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "ec2da84b3d9d398e7e2d",
+          "start_ms": 2600.0,
+          "end_ms": 4800.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "2136f3fe30e723af7676",
+          "start_ms": 10700.0,
+          "end_ms": 12133.333,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "17b9250cbe0f1f9fff1c",
+          "start_ms": 13100.0,
+          "end_ms": 14733.333,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "f31c51cdbd6d5d9327e9",
+          "start_ms": 21033.333,
+          "end_ms": 22533.333,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 38533.333,
+            "observed_frames": 1024,
+            "source_track_ids": [
+              1,
+              101
+            ],
+            "measured_episode_count": 4,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 4,
+        "applicable_requirements": 17,
+        "fraction": 0.23529411764705882,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 2,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "backhand_slice",
+          "baseline_forehand",
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 206
+      },
+      "selected_frames": 1024,
+      "selected_frames_with_saved_native": 1024,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 2309,
+      "selected_tracks": {
+        "1": 771,
+        "101": 253
+      },
+      "selector_reason_counts": {
+        "None": 1024,
+        "appearance_match_awaiting_temporal_support": 26,
+        "target_identity_unmatched": 162,
+        "appearance_match_not_unique": 1,
+        "target_not_detected": 17
+      },
+      "context_actions": 3,
+      "input_sha256": {
+        "video": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+        "frames.jsonl": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+        "sam3d_frames.jsonl": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759",
+        "summary.json": "2d8fda7ae9543c6326bc8c0afaed89c9321236be30a0f87eb9446dbe028f07b4",
+        "action_context": "180dbef8d6f60a068c596a2661402b1db94b22c218b48af4a6fcd878309a76da"
+      },
+      "output_timeline_sha256": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+      "elapsed_seconds": 3.219,
+      "completed_at_utc": "2026-10-26T19:10:16.941592+00:00"
+    },
+    {
+      "sample_id": "regression-nadal",
+      "job_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "source_group": "nadal",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+      "old_score": 92.12,
+      "old_scored_actions": 2,
+      "started_at_utc": "2026-10-26T19:10:16.943095+00:00",
+      "reused_timeline_sha256": "7bbb1285089fa94c25b5ab61cddeff6ce3f4773fb9dee9affed5c9b44a78a2ac",
+      "status": "scored",
+      "score": 92.44,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "fbe0a2b08202a11285b6",
+          "start_ms": 8000.0,
+          "end_ms": 9280.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "8948fd5a3cf5e94ef3e9",
+          "start_ms": 19560.0,
+          "end_ms": 21360.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 8000.0,
+            "end_ms": 30960.0,
+            "observed_frames": 565,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 2,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 4,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 2,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 10
+      },
+      "selected_frames": 565,
+      "selected_frames_with_saved_native": 565,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 1150,
+      "selected_tracks": {
+        "1": 565
+      },
+      "selector_reason_counts": {
+        "None": 565,
+        "target_identity_unmatched": 5,
+        "appearance_match_awaiting_temporal_support": 5
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+        "frames.jsonl": "8c22c227144adc496f1d43159c5ff6895aa96aaba8b250ab36ee77c6b8b88e86",
+        "sam3d_frames.jsonl": "57f979030ef30aad94177846f93157a9f1e89a8e343212bbd2fce26634fb0a2d",
+        "summary.json": "d372d3d804f30b7410e5cfa7c9f0a852029b0d4176e678f216ca3416c97747fd",
+        "action_context": null
+      },
+      "output_timeline_sha256": "7bbb1285089fa94c25b5ab61cddeff6ce3f4773fb9dee9affed5c9b44a78a2ac",
+      "elapsed_seconds": 1.859,
+      "completed_at_utc": "2026-10-26T19:10:18.789638+00:00"
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "job_id": "7e166b3a-5a2c-4820-92a4-8bec782bd775",
+      "source_group": "ordinary-850cb",
+      "evaluation_label": "ordinary",
+      "split": "robustness",
+      "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "old_score": 88.36,
+      "old_scored_actions": 14,
+      "started_at_utc": "2026-10-26T19:10:18.791639+00:00",
+      "reused_timeline_sha256": "0da365b245ea041e89143a542c91b9c8b13075a6c648630030a4c25d9e7e7860",
+      "status": "scored",
+      "score": 87.43,
+      "episodes": 14,
+      "candidate_accounting": {
+        "proposed_count": 24,
+        "accepted_count": 14,
+        "other_subject_count": 0,
+        "rejected_count": 10,
+        "rejection_counts": {
+          "candidate_overlap_duplicate": 1,
+          "candidate_source_or_complete_phase_unverified": 9
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "a4ad6c56937715dcc8e4",
+          "start_ms": 5933,
+          "end_ms": 6933,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_overlap_duplicate"
+          ]
+        },
+        {
+          "episode_id": "af270b5666077da8603a",
+          "start_ms": 20433,
+          "end_ms": 20967,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "8bfe6128239d97952b39",
+          "start_ms": 26333,
+          "end_ms": 27067,
+          "person_track_id": 70,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "a938d8edff1114cec718",
+          "start_ms": 34400,
+          "end_ms": 35400,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "b98ed3bfff886c7aff63",
+          "start_ms": 40933,
+          "end_ms": 41900,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "8cdd67c3a5fde7812b6f",
+          "start_ms": 49533,
+          "end_ms": 51233,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "3beef5b754a8a1f3fcb8",
+          "start_ms": 63233,
+          "end_ms": 64100,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "bcb0689cc2dee06a4233",
+          "start_ms": 73800,
+          "end_ms": 74900,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "54d0107cca0f8702c025",
+          "start_ms": 76567,
+          "end_ms": 77133,
+          "person_track_id": 89,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "a3f4e32c15712a2f6ae9",
+          "start_ms": 94000,
+          "end_ms": 94467,
+          "person_track_id": 231,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "aa405ec7db42df93a1e0",
+          "start_ms": 2033.333,
+          "end_ms": 3666.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bfc354bd9e949f3d5060",
+          "start_ms": 4633.333,
+          "end_ms": 7166.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "9e1ea3767d3b4d6a627a",
+          "start_ms": 9833.333,
+          "end_ms": 11700.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "d157f2cd1f909fab36d8",
+          "start_ms": 14300.0,
+          "end_ms": 16066.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bdad188205f683a88d45",
+          "start_ms": 23800.0,
+          "end_ms": 25600.0,
+          "person_track_id": 70,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "f3d3a75483416dc64edc",
+          "start_ms": 31033.333,
+          "end_ms": 32733.333,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "5b9e83e1145f8cbd42aa",
+          "start_ms": 37900.0,
+          "end_ms": 39366.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "1736974c810539ba0486",
+          "start_ms": 43733.333,
+          "end_ms": 45166.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "54f60aaba08284697cbb",
+          "start_ms": 46900.0,
+          "end_ms": 48566.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "35bd5afac9db445261f8",
+          "start_ms": 54100.0,
+          "end_ms": 55666.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "9dc61d4ad386442b5690",
+          "start_ms": 57200.0,
+          "end_ms": 58933.333,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "9700bde5f55a99d5ed62",
+          "start_ms": 59400.0,
+          "end_ms": 60966.667,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "14521a1461ce4b190d84",
+          "start_ms": 69200.0,
+          "end_ms": 70833.333,
+          "person_track_id": 89,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "d681e9ff2467b6aef0ba",
+          "start_ms": 89200.0,
+          "end_ms": 90900.0,
+          "person_track_id": 231,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 97000.0,
+            "observed_frames": 2424,
+            "source_track_ids": [
+              1,
+              70,
+              89,
+              231
+            ],
+            "measured_episode_count": 14,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 14,
+        "applicable_requirements": 28,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 14,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 487
+      },
+      "selected_frames": 2424,
+      "selected_frames_with_saved_native": 2424,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 5581,
+      "selected_tracks": {
+        "1": 636,
+        "70": 129,
+        "89": 1354,
+        "231": 305
+      },
+      "selector_reason_counts": {
+        "None": 2424,
+        "target_identity_unmatched": 462,
+        "target_not_detected": 10,
+        "appearance_match_awaiting_temporal_support": 15
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+        "frames.jsonl": "0329d8b932692415645668379ccce9a1692320343dbc15b848c2d0dcf30fd9df",
+        "sam3d_frames.jsonl": "b9b8f0a09f4c834499ef664b6948fa2480075a1aa4d4efcd2c06c4ec6359a4ef",
+        "summary.json": "6e381de774dea9ae632e5ca89224013a3ae8a6143f7475625d2622dac620181b",
+        "action_context": null
+      },
+      "output_timeline_sha256": "0da365b245ea041e89143a542c91b9c8b13075a6c648630030a4c25d9e7e7860",
+      "elapsed_seconds": 8.625,
+      "completed_at_utc": "2026-10-26T19:10:27.422705+00:00"
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "old_score": 75.85,
+      "old_scored_actions": 5,
+      "started_at_utc": "2026-10-26T19:10:27.423706+00:00",
+      "reused_timeline_sha256": "1a0cc9ec0de9e29244acbcdcfc89f300ae4b587753132b282978c0d91ae6eee5",
+      "status": "scored",
+      "score": 75.12,
+      "episodes": 5,
+      "candidate_accounting": {
+        "proposed_count": 7,
+        "accepted_count": 5,
+        "other_subject_count": 0,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1,
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "c2ff3c565211f56b2ba9",
+          "start_ms": 22933,
+          "end_ms": 24167,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "e67754f8fae9419d2ba7",
+          "start_ms": 300.0,
+          "end_ms": 2000.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "4bb491f2e1c1fb6fda9f",
+          "start_ms": 5100.0,
+          "end_ms": 6600.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "d8c45df52b772d0dba5c",
+          "start_ms": 11933.333,
+          "end_ms": 13666.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "7f69fc9a9d8eacc3041a",
+          "start_ms": 16700.0,
+          "end_ms": 18700.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bbb4c9d6adf5876e2ae6",
+          "start_ms": 21833.333,
+          "end_ms": 23966.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "dd5737dc1e6ee709d056",
+          "start_ms": 28567,
+          "end_ms": 29633,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_lacks_continuous_complete_motion"
+          ]
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 29966.667,
+            "observed_frames": 900,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 5,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 5,
+        "applicable_requirements": 15,
+        "fraction": 0.3333333333333333,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 4,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "geometry_discontinuity": 1
+      },
+      "selected_frames": 900,
+      "selected_frames_with_saved_native": 900,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 900,
+      "selected_tracks": {
+        "1": 900
+      },
+      "selector_reason_counts": {
+        "None": 900
+      },
+      "context_actions": 1,
+      "input_sha256": {
+        "video": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+        "frames.jsonl": "0639c442aebe4df60e1516533d9f163504ec1c1c6916e3a2cde1dbf404d3f769",
+        "sam3d_frames.jsonl": "c89a42ef44d03603b15016338eabe94f98302594fabe048861e9ad4c77f98d6b",
+        "summary.json": "da634c9ed6057502f010bd6f1a5f8e4e3d80259f233045dc1f0da2f99b7d0a16",
+        "action_context": "fd9759003ad12b7a01f1c31ce6f3f7e41899b88ee8eea77aa4f6d6e0f381dc12"
+      },
+      "output_timeline_sha256": "1a0cc9ec0de9e29244acbcdcfc89f300ae4b587753132b282978c0d91ae6eee5",
+      "elapsed_seconds": 2.188,
+      "completed_at_utc": "2026-10-26T19:10:29.603082+00:00"
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+      "old_score": 92.33,
+      "old_scored_actions": 2,
+      "started_at_utc": "2026-10-26T19:10:29.604082+00:00",
+      "reused_timeline_sha256": "86c44354add546609ff235e2be30567d3635375283d6bc65e473e8035dc3fd3a",
+      "status": "scored",
+      "score": 92.02,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "f2e5e28ee45f6fc2668e",
+          "start_ms": 4100.0,
+          "end_ms": 5566.667,
+          "person_track_id": 6,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "8ad2c81d9e5608070d6c",
+          "start_ms": 12633.333,
+          "end_ms": 13833.333,
+          "person_track_id": 6,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 1100.0,
+            "end_ms": 19966.667,
+            "observed_frames": 563,
+            "source_track_ids": [
+              6,
+              60
+            ],
+            "measured_episode_count": 2,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 3,
+        "applicable_requirements": 10,
+        "fraction": 0.3,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 1,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_two_hand_backhand",
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 33,
+        "source_continuity_break": 44,
+        "native_record_missing_or_duplicate": 3
+      },
+      "selected_frames": 566,
+      "selected_frames_with_saved_native": 563,
+      "selected_frames_missing_saved_native": 3,
+      "old_native_records": 599,
+      "selected_tracks": {
+        "6": 561,
+        "60": 5
+      },
+      "selector_reason_counts": {
+        "athlete_role_not_established": 33,
+        "None": 566
+      },
+      "context_actions": 1,
+      "input_sha256": {
+        "video": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+        "frames.jsonl": "82fe182e3596ca928f903552462b2a85d9742c441a4916dbb5df987af9057f74",
+        "sam3d_frames.jsonl": "e9c80f2dffe2e9e2abfa52285e77868dccfd339ee517ed0787dadd7514159ad5",
+        "summary.json": "91c907e5c2e4e8aeb44ebe6b42395aec66209462018bb14dffaac5bfe29f69b7",
+        "action_context": "bf4f877e68a99b7f3eeb99550aabc8521b35bd0eaf365fc9f6af6cc465a0f8d5"
+      },
+      "output_timeline_sha256": "86c44354add546609ff235e2be30567d3635375283d6bc65e473e8035dc3fd3a",
+      "elapsed_seconds": 0.969,
+      "completed_at_utc": "2026-10-26T19:10:30.576630+00:00"
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "old_score": 88.66,
+      "old_scored_actions": 4,
+      "started_at_utc": "2026-10-26T19:10:30.578259+00:00",
+      "reused_timeline_sha256": "90ae83f2d8b55b4fb27a41f192b4da188d1eb408151f1349c90417ba0538dda4",
+      "status": "scored",
+      "score": 88.05,
+      "episodes": 4,
+      "candidate_accounting": {
+        "proposed_count": 4,
+        "accepted_count": 4,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "fd7313ac258b9b64cff8",
+          "start_ms": 7000.0,
+          "end_ms": 8458.333,
+          "person_track_id": 2,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "46cc9cb95eed3e73589b",
+          "start_ms": 13750.0,
+          "end_ms": 15375.0,
+          "person_track_id": 2,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "ef59108571f7298d5e97",
+          "start_ms": 23416.667,
+          "end_ms": 24958.333,
+          "person_track_id": 2,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "096c46782c3d6011653e",
+          "start_ms": 27875.0,
+          "end_ms": 29875.0,
+          "person_track_id": 2,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 29958.333,
+            "observed_frames": 719,
+            "source_track_ids": [
+              2
+            ],
+            "measured_episode_count": 4,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 4,
+        "applicable_requirements": 13,
+        "fraction": 0.3076923076923077,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 3,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 1
+      },
+      "selected_frames": 719,
+      "selected_frames_with_saved_native": 719,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 720,
+      "selected_tracks": {
+        "2": 719
+      },
+      "selector_reason_counts": {
+        "None": 719,
+        "target_identity_unmatched": 1
+      },
+      "context_actions": 1,
+      "input_sha256": {
+        "video": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+        "frames.jsonl": "02d99a68ad9968f9d4abe5f425b3dd3fce5f4e74362a289f1c3bdee3ad2beaa3",
+        "sam3d_frames.jsonl": "31d953b0f3a399f056b664e76d7e8924d94cfcf35c2b286f456bb1265f000545",
+        "summary.json": "048e0424d3c146fe9da015990d9e9a180ef932aa006ed6511e7374ca0282a9f4",
+        "action_context": "87186e365e75ad978ad5be74f9f4290ef36c02056fd8d86de162fb98c6decc36"
+      },
+      "output_timeline_sha256": "90ae83f2d8b55b4fb27a41f192b4da188d1eb408151f1349c90417ba0538dda4",
+      "elapsed_seconds": 1.375,
+      "completed_at_utc": "2026-10-26T19:10:31.947862+00:00"
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "source_group": "c235227fffcd3290b60572d0c3f9cc85",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "old_score": 86.12,
+      "old_scored_actions": 4,
+      "started_at_utc": "2026-10-26T19:10:31.949853+00:00",
+      "reused_timeline_sha256": "9dcac6229556e685600c258b975f2eb49c75e8721a8da2dc263a7fc58852ba72",
+      "status": "scored",
+      "score": 82.8,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 4,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1,
+          "reviewed_action_incomplete_or_invalid": 2,
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "a1021b7a050884c12af5",
+          "start_ms": 3133,
+          "end_ms": 3933,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "c24fcdd1258b22af89cb",
+          "start_ms": 10833,
+          "end_ms": 11500,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "preparation_only_no_complete_swing"
+          ]
+        },
+        {
+          "episode_id": "fd9ea3d1daa043c836f2",
+          "start_ms": 20167,
+          "end_ms": 20900,
+          "person_track_id": 86,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "preparation_only_no_complete_swing"
+          ]
+        },
+        {
+          "episode_id": "d8c45df52b772d0dba5c",
+          "start_ms": 11600.0,
+          "end_ms": 13033.333,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "a9378371a40d10f226a9",
+          "start_ms": 21533,
+          "end_ms": 22133,
+          "person_track_id": 86,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_lacks_continuous_complete_motion"
+          ]
+        },
+        {
+          "episode_id": "910e9d3c38fe1764ac02",
+          "start_ms": 24433.333,
+          "end_ms": 26166.667,
+          "person_track_id": 86,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 29966.667,
+            "observed_frames": 709,
+            "source_track_ids": [
+              1,
+              86
+            ],
+            "measured_episode_count": 2,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 4,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 2,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "native_record_missing_or_duplicate": 1,
+        "source_continuity_break": 3,
+        "primary_subject_unverified": 190,
+        "geometry_discontinuity": 2
+      },
+      "selected_frames": 710,
+      "selected_frames_with_saved_native": 709,
+      "selected_frames_missing_saved_native": 1,
+      "old_native_records": 900,
+      "selected_tracks": {
+        "1": 416,
+        "86": 294
+      },
+      "selector_reason_counts": {
+        "None": 710,
+        "target_not_detected": 46,
+        "target_identity_unmatched": 141,
+        "appearance_match_awaiting_temporal_support": 3
+      },
+      "context_actions": 2,
+      "input_sha256": {
+        "video": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+        "frames.jsonl": "0e99aad20db2154a9583cc118ea76f8b012390d4278e813449ac589c28d6a213",
+        "sam3d_frames.jsonl": "099d73ef3b3d409ef45857109eafe18e65b77d0fe998e7deb144102c64ca0722",
+        "summary.json": "1a7c8672fdf53c433f00431af2153949e777224919bedae1133e65309d7484f2",
+        "action_context": "1413514c7bd873794cb565e1ab395e369be294bae18d3caa3ea2e227063d2493"
+      },
+      "output_timeline_sha256": "9dcac6229556e685600c258b975f2eb49c75e8721a8da2dc263a7fc58852ba72",
+      "elapsed_seconds": 1.531,
+      "completed_at_utc": "2026-10-26T19:10:33.487900+00:00"
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "source_group": "c2485607c23646e706d9c4aae89e668e",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "old_score": 80.75,
+      "old_scored_actions": 6,
+      "started_at_utc": "2026-10-26T19:10:33.491021+00:00",
+      "reused_timeline_sha256": "245949f0f3ad89cbd85622d4f0d7be334c7fd457d5dd6385adda41dbf763e489",
+      "status": "scored",
+      "score": 85.63,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 7,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 5,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 5
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "e69a66190671b02b0d92",
+          "start_ms": 14433,
+          "end_ms": 15100,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "a677232d9f58118b9965",
+          "start_ms": 16633,
+          "end_ms": 17367,
+          "person_track_id": 56,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "2f3a1fec7f805258830f",
+          "start_ms": 19467,
+          "end_ms": 20367,
+          "person_track_id": 56,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "cad9dc32c7db2803e757",
+          "start_ms": 22833,
+          "end_ms": 23567,
+          "person_track_id": 56,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "b1a9fece2e97df2cba37",
+          "start_ms": 26367,
+          "end_ms": 27133,
+          "person_track_id": 56,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "02bc2476e80edab352e5",
+          "start_ms": 0.0,
+          "end_ms": 1400.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "fefa868c764e18331698",
+          "start_ms": 10633.333,
+          "end_ms": 12200.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 15233.333,
+            "observed_frames": 458,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 2,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 14,
+        "fraction": 0.14285714285714285,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "quality_reason_counts": {
+        "geometry_discontinuity": 2,
+        "source_continuity_break": 3,
+        "primary_subject_unverified": 442
+      },
+      "selected_frames": 458,
+      "selected_frames_with_saved_native": 458,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 900,
+      "selected_tracks": {
+        "1": 458
+      },
+      "selector_reason_counts": {
+        "None": 458,
+        "target_identity_unmatched": 438,
+        "target_not_detected": 4
+      },
+      "context_actions": 2,
+      "input_sha256": {
+        "video": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+        "frames.jsonl": "353eed638d15bea5465bcb9435108898f0d260b22f55ea1845826acc5665ce4d",
+        "sam3d_frames.jsonl": "c682455a280bbfc8d06d919607acccaba8830f57f6903989b7093a93b4b82cb3",
+        "summary.json": "760e9d1ed85cfbaaaf3f72413f981764edbd51e687ed0643c4078cfd475fce5c",
+        "action_context": "e61e7aef219325ecbd7eaf10bcece14a931ec2839d23d39d837dad32fa8de182"
+      },
+      "output_timeline_sha256": "245949f0f3ad89cbd85622d4f0d7be334c7fd457d5dd6385adda41dbf763e489",
+      "elapsed_seconds": 1.454,
+      "completed_at_utc": "2026-10-26T19:10:34.952450+00:00"
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "job_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "source_group": "user-video-01e86002f21704680103700397b8352743",
+      "evaluation_label": "ordinary",
+      "split": "regression",
+      "source_video_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+      "old_score": 93.45,
+      "old_scored_actions": 4,
+      "started_at_utc": "2026-10-26T19:10:34.954452+00:00",
+      "reused_timeline_sha256": "c384fe86ab364db2c637f9b46d180c424dc316e2a10dbc9f0c935ae2e3bad367",
+      "status": "scored",
+      "score": 93.31,
+      "episodes": 4,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 4,
+        "other_subject_count": 0,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 2
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "d93de4f3416ecf218da1",
+          "start_ms": 10433,
+          "end_ms": 11133,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "bda353752b36c5bde3ca",
+          "start_ms": 17133,
+          "end_ms": 18700,
+          "person_track_id": 80,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "a6dd122d1b868d1e5112",
+          "start_ms": 2033.333,
+          "end_ms": 3433.333,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "caa11765d6d1f61f1263",
+          "start_ms": 5100.0,
+          "end_ms": 6066.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "f9efe5d1ff7723f7bb2b",
+          "start_ms": 7333.333,
+          "end_ms": 8766.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "00ecaf69a31e77513beb",
+          "start_ms": 15133.333,
+          "end_ms": 16533.333,
+          "person_track_id": 80,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 22033.333,
+            "observed_frames": 521,
+            "source_track_ids": [
+              1,
+              80
+            ],
+            "measured_episode_count": 4,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 4,
+        "applicable_requirements": 8,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 4,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 280,
+        "source_continuity_break": 1
+      },
+      "selected_frames": 521,
+      "selected_frames_with_saved_native": 521,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 1506,
+      "selected_tracks": {
+        "1": 299,
+        "80": 222
+      },
+      "selector_reason_counts": {
+        "None": 521,
+        "target_identity_unmatched": 250,
+        "appearance_match_awaiting_temporal_support": 20,
+        "target_not_detected": 10
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+        "frames.jsonl": "8f331d4f71477e07f072430130c573874eea79bcf9ec5fe47574eefa8b2f2e66",
+        "sam3d_frames.jsonl": "b5745755c515c29f210905a6927940e8d65733584114799349189eb5391fbacf",
+        "summary.json": "134c25b3fd731c824e192d4b2c35e40ea3630dcb01bc16e6e23a51c6d04507a6",
+        "action_context": null
+      },
+      "output_timeline_sha256": "c384fe86ab364db2c637f9b46d180c424dc316e2a10dbc9f0c935ae2e3bad367",
+      "elapsed_seconds": 2.218,
+      "completed_at_utc": "2026-10-26T19:10:37.168421+00:00"
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "job_id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "evaluation_label": "ordinary",
+      "split": "robustness",
+      "source_video_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+      "old_score": 76.52,
+      "old_scored_actions": 1,
+      "started_at_utc": "2026-10-26T19:10:37.170968+00:00",
+      "reused_timeline_sha256": "a6cef072f0b61b45c6e74ab3305bf2ac7bba18dc3509d6063948955f92aa99a3",
+      "status": "scored",
+      "score": 80.89,
+      "episodes": 1,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 1,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "5ec55f607ca2f6f71918",
+          "start_ms": 333.333,
+          "end_ms": 1200.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "ef8c0fdd0742e765c419",
+          "start_ms": 5533,
+          "end_ms": 6700,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_lacks_continuous_complete_motion"
+          ]
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 29966.667,
+            "observed_frames": 900,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 1,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 1,
+        "applicable_requirements": 2,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 1,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "geometry_discontinuity": 2,
+        "source_continuity_break": 4
+      },
+      "selected_frames": 900,
+      "selected_frames_with_saved_native": 900,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 900,
+      "selected_tracks": {
+        "1": 900
+      },
+      "selector_reason_counts": {
+        "None": 900
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+        "frames.jsonl": "4a0db18a610878929e20def705534b48a0927342e7d40cea7b7729dc52b2ce65",
+        "sam3d_frames.jsonl": "f8f3325bc2b9e9a63f3117d438aab40129d8a89f4ea2db63064510b442a987b8",
+        "summary.json": "cad249a2483164d9bee6f8a61299540e38e14b6d49e5e1c1d728cfcb79681a92",
+        "action_context": null
+      },
+      "output_timeline_sha256": "a6cef072f0b61b45c6e74ab3305bf2ac7bba18dc3509d6063948955f92aa99a3",
+      "elapsed_seconds": 1.532,
+      "completed_at_utc": "2026-10-26T19:10:38.698240+00:00"
+    },
+    {
+      "sample_id": "white-mirror",
+      "job_id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "evaluation_label": "ordinary",
+      "split": "robustness",
+      "source_video_sha256": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+      "old_score": 75.48,
+      "old_scored_actions": 6,
+      "started_at_utc": "2026-10-26T19:10:38.701240+00:00",
+      "reused_timeline_sha256": "d126677ea5ae0977b9820555fbc2c04e858de848e4fe4808b6f242b8a540c959",
+      "status": "scored",
+      "score": 74.99,
+      "episodes": 6,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 6,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "0bb4febe096cb4af56a6",
+          "start_ms": 300.0,
+          "end_ms": 2000.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "4bb491f2e1c1fb6fda9f",
+          "start_ms": 5100.0,
+          "end_ms": 6000.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "5b169ea0c1a61ef103fe",
+          "start_ms": 11800.0,
+          "end_ms": 13366.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "e400fc9575c90f7382e0",
+          "start_ms": 16700.0,
+          "end_ms": 18700.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bbb4c9d6adf5876e2ae6",
+          "start_ms": 21833.333,
+          "end_ms": 23966.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "dd5737dc1e6ee709d056",
+          "start_ms": 28300.0,
+          "end_ms": 29366.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 29966.667,
+            "observed_frames": 900,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 6,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 6,
+        "applicable_requirements": 12,
+        "fraction": 0.5,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 6,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic"
+        ]
+      },
+      "quality_reason_counts": {
+        "geometry_discontinuity": 4
+      },
+      "selected_frames": 900,
+      "selected_frames_with_saved_native": 900,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 900,
+      "selected_tracks": {
+        "1": 900
+      },
+      "selector_reason_counts": {
+        "None": 900
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+        "frames.jsonl": "2f40b99c5210dbd19a6947da29c3a1b04d0e9d08b451d4d5aedf1ebff3bb4f1c",
+        "sam3d_frames.jsonl": "e1730e3fd8faaf4b9b117f7a0e57740099cf75be92a921da66a99712af05c051",
+        "summary.json": "60a279a0ab024522ae2a35fbac7c18707ee1acb6402f7bb0059ce1c8f7fae85f",
+        "action_context": null
+      },
+      "output_timeline_sha256": "d126677ea5ae0977b9820555fbc2c04e858de848e4fe4808b6f242b8a540c959",
+      "elapsed_seconds": 1.64,
+      "completed_at_utc": "2026-10-26T19:10:40.334917+00:00"
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "job_id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+      "source_group": "blaz-rola-ncaa-2013-zootennis",
+      "evaluation_label": "unknown",
+      "split": "regression",
+      "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:40.336571+00:00",
+      "reused_timeline_sha256": "64beee6ffad6ceed3daee253a24c1b32cea7fd67bfea18fb7c119481fb3793da",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "ddfc26638d797747c4d1",
+          "start_ms": 2469,
+          "end_ms": 2936,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 24891.533,
+            "observed_frames": 568,
+            "source_track_ids": [
+              1,
+              31,
+              62
+            ],
+            "measured_episode_count": 0,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "source_continuity_break": 176,
+        "primary_subject_unverified": 182
+      },
+      "selected_frames": 568,
+      "selected_frames_with_saved_native": 568,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 1208,
+      "selected_tracks": {
+        "1": 320,
+        "31": 200,
+        "62": 48
+      },
+      "selector_reason_counts": {
+        "None": 568,
+        "target_identity_unmatched": 143,
+        "target_not_detected": 28,
+        "appearance_match_awaiting_temporal_support": 11
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+        "frames.jsonl": "f491ea74eba8f76151b49e863dade423720afe45b4dac82cdd22946c8146dcf5",
+        "sam3d_frames.jsonl": "8a3ac49ccce6dd20e33cc2a93d6397a3a8db69c9f8cf7f2bddd5e17a122ae488",
+        "summary.json": "422184a23893f7912632b4b6760c742af5ebe7cf00287c21d8f0a43c8ad2d906",
+        "action_context": null
+      },
+      "output_timeline_sha256": "64beee6ffad6ceed3daee253a24c1b32cea7fd67bfea18fb7c119481fb3793da",
+      "elapsed_seconds": 1.5,
+      "completed_at_utc": "2026-10-26T19:10:41.846827+00:00"
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "job_id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+      "source_group": "tsitsipas-alcaraz-french-open-2023-hameltion",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "03e5c94cead59642f851a5899453d1bba6ec8afab36439d005e2345b082e9c5b",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:41.849827+00:00",
+      "reused_timeline_sha256": "55225ab73117cc3e57d523ec89b71ef52968560b6c5673258f3f7f84d76c4696",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": null,
+        "selection_basis": "first_unlinked_source_track",
+        "cross_subject_aggregation": false,
+        "subjects": []
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 250
+      },
+      "selected_frames": 0,
+      "selected_frames_with_saved_native": 0,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 500,
+      "selected_tracks": {},
+      "selector_reason_counts": {
+        "athlete_role_not_established": 250
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "03e5c94cead59642f851a5899453d1bba6ec8afab36439d005e2345b082e9c5b",
+        "frames.jsonl": "93a3f8e54b0a2bf20d12c21073946b16538c71d02571933a0df25ad0f3dbd1dd",
+        "sam3d_frames.jsonl": "5545b8e287c59a033d35e27ec3ec7322feb4bc72d87c1e6edc90d09e0d70ceea",
+        "summary.json": "5b268103613b5d482cad6fcd3cb62fae4fd05462e2c25c4454cdaba53a4da9e2",
+        "action_context": null
+      },
+      "output_timeline_sha256": "55225ab73117cc3e57d523ec89b71ef52968560b6c5673258f3f7f84d76c4696",
+      "elapsed_seconds": 0.688,
+      "completed_at_utc": "2026-10-26T19:10:42.524406+00:00"
+    },
+    {
+      "sample_id": "davis-cup-2018-04",
+      "job_id": "e0a62ad9-9422-4635-a254-e375819a971c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "a2b0d27fcdcdab2652a2b92c2bb22ad19ddcab06b32501a636622ce90f0da31a",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:42.527088+00:00",
+      "reused_timeline_sha256": "d7c1233b6864e8557f7748ca6ab658c6967ecfbb66841d10c50ecf6b412b32c4",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 6973.633,
+            "observed_frames": 181,
+            "source_track_ids": [
+              1,
+              11
+            ],
+            "measured_episode_count": 0,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "native_record_missing_or_duplicate": 9,
+        "primary_subject_unverified": 20
+      },
+      "selected_frames": 190,
+      "selected_frames_with_saved_native": 181,
+      "selected_frames_missing_saved_native": 9,
+      "old_native_records": 420,
+      "selected_tracks": {
+        "1": 118,
+        "11": 72
+      },
+      "selector_reason_counts": {
+        "None": 190,
+        "appearance_match_awaiting_temporal_support": 6,
+        "target_identity_unmatched": 14
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "a2b0d27fcdcdab2652a2b92c2bb22ad19ddcab06b32501a636622ce90f0da31a",
+        "frames.jsonl": "782136b904d0321bf2b53829dca3628978e376fc32e69ba5398696fde4657f24",
+        "sam3d_frames.jsonl": "e59c548c6478c5381a806cd8105430774739f3aeb2294e8b248b6ca73ebeaf6c",
+        "summary.json": "4d34d0342bccee042b812914a570ca171c60c7131d20e33068c63749f3c6de57",
+        "action_context": null
+      },
+      "output_timeline_sha256": "d7c1233b6864e8557f7748ca6ab658c6967ecfbb66841d10c50ecf6b412b32c4",
+      "elapsed_seconds": 0.625,
+      "completed_at_utc": "2026-10-26T19:10:43.148916+00:00"
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "old_score": 77.67,
+      "old_scored_actions": 1,
+      "started_at_utc": "2026-10-26T19:10:43.151580+00:00",
+      "reused_timeline_sha256": "7289ff8311188288a9f6f5e30bab97f62b9dabdadf6ee2b1e6ab63e3bc107b46",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "reviewed_action_incomplete_or_invalid": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "bf9e12457888104df14f",
+          "start_ms": 100,
+          "end_ms": 1235,
+          "person_track_id": 2,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "incomplete_serve_preparation_only"
+          ]
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 734.067,
+            "end_ms": 11978.633,
+            "observed_frames": 165,
+            "source_track_ids": [
+              2,
+              42,
+              82
+            ],
+            "measured_episode_count": 0,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 195
+      },
+      "selected_frames": 165,
+      "selected_frames_with_saved_native": 165,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 719,
+      "selected_tracks": {
+        "2": 40,
+        "42": 97,
+        "82": 28
+      },
+      "selector_reason_counts": {
+        "athlete_role_not_established": 22,
+        "None": 165,
+        "appearance_match_awaiting_temporal_support": 20,
+        "target_identity_unmatched": 140,
+        "appearance_match_not_unique": 13
+      },
+      "context_actions": 1,
+      "input_sha256": {
+        "video": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+        "frames.jsonl": "53264f8345baedce2a9640dfc4ab3bb5171aaacb22772aedf374afe20f1ac0d1",
+        "sam3d_frames.jsonl": "978996d9f520cae77fe887e1778a119831e3b7612b376d9eea154c8d385cdd27",
+        "summary.json": "eba1f0eacbae226935f3b2c85704d678f85de9c6b3908bdcd06298335f23eae9",
+        "action_context": "d95495ca365d277875baa8ee533d284416361d8b9c6fdce57f6ce10562c1cea0"
+      },
+      "output_timeline_sha256": "7289ff8311188288a9f6f5e30bab97f62b9dabdadf6ee2b1e6ab63e3bc107b46",
+      "elapsed_seconds": 1.062,
+      "completed_at_utc": "2026-10-26T19:10:44.211426+00:00"
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+      "old_score": 73.29,
+      "old_scored_actions": 1,
+      "started_at_utc": "2026-10-26T19:10:44.214425+00:00",
+      "reused_timeline_sha256": "45c70e68b9e27e52429de576f06f938d82bad86b3d55585430d0060c458a1ef9",
+      "status": "scored",
+      "score": 92.09,
+      "episodes": 1,
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 1,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "9c5e87a2ea6513a72c7f",
+          "start_ms": 266.933,
+          "end_ms": 1351.35,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 1351.35,
+            "observed_frames": 82,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 1,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 1,
+        "applicable_requirements": 7,
+        "fraction": 0.14285714285714285,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "quality_reason_counts": {},
+      "selected_frames": 82,
+      "selected_frames_with_saved_native": 82,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 82,
+      "selected_tracks": {
+        "1": 82
+      },
+      "selector_reason_counts": {
+        "None": 82
+      },
+      "context_actions": 1,
+      "input_sha256": {
+        "video": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+        "frames.jsonl": "7c453f17ab7eb2ebfd15a77696647a3615e4ad776ad9f13dce26ec105cc4cdc5",
+        "sam3d_frames.jsonl": "61bacb55cdc72d90a93f25b3264362e534e2cc7767ebf6a019496806552720c5",
+        "summary.json": "80b4f294466c01dc487e5e61038411339447519097683afb289f26298e5e201b",
+        "action_context": "60b2f17db4c95894142ba0621e9397ae0fbccb1bbc2e20d1fc77ba40f816eae7"
+      },
+      "output_timeline_sha256": "45c70e68b9e27e52429de576f06f938d82bad86b3d55585430d0060c458a1ef9",
+      "elapsed_seconds": 0.188,
+      "completed_at_utc": "2026-10-26T19:10:44.411748+00:00"
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "job_id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:44.413747+00:00",
+      "reused_timeline_sha256": "089ac6d6e8018bef2e1504ac962b38b71ee496ba72a33997a5c7ee2cb9fe8e75",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 1351.35,
+            "observed_frames": 82,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 0,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {},
+      "selected_frames": 82,
+      "selected_frames_with_saved_native": 82,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 82,
+      "selected_tracks": {
+        "1": 82
+      },
+      "selector_reason_counts": {
+        "None": 82
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+        "frames.jsonl": "7f123116e4624255e74ee540692c4f04fe377770dbae8a02964d5c3dbaaa3a2e",
+        "sam3d_frames.jsonl": "3a8287cc364c0713918474b29c3f86c4af319410e360bc7e40f011ea41d46723",
+        "summary.json": "e29be2691a2732490dd2c62c9e698dcbeff60ee822b7899b5f5845d2b4d0a4e2",
+        "action_context": null
+      },
+      "output_timeline_sha256": "089ac6d6e8018bef2e1504ac962b38b71ee496ba72a33997a5c7ee2cb9fe8e75",
+      "elapsed_seconds": 0.157,
+      "completed_at_utc": "2026-10-26T19:10:44.578822+00:00"
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "old_score": 80.9,
+      "old_scored_actions": 1,
+      "started_at_utc": "2026-10-26T19:10:44.581918+00:00",
+      "reused_timeline_sha256": "17cba3570893a063177ecadcfa616ebd5bebc6ef227b9bc4777c841a2ce0dbca",
+      "status": "scored",
+      "score": 81.32,
+      "episodes": 1,
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 1,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [
+        {
+          "episode_id": "05a833ce405fa4ce4af6",
+          "start_ms": 66.733,
+          "end_ms": 1685.017,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 1685.017,
+            "observed_frames": 102,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 1,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 1,
+        "applicable_requirements": 7,
+        "fraction": 0.14285714285714285,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "quality_reason_counts": {},
+      "selected_frames": 102,
+      "selected_frames_with_saved_native": 102,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 102,
+      "selected_tracks": {
+        "1": 102
+      },
+      "selector_reason_counts": {
+        "None": 102
+      },
+      "context_actions": 1,
+      "input_sha256": {
+        "video": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+        "frames.jsonl": "0e0780814153be2d5e2c602873942cb3ccc992c7720cd197464178ae0304b8df",
+        "sam3d_frames.jsonl": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d",
+        "summary.json": "e34639c3bcab56f608c7584467a5bbfaa981dc36bb2dc6e80373b3f40e6370b0",
+        "action_context": "4be86b1941c13e0a0fe93af865819aeb0338d758c092aaaed3713d079b5d85a7"
+      },
+      "output_timeline_sha256": "17cba3570893a063177ecadcfa616ebd5bebc6ef227b9bc4777c841a2ce0dbca",
+      "elapsed_seconds": 0.187,
+      "completed_at_utc": "2026-10-26T19:10:44.764561+00:00"
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "job_id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "evaluation_label": "unknown",
+      "split": "robustness",
+      "source_video_sha256": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:44.767559+00:00",
+      "reused_timeline_sha256": "e9464fc01de1869b0aad02d338f743a3c2c55830326018725e0ea23c4fcdfcf7",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 1685.017,
+            "observed_frames": 101,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 0,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 1
+      },
+      "selected_frames": 101,
+      "selected_frames_with_saved_native": 101,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 102,
+      "selected_tracks": {
+        "1": 101
+      },
+      "selector_reason_counts": {
+        "None": 101,
+        "target_not_detected": 1
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+        "frames.jsonl": "c0a366752dfacd5a315053e12516735e69f5137ab4ea5f5b182ae84a3e981a2c",
+        "sam3d_frames.jsonl": "e2fdd175a67e8e55c341d1395fb596eddd8f4a47978876882d3ae2d05df6f914",
+        "summary.json": "1be2c19f2d41fba20585931969af176a8a41561e51033eccba0ccb15c22fbdc9",
+        "action_context": null
+      },
+      "output_timeline_sha256": "e9464fc01de1869b0aad02d338f743a3c2c55830326018725e0ea23c4fcdfcf7",
+      "elapsed_seconds": 0.188,
+      "completed_at_utc": "2026-10-26T19:10:44.955576+00:00"
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "source_group": "2012-usopen-jc-demiace",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "old_score": 86.13,
+      "old_scored_actions": 5,
+      "started_at_utc": "2026-10-26T19:10:44.962597+00:00",
+      "reused_timeline_sha256": "2dcbd9e2889244282d7ed0888c1887b452d5cab0ffd2acb558c1bc24d7cb6c8b",
+      "status": "scored",
+      "score": 84.04,
+      "episodes": 5,
+      "candidate_accounting": {
+        "proposed_count": 8,
+        "accepted_count": 5,
+        "other_subject_count": 0,
+        "rejected_count": 3,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 3
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "11536600ad19daab0412",
+          "start_ms": 1752,
+          "end_ms": 2544,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "91a58aa80dd1b2ad3fe3",
+          "start_ms": 13889,
+          "end_ms": 15224,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "6ff7b2f4e4467ac942a1",
+          "start_ms": 18393,
+          "end_ms": 19436,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "eea908aec21f9097f302",
+          "start_ms": 3086.417,
+          "end_ms": 4921.583,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "7549dec002f775d57c4c",
+          "start_ms": 6756.75,
+          "end_ms": 8341.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "2c3e2cf399f94cb8ffe4",
+          "start_ms": 9217.542,
+          "end_ms": 10760.75,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "08f8c3e0bd41f8f50cdd",
+          "start_ms": 12095.417,
+          "end_ms": 13763.75,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "ed54c83fdf4e8c5e51f7",
+          "start_ms": 17142.125,
+          "end_ms": 18727.042,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 19519.5,
+            "observed_frames": 469,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 5,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 18,
+        "applicable_requirements": 37,
+        "fraction": 0.4864864864864865,
+        "verified_technique_episodes": 5,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "backhand_slice",
+          "baseline_forehand",
+          "baseline_two_hand_backhand"
+        ]
+      },
+      "quality_reason_counts": {
+        "source_continuity_break": 17
+      },
+      "selected_frames": 469,
+      "selected_frames_with_saved_native": 469,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 469,
+      "selected_tracks": {
+        "1": 469
+      },
+      "selector_reason_counts": {
+        "None": 469
+      },
+      "context_actions": 5,
+      "input_sha256": {
+        "video": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+        "frames.jsonl": "34b9c0d21cd0f5ae156b8cb8ad6b0eeacaf95a544b7cbc3d402d3ec2d01ca783",
+        "sam3d_frames.jsonl": "03722efc5465311765420d922e02caf2370bc93d6b31adb1f3932b6ff35f7062",
+        "summary.json": "9bc5addcf6745388b6a2595fa7b09fd71b28f8a94c34d70b27fa090fe3f332ce",
+        "action_context": "028f16675c3248b3cb82f1eb1aed12af24e54e9caef3f890653167058fc72ecf"
+      },
+      "output_timeline_sha256": "2dcbd9e2889244282d7ed0888c1887b452d5cab0ffd2acb558c1bc24d7cb6c8b",
+      "elapsed_seconds": 0.781,
+      "completed_at_utc": "2026-10-26T19:10:45.754009+00:00"
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "source_group": "2012-usopen-jc-demiace",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+      "old_score": 88.18,
+      "old_scored_actions": 3,
+      "started_at_utc": "2026-10-26T19:10:45.757008+00:00",
+      "reused_timeline_sha256": "e98fb1b7d850868448f8a47eb72915eaebfae0335160cc6eb03e00f88cf0e396",
+      "status": "scored",
+      "score": 87.94,
+      "episodes": 3,
+      "candidate_accounting": {
+        "proposed_count": 4,
+        "accepted_count": 3,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "1203108fda6933274af8",
+          "start_ms": 6215,
+          "end_ms": 6673,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "34d5a0fd93f05ef3be25",
+          "start_ms": 625.625,
+          "end_ms": 2168.833,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "43b46b2fb3c034bd37d3",
+          "start_ms": 6715.042,
+          "end_ms": 8091.417,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "a17248cad9bea5eb6088",
+          "start_ms": 9426.083,
+          "end_ms": 11219.542,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 0.0,
+            "end_ms": 16975.292,
+            "observed_frames": 366,
+            "source_track_ids": [
+              1
+            ],
+            "measured_episode_count": 3,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 5,
+        "applicable_requirements": 23,
+        "fraction": 0.21739130434782608,
+        "verified_technique_episodes": 3,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "baseline_one_hand_backhand"
+        ]
+      },
+      "quality_reason_counts": {
+        "source_continuity_break": 16,
+        "primary_subject_unverified": 42
+      },
+      "selected_frames": 366,
+      "selected_frames_with_saved_native": 366,
+      "selected_frames_missing_saved_native": 0,
+      "old_native_records": 408,
+      "selected_tracks": {
+        "1": 366
+      },
+      "selector_reason_counts": {
+        "None": 366,
+        "target_identity_unmatched": 40,
+        "appearance_match_awaiting_temporal_support": 2
+      },
+      "context_actions": 3,
+      "input_sha256": {
+        "video": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+        "frames.jsonl": "9743e765c380a15d2ee46db06b96070cead5e1694e87dd03c1179f32fef84a7b",
+        "sam3d_frames.jsonl": "a72d1257fc3eae64a922edfd68f93ca99556a580fc5920078b4ce72d0319803f",
+        "summary.json": "83bf47cbb5a56d2ce31392558c15c266af9a724ddf54b48d11ff5f6cfe3635c6",
+        "action_context": "1e25353eece3a05148add150c0bf5d5d37982eaac052e5e5ef967f9d11928a74"
+      },
+      "output_timeline_sha256": "e98fb1b7d850868448f8a47eb72915eaebfae0335160cc6eb03e00f88cf0e396",
+      "elapsed_seconds": 0.813,
+      "completed_at_utc": "2026-10-26T19:10:46.578920+00:00"
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "source_group": "2012-usopen-jc-demiace",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:46.583924+00:00",
+      "reused_timeline_sha256": "ba5f1d6bec48d8dd8ff91f9ad3eb98cfac160e4daa95e5244ef8625ce31e5782",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": null,
+        "selection_basis": "first_unlinked_source_track",
+        "cross_subject_aggregation": false,
+        "subjects": []
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 106,
+        "native_record_missing_or_duplicate": 78
+      },
+      "selected_frames": 78,
+      "selected_frames_with_saved_native": 0,
+      "selected_frames_missing_saved_native": 78,
+      "old_native_records": 184,
+      "selected_tracks": {
+        "14": 78
+      },
+      "selector_reason_counts": {
+        "athlete_role_not_established": 26,
+        "None": 78,
+        "target_identity_unmatched": 80
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+        "frames.jsonl": "5d5204d1f6b25abf80373b102077a0fc542af561006010fb7bc8ba0d27c0acb9",
+        "sam3d_frames.jsonl": "5ccdd54db43182ac82c9c40df07cfbd9031eaddc89a48f72a4f1191fcac0fc28",
+        "summary.json": "d799b3d760725682de5a5d06533c078dd105a1525e387e9931068f6f8fda3b4c",
+        "action_context": null
+      },
+      "output_timeline_sha256": "ba5f1d6bec48d8dd8ff91f9ad3eb98cfac160e4daa95e5244ef8625ce31e5782",
+      "elapsed_seconds": 0.312,
+      "completed_at_utc": "2026-10-26T19:10:46.887375+00:00"
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "source_group": "2024-usopen-dimitrov-tiafoe-oleg-yunakov",
+      "evaluation_label": "professional",
+      "split": "regression",
+      "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "old_score": null,
+      "old_scored_actions": 0,
+      "started_at_utc": "2026-10-26T19:10:46.890373+00:00",
+      "reused_timeline_sha256": "4708500cc71b2ad5875576de552facd32bc630035a77799426543bfdd38bf021",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "subject_scope": {
+        "version": "subject-scoped-assessment-v1",
+        "selected_subject_id": "subject-1",
+        "selection_basis": "first_locked_target",
+        "cross_subject_aggregation": false,
+        "subjects": [
+          {
+            "subject_id": "subject-1",
+            "identity_basis": "target_lock",
+            "start_ms": 4000.0,
+            "end_ms": 23350.0,
+            "observed_frames": 893,
+            "source_track_ids": [
+              1,
+              95
+            ],
+            "measured_episode_count": 0,
+            "included_in_report": true
+          }
+        ]
+      },
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "quality_reason_counts": {
+        "primary_subject_unverified": 688,
+        "native_record_missing_or_duplicate": 214
+      },
+      "selected_frames": 1107,
+      "selected_frames_with_saved_native": 893,
+      "selected_frames_missing_saved_native": 214,
+      "old_native_records": 1795,
+      "selected_tracks": {
+        "1": 427,
+        "95": 680
+      },
+      "selector_reason_counts": {
+        "athlete_role_not_established": 240,
+        "None": 1107,
+        "target_identity_unmatched": 274,
+        "appearance_match_not_unique": 2,
+        "appearance_match_awaiting_temporal_support": 6,
+        "target_not_detected": 166
+      },
+      "context_actions": 0,
+      "input_sha256": {
+        "video": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+        "frames.jsonl": "c17fb06f87e993f9d1e4d7def2b858b7438380db309ff872977b9f0dbab16c35",
+        "sam3d_frames.jsonl": "e92f458bd0700a85c39a68a2e0c044d8bd5856da282fb8fc9ed30b58e5ec71a4",
+        "summary.json": "27971e1d3623a60e6a22a1ba0249980824d4950aa5d500a5d5ff1e133edea224",
+        "action_context": null
+      },
+      "output_timeline_sha256": "4708500cc71b2ad5875576de552facd32bc630035a77799426543bfdd38bf021",
+      "elapsed_seconds": 2.719,
+      "completed_at_utc": "2026-10-26T19:10:49.606100+00:00"
+    }
+  ]
+}

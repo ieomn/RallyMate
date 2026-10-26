@@ -1,0 +1,112 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+  "sample_id": "davis-cup-2018-05",
+  "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "bf9e12457888104df14f",
+      "person_track_id": 2,
+      "start_ms": 100,
+      "peak_ms": 567,
+      "end_ms": 1235,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "serve",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "incomplete_serve_preparation_only"
+        ],
+        "explanation": "原候选100–1235ms仅是发球准备/抛球；完整发球头顶挥出在约1.7–1.85s，不能按此候选评价完整发球。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "davis-cup-2018-05:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 701,
+      "evidence": {
+        "contact_sheet": "action-sheets/davis-cup-2018-05-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 0.0,
+            "nearest_primary_timestamp_ms": 0,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 383.716,
+            "nearest_primary_timestamp_ms": 400,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 617.433,
+            "nearest_primary_timestamp_ms": 601,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 767.433,
+            "nearest_primary_timestamp_ms": 767,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 917.433,
+            "nearest_primary_timestamp_ms": 901,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 1267.933,
+            "nearest_primary_timestamp_ms": 1268,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 1688.433,
+            "nearest_primary_timestamp_ms": 1702,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 1767.433,
+            "nearest_primary_timestamp_ms": 1768,
+            "old_source_track_id": 2
+          }
+        ],
+        "observation_zh": "近端白色/红绿领上衣深短裤发球者A；0.85s左手抛球，1.55s屈膝/举拍，1.70–1.85s右臂头顶发球；原候选100–1235ms仅准备/抛球，原评分扩窗到1768ms仍未完整随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 0.0,
+          "peak_ms": 767.433,
+          "end_ms": 1768.433
+        },
+        "limitations": [
+          "original_candidate_preparation_only_not_complete_serve"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth",
+        "additional_contact_sheet": "action-sheets/davis-cup-2018-05-manual-full.jpg",
+        "phase_completeness": "original_candidate_preparation_only_not_complete_serve"
+      },
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/davis-cup-2018-05-manual-full.jpg",
+            "timestamp_ms": 0,
+            "requested_sheet_timestamp_ms": 0.0,
+            "source_frame_index": 0,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          }
+        ],
+        "up_observation_zh": "建筑柱、围网立柱或球网柱在参考画面中竖直，未见画面滚转；只核验屏幕向上，未提供无法可靠确定的向网投影方向。",
+        "direction_accuracy": "manual image up reference only; no 3D gravity calibration",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 0
+    }
+  ]
+}
