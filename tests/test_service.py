@@ -469,7 +469,7 @@ class ServiceTests(unittest.TestCase):
             with self.assertRaisesRegex(ServiceConfigError, "job-writable"):
                 settings.validate_license()
 
-    def test_historical_registry_override_is_not_ready_without_calibration(self) -> None:
+    def test_explicit_historical_registry_uses_validated_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             settings = self._settings(root)
@@ -484,11 +484,12 @@ class ServiceTests(unittest.TestCase):
             with TestClient(app, raise_server_exceptions=False) as client:
                 ready = client.get("/health/ready")
                 self.assertEqual(ready.status_code, 200)
-                self.assertEqual(ready.json()["status"], "not_ready")
-                self.assertTrue(
-                    any("not authorized" in reason for reason in ready.json()["reasons"])
-                )
-                self.assertEqual(client.get("/v1/model-capabilities").status_code, 500)
+                self.assertEqual(ready.json()["status"], "ready")
+                capabilities = client.get("/v1/model-capabilities")
+                self.assertEqual(capabilities.status_code, 200)
+                authority = capabilities.json()["minimum_scoring_loop"]["registry_lifecycle"]
+                self.assertEqual(authority["lifecycle"], "explicit_input")
+                self.assertEqual(authority["role"], "runtime_feasibility")
 
 
 if __name__ == "__main__":

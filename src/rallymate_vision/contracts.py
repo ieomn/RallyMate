@@ -239,8 +239,8 @@ def load_request(path: str | Path) -> PipelineRequest:
         raise ContractError("models.detect_confidence must be in the 0..1 range")
     if not 0.0 <= models.pose_confidence <= 1.0:
         raise ContractError("models.pose_confidence must be in the 0..1 range")
-    if models.pose_backend not in {"yolo", "rtmpose"}:
-        raise ContractError("models.pose_backend must be yolo or rtmpose")
+    if models.pose_backend not in {"yolo", "rtmpose", "sam3d"}:
+        raise ContractError("models.pose_backend must be yolo, rtmpose or sam3d")
     if models.pose_runtime not in {"pytorch", "onnxruntime", "tensorrt"}:
         raise ContractError(
             "models.pose_runtime must be pytorch, onnxruntime or tensorrt"
@@ -252,11 +252,17 @@ def load_request(path: str | Path) -> PipelineRequest:
         "coco17",
         "halpe26",
         "coco_wholebody133",
+        "mhr70",
     }:
         raise ContractError(
             "models.pose_native_keypoint_format must be coco17, halpe26 or "
-            "coco_wholebody133"
+            "coco_wholebody133 or mhr70"
         )
+    if models.pose_backend == "sam3d" and (
+        models.pose_runtime != "pytorch"
+        or models.pose_native_keypoint_format not in {None, "mhr70"}
+    ):
+        raise ContractError("SAM 3D requires pytorch runtime and mhr70 keypoints")
     _validate_pose_preset_binding(models)
 
     polygon = court_data.get("manual_polygon_normalized")

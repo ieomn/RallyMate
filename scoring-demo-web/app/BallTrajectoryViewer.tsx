@@ -1,16 +1,153 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { PosePreviewResponse, TrajectoryPoint, TrajectoryPreviewResponse } from "./lib/api-types";
 import { timestampForVideoTime, trajectoryAvailability, trajectoryDisplayOpacity, trajectoryEdges, trajectoryStrokes, videoTimeForTimestamp, visibleTrajectoryPaths, type TrajectoryDisplayMode } from "./lib/trajectory-viewer";
-import { poseFrameAt } from "./lib/pose-playback";
+import { motionFocusAt } from "./lib/motion-focus";
 import { usePosePlayback, type PoseWindowLoader } from "./lib/use-pose-playback";
-import PoseSkeletonOverlay from "./PoseSkeletonOverlay";
+import MotionFocusOverlay from "./MotionFocusOverlay";
+
+export type CandidateReplayBinding = {
+  jobId: string;
+  sessionKey: string;
+  mediaKey: string;
+  kind: "annotated" | "original";
+  videoSha256: string | null;
+  originMs: number | null;
+  mappingVerified: boolean;
+};
+export type CandidateReplayRequest = {
+  jobId: string;
+  sessionKey: string;
+  identityKey: string;
+  candidateKey: string;
+  videoSha256: string;
+  videoTimestampMs: number;
+};
+export type CandidateReplaySeekResult = { status: "applied" | "pending" | "rejected"; reason?: string };
+export type CandidateReplayHandle = {
+  binding: CandidateReplayBinding;
+  seek(request: CandidateReplayRequest, signal: AbortSignal): CandidateReplaySeekResult;
+  cancel(): void;
+};
+type CandidateVideo = Pick<HTMLVideoElement, "src" | "currentSrc" | "readyState" | "duration" | "seekable" | "currentTime" | "pause">;
+type CandidateReplayContext = {
+  binding: CandidateReplayBinding | null;
+  jobId?: string;
+  videoSrc?: string | null;
+  videoTimeOriginMs: number;
+  video: CandidateVideo | null;
+  baseUrl: string;
+};
+const candidateBindingKeys = ["jobId", "sessionKey", "mediaKey", "kind", "videoSha256", "originMs", "mappingVerified"] as const;
+const sourceSha = (value: unknown) => typeof value === "string" && /^[a-f0-9]{64}$/i.test(value) ? value.toLowerCase() : null;
+function replaySourceUrl(value: string | null | undefined, baseUrl: string): string | null {
+  if (!value) return null;
+  try { return new URL(value, baseUrl).href; } catch { return null; }
+}
+
+/** A candidate's bound video clock is separate from its exact original PTS. */
+export function candidateReplayTarget(videoTimestampMs: number, originMs: number | null,
+  video: Pick<CandidateVideo, "readyState" | "duration" | "seekable">): { status: "ready" | "pending" | "rejected"; seconds?: number; reason?: string } {
+  if (!Number.isFinite(videoTimestampMs) || videoTimestampMs < 0 || originMs === null || !Number.isFinite(originMs)) return { status: "rejected", reason: "time_mapping_unavailable" };
+  const seconds = (videoTimestampMs - originMs) / 1000;
+  if (!Number.isFinite(seconds) || seconds < 0) return { status: "rejected", reason: "before_media_origin" };
+  if (video.readyState < 1) return { status: "pending", reason: "media_metadata_pending" };
+  if (!Number.isFinite(video.duration) || video.duration <= 0) return { status: "rejected", reason: "media_duration_unavailable" };
+  // The terminal duration is not a displayed decoded frame.
+  if (seconds >= video.duration) return { status: "rejected", reason: "outside_media_duration" };
+  if (!video.seekable.length) return { status: "pending", reason: "media_seekable_pending" };
+  for (let index = 0; index < video.seekable.length; index++) {
+    const start = video.seekable.start(index), end = video.seekable.end(index);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start) return { status: "rejected", reason: "media_seekable_invalid" };
+    if (seconds >= start && seconds <= end) return { status: "ready", seconds };
+  }
+  return { status: "rejected", reason: "outside_media_seekable" };
+}
+
+/** Separate from legacy report seek: one cancellable request, rechecked at use. */
+export function createCandidateReplayController({ getContext, onApplied }: {
+  getContext(): CandidateReplayContext;
+  onApplied?(videoTimestampMs: number): void;
+}): CandidateReplayHandle & { resumePending(): CandidateReplaySeekResult | null; dispose(): void } {
+  const initial = getContext();
+  if (!initial.binding) throw new Error("candidate replay binding required");
+  const binding = Object.freeze({ ...initial.binding });
+  const video = initial.video;
+  const expectedSrc = replaySourceUrl(initial.videoSrc, initial.baseUrl);
+  let active = true;
+  let pending: { request: CandidateReplayRequest; signal: AbortSignal; abort: () => void } | null = null;
+  const reject = (reason: string): CandidateReplaySeekResult => ({ status: "rejected", reason });
+  const cancel = () => {
+    const old = pending; pending = null;
+    old?.signal.removeEventListener("abort", old.abort);
+  };
+  function scopeReason(request: CandidateReplayRequest, signal: AbortSignal): string | null {
+    if (!active) return "replay_handle_inactive";
+    if (signal.aborted) return "request_aborted";
+    const current = getContext();
+    if (!current.binding || candidateBindingKeys.some(key => current.binding![key] !== binding[key])) return "replay_binding_changed";
+    if (!binding.jobId || !binding.sessionKey || !binding.mediaKey || current.jobId !== binding.jobId
+      || request.jobId !== binding.jobId || request.sessionKey !== binding.sessionKey) return "replay_scope_mismatch";
+    if (typeof request.identityKey !== "string" || !request.identityKey || typeof request.candidateKey !== "string" || !request.candidateKey) return "candidate_identity_missing";
+    if (!sourceSha(binding.videoSha256) || sourceSha(request.videoSha256) !== sourceSha(binding.videoSha256)) return "video_source_mismatch";
+    if (!binding.mappingVerified || binding.originMs === null || !Number.isFinite(binding.originMs)) return "time_mapping_unavailable";
+    if (current.videoTimeOriginMs !== binding.originMs) return "replay_time_origin_mismatch";
+    if (!video || current.video !== video || !expectedSrc || replaySourceUrl(current.videoSrc, current.baseUrl) !== expectedSrc
+      || replaySourceUrl(video.src, current.baseUrl) !== expectedSrc) return "replay_media_changed";
+    if (video.currentSrc && replaySourceUrl(video.currentSrc, current.baseUrl) !== expectedSrc) return "replay_media_changed";
+    if (video.readyState >= 1 && !video.currentSrc) return "replay_media_unavailable";
+    return null;
+  }
+  function attempt(request: CandidateReplayRequest, signal: AbortSignal): CandidateReplaySeekResult {
+    const reason = scopeReason(request, signal);
+    if (reason) return reject(reason);
+    const target = candidateReplayTarget(request.videoTimestampMs, binding.originMs, video!);
+    if (target.status !== "ready") return { status: target.status, reason: target.reason };
+    try {
+      video!.pause();
+      // pause may synchronously notify a host. Recheck before touching its media.
+      const afterPause = scopeReason(request, signal);
+      if (afterPause) return reject(afterPause);
+      const freshTarget = candidateReplayTarget(request.videoTimestampMs, binding.originMs, video!);
+      if (freshTarget.status !== "ready") return { status: freshTarget.status, reason: freshTarget.reason };
+      video!.currentTime = freshTarget.seconds!;
+    } catch { return reject("media_seek_failed"); }
+    onApplied?.(request.videoTimestampMs);
+    return { status: "applied" };
+  }
+  return {
+    binding,
+    cancel,
+    dispose() { active = false; cancel(); },
+    seek(request, signal) {
+      cancel();
+      if (!signal || typeof signal.addEventListener !== "function") return reject("request_signal_required");
+      const snapshot = { ...request };
+      const result = attempt(snapshot, signal);
+      if (result.status !== "pending") return result;
+      const item = { request: snapshot, signal, abort: () => { if (pending === item) cancel(); } };
+      pending = item;
+      signal.addEventListener("abort", item.abort, { once: true });
+      if (signal.aborted) { cancel(); return reject("request_aborted"); }
+      return result;
+    },
+    resumePending() {
+      if (!pending) return null;
+      const item = pending;
+      const result = attempt(item.request, item.signal);
+      if (result.status !== "pending" && pending === item) cancel();
+      return result;
+    },
+  };
+}
 
 type BallTrajectoryViewerProps = {
   trajectory: TrajectoryPreviewResponse | null;
   /** A clean replay URL or a local object URL owned by the caller. */
   videoSrc?: string | null;
+  /** Only a caller-verified original may be used for court-frame capture. */
+  videoKind?: "original" | "annotated" | null;
   poster?: string | null;
   embeddedPoints?: TrajectoryPoint[];
   isLive?: boolean;
@@ -24,8 +161,11 @@ type BallTrajectoryViewerProps = {
   loadPoseWindow?: PoseWindowLoader;
   /** Original source video, or generated replay with timing_preserved === true. */
   poseTimingPreserved?: boolean;
-  /** Explicit viewer preferences. Reports start with an unobstructed replay. */
+  /** Explicit viewer preferences; standalone players stay unobstructed by default. */
   initialOverlays?: { ball?: boolean; pose?: boolean };
+  quickAnalysisTools?: boolean;
+  candidateReplayBinding?: CandidateReplayBinding;
+  onCandidateReplayHandle?: (handle: CandidateReplayHandle | null) => void;
 };
 
 function clamp(value: number, minimum = 0, maximum = 1) {
@@ -65,6 +205,7 @@ function PlaybackIcon({ playing }: { playing: boolean }) {
 export default function BallTrajectoryViewer({
   trajectory,
   videoSrc,
+  videoKind = null,
   poster,
   embeddedPoints = EMPTY_POINTS,
   isLive = true,
@@ -77,11 +218,19 @@ export default function BallTrajectoryViewer({
   loadPoseWindow,
   poseTimingPreserved = false,
   initialOverlays,
+  quickAnalysisTools = false,
+  candidateReplayBinding,
+  onCandidateReplayHandle,
 }: BallTrajectoryViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const animationRef = useRef<number | null>(null);
   const pendingSeekRef = useRef<number | null>(null);
+  const candidateControllerRef = useRef<ReturnType<typeof createCandidateReplayController> | null>(null);
+  const candidateContextRef = useRef({ candidateReplayBinding, videoSrc, jobId, videoTimeOriginMs });
+  useEffect(() => {
+    candidateContextRef.current = { candidateReplayBinding, videoSrc, jobId, videoTimeOriginMs };
+  }, [candidateReplayBinding, videoSrc, jobId, videoTimeOriginMs]);
   const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
   const [currentMs, setCurrentMs] = useState<number | null>(null);
   const [durationMs, setDurationMs] = useState(0);
@@ -122,9 +271,33 @@ export default function BallTrajectoryViewer({
   const latestMs = trajectory?.source.end_timestamp_ms ?? range.end;
   const atMs = following ? latestMs : currentMs ?? (videoSrc ? videoTimeOriginMs : range.end);
   const pose = usePosePlayback({ atMs, jobId: jobId ?? trajectory?.job_id, loadWindow: loadPoseWindow, initialPreview: posePreview, enabled: showPose && poseTimingPreserved });
-  const poseFrame = poseFrameAt(pose.preview, atMs);
   const aspectRatio = trajectory?.source.width && trajectory?.source.height ? trajectory.source.width / trajectory.source.height : videoAspectRatio;
+  const motionFocus = useMemo(() => motionFocusAt(pose.preview, atMs, aspectRatio), [pose.preview, atMs, aspectRatio]);
   const replayJobId = jobId ?? trajectory?.job_id ?? pose.preview?.job_id;
+
+  useEffect(() => {
+    if (!onCandidateReplayHandle) return;
+    if (!candidateContextRef.current.candidateReplayBinding || !videoSrc || !videoRef.current) { onCandidateReplayHandle(null); return; }
+    const controller = createCandidateReplayController({
+      getContext: () => ({ binding: candidateContextRef.current.candidateReplayBinding ?? null,
+        jobId: candidateContextRef.current.jobId, videoSrc: candidateContextRef.current.videoSrc,
+        videoTimeOriginMs: candidateContextRef.current.videoTimeOriginMs,
+        video: videoRef.current, baseUrl: document.baseURI }),
+      onApplied: timestampMs => {
+        setFollowLatest(false); setSelectedSegment(null); setCurrentMs(timestampMs);
+        videoRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+      },
+    });
+    candidateControllerRef.current = controller;
+    onCandidateReplayHandle(controller);
+    return () => {
+      controller.dispose();
+      if (candidateControllerRef.current === controller) candidateControllerRef.current = null;
+      onCandidateReplayHandle(null);
+    };
+  }, [onCandidateReplayHandle, videoSrc, jobId, videoTimeOriginMs, candidateReplayBinding?.jobId, candidateReplayBinding?.sessionKey,
+    candidateReplayBinding?.mediaKey, candidateReplayBinding?.kind, candidateReplayBinding?.videoSha256,
+    candidateReplayBinding?.originMs, candidateReplayBinding?.mappingVerified]);
 
   useEffect(() => {
     const syncFullscreen = () => {
@@ -147,6 +320,16 @@ export default function BallTrajectoryViewer({
       animationRef.current = null;
       return;
     }
+    const decodedVideo = videoRef.current;
+    if (decodedVideo && typeof decodedVideo.requestVideoFrameCallback === "function") {
+      let callbackId: number;
+      const onDecodedFrame: VideoFrameRequestCallback = (_now, metadata) => {
+        setCurrentMs(timestampForVideoTime(metadata.mediaTime, videoTimeOriginMs));
+        callbackId = decodedVideo.requestVideoFrameCallback(onDecodedFrame);
+      };
+      callbackId = decodedVideo.requestVideoFrameCallback(onDecodedFrame);
+      return () => decodedVideo.cancelVideoFrameCallback(callbackId);
+    }
     const tick = () => {
       const video = videoRef.current;
       if (video) setCurrentMs(timestampForVideoTime(video.currentTime, videoTimeOriginMs));
@@ -168,7 +351,7 @@ export default function BallTrajectoryViewer({
         video.pause();
         if (video.readyState >= 1) video.currentTime = videoTimeForTimestamp(timestampMs, videoTimeOriginMs);
         else pendingSeekRef.current = timestampMs;
-        video.scrollIntoView({ behavior: "smooth", block: "center" });
+        video.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
       }
     };
     window.addEventListener("rallymate:seek-video", onSeek);
@@ -229,21 +412,28 @@ export default function BallTrajectoryViewer({
   const currentTimeLabel = formatReplayTime(Math.max(0, atMs - videoTimeOriginMs));
   const durationLabel = durationMs > 0 ? formatReplayTime(durationMs) : "—:—";
   const hasPoseSource = Boolean(loadPoseWindow || posePreview);
+  const overlayControls = <div className={`replay-overlay-switches${quickAnalysisTools ? " is-prominent" : ""}`} aria-label="回放显示设置"><label><input type="checkbox" checked={showPose && poseTimingPreserved} disabled={!poseTimingPreserved || !canPlayVideo || !hasPoseSource} onChange={event => setShowPose(event.target.checked)} />动作标记</label><label><input type="checkbox" checked={showOverlay} disabled={!hasData} onChange={event => setShowOverlay(event.target.checked)} />球路</label><span role="status">{!canPlayVideo ? "当前没有可回放的视频。" : !poseTimingPreserved ? "回放时间对应尚未确认，动作标记已暂停。" : !hasPoseSource ? "此报告未提供姿态观测，视频仍可回放。" : !showPose ? "动作标记已隐藏" : seeking ? "正在定位画面…" : pose.pending ? "正在读取动作标记…" : pose.error ? "动作标记暂时无法读取，视频仍可回放。" : motionFocus ? "全身关节 · 手部轨迹" : pending ? "人体姿态识别中" : "当前时刻暂无可靠动作标记"}</span></div>;
 
   return (
     <div ref={viewerRef} className="ball-trajectory-viewer" data-status={availability.state} data-overlay={showOverlay ? "on" : "off"} data-pose={poseTimingPreserved ? showPose ? "on" : "off" : "paused"}>
-      <div className="ball-trajectory-stage" style={{ aspectRatio }}>
-        {canPlayVideo ? <video ref={videoRef} className="ball-trajectory-video" src={videoSrc ?? undefined} poster={poster ?? undefined} playsInline muted preload="metadata" onError={onVideoError} aria-label="当前视频回放"
-          onLoadedMetadata={event => { const video = event.currentTarget; setReplayRate(video, playbackRate); setDurationMs(Number.isFinite(video.duration) ? video.duration * 1000 : 0); if (video.videoWidth > 0 && video.videoHeight > 0) setVideoAspectRatio(video.videoWidth / video.videoHeight); if (pendingSeekRef.current !== null) { video.currentTime = videoTimeForTimestamp(pendingSeekRef.current, videoTimeOriginMs); pendingSeekRef.current = null; } else if (following) video.currentTime = videoTimeForTimestamp(latestMs, videoTimeOriginMs); setCurrentMs(timestampForVideoTime(video.currentTime, videoTimeOriginMs)); }}
+      <div className="ball-trajectory-stage" style={{ aspectRatio, "--replay-aspect": aspectRatio } as CSSProperties}>
+        {canPlayVideo ? <video ref={videoRef} className="ball-trajectory-video" data-replay-role={videoKind ?? undefined} data-time-origin-ms={videoTimeOriginMs} src={videoSrc ?? undefined} poster={poster ?? undefined} playsInline muted preload="metadata" onError={() => { candidateControllerRef.current?.dispose(); onVideoError?.(); }} aria-label="当前视频回放"
+          onLoadedMetadata={event => { const video = event.currentTarget; setReplayRate(video, playbackRate); setDurationMs(Number.isFinite(video.duration) ? video.duration * 1000 : 0); if (video.videoWidth > 0 && video.videoHeight > 0) setVideoAspectRatio(video.videoWidth / video.videoHeight); if (pendingSeekRef.current !== null) { video.currentTime = videoTimeForTimestamp(pendingSeekRef.current, videoTimeOriginMs); pendingSeekRef.current = null; } else if (following) video.currentTime = videoTimeForTimestamp(latestMs, videoTimeOriginMs); setCurrentMs(timestampForVideoTime(video.currentTime, videoTimeOriginMs)); candidateControllerRef.current?.resumePending(); }}
+          onLoadedData={() => candidateControllerRef.current?.resumePending()}
+          onCanPlay={() => candidateControllerRef.current?.resumePending()}
+          onProgress={() => candidateControllerRef.current?.resumePending()}
+          onDurationChange={() => candidateControllerRef.current?.resumePending()}
           onTimeUpdate={event => setCurrentMs(timestampForVideoTime(event.currentTarget.currentTime, videoTimeOriginMs))}
           onSeeking={() => setSeeking(true)} onSeeked={event => { setSeeking(false); setCurrentMs(timestampForVideoTime(event.currentTarget.currentTime, videoTimeOriginMs)); }}
           onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
         /> : <div className="ball-trajectory-empty"><strong>{error ? "回放暂不可用" : pending ? "视频分析中" : "当前结果没有回放视频"}</strong><span>{hasData ? "拖动时间轴可查看短时球路观测" : availability.description}</span></div>}
-        {poseTimingPreserved && showPose && canPlayVideo && !seeking && poseFrame && pose.preview && <PoseSkeletonOverlay frame={poseFrame} preview={pose.preview} aspectRatio={aspectRatio} />}
-        {showOverlay && <svg className="ball-trajectory-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={displayMode === "tail" ? "球路短尾迹" : "已播放的完整球路"}>
+        {poseTimingPreserved && showPose && canPlayVideo && !seeking && motionFocus && <MotionFocusOverlay focus={motionFocus} />}
+        {showOverlay && <svg className="ball-trajectory-overlay" viewBox={`0 0 ${100 * aspectRatio} 100`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={displayMode === "tail" ? "球路短尾迹" : "已播放的完整球路"}>
+          <g transform={`scale(${aspectRatio} 1)`}>
           {strokes.map((stroke, index) => <polyline key={`stroke-${stroke.points[0].timestamp_ms}-${index}`} points={stroke.points.map(point => `${point.x * 100},${point.y * 100}`).join(" ")} fill="none" stroke={stroke.source === "interpolated" ? "#93b4d5" : "#d8ff66"} strokeOpacity={trajectoryDisplayOpacity(renderedPoints[stroke.pathIndex], pointSegments.get(stroke.points[0])?.display_quality?.detector_confidence.median) * (holdingCompletedFlight ? .75 : 1)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={stroke.source === "interpolated" ? "4 4" : undefined} vectorEffect="non-scaling-stroke" />)}
           {showPoints && observed.map((point, index) => <circle key={`o-${point.timestamp_ms}-${index}`} cx={point.x * 100} cy={point.y * 100} r="0.25" fill="#b6d0a9" />)}
           {showPoints && interpolated.map((point, index) => <circle key={`i-${point.timestamp_ms}-${index}`} cx={point.x * 100} cy={point.y * 100} r="0.2" fill="#93b4d5" />)}
+          </g>
         </svg>}
         {holdingCompletedFlight && <span className="trajectory-held-label">最近球路观测 · 最多保留 0.6 秒</span>}
         {canPlayVideo && !playing && <button type="button" className="replay-stage-play" aria-label="播放视频" onClick={togglePlayback}><PlaybackIcon playing={false} /></button>}
@@ -258,9 +448,11 @@ export default function BallTrajectoryViewer({
         </div>
       </div>
       {(playbackError || fullscreenError) && <p className="replay-control-feedback" role="status">{playbackError || fullscreenError}</p>}
+      {quickAnalysisTools && overlayControls}
+      {poseTimingPreserved && showPose && hasPoseSource && <p className="motion-focus-caption">短尾迹显示最近半秒的手部轨迹估计；脚部标记表示画面位置。</p>}
       <details className="ball-trajectory-options">
         <summary><span>分析工具</span><span>{showPose && poseTimingPreserved || showOverlay ? "叠层已开启" : "按需开启画面叠层"}</span></summary>
-        <div className="replay-overlay-switches" aria-label="回放显示设置"><label><input type="checkbox" checked={showPose && poseTimingPreserved} disabled={!poseTimingPreserved || !canPlayVideo || !hasPoseSource} onChange={event => setShowPose(event.target.checked)} />人体骨架</label><label><input type="checkbox" checked={showOverlay} disabled={!hasData} onChange={event => setShowOverlay(event.target.checked)} />球路</label><span role="status">{!poseTimingPreserved ? "回放时间对应尚未确认，人体骨架已暂停。" : !hasPoseSource ? "此报告未提供人体骨架，视频仍可回放。" : !showPose ? "人体骨架已隐藏" : seeking ? "正在定位画面…" : pose.pending ? "正在读取人体骨架…" : pose.error ? "人体骨架暂时无法读取，视频仍可回放。" : poseFrame ? "骨架随回放同步" : pending ? "人体姿态识别中" : "当前时刻暂无可靠人体姿态"}</span></div>
+        {!quickAnalysisTools && overlayControls}
         {showOverlay && <div className="trajectory-view-modes" aria-label="球路显示方式">{([["segment", "当前候选球路"], ["tail", "短尾迹"], ["overview", "球路概览"]] as const).map(([mode, label]) => <button type="button" key={mode} aria-pressed={displayMode === mode} onClick={() => { setDisplayMode(mode); setSelectedSegment(null); }}>{label}</button>)}</div>}
         {showOverlay && renderedPoints.length > 1 && displayMode !== "overview" && <p className="ball-trajectory-analysis">当前显示 {renderedPoints.length} 条候选，尚未确认唯一比赛用球；片段之间不连线。</p>}
         <div className="ball-trajectory-options-body">

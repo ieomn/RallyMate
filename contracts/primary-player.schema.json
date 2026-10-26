@@ -4,16 +4,33 @@
   "type": "object",
   "required": ["schema_version", "processed_index", "source_frame_index", "timestamp_ms", "primary_player_id", "selection_status", "source_track_id", "selection_algorithm_version"],
   "properties": {
+    "selection_epoch": {"type": ["integer", "null"], "minimum": 0, "description": "Only copied from a verified same-frame native SAM pose and request ledger."},
+    "camera_reference_epoch": {"type": ["integer", "null"], "minimum": 0, "description": "Only copied from the same verified native source binding as selection_epoch."},
+    "subject_identity": {"type": "object","required": ["version","subject_id","status","source_track_id","evidence","reason_code"],"properties": {"version": {"const": "subject-lock-v1"},"subject_id": {"enum": ["subject-1",null]},"status": {"enum": ["locked","reidentified","unknown"]},"source_track_id": {"type": ["integer","null"],"minimum": 1},"evidence": {"type": "array","items": {"type": "string"}},"reason_code": {"type": ["string","null"]},"appearance_distance": {"type": ["number","null"],"minimum": 0,"maximum": 1}},"allOf": [{"if": {"properties": {"status": {"const": "unknown"}}},"then": {"properties": {"subject_id": {"type": "null"},"source_track_id": {"type": "null"},"reason_code": {"type": "string","minLength": 1}}},"else": {"properties": {"subject_id": {"const": "subject-1"},"source_track_id": {"type": "integer","minimum": 1},"evidence": {"minItems": 1},"reason_code": {"type": "null"}}}}],"description": "Sequence-local target association, not a verified real-world person identity. Unknown frames must not be grouped under legacy primary_player_id=1."},
     "schema_version": {"const": "1.0.0"},
     "processed_index": {"type": "integer", "minimum": 0},
     "source_frame_index": {"type": "integer", "minimum": 0},
     "timestamp_ms": {"type": "integer", "minimum": 0},
     "primary_player_id": {"const": 1},
     "selection_status": {"enum": ["selected", "missing"]},
+    "selection_reason_code": {"type": ["string", "null"]},
+    "selection_identity_guard": {"enum": ["same_detected_track", "overlapping_anchor_tracklet", "retained_identity_anchor", null]},
+    "selection_score_uses_model_geometry": {"type": "boolean"},
     "source_track_id": {"type": ["integer", "null"], "minimum": 1},
     "bbox_px": {"type": ["array", "null"], "minItems": 4, "maxItems": 4},
     "pose_present": {"type": "boolean"},
     "keypoint_valid_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "pose_selection_fraction": {
+      "type": ["number", "null"], "minimum": 0, "maximum": 1,
+      "description": "Target-joint support for primary selection only; interpreted by pose_selection_semantics, never a technique score or inferred confidence."
+    },
+    "pose_selection_semantics": {"enum": ["confidence_qualified_target_joint_coverage", "model_geometry_coverage", null]},
+    "model_geometry_coverage": {
+      "type": ["number", "null"], "minimum": 0, "maximum": 1,
+      "description": "Fraction of eight target body joints with strictly source-bound native in-frame model pixels; null when binding is unavailable."
+    },
+    "model_geometry_reason": {"type": ["string", "null"]},
+    "selection_evidence_version": {"type": "string"},
     "selection_prior_score": {"type": ["number", "null"]},
     "selection_candidate_count": {"type": "integer", "minimum": 0},
     "selection_best_score": {

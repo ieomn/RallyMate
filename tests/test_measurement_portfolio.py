@@ -39,6 +39,20 @@ def _sources() -> dict[str, dict[str, str]]:
 
 
 class MeasurementPortfolioTests(unittest.TestCase):
+    def test_model_geometry_retains_null_confidence_and_source_proof(self):
+        from tests.test_sam_footwork import model_report_fixture
+        report = build_indicator_measurement_portfolio(**model_report_fixture())
+        for item in report["indicators"]:
+            selected = item["representative_measurement"]
+            self.assertIsNone(selected["selection_quality"]["minimum_required_feature_confidence"])
+            self.assertIsNone(selected["selection_quality"]["mean_required_feature_confidence"])
+            self.assertFalse(selected["measurement_provenance"]["visibility_verified"])
+            self.assertIsNone(selected["feature_vector"][0]["confidence"])
+            self.assertTrue(selected["feature_vector"][0]["source_window"]["source_bindings"])
+        if Draft202012Validator:
+            schema = json.loads((ROOT / "contracts/indicator-measurement-portfolio.schema.json").read_text())
+            Draft202012Validator(schema).validate(report)
+
     def _real_portfolio(self, directory: Path) -> dict:
         registry = json.loads(
             (ROOT / "metric-feasibility-pose-wave-v2.json").read_text(

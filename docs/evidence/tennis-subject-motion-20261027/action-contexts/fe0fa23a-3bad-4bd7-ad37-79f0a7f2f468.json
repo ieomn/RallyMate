@@ -1,0 +1,145 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+  "sample_id": "holdout-ordinary-night",
+  "prior_results_seen": true,
+  "phase_audit_coverage_updated_after_gpu_dense_source_review": true,
+  "actions": [
+    {
+      "episode_id": "c24fcdd1258b22af89cb",
+      "person_track_id": 1,
+      "start_ms": 10833,
+      "peak_ms": 11233,
+      "end_ms": 11500,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_phase_consistency_audit_20261027",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "preparation_only_no_complete_swing"
+        ],
+        "explanation": "同一黄衣A主体可确认；原候选只覆盖准备/后引拍，真正前挥是后续独立候选，不能将此准备阶段单独评完整击球。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/holdout-ordinary-night-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 10500.0,
+            "nearest_primary_timestamp_ms": 10500,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 10900.0,
+            "nearest_primary_timestamp_ms": 10900,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11150.0,
+            "nearest_primary_timestamp_ms": 11133,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11300.0,
+            "nearest_primary_timestamp_ms": 11300,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11450.0,
+            "nearest_primary_timestamp_ms": 11433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11500.0,
+            "nearest_primary_timestamp_ms": 11500,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11620.0,
+            "nearest_primary_timestamp_ms": 11633,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11699.0,
+            "nearest_primary_timestamp_ms": 11700,
+            "old_source_track_id": 1
+          }
+        ],
+        "additional_source_audit_sheet": "action-sheets/gpu-night-e02.jpg",
+        "observation_zh": "对旧、新两版相同源动作采用同一有效性标准。此拒绝来自明确标注的独立人工阶段审计，不能称为自动识别修复。",
+        "reviewed_source_window": {
+          "start_ms": 10500.0,
+          "end_ms": 11700.0
+        }
+      }
+    },
+    {
+      "episode_id": "fd9ea3d1daa043c836f2",
+      "person_track_id": 86,
+      "start_ms": 20167,
+      "peak_ms": 20600,
+      "end_ms": 20900,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_phase_consistency_audit_20261027",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "preparation_only_no_complete_swing"
+        ],
+        "explanation": "同一黄衣A主体可确认；原候选只覆盖准备/后引拍，真正前挥是后续独立候选，不能将此准备阶段单独评完整击球。"
+      },
+      "evidence": {
+        "contact_sheet": "action-sheets/holdout-ordinary-night-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 20033.333,
+            "nearest_primary_timestamp_ms": 20033,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20300.0,
+            "nearest_primary_timestamp_ms": 20300,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20416.667,
+            "nearest_primary_timestamp_ms": 20433,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20566.667,
+            "nearest_primary_timestamp_ms": 20567,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20716.667,
+            "nearest_primary_timestamp_ms": 20733,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 20900.0,
+            "nearest_primary_timestamp_ms": 20900,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21153.333,
+            "nearest_primary_timestamp_ms": 21167,
+            "old_source_track_id": 86
+          },
+          {
+            "requested_timestamp_ms": 21232.333,
+            "nearest_primary_timestamp_ms": 21233,
+            "old_source_track_id": 86
+          }
+        ],
+        "additional_source_audit_sheet": "action-sheets/gpu-night-e04.jpg",
+        "observation_zh": "对旧、新两版相同源动作采用同一有效性标准。此拒绝来自明确标注的独立人工阶段审计，不能称为自动识别修复。",
+        "reviewed_source_window": {
+          "start_ms": 20033.333,
+          "end_ms": 21233.333
+        }
+      }
+    }
+  ]
+}

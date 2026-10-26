@@ -33,6 +33,66 @@ def fixture(n=1):
 
 
 class SourceAssessmentTests(unittest.TestCase):
+    def test_head_partial_measurements_project_without_gaze_claim_and_reject_wrong_scope(self):
+        from tests.test_source_aligned_features import fixture as observed_fixture
+        from rallymate_scoring.source_aligned_features import prepare_source_aligned_context,compute_source_aligned_features
+        from rallymate_scoring.indicator_assessment import build_indicator_assessment
+        sequence,events,timeline=observed_fixture()
+        context=prepare_source_aligned_context(sequence,events,primary_timeline=timeline)
+        record=compute_source_aligned_features(sequence,events[0],events=events,context=context)
+        artifact,_=fixture()
+        artifact.update(video_id='video-a',records=[record])
+        report=project_source_assessment(artifact,events,video_id='video-a',duration_ms=1600)
+        head=next(i for i in report['indicators'] if i['indicator_id']=='FS01-M01')['windows'][0]
+        self.assertEqual([m['value'] for m in head['measurements']],[0.,0.])
+        self.assertFalse(head['measurements'][0]['evidence']['gaze_evaluated'])
+        assessment=build_indicator_assessment({},source_assessment=report)
+        self.assertEqual(next(i for i in assessment['indicators'] if i['indicator_id']=='FS01-M01')['status'],'measured_partial_rule')
+        for defect in ('gaze','window','coverage'):
+            bad=copy.deepcopy(artifact)
+            item=next(i for i in bad['records'][0]['indicators'] if i['indicator_id']=='FS01-M01')
+            m=item['source_measurements'][0]
+            if defect=='gaze':m['evidence']['gaze_evaluated']=True
+            elif defect=='window':m['window_ms']['end_ms']=800
+            else:m['coverage']['valid_frame_count']=1
+            projected=project_source_assessment(bad,events,video_id='video-a',duration_ms=1600)
+            self.assertIsNone(next(i for i in projected['indicators'] if i['indicator_id']=='FS01-M01')['windows'][0]['measurements'][0]['value'],defect)
+
+    def test_fs02_direction_requires_full_window_head_hip_coverage_and_preserves_proxy_evidence(self):
+        from rallymate_scoring.indicator_assessment import build_indicator_assessment
+        artifact,events=fixture()
+        event=events[0]
+        event['event_code']='FS02'
+        item=artifact['records'][0]['indicators'][0]
+        item['indicator_id']='FS02-M01'
+        coverage={'valid_frame_count':7,'total_frame_count':10,
+                  'required_joint_names':['nose','left_ear','right_ear','left_hip','right_hip']}
+        item['source_rule_gate']['pose_coverage']=coverage
+        row=item['source_measurements'][0]
+        row.update(feature_name='launch_direction_deg',name_zh='启动方向图像代理',value=31.7,unit='deg',
+                   source_ref='CARD-FS:word/document.xml:P0258',source_frames=list(range(10)),coverage=coverage,
+                   definition='平滑髋中心端点位移加中位速度乘时长；不判断方向正确性',
+                   evidence={'endpoint_source_frames':[0,9],'formula':'atan2(-v_y,v_x)',
+                             'direction_correctness_evaluated':False,'source_clause_complete':False})
+        report=project_source_assessment(artifact,events,video_id='video',duration_ms=100)
+        projected=next(r for r in report['indicators'] if r['indicator_id']=='FS02-M01')['windows'][0]['measurements'][0]
+        self.assertEqual(projected['value'],31.7)
+        self.assertEqual(projected['source_frames'],list(range(10)))
+        assessment=build_indicator_assessment({},source_assessment=report)
+        card=next(r for r in assessment['indicators'] if r['indicator_id']=='FS02-M01')
+        self.assertEqual(card['status'],'measured_partial_rule')
+        self.assertEqual(assessment['counts']['formal_graded'],0)
+        for defect in ('coverage','window','frames','claims'):
+            changed=copy.deepcopy(artifact)
+            m=changed['records'][0]['indicators'][0]['source_measurements'][0]
+            if defect=='coverage':m['coverage']['valid_frame_count']=6
+            elif defect=='window':m['window_ms']['end_ms']=99
+            elif defect=='frames':m['source_frames']=[0,9]
+            else:m['evidence']['direction_correctness_evaluated']=True
+            bad=project_source_assessment(changed,events,video_id='video',duration_ms=100)
+            value=next(r for r in bad['indicators'] if r['indicator_id']=='FS02-M01')['windows'][0]['measurements'][0]
+            self.assertIsNone(value['value'],defect)
+
     def test_exact_seventy_percent_passes_visibility_without_a_grade(self):
         artifact, events = fixture()
         report = project_source_assessment(artifact, events, video_id="video", duration_ms=100)

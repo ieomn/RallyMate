@@ -633,7 +633,12 @@ def write_scoring_truth_evidence_plan(
             )
     base = html_path.parent.resolve()
     video_path = Path(str(plan["source"]["review_video"]["path"])).resolve()
-    video_url = Path(os.path.relpath(video_path, base)).as_posix()
+    try:
+        video_url = Path(os.path.relpath(video_path, base)).as_posix()
+    except ValueError:
+        # Windows cannot express a relative URL between different drives.
+        # This is a local HTML artifact, so retain the exact source file URI.
+        video_url = video_path.as_uri()
     rows = []
     for unit in plan["units"]:
         seek = ""

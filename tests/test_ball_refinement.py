@@ -57,6 +57,64 @@ class BallRefinementTests(unittest.TestCase):
                 self.assertEqual(model.detect(np.zeros(shape,dtype=np.uint8)),[])
                 self.assertEqual(model.detect_model.predict.call_count,1)
 
+    def test_720p_missing_ball_uses_native_size_and_stricter_confidence(self):
+        model = self.perception([result([[100,100,200,300]], [0], [.9]),
+                                 result([[500,250,510,260]], [32], [.45])])
+        rows = model.detect(np.zeros((720,1280,3),dtype=np.uint8))
+        self.assertEqual({row['class_name'] for row in rows}, {'player', 'ball'})
+        options = model.detect_model.predict.call_args_list[1].kwargs
+        self.assertEqual(options['imgsz'], 1280)
+        self.assertEqual(options['conf'], .35)
+        self.assertEqual(options['classes'], [32])
+
+    def test_720p_confident_ball_skips_extra_candidates(self):
+        model = self.perception([result([[100,100,110,110]], [32], [.5])])
+        rows = model.detect(np.zeros((720,1280,3),dtype=np.uint8))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(model.detect_model.predict.call_count, 1)
+
+    def test_720p_weak_ball_can_be_refined_but_never_forced_to_one_identity(self):
+        model = self.perception([result([[100,100,110,110]], [32], [.3]),
+                                 result([[100,100,110,110],[400,400,411,411]], [32,32], [.6,.4])])
+        rows = model.detect(np.zeros((720,1280,3),dtype=np.uint8))
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(row['track_id'] is None for row in rows))
+        self.assertEqual(rows[0]['confidence'], .6)
+
+    def test_native_refinement_keeps_configuration_disable_and_source_size_cap(self):
+        cases = [((720,1280,3),None,960,None), ((720,1366,3),1536,960,1344),
+                 ((1280,720,3),1536,960,1280), ((540,1280,3),1536,960,None),
+                 ((720,1280,3),1536,1280,None)]
+        for shape, configured, base_size, expected in cases:
+            with self.subTest(shape=shape,configured=configured,base_size=base_size):
+                model=self.perception([result([],[],[])] * (2 if expected else 1))
+                model.ball_refinement_imgsz=configured
+                model.detect_imgsz=base_size
+                model.detect(np.zeros(shape,dtype=np.uint8))
+                self.assertEqual(model.detect_model.predict.call_count,2 if expected else 1)
+                if expected:
+                    self.assertEqual(model.detect_model.predict.call_args_list[1].kwargs['imgsz'],expected)
+
+    def test_native_refinement_preserves_higher_requested_confidence(self):
+        model=self.perception([result([],[],[]),result([],[],[])])
+        model.detect_confidence=.6
+        model.detect(np.zeros((720,1280,3),dtype=np.uint8))
+        self.assertEqual(model.detect_model.predict.call_args_list[1].kwargs['conf'],.6)
+
+    def test_native_refinement_rejects_low_confidence_extra_even_if_backend_returns_it(self):
+        model=self.perception([result([],[],[]),
+                               result([[100,100,110,110],[200,200,210,210]], [32,32], [.349,.35])])
+        rows=model.detect(np.zeros((720,1280,3),dtype=np.uint8))
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['confidence'],.35)
+
+    def test_hd_keeps_extra_pass_even_with_confident_base_ball(self):
+        model=self.perception([result([[100,100,110,110]],[32],[.8]),result([],[],[])])
+        model.detect(np.zeros((1080,1920,3),dtype=np.uint8))
+        options=model.detect_model.predict.call_args_list[1].kwargs
+        self.assertEqual(options['imgsz'],1536)
+        self.assertEqual(options['conf'],.25)
+
     def test_refinement_can_be_disabled_and_handles_empty_base_output(self):
         for enabled in (None,1536):
             with self.subTest(enabled=enabled):

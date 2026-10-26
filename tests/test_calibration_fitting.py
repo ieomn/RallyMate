@@ -424,18 +424,11 @@ class CalibrationFittingTests(unittest.TestCase):
             "reason": "valid",
             "source_frames": [1],
         }
-        result = score_indicator(
-            indicator_id="FS01-M02",
-            features=[feature],
-            calibration=candidate,
-            model_versions={"pose": "test", "event": "test", "feature": "test"},
-            evidence=[],
-            feasibility_level="F4",
-        )
-        self.assertEqual(result["status"], "calibration_required")
-        self.assertIsNone(result["grade"])
-        self.assertIsNone(result["threshold_version"])
-        self.assertIn("calibration_candidate_not_promoted", result["reason_codes"])
+        # A fitting candidate has no deployed rule version/flat feature schema.
+        # Reject malformed mathematics, not the absence of a promotion approval.
+        with self.assertRaisesRegex(ValueError, "identity, version and unit"):
+            score_indicator(indicator_id="FS01-M02", features=[feature], calibration=candidate,
+                model_versions={}, evidence=[], feasibility_level="F4")
 
     def test_cli_gate_failure_creates_no_output_directory_or_asset(self) -> None:
         root = Path(__file__).resolve().parents[1]

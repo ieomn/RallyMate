@@ -14,7 +14,7 @@ const steps = [
 
 const questions = [
   { title: "第一次使用，需要准备什么？", text: "一段正常速度的网球训练原视频就可以开始。固定手机，尽量让全身和双脚始终入镜，保留动作前后的过程。可以先查看拍摄指南，再上传视频。" },
-  { title: "这里的交互演示是真实分析结果吗？", text: "宣传页中的球场、路径和阶段变化用于演示复盘方式。上传自己的视频后，训练工作台会显示对应的实际画面与可用测量；品牌主视觉是原创概念图。" },
+  { title: "只读样例是真实分析结果吗？", text: "不是。只读样例沿用项目已有的虚构标注，用来说明片段、观察和复盘问题如何连接，没有对应原视频。当前没有获准公开的真实样片。另有球场与时间轴操作示意；品牌主视觉是原创概念图。上传自己的视频后，报告会显示实际可用的结果。" },
   { title: "分析报告能代替教练的判断吗？", text: "RallyMate 帮你回看画面、定位片段，并整理可观察的测量信息。动作是否合理、应该怎样调整，仍需结合场景和教练判断。测量证据参考分不等同于正式技术评分。" },
   { title: "训练结束后，可以留下什么？", text: "可以下载 HTML 报告和 JSON 备份，之后导入备份继续查看。当前训练记录保存在此浏览器中；备份本身不包含原视频，建议同时保留原片。" },
 ];
@@ -109,7 +109,7 @@ export default function MarketingLanding() {
         <div className="mk-hero-content">
           <h1 id="mk-hero-title">下一拍，<br /><span>更有方向。</span></h1>
           <p className="mk-hero-description">用一段训练视频，<br />回到值得看清的瞬间。</p>
-          <div className="mk-hero-actions"><a href="/?view=analysis" className="mk-button mk-button-lime">开启我的复盘<ProductIcon name="arrow-up-right" size={20} /></a><a href="#experience" className="mk-watch-link"><span><ProductIcon name="play" size={14} /></span>先体验一下</a></div>
+          <div className="mk-hero-actions"><a href="/?view=analysis" className="mk-button mk-button-lime">开启我的复盘<ProductIcon name="arrow-up-right" size={20} /></a><a href="/welcome/sample" className="mk-watch-link"><span><ProductIcon name="play" size={14} /></span>先看交付样例</a></div>
         </div>
         <div className="mk-hero-bottom"><a href="#experience"><span className="mk-scroll-line" aria-hidden="true" />向下探索</a></div>
       </section>

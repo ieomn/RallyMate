@@ -6,7 +6,8 @@ import json
 import unittest
 
 from rallymate_scoring.stroke_candidates import detect_stroke_candidates, _sample, _associate_rackets
-from rallymate_scoring.stroke_analysis import ANALYSIS_VERSION, _episode, _classification, racket_hand_evidence, build_motion_analysis
+from rallymate_scoring.stroke_analysis import (ANALYSIS_VERSION, _episode, _classification, racket_hand_evidence,
+                                              build_motion_analysis, candidate_hand_evidence)
 from rallymate_scoring.rotation_analysis import analyze_rotation
 
 
@@ -213,6 +214,17 @@ class RotationAnalysisTests(unittest.TestCase):
 
 
 class StrokeMotionAnalysisTests(unittest.TestCase):
+    def test_candidate_hand_check_keeps_existing_vote_and_separation_thresholds(self):
+        samples = [_sample(make_frame(i)["poses"][0], make_frame(i)["frame"]) for i in range(12)]
+        for count, opposite, expected in ((7, 0, None), (8, 0, "right"), (8, 3, None), (9, 3, "right")):
+            for i, sample in enumerate(samples):
+                sample.racket_sides = {"right"} if i < count else {"left"} if i < count + opposite else set()
+            self.assertEqual(racket_hand_evidence(samples)["hand"], expected)
+        for sample in samples:
+            sample.points.update(left_wrist=(0, 0), right_wrist=(.55, 0))
+            sample.racket_sides = {"right"}
+        self.assertIsNone(racket_hand_evidence(samples)["hand"])
+
     def test_forehand_is_measured_with_ordered_phases_and_no_contact_or_score(self):
         result = motion(swing())
         self.assertEqual(result["analysis_version"], ANALYSIS_VERSION)
@@ -231,6 +243,9 @@ class StrokeMotionAnalysisTests(unittest.TestCase):
         self.assertEqual(episode["phases"][0]["start_ms"], episode["start_ms"])
         self.assertEqual(episode["phases"][-1]["end_ms"], episode["end_ms"])
         self.assertEqual(episode["rotation_analysis"]["status"], "measured_2d")
+        self.assertEqual(episode["process_motion"]["version"], "process-motion-v1.1.0")
+        self.assertIsNone(episode["process_motion"]["score"])
+        self.assertEqual(episode["evidence"]["process_continuity"]["selection_epoch"], 0)
         self.assertIsNone(episode["rotation_analysis"]["score"])
         for key, value in episode["rotation_analysis"]["metrics"].items():
             self.assertEqual(episode["metrics"][key], value)
@@ -282,6 +297,32 @@ class StrokeMotionAnalysisTests(unittest.TestCase):
             self.assertIsNone(follow["start_ms"])
             self.assertIsNone(follow["end_ms"])
             self.assertTrue(episode["metric_notes_zh"])
+
+    def test_episode_never_turns_a_missing_frame_or_wrist_jump_into_swing_speed(self):
+        frames = swing()
+        candidate = detect_stroke_candidates(frames)["candidates"][0]
+        samples = [_sample(frame["poses"][0], frame["frame"]) for frame in frames]
+        middle = next(i for i, sample in enumerate(samples)
+                      if candidate["start_ms"] < sample.time < candidate["end_ms"])
+        for mode in ("missing_frame", "wrist_jump", "camera_reference_kind"):
+            changed = deepcopy(samples)
+            if mode == "missing_frame":
+                del changed[middle]
+            elif mode == "wrist_jump":
+                x, y = changed[middle].points["right_wrist"]
+                changed[middle].points["right_wrist"] = (x + 4, y)
+            else:
+                changed[middle].camera_compensated = True
+            self.assertIsNone(_episode(candidate, changed), mode)
+            self.assertEqual(candidate_hand_evidence(candidate, changed)["status"], "unavailable_context", mode)
+
+    def test_regular_frame_stride_is_supported_without_inventing_missing_observations(self):
+        frames = swing()
+        candidate = detect_stroke_candidates(frames)["candidates"][0]
+        samples = [_sample(frame["poses"][0], frame["frame"]) for frame in frames]
+        for sample in samples:
+            sample.frame_index *= 2
+        self.assertIsNotNone(_episode(candidate, samples))
 
     def test_trimmed_empty_or_short_classification_window_is_unclassified(self):
         sample = _sample(make_frame(0)["poses"][0], make_frame(0)["frame"])

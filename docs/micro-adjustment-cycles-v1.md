@@ -1,0 +1,57 @@
+# FS05-M02 连续视觉调整应用规则 v1
+
+本模块为 FS05-M02“小步调整身体位置”提供单卡后端计算；统一 298 卡报告可通过服务端注释文件调用它。原目录、原文技术等级和历史 v4 不变。应用输出沿用 `automatic-formal-card-scoring-v1.0.0`；`original_grade=null`、`source_grade_supported=false`。人工绑定的是已观察开发窗口，不证明完整原文 FS05 阶段、真实触地或网球技术步型。
+
+原文 CARD-FS T023 定义为“通过连续短步、高频低幅调整身体整体位置”，计算涉及单位时间步数、单步长度及髋中心总位移与净位移比。本应用不需要球目标或场地方向，不要求仅一个脚运动。它只评价以下两个独立条件，阈值在本批计算前固定，没有按真实结果调分：
+
+- 完整视觉调整 episode 数至少 2，表达连续出现，而非确认技术步频。
+- 双脚在**整个原窗**的二维路径长度最大值位于 `[0.03, 0.5]` 躯干，沿用已有小路径范围。往返路径和截断脚的路径也纳入，不能用净位移或挑选较小的一脚代替。
+
+两项等权，全部通过为 A/100，一项通过为 C/60，全部失败为 E/20。几何、来源或原帧证据缺失时仍不可评分、空等级、空分。完整数据中只有零或一次完整运动是可计算的条件失败，不因“不满足两次”变成缺测。频率为完整观察 episode 数除以原 PTS 窗口秒数，只作附属量，避免把次数和频率重复计分；不称真实脚接触节奏。髋路径比没有已确定的好坏方向，未加入计分条件。
+
+## 周期与同时运动的计数约定
+
+版本为 `complete-visual-adjustment-episodes-v1.0.0`。先在双脚各自原连续轨迹上计算相邻原帧速度，采用已有 `0.5` 躯干/秒边界。每个速度超过边界的连续运动段都保留，再取其完整相邻低速段组成局部低速—运动—低速窗口，用原 `_phases` 检查每段至少 3 帧、80 ms、端点统计不跨运动段、前后低速位置可区分。局部计数使用同一整个原窗固定躯干尺度，不重新选择尺度或滤波。原窗首尾截断、短暂运动和其他不完整段记录明确原因，不能被删除、补齐或变成完整周期。
+
+左右脚运动区间按 `[运动起始帧, 运动结束帧)` 表示实际相邻帧对，有正长度重叠时做传递合并，形成一次 episode。只有共享端点而没有共同运动帧对时不合并；顺序不重叠运动可构成不同 episode，同一只脚的两个顺序周期也可以。合并依据包括不完整运动段：它们可以连接重叠段，但不能使 episode 变完整。episode 中至少包含一个完整视觉周期才计为 1；两个同时完成的脚不计为 2。全部 episode、成员周期和不完整原因都保留，单一整体窗口的“只有一个周期”诊断不会阻止多周期评分。
+
+## 原始来源与几何
+
+复用既有原视频、summary、四个 run 文件摘要和解码 PTS 绑定；目录 basename 与 `source_run_id` 必须匹配。模型原 detector epoch、主选人 epoch、派生连续段和相机 epoch 分别验证。实际选中模型的缺失或错误 binding 不会被静默丢弃；无关来源不能替代，完整原帧分母不缩小。
+
+六个共同关节为双肩、双髋、双踝，要求每个原帧都有合法观测。局部重表达复用 `_local_full_torso`：先核验旧 normalized 点、center、scale、basis 与同帧原记录重解析的 reference 点，再对副本重建 full torso。原模型 binding 不改写，不补缺点，不修改共享归一化逻辑。每帧原/新表示及原 PTS 账本均保存。质量检查使用本卡实际六关节；原事件质量存在且覆盖整个窗口仍是必要条件，软提示与硬来源失败分开。
+
+固定尺度是整个窗口肩中心—髋中心距离中位数，路径为相邻原帧二维距离之和除以该尺度。所有值仅为相机补偿参考平面的观察，不证明能量、承重、真实三维距离或技术质量。
+
+## 固定真实开发例
+
+新注释文件为 `tests/fixtures/micro-adjustment-cycles-e420-annotations-v1.json`。root 明确授权把已逐原图观察的同一固定窗口用于新的 M02 应用规则评估：native `e4204ec3-7d84-4a90-a961-9dad01b43c2e` 的原帧 112–136，PTS 2240–2720，time base 1/600，25 帧、0.8 秒。它没有因分数扩窗，也不是原文完整 FS05 阶段或独立 heldout。媒体与 production 0a3 同 SHA，但姿态输入来自 native e420，四个原 artifact 摘要分别核验，不能用另一个 run 替换。
+
+实际原媒体入口重新解码完整 2911 帧，局部 25/25 六关节有效。全局旧表示为 `right_shoulder_right_torso`，经同原记录核对后局部重表达为 full torso。原 SAM epoch 0 与下游 primary epoch 1 分别保留。
+
+右脚运动 124–132 帧有完整前低速 400 ms、运动 266.667 ms、后低速 133.333 ms，计一个完整 episode。左脚 112–118 帧运动缺少原窗之前的低速段，保留为截断且不计完整；它的路径仍计入小路径条件。结果为完整 episode 数 1（失败）、双脚最大路径 `0.30026233094030963` 躯干（通过），应用分 C/60。附属完整观察 episode 频率为 1.25 Hz，不是实际脚触地步频。当前没有新增已确认的连续两次真实微调阳性。
+
+## 调用与验证
+
+`compute_micro_adjustment_cycles(records, primary, events, decoder_timeline, document, source_job_id=...)` 是原记录回放入口，始终不声称已核验媒体。`build_micro_adjustment_cycle_report(run_dir, document, video_path=...)` 是独立真实服务入口，检查原文件摘要、真实视频 SHA、实际解码及运行前后文件不变，再返回单卡报告。调用方不可提供已算好的周期数、通过位、等级或分数。
+
+```python
+from rallymate_service.micro_adjustment_cycles import build_micro_adjustment_cycle_report
+report = build_micro_adjustment_cycle_report(native_run, annotation_document, video_path=original_video)
+```
+
+专项测试入口为 `python -B -m unittest tests.test_micro_adjustment_cycles -v`，`PYTHONPATH=src`；可用 `CARD_ARTIFACT_ROOT` 指向原媒体根目录。真实小型回归复用已提交的原始数字 fixture，媒体集成另走完整真实服务入口，缺媒体显式跳过。合成例仅检查顺序双脚、同脚两周期、同时双脚、传递重叠、静止、另一脚大往返及源拒绝逻辑，不能计为真实视频阳性。候选在 `4cb84192445762ad5eaa1ac6c6d4ec757fb1c4a1` 的干净归档加本批四个新增文件中验证，不叠加其他未提交代码。
+
+本批 14 项专项全部实际执行。干净归档组合检查共 40 项，首次 39 通过、1 个既有方向卡媒体测试因另一个环境变量未设置而跳过；设置该测试要求的 `RALLYMATE_REAL_ARTIFACT_ROOT` 后单独补跑通过，合计 40 个不同测试实际通过。另一次独立真实服务重放核对了 89 个实际导入的项目模块来源，以及四个原 run 文件与原视频运行前后摘要。这里重新解码原媒体并重算保存的原始姿态观测，没有重新执行姿态模型推理。
+
+## 统一报告与既有 HTTP 接口
+
+服务端可在正确原 run 目录内提供 `micro-adjustment-cycle-annotations.json`，schema 仍是 `micro-adjustment-cycle-annotations-v1.0.0`。客户端没有新建提交分数或通过位的路由。统一计算先执行现有来源链，再调用本模块实际读取原 artifacts、验证视频与原 PTS；仅明确声明的 FS05-M02 替换相应卡行。其他 297 卡和方向卡 FS05-M03/M04 均保留。空注释文档不替换未声明卡，文件不存在则不调用此消费者。
+
+统一输出增加 `input.micro_adjustment_cycle_execution`，其中 `status` 为 `executed` 或 `unavailable`，`version` 为 `micro-adjustment-cycles-execution-v1.0.0`。成功时保留单卡生产入口的完整 input、`replaced_card_ids`；失败时保留 `affected_card_ids` 和明确原因。实例的计算证据仍位于 `source_window_evidence.micro_adjustment_cycles`，`application_rule_version` 仍为 `complete-visual-adjustment-episodes-v1.0.0`。顶层 `micro_adjustment_cycle_windows` 必须与实际实例的注释、窗口和原帧完全一致。覆盖统计新增 `micro_cycle_annotated_window_count`、`micro_cycle_executed_card_count`，总分继续按有分卡的均值重算。
+
+缓存键包含注释、四个原 run 文件、实际媒体的内容摘要，以及 M02 引擎、规则、注释和所用共享测量版本。同大小、同修改时间的内容变化也会失效。非法来源或注释不能继续使用旧 M02 分数；错误只清除该卡及其顶层窗口、重算总分，不清除方向卡。原 `/v1/jobs/{id}/demo-result` 的 `current` 和 `legacy-v1` 均直接返回新的统一 `card_execution`，未增加 HTTP 路由。
+
+统一接线专项为 `tests.test_card_execution_micro_cycles_integration`。真实验证使用 native e420 的只读输入副本，原 run basename/job_id 保持；仅副本 summary 中的媒体路径迁移至同 SHA 的既有本地视频，再为两份服务端注释记录新的 summary 摘要。测试同时挂 M02 与 M03/M04，逐字段比较其余 297 卡，清空进程内缓存后独立重建，并通过真实 FastAPI 请求校验两种 HTTP 合同。没有把生产 0a3 的姿态观测替换为 native 数据，也没有重新运行姿态模型。
+
+在 `7da25727faa04dfb4f213cec50e57aabf911a76c` 干净归档上加本次接线候选的实际结果：仅挂两张方向卡时为 187 实例、113 有分、74 不可用、7 张有分卡，总分 `56.70248775838838`；加 M02 后为 188 实例、114 有分、74 不可用、8 张有分卡，总分 `57.11467678858983`。新增仅为同一开发视频同一固定窗口的 M02 实例，没有新增视频。其他 297 卡逐字段一致，M02/M03/M04 均为 C/60。首次计算与清空缓存后的独立重建结果一致，HTTP `current` 与 `legacy-v1` 返回值均与该实际统一报告完全一致。改错 M02 选人绑定后其分数清空，另外 297 卡保持；删除 M02 注释后完整报告回到方向卡基线。

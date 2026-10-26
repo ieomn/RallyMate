@@ -1,0 +1,109 @@
+{
+  "version": "footwork-cycle-annotations-v1.0.0",
+  "source_run_id": "extension-fs-usta-return-footwork-heldout",
+  "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+  "input_artifact_sha256": {
+    "frames.jsonl": "176b05874bab181f13118e6103a762866cbfc6769e56f1bca1eb663a55189593",
+    "primary-player.jsonl": "9a5fe0c6b0d5f18eb7c3085c3225558041c2295fd90f0636fb00bc5b7a003cee",
+    "events.jsonl": "db28426728b58210420c42911c59140685ab6d0432361848ca3f22d7b0fdafde",
+    "summary.json": "0780e7ad8f02d5eb59cd2b3538fcb65d88c3eca71a43f03e119bdf073891e56d"
+  },
+  "windows": [
+    {
+      "event_id": "manual-recovery-01-fs04-projection",
+      "event_code": "FS04",
+      "primary_player_id": 1,
+      "start_source_frame": 11792,
+      "end_source_frame": 11827,
+      "start_ms": 393460,
+      "end_ms": 394628,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "independent-nonexpert-footwork-review-v1",
+        "source": "footwork-independent-review.json#manual-recovery-01",
+        "uncertainty_ms": 100,
+        "semantics": "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      }
+    },
+    {
+      "event_id": "manual-recovery-02-fs04-projection",
+      "event_code": "FS04",
+      "primary_player_id": 1,
+      "start_source_frame": 11879,
+      "end_source_frame": 11914,
+      "start_ms": 396363,
+      "end_ms": 397530,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "independent-nonexpert-footwork-review-v1",
+        "source": "footwork-independent-review.json#manual-recovery-02",
+        "uncertainty_ms": 100,
+        "semantics": "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      }
+    },
+    {
+      "event_id": "manual-recovery-03-fs04-projection",
+      "event_code": "FS04",
+      "primary_player_id": 1,
+      "start_source_frame": 11961,
+      "end_source_frame": 11996,
+      "start_ms": 399099,
+      "end_ms": 400267,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "independent-nonexpert-footwork-review-v1",
+        "source": "footwork-independent-review.json#manual-recovery-03",
+        "uncertainty_ms": 100,
+        "semantics": "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      }
+    },
+    {
+      "event_id": "manual-recovery-04-fs04-projection",
+      "event_code": "FS04",
+      "primary_player_id": 1,
+      "start_source_frame": 12050,
+      "end_source_frame": 12083,
+      "start_ms": 402068,
+      "end_ms": 403169,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "independent-nonexpert-footwork-review-v1",
+        "source": "footwork-independent-review.json#manual-recovery-04",
+        "uncertainty_ms": 100,
+        "semantics": "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      }
+    },
+    {
+      "event_id": "manual-recovery-05-fs04-projection",
+      "event_code": "FS04",
+      "primary_player_id": 1,
+      "start_source_frame": 12129,
+      "end_source_frame": 12167,
+      "start_ms": 404704,
+      "end_ms": 405972,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "independent-nonexpert-footwork-review-v1",
+        "source": "footwork-independent-review.json#manual-recovery-05",
+        "uncertainty_ms": 100,
+        "semantics": "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      }
+    },
+    {
+      "event_id": "manual-recovery-06-fs04-projection",
+      "event_code": "FS04",
+      "primary_player_id": 1,
+      "start_source_frame": 12218,
+      "end_source_frame": 12250,
+      "start_ms": 407674,
+      "end_ms": 408742,
+      "binding": {
+        "method": "manual_anchor",
+        "version": "independent-nonexpert-footwork-review-v1",
+        "source": "footwork-independent-review.json#manual-recovery-06",
+        "uncertainty_ms": 100,
+        "semantics": "manual_visual_candidate_window_not_expert_technique_or_contact_truth"
+      }
+    }
+  ]
+}

@@ -1,0 +1,306 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+  "sample_id": "regression-ordinary-b",
+  "source_group": "ordinary-ece12",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "1abe4817405d7eb4974c",
+      "person_track_id": 1,
+      "start_ms": 67,
+      "peak_ms": 433,
+      "end_ms": 800,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "serve",
+      "validity": {
+        "status": "invalid",
+        "reason_codes": [
+          "incomplete_serve_follow_through_unobserved"
+        ],
+        "explanation": "旧评分扩展窗止于1.333s发球上伸阶段，原候选更短；不能把抛球或击球前上伸视作已观察完整随挥。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "regression-ordinary-b:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 167,
+      "evidence": {
+        "contact_sheet": "action-sheets/regression-ordinary-b-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 0.0,
+            "nearest_primary_timestamp_ms": 0,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 200.0,
+            "nearest_primary_timestamp_ms": 200,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 250.0,
+            "nearest_primary_timestamp_ms": 233,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 400.0,
+            "nearest_primary_timestamp_ms": 400,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 550.0,
+            "nearest_primary_timestamp_ms": 533,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 866.667,
+            "nearest_primary_timestamp_ms": 867,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1253.333,
+            "nearest_primary_timestamp_ms": 1267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 1332.333,
+            "nearest_primary_timestamp_ms": 1333,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "蓝上衣白短裤目标；抛球、屈膝、右臂头顶发球明确；旧评分窗口止于1.333s击球附近，缺少完整随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 0.0,
+          "peak_ms": 400.0,
+          "end_ms": 1333.333
+        },
+        "limitations": [
+          "serve_follow_through_outside_refined_window"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/regression-ordinary-b-direction-reference.jpg",
+            "timestamp_ms": 0,
+            "requested_sheet_timestamp_ms": 0.0,
+            "source_frame_index": 0,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          }
+        ],
+        "up_observation_zh": "建筑柱、围网立柱或球网柱在参考画面中竖直，未见画面滚转；只核验屏幕向上，未提供无法可靠确定的向网投影方向。",
+        "direction_accuracy": "manual image up reference only; no 3D gravity calibration",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 0
+    },
+    {
+      "episode_id": "ec2da84b3d9d398e7e2d",
+      "person_track_id": 1,
+      "start_ms": 2933,
+      "peak_ms": 3333,
+      "end_ms": 4267,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "backhand_slice",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "regression-ordinary-b:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 3033,
+      "evidence": {
+        "contact_sheet": "action-sheets/regression-ordinary-b-e02.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 2600.0,
+            "nearest_primary_timestamp_ms": 2600,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 2966.667,
+            "nearest_primary_timestamp_ms": 2967,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3183.333,
+            "nearest_primary_timestamp_ms": 3167,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3333.333,
+            "nearest_primary_timestamp_ms": 3333,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 3483.333,
+            "nearest_primary_timestamp_ms": 3467,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4066.667,
+            "nearest_primary_timestamp_ms": 4067,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4720.0,
+            "nearest_primary_timestamp_ms": 4733,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 4799.0,
+            "nearest_primary_timestamp_ms": 4800,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；2.967s反手侧高拍头，3.333s单手向前下挥出且非持拍臂反向打开。",
+        "reviewed_window_ms": {
+          "start_ms": 2600.0,
+          "peak_ms": 3333.333,
+          "end_ms": 4800.0
+        },
+        "limitations": [
+          "ball_spin_and_exact_contact_unverified"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/regression-ordinary-b-direction-reference.jpg",
+            "timestamp_ms": 0,
+            "requested_sheet_timestamp_ms": 0.0,
+            "source_frame_index": 0,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          }
+        ],
+        "up_observation_zh": "建筑柱、围网立柱或球网柱在参考画面中竖直，未见画面滚转；只核验屏幕向上，未提供无法可靠确定的向网投影方向。",
+        "direction_accuracy": "manual image up reference only; no 3D gravity calibration",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 0
+    },
+    {
+      "episode_id": "2136f3fe30e723af7676",
+      "person_track_id": 1,
+      "start_ms": 11033,
+      "peak_ms": 11367,
+      "end_ms": 11600,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "regression-ordinary-b:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 11833,
+      "evidence": {
+        "contact_sheet": "action-sheets/regression-ordinary-b-e03.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 10700.0,
+            "nearest_primary_timestamp_ms": 10700,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11066.666,
+            "nearest_primary_timestamp_ms": 11067,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11283.333,
+            "nearest_primary_timestamp_ms": 11267,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11433.333,
+            "nearest_primary_timestamp_ms": 11433,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11583.333,
+            "nearest_primary_timestamp_ms": 11567,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 11783.333,
+            "nearest_primary_timestamp_ms": 11767,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12053.333,
+            "nearest_primary_timestamp_ms": 12067,
+            "old_source_track_id": 1
+          },
+          {
+            "requested_timestamp_ms": 12132.333,
+            "nearest_primary_timestamp_ms": 12133,
+            "old_source_track_id": 1
+          }
+        ],
+        "observation_zh": "同一目标；右手正手后引拍、前挥及对侧随挥清楚可见。",
+        "reviewed_window_ms": {
+          "start_ms": 10700.0,
+          "peak_ms": 11433.333,
+          "end_ms": 12133.333
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/regression-ordinary-b-direction-reference.jpg",
+            "timestamp_ms": 0,
+            "requested_sheet_timestamp_ms": 0.0,
+            "source_frame_index": 0,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          }
+        ],
+        "up_observation_zh": "建筑柱、围网立柱或球网柱在参考画面中竖直，未见画面滚转；只核验屏幕向上，未提供无法可靠确定的向网投影方向。",
+        "direction_accuracy": "manual image up reference only; no 3D gravity calibration",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 0
+    }
+  ]
+}

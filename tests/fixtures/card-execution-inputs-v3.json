@@ -1,0 +1,115 @@
+{
+  "version": "card-execution-inputs-v3.0.0",
+  "inventory_manifests": [
+    "tests/fixtures/card-video-cases.json",
+    "tests/fixtures/card-video-cases-extension-20261022.json",
+    "tests/fixtures/card-video-cases-heldout-20261022.json"
+  ],
+  "executions": [
+    {
+      "id": "temporal-original",
+      "route": "temporal",
+      "source_run_id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+      "run_dir": ".codex_tmp/local-migration-20261019/local-data/runs/0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+      "local_video": ".codex_tmp/local-migration-20261019/local-data/uploads/0a3df3a3-2629-4dd5-80a1-54e4b11f7341.mp4",
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "input_artifact_sha256": {
+        "frames.jsonl": "88d8675ce0c1d6ad2230973570b73ba672225f9cee4c0a05fb2146c2a7cd4fb6",
+        "events.jsonl": "743e087a7dc83823477c0d2c270bdad12c0a864b6fd6aae52a441f047d473353",
+        "primary-player.jsonl": "ce7aaad4485565f9314bae2f1cfddf09bcc6302e049315165e3ed4e733e59576",
+        "summary.json": "c11e04786f6e21abc1fd6723b491f2bba0faba0a499bbb4930401188d9d758ba"
+      }
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "id": "gs-preparation-ocw-pe.710-2-forehand-220k",
+      "route": "gs_preparation",
+      "annotation_path": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k/gs-stage-annotations.json"
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "id": "gs-preparation-ocw-pe.710-1hand_backhand-220k",
+      "route": "gs_preparation",
+      "annotation_path": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k/gs-stage-annotations.json"
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "id": "gs-preparation-ocw-pe.710-2-hand_backhand-220k",
+      "route": "gs_preparation",
+      "annotation_path": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k/gs-stage-annotations.json"
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "id": "gs-acceleration-ocw-pe.710-2-forehand-220k",
+      "route": "gs_acceleration",
+      "annotation_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+      "annotation_case_id": "ocw-pe.710-2-forehand-220k",
+      "racket_side_manifest": "tests/fixtures/gs-racket-side-observations-20261022.json",
+      "racket_side_case_id": "ocw-pe.710-2-forehand-220k"
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "id": "gs-acceleration-ocw-pe.710-1hand_backhand-220k",
+      "route": "gs_acceleration",
+      "annotation_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+      "annotation_case_id": "ocw-pe.710-1hand_backhand-220k",
+      "racket_side_manifest": "tests/fixtures/gs-racket-side-observations-20261022.json",
+      "racket_side_case_id": "ocw-pe.710-1hand_backhand-220k"
+    },
+    {
+      "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "id": "gs-acceleration-ocw-pe.710-2-hand_backhand-220k",
+      "route": "gs_acceleration",
+      "annotation_manifest": "tests/fixtures/gs-acceleration-windows-20261022.json",
+      "annotation_case_id": "ocw-pe.710-2-hand_backhand-220k",
+      "racket_side_manifest": "tests/fixtures/gs-racket-side-observations-20261022.json",
+      "racket_side_case_id": "ocw-pe.710-2-hand_backhand-220k"
+    },
+    {
+      "id": "cycle-usta-manual-fs04",
+      "route": "footwork_cycle",
+      "source_run_id": "extension-fs-usta-return-footwork-heldout",
+      "run_dir": ".codex_tmp/cycle-artifact-clean-check-20261022/runs/extension-fs-usta-return-footwork-heldout",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-footwork.mp4",
+      "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+      "annotation_path": ".codex_tmp/cycle-artifact-clean-check-20261022/runs/extension-fs-usta-return-footwork-heldout/footwork-cycle-annotations.json"
+    },
+    {
+      "id": "fs-manual-usta-three-windows",
+      "route": "fs_card_windows",
+      "source_run_id": "extension-fs-usta-return-footwork-heldout",
+      "run_dir": ".codex_tmp/fs35-real-window-development-20261022/source-runs/extension-fs-usta-return-footwork-heldout",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-footwork.mp4",
+      "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+      "input_artifact_sha256": {
+        "frames.jsonl": "176b05874bab181f13118e6103a762866cbfc6769e56f1bca1eb663a55189593",
+        "primary-player.jsonl": "9a5fe0c6b0d5f18eb7c3085c3225558041c2295fd90f0636fb00bc5b7a003cee",
+        "events.jsonl": "db28426728b58210420c42911c59140685ab6d0432361848ca3f22d7b0fdafde",
+        "summary.json": "0780e7ad8f02d5eb59cd2b3538fcb65d88c3eca71a43f03e119bdf073891e56d"
+      },
+      "annotation_fixture": "tests/fixtures/fs-card-real-usta-manual-v1.json"
+    }
+  ],
+  "excluded_duplicate_input": ".codex_tmp/cycle-artifact-clean-check-20261022/actual-api-card-reports.json",
+  "exclusion_reason": "unified_API_is_integration_crosscheck_only_same_preparation_cycle_and_old_FS_instances_not_new_samples",
+  "racket_side_reuse_policy": "merge_source_observation_into_same_action_without_new_instance_or_changed_stage_window",
+  "additional_gs_policy": "only_explicit_frozen_source_annotations_via_gs_additional_route_no_synthetic_or_relabelled_stages"
+}

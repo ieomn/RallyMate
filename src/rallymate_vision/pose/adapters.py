@@ -6,6 +6,9 @@ from collections.abc import Sequence
 import numpy as np
 
 from rallymate_vision.pose.base import PoseBackend
+from rallymate_vision.pose.association import (
+    POLICY_VERSION, audit_pose_person_associations, person_box_ownership, valid_box,
+)
 from rallymate_vision.pose.metadata import keypoint_schema
 from rallymate_vision.utils import clamp, expand_box, safe_float
 
@@ -27,6 +30,7 @@ class PoseEstimator:
         self.backend = backend
         self.roi_margin = float(roi_margin)
         self.min_roi_size_px = int(min_roi_size_px)
+        self.last_association_diagnostics: dict = {}
 
     def estimate(
         self,
@@ -37,6 +41,17 @@ class PoseEstimator:
         timestamp_ms: int | None = None,
     ) -> list[dict]:
         height, width = frame.shape[:2]
+        self.last_association_diagnostics = {"policy_version": POLICY_VERSION, "rois": [], "duplicate_audit": None}
+        if isinstance(max_players, bool) or not isinstance(max_players, int) or max_players < 0:
+            raise ValueError("max_players must be a non-negative integer")
+        ids = []
+        for player in player_detections:
+            track = player.get("track_id")
+            if isinstance(track, bool) or not isinstance(track, int) or track < 0 or not valid_box(player.get("bbox_px"), (width, height)):
+                raise ValueError("player target must have a valid track id and original-frame box")
+            ids.append(track)
+        if len(ids) != len(set(ids)):
+            raise ValueError("player target track ids must be unique within a frame")
         players = sorted(
             player_detections,
             key=lambda detection: (
@@ -57,6 +72,7 @@ class PoseEstimator:
                 x2 - x1 < self.min_roi_size_px
                 or y2 - y1 < self.min_roi_size_px
             ):
+                self.last_association_diagnostics["rois"].append({"person_track_id": player["track_id"], "target_box_px": list(player["bbox_px"]), "roi_bbox_px": crop_box, "reason_code": "pose_roi_too_small"})
                 continue
             crops.append(frame[y1:y2, x1:x2])
             crop_boxes.append(crop_box)
@@ -65,16 +81,45 @@ class PoseEstimator:
             return []
 
         timestamps = [timestamp_ms] * len(crops) if timestamp_ms is not None else None
-        outputs = self.backend.infer(crops, timestamps_ms=timestamps)
+        targeted = getattr(self.backend, "infer_targeted", None)
+        if callable(targeted):
+            targets = [[player["bbox_px"][0] - crop[0], player["bbox_px"][1] - crop[1], player["bbox_px"][2] - crop[0], player["bbox_px"][3] - crop[1]] for player, crop in zip(accepted_players, crop_boxes)]
+            outputs = targeted(crops, targets, timestamps_ms=timestamps)
+        else:
+            outputs = self.backend.infer(crops, timestamps_ms=timestamps)
         if len(outputs) != len(crops):
             raise ValueError("PoseBackend must return exactly one output slot per ROI")
         metadata = self.backend.metadata()
         schema = keypoint_schema(metadata.native_keypoint_format)
         definitions = schema["keypoints"]
         poses: list[dict] = []
-        for player, crop_box, output in zip(accepted_players, crop_boxes, outputs):
+        backend_diagnostics = getattr(self.backend, "last_association_diagnostics", []) if callable(targeted) else []
+        for index, (player, crop_box, output) in enumerate(zip(accepted_players, crop_boxes, outputs)):
+            diagnostic = {"person_track_id": player["track_id"], "target_box_px": list(player["bbox_px"]), "roi_bbox_px": crop_box, "reason_code": "pose_backend_no_output" if output is None else "pose_legacy_single_roi_output"}
+            if isinstance(backend_diagnostics, list) and index < len(backend_diagnostics):
+                diagnostic["backend"] = backend_diagnostics[index]
+                diagnostic["reason_code"] = backend_diagnostics[index].get("reason_code", diagnostic["reason_code"])
+            self.last_association_diagnostics["rois"].append(diagnostic)
             if output is None:
                 continue
+            if callable(targeted) and output.person_bbox_xyxy is None:
+                diagnostic["reason_code"] = "pose_targeted_candidate_box_missing"
+                continue
+            association = None
+            if output.person_bbox_xyxy is not None:
+                local_box = output.person_bbox_xyxy
+                if not valid_box(local_box, (crop_box[2] - crop_box[0], crop_box[3] - crop_box[1])):
+                    diagnostic["reason_code"] = "pose_candidate_box_invalid"
+                    continue
+                global_box = [local_box[0] + crop_box[0], local_box[1] + crop_box[1], local_box[2] + crop_box[0], local_box[3] + crop_box[1]]
+                ownership = person_box_ownership(global_box, player_detections, frame_size=(width, height))
+                diagnostic["candidate_bbox_px"] = global_box
+                diagnostic["person_box_ownership"] = ownership
+                if ownership["preferred_person_track_id"] != player["track_id"]:
+                    diagnostic["reason_code"] = "pose_candidate_wrong_or_ambiguous_person"
+                    continue
+                association = {"policy_version": POLICY_VERSION, "target_box_px": list(player["bbox_px"]), "candidate_bbox_px": global_box, "person_track_id": player["track_id"], "person_box_ownership": ownership, "roi_selection": output.person_association}
+                diagnostic["reason_code"] = "pose_target_verified"
             xy = np.asarray(output.keypoints_xy)
             scores = np.asarray(output.keypoint_scores)
             if xy.shape[0] != len(definitions):
@@ -121,8 +166,7 @@ class PoseEstimator:
                         }
                     )
                 keypoints.append(serialized)
-            poses.append(
-                {
+            pose = {
                     "person_track_id": player["track_id"],
                     "confidence": safe_float(clamp(output.pose_score, 0.0, 1.0), 5),
                     "roi_bbox_px": crop_box,
@@ -130,5 +174,14 @@ class PoseEstimator:
                     "keypoint_format": metadata.native_keypoint_format,
                     "keypoints": keypoints,
                 }
-            )
+            if association is not None:
+                pose["person_association"] = association
+            poses.append(pose)
+        audit = audit_pose_person_associations(poses, player_detections, frame_size=(width, height))
+        self.last_association_diagnostics["duplicate_audit"] = audit
+        rejected = set(audit["rejected_person_track_ids"])
+        for diagnostic in self.last_association_diagnostics["rois"]:
+            if diagnostic["person_track_id"] in rejected:
+                diagnostic["reason_code"] = "pose_duplicate_body_different_tracks"
+        poses = [pose for pose in poses if pose["person_track_id"] not in rejected]
         return poses

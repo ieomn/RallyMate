@@ -1,0 +1,1097 @@
+{
+  "version": "card-execution-v1.0.0",
+  "rule_version": "card-rules-v1.0.0",
+  "source_run_id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+  "input": {
+    "source_frame_count": 2911,
+    "event_record_count": 120,
+    "observed_event_codes": [
+      "FS01",
+      "FS02",
+      "FS09"
+    ],
+    "source": "original_frame_observations_events_and_primary_selection",
+    "saved_grades_trusted": false,
+    "catalogue_sha256": "f199f98b2b3cbfc9da944dd0dc685bf20d6f38acd1256927632748a1f7902a09"
+  },
+  "cards": [
+    {
+      "indicator_id": "FS01-M02",
+      "event_code": "FS01",
+      "rule_version": "card-rules-v1.0.0",
+      "rule_kind": "visual_proxy",
+      "name_zh": "重心预加载",
+      "runtime_engine": "temporal-card-evidence-v1.0.0",
+      "run_status": "proxy_scored",
+      "reason_codes": [],
+      "original_grade": null,
+      "source_grade_supported": false,
+      "instance_count": 40,
+      "instance_status_counts": {
+        "review_required": 37,
+        "proxy_scored": 3
+      },
+      "instances": [
+        {
+          "version": "card-execution-v1.0.0",
+          "indicator_id": "FS01-M02",
+          "rule_version": "card-rules-v1.0.0",
+          "measurement_version": "temporal-card-evidence-v1.0.0",
+          "video_id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+          "event_id": "fs01-001-f8d1fd9f21c4",
+          "person_track_id": 1,
+          "event_code": "FS01",
+          "status": "review_required",
+          "original_grade": null,
+          "proxy_grade": null,
+          "score": null,
+          "source_grade_supported": false,
+          "reason_codes": [
+            "fallback_local_dip_action_type_unverified"
+          ],
+          "conditions": [
+            {
+              "key": "hip_drop_torso",
+              "metric": "hip_drop_torso",
+              "value": 0.01008444761343093,
+              "operator": "gte",
+              "threshold": 0.03,
+              "unit": "torso",
+              "passed": null
+            },
+            {
+              "key": "left_knee_flexion_change_deg",
+              "metric": "left_knee_flexion_change_deg",
+              "value": -0.8042531913804396,
+              "operator": "gte",
+              "threshold": 4.0,
+              "unit": "deg",
+              "passed": null
+            },
+            {
+              "key": "right_knee_flexion_change_deg",
+              "metric": "right_knee_flexion_change_deg",
+              "value": -18.97212468352504,
+              "operator": "gte",
+              "threshold": 4.0,
+              "unit": "deg",
+              "passed": null
+            },
+            {
+              "key": "joint_descent_fraction",
+              "metric": "joint_descent_fraction",
+              "value": 0.20000000000000007,
+              "operator": "gte",
+              "threshold": 0.7,
+              "unit": "fraction",
+              "passed": null
+            },
+            {
+              "key": "speed_step_variation_ratio",
+              "metric": "speed_step_variation_ratio",
+              "value": 0.5449515542840229,
+              "operator": "lte",
+              "threshold": 1.5,
+              "unit": "ratio",
+              "passed": null
+            }
+          ],
+          "measurements": {
+            "hip_drop_torso": 0.01008444761343093,
+            "left_knee_flexion_change_deg": -0.8042531913804396,
+            "right_knee_flexion_change_deg": -18.97212468352504,
+            "joint_descent_fraction": 0.20000000000000007,
+            "speed_step_variation_ratio": 0.5449515542840229,
+            "hip_inside_support_fraction": 1.0,
+            "body_speed_std_torso_s": 0.12018321019886419,
+            "hip_speed_drop_torso_s": 0.13341366550274197,
+            "hip_speed_drop_fraction": 0.2634831532603657,
+            "trunk_tilt_std_deg": 0.7804540633716727,
+            "joint_braking_fraction": 0.2500000000000001,
+            "supported_low_motion_duration_ms": 0.0,
+            "shoulder_hip_angular_speed_drop_deg_s": 1.6957091214579094
+          },
+          "evidence": {
+            "phase_selection": {
+              "phase_contract_version": "source-preload-turning-point-v1.0.0",
+              "original_preload_ms": 1167.0,
+              "source_preload_ms": null,
+              "source_preload_start_ms": null,
+              "status": "unavailable",
+              "repair_reason": "pre_takeoff_window_too_short_for_turn_evidence",
+              "source_frames": [],
+              "selection_semantics": "deepest_observed_pre_takeoff_hip_y_turn_with_two_descent_and_two_ascent_changes; plateau_allowed_no_interpolation",
+              "is_ground_truth": false,
+              "original_event_modified": false,
+              "minimum_directional_changes_each_side": 2,
+              "support_rule_semantics": "engineering_observation_support_not_Word_technical_threshold"
+            },
+            "fallback": {
+              "trigger": "pre_takeoff_window_too_short_for_turn_evidence",
+              "strategy": "earliest_complete_local_dip_before_landing_or_event_end",
+              "candidates": [
+                {
+                  "start_ms": 1467.0,
+                  "end_ms": 1633.0,
+                  "confirmation_end_ms": 1967.0,
+                  "source_frames": [
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59
+                  ]
+                }
+              ],
+              "selected": {
+                "start_ms": 1467.0,
+                "end_ms": 1633.0,
+                "confirmation_end_ms": 1967.0,
+                "source_frames": [
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59
+                ]
+              },
+              "takeoff_inferred": false,
+              "original_event_modified": false,
+              "phase_semantics": "local_dip_visual_proxy_not_confirmed_pre_takeoff_load"
+            },
+            "requested_window_ms": {
+              "start_ms": 1467.0,
+              "end_ms": 1633.0
+            },
+            "source_frames": [
+              44,
+              45,
+              46,
+              47,
+              48,
+              49
+            ],
+            "timestamps_ms": [
+              1467.0,
+              1500.0,
+              1533.0,
+              1567.0,
+              1600.0,
+              1633.0
+            ],
+            "coverage": {
+              "scope": "inclusive_window_all_sampled_source_frames",
+              "groups": [
+                {
+                  "joint_names": [
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_hip",
+                    "right_hip",
+                    "left_knee",
+                    "right_knee",
+                    "left_ankle",
+                    "right_ankle"
+                  ],
+                  "valid_frame_count": 6,
+                  "total_frame_count": 6,
+                  "fraction": 1.0,
+                  "meets_70_percent": true
+                }
+              ],
+              "required_joint_names": [
+                "left_shoulder",
+                "right_shoulder",
+                "left_hip",
+                "right_hip",
+                "left_knee",
+                "right_knee",
+                "left_ankle",
+                "right_ankle"
+              ],
+              "valid_frame_count": 6,
+              "total_frame_count": 6,
+              "fraction": 1.0,
+              "passes": true,
+              "threshold": 0.7,
+              "operator": ">=",
+              "source_rule": "below_70_percent_is_unavailable",
+              "point_validity": {
+                "minimum_confidence": null,
+                "semantics": "strict_source_bound_finite_in_frame_model_geometry"
+              },
+              "group_semantics": "all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+              "interpretation": "engineering_geometry_support_only; Word_visibility_not_verified",
+              "semantics": "model_estimate_geometry_not_verified_visibility",
+              "visibility_verified": false,
+              "source_visibility_70_percent_verified": null
+            },
+            "reference": "one_camera_epoch_fixed_median_torso",
+            "interpolation_used": false,
+            "source_timestamps_ms": [
+              1466.6666666666667,
+              1500.0,
+              1533.3333333333333,
+              1566.6666666666667,
+              1600.0,
+              1633.3333333333333
+            ],
+            "time_basis": "decoder_pts",
+            "source_duration_ms": 166.66666666666666,
+            "event_quality": {
+              "schema_version": "1.0.0",
+              "policy_version": "indicator-event-quality-v1.6.0",
+              "indicator_id": "FS01-M02",
+              "status": "pass",
+              "hard_fail": false,
+              "measurement_allowed": true,
+              "scoring_allowed": true,
+              "input_quality_flags": [
+                "event_ground_truth_missing",
+                "provisional_rule_baseline"
+              ],
+              "hard_fail_flags": [],
+              "scoring_block_flags": [],
+              "advisory_flags": [],
+              "non_blocking_flags": [
+                "event_ground_truth_missing",
+                "provisional_rule_baseline"
+              ],
+              "unclassified_flags": [],
+              "semantics": "quality_evidence_gate_only_no_A_to_E_thresholds"
+            }
+          },
+          "quality": {
+            "scope": "inclusive_window_all_sampled_source_frames",
+            "groups": [
+              {
+                "joint_names": [
+                  "left_shoulder",
+                  "right_shoulder",
+                  "left_hip",
+                  "right_hip",
+                  "left_knee",
+                  "right_knee",
+                  "left_ankle",
+                  "right_ankle"
+                ],
+                "valid_frame_count": 6,
+                "total_frame_count": 6,
+                "fraction": 1.0,
+                "meets_70_percent": true
+              }
+            ],
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_knee",
+              "right_knee",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "valid_frame_count": 6,
+            "total_frame_count": 6,
+            "fraction": 1.0,
+            "passes": true,
+            "threshold": 0.7,
+            "operator": ">=",
+            "source_rule": "below_70_percent_is_unavailable",
+            "point_validity": {
+              "minimum_confidence": null,
+              "semantics": "strict_source_bound_finite_in_frame_model_geometry"
+            },
+            "group_semantics": "all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+            "interpretation": "engineering_geometry_support_only; Word_visibility_not_verified",
+            "semantics": "model_estimate_geometry_not_verified_visibility",
+            "visibility_verified": false,
+            "source_visibility_70_percent_verified": null
+          },
+          "threshold_basis": "engineering_provisional_not_source_or_calibrated",
+          "limitations": [
+            "2D hip midpoint is not physical centre of mass",
+            "low bilateral ankle motion with projected support is not verified ground contact",
+            "pose candidate boundaries are not ground truth",
+            "model geometry does not establish original-card joint visibility"
+          ],
+          "source": {
+            "document_id": "CARD-FS",
+            "document_sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+            "table": "T003",
+            "rubric_sha256": "c4a3e3c6c39d5ac52a650b9924784f64620167c1706ace397b45a3d07600a5d4"
+          }
+        }
+      ]
+    },
+    {
+      "indicator_id": "FS09-M03",
+      "event_code": "FS09",
+      "rule_version": "card-rules-v1.0.0",
+      "rule_kind": "visual_proxy",
+      "name_zh": "下肢吸收身体惯性",
+      "runtime_engine": "temporal-card-evidence-v1.0.0",
+      "run_status": "proxy_scored",
+      "reason_codes": [],
+      "original_grade": null,
+      "source_grade_supported": false,
+      "instance_count": 40,
+      "instance_status_counts": {
+        "review_required": 12,
+        "proxy_scored": 28
+      },
+      "instances": [
+        {
+          "version": "card-execution-v1.0.0",
+          "indicator_id": "FS09-M03",
+          "rule_version": "card-rules-v1.0.0",
+          "measurement_version": "temporal-card-evidence-v1.0.0",
+          "video_id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+          "event_id": "fs09-001-f182cd107f00",
+          "person_track_id": 1,
+          "event_code": "FS09",
+          "status": "proxy_scored",
+          "original_grade": null,
+          "proxy_grade": "D",
+          "score": 40,
+          "source_grade_supported": false,
+          "reason_codes": [],
+          "conditions": [
+            {
+              "key": "hip_speed_drop_torso_s",
+              "metric": "hip_speed_drop_torso_s",
+              "value": -0.5730220154257564,
+              "operator": "gte",
+              "threshold": 0.2,
+              "unit": "torso/s",
+              "passed": false
+            },
+            {
+              "key": "hip_speed_drop_fraction",
+              "metric": "hip_speed_drop_fraction",
+              "value": -2.329477519766037,
+              "operator": "gte",
+              "threshold": 0.25,
+              "unit": "fraction",
+              "passed": false
+            },
+            {
+              "key": "left_knee_flexion_change_deg",
+              "metric": "left_knee_flexion_change_deg",
+              "value": -7.9795700434624734,
+              "operator": "gte",
+              "threshold": 4.0,
+              "unit": "deg",
+              "passed": false
+            },
+            {
+              "key": "right_knee_flexion_change_deg",
+              "metric": "right_knee_flexion_change_deg",
+              "value": -0.004954620933347087,
+              "operator": "gte",
+              "threshold": 4.0,
+              "unit": "deg",
+              "passed": false
+            },
+            {
+              "key": "hip_drop_torso",
+              "metric": "hip_drop_torso",
+              "value": -0.052907091252204594,
+              "operator": "gte",
+              "threshold": 0.03,
+              "unit": "torso",
+              "passed": false
+            },
+            {
+              "key": "trunk_tilt_std_deg",
+              "metric": "trunk_tilt_std_deg",
+              "value": 2.7011357652587002,
+              "operator": "lte",
+              "threshold": 10.0,
+              "unit": "deg",
+              "passed": true
+            },
+            {
+              "key": "joint_braking_fraction",
+              "metric": "joint_braking_fraction",
+              "value": 0.0,
+              "operator": "gte",
+              "threshold": 0.5,
+              "unit": "fraction",
+              "passed": false
+            }
+          ],
+          "measurements": {
+            "hip_drop_torso": -0.052907091252204594,
+            "left_knee_flexion_change_deg": -7.9795700434624734,
+            "right_knee_flexion_change_deg": -0.004954620933347087,
+            "joint_descent_fraction": 0.0,
+            "speed_step_variation_ratio": 0.31677626889996163,
+            "hip_inside_support_fraction": 1.0,
+            "body_speed_std_torso_s": 0.17105411196402626,
+            "hip_speed_drop_torso_s": -0.5730220154257564,
+            "hip_speed_drop_fraction": -2.329477519766037,
+            "trunk_tilt_std_deg": 2.7011357652587002,
+            "joint_braking_fraction": 0.0,
+            "supported_low_motion_duration_ms": 33.333333333333336,
+            "shoulder_hip_angular_speed_drop_deg_s": 471.2125623262448
+          },
+          "evidence": {
+            "phase_selection": {
+              "start": "peak_speed_ms_visual_braking_candidate",
+              "end": "first_restabilization_candidate_or_600_ms_cap",
+              "physical_braking_confirmed": false
+            },
+            "requested_window_ms": {
+              "start_ms": 2500.0,
+              "end_ms": 2933.0
+            },
+            "source_frames": [
+              75,
+              76,
+              77,
+              78,
+              79,
+              80,
+              81,
+              82,
+              83,
+              84,
+              85,
+              86,
+              87,
+              88
+            ],
+            "timestamps_ms": [
+              2500.0,
+              2533.0,
+              2567.0,
+              2600.0,
+              2633.0,
+              2667.0,
+              2700.0,
+              2733.0,
+              2767.0,
+              2800.0,
+              2833.0,
+              2867.0,
+              2900.0,
+              2933.0
+            ],
+            "coverage": {
+              "scope": "inclusive_window_all_sampled_source_frames",
+              "groups": [
+                {
+                  "joint_names": [
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_hip",
+                    "right_hip",
+                    "left_knee",
+                    "right_knee",
+                    "left_ankle",
+                    "right_ankle"
+                  ],
+                  "valid_frame_count": 14,
+                  "total_frame_count": 14,
+                  "fraction": 1.0,
+                  "meets_70_percent": true
+                }
+              ],
+              "required_joint_names": [
+                "left_shoulder",
+                "right_shoulder",
+                "left_hip",
+                "right_hip",
+                "left_knee",
+                "right_knee",
+                "left_ankle",
+                "right_ankle"
+              ],
+              "valid_frame_count": 14,
+              "total_frame_count": 14,
+              "fraction": 1.0,
+              "passes": true,
+              "threshold": 0.7,
+              "operator": ">=",
+              "source_rule": "below_70_percent_is_unavailable",
+              "point_validity": {
+                "minimum_confidence": null,
+                "semantics": "strict_source_bound_finite_in_frame_model_geometry"
+              },
+              "group_semantics": "all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+              "interpretation": "engineering_geometry_support_only; Word_visibility_not_verified",
+              "semantics": "model_estimate_geometry_not_verified_visibility",
+              "visibility_verified": false,
+              "source_visibility_70_percent_verified": null
+            },
+            "reference": "one_camera_epoch_fixed_median_torso",
+            "interpolation_used": false,
+            "source_timestamps_ms": [
+              2500.0,
+              2533.3333333333335,
+              2566.6666666666665,
+              2600.0,
+              2633.3333333333335,
+              2666.6666666666665,
+              2700.0,
+              2733.3333333333335,
+              2766.6666666666665,
+              2800.0,
+              2833.3333333333335,
+              2866.6666666666665,
+              2900.0,
+              2933.3333333333335
+            ],
+            "time_basis": "decoder_pts",
+            "source_duration_ms": 433.3333333333333,
+            "event_quality": {
+              "schema_version": "1.0.0",
+              "policy_version": "indicator-event-quality-v1.6.0",
+              "indicator_id": "FS09-M03",
+              "status": "pass",
+              "hard_fail": false,
+              "measurement_allowed": true,
+              "scoring_allowed": true,
+              "input_quality_flags": [
+                "event_ground_truth_missing",
+                "provisional_rule_baseline"
+              ],
+              "hard_fail_flags": [],
+              "scoring_block_flags": [],
+              "advisory_flags": [],
+              "non_blocking_flags": [
+                "event_ground_truth_missing",
+                "provisional_rule_baseline"
+              ],
+              "unclassified_flags": [],
+              "semantics": "quality_evidence_gate_only_no_A_to_E_thresholds"
+            }
+          },
+          "quality": {
+            "scope": "inclusive_window_all_sampled_source_frames",
+            "groups": [
+              {
+                "joint_names": [
+                  "left_shoulder",
+                  "right_shoulder",
+                  "left_hip",
+                  "right_hip",
+                  "left_knee",
+                  "right_knee",
+                  "left_ankle",
+                  "right_ankle"
+                ],
+                "valid_frame_count": 14,
+                "total_frame_count": 14,
+                "fraction": 1.0,
+                "meets_70_percent": true
+              }
+            ],
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_knee",
+              "right_knee",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "valid_frame_count": 14,
+            "total_frame_count": 14,
+            "fraction": 1.0,
+            "passes": true,
+            "threshold": 0.7,
+            "operator": ">=",
+            "source_rule": "below_70_percent_is_unavailable",
+            "point_validity": {
+              "minimum_confidence": null,
+              "semantics": "strict_source_bound_finite_in_frame_model_geometry"
+            },
+            "group_semantics": "all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+            "interpretation": "engineering_geometry_support_only; Word_visibility_not_verified",
+            "semantics": "model_estimate_geometry_not_verified_visibility",
+            "visibility_verified": false,
+            "source_visibility_70_percent_verified": null
+          },
+          "threshold_basis": "engineering_provisional_not_source_or_calibrated",
+          "limitations": [
+            "2D hip midpoint is not physical centre of mass",
+            "low bilateral ankle motion with projected support is not verified ground contact",
+            "pose candidate boundaries are not ground truth",
+            "model geometry does not establish original-card joint visibility"
+          ],
+          "source": {
+            "document_id": "CARD-FS",
+            "document_sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+            "table": "T044",
+            "rubric_sha256": "a6e123b32144c5e26a4b0a47b19f614409b072f082482ba44df3fddae1ca0d8c"
+          },
+          "condition_completion_fraction": 0.14285714285714285,
+          "semantics": "engineering_visual_condition_completion_not_original_technical_grade"
+        }
+      ]
+    },
+    {
+      "indicator_id": "FS09-M04",
+      "event_code": "FS09",
+      "rule_version": "card-rules-v1.0.0",
+      "rule_kind": "visual_proxy",
+      "name_zh": "重心重新稳定",
+      "runtime_engine": "temporal-card-evidence-v1.0.0",
+      "run_status": "proxy_scored",
+      "reason_codes": [],
+      "original_grade": null,
+      "source_grade_supported": false,
+      "instance_count": 40,
+      "instance_status_counts": {
+        "proxy_scored": 28,
+        "review_required": 12
+      },
+      "instances": [
+        {
+          "version": "card-execution-v1.0.0",
+          "indicator_id": "FS09-M04",
+          "rule_version": "card-rules-v1.0.0",
+          "measurement_version": "temporal-card-evidence-v1.0.0",
+          "video_id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+          "event_id": "fs09-001-f182cd107f00",
+          "person_track_id": 1,
+          "event_code": "FS09",
+          "status": "proxy_scored",
+          "original_grade": null,
+          "proxy_grade": "A",
+          "score": 100,
+          "source_grade_supported": false,
+          "reason_codes": [],
+          "conditions": [
+            {
+              "key": "hip_inside_support_fraction",
+              "metric": "hip_inside_support_fraction",
+              "value": 1.0,
+              "operator": "gte",
+              "threshold": 0.8,
+              "unit": "fraction",
+              "passed": true
+            },
+            {
+              "key": "supported_low_motion_duration_ms",
+              "metric": "supported_low_motion_duration_ms",
+              "value": 300.0,
+              "operator": "gte",
+              "threshold": 120.0,
+              "unit": "ms",
+              "passed": true
+            },
+            {
+              "key": "shoulder_hip_angular_speed_drop_deg_s",
+              "metric": "shoulder_hip_angular_speed_drop_deg_s",
+              "value": 94.76951795000456,
+              "operator": "gte",
+              "threshold": 5.0,
+              "unit": "deg/s",
+              "passed": true
+            }
+          ],
+          "measurements": {
+            "hip_drop_torso": -0.03905940240773225,
+            "left_knee_flexion_change_deg": 7.95588343614051,
+            "right_knee_flexion_change_deg": -5.2859456581360575,
+            "joint_descent_fraction": 0.13793103448275867,
+            "speed_step_variation_ratio": 0.9558316164650048,
+            "hip_inside_support_fraction": 1.0,
+            "body_speed_std_torso_s": 0.27011392147084134,
+            "hip_speed_drop_torso_s": 0.12925292750253048,
+            "hip_speed_drop_fraction": 0.16191380788479345,
+            "trunk_tilt_std_deg": 6.28098127701482,
+            "joint_braking_fraction": 0.03571428571428576,
+            "supported_low_motion_duration_ms": 300.0,
+            "shoulder_hip_angular_speed_drop_deg_s": 94.76951795000456
+          },
+          "evidence": {
+            "phase_selection": {
+              "start": "deceleration_peak_ms",
+              "end": "event_end",
+              "physical_contact_confirmed": false
+            },
+            "requested_window_ms": {
+              "start_ms": 2733.0,
+              "end_ms": 3700.0
+            },
+            "source_frames": [
+              82,
+              83,
+              84,
+              85,
+              86,
+              87,
+              88,
+              89,
+              90,
+              91,
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104,
+              105,
+              106,
+              107,
+              108,
+              109,
+              110,
+              111
+            ],
+            "timestamps_ms": [
+              2733.0,
+              2767.0,
+              2800.0,
+              2833.0,
+              2867.0,
+              2900.0,
+              2933.0,
+              2967.0,
+              3000.0,
+              3033.0,
+              3067.0,
+              3100.0,
+              3133.0,
+              3167.0,
+              3200.0,
+              3233.0,
+              3267.0,
+              3300.0,
+              3333.0,
+              3367.0,
+              3400.0,
+              3433.0,
+              3467.0,
+              3500.0,
+              3533.0,
+              3567.0,
+              3600.0,
+              3633.0,
+              3667.0,
+              3700.0
+            ],
+            "coverage": {
+              "scope": "inclusive_window_all_sampled_source_frames",
+              "groups": [
+                {
+                  "joint_names": [
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_hip",
+                    "right_hip",
+                    "left_ankle",
+                    "right_ankle"
+                  ],
+                  "valid_frame_count": 30,
+                  "total_frame_count": 30,
+                  "fraction": 1.0,
+                  "meets_70_percent": true
+                }
+              ],
+              "required_joint_names": [
+                "left_shoulder",
+                "right_shoulder",
+                "left_hip",
+                "right_hip",
+                "left_ankle",
+                "right_ankle"
+              ],
+              "valid_frame_count": 30,
+              "total_frame_count": 30,
+              "fraction": 1.0,
+              "passes": true,
+              "threshold": 0.7,
+              "operator": ">=",
+              "source_rule": "below_70_percent_is_unavailable",
+              "point_validity": {
+                "minimum_confidence": null,
+                "semantics": "strict_source_bound_finite_in_frame_model_geometry"
+              },
+              "group_semantics": "all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+              "interpretation": "engineering_geometry_support_only; Word_visibility_not_verified",
+              "semantics": "model_estimate_geometry_not_verified_visibility",
+              "visibility_verified": false,
+              "source_visibility_70_percent_verified": null
+            },
+            "reference": "one_camera_epoch_fixed_median_torso",
+            "interpolation_used": false,
+            "source_timestamps_ms": [
+              2733.3333333333335,
+              2766.6666666666665,
+              2800.0,
+              2833.3333333333335,
+              2866.6666666666665,
+              2900.0,
+              2933.3333333333335,
+              2966.6666666666665,
+              3000.0,
+              3033.3333333333335,
+              3066.6666666666665,
+              3100.0,
+              3133.3333333333335,
+              3166.6666666666665,
+              3200.0,
+              3233.3333333333335,
+              3266.6666666666665,
+              3300.0,
+              3333.3333333333335,
+              3366.6666666666665,
+              3400.0,
+              3433.3333333333335,
+              3466.6666666666665,
+              3500.0,
+              3533.3333333333335,
+              3566.6666666666665,
+              3600.0,
+              3633.3333333333335,
+              3666.6666666666665,
+              3700.0
+            ],
+            "time_basis": "decoder_pts",
+            "source_duration_ms": 966.6666666666666,
+            "event_quality": {
+              "schema_version": "1.0.0",
+              "policy_version": "indicator-event-quality-v1.6.0",
+              "indicator_id": "FS09-M04",
+              "status": "pass",
+              "hard_fail": false,
+              "measurement_allowed": true,
+              "scoring_allowed": true,
+              "input_quality_flags": [
+                "event_ground_truth_missing",
+                "provisional_rule_baseline"
+              ],
+              "hard_fail_flags": [],
+              "scoring_block_flags": [],
+              "advisory_flags": [],
+              "non_blocking_flags": [
+                "event_ground_truth_missing",
+                "provisional_rule_baseline"
+              ],
+              "unclassified_flags": [],
+              "semantics": "quality_evidence_gate_only_no_A_to_E_thresholds"
+            }
+          },
+          "quality": {
+            "scope": "inclusive_window_all_sampled_source_frames",
+            "groups": [
+              {
+                "joint_names": [
+                  "left_shoulder",
+                  "right_shoulder",
+                  "left_hip",
+                  "right_hip",
+                  "left_ankle",
+                  "right_ankle"
+                ],
+                "valid_frame_count": 30,
+                "total_frame_count": 30,
+                "fraction": 1.0,
+                "meets_70_percent": true
+              }
+            ],
+            "required_joint_names": [
+              "left_shoulder",
+              "right_shoulder",
+              "left_hip",
+              "right_hip",
+              "left_ankle",
+              "right_ankle"
+            ],
+            "valid_frame_count": 30,
+            "total_frame_count": 30,
+            "fraction": 1.0,
+            "passes": true,
+            "threshold": 0.7,
+            "operator": ">=",
+            "source_rule": "below_70_percent_is_unavailable",
+            "point_validity": {
+              "minimum_confidence": null,
+              "semantics": "strict_source_bound_finite_in_frame_model_geometry"
+            },
+            "group_semantics": "all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+            "interpretation": "engineering_geometry_support_only; Word_visibility_not_verified",
+            "semantics": "model_estimate_geometry_not_verified_visibility",
+            "visibility_verified": false,
+            "source_visibility_70_percent_verified": null
+          },
+          "threshold_basis": "engineering_provisional_not_source_or_calibrated",
+          "limitations": [
+            "2D hip midpoint is not physical centre of mass",
+            "low bilateral ankle motion with projected support is not verified ground contact",
+            "pose candidate boundaries are not ground truth",
+            "model geometry does not establish original-card joint visibility"
+          ],
+          "source": {
+            "document_id": "CARD-FS",
+            "document_sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+            "table": "T045",
+            "rubric_sha256": "0ccf20734d5010d3fdea69bcf52f0ba2bd32d7b6e23b7a4773ccd469dc8a6d1d"
+          },
+          "condition_completion_fraction": 1.0,
+          "semantics": "engineering_visual_condition_completion_not_original_technical_grade"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "version": "card-evaluation-v1.0.0",
+    "grade_points": {
+      "A": 100,
+      "B": 80,
+      "C": 60,
+      "D": 40,
+      "E": 20
+    },
+    "channels": {
+      "original": {
+        "score": null,
+        "scored_cards": 0,
+        "applicable_cards": 298,
+        "coverage": 0.0,
+        "scored_event_instances": 0,
+        "per_card": {}
+      },
+      "visual_proxy": {
+        "score": 54.1957671957672,
+        "scored_cards": 5,
+        "applicable_cards": 298,
+        "coverage": 0.016778523489932886,
+        "scored_event_instances": 110,
+        "per_card": {
+          "FS01-M02": 53.333333333333336,
+          "FS01-M05": 63.333333333333336,
+          "FS09-M03": 51.42857142857143,
+          "FS09-M04": 62.142857142857146,
+          "FS09-M05": 40.74074074074074
+        }
+      },
+      "manual": {
+        "score": null,
+        "scored_cards": 0,
+        "applicable_cards": 298,
+        "coverage": 0.0,
+        "scored_event_instances": 0,
+        "per_card": {}
+      }
+    },
+    "status_counts": {
+      "review_required": 90,
+      "proxy_scored": 110
+    },
+    "conflicting_event_instances": 0,
+    "overall_score": null,
+    "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+    "weight_policy": "equal_card_weight_after_event_mean",
+    "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+  },
+  "observed_type_summary": {
+    "version": "card-evaluation-v1.0.0",
+    "grade_points": {
+      "A": 100,
+      "B": 80,
+      "C": 60,
+      "D": 40,
+      "E": 20
+    },
+    "channels": {
+      "original": {
+        "score": null,
+        "scored_cards": 0,
+        "applicable_cards": 15,
+        "coverage": 0.0,
+        "scored_event_instances": 0,
+        "per_card": {}
+      },
+      "visual_proxy": {
+        "score": 54.1957671957672,
+        "scored_cards": 5,
+        "applicable_cards": 15,
+        "coverage": 0.3333333333333333,
+        "scored_event_instances": 110,
+        "per_card": {
+          "FS01-M02": 53.333333333333336,
+          "FS01-M05": 63.333333333333336,
+          "FS09-M03": 51.42857142857143,
+          "FS09-M04": 62.142857142857146,
+          "FS09-M05": 40.74074074074074
+        }
+      },
+      "manual": {
+        "score": null,
+        "scored_cards": 0,
+        "applicable_cards": 15,
+        "coverage": 0.0,
+        "scored_event_instances": 0,
+        "per_card": {}
+      }
+    },
+    "status_counts": {
+      "review_required": 90,
+      "proxy_scored": 110
+    },
+    "conflicting_event_instances": 0,
+    "overall_score": null,
+    "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+    "weight_policy": "equal_card_weight_after_event_mean",
+    "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+  },
+  "coverage": {
+    "source_card_count": 298,
+    "fs_card_count": 50,
+    "gs_card_count": 248,
+    "wired_temporal_card_count": 5,
+    "computed_card_instance_count": 200,
+    "run_card_status_counts": {
+      "not_observed": 283,
+      "not_executed": 7,
+      "proxy_scored": 5,
+      "review_required": 3
+    },
+    "original_auto_graded_card_count": 0,
+    "semantics": "catalogue_coverage_is_not_extractor_or_validation_coverage"
+  },
+  "overall_score": null,
+  "missing_policy": "exclude_from_score_keep_in_coverage_no_missing_zero",
+  "limitations": [
+    "Only five temporal calculators are wired by this adapter.",
+    "Automatic event candidates are not independently verified action labels.",
+    "Proxy thresholds are uncalibrated engineering rules, not Word-grade thresholds."
+  ],
+  "fixture_note": "Three real card/event instances selected from a freshly recomputed 2911-frame source report; top-level counts intentionally retain full-run values to test client recomputation."
+}

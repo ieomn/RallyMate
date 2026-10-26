@@ -14,7 +14,20 @@ set +a
 
 export PYTHONPATH="$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUNBUFFERED=1
-export PATH="$PROJECT_ROOT/.venv/bin:$PROJECT_ROOT/tools/node/bin:$PATH"
+export PATH="$PROJECT_ROOT/.venv/bin:$PROJECT_ROOT/tools/node/bin:$PROJECT_ROOT/tools/bin:$PATH"
+# Keep every writable runtime/cache path on the AutoDL data disk.
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PROJECT_ROOT/runtime/cache}"
+export HF_HOME="${HF_HOME:-$XDG_CACHE_HOME/huggingface}"
+export TORCH_HOME="${TORCH_HOME:-$XDG_CACHE_HOME/torch}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-$XDG_CACHE_HOME/matplotlib}"
+export YOLO_CONFIG_DIR="${YOLO_CONFIG_DIR:-$XDG_CACHE_HOME/ultralytics}"
+export TMPDIR="${TMPDIR:-$PROJECT_ROOT/runtime/tmp}"
+export TEMP="$TMPDIR"
+export TMP="$TMPDIR"
+if [[ -d "$PROJECT_ROOT/tools/egl/usr/lib/x86_64-linux-gnu" ]]; then
+    export LD_LIBRARY_PATH="$PROJECT_ROOT/tools/egl/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+mkdir -p -- "$XDG_CACHE_HOME" "$HF_HOME" "$TORCH_HOME" "$MPLCONFIGDIR" "$YOLO_CONFIG_DIR" "$TMPDIR"
 export RALLYMATE_ENVIRONMENT="${RALLYMATE_ENVIRONMENT:-development}"
 export RALLYMATE_MODEL_LICENSE_ACK="${RALLYMATE_MODEL_LICENSE_ACK:-development}"
 export RALLYMATE_DEVICE="${RALLYMATE_DEVICE:-0}"

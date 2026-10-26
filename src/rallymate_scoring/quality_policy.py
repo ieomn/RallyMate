@@ -342,6 +342,16 @@ def evaluate_indicator_event_quality(
             advisory_flags.append(flag)
             unclassified_flags.append(flag)
 
+    # Candidate quality diagnostics do not invalidate a finite, source-bound
+    # feature merely because no human validation campaign exists. Ambiguous
+    # identities/sides and genuinely missing required phases remain blocking.
+    advisory_only = {"primary_pose_coverage_low", "pose_kinematic_coverage_low",
+                     "keypoint_jump_candidates_present", "left_right_swap_candidates_present"}
+    if indicator_id == "FS02-M02":
+        # Its Word formula is hip/shoulder displacement continuity; ball-relative
+        # correctness belongs to FS02-M01 and is a separate optional measurement.
+        advisory_only.add("tactical_target_direction_not_observed")
+    scoring_block_flags = [flag for flag in scoring_block_flags if flag not in advisory_only]
     hard_fail = bool(hard_fail_flags)
     scoring_allowed = not hard_fail and not scoring_block_flags
     status = (

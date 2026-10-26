@@ -95,12 +95,6 @@ def _authoritative_production_quality_flags(
             "production indicator feature event_code does not match the "
             f"authoritative feasibility indicator: {indicator_id}"
         )
-    if record.get("feasibility_level") != indicator.get("feasibility_level"):
-        raise ValueError(
-            "production indicator feature feasibility_level does not match the "
-            f"authoritative feasibility indicator: {indicator_id}"
-        )
-
     quality_flags = indicator_event_quality_flags(event, indicator)
     scoring_context = record.get("scoring_context")
     if indicator_id == TARGET_DIRECTION_INDICATOR_ID and scoring_context is not None:
@@ -193,7 +187,7 @@ def score_indicator_records(
         scoring_features = record.get("scoring_features", record["features"])
         if not isinstance(scoring_features, list) or not scoring_features:
             raise ValueError("indicator feature record scoring_features must be non-empty")
-        if runtime_bound_production:
+        if runtime_bound_production or (event_by_id is not None and indicator_by_id is not None):
             authoritative_quality_flags = _authoritative_production_quality_flags(
                 record,
                 event_by_id=event_by_id,

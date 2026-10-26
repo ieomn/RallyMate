@@ -1,0 +1,67 @@
+{
+  "version": "relative-reference-v3.0.0",
+  "legacy_policy": {
+    "version": "relative-reference-v2.0.0",
+    "neutral_score": 50,
+    "prior_sample_weight": 3,
+    "formula_zh": "每规则 = 50 + (独立动作均分 − 50) × n/(n+3)；维内规则等权，五维等权。n 是去重动作数，3 是旧项目规则采用的先验强度。缺项取 50。此历史算法不参与当前成绩。"
+  },
+  "dimensions": [
+    {"id": "movement", "name_zh": "移动质量"},
+    {"id": "preparation", "name_zh": "准备与引拍"},
+    {"id": "swing", "name_zh": "挥拍协调"},
+    {"id": "contact", "name_zh": "触球控制"},
+    {"id": "follow_through", "name_zh": "随挥与衔接"}
+  ],
+  "rules": [
+    {
+      "id": "movement_target_alignment",
+      "dimension": "movement",
+      "name_zh": "独立目标方向一致性",
+      "unit": "deg",
+      "min": 0,
+      "max": 180,
+      "source": "indicator_features.FS02-M02.scoring_context.accepted_operator_reference",
+      "mapping": "inverse_fraction",
+      "minimum_samples": 0,
+      "formula_zh": "100 × (1 − 与独立目标的角差 / 180°)",
+      "scope_zh": "仅衡量与独立设定目标的方向符合度；不等于完整移动质量或优秀球员等级。"
+    }
+  ],
+  "excluded_legacy_rules": [
+    {
+      "id": "acceleration_trend",
+      "dimension": "swing",
+      "name_zh": "腕速加速趋势",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": "action_recognition.motion_analysis.episodes.process_motion.phases.wrist.speed_increase_fraction",
+      "mapping": "direct_percent",
+      "minimum_samples": 3,
+      "formula_zh": "相邻腕速正向变化量 / 全部变化量 × 100",
+      "exclusion_reason": "selection_biased_proxy_excluded"
+    },
+    {
+      "id": "deceleration_trend",
+      "dimension": "follow_through",
+      "name_zh": "腕速减速趋势",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "source": "action_recognition.motion_analysis.episodes.process_motion.phases.wrist.speed_decrease_fraction",
+      "mapping": "direct_percent",
+      "minimum_samples": 3,
+      "formula_zh": "相邻腕速负向变化量绝对值 / 全部变化量 × 100",
+      "exclusion_reason": "selection_biased_proxy_excluded"
+    }
+  ],
+  "formula_zh": "每规则取有效去重动作测量所对应分数的均值；维内有效规则等权，再对有有效分数的维度等权平均。缺测保持为空，不填 50 或 0；相同动作质量不因样本数改变而缩放。没有任何有效规则时总分为空。",
+  "limitations_zh": [
+    "这是项目定义的相对参考分，未经优秀球员样本或教练评分标定，不等同官方等级。",
+    "原腕速加减速趋势受分段选择影响，已退出总分；旧值仅保留作历史曲线诊断。",
+    "缺少规则、独立目标或有效测量时成绩为空，并单独报告原因；不把缺测算作动作错误。",
+    "当前仅独立目标方向一致性有计分规则；仅一个有效维度的成绩不代表完整五维技术能力，样本数用于报告支持范围，不缩放成绩。",
+    "二维肩髋投影和手腕轨迹不能证明真实发力、击球效率、拍面姿态或球的落点。"
+  ]
+}

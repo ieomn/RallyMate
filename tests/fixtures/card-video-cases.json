@@ -1,0 +1,356 @@
+{
+  "schema_version": "card-video-cases-v1",
+  "annotation_policy": "Agent visual estimates from original decoded frames; no tennis-expert adjudication. The public single-hand backhand and independent local MOV are held out from parameter tuning. Forward-swing windows are not true ball-racket contacts or original-card grades. Unknown labels and missing observations never count as correct or E. Local cases with no exhaustive annotations do not produce recall/precision.",
+  "cases": [
+    {
+      "id": "ocw-pe.710-2-forehand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "download_url": "https://archive.org/download/MITPE.710IAP06/ocw-pe.710-2-forehand-220k.mp4",
+      "retrieved_on": "2026-10-22",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "run_dir": ".codex_tmp/card-video-validation-20261022/runs/ocw-pe.710-2-forehand-220k",
+      "split": "development",
+      "annotation_origin": "agent_visual_review_of_decoded_frames_2026-10-22",
+      "annotation_version": "mit-forward-swing-windows-v1",
+      "camera": "fixed oblique/front-side view",
+      "handedness": "right dominant, observed racket hold; two-hand backhand accepts either wrist",
+      "frame_rate_note": "about 14.98 fps, decoder PTS retained; nominal fps does not establish contact time",
+      "observation_limits": [
+        "432x240 low resolution",
+        "small ball and racket motion blur",
+        "forward-swing anchors estimated +/-150ms",
+        "no expert-certified A-E labels",
+        "no gaze, force or 3D racket-face measurement"
+      ],
+      "annotations": [
+        {
+          "id": "forehand-1",
+          "action_type": "forehand",
+          "start_ms": 2400,
+          "end_ms": 2950,
+          "anchor_ms": 2700,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "forehand-2",
+          "action_type": "forehand",
+          "start_ms": 6500,
+          "end_ms": 7150,
+          "anchor_ms": 6900,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "forehand-3",
+          "action_type": "forehand",
+          "start_ms": 10400,
+          "end_ms": 11050,
+          "anchor_ms": 10800,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "forehand-4",
+          "action_type": "forehand",
+          "start_ms": 14700,
+          "end_ms": 15200,
+          "anchor_ms": 15000,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        }
+      ],
+      "stage_windows": [
+        {
+          "id": "forehand-1-preparation",
+          "stage_id": "GS01-M03",
+          "start_ms": 1650,
+          "end_ms": 2300
+        },
+        {
+          "id": "forehand-2-preparation",
+          "stage_id": "GS01-M03",
+          "start_ms": 5750,
+          "end_ms": 6400
+        },
+        {
+          "id": "forehand-3-preparation",
+          "stage_id": "GS01-M03",
+          "start_ms": 9650,
+          "end_ms": 10300
+        },
+        {
+          "id": "forehand-4-preparation",
+          "stage_id": "GS01-M03",
+          "start_ms": 13950,
+          "end_ms": 14600
+        }
+      ]
+    },
+    {
+      "id": "ocw-pe.710-1hand_backhand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "download_url": "https://archive.org/download/MITPE.710IAP06/ocw-pe.710-1hand_backhand-220k.mp4",
+      "retrieved_on": "2026-10-22",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "run_dir": ".codex_tmp/card-video-validation-20261022/runs/ocw-pe.710-1hand_backhand-220k",
+      "split": "held_out_validation",
+      "annotation_origin": "agent_visual_review_of_decoded_frames_2026-10-22",
+      "annotation_version": "mit-forward-swing-windows-v1",
+      "camera": "fixed oblique/front-side view",
+      "handedness": "right dominant, observed racket hold; two-hand backhand accepts either wrist",
+      "frame_rate_note": "about 14.98 fps, decoder PTS retained; nominal fps does not establish contact time",
+      "observation_limits": [
+        "432x240 low resolution",
+        "small ball and racket motion blur",
+        "forward-swing anchors estimated +/-150ms",
+        "no expert-certified A-E labels",
+        "no gaze, force or 3D racket-face measurement"
+      ],
+      "annotations": [
+        {
+          "id": "backhand-1",
+          "action_type": "backhand",
+          "start_ms": 2300,
+          "end_ms": 2800,
+          "anchor_ms": 2500,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "backhand-2",
+          "action_type": "backhand",
+          "start_ms": 6100,
+          "end_ms": 6500,
+          "anchor_ms": 6300,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "backhand-3",
+          "action_type": "backhand",
+          "start_ms": 10050,
+          "end_ms": 10400,
+          "anchor_ms": 10200,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "backhand-4",
+          "action_type": "backhand",
+          "start_ms": 13700,
+          "end_ms": 14100,
+          "anchor_ms": 13900,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        }
+      ],
+      "stage_windows": [
+        {
+          "id": "backhand-1-preparation",
+          "stage_id": "GS03-M03",
+          "start_ms": 1550,
+          "end_ms": 2200
+        },
+        {
+          "id": "backhand-2-preparation",
+          "stage_id": "GS03-M03",
+          "start_ms": 5350,
+          "end_ms": 6000
+        },
+        {
+          "id": "backhand-3-preparation",
+          "stage_id": "GS03-M03",
+          "start_ms": 9300,
+          "end_ms": 9950
+        },
+        {
+          "id": "backhand-4-preparation",
+          "stage_id": "GS03-M03",
+          "start_ms": 12950,
+          "end_ms": 13600
+        }
+      ]
+    },
+    {
+      "id": "ocw-pe.710-2-hand_backhand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "download_url": "https://archive.org/download/MITPE.710IAP06/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "retrieved_on": "2026-10-22",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "run_dir": ".codex_tmp/card-video-validation-20261022/runs/ocw-pe.710-2-hand_backhand-220k",
+      "split": "development",
+      "annotation_origin": "agent_visual_review_of_decoded_frames_2026-10-22",
+      "annotation_version": "mit-forward-swing-windows-v1",
+      "camera": "fixed oblique/front-side view",
+      "handedness": "right dominant, observed racket hold; two-hand backhand accepts either wrist",
+      "frame_rate_note": "about 14.98 fps, decoder PTS retained; nominal fps does not establish contact time",
+      "observation_limits": [
+        "432x240 low resolution",
+        "small ball and racket motion blur",
+        "forward-swing anchors estimated +/-150ms",
+        "no expert-certified A-E labels",
+        "no gaze, force or 3D racket-face measurement"
+      ],
+      "annotations": [
+        {
+          "id": "two_handed_backhand-1",
+          "action_type": "two_handed_backhand",
+          "start_ms": 1650,
+          "end_ms": 2100,
+          "anchor_ms": 1850,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "two_handed_backhand-2",
+          "action_type": "two_handed_backhand",
+          "start_ms": 5400,
+          "end_ms": 5800,
+          "anchor_ms": 5600,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "two_handed_backhand-3",
+          "action_type": "two_handed_backhand",
+          "start_ms": 9300,
+          "end_ms": 9750,
+          "anchor_ms": 9550,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "two_handed_backhand-4",
+          "action_type": "two_handed_backhand",
+          "start_ms": 12900,
+          "end_ms": 13350,
+          "anchor_ms": 13150,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        }
+      ],
+      "stage_windows": [
+        {
+          "id": "two_handed_backhand-1-preparation",
+          "stage_id": "GS02-M03",
+          "start_ms": 900,
+          "end_ms": 1550
+        },
+        {
+          "id": "two_handed_backhand-2-preparation",
+          "stage_id": "GS02-M03",
+          "start_ms": 4650,
+          "end_ms": 5300
+        },
+        {
+          "id": "two_handed_backhand-3-preparation",
+          "stage_id": "GS02-M03",
+          "start_ms": 8550,
+          "end_ms": 9200
+        },
+        {
+          "id": "two_handed_backhand-4-preparation",
+          "stage_id": "GS02-M03",
+          "start_ms": 12150,
+          "end_ms": 12800
+        }
+      ]
+    },
+    {
+      "id": "0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+      "source_organization": "user-provided local source",
+      "source_url": null,
+      "local_video": ".codex_tmp/local-migration-20261019/local-data/uploads/0a3df3a3-2629-4dd5-80a1-54e4b11f7341.mp4",
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "run_dir": ".codex_tmp/local-migration-20261019/local-data/runs/0a3df3a3-2629-4dd5-80a1-54e4b11f7341",
+      "split": "development",
+      "annotation_origin": "agent_visual_sample_review_only_not_exhaustive",
+      "camera": "rear court-side view with opponent and off-frame runs",
+      "observation_limits": [
+        "private original stays outside Git",
+        "sparse visual review does not establish recall or precision",
+        "model-generated coordinates do not prove joint visibility"
+      ],
+      "annotations": []
+    },
+    {
+      "id": "b10f614f-b1c1-4207-b9d4-50082eb43164",
+      "source_organization": "user-provided local source",
+      "source_url": null,
+      "local_video": ".codex_tmp/local-migration-20261019/local-data/uploads/b10f614f-b1c1-4207-b9d4-50082eb43164.mov",
+      "video_sha256": "8aa8579a18a303d183f9732a1f5898750586b3c4fe6f885cad2fd942ad36b764",
+      "run_dir": ".codex_tmp/local-migration-20261019/local-data/runs/b10f614f-b1c1-4207-b9d4-50082eb43164",
+      "split": "held_out_validation",
+      "annotation_origin": "agent_visual_sample_review_only_not_exhaustive",
+      "camera": "moving handheld oblique/front view with zoom",
+      "observation_limits": [
+        "private original stays outside Git",
+        "sparse visual review does not establish recall or precision",
+        "model-generated coordinates do not prove joint visibility"
+      ],
+      "annotations": []
+    },
+    {
+      "id": "usta-unit-turn",
+      "source_organization": "USTA",
+      "source_url": "https://www.usta.com/en/home/improve/tips-and-instruction/national/improve-your-tennis-game--get-your-forehand-flowing.html",
+      "source_title": "Improve Your Game: Perfecting Your Forehand — Rita Gladstone",
+      "retrieved_on": "2026-10-22",
+      "split": "source_reference_only",
+      "status": "page_reviewed_video_not_downloaded_or_run",
+      "observation_limits": [
+        "page states social-media-cookie preference required for player; no claim of video validation"
+      ]
+    }
+  ]
+}

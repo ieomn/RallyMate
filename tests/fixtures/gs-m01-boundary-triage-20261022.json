@@ -1,0 +1,4026 @@
+{
+  "schema_version": "gs-m01-boundary-triage-v1.0.0",
+  "frozen_at_utc": "2026-10-22T11:14:28.262529+00:00",
+  "purpose": "Read-only nonexpert boundary observability audit; preserves why no new source M01 or additional GS stage can be run. Not an action benchmark, model performance test, or technical grade.",
+  "execution": {
+    "new_model_inference": false,
+    "scoring_or_preload_module_called": false,
+    "production_stage_adapter_called": false,
+    "thresholds_changed": false,
+    "new_M01_stage_annotations": 0,
+    "new_GS_stage_annotations": 0,
+    "score": null,
+    "original_grade": null
+  },
+  "scope_counts": {
+    "initial_sources": 7,
+    "initial_unique_frames": 147,
+    "atp_dense_frames": 51,
+    "atp_context_frames": 5,
+    "atp_additional_unique_context_frames": 4,
+    "usopen_context_frames": 4,
+    "additional_mit_fh_all_stage_frames": 72,
+    "not_additive_note": "MIT72 overlaps initial MIT16 by13 originalframes; ATP425 context overlaps the dense51. Counts describe review passes and are not summed as unique data."
+  },
+  "policies": {
+    "nonexpert": true,
+    "exhaustive_whole_video_annotation": false,
+    "observed_material_not_independent_validation": true,
+    "minimum_frame_gate_not_used_to_extend_boundaries": true,
+    "previous_M03_not_relabelled_M01": true,
+    "single_hand_backhand_parameter_holdout_not_tuned": true,
+    "candidate_brackets_not_stage_annotations": true
+  },
+  "frozen_input_reports": [
+    {
+      "path": ".codex_tmp/gs-m01-observability-20261022/m01-observability-review.json",
+      "sha256": "b27422afade6041157019ad3b32e124a0834b9e4b323a379cba7d8e19df33c0f"
+    },
+    {
+      "path": ".codex_tmp/gs-m01-boundary-validation-20261022/m01-boundary-triage.json",
+      "sha256": "5796f446c3a8752672f022270995924385923b8745912c1dc76130393ccf1e95"
+    },
+    {
+      "path": ".codex_tmp/gs-m01-boundary-validation-20261022/candidate-extraction-ledger.json",
+      "sha256": "c7e697ad329e22ec90819b201b4ee0851ef6c4ab807f27e35872f044daa8d2c0"
+    },
+    {
+      "path": ".codex_tmp/gs-full-stage-review-20261022/forehand-extraction-ledger.json",
+      "sha256": "bf1a897f854bcd98fef0fab6ee8021dbdfd41d4b4a9814e144a4fa22bf0472d3"
+    }
+  ],
+  "clock_provenance": {
+    "source": "actual original-video FFmpeg showinfo decoder PTS; never frame_index/fps",
+    "source_decoder_ledger_sha256": {
+      "atp": "4cdd758e85f21f1694e06fa36258d9f7b676da885d96cfd523ef892a5ea07a92",
+      "usopen": "d91bb2a49ded3df1e1da84a102f5cedc89a76f35bc06f5df3b7637eeedcb8d6c"
+    },
+    "extraction_decoder_module_sha256": "ed9d6ae0549022d335f90a1d4d571c714bf30883c62d90a99d7955cf4096e1a5"
+  },
+  "original_rule_basis": [
+    {
+      "indicator_id": "GS01-M01-03",
+      "source_rubric_sha256": "9849f63dc7c87c461cd5821965eaa5d48109eacd0a4ceeb950af8e6da16fa5ad",
+      "original_start": "球离开对方拍面，",
+      "original_end": "垫步落地，",
+      "effective_stage_window": {
+        "stage_code": "GS01-M01",
+        "start": "球离开对方拍面，",
+        "end": "垫步落地，",
+        "origin": "source",
+        "binding_required": true,
+        "subwindow_required": false
+      }
+    },
+    {
+      "indicator_id": "GS02-M01-04",
+      "source_rubric_sha256": "385c4fbf8cd15ca6b04b5e22ac01ca0656f487f11cfd4d7de419beae9be1b19c",
+      "original_start": "球离开对方拍面，",
+      "original_end": "垫步落地，",
+      "effective_stage_window": {
+        "stage_code": "GS02-M01",
+        "start": "球离开对方拍面，",
+        "end": "垫步落地，",
+        "origin": "source",
+        "binding_required": true,
+        "subwindow_required": false
+      }
+    },
+    {
+      "indicator_id": "GS03-M01-03",
+      "source_rubric_sha256": "cb88d91d0fc7d022324aef7a924395a7a24feb563d70c847cf51b35d2212ec47",
+      "original_start": "",
+      "original_end": "",
+      "effective_stage_window": {
+        "stage_code": "GS03-M01",
+        "start": "可确认对手出球或本拍来球进入可观测区，非持拍手辅助球拍",
+        "end": "本次垫步落地候选已确认",
+        "origin": "engineering_revision",
+        "binding_required": true,
+        "subwindow_required": false
+      }
+    },
+    {
+      "indicator_id": "GS04-M01-03",
+      "source_rubric_sha256": "d532c48fa54287a93eefc80755fc4993006dc9209659bce2fc23858057135c99",
+      "original_start": "",
+      "original_end": "",
+      "effective_stage_window": {
+        "stage_code": "GS04-M01",
+        "start": "可确认对手出球或本拍来球进入可观测区，建立切削准备",
+        "end": "本次垫步落地候选已确认，非持拍手辅助拍喉",
+        "origin": "engineering_revision",
+        "binding_required": true,
+        "subwindow_required": false
+      }
+    },
+    {
+      "indicator_id": "GS05-M01-03",
+      "source_rubric_sha256": "56a292f66ef5bf2b21b807848a67eb0bcd1eea9fe022e07a07539749a39f9ca4",
+      "original_start": "球离开对方拍面，",
+      "original_end": "垫步落地，",
+      "effective_stage_window": {
+        "stage_code": "GS05-M01",
+        "start": "球离开对方拍面，",
+        "end": "垫步落地，",
+        "origin": "source",
+        "binding_required": true,
+        "subwindow_required": false
+      }
+    }
+  ],
+  "catalogue_raw_sha256_at_visual_review": "e9014eb960a63bb068c35f7c9555f6e5a1a76d7d95db8c59d93013d215deb5d6",
+  "initial_cases": [
+    {
+      "case": "mit-fh",
+      "source_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "cards": [
+        "GS01-M01-03"
+      ],
+      "observation": "Full demonstrator is visible in the reviewed first swing, but opponent/feed stroke is outside the shot. Incoming ball appears only after body/racket turn. Existing M03 remains M03.",
+      "missing": [
+        "opponent_ball_departure",
+        "independently_confirmed_split_step_landing"
+      ],
+      "sampling": "16 sparse frames 0..45; no exhaustive absence claim",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "frames": [
+        {
+          "source_frame_index": 0,
+          "raw_png_sha256": "51b93bea029f7f66e9de502d5fcf5a794a00f4643e590d865d170b36a435d58c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00000.png",
+          "source_binding": {
+            "frame_index": 0,
+            "pts": 0,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 3,
+          "raw_png_sha256": "d16ca1093f600fa56ffb68fccfaf29318c55780082a7a21044bf4c153f87cfc1",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00003.png",
+          "source_binding": {
+            "frame_index": 3,
+            "pts": 19800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 6,
+          "raw_png_sha256": "f0ad227ae9b8d7beace2c93ff0e31ac00f2b877a200470a1b2bf8be7a394d86c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00006.png",
+          "source_binding": {
+            "frame_index": 6,
+            "pts": 37800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 9,
+          "raw_png_sha256": "1b2dcdbcf4cf240125f705abcbaa1552a389fc3753d84843dc8aa5d72203679f",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00009.png",
+          "source_binding": {
+            "frame_index": 9,
+            "pts": 55800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 12,
+          "raw_png_sha256": "5c6acbb2965e6043684d8d8515b5ff3ddad96b0de540de1d3d74e8d747cd7e68",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00012.png",
+          "source_binding": {
+            "frame_index": 12,
+            "pts": 73800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 15,
+          "raw_png_sha256": "2c0772b7af976350c98f3cef1d45e3579cd32d2ffcaf692af99235e1a314d8be",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00015.png",
+          "source_binding": {
+            "frame_index": 15,
+            "pts": 91800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 18,
+          "raw_png_sha256": "cef8936468a1dcf80266940ffc6232183db8d4b338978958be4301c8e8263738",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00018.png",
+          "source_binding": {
+            "frame_index": 18,
+            "pts": 109800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 21,
+          "raw_png_sha256": "7ab0ef3974b90f99676be6c097939357a353ff4bf29d90eb7d05be9f09d42a2e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00021.png",
+          "source_binding": {
+            "frame_index": 21,
+            "pts": 127800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 24,
+          "raw_png_sha256": "aa025910aaa27105c492274522b6e542b739960844f16c9634f0613b2507f3aa",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00024.png",
+          "source_binding": {
+            "frame_index": 24,
+            "pts": 145800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 27,
+          "raw_png_sha256": "acd20a59c48747625f0db1acbcbd795012808194ee3fe07a084fd2d0bd266d9a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00027.png",
+          "source_binding": {
+            "frame_index": 27,
+            "pts": 163800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 30,
+          "raw_png_sha256": "3220497783c37f5dd8f27de4b0c71eaea48eb76737a8074a79060e8b3dd73e0d",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00030.png",
+          "source_binding": {
+            "frame_index": 30,
+            "pts": 181800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 33,
+          "raw_png_sha256": "dede54626aa9504a31b51ac1305605cacf3785eecb7e224d4b65b2e13c34cb17",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00033.png",
+          "source_binding": {
+            "frame_index": 33,
+            "pts": 199800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 36,
+          "raw_png_sha256": "2a9f587f9615d9668b3d02e504d3835a981e3009f685e42e9010645a30dbec07",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00036.png",
+          "source_binding": {
+            "frame_index": 36,
+            "pts": 217800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 39,
+          "raw_png_sha256": "91759eb898d171321adb81530a3e541a9e2a7a47dcfdc8eb03f7eb8894db3b6e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00039.png",
+          "source_binding": {
+            "frame_index": 39,
+            "pts": 235800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 42,
+          "raw_png_sha256": "7cac0f15f8056112a3f6cdf0dcd7040e8bdd445b71491af635ef17cda59b02ab",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00042.png",
+          "source_binding": {
+            "frame_index": 42,
+            "pts": 253800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        },
+        {
+          "source_frame_index": 45,
+          "raw_png_sha256": "87fe04a60eaa2a3826b41338dd9c9d089547289077601a197aaa01ac3c446e0d",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-fh-frame-00045.png",
+          "source_binding": {
+            "frame_index": 45,
+            "pts": 271800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false
+    },
+    {
+      "case": "mit-ohbh",
+      "source_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "cards": [
+        "GS03-M01-03"
+      ],
+      "observation": "Additionally reviewed every original frame 9..33. Feet/body pivot and a forward step are visible; no unambiguous split-step landing was established. A clearly visible incoming ball occurs at frame 32 after the turn/backswing, so it cannot be moved earlier to create an M01 interval. Opponent is off-screen.",
+      "missing": [
+        "ordered_incoming_ball_then_confirmed_split_landing"
+      ],
+      "sampling": "15 sparse frames plus all 25 frames 9..33",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_organization": "MIT OpenCourseWare",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "frames": [
+        {
+          "source_frame_index": 0,
+          "raw_png_sha256": "51b93bea029f7f66e9de502d5fcf5a794a00f4643e590d865d170b36a435d58c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00000.png",
+          "source_binding": {
+            "frame_index": 0,
+            "pts": 0,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 3,
+          "raw_png_sha256": "a30447e545bcfb50a59947d56b3de868e96c82aa7574177e49549314ceb9348f",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00003.png",
+          "source_binding": {
+            "frame_index": 3,
+            "pts": 19800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 6,
+          "raw_png_sha256": "f9a6ba9f97ca2248372b653f88faa8d99a697cadb0e64b3e2d407c9bf821d898",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00006.png",
+          "source_binding": {
+            "frame_index": 6,
+            "pts": 37800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 9,
+          "raw_png_sha256": "070f219bceb0c606e2db50a3e31a5db384616e2abd875407067af941e6605dd3",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00009.png",
+          "source_binding": {
+            "frame_index": 9,
+            "pts": 55800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 10,
+          "raw_png_sha256": "c519b8ff97b30c072ba66e0fd4b695ec1bc536c62e4505a0089a34a05ff2ab94",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00010.png",
+          "source_binding": {
+            "frame_index": 10,
+            "pts": 61830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 11,
+          "raw_png_sha256": "25ed1f05304d38c452b1e91912fb19912b71210174d382f32d6ffce6dd519351",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00011.png",
+          "source_binding": {
+            "frame_index": 11,
+            "pts": 67860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 12,
+          "raw_png_sha256": "22c61d2a20f35912c14413ef160f3329b27447be3434a3184b33f04f6efc1be7",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00012.png",
+          "source_binding": {
+            "frame_index": 12,
+            "pts": 73800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 13,
+          "raw_png_sha256": "c04a874b295c644af235a7edfb065ba1c7fa421bcc3dc5b707a9d9a2bd86c70f",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00013.png",
+          "source_binding": {
+            "frame_index": 13,
+            "pts": 79830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 14,
+          "raw_png_sha256": "fa458e6752031757565312d5d123ddfa2af41bc55ce29ab5c43564ea81001296",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00014.png",
+          "source_binding": {
+            "frame_index": 14,
+            "pts": 85860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 15,
+          "raw_png_sha256": "f5d73622171aa99c53df860323657bbf150ebf053189aab12cae8fd9b09cda03",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00015.png",
+          "source_binding": {
+            "frame_index": 15,
+            "pts": 91800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 16,
+          "raw_png_sha256": "e7d93f0234df993ae395652165207908cc2c7ed73bf32c3f9790a9077e3830e6",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00016.png",
+          "source_binding": {
+            "frame_index": 16,
+            "pts": 97830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 17,
+          "raw_png_sha256": "b8a7159385e084060364fccac2911c95148f00c294600e8c97705e1a62115fde",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00017.png",
+          "source_binding": {
+            "frame_index": 17,
+            "pts": 103860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 18,
+          "raw_png_sha256": "2b6bcb4b2b5586b74a7d04beee386fd795364b770e78d324c156bf4ce40091ec",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00018.png",
+          "source_binding": {
+            "frame_index": 18,
+            "pts": 109800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 19,
+          "raw_png_sha256": "65373e621e79022971801e9b787f78afceacc5b3cf70c2703983b37381e4044b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00019.png",
+          "source_binding": {
+            "frame_index": 19,
+            "pts": 115830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 20,
+          "raw_png_sha256": "f103606f5d67dfe3f1adadb9c3f3ce3f058465a04c4d265faea00f6895e80279",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00020.png",
+          "source_binding": {
+            "frame_index": 20,
+            "pts": 121860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 21,
+          "raw_png_sha256": "e99f0665c3b2532380b4b3b3ea9c0df5fd1296de0346d0a48880e6c9b2b5fe4a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00021.png",
+          "source_binding": {
+            "frame_index": 21,
+            "pts": 127800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 22,
+          "raw_png_sha256": "cc9f05da71214c86e71daebee2e49f4f093ae3096c4428bab2d6a9116c22e282",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00022.png",
+          "source_binding": {
+            "frame_index": 22,
+            "pts": 133830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 23,
+          "raw_png_sha256": "aa78da79b81234e98ac089f91fb58166923125d3c148aa99e2605271c8e39c20",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00023.png",
+          "source_binding": {
+            "frame_index": 23,
+            "pts": 139860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 24,
+          "raw_png_sha256": "49c0597e9debe4109087fd6fe8b6f18caeee4271c321d9a78e1f976949d5885e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00024.png",
+          "source_binding": {
+            "frame_index": 24,
+            "pts": 145800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 25,
+          "raw_png_sha256": "a16df2c01e4eca20e1dbcd4b0ae8e6f9689bd125556d5ab026acbd72d342bb58",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00025.png",
+          "source_binding": {
+            "frame_index": 25,
+            "pts": 151830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 26,
+          "raw_png_sha256": "10948532322712fec399b9b8cda729fa45e8be114c42667b2bb593e977d8d2d1",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00026.png",
+          "source_binding": {
+            "frame_index": 26,
+            "pts": 157860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 27,
+          "raw_png_sha256": "69dbe7b9a08553bf4081ef650695d3aa8f7926c5361a2058417b433e07af42f3",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00027.png",
+          "source_binding": {
+            "frame_index": 27,
+            "pts": 163800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 28,
+          "raw_png_sha256": "d0bf6592d3bd67c7b7c62ec0fdf611a25523f1a1560826c986e55aec2ea4b1f8",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00028.png",
+          "source_binding": {
+            "frame_index": 28,
+            "pts": 169830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 29,
+          "raw_png_sha256": "d12197689012f0e0c5e449dfc13630602496a8ae1a38295be86ac28ed11afde9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00029.png",
+          "source_binding": {
+            "frame_index": 29,
+            "pts": 175860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 30,
+          "raw_png_sha256": "a0110987ead4838476adc18081a1bc9bededbca49ac452f64de776cc67068bcc",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00030.png",
+          "source_binding": {
+            "frame_index": 30,
+            "pts": 181800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 31,
+          "raw_png_sha256": "bb6645d7cd7f2c040aeb1cd102b2946d855c2f979163310a449f82bf620ffe70",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00031.png",
+          "source_binding": {
+            "frame_index": 31,
+            "pts": 187830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 32,
+          "raw_png_sha256": "1c9f5babb5e80cdab820dcb7cf8faa342303ca6d61a0928d35f8c99a05aec2ec",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00032.png",
+          "source_binding": {
+            "frame_index": 32,
+            "pts": 193860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 33,
+          "raw_png_sha256": "5ad45b1049c099267494c0f167375031a7a3989ed31eb84a51c321598c7e8047",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00033.png",
+          "source_binding": {
+            "frame_index": 33,
+            "pts": 199800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 36,
+          "raw_png_sha256": "518af5a96149d0e8297834443cb07c6bca2215e68891a93a22179dd4a186f6d5",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00036.png",
+          "source_binding": {
+            "frame_index": 36,
+            "pts": 217800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 39,
+          "raw_png_sha256": "2b40ef46c8fddf9100f4ac7a6709915b4dfe9f82497e88d778c4b65257f0d538",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00039.png",
+          "source_binding": {
+            "frame_index": 39,
+            "pts": 235800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        },
+        {
+          "source_frame_index": 42,
+          "raw_png_sha256": "f4c6f83c0da031367ef115b3b44202b10888be7254bce53a160cc3269c085d4c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-ohbh-frame-00042.png",
+          "source_binding": {
+            "frame_index": 42,
+            "pts": 253800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false,
+      "original_dataset_policy": "single-handed backhand remains parameter-held-out; no thresholds or algorithm choices were fitted to it"
+    },
+    {
+      "case": "mit-thbh",
+      "source_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "cards": [
+        "GS02-M01-04"
+      ],
+      "observation": "Opponent/feed stroke is outside the shot. Single-player preparation, feet adjustment and backswing are visible, but they do not establish the original opponent-release boundary. Existing M03 remains M03.",
+      "missing": [
+        "opponent_ball_departure",
+        "independently_confirmed_split_step_landing"
+      ],
+      "sampling": "15 sparse frames 0..42; no exhaustive absence claim",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "frames": [
+        {
+          "source_frame_index": 0,
+          "raw_png_sha256": "51b93bea029f7f66e9de502d5fcf5a794a00f4643e590d865d170b36a435d58c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00000.png",
+          "source_binding": {
+            "frame_index": 0,
+            "pts": 0,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 3,
+          "raw_png_sha256": "31b661dc2ed28b53f06b59edb4ddf73b9e8f43a2d9bebd2cef4df4f50f6a0436",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00003.png",
+          "source_binding": {
+            "frame_index": 3,
+            "pts": 19800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 6,
+          "raw_png_sha256": "cef037e2a563eb1866e36fb4886248b66f2531f4135d1376f867dfcb1a71bc76",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00006.png",
+          "source_binding": {
+            "frame_index": 6,
+            "pts": 37800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 9,
+          "raw_png_sha256": "8c9deb925ba0fe2ac23aada659323082cb5203a51ffd85b110e2b1794656a26b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00009.png",
+          "source_binding": {
+            "frame_index": 9,
+            "pts": 55800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 12,
+          "raw_png_sha256": "7816c7d9b4f741d7313580048820af6d7121467194e1090304a939a3f6213cd3",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00012.png",
+          "source_binding": {
+            "frame_index": 12,
+            "pts": 73800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 15,
+          "raw_png_sha256": "85cc11a6bd7f4b0f11610f3a189dbaa7bf989ff334ea84a4c362e5b2b4233be9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00015.png",
+          "source_binding": {
+            "frame_index": 15,
+            "pts": 91800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 18,
+          "raw_png_sha256": "dd2c69c84d21e07ee0812d826bf73e3dfed8655ae9ca9c3691def0c73d0456b7",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00018.png",
+          "source_binding": {
+            "frame_index": 18,
+            "pts": 109800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 21,
+          "raw_png_sha256": "b85a3aa5bb162c82dae129e024da08d3cc38a1b08ac444247b6fec045e505c1f",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00021.png",
+          "source_binding": {
+            "frame_index": 21,
+            "pts": 127800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 24,
+          "raw_png_sha256": "a0d0c0a68aabfd3075394907f38b3d872475993cf9979ea5a8ce22790f37c848",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00024.png",
+          "source_binding": {
+            "frame_index": 24,
+            "pts": 145800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 27,
+          "raw_png_sha256": "108871465974519497e1e448fde2e2d08a5f7613e72283be24b755cb39d2d2b8",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00027.png",
+          "source_binding": {
+            "frame_index": 27,
+            "pts": 163800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 30,
+          "raw_png_sha256": "6c564993d4b93705b1f4756c00445fa05dce2aa7ac4af08172be409f612e7f08",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00030.png",
+          "source_binding": {
+            "frame_index": 30,
+            "pts": 181800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 33,
+          "raw_png_sha256": "91118b52682fc36bae9ef5a0990c526b63f05439e695a8afd278d7d290e4de15",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00033.png",
+          "source_binding": {
+            "frame_index": 33,
+            "pts": 199800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 36,
+          "raw_png_sha256": "0d1cb7871707f759a00a8b6984d5f5d50ff302c49142f08e7d27ed52491e0a3a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00036.png",
+          "source_binding": {
+            "frame_index": 36,
+            "pts": 217800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 39,
+          "raw_png_sha256": "5ba761224f7914762bc2ce0167e771c7ee75d5a435161ce206997e242d1cd60e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00039.png",
+          "source_binding": {
+            "frame_index": 39,
+            "pts": 235800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        },
+        {
+          "source_frame_index": 42,
+          "raw_png_sha256": "da898d1c788f6382a7ba50b0de2929c981b03708ff30b946f9349ee9f2949e62",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/mit-thbh-frame-00042.png",
+          "source_binding": {
+            "frame_index": 42,
+            "pts": 253800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false
+    },
+    {
+      "case": "usta-slice",
+      "source_video": ".codex_tmp/card-video-extension-20261022/media/usta-slice-backhand.mp4",
+      "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8",
+      "cards": [
+        "GS04-M01-03"
+      ],
+      "observation": "Self-slice drill with successive close/front/rear shots. Several reviewed shots clip the lower legs/feet; the rear shot shows standing foot adjustment but no established opponent incoming-ball to split-step landing sequence. Self-generated ball control is not a complete match GS04 M01.",
+      "missing": [
+        "match_incoming_ball_context",
+        "independently_confirmed_split_step_landing"
+      ],
+      "sampling": "12 sparse frames 980..1200; edited shots never joined",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": "https://www.usta.com/en/home/improve/tips-and-instruction/national/tennis-techniques--hitting-the-slice-backhand.html",
+      "source_organization": "USTA",
+      "source_title": "Tennis Technique: The Slice Backhand",
+      "frames": [
+        {
+          "source_frame_index": 980,
+          "raw_png_sha256": "a21600e3c9e7dc7b0c2d66bd6991d063171773c3e46345e35d66d0133e207983",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-00980.png",
+          "source_binding": {
+            "frame_index": 980,
+            "pts": 980980,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 990,
+          "raw_png_sha256": "c7fd4577b27f8284ac90ce12e5d5416a76d675a529dab6ac2665d787abe311d0",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-00990.png",
+          "source_binding": {
+            "frame_index": 990,
+            "pts": 990990,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1000,
+          "raw_png_sha256": "03131523f73cd262728a65ce8d03fd725317675610f901e668767278a8266eb7",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01000.png",
+          "source_binding": {
+            "frame_index": 1000,
+            "pts": 1001000,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1010,
+          "raw_png_sha256": "dcb566ee50fbed6625de050e18805e412386b1476a12184e8812b840ba87e627",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01010.png",
+          "source_binding": {
+            "frame_index": 1010,
+            "pts": 1011010,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1020,
+          "raw_png_sha256": "df9b117e3d4dc0ecd1708b1dd3f45db92adf4a40cfd28caf283f60a83ef483d7",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01020.png",
+          "source_binding": {
+            "frame_index": 1020,
+            "pts": 1021020,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1030,
+          "raw_png_sha256": "f0d6973c43f5583606370a9d09add27bfc12709011cea9755f5220a81bf1da1a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01030.png",
+          "source_binding": {
+            "frame_index": 1030,
+            "pts": 1031030,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1040,
+          "raw_png_sha256": "c02f10fcc16f7a09a01abf78d5b5e40f24418ee0dcc73ae9b71d6e81e5fbc1fe",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01040.png",
+          "source_binding": {
+            "frame_index": 1040,
+            "pts": 1041040,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1050,
+          "raw_png_sha256": "6306ad36369d1e03d574276c848c9e305cf335e0ac9053bf6ee9044f5ff03a78",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01050.png",
+          "source_binding": {
+            "frame_index": 1050,
+            "pts": 1051050,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1080,
+          "raw_png_sha256": "34b35f0d459e224fb171f777c7b5f06658a3b9d7031940bc9c463391fe37f527",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01080.png",
+          "source_binding": {
+            "frame_index": 1080,
+            "pts": 1081080,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1120,
+          "raw_png_sha256": "03792775c9b4eb293915dc0ac84b7750efbb96467d6850f958938fab6a6bfa2b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01120.png",
+          "source_binding": {
+            "frame_index": 1120,
+            "pts": 1121120,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1160,
+          "raw_png_sha256": "00c84fe7ec1d9a06d3bb3b56112f80309f92af95487ede7731c49386da0309f5",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01160.png",
+          "source_binding": {
+            "frame_index": 1160,
+            "pts": 1161160,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        },
+        {
+          "source_frame_index": 1200,
+          "raw_png_sha256": "e77d528f87a632028c7bdecb5caf3a27a775867f78ce65288923496df25e5cdf",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/usta-slice-frame-01200.png",
+          "source_binding": {
+            "frame_index": 1200,
+            "pts": 1201200,
+            "time_base_num": 1,
+            "time_base_den": 60000,
+            "video_sha256": "63398e188cc300af2028457af17ffbed84596fc105718d06507345fcf75388d8"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false
+    },
+    {
+      "case": "rick-slice",
+      "source_video": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "cards": [
+        "GS05-M01-03"
+      ],
+      "observation": "Standing explanation and shadow forehand-slice demonstration. No opponent hitting or incoming-ball context appears in the reviewed sequence. Widening stance during the demonstration is not a verified split-step endpoint.",
+      "missing": [
+        "opponent_ball_departure",
+        "independently_confirmed_split_step_landing"
+      ],
+      "sampling": "12 sparse frames 1380..1545; not a full-source exhaustive review",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+      "frames": [
+        {
+          "source_frame_index": 1380,
+          "raw_png_sha256": "e84d3df84bb4a620bcefbe4ec198af411c593ad614054133b7fdd23731d33442",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01380.png",
+          "source_binding": {
+            "frame_index": 1380,
+            "pts": 706560,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1395,
+          "raw_png_sha256": "31eeba0a70a1fda8057ba30a305ee3990d9d64c9a3ab82e822fe906e3a15061e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01395.png",
+          "source_binding": {
+            "frame_index": 1395,
+            "pts": 714240,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1410,
+          "raw_png_sha256": "1ca571fea58b222fcc0eab3bbbe05e9ca94a2e62d75a0c8a8c6051baf4643017",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01410.png",
+          "source_binding": {
+            "frame_index": 1410,
+            "pts": 721920,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1425,
+          "raw_png_sha256": "2b29b776997cb80db1ab93bc3da7a370faf79a33683d53241775ece0b8a73b8e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01425.png",
+          "source_binding": {
+            "frame_index": 1425,
+            "pts": 729600,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1440,
+          "raw_png_sha256": "76b11b8672daefaa5f229dbdce0a4f043d7f50ffc93cc1b2fef7853877456a9c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01440.png",
+          "source_binding": {
+            "frame_index": 1440,
+            "pts": 737280,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1455,
+          "raw_png_sha256": "c620fbaaa9924252e342287a9a9b809e42e5aced2ba426ea187fa4f04fba7e38",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01455.png",
+          "source_binding": {
+            "frame_index": 1455,
+            "pts": 744960,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1470,
+          "raw_png_sha256": "8412a2cbc37eafd8460b9d456e3268b08def1c1be5ecf6ce5450553e500f7f72",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01470.png",
+          "source_binding": {
+            "frame_index": 1470,
+            "pts": 752640,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1485,
+          "raw_png_sha256": "ef99728d3181f957eedd969c6593e5d673e16d65a4ab3237ba3a541e71870aeb",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01485.png",
+          "source_binding": {
+            "frame_index": 1485,
+            "pts": 760320,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1500,
+          "raw_png_sha256": "8b839cc29b85a680e3bf8da8e403b29138e14b95d4e43c4d82efc65831edcb6e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01500.png",
+          "source_binding": {
+            "frame_index": 1500,
+            "pts": 768000,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1515,
+          "raw_png_sha256": "2f4fcc4c601eefc825e957a0f48c94d09bf327006c520ee0a7b436d3e6a1a498",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01515.png",
+          "source_binding": {
+            "frame_index": 1515,
+            "pts": 775680,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1530,
+          "raw_png_sha256": "b8e2c6e2b4f4aa08d6c890f4f24244af7631aaf4d28a8084d1989e7cf944f74e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01530.png",
+          "source_binding": {
+            "frame_index": 1530,
+            "pts": 783360,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        },
+        {
+          "source_frame_index": 1545,
+          "raw_png_sha256": "34f60c478c580a530d69d840abd78e9f481d58c89c8f7e5d4505bd2f6a73adfb",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/rick-slice-frame-01545.png",
+          "source_binding": {
+            "frame_index": 1545,
+            "pts": 791040,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false
+    },
+    {
+      "case": "local-court",
+      "source_video": ".codex_tmp/local-migration-20261019/local-data/uploads/0a3df3a3-2629-4dd5-80a1-54e4b11f7341.mp4",
+      "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "cards": [
+        "GS01-M01-03"
+      ],
+      "observation": "Court overview includes the distant opponent; every original frame 135..170 was additionally reviewed. Opponent swing then departing/approaching ball are visible, but near player chiefly shifts/lifts the left foot while right foot remains near its support position, then turns. A complete split-step landing endpoint was not independently established. Do not promote the old detector FS candidate to an M01 label.",
+      "missing": [
+        "independently_confirmed_split_step_landing"
+      ],
+      "sampling": "12 sparse overview frames 0..330 plus all 36 frames 135..170; no conclusion about all 97 seconds",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": null,
+      "source_organization": "private local recording",
+      "frames": [
+        {
+          "source_frame_index": 0,
+          "raw_png_sha256": "c7561bd7c186f0d5dd5a00d7d728901e9c98ac1e9f58823433bea7f70880084b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00000.png",
+          "source_binding": {
+            "frame_index": 0,
+            "pts": 0,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 30,
+          "raw_png_sha256": "4b1d4b1ce38f9b345318285b3cae0f445fe31b142d0bb2d84d4a89eb2488f9a4",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00030.png",
+          "source_binding": {
+            "frame_index": 30,
+            "pts": 600,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 60,
+          "raw_png_sha256": "aa4cf93e1094e907ee4998b688c2799aef96ef1f29d5912468205829f691edb5",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00060.png",
+          "source_binding": {
+            "frame_index": 60,
+            "pts": 1200,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 90,
+          "raw_png_sha256": "16a1cd950ba6efb944b18c75a8a4e6d5b562ddd895cb8e5a5255717a10200ec9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00090.png",
+          "source_binding": {
+            "frame_index": 90,
+            "pts": 1800,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 120,
+          "raw_png_sha256": "ed8914195096d0eeaf5712071bf31a9a81a706f0f5c21bd270c7d1d133b81482",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00120.png",
+          "source_binding": {
+            "frame_index": 120,
+            "pts": 2400,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 135,
+          "raw_png_sha256": "389542166e2d6988595ee43e6c2402e29c7f75f041406e4f1517086a0680e168",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00135.png",
+          "source_binding": {
+            "frame_index": 135,
+            "pts": 2700,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 136,
+          "raw_png_sha256": "1d5776699eb38766452008886eac68b0682722585d6c6a5a408bda37907c3335",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00136.png",
+          "source_binding": {
+            "frame_index": 136,
+            "pts": 2720,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 137,
+          "raw_png_sha256": "43640b9579689610a303bae8ea96fccbebc1f2075f1358f13f41c353dfa2bd71",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00137.png",
+          "source_binding": {
+            "frame_index": 137,
+            "pts": 2740,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 138,
+          "raw_png_sha256": "ac5ff519c83d62093c88676fdf147ad53ebfb5c5496a7f1da549a69750027a17",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00138.png",
+          "source_binding": {
+            "frame_index": 138,
+            "pts": 2760,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 139,
+          "raw_png_sha256": "f78ef6a568c092d5fa6092bf316aa548f63d8ff59cc13f4bd6c425853e170376",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00139.png",
+          "source_binding": {
+            "frame_index": 139,
+            "pts": 2780,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 140,
+          "raw_png_sha256": "00d538508680b5a2936970e9c0f05c85fa7a08da3af14271fe1eb202ae41cf91",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00140.png",
+          "source_binding": {
+            "frame_index": 140,
+            "pts": 2800,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 141,
+          "raw_png_sha256": "025257607c80deba91d9e910c723ffd418310ab8da3c042246e4017c39b60393",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00141.png",
+          "source_binding": {
+            "frame_index": 141,
+            "pts": 2820,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 142,
+          "raw_png_sha256": "7aa67ac2d2cec73f37140183373759e53250f9b3874f1a76b9797831957a8bc9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00142.png",
+          "source_binding": {
+            "frame_index": 142,
+            "pts": 2840,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 143,
+          "raw_png_sha256": "e8c12fbd2c82875aaa20cad135ceb5bf1bc86f177e4828e1116d19049c1f5a79",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00143.png",
+          "source_binding": {
+            "frame_index": 143,
+            "pts": 2860,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 144,
+          "raw_png_sha256": "3d6deaad4fee4f2ac3a93109627d4946196a14a3b0433841ea285cbaedd958a0",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00144.png",
+          "source_binding": {
+            "frame_index": 144,
+            "pts": 2880,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 145,
+          "raw_png_sha256": "1f163f1da9925ffc939002ca8beb51cb40abeab284bd49b03963786f8dcf7373",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00145.png",
+          "source_binding": {
+            "frame_index": 145,
+            "pts": 2900,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 146,
+          "raw_png_sha256": "fab8112effc9e2e4713d9fee97f3450d553fb1530ce7fce531d5f31ac396d02b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00146.png",
+          "source_binding": {
+            "frame_index": 146,
+            "pts": 2920,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 147,
+          "raw_png_sha256": "2684bd3777166fe2f51a4bbb1838e3bd176fc985a129a3ba34e2eb25cb8d6377",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00147.png",
+          "source_binding": {
+            "frame_index": 147,
+            "pts": 2940,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 148,
+          "raw_png_sha256": "2feabf5b194eb7f8cf6682bfff03254e8ab46bfe14cd024879cf1403ed98fb45",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00148.png",
+          "source_binding": {
+            "frame_index": 148,
+            "pts": 2960,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 149,
+          "raw_png_sha256": "8df37a439c3d33c92d4799e9416faea8441bdbddfa10bf6417b10fc8a4e55a53",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00149.png",
+          "source_binding": {
+            "frame_index": 149,
+            "pts": 2980,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 150,
+          "raw_png_sha256": "9d08414e4a72e48d3b1682c192ae12fbbef93ae776d86f9d3135f2e2a4d671aa",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00150.png",
+          "source_binding": {
+            "frame_index": 150,
+            "pts": 3000,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 151,
+          "raw_png_sha256": "6bfab0d70cbd3279dde90fe5dad84f23194ccd44ce4e2054913edb12545e3e7e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00151.png",
+          "source_binding": {
+            "frame_index": 151,
+            "pts": 3020,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 152,
+          "raw_png_sha256": "e3b62032a20de1fbc82cb5edf6fd8aef321d857c5a9fd0c538739149ea4a3145",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00152.png",
+          "source_binding": {
+            "frame_index": 152,
+            "pts": 3040,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 153,
+          "raw_png_sha256": "507e68d07604ec7b5b54663e438364a760a5cd34beabe465eef7012bc4d7942b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00153.png",
+          "source_binding": {
+            "frame_index": 153,
+            "pts": 3060,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 154,
+          "raw_png_sha256": "082003e6340dd7013ae5b593489040e01b08ceca070749f88ac9c3dcdf5319e9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00154.png",
+          "source_binding": {
+            "frame_index": 154,
+            "pts": 3080,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 155,
+          "raw_png_sha256": "0d6ee62232b4ada49b8a672a2445ed0cd4259dc5c0613cb5d43d609b365a49c6",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00155.png",
+          "source_binding": {
+            "frame_index": 155,
+            "pts": 3100,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 156,
+          "raw_png_sha256": "3f7156db7c0c728f8bd730e684fe8f5190e1ba9ff73a783d934527c3c8ecf8c9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00156.png",
+          "source_binding": {
+            "frame_index": 156,
+            "pts": 3120,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 157,
+          "raw_png_sha256": "3ca3aad695667df87d2914b2279d6e55fcc2ad786e621d5a15a8154340ceaa6c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00157.png",
+          "source_binding": {
+            "frame_index": 157,
+            "pts": 3140,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 158,
+          "raw_png_sha256": "d3f9c677e2f26cdf83f3937a8267d04cabb556c6a598d8c6ba835c567dc42180",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00158.png",
+          "source_binding": {
+            "frame_index": 158,
+            "pts": 3160,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 159,
+          "raw_png_sha256": "dc99e02f9e0a1c321d25fba644c83e03187fef7a4b6eeb72630b70025f8c463f",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00159.png",
+          "source_binding": {
+            "frame_index": 159,
+            "pts": 3180,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 160,
+          "raw_png_sha256": "d7553bbf5a63fc805b4bb5d5db6403adb85ec4e8f5ac436610cb94651ce96ce9",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00160.png",
+          "source_binding": {
+            "frame_index": 160,
+            "pts": 3200,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 161,
+          "raw_png_sha256": "f65bde6b39e8828294bbe99e6ed416791ae53b51f1cbd89f79d1a7f6a17e05df",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00161.png",
+          "source_binding": {
+            "frame_index": 161,
+            "pts": 3220,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 162,
+          "raw_png_sha256": "6948cd9aba104aee71f03853fc6d3c7b69a30b536eb10c62267c368297bec57e",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00162.png",
+          "source_binding": {
+            "frame_index": 162,
+            "pts": 3240,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 163,
+          "raw_png_sha256": "841c26a62c071a5da8c69667ff83f7972fe05af8d5ac77ea8d81dffde0c518b2",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00163.png",
+          "source_binding": {
+            "frame_index": 163,
+            "pts": 3260,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 164,
+          "raw_png_sha256": "68678720bbe8ad35c42392314f8883f52722f32797c7474f3f521b8a0a7f7262",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00164.png",
+          "source_binding": {
+            "frame_index": 164,
+            "pts": 3280,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 165,
+          "raw_png_sha256": "d2fa698a2db9eec3b561cb3feabbd69dc3640eb85cfaa46e6acea12a820803f4",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00165.png",
+          "source_binding": {
+            "frame_index": 165,
+            "pts": 3300,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 166,
+          "raw_png_sha256": "95e497c93be1c33393be1b6d2af82bbf54aae8a8b1a042e1f3c8dd94c35086fd",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00166.png",
+          "source_binding": {
+            "frame_index": 166,
+            "pts": 3320,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 167,
+          "raw_png_sha256": "b860f6555a17d4d96ad047d3b9e6efbcc10522ebb7db69142f9f19be886ffb21",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00167.png",
+          "source_binding": {
+            "frame_index": 167,
+            "pts": 3340,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 168,
+          "raw_png_sha256": "beb8b09870351ef2700883b52e8920ffa3f543bf6f488c6a8fde1f84e36cf8f7",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00168.png",
+          "source_binding": {
+            "frame_index": 168,
+            "pts": 3360,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 169,
+          "raw_png_sha256": "63439de8fb19185b25cd16adabd731ce49078b12a61c92d58ad5ffabc46891f2",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00169.png",
+          "source_binding": {
+            "frame_index": 169,
+            "pts": 3380,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 170,
+          "raw_png_sha256": "b96fb0c6e65125290e36edf724974c7336aec8b39a0615c9d118002dd37d79a4",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00170.png",
+          "source_binding": {
+            "frame_index": 170,
+            "pts": 3400,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 180,
+          "raw_png_sha256": "401c54ad567769ffe1028fedaba7936fcb6f95d3fe4a42137ab162c67bb53351",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00180.png",
+          "source_binding": {
+            "frame_index": 180,
+            "pts": 3600,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 210,
+          "raw_png_sha256": "03e4d30fa646f62416a01834c2b8fa852bb0c723c71bee77d96880c834673c7b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00210.png",
+          "source_binding": {
+            "frame_index": 210,
+            "pts": 4200,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 240,
+          "raw_png_sha256": "5d807b42a61594e9518634727fe1432fda566d324424006b1637eefb9c7cf116",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00240.png",
+          "source_binding": {
+            "frame_index": 240,
+            "pts": 4800,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 270,
+          "raw_png_sha256": "7529a0cbd4d661472eeb663b1b6ee8c082932287e7baed8acc79a727daf77751",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00270.png",
+          "source_binding": {
+            "frame_index": 270,
+            "pts": 5400,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 300,
+          "raw_png_sha256": "80436778d728dddc70bf53146013baaac4067d6f4210ed2853c1abb3cc010761",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00300.png",
+          "source_binding": {
+            "frame_index": 300,
+            "pts": 6000,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        },
+        {
+          "source_frame_index": 330,
+          "raw_png_sha256": "22fac038d61e298933d0c91e40073dce2a3851807cc1c897c214cbc028246dc5",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/local-court-frame-00330.png",
+          "source_binding": {
+            "frame_index": 330,
+            "pts": 6600,
+            "time_base_num": 1,
+            "time_base_den": 600,
+            "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false
+    },
+    {
+      "case": "wimbledon",
+      "source_video": ".codex_tmp/pose-only-review-development-20261022/validation-source/wimbledon-konta-practice.mp4",
+      "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020",
+      "cards": [
+        "GS01-M01-03"
+      ],
+      "observation": "Player and feet are visible during repeated groundstroke preparation/recovery, with camera following the player, but opponent ball departure is outside the shot. Ready-posture dips or foot adjustment cannot supply the missing original M01 start.",
+      "missing": [
+        "opponent_ball_departure"
+      ],
+      "sampling": "14 sparse frames 0..195 within the previously observed 204-frame first shot",
+      "status": "unresolved_no_source_M01_window_established",
+      "stage_window": null,
+      "local_preload_observation": null,
+      "score": null,
+      "original_grade": null,
+      "source_url": "https://www.youtube.com/watch?v=55RL1fEKZvI",
+      "source_organization": "Wimbledon",
+      "frames": [
+        {
+          "source_frame_index": 0,
+          "raw_png_sha256": "19dfe72bb60742b4c62a4e13b1ed79c1b0feeb9c82845499093acaad4212970c",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00000.png",
+          "source_binding": {
+            "frame_index": 0,
+            "pts": 0,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 15,
+          "raw_png_sha256": "bc45c575f89cb3ab09d8b2ccd0f664d1511bc91b01018f351d079fafeec5511a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00015.png",
+          "source_binding": {
+            "frame_index": 15,
+            "pts": 7680,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 30,
+          "raw_png_sha256": "debf198baedf5529adb38019fd66db300d47c634e84bba6ea72d013758090beb",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00030.png",
+          "source_binding": {
+            "frame_index": 30,
+            "pts": 15360,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 45,
+          "raw_png_sha256": "9d1e318d60ea334ea550f50412a965886ab16c1919e845bd6a52a0da0a70ad4a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00045.png",
+          "source_binding": {
+            "frame_index": 45,
+            "pts": 23040,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 60,
+          "raw_png_sha256": "c412b028ee31937ca846a5945c38e21311dc154a6e4bafb5b40e11db0cd679ea",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00060.png",
+          "source_binding": {
+            "frame_index": 60,
+            "pts": 30720,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 75,
+          "raw_png_sha256": "8b86879b8c3af53839099ddf3bbd099ab45407b881db5957bd5928cfe05dff9a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00075.png",
+          "source_binding": {
+            "frame_index": 75,
+            "pts": 38400,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 90,
+          "raw_png_sha256": "d88242998f8395f029ac8a962781e176ee94bd525f76c89d9c2a2a912fb42155",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00090.png",
+          "source_binding": {
+            "frame_index": 90,
+            "pts": 46080,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 105,
+          "raw_png_sha256": "5a78cb9ca7f5aad8816304628a541937ea7062f12378d81507940cdaa48566e8",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00105.png",
+          "source_binding": {
+            "frame_index": 105,
+            "pts": 53760,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 120,
+          "raw_png_sha256": "a7f3fb0d58266521e5d8c68b17b157b221d2c9d5e181f628b7d71f53ab1cf59b",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00120.png",
+          "source_binding": {
+            "frame_index": 120,
+            "pts": 61440,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 135,
+          "raw_png_sha256": "17391819682e0d8385590638598ba64e32139c5cc9798c8af8b2615deb5bf1db",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00135.png",
+          "source_binding": {
+            "frame_index": 135,
+            "pts": 69120,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 150,
+          "raw_png_sha256": "6590a933187e3b82153b713310c7f6eee5614ef30199ae51a7c66a554b5201a5",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00150.png",
+          "source_binding": {
+            "frame_index": 150,
+            "pts": 76800,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 165,
+          "raw_png_sha256": "1f77002a15d074513ea5ff033af050e79a6941db588d54f3a1371998ffaec913",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00165.png",
+          "source_binding": {
+            "frame_index": 165,
+            "pts": 84480,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 180,
+          "raw_png_sha256": "b55080b4e4f4564bad9e6a329f3f4aa6ba85261daeb35ae47aa954ba33dceff5",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00180.png",
+          "source_binding": {
+            "frame_index": 180,
+            "pts": 92160,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        },
+        {
+          "source_frame_index": 195,
+          "raw_png_sha256": "cbbc0576b614a0994f7e560cf42492ccbe6794e59eed3079acad7506e6d4184a",
+          "raw_png_evidence_path": ".codex_tmp/gs-m01-observability-20261022/wimbledon-frame-00195.png",
+          "source_binding": {
+            "frame_index": 195,
+            "pts": 99840,
+            "time_base_num": 1,
+            "time_base_den": 12800,
+            "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020"
+          }
+        }
+      ],
+      "parameter_tuning_performed": false
+    }
+  ],
+  "atp": {
+    "original_frame_range": [
+      375,
+      425
+    ],
+    "source_pts_ms_range": [
+      15000,
+      17000
+    ],
+    "observation": "Both players are visible. Near player gathers feet/hops then separates feet and bends knees; far player executes a return. Exact departing-ball and shoe-contact instants remain uncertain at source resolution.",
+    "first_reviewer_tentative_departure_bracket_frames": [
+      391,
+      393
+    ],
+    "first_reviewer_tentative_landing_bracket_frames": [
+      397,
+      400
+    ],
+    "independent_reviewer_departure_bracket_frames": [
+      397,
+      400
+    ],
+    "independent_reviewer_landing_bracket_frames": [
+      397,
+      400
+    ],
+    "reviewer_disagreement_retained": true,
+    "independent_review_note": "Reviewed six native crop sheets and397/398/399/400 full PNGs without preload values. Ball can be tracked departing around399..402, but contact pixels insufficient; boundary brackets overlap. Cannot independently establish positive-length complete source M01.",
+    "conclusion": "unresolved_no_complete_source_M01_frozen",
+    "stage_window": null,
+    "local_preload_observation": null,
+    "rejected_extensions": "Do not extend endpoint into404..410 lateral movement or418 preparation merely to reach7frames.",
+    "frames": [
+      {
+        "source_frame_index": 375,
+        "raw_png_sha256": "7caaba9413bb764382e40fc53e2802ef01668a14de86d97e72c1d4ec11cc7e2e",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00375.png",
+        "source_binding": {
+          "frame_index": 375,
+          "pts": 192000,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 376,
+        "raw_png_sha256": "f53cd68ff9a2b83e38774ece673db4fc7ad9049e4d4f267febba6ff5a99671dd",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00376.png",
+        "source_binding": {
+          "frame_index": 376,
+          "pts": 192512,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 377,
+        "raw_png_sha256": "00261f48ba6802760b2dedacb2cff2e0a8e09a9cfb56a34c7ef71d85df7382b5",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00377.png",
+        "source_binding": {
+          "frame_index": 377,
+          "pts": 193024,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 378,
+        "raw_png_sha256": "9be547d5118d5df7024a5a7c8e1103ad1c8521bdc5dd940f5b47a17f0f7076c6",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00378.png",
+        "source_binding": {
+          "frame_index": 378,
+          "pts": 193536,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 379,
+        "raw_png_sha256": "74b0eb4dec911393518229b68d4684ee690c3b57943da018b6d038d8276d4dc2",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00379.png",
+        "source_binding": {
+          "frame_index": 379,
+          "pts": 194048,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 380,
+        "raw_png_sha256": "2daea42c6e51f21355c28e6ebb032cd16634a01e4ae664fae20b60976a002c87",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00380.png",
+        "source_binding": {
+          "frame_index": 380,
+          "pts": 194560,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 381,
+        "raw_png_sha256": "eb346a2705578c3054964a631fd9dbaf73f07fc530054f45cc23bfdfd43b6554",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00381.png",
+        "source_binding": {
+          "frame_index": 381,
+          "pts": 195072,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 382,
+        "raw_png_sha256": "16ea5794107fea7fa0a16523afa3326daa4f43af01a172f0159f6770d78ed119",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00382.png",
+        "source_binding": {
+          "frame_index": 382,
+          "pts": 195584,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 383,
+        "raw_png_sha256": "d59e916215d680eba521a791060e6516e9530c871429868ea86df708f0fea338",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00383.png",
+        "source_binding": {
+          "frame_index": 383,
+          "pts": 196096,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 384,
+        "raw_png_sha256": "6ff1381dd1f53300cd406467daee272bc95d3fe44bb411b381f123ea8760f24b",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00384.png",
+        "source_binding": {
+          "frame_index": 384,
+          "pts": 196608,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 385,
+        "raw_png_sha256": "dfeb63121a6251dfb0ba9d5f7536a3840de543a7ec19f1c01e06492c64a9c96e",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00385.png",
+        "source_binding": {
+          "frame_index": 385,
+          "pts": 197120,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 386,
+        "raw_png_sha256": "64eaecc5e73988b5f1bcdedb176ffd0b76105e226dd5e394d8508a49ca41c800",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00386.png",
+        "source_binding": {
+          "frame_index": 386,
+          "pts": 197632,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 387,
+        "raw_png_sha256": "1920c733d4fbb1740191c132da2be95dda73811578c3e58e12d0c3513e7df4ef",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00387.png",
+        "source_binding": {
+          "frame_index": 387,
+          "pts": 198144,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 388,
+        "raw_png_sha256": "748cdc07986feaa13ef737c95f0cf7b75dcf230dee480f5c386b19652a812d46",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00388.png",
+        "source_binding": {
+          "frame_index": 388,
+          "pts": 198656,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 389,
+        "raw_png_sha256": "f5e3c5ecb064fe9f6a6afe7396b0512ba4ba9288e34c424ab1591eea59c0abc9",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00389.png",
+        "source_binding": {
+          "frame_index": 389,
+          "pts": 199168,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 390,
+        "raw_png_sha256": "e5f0ad20241360951accdad3c773ad6a15e814cc2db3be55014ef0fb0d8e5730",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00390.png",
+        "source_binding": {
+          "frame_index": 390,
+          "pts": 199680,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 391,
+        "raw_png_sha256": "4262887a173fb4d6b247db1ff9c39aea19e7d6f0ae19ec6213b2b05f6f351466",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00391.png",
+        "source_binding": {
+          "frame_index": 391,
+          "pts": 200192,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 392,
+        "raw_png_sha256": "6daed8e5bf7dcdd306789a1fe267ead7ea25c197535cdf15f1855f6453709170",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00392.png",
+        "source_binding": {
+          "frame_index": 392,
+          "pts": 200704,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 393,
+        "raw_png_sha256": "49e30bda03aa40446848f4c3074a36d59f5a1074e8a7fc9f6c9cdcae290181b1",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00393.png",
+        "source_binding": {
+          "frame_index": 393,
+          "pts": 201216,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 394,
+        "raw_png_sha256": "8fc8009d2d62e82a2d41aea5a4078d8bb063673db2058585a85dd4484dd7b3b9",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00394.png",
+        "source_binding": {
+          "frame_index": 394,
+          "pts": 201728,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 395,
+        "raw_png_sha256": "e2e1e113188609bdf3e17d9222838d0fb5c0bd787cbd7e4280c9729b86929a24",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00395.png",
+        "source_binding": {
+          "frame_index": 395,
+          "pts": 202240,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 396,
+        "raw_png_sha256": "c3cabec506c81128ab52ead7b268c95a4f77120533dcafe4faf2facb01073753",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00396.png",
+        "source_binding": {
+          "frame_index": 396,
+          "pts": 202752,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 397,
+        "raw_png_sha256": "3e4b0cd3da54f03add80e69566df3454b201c5679b696566eaf97fd9df891711",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00397.png",
+        "source_binding": {
+          "frame_index": 397,
+          "pts": 203264,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 398,
+        "raw_png_sha256": "2c793064290e03c686e64594a064f9cd093c4f95cf7a9d63ad7c973a2f579e3e",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00398.png",
+        "source_binding": {
+          "frame_index": 398,
+          "pts": 203776,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 399,
+        "raw_png_sha256": "8276b477fa02df630caadeb883c269ec8a71465d9cdf74e7e2912eca7daabe9a",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00399.png",
+        "source_binding": {
+          "frame_index": 399,
+          "pts": 204288,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 400,
+        "raw_png_sha256": "dddf02af705abb51bce2105899665a8e15e6452bc9a3bcf187f2efda541f4345",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00400.png",
+        "source_binding": {
+          "frame_index": 400,
+          "pts": 204800,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 401,
+        "raw_png_sha256": "e17a5ae84872280561d5d66d148da7a4867d41a67a02ce8fef097b12746eeff4",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00401.png",
+        "source_binding": {
+          "frame_index": 401,
+          "pts": 205312,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 402,
+        "raw_png_sha256": "4ab904b64f38acdd3204b8d1333348f1fe578a58c4bab15addfef70987bd11d3",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00402.png",
+        "source_binding": {
+          "frame_index": 402,
+          "pts": 205824,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 403,
+        "raw_png_sha256": "9ab4fa7ee9728c0494ce46f31beeca239272925bd3d80a282864b69d289c30af",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00403.png",
+        "source_binding": {
+          "frame_index": 403,
+          "pts": 206336,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 404,
+        "raw_png_sha256": "a920cdfecda6b06afd9eda6dc2bb50e5b2c921bc1161d67b291ecc700e4f1019",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00404.png",
+        "source_binding": {
+          "frame_index": 404,
+          "pts": 206848,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 405,
+        "raw_png_sha256": "5b99cea5beb3d2609c59d72ac28bf8bfe46c76cd4ba47034bf9e5539fa69bc20",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00405.png",
+        "source_binding": {
+          "frame_index": 405,
+          "pts": 207360,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 406,
+        "raw_png_sha256": "b0e08a97acf9d350a5a2c7010916764c9226279ed9ea80e8391b354e0852e13d",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00406.png",
+        "source_binding": {
+          "frame_index": 406,
+          "pts": 207872,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 407,
+        "raw_png_sha256": "2c9501fb6a0e90c934fd4a638f7b60d03588634c9ad96a9a3731fe30c254f380",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00407.png",
+        "source_binding": {
+          "frame_index": 407,
+          "pts": 208384,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 408,
+        "raw_png_sha256": "2ba68e2225f0f562c0da7465057a216f72946717c9476333ece95b4bb1550ef7",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00408.png",
+        "source_binding": {
+          "frame_index": 408,
+          "pts": 208896,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 409,
+        "raw_png_sha256": "33317ec86c168bb53984ff7f404062c9bd2bb3a0a0093952f8db211204135891",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00409.png",
+        "source_binding": {
+          "frame_index": 409,
+          "pts": 209408,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 410,
+        "raw_png_sha256": "056faa03276fcd632ad1324931ef680ec66525158126e3dc03eb3a5f1f22356c",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00410.png",
+        "source_binding": {
+          "frame_index": 410,
+          "pts": 209920,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 411,
+        "raw_png_sha256": "8b4195362bc2da3c8a03bcc586c58dffdf94439772fae691639d6e5d4a32a671",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00411.png",
+        "source_binding": {
+          "frame_index": 411,
+          "pts": 210432,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 412,
+        "raw_png_sha256": "7d78546bc8fb97c1c460497a47a2ca4fbcffc266cfd65c3258173c96d58ecc21",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00412.png",
+        "source_binding": {
+          "frame_index": 412,
+          "pts": 210944,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 413,
+        "raw_png_sha256": "8af47b4debce1a7269de5177836c39c6b2e6c39ae032ccbd22f602f4d6465029",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00413.png",
+        "source_binding": {
+          "frame_index": 413,
+          "pts": 211456,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 414,
+        "raw_png_sha256": "0965f9292d705a54f491b87760cc4f3d5cea45e3ad1536aa4df0b53e9e44211d",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00414.png",
+        "source_binding": {
+          "frame_index": 414,
+          "pts": 211968,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 415,
+        "raw_png_sha256": "c55ea109131a548d6aefb273ee30c50432956de5de4ee56a865e7fc6d54441d1",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00415.png",
+        "source_binding": {
+          "frame_index": 415,
+          "pts": 212480,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 416,
+        "raw_png_sha256": "c1e2ab5b280d728cb8d7885eaa467dc3937659e10e81b7ea3cb7d8ef758e7887",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00416.png",
+        "source_binding": {
+          "frame_index": 416,
+          "pts": 212992,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 417,
+        "raw_png_sha256": "010305346852320e9c29836655d9fae44c7d03a9134eec0c736b8c94595ab2e2",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00417.png",
+        "source_binding": {
+          "frame_index": 417,
+          "pts": 213504,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 418,
+        "raw_png_sha256": "7c2cbd587fc7584c2bbce3a76462388fa66ddbffd0911aef038e13d145471dcd",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00418.png",
+        "source_binding": {
+          "frame_index": 418,
+          "pts": 214016,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 419,
+        "raw_png_sha256": "296887baa3e55b597b4b50d289af206949528fd53e69ab6f0c1ce3e7300c9258",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00419.png",
+        "source_binding": {
+          "frame_index": 419,
+          "pts": 214528,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 420,
+        "raw_png_sha256": "666619614d0794744d6cc7d89262a978761fb4c313e0e104879f78533cdd78fd",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00420.png",
+        "source_binding": {
+          "frame_index": 420,
+          "pts": 215040,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 421,
+        "raw_png_sha256": "a26bebcec24a2d11e6c2078580bebe593d7266694afd878ee8d0f32558ee9525",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00421.png",
+        "source_binding": {
+          "frame_index": 421,
+          "pts": 215552,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 422,
+        "raw_png_sha256": "e97355b967428cdbd9443dfb1ee6fc1ec57ad32717a939845bdf1ade942a901e",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00422.png",
+        "source_binding": {
+          "frame_index": 422,
+          "pts": 216064,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 423,
+        "raw_png_sha256": "0fe9ae1c50db573048655af0216980aba209637e5d994e7c78979dfc0f7515ea",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00423.png",
+        "source_binding": {
+          "frame_index": 423,
+          "pts": 216576,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 424,
+        "raw_png_sha256": "26a4fba4e76c2f8a17a653912d872ddce3fc5426a68dde7bd2329aacacb0af59",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00424.png",
+        "source_binding": {
+          "frame_index": 424,
+          "pts": 217088,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 425,
+        "raw_png_sha256": "f5dbc662732e0d6bf85330fff7f9046fa63dcf79767086abc525466e5e35ec4b",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-original-00425.png",
+        "source_binding": {
+          "frame_index": 425,
+          "pts": 217600,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      }
+    ],
+    "context_frames": [
+      {
+        "source_frame_index": 200,
+        "raw_png_sha256": "576b23beea91e46e7b7024ad889903e6e2471ec7888580b36ea9d4a3d5612a54",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-200.png",
+        "source_binding": {
+          "frame_index": 200,
+          "pts": 102400,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 300,
+        "raw_png_sha256": "b254f175af7b64eed296160ddc0e1f58f6c9a77f1ee0c7041039bc9130463490",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-300.png",
+        "source_binding": {
+          "frame_index": 300,
+          "pts": 153600,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 425,
+        "raw_png_sha256": "f5dbc662732e0d6bf85330fff7f9046fa63dcf79767086abc525466e5e35ec4b",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-425.png",
+        "source_binding": {
+          "frame_index": 425,
+          "pts": 217600,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 600,
+        "raw_png_sha256": "06cc344c37fe0b794b79b906e5576a0dfd62e656204cac1ac9782024a1be5b4e",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-600.png",
+        "source_binding": {
+          "frame_index": 600,
+          "pts": 307200,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      },
+      {
+        "source_frame_index": 750,
+        "raw_png_sha256": "e5666aa211b3b7f3beee0a0a2c477e8aca2c1fc5abfbfd25795e5e70be8f43c6",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/atp-750.png",
+        "source_binding": {
+          "frame_index": 750,
+          "pts": 384000,
+          "time_base_num": 1,
+          "time_base_den": 12800,
+          "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+        }
+      }
+    ],
+    "source": {
+      "id": "atp-nadal-left-forehand",
+      "source_url": "https://www.youtube.com/watch?v=W8JJJ2j5hOM",
+      "local_video": ".codex_tmp/card-video-lefty-heldout-20261022/media/atp-nadal-forehand-rome.mp4",
+      "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+      "source_interval_ms": [
+        8000,
+        31000
+      ]
+    },
+    "score": null,
+    "original_grade": null,
+    "first_reviewer_tentative_departure_bracket_source_bindings": [
+      {
+        "frame_index": 391,
+        "pts": 200192,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      },
+      {
+        "frame_index": 393,
+        "pts": 201216,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      }
+    ],
+    "first_reviewer_tentative_landing_bracket_source_bindings": [
+      {
+        "frame_index": 397,
+        "pts": 203264,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      },
+      {
+        "frame_index": 400,
+        "pts": 204800,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      }
+    ],
+    "independent_reviewer_departure_bracket_source_bindings": [
+      {
+        "frame_index": 397,
+        "pts": 203264,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      },
+      {
+        "frame_index": 400,
+        "pts": 204800,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      }
+    ],
+    "independent_reviewer_landing_bracket_source_bindings": [
+      {
+        "frame_index": 397,
+        "pts": 203264,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      },
+      {
+        "frame_index": 400,
+        "pts": 204800,
+        "time_base_num": 1,
+        "time_base_den": 12800,
+        "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85"
+      }
+    ]
+  },
+  "usopen": {
+    "reviewed_original_frames": [
+      1395,
+      1440,
+      1500,
+      1540
+    ],
+    "observation": "Near player whole-body view; no opponent contact visible in these existing shot contexts.",
+    "conclusion": "original_opponent_departure_boundary_unavailable",
+    "stage_window": null,
+    "decode_note": "OpenCV source-frame seeks returned frames; one h264 mmco warning was printed. No exact phase annotation derives from those context frames.",
+    "frames": [
+      {
+        "source_frame_index": 1395,
+        "raw_png_sha256": "732f544c27b1ad28772694e7becd4aabe93b9ba94087b3c37052fafa43edd411",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/usopen-1395.png",
+        "source_binding": {
+          "frame_index": 1395,
+          "pts": 1396395,
+          "time_base_num": 1,
+          "time_base_den": 30000,
+          "video_sha256": "e2f4314048dd6dfb29a376d6c5d5ffe2357aac1132b0ef592890df2eb3bb4da1"
+        }
+      },
+      {
+        "source_frame_index": 1440,
+        "raw_png_sha256": "81330cbcb1bee6077113d9f60bcd0068b1a01246d504f3795b5c8e2b47d84d01",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/usopen-1440.png",
+        "source_binding": {
+          "frame_index": 1440,
+          "pts": 1441440,
+          "time_base_num": 1,
+          "time_base_den": 30000,
+          "video_sha256": "e2f4314048dd6dfb29a376d6c5d5ffe2357aac1132b0ef592890df2eb3bb4da1"
+        }
+      },
+      {
+        "source_frame_index": 1500,
+        "raw_png_sha256": "22c8bd920b040b9768239a4943cc9d81e209df49a6c994bce36b8a61e7231f0c",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/usopen-1500.png",
+        "source_binding": {
+          "frame_index": 1500,
+          "pts": 1501500,
+          "time_base_num": 1,
+          "time_base_den": 30000,
+          "video_sha256": "e2f4314048dd6dfb29a376d6c5d5ffe2357aac1132b0ef592890df2eb3bb4da1"
+        }
+      },
+      {
+        "source_frame_index": 1540,
+        "raw_png_sha256": "26aec0c77c57ce9bfd78b0e4419812d8542b73e4fc0e232219ffbd7a055f51f6",
+        "raw_png_evidence_path": ".codex_tmp/gs-m01-boundary-validation-20261022/usopen-1540.png",
+        "source_binding": {
+          "frame_index": 1540,
+          "pts": 1541540,
+          "time_base_num": 1,
+          "time_base_den": 30000,
+          "video_sha256": "e2f4314048dd6dfb29a376d6c5d5ffe2357aac1132b0ef592890df2eb3bb4da1"
+        }
+      }
+    ],
+    "source": {
+      "id": "usopen-nadal-left-dominant-backhand",
+      "source_url": "https://www.youtube.com/watch?v=27RlSf17Z4A",
+      "local_video": ".codex_tmp/card-video-lefty-heldout-20261022/media/usopen-nadal-2018.mp4",
+      "video_sha256": "e2f4314048dd6dfb29a376d6c5d5ffe2357aac1132b0ef592890df2eb3bb4da1",
+      "source_interval_ms": [
+        46500,
+        51800
+      ]
+    },
+    "local_preload_observation": null,
+    "score": null,
+    "original_grade": null,
+    "sequential_decode_png_byte_verification": {
+      "verified_frames": [
+        1395,
+        1440,
+        1500,
+        1540
+      ],
+      "method": "Decode original video sequentially from frame 0; PNG encoded bytes equal the frozen context PNG hashes; no media rewrite."
+    }
+  },
+  "bounded_unprocessed_candidates": [
+    {
+      "source_url": "https://www.tennisresources.com/timing-the-split-step/",
+      "organization_evidence_url": "https://www.tennisresources.com/tennis-resources/",
+      "title": "Timing the split step",
+      "author": "USPTA / Rick Macci",
+      "media_link": "https://no-cache.uspta.com/trc/Tip38_RickMacci_SplitStep-Mobile.mp4",
+      "media_fetch_result": "HTTP404",
+      "downloaded": false,
+      "inference_run": false,
+      "visual_reviewed": false,
+      "disposition": "candidate_only_unavailable_media_not_validation"
+    }
+  ],
+  "mit_first_forehand_all_stage_review": {
+    "case": "mit-fh-first-action",
+    "action_id": "forehand-1",
+    "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+    "source_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+    "reviewed_range": [
+      9,
+      80
+    ],
+    "frames": [
+      {
+        "source_frame_index": 9,
+        "raw_png_sha256": "1b2dcdbcf4cf240125f705abcbaa1552a389fc3753d84843dc8aa5d72203679f",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0009.png",
+        "source_binding": {
+          "frame_index": 9,
+          "pts": 55800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 10,
+        "raw_png_sha256": "361f54c51fcc4ae6b18d5d127a7ab50627f442162dd9b7ab75e482056200a689",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0010.png",
+        "source_binding": {
+          "frame_index": 10,
+          "pts": 61830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 11,
+        "raw_png_sha256": "7e7ef2c54bc472e4c4d8969b32dd57909719800859ebfc02266966ed800357bb",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0011.png",
+        "source_binding": {
+          "frame_index": 11,
+          "pts": 67860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 12,
+        "raw_png_sha256": "5c6acbb2965e6043684d8d8515b5ff3ddad96b0de540de1d3d74e8d747cd7e68",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0012.png",
+        "source_binding": {
+          "frame_index": 12,
+          "pts": 73800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 13,
+        "raw_png_sha256": "da95a3be353ce3bda9c252302634a0a8901223f19c4deb73ebc7216b604a65ea",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0013.png",
+        "source_binding": {
+          "frame_index": 13,
+          "pts": 79830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 14,
+        "raw_png_sha256": "2a973bd0d221eeb1693ca80583881f30272e260581d49b48a1e0711c0ed13236",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0014.png",
+        "source_binding": {
+          "frame_index": 14,
+          "pts": 85860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 15,
+        "raw_png_sha256": "2c0772b7af976350c98f3cef1d45e3579cd32d2ffcaf692af99235e1a314d8be",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0015.png",
+        "source_binding": {
+          "frame_index": 15,
+          "pts": 91800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 16,
+        "raw_png_sha256": "fa7b21ee515ac6f80fd9bda393958e0e4762fa867cfcd5aa985b1e8a5837bca7",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0016.png",
+        "source_binding": {
+          "frame_index": 16,
+          "pts": 97830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 17,
+        "raw_png_sha256": "d7fa2a4265bef569a6d860fe8514dc56b33234d2b8bb7ad70dadca4679c56f5c",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0017.png",
+        "source_binding": {
+          "frame_index": 17,
+          "pts": 103860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 18,
+        "raw_png_sha256": "cef8936468a1dcf80266940ffc6232183db8d4b338978958be4301c8e8263738",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0018.png",
+        "source_binding": {
+          "frame_index": 18,
+          "pts": 109800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 19,
+        "raw_png_sha256": "c0c6411123b970d00812b780b9dd035a58f412a4785d385e523b31a82348834f",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0019.png",
+        "source_binding": {
+          "frame_index": 19,
+          "pts": 115830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 20,
+        "raw_png_sha256": "b20a52e65da89487544fd474a0703cbf033992da6f4d5e5c06b29ed9845f7b53",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0020.png",
+        "source_binding": {
+          "frame_index": 20,
+          "pts": 121860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 21,
+        "raw_png_sha256": "7ab0ef3974b90f99676be6c097939357a353ff4bf29d90eb7d05be9f09d42a2e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0021.png",
+        "source_binding": {
+          "frame_index": 21,
+          "pts": 127800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 22,
+        "raw_png_sha256": "066c644f4d3fe86a905bd6d0341add26f926b4adaf92537944dbc578cd7db428",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0022.png",
+        "source_binding": {
+          "frame_index": 22,
+          "pts": 133830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 23,
+        "raw_png_sha256": "058d32433d8767532ac629c3517f5c8669b514abfaf16e1597967d6023766e36",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0023.png",
+        "source_binding": {
+          "frame_index": 23,
+          "pts": 139860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 24,
+        "raw_png_sha256": "aa025910aaa27105c492274522b6e542b739960844f16c9634f0613b2507f3aa",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0024.png",
+        "source_binding": {
+          "frame_index": 24,
+          "pts": 145800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 25,
+        "raw_png_sha256": "b402a1e1f52a5efe612d2ea2aadff637e0cfb21eed451b8f7b14da929fa1373b",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0025.png",
+        "source_binding": {
+          "frame_index": 25,
+          "pts": 151830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 26,
+        "raw_png_sha256": "e4fe24e562f12307f03362607afdedff5d4861b0c9ee188902e558416e20da85",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0026.png",
+        "source_binding": {
+          "frame_index": 26,
+          "pts": 157860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 27,
+        "raw_png_sha256": "acd20a59c48747625f0db1acbcbd795012808194ee3fe07a084fd2d0bd266d9a",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0027.png",
+        "source_binding": {
+          "frame_index": 27,
+          "pts": 163800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 28,
+        "raw_png_sha256": "a1825449b1a7cdcc6773a73f8451ae3a7807f35b067f52a81c7a8acfac3f0dee",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0028.png",
+        "source_binding": {
+          "frame_index": 28,
+          "pts": 169830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 29,
+        "raw_png_sha256": "c89efb58f3ccf57ed86703ca20872eea17d43d18cc3c3b88f0c6b477403427e1",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0029.png",
+        "source_binding": {
+          "frame_index": 29,
+          "pts": 175860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 30,
+        "raw_png_sha256": "3220497783c37f5dd8f27de4b0c71eaea48eb76737a8074a79060e8b3dd73e0d",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0030.png",
+        "source_binding": {
+          "frame_index": 30,
+          "pts": 181800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 31,
+        "raw_png_sha256": "14fe7275d73880da01de68d5c3feed038d75e05a955abecda4c0418a6fd7e06d",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0031.png",
+        "source_binding": {
+          "frame_index": 31,
+          "pts": 187830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 32,
+        "raw_png_sha256": "cc353bb807d497d99a97da6e1490b5e48fdcf2d3d095b890bbe1f0f8f3bbd812",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0032.png",
+        "source_binding": {
+          "frame_index": 32,
+          "pts": 193860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 33,
+        "raw_png_sha256": "dede54626aa9504a31b51ac1305605cacf3785eecb7e224d4b65b2e13c34cb17",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0033.png",
+        "source_binding": {
+          "frame_index": 33,
+          "pts": 199800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 34,
+        "raw_png_sha256": "651b5f82ca6e9cbabefa3e570cdbe869e1962da3da64f0e2a329a398d93f15a4",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0034.png",
+        "source_binding": {
+          "frame_index": 34,
+          "pts": 205830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 35,
+        "raw_png_sha256": "fccc53c2b6cfe014cad6f2b2dc89e54d9ffb8ec76c196efb145a596c90f1aef7",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0035.png",
+        "source_binding": {
+          "frame_index": 35,
+          "pts": 211860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 36,
+        "raw_png_sha256": "2a9f587f9615d9668b3d02e504d3835a981e3009f685e42e9010645a30dbec07",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0036.png",
+        "source_binding": {
+          "frame_index": 36,
+          "pts": 217800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 37,
+        "raw_png_sha256": "8bc456200c594992751e34e3e700869b921771e91de3d67dc147940f42fc8886",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0037.png",
+        "source_binding": {
+          "frame_index": 37,
+          "pts": 223830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 38,
+        "raw_png_sha256": "5433fd11055a7846c05580769ec226f08987e59aae031614526cfe122b416857",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0038.png",
+        "source_binding": {
+          "frame_index": 38,
+          "pts": 229860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 39,
+        "raw_png_sha256": "91759eb898d171321adb81530a3e541a9e2a7a47dcfdc8eb03f7eb8894db3b6e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0039.png",
+        "source_binding": {
+          "frame_index": 39,
+          "pts": 235800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 40,
+        "raw_png_sha256": "1d6e57ceec577f2f15ed1c13a923428cac8e405ca3e6d0e89a8eb87a5fc63f1e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0040.png",
+        "source_binding": {
+          "frame_index": 40,
+          "pts": 241830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 41,
+        "raw_png_sha256": "7713f53392f3cb94fe2dbcbd3f9011fce84111a915dbc81798bc1652cc534734",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0041.png",
+        "source_binding": {
+          "frame_index": 41,
+          "pts": 247860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 42,
+        "raw_png_sha256": "7cac0f15f8056112a3f6cdf0dcd7040e8bdd445b71491af635ef17cda59b02ab",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0042.png",
+        "source_binding": {
+          "frame_index": 42,
+          "pts": 253800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 43,
+        "raw_png_sha256": "6d8c62eb6e6c1ba61ed13b03cf25c429aa2017d4213c4e7fb033c321750daf24",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0043.png",
+        "source_binding": {
+          "frame_index": 43,
+          "pts": 259830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 44,
+        "raw_png_sha256": "853ff4fb3d0b4a8f9b4709e927837d655250bc435f2e85a60a67fbee06f899f4",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0044.png",
+        "source_binding": {
+          "frame_index": 44,
+          "pts": 265860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 45,
+        "raw_png_sha256": "87fe04a60eaa2a3826b41338dd9c9d089547289077601a197aaa01ac3c446e0d",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0045.png",
+        "source_binding": {
+          "frame_index": 45,
+          "pts": 271800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 46,
+        "raw_png_sha256": "8d59ebd1026153cbf54207d0ac1d019e6f9b6b25341bdb4071cfa3c0a7a6c408",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0046.png",
+        "source_binding": {
+          "frame_index": 46,
+          "pts": 277830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 47,
+        "raw_png_sha256": "d1724ca6bcb9613f566c45ee27d1d41d9ee637e358dcb0e9e067694e5fc8d23e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0047.png",
+        "source_binding": {
+          "frame_index": 47,
+          "pts": 283860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 48,
+        "raw_png_sha256": "2a0a8ea7a870b694d51b8546776d902ff9780146b0adc499dab8ad1e2adc9551",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0048.png",
+        "source_binding": {
+          "frame_index": 48,
+          "pts": 289800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 49,
+        "raw_png_sha256": "409e788c44eca8434fe4b7d7b2c31a42c264638a38f9c1d82eb8433ddc249361",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0049.png",
+        "source_binding": {
+          "frame_index": 49,
+          "pts": 295830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 50,
+        "raw_png_sha256": "80e52bd07743055ef45f36a2320812270a11ba77a12094555c911874324b1068",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0050.png",
+        "source_binding": {
+          "frame_index": 50,
+          "pts": 301860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 51,
+        "raw_png_sha256": "571611c3b1ba869b960749c023eda6483d79c5429516a193859d75464dece1fe",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0051.png",
+        "source_binding": {
+          "frame_index": 51,
+          "pts": 307800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 52,
+        "raw_png_sha256": "516af8e793574016d79ff8cba701b8fa3e0fd5969db807a3309937b18e44cbf3",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0052.png",
+        "source_binding": {
+          "frame_index": 52,
+          "pts": 313830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 53,
+        "raw_png_sha256": "56c817350508add2cc04943347d0b9fa95d7ba75bb1c49015100415a02edf744",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0053.png",
+        "source_binding": {
+          "frame_index": 53,
+          "pts": 319860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 54,
+        "raw_png_sha256": "6551a3e82a29bf701fc43774b03b100675faddb0ceed771c3b9603514589d495",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0054.png",
+        "source_binding": {
+          "frame_index": 54,
+          "pts": 325800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 55,
+        "raw_png_sha256": "74f3db1279b91e41064c781c5f176baf1d47e390f0e9ff860e95f8b44b6ce332",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0055.png",
+        "source_binding": {
+          "frame_index": 55,
+          "pts": 331830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 56,
+        "raw_png_sha256": "79bce6a98feea2f5b74076e6ab6c24d9246cbb0872e0d50b7e4bee289e0e04eb",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0056.png",
+        "source_binding": {
+          "frame_index": 56,
+          "pts": 337860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 57,
+        "raw_png_sha256": "74301c75021349436168493274777023e58f4769851ea3149b4401e1f19600e1",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0057.png",
+        "source_binding": {
+          "frame_index": 57,
+          "pts": 343800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 58,
+        "raw_png_sha256": "e731e66b3eb5d0fb0e529add6e39b9bb22d86cff321447dff2ef5254edab7e02",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0058.png",
+        "source_binding": {
+          "frame_index": 58,
+          "pts": 349830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 59,
+        "raw_png_sha256": "e54cfe0db4b0198de83347eb11f60b6536c02189094d53c799b997bb2c4f013e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0059.png",
+        "source_binding": {
+          "frame_index": 59,
+          "pts": 355860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 60,
+        "raw_png_sha256": "ffff54d6d61095fc04dd6d4c1cae913f6e0cc71f6a0ee9cf4866a06834b4b7a0",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0060.png",
+        "source_binding": {
+          "frame_index": 60,
+          "pts": 361800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 61,
+        "raw_png_sha256": "909d49bc67ce89ec50dca77f019eaa5f635d499c529fc392c4e017a04b289651",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0061.png",
+        "source_binding": {
+          "frame_index": 61,
+          "pts": 367830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 62,
+        "raw_png_sha256": "866a9ecd2c5c18fb10830db8852b1200d735d743a50b9e7c977e01136def73f6",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0062.png",
+        "source_binding": {
+          "frame_index": 62,
+          "pts": 373860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 63,
+        "raw_png_sha256": "2b2b8ab5caf78c3cf4c23d92de962dd04374c5825fc0470f8f339354c79845f1",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0063.png",
+        "source_binding": {
+          "frame_index": 63,
+          "pts": 379800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 64,
+        "raw_png_sha256": "f834fc7e77f68c98d60c816fc1179ac789198e07e56fe0b2833c78c57fe2fadc",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0064.png",
+        "source_binding": {
+          "frame_index": 64,
+          "pts": 385830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 65,
+        "raw_png_sha256": "faba36c5f1a841de537ba5eeae1b5c3fbbe9f421cb693cff61440a944052ae84",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0065.png",
+        "source_binding": {
+          "frame_index": 65,
+          "pts": 391860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 66,
+        "raw_png_sha256": "6b48d274aaab7e555119eb1dffccda455dd26ea55886c8a672b52cb7b1986fe2",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0066.png",
+        "source_binding": {
+          "frame_index": 66,
+          "pts": 397800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 67,
+        "raw_png_sha256": "635fa8dd4d27ec9e0027dc918dcb0d5476f871d5d014044f46d07f68f7923dec",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0067.png",
+        "source_binding": {
+          "frame_index": 67,
+          "pts": 403830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 68,
+        "raw_png_sha256": "a7ec5e9483b26d47d640c9fa1d8b57b2db93be71ede5513ff256c7c3c82bf191",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0068.png",
+        "source_binding": {
+          "frame_index": 68,
+          "pts": 409860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 69,
+        "raw_png_sha256": "c76c3a63fc12d0714a953e7bed63488dbfada4e83002a9ebd7877dd5326366f6",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0069.png",
+        "source_binding": {
+          "frame_index": 69,
+          "pts": 415800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 70,
+        "raw_png_sha256": "86dace024f3ab719900848a3d219ac7ff653d34d5ab449af31309023a674880b",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0070.png",
+        "source_binding": {
+          "frame_index": 70,
+          "pts": 421830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 71,
+        "raw_png_sha256": "7e436514d20caed99229e6062e2e127a3e0da45b5cc8095316993069140177a8",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0071.png",
+        "source_binding": {
+          "frame_index": 71,
+          "pts": 427860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 72,
+        "raw_png_sha256": "18ccc5a7d031e2dc551b45d5d1978ebb3371755c3ed94a93e6da5e78b00af5de",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0072.png",
+        "source_binding": {
+          "frame_index": 72,
+          "pts": 433800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 73,
+        "raw_png_sha256": "a05ba7b4d8215a87cb86afaa3fa7b66984a58466c3a13c165730b523be820c4b",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0073.png",
+        "source_binding": {
+          "frame_index": 73,
+          "pts": 439830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 74,
+        "raw_png_sha256": "bfd5b12841510fc18d23cd000bcd4932571bc6419be8c1aff7a9118ea6d88ecb",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0074.png",
+        "source_binding": {
+          "frame_index": 74,
+          "pts": 445860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 75,
+        "raw_png_sha256": "c867e56bf6ae23cda27842e83fd32b09d8f657fa5759f58b43f1e0bf8f6766eb",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0075.png",
+        "source_binding": {
+          "frame_index": 75,
+          "pts": 451800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 76,
+        "raw_png_sha256": "9c2652d929526819ce973bc676bb4168821418038fe9fc9cb4bc4c9c2ed5e5b3",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0076.png",
+        "source_binding": {
+          "frame_index": 76,
+          "pts": 457830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 77,
+        "raw_png_sha256": "7410430b24429093c4d0eeee65f28f57c4c9c17fe4abf0b1e6d93e592dd57c85",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0077.png",
+        "source_binding": {
+          "frame_index": 77,
+          "pts": 463860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 78,
+        "raw_png_sha256": "6e7712c5e314026fab17548cf55b2cecd364e72e0d34a20cc8816a1a1bbd996e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0078.png",
+        "source_binding": {
+          "frame_index": 78,
+          "pts": 469800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 79,
+        "raw_png_sha256": "4f9e96882d8e1f090471e963e516745332b6ea03bb6c95d9d8cc786072ec410f",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0079.png",
+        "source_binding": {
+          "frame_index": 79,
+          "pts": 475830,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      },
+      {
+        "source_frame_index": 80,
+        "raw_png_sha256": "3daea302a87fdad2a3b612aedc526b663fc4b4abbbfd614184deb5b9f2ba651e",
+        "raw_png_evidence_path": ".codex_tmp/gs-full-stage-review-20261022/forehand-original-0080.png",
+        "source_binding": {
+          "frame_index": 80,
+          "pts": 481860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50"
+        }
+      }
+    ],
+    "stages": [
+      {
+        "stage_code": "GS01-M01",
+        "indicator_ids": [
+          "GS01-M01-01",
+          "GS01-M01-02",
+          "GS01-M01-03",
+          "GS01-M01-04",
+          "GS01-M01-05"
+        ],
+        "source_start": "球离开对方拍面，",
+        "source_end": "垫步落地，",
+        "status": "unresolved",
+        "reason": "对手/喂球者出球不在画面；不能以准备下蹲或旧 M03 替代原始起点。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M02",
+        "indicator_ids": [
+          "GS01-M02-01",
+          "GS01-M02-02",
+          "GS01-M02-03",
+          "GS01-M02-04",
+          "GS01-M02-05"
+        ],
+        "source_start": "左右脚重新接触地面（垫步落地）",
+        "source_end": "开始转体",
+        "status": "unresolved",
+        "reason": "原始起点要求垫步重新接地；本次动作未建立该落地事件，不能把普通脚步调整作为起点。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M03",
+        "indicator_ids": [
+          "GS01-M03-01",
+          "GS01-M03-02",
+          "GS01-M03-03",
+          "GS01-M03-04",
+          "GS01-M03-05"
+        ],
+        "source_start": "开始完成单位转体，肩线开始旋转，非持拍手辅助球拍整体转动，",
+        "source_end": "重心成功加载至持拍手同侧支撑腿，重心完成侧向转移，支撑腿承重稳定，为主动蹬地做准备",
+        "status": "prior_manual_proxy_only",
+        "reason": "既有人工 M03 几何代理保留原身份；本轮未新增或重标，承重与主动发力并未被证实。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M04",
+        "indicator_ids": [
+          "GS01-M04-01",
+          "GS01-M04-02",
+          "GS01-M04-03",
+          "GS01-M04-04",
+          "GS01-M04-05",
+          "GS01-M04-06"
+        ],
+        "source_start": "重心成功加载至持拍手同侧支撑腿，支撑腿承重稳定，身体完成蓄力姿态|J：J070 J077 J146 J166；S：S013；K：K050 K060 K080",
+        "source_end": "骨盆开始主动旋转，骨盆角速度明显增加，动力链开始向前上方传递",
+        "status": "unresolved",
+        "reason": "可见躯干/腿部转动，但起点的支撑腿稳定承重和蓄力、终点的骨盆主动旋转与向前上方传力无法由二维画面证实；未以膝角变化替代蹬地。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M05",
+        "indicator_ids": [
+          "GS01-M05-01",
+          "GS01-M05-02",
+          "GS01-M05-03",
+          "GS01-M05-04",
+          "GS01-M05-05",
+          "GS01-M05-06"
+        ],
+        "source_start": "支撑腿主动蹬地完成，骨盆开始主动旋转,动力链开始向前上方传递| J：J070 J071 J072；K：K080 K081",
+        "source_end": "肩髋分离达到最大值，胸廓开始主动旋转，肩髋分离角达到峰值，胸廓开始接管动力链",
+        "status": "unresolved",
+        "reason": "支撑腿主动蹬地完成及动力传递不可见；单视角肩线/髋线投影不能独立确认真实肩髋分离达到峰值或胸廓接管动力链。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M06",
+        "indicator_ids": [
+          "GS01-M06-01",
+          "GS01-M06-02",
+          "GS01-M06-03",
+          "GS01-M06-04",
+          "GS01-M06-05"
+        ],
+        "source_start": "肩髋分离达到最大值，胸廓开始主动旋转",
+        "source_end": "持拍手开始主动加速，球拍进入释放准备状态",
+        "status": "unresolved",
+        "reason": "起点要求真实肩髋最大分离及胸廓主动旋转；终点要求持拍手主动加速/释放准备。二维手腕移动和拍下落不能确认主动性或独立标定两端。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M07",
+        "indicator_ids": [
+          "GS01-M07-01",
+          "GS01-M07-02",
+          "GS01-M07-03",
+          "GS01-M07-04",
+          "GS01-M07-05"
+        ],
+        "source_start": "持拍手开始主动加速，球拍进入释放准备状态",
+        "source_end": "球拍轨迹与预测击球轨迹开始收敛",
+        "status": "prior_manual_proxy_only",
+        "reason": "既有人工前挥/加速代理边界单独保留；本轮没有以其三相窗口均分十阶段，也未新增 M07。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M08",
+        "indicator_ids": [
+          "GS01-M08-01",
+          "GS01-M08-02",
+          "GS01-M08-03",
+          "GS01-M08-04",
+          "GS01-M08-05"
+        ],
+        "source_start": "球拍轨迹与预测击球轨迹开始收敛",
+        "source_end": "球离开拍面",
+        "status": "unresolved",
+        "reason": "球在39–40帧从拍附近向外移动可见，但起点的球拍与预测击球轨迹收敛无法直接观察；不能用可见球离拍反推完整 M08。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M09",
+        "indicator_ids": [
+          "GS01-M09-01",
+          "GS01-M09-02",
+          "GS01-M09-03",
+          "GS01-M09-04",
+          "GS01-M09-05"
+        ],
+        "source_start": "球离开拍面",
+        "source_end": "非持拍手重新接触球拍",
+        "status": "unresolved",
+        "reason": "球离拍可见候选39–40；非持拍手于41–43向拍柄/持拍腕汇合，但432×240像素与遮挡不足以确认实际接触球拍还是持拍腕，原始终点未建立。不得延长至52回拍身前凑帧。",
+        "new_annotation": null,
+        "new_score": null
+      },
+      {
+        "stage_code": "GS01-M10",
+        "indicator_ids": [
+          "GS01-M10-01",
+          "GS01-M10-02",
+          "GS01-M10-03",
+          "GS01-M10-04"
+        ],
+        "source_start": "非持拍手重新接触球拍",
+        "source_end": "左右脚重新接触地面，身体建立稳定准备姿态",
+        "status": "unresolved",
+        "reason": "原始起点为非持拍手重新接触球拍，未得到确认；60–62可见宽站位/拍身前的准备形态，不能据此证明鞋底接地和受力，也不能补造缺失起点。",
+        "new_annotation": null,
+        "new_score": null
+      }
+    ],
+    "scoring_or_preload_module_called": false,
+    "production_adapter_called": false,
+    "independent_visual_review": {
+      "reviewed_range": [
+        33,
+        68
+      ],
+      "extra_raw_frames": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        52,
+        53,
+        54
+      ],
+      "ball_departure_bracket_frames": [
+        39,
+        40
+      ],
+      "non_racket_hand_convergence_bracket_frames": [
+        41,
+        43
+      ],
+      "visible_ready_posture_bracket_frames": [
+        60,
+        62
+      ],
+      "limitation": "Nonexpert; no new numerical result read. Hand-to-racket contact cannot be distinguished from hand-to-wrist overlap; shoe contact/force is not established. Candidate brackets are not stage annotations."
+    },
+    "review_sheet_sha256": {
+      "forehand-all-frames-1.png": "0d6646db1f2c9d07d65f825780f9899960b15d4d035f876bc7b56f8668c2ab75",
+      "forehand-all-frames-2.png": "abcd76e5b201cb2a145e5845ef0a5213a32641861f23eed9aff22ba94d0bfd7c",
+      "forehand-all-frames-3.png": "f158b0b87ed467aa0f7522a07d23a96a670e8d5c5a4c5fd4bb185228060a079b",
+      "forehand-all-frames-4.png": "abd2fe6eb8540358dbdb93f2a728357e7ab0b8b89dfd4e47c7302a80fa39f0ca",
+      "forehand-all-frames-5.png": "eb7a5bb08400fc3a54fb089ed26fbc6ea2f1ca4fda93fded1c12cc1d2cff75d5",
+      "forehand-all-frames-6.png": "f7b3e80233f261793469506d4f6eb2df5c54b19485dad8e81a1ab19bc5514b0a"
+    }
+  }
+}

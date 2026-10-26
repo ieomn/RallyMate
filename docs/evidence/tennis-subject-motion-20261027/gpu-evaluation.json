@@ -1,0 +1,374 @@
+{
+  "schema_version": "tennis-gpu-real-rerun-assessment-v1",
+  "sample_count": 4,
+  "new_independent_sources": 0,
+  "scope": "Actual new detector and GPU-native runs of existing sources, followed by final CPU assessment; distinct from frozen-native 25 regression.",
+  "started_at_utc": "2026-10-26T19:12:16.872994+00:00",
+  "completed_at_utc": "2026-10-26T19:12:19.520967+00:00",
+  "code_hashes_at_start": {
+    "src/rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+    "src/rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a"
+  },
+  "code_hashes_at_end": {
+    "src/rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+    "src/rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a"
+  },
+  "code_changed_during_execution": false,
+  "samples": [
+    {
+      "sample": "pink",
+      "job_id": "identity-lock-20261027-pink",
+      "original_job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "status": "scored",
+      "score": 85.63,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 3,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "reviewed_action_incomplete_or_invalid": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "e69a66190671b02b0d92",
+          "start_ms": 14433,
+          "end_ms": 15100,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "follow_recovery_clipped_by_camera_pan"
+          ]
+        },
+        {
+          "episode_id": "02bc2476e80edab352e5",
+          "start_ms": 0.0,
+          "end_ms": 1400.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "fefa868c764e18331698",
+          "start_ms": 10633.333,
+          "end_ms": 12200.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "pattern_coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 14,
+        "fraction": 0.14285714285714285,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "manual_context_counts": {
+        "valid": 2,
+        "invalid": 1
+      },
+      "input_sha256": {
+        "frames.jsonl": "dd47ee4b2c09ab3fa238c3449d386e1bdfaf22fc12a5d46f9fdc5c471e875a18",
+        "primary-player.jsonl": "396ab253d781ef8205add834bd94d48dc787ccb0a09e85909ac475376b30d96e",
+        "sam3d_frames.jsonl": "482f11620ed571038b334af2f8d4953403f99e5d80877a318a6b5df5b74332af",
+        "action-recognition.json": "5922b3fc984a338f30f702e306adb00877d01649d89332b20242226d2c5ca683",
+        "validation-summary.json": "a63529302b01163d76848797cdad3ab07f59b270e1685bf310137152a9f684b9"
+      },
+      "context_sha256": "b2f75a7d8f82384a0dc1bdbd2ccbc771caf5966622c75971dc7847dc2e4b13ed",
+      "gpu_inference_duration_seconds": 127.655,
+      "native_inference_seconds": 39.116,
+      "native_ok": 458
+    },
+    {
+      "sample": "night",
+      "job_id": "identity-final-fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "original_job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "status": "scored",
+      "score": 81.76,
+      "episodes": 2,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 4,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1,
+          "reviewed_action_incomplete_or_invalid": 2,
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "a1021b7a050884c12af5",
+          "start_ms": 3133,
+          "end_ms": 3933,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_source_or_complete_phase_unverified"
+          ]
+        },
+        {
+          "episode_id": "c24fcdd1258b22af89cb",
+          "start_ms": 10833,
+          "end_ms": 11500,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "preparation_only_no_complete_swing"
+          ]
+        },
+        {
+          "episode_id": "532117da5e532cf55aa6",
+          "start_ms": 20200,
+          "end_ms": 20933,
+          "person_track_id": 86,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "preparation_only_no_complete_swing"
+          ]
+        },
+        {
+          "episode_id": "d8c45df52b772d0dba5c",
+          "start_ms": 11600.0,
+          "end_ms": 13033.333,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "c0ee3f106cc66db66c35",
+          "start_ms": 21533,
+          "end_ms": 22133,
+          "person_track_id": 86,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_lacks_continuous_complete_motion"
+          ]
+        },
+        {
+          "episode_id": "910e9d3c38fe1764ac02",
+          "start_ms": 24433.333,
+          "end_ms": 26166.667,
+          "person_track_id": 86,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        }
+      ],
+      "pattern_coverage": {
+        "measured_requirements": 3,
+        "applicable_requirements": 9,
+        "fraction": 0.3333333333333333,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 1,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "generic"
+        ]
+      },
+      "manual_context_counts": {
+        "valid": 4,
+        "invalid": 2
+      },
+      "input_sha256": {
+        "frames.jsonl": "68919ddc3eb9b3dd2c577492f5223ca2bd2a8987aa8ecd8fb3493b99b09f6826",
+        "primary-player.jsonl": "b7c86596912cbaad8423cc371e6f3c7d88d1645acf82eb4c98bee5b8abe4e774",
+        "sam3d_frames.jsonl": "2c91f15d8a3c79efc3dd33a67e204d48e7565100d86bc634af144e19e5cf7fc9",
+        "action-recognition.json": "c17a41bae95577d390c8c6013239a3b7af5ab2b6b3ec57e997e666cac1b4d52e",
+        "validation-summary.json": "e6f349412c779acfe395f5d2d0e4489180d2bddae14b21e7a9b42393d69922a0"
+      },
+      "context_sha256": "aa29881d4aa5091a2b0bc8d626595584eeb09ab3673febc6f1790b4fa20b3214",
+      "gpu_inference_duration_seconds": 114.635,
+      "native_inference_seconds": 59.282,
+      "native_ok": 710
+    },
+    {
+      "sample": "federer",
+      "job_id": "identity-final-7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "original_job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "source_video_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "other_subject_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "episode_validity": [],
+      "pattern_coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "manual_context_counts": {},
+      "input_sha256": {
+        "frames.jsonl": "625e3f0ebcad312d62edb1d652cd0b8e930ebec445b5de80eee51267838722fa",
+        "primary-player.jsonl": "f2f062c3b6746a4556b81e233f69f08d88f656b1992cdb16a52125a570c1fdfc",
+        "sam3d_frames.jsonl": "5f64ae63628b718e62937adb593566ddde9e3632f9a4be0cf45f02b4a4fb74d7",
+        "action-recognition.json": "e477689247e1a8007c951ac0ffe6fdee8c946148ca0b8a6b41ed971095219135",
+        "validation-summary.json": "64088f8238f32638c28dfc9d6ad3f0b4b3a1af600a1d56c540ea03f036f6fb3b"
+      },
+      "context_sha256": null,
+      "gpu_inference_duration_seconds": 36.104,
+      "native_inference_seconds": 8.252,
+      "native_ok": 78
+    },
+    {
+      "sample": "white",
+      "job_id": "identity-lock-20261027-white",
+      "original_job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "status": "scored",
+      "score": 75.12,
+      "episodes": 5,
+      "candidate_accounting": {
+        "proposed_count": 7,
+        "accepted_count": 5,
+        "other_subject_count": 0,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "reviewed_action_incomplete_or_invalid": 1,
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "episode_validity": [
+        {
+          "episode_id": "c2ff3c565211f56b2ba9",
+          "start_ms": 22933,
+          "end_ms": 24167,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "reviewed_action_incomplete_or_invalid"
+          ],
+          "review_reason_codes": [
+            "duplicate_recovery_or_ball_retrieval"
+          ]
+        },
+        {
+          "episode_id": "e67754f8fae9419d2ba7",
+          "start_ms": 300.0,
+          "end_ms": 2000.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "4bb491f2e1c1fb6fda9f",
+          "start_ms": 5100.0,
+          "end_ms": 6600.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "d8c45df52b772d0dba5c",
+          "start_ms": 11933.333,
+          "end_ms": 13666.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "7f69fc9a9d8eacc3041a",
+          "start_ms": 16700.0,
+          "end_ms": 18700.0,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "bbb4c9d6adf5876e2ae6",
+          "start_ms": 21833.333,
+          "end_ms": 23966.667,
+          "person_track_id": 1,
+          "subject_id": "subject-1",
+          "status": "scored",
+          "reason_codes": []
+        },
+        {
+          "episode_id": "dd5737dc1e6ee709d056",
+          "start_ms": 28567,
+          "end_ms": 29633,
+          "person_track_id": 1,
+          "status": "rejected",
+          "reason_codes": [
+            "candidate_lacks_continuous_complete_motion"
+          ]
+        }
+      ],
+      "pattern_coverage": {
+        "measured_requirements": 5,
+        "applicable_requirements": 35,
+        "fraction": 0.14285714285714285,
+        "verified_technique_episodes": 5,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "manual_context_counts": {
+        "valid": 6,
+        "invalid": 1
+      },
+      "input_sha256": {
+        "frames.jsonl": "5bc95ff2e836ca0670775ae11d2ebf7fe36f951b1c00039382421d80f376a50f",
+        "primary-player.jsonl": "41543311267c6955a557904a3e64ab792355dfc9927fbf927b4c0b944cf29a08",
+        "sam3d_frames.jsonl": "19737d6aadfd47287795898c859a46da6ad9aeca5ab92ed755b471c4f178d36e",
+        "action-recognition.json": "2e17a05af391c63c19b4b4c83241f4aa20989870c5a46bf35b9a5ead6323030e",
+        "validation-summary.json": "591f6da1da5b4bc91b758266b5293b84b462b350d90e410642ac6035b972ac24"
+      },
+      "context_sha256": "d7f94ba80f67ca7e98e21ab35248e152a392fa411260620585cb3e50d54a9543",
+      "gpu_inference_duration_seconds": 143.746,
+      "native_inference_seconds": 75.394,
+      "native_ok": 900
+    }
+  ]
+}

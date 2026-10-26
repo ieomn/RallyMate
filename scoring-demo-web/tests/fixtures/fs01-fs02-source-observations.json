@@ -1,0 +1,5262 @@
+{
+  "provenance": {
+    "scope": "Actual source observations; selected two FS cards and two source windows each, not model accuracy truth",
+    "original_sha256": {
+      ".codex_tmp\\autodl-sam-coordination-20261018\\qa-evidence\\fs01-head-replay\\source-assessment.json": "cea90291c4f9507401a4df9c88d9b50e9ebc84d3c9a37afbf0c5ad120ae1bbe2",
+      ".codex_tmp\\autodl-sam-coordination-20261018\\qa-evidence\\indicator-acceptance-matrix-v3\\d73032eb-0c6e-4087-9001-310758fdcb5c-composed-indicator-assessment.json": "5915b55f1c678fd9249eba7eb26677f79fd63a886f6bd0109141da4fd36c2bb0",
+      "service_data\\runs\\d73032eb-0c6e-4087-9001-310758fdcb5c\\summary.json": "aef30b9df9d36dbd71b1180e751d0baa37c8eb9c5a36fd20cc0de6424aa25cea"
+    }
+  },
+  "job_id": "d73032eb-0c6e-4087-9001-310758fdcb5c",
+  "input": {
+    "video": {
+      "duration_ms": 97033
+    }
+  },
+  "source_aligned_assessment": {
+    "version": "source-aligned-assessment-v1.0.0",
+    "status": "available",
+    "score_semantics": "source_aligned_measurement_not_technical_grade",
+    "technical_grade": null,
+    "technical_score_0_to_100": null,
+    "indicators": [
+      {
+        "indicator_id": "FS02-M01",
+        "window_count": 41,
+        "measured_window_count": 34,
+        "unavailable_window_count": 7,
+        "returned_window_count": 2,
+        "is_truncated": true,
+        "selection_policy": "up_to_60_measurable_and_20_unavailable_windows_then_fill_chronologically",
+        "windows": [
+          {
+            "event_id": "fs02-000-beadf83f6c3d",
+            "person_track_id": 1,
+            "start_ms": 300,
+            "end_ms": 900,
+            "measurements": [
+              {
+                "feature_name": "launch_direction_deg",
+                "label_zh": "启动方向（图像代理）",
+                "value": 31.763908713124255,
+                "unit": "deg",
+                "status": "measured",
+                "reason_zh": "已从该时段计算；好坏和等级仍需结合原文由教练判断。",
+                "source_requirement_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+                "source_ref": "CARD-FS:word/document.xml:P0258",
+                "measurement_window": {
+                  "start_ms": 300,
+                  "end_ms": 900
+                },
+                "source_frames": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27
+                ],
+                "definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+                "coverage": {
+                  "scope": "inclusive_window_all_sampled_source_frames",
+                  "groups": [
+                    {
+                      "joint_names": [
+                        "nose",
+                        "left_ear",
+                        "right_ear",
+                        "left_hip",
+                        "right_hip"
+                      ],
+                      "valid_frame_count": 19,
+                      "total_frame_count": 19,
+                      "fraction": 1.0,
+                      "meets_70_percent": true
+                    }
+                  ],
+                  "required_joint_names": [
+                    "nose",
+                    "left_ear",
+                    "right_ear",
+                    "left_hip",
+                    "right_hip"
+                  ],
+                  "valid_frame_count": 19,
+                  "total_frame_count": 19,
+                  "fraction": 1.0,
+                  "passes": true,
+                  "threshold": 0.7,
+                  "operator": ">=",
+                  "source_rule": "below_70_percent_is_unavailable",
+                  "point_validity": {
+                    "minimum_confidence": 0.25,
+                    "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+                  },
+                  "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+                  "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+                },
+                "evidence": {
+                  "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+                  "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+                  "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+                  "endpoint_source_frames": [
+                    9,
+                    27
+                  ],
+                  "computation_diagnostics": {
+                    "valid_samples": 19,
+                    "edge_fraction": 0.25,
+                    "edge_sample_count": 5,
+                    "early_position": [
+                      0.22392347508845636,
+                      0.4408457661553291
+                    ],
+                    "late_position": [
+                      0.26623301396681953,
+                      0.4176393107773826
+                    ],
+                    "median_velocity": [
+                      0.07958328423821139,
+                      -0.05425716442914065
+                    ],
+                    "duration_s": 0.6,
+                    "composite_vector": [
+                      0.09005950942129,
+                      -0.05576075403543091
+                    ],
+                    "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+                    "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+                  },
+                  "scope": "FS02_candidate_event_direction_only",
+                  "incoming_ball_direction_available": false,
+                  "direction_correctness_evaluated": false,
+                  "source_clause_complete": false
+                }
+              }
+            ],
+            "visibility": {
+              "status": "sufficient",
+              "valid_frame_ratio": 1.0,
+              "valid_frame_count": 19,
+              "total_frame_count": 19,
+              "required_joint_ids": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "threshold_ratio": 0.7,
+              "scope": "indicator_window",
+              "reason_zh": "统计该时段所有已分析帧中，本指标所需人体关节同时有效的帧。达到 70% 仅通过可见性检查，不代表技术合格。"
+            },
+            "limitations_zh": [
+              "仅提供画面二维测量，不代表真实重心、地面接触、发力或技术等级。",
+              "阶段与事件仍是待人工核验的候选；原文没有给出数值等级切点。",
+              "基线端点、归一化尺度及速度摘要是明确公开的工程操作定义，原文未规定这些数值细节。",
+              "仅输出启动方向图像代理；未绑定活动球轨迹，不判断与来球方向是否一致，亦未确认垫步落地和真实第一步边界。"
+            ],
+            "association": null,
+            "complete_source_rule_verified": false
+          },
+          {
+            "event_id": "fs02-007-993b3565d888",
+            "person_track_id": 1,
+            "start_ms": 17067,
+            "end_ms": 18667,
+            "measurements": [
+              {
+                "feature_name": "launch_direction_deg",
+                "label_zh": "启动方向（图像代理）",
+                "value": null,
+                "unit": "deg",
+                "status": "unavailable",
+                "reason_zh": "本指标所需关节在该时段同时有效的帧不足 70%。",
+                "source_requirement_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+                "source_ref": "CARD-FS:word/document.xml:P0258",
+                "measurement_window": null,
+                "source_frames": [
+                  512,
+                  513,
+                  514,
+                  515,
+                  516,
+                  517,
+                  518,
+                  519,
+                  520,
+                  521,
+                  522,
+                  523,
+                  524,
+                  525,
+                  526,
+                  527,
+                  528,
+                  529,
+                  530,
+                  531,
+                  532,
+                  533,
+                  534,
+                  535,
+                  536,
+                  537,
+                  538,
+                  539,
+                  540,
+                  541,
+                  542,
+                  543,
+                  544,
+                  545,
+                  546,
+                  547,
+                  548,
+                  549,
+                  550,
+                  551,
+                  552,
+                  553,
+                  554,
+                  555,
+                  556,
+                  557,
+                  558,
+                  559,
+                  560
+                ],
+                "definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+                "coverage": {
+                  "scope": "inclusive_window_all_sampled_source_frames",
+                  "groups": [
+                    {
+                      "joint_names": [
+                        "nose",
+                        "left_ear",
+                        "right_ear",
+                        "left_hip",
+                        "right_hip"
+                      ],
+                      "valid_frame_count": 31,
+                      "total_frame_count": 49,
+                      "fraction": 0.6326530612244898,
+                      "meets_70_percent": false
+                    }
+                  ],
+                  "required_joint_names": [
+                    "nose",
+                    "left_ear",
+                    "right_ear",
+                    "left_hip",
+                    "right_hip"
+                  ],
+                  "valid_frame_count": 31,
+                  "total_frame_count": 49,
+                  "fraction": 0.6326530612244898,
+                  "passes": false,
+                  "threshold": 0.7,
+                  "operator": ">=",
+                  "source_rule": "below_70_percent_is_unavailable",
+                  "point_validity": {
+                    "minimum_confidence": 0.25,
+                    "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+                  },
+                  "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+                  "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+                },
+                "evidence": {}
+              }
+            ],
+            "visibility": {
+              "status": "insufficient",
+              "valid_frame_ratio": 0.6326530612244898,
+              "valid_frame_count": 31,
+              "total_frame_count": 49,
+              "required_joint_ids": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "threshold_ratio": 0.7,
+              "scope": "indicator_window",
+              "reason_zh": "统计该时段所有已分析帧中，本指标所需人体关节同时有效的帧。达到 70% 仅通过可见性检查，不代表技术合格。"
+            },
+            "limitations_zh": [
+              "仅提供画面二维测量，不代表真实重心、地面接触、发力或技术等级。",
+              "阶段与事件仍是待人工核验的候选；原文没有给出数值等级切点。",
+              "基线端点、归一化尺度及速度摘要是明确公开的工程操作定义，原文未规定这些数值细节。",
+              "仅输出启动方向图像代理；未绑定活动球轨迹，不判断与来球方向是否一致，亦未确认垫步落地和真实第一步边界。"
+            ],
+            "association": null,
+            "complete_source_rule_verified": false
+          }
+        ]
+      },
+      {
+        "indicator_id": "FS01-M01",
+        "window_count": 41,
+        "measured_window_count": 29,
+        "unavailable_window_count": 12,
+        "returned_window_count": 2,
+        "is_truncated": true,
+        "selection_policy": "up_to_60_measurable_and_20_unavailable_windows_then_fill_chronologically",
+        "windows": [
+          {
+            "event_id": "fs01-000-0b724df86cf8",
+            "person_track_id": 1,
+            "start_ms": 0,
+            "end_ms": 300,
+            "measurements": [
+              {
+                "feature_name": "head_center_mean_speed_frame_long_edge_s",
+                "label_zh": "候选前段头部中心速度",
+                "value": null,
+                "unit": "frame_long_edge/s",
+                "status": "unavailable",
+                "reason_zh": "这个阶段可用的连续样本不足。",
+                "source_requirement_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+                "source_ref": "CARD-FS:word/document.xml:P0080",
+                "measurement_window": null,
+                "source_frames": [
+                  0
+                ],
+                "definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+                "coverage": {
+                  "scope": "inclusive_window_all_sampled_source_frames",
+                  "groups": [
+                    {
+                      "joint_names": [
+                        "nose",
+                        "left_ear",
+                        "right_ear"
+                      ],
+                      "valid_frame_count": 1,
+                      "total_frame_count": 1,
+                      "fraction": 1.0,
+                      "meets_70_percent": true
+                    }
+                  ],
+                  "required_joint_names": [
+                    "nose",
+                    "left_ear",
+                    "right_ear"
+                  ],
+                  "valid_frame_count": 1,
+                  "total_frame_count": 1,
+                  "fraction": 1.0,
+                  "passes": true,
+                  "threshold": 0.7,
+                  "operator": ">=",
+                  "source_rule": "below_70_percent_is_unavailable",
+                  "point_validity": {
+                    "minimum_confidence": 0.25,
+                    "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+                  },
+                  "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+                  "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+                },
+                "evidence": {
+                  "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+                  "takeoff_proxy_ms": 0.0,
+                  "gaze_evaluated": false,
+                  "incoming_ball_alignment_evaluated": false,
+                  "technical_stability_evaluated": false,
+                  "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+                  "used_adjacent_source_frame_pairs": [],
+                  "observed_duration_ms": 0.0
+                }
+              },
+              {
+                "feature_name": "head_axis_circular_std_deg",
+                "label_zh": "候选前段头部轴角波动",
+                "value": null,
+                "unit": "deg",
+                "status": "unavailable",
+                "reason_zh": "这个阶段可用的连续样本不足。",
+                "source_requirement_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+                "source_ref": "CARD-FS:word/document.xml:P0080",
+                "measurement_window": null,
+                "source_frames": [
+                  0
+                ],
+                "definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+                "coverage": {
+                  "scope": "inclusive_window_all_sampled_source_frames",
+                  "groups": [
+                    {
+                      "joint_names": [
+                        "nose",
+                        "left_ear",
+                        "right_ear"
+                      ],
+                      "valid_frame_count": 1,
+                      "total_frame_count": 1,
+                      "fraction": 1.0,
+                      "meets_70_percent": true
+                    }
+                  ],
+                  "required_joint_names": [
+                    "nose",
+                    "left_ear",
+                    "right_ear"
+                  ],
+                  "valid_frame_count": 1,
+                  "total_frame_count": 1,
+                  "fraction": 1.0,
+                  "passes": true,
+                  "threshold": 0.7,
+                  "operator": ">=",
+                  "source_rule": "below_70_percent_is_unavailable",
+                  "point_validity": {
+                    "minimum_confidence": 0.25,
+                    "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+                  },
+                  "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+                  "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+                },
+                "evidence": {
+                  "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+                  "takeoff_proxy_ms": 0.0,
+                  "gaze_evaluated": false,
+                  "incoming_ball_alignment_evaluated": false,
+                  "technical_stability_evaluated": false,
+                  "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+                  "used_source_frames": [
+                    0
+                  ],
+                  "angle_period_deg": 180
+                }
+              }
+            ],
+            "visibility": {
+              "status": "sufficient",
+              "valid_frame_ratio": 1.0,
+              "valid_frame_count": 10,
+              "total_frame_count": 10,
+              "required_joint_ids": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "threshold_ratio": 0.7,
+              "scope": "indicator_window",
+              "reason_zh": "统计该时段所有已分析帧中，本指标所需人体关节同时有效的帧。达到 70% 仅通过可见性检查，不代表技术合格。"
+            },
+            "limitations_zh": [
+              "仅提供画面二维测量，不代表真实重心、地面接触、发力或技术等级。",
+              "阶段与事件仍是待人工核验的候选；原文没有给出数值等级切点。",
+              "基线端点、归一化尺度及速度摘要是明确公开的工程操作定义，原文未规定这些数值细节。",
+              "仅描述FS01候选起点至起跳代理的头部局部运动；未确认原文垫步前正式窗口，不判真正盯球、时机正确或头部稳定合格。"
+            ],
+            "association": null,
+            "complete_source_rule_verified": false
+          },
+          {
+            "event_id": "fs01-002-cf610670458d",
+            "person_track_id": 1,
+            "start_ms": 2933,
+            "end_ms": 3667,
+            "measurements": [
+              {
+                "feature_name": "head_center_mean_speed_frame_long_edge_s",
+                "label_zh": "候选前段头部中心速度",
+                "value": 0.04530210807643606,
+                "unit": "frame_long_edge/s",
+                "status": "measured",
+                "reason_zh": "已从该时段计算；好坏和等级仍需结合原文由教练判断。",
+                "source_requirement_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+                "source_ref": "CARD-FS:word/document.xml:P0080",
+                "measurement_window": {
+                  "start_ms": 2933,
+                  "end_ms": 3567.0
+                },
+                "source_frames": [
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107
+                ],
+                "definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+                "coverage": {
+                  "scope": "inclusive_window_all_sampled_source_frames",
+                  "groups": [
+                    {
+                      "joint_names": [
+                        "nose",
+                        "left_ear",
+                        "right_ear"
+                      ],
+                      "valid_frame_count": 20,
+                      "total_frame_count": 20,
+                      "fraction": 1.0,
+                      "meets_70_percent": true
+                    }
+                  ],
+                  "required_joint_names": [
+                    "nose",
+                    "left_ear",
+                    "right_ear"
+                  ],
+                  "valid_frame_count": 20,
+                  "total_frame_count": 20,
+                  "fraction": 1.0,
+                  "passes": true,
+                  "threshold": 0.7,
+                  "operator": ">=",
+                  "source_rule": "below_70_percent_is_unavailable",
+                  "point_validity": {
+                    "minimum_confidence": 0.25,
+                    "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+                  },
+                  "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+                  "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+                },
+                "evidence": {
+                  "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+                  "takeoff_proxy_ms": 3567.0,
+                  "gaze_evaluated": false,
+                  "incoming_ball_alignment_evaluated": false,
+                  "technical_stability_evaluated": false,
+                  "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+                  "used_adjacent_source_frame_pairs": [
+                    [
+                      88,
+                      89
+                    ],
+                    [
+                      89,
+                      90
+                    ],
+                    [
+                      90,
+                      91
+                    ],
+                    [
+                      91,
+                      92
+                    ],
+                    [
+                      92,
+                      93
+                    ],
+                    [
+                      93,
+                      94
+                    ],
+                    [
+                      94,
+                      95
+                    ],
+                    [
+                      95,
+                      96
+                    ],
+                    [
+                      96,
+                      97
+                    ],
+                    [
+                      97,
+                      98
+                    ],
+                    [
+                      98,
+                      99
+                    ],
+                    [
+                      99,
+                      100
+                    ],
+                    [
+                      100,
+                      101
+                    ],
+                    [
+                      101,
+                      102
+                    ],
+                    [
+                      102,
+                      103
+                    ],
+                    [
+                      103,
+                      104
+                    ],
+                    [
+                      104,
+                      105
+                    ],
+                    [
+                      105,
+                      106
+                    ],
+                    [
+                      106,
+                      107
+                    ]
+                  ],
+                  "observed_duration_ms": 634.0000000000001
+                }
+              },
+              {
+                "feature_name": "head_axis_circular_std_deg",
+                "label_zh": "候选前段头部轴角波动",
+                "value": 2.908267237037714,
+                "unit": "deg",
+                "status": "measured",
+                "reason_zh": "已从该时段计算；好坏和等级仍需结合原文由教练判断。",
+                "source_requirement_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+                "source_ref": "CARD-FS:word/document.xml:P0080",
+                "measurement_window": {
+                  "start_ms": 2933,
+                  "end_ms": 3567.0
+                },
+                "source_frames": [
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107
+                ],
+                "definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+                "coverage": {
+                  "scope": "inclusive_window_all_sampled_source_frames",
+                  "groups": [
+                    {
+                      "joint_names": [
+                        "nose",
+                        "left_ear",
+                        "right_ear"
+                      ],
+                      "valid_frame_count": 20,
+                      "total_frame_count": 20,
+                      "fraction": 1.0,
+                      "meets_70_percent": true
+                    }
+                  ],
+                  "required_joint_names": [
+                    "nose",
+                    "left_ear",
+                    "right_ear"
+                  ],
+                  "valid_frame_count": 20,
+                  "total_frame_count": 20,
+                  "fraction": 1.0,
+                  "passes": true,
+                  "threshold": 0.7,
+                  "operator": ">=",
+                  "source_rule": "below_70_percent_is_unavailable",
+                  "point_validity": {
+                    "minimum_confidence": 0.25,
+                    "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+                  },
+                  "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+                  "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+                },
+                "evidence": {
+                  "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+                  "takeoff_proxy_ms": 3567.0,
+                  "gaze_evaluated": false,
+                  "incoming_ball_alignment_evaluated": false,
+                  "technical_stability_evaluated": false,
+                  "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+                  "used_source_frames": [
+                    88,
+                    89,
+                    90,
+                    91,
+                    92,
+                    93,
+                    94,
+                    95,
+                    96,
+                    97,
+                    98,
+                    99,
+                    100,
+                    101,
+                    102,
+                    103,
+                    104,
+                    105,
+                    106,
+                    107
+                  ],
+                  "angle_period_deg": 180
+                }
+              }
+            ],
+            "visibility": {
+              "status": "sufficient",
+              "valid_frame_ratio": 1.0,
+              "valid_frame_count": 23,
+              "total_frame_count": 23,
+              "required_joint_ids": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "threshold_ratio": 0.7,
+              "scope": "indicator_window",
+              "reason_zh": "统计该时段所有已分析帧中，本指标所需人体关节同时有效的帧。达到 70% 仅通过可见性检查，不代表技术合格。"
+            },
+            "limitations_zh": [
+              "仅提供画面二维测量，不代表真实重心、地面接触、发力或技术等级。",
+              "阶段与事件仍是待人工核验的候选；原文没有给出数值等级切点。",
+              "基线端点、归一化尺度及速度摘要是明确公开的工程操作定义，原文未规定这些数值细节。",
+              "仅描述FS01候选起点至起跳代理的头部局部运动；未确认原文垫步前正式窗口，不判真正盯球、时机正确或头部稳定合格。"
+            ],
+            "association": null,
+            "complete_source_rule_verified": false
+          }
+        ]
+      }
+    ],
+    "measurement_artifact_version": "source-aligned-measurements-artifact-v1.0.0",
+    "source_binding": {
+      "reference_version": "scoring-reference-20261004",
+      "reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+      "document": {
+        "id": "CARD-FS",
+        "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+      }
+    },
+    "reason_zh": "按原文计算的局部测量，配合逐段人工技术评审；没有自动转换为等级或百分制。"
+  },
+  "indicator_assessment": {
+    "version": "word-indicator-assessment-v1.0.0",
+    "source_binding": {
+      "reference_version": "scoring-reference-20261004",
+      "source_documents": [
+        {
+          "id": "CARD-FS",
+          "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+        },
+        {
+          "id": "CARD-GS",
+          "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0"
+        }
+      ]
+    },
+    "counts": {
+      "total": 2,
+      "formal_graded": 0,
+      "observations": 92,
+      "returned_observations": 36
+    },
+    "indicators": [
+      {
+        "indicator_id": "FS01-M01",
+        "name_zh": "观察对方击球",
+        "event_code": "FS01",
+        "stage_code": "FS01",
+        "status": "measured_partial_rule",
+        "status_label_zh": "已取得部分原文测量",
+        "explanation_zh": "已取得 58 项次原文对应的局部测量；全部动作条件和等级尚未验证。",
+        "calculation_zh": "头部中心速度与角度波动 + 头部朝向相对来球方向的一致性；球轨迹不可用时仅评价头部稳定",
+        "observation_ids": [
+          "source:FS01-M01:fs01-002-cf610670458d:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-002-cf610670458d:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-005-907586925f79:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-005-907586925f79:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-009-1bb7df85b6a5:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-009-1bb7df85b6a5:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-014-57bb7d204d81:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-014-57bb7d204d81:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-016-c13a9b46816e:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-016-c13a9b46816e:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-019-afa9d05837e0:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-019-afa9d05837e0:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-021-b7a0dcd78773:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-021-b7a0dcd78773:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-025-c194304dc6a8:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-025-c194304dc6a8:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-027-f62b08675442:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-027-f62b08675442:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-031-02a87fa829b0:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-031-02a87fa829b0:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-037-ebd81ecb1406:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-037-ebd81ecb1406:head_axis_circular_std_deg",
+          "source:FS01-M01:fs01-040-5ca614965f62:head_center_mean_speed_frame_long_edge_s",
+          "source:FS01-M01:fs01-040-5ca614965f62:head_axis_circular_std_deg"
+        ],
+        "blockers": [
+          {
+            "code": "true_gaze_unobservable",
+            "message_zh": "头部稳定不能证明正在盯球。"
+          },
+          {
+            "code": "qualitative_rubric_uncalibrated",
+            "message_zh": "原文 A～E 是定性标准，没有给出可直接执行的数值分界；当前不生成正式等级。"
+          }
+        ],
+        "source": {
+          "document_id": "CARD-FS",
+          "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+          "table": "T002",
+          "rubric_sha256": "29d69aac455b9b289ed368618ded71fece490fc7436bcf4aec6245a41096fa6a"
+        },
+        "grade": {
+          "status": "calibration_required",
+          "label_zh": "暂不生成等级",
+          "reason_zh": "无完整可执行且经过验证的分级规则；缺测不等于 E 级或零分。"
+        },
+        "observation_count": 58,
+        "returned_observation_count": 24,
+        "observations_truncated": true
+      },
+      {
+        "indicator_id": "FS02-M01",
+        "name_zh": "判断来球方向",
+        "event_code": "FS02",
+        "stage_code": "FS02",
+        "status": "measured_partial_rule",
+        "status_label_zh": "已取得部分原文测量",
+        "explanation_zh": "已取得 34 项次原文对应的局部测量；全部动作条件和等级尚未验证。",
+        "calculation_zh": "身体中心启动方向与球轨迹方向夹角；球轨迹不可用时仅输出“启动方向”，不判断方向是否正确",
+        "observation_ids": [
+          "source:FS02-M01:fs02-000-beadf83f6c3d:launch_direction_deg",
+          "source:FS02-M01:fs02-003-96df44348cc0:launch_direction_deg",
+          "source:FS02-M01:fs02-006-f5d1884b13a4:launch_direction_deg",
+          "source:FS02-M01:fs02-010-18e535c05537:launch_direction_deg",
+          "source:FS02-M01:fs02-015-1536dbd04bc7:launch_direction_deg",
+          "source:FS02-M01:fs02-018-9ff8d105fd40:launch_direction_deg",
+          "source:FS02-M01:fs02-021-c11da26c738b:launch_direction_deg",
+          "source:FS02-M01:fs02-026-956493641bcc:launch_direction_deg",
+          "source:FS02-M01:fs02-029-63c5e7f25599:launch_direction_deg",
+          "source:FS02-M01:fs02-034-e220583889f8:launch_direction_deg",
+          "source:FS02-M01:fs02-037-17670ef7e7d4:launch_direction_deg",
+          "source:FS02-M01:fs02-040-f1efaa49a3d3:launch_direction_deg"
+        ],
+        "blockers": [
+          {
+            "code": "incoming_ball_direction_not_bound",
+            "message_zh": "启动方向是图像代理；未绑定活动球轨迹，不能判断是否与来球方向一致。"
+          },
+          {
+            "code": "qualitative_rubric_uncalibrated",
+            "message_zh": "原文 A～E 是定性标准，没有给出可直接执行的数值分界；当前不生成正式等级。"
+          }
+        ],
+        "source": {
+          "document_id": "CARD-FS",
+          "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e",
+          "table": "T007",
+          "rubric_sha256": "07a9f1eb99d78be563eca41046a9de3933fe35c5f760150086085953bbdb100a"
+        },
+        "grade": {
+          "status": "calibration_required",
+          "label_zh": "暂不生成等级",
+          "reason_zh": "无完整可执行且经过验证的分级规则；缺测不等于 E 级或零分。"
+        },
+        "observation_count": 34,
+        "returned_observation_count": 12,
+        "observations_truncated": true
+      }
+    ],
+    "observations": [
+      {
+        "observation_id": "source:FS02-M01:fs02-000-beadf83f6c3d:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 31.763908713124255,
+        "unit": "deg",
+        "event_id": "fs02-000-beadf83f6c3d",
+        "person_track_id": 1,
+        "start_ms": 300,
+        "end_ms": 900,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 19,
+              "total_frame_count": 19,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 19,
+          "total_frame_count": 19,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            9,
+            27
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 19,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 5,
+            "early_position": [
+              0.22392347508845636,
+              0.4408457661553291
+            ],
+            "late_position": [
+              0.26623301396681953,
+              0.4176393107773826
+            ],
+            "median_velocity": [
+              0.07958328423821139,
+              -0.05425716442914065
+            ],
+            "duration_s": 0.6,
+            "composite_vector": [
+              0.09005950942129,
+              -0.05576075403543091
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-003-96df44348cc0:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": -174.2234185053287,
+        "unit": "deg",
+        "event_id": "fs02-003-96df44348cc0",
+        "person_track_id": 1,
+        "start_ms": 5267,
+        "end_ms": 6667,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176,
+          177,
+          178,
+          179,
+          180,
+          181,
+          182,
+          183,
+          184,
+          185,
+          186,
+          187,
+          188,
+          189,
+          190,
+          191,
+          192,
+          193,
+          194,
+          195,
+          196,
+          197,
+          198,
+          199,
+          200
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 43,
+              "total_frame_count": 43,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 43,
+          "total_frame_count": 43,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            158,
+            200
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 43,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 11,
+            "early_position": [
+              0.23458217805475692,
+              0.3946948275639131
+            ],
+            "late_position": [
+              0.12793558722300838,
+              0.40061675139672115
+            ],
+            "median_velocity": [
+              -0.10464232324442845,
+              0.014062258361872205
+            ],
+            "duration_s": 1.4,
+            "composite_vector": [
+              -0.25314584337394835,
+              0.025609085539429127
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-006-f5d1884b13a4:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 3.5506083757735794,
+        "unit": "deg",
+        "event_id": "fs02-006-f5d1884b13a4",
+        "person_track_id": 1,
+        "start_ms": 14767,
+        "end_ms": 15767,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          443,
+          444,
+          445,
+          446,
+          447,
+          448,
+          449,
+          450,
+          451,
+          452,
+          453,
+          454,
+          455,
+          456,
+          457,
+          458,
+          459,
+          460,
+          461,
+          462,
+          463,
+          464,
+          465,
+          466,
+          467,
+          468,
+          469,
+          470,
+          471,
+          472,
+          473
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 31,
+              "total_frame_count": 31,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 31,
+          "total_frame_count": 31,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            443,
+            473
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 31,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 8,
+            "early_position": [
+              0.13174798281247002,
+              0.38586862297616953
+            ],
+            "late_position": [
+              0.21333896426652577,
+              0.3783778819692981
+            ],
+            "median_velocity": [
+              0.1111379163848441,
+              -0.004467943580656091
+            ],
+            "duration_s": 1.0,
+            "composite_vector": [
+              0.19272889783889985,
+              -0.011958684587527506
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-010-18e535c05537:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 146.3693307799651,
+        "unit": "deg",
+        "event_id": "fs02-010-18e535c05537",
+        "person_track_id": 1,
+        "start_ms": 23867,
+        "end_ms": 24167,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          716,
+          717,
+          718,
+          719,
+          720,
+          721,
+          722,
+          723,
+          724,
+          725
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 10,
+              "total_frame_count": 10,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 10,
+          "total_frame_count": 10,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            716,
+            725
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 10,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 3,
+            "early_position": [
+              0.08413431463214344,
+              0.42013871664552066
+            ],
+            "late_position": [
+              0.06698634383539112,
+              0.408002262468548
+            ],
+            "median_velocity": [
+              -0.0696846487269708,
+              -0.04391837476878571
+            ],
+            "duration_s": 0.3,
+            "composite_vector": [
+              -0.038053365414843554,
+              -0.025311966607608392
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-015-1536dbd04bc7:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 11.091021163989373,
+        "unit": "deg",
+        "event_id": "fs02-015-1536dbd04bc7",
+        "person_track_id": 1,
+        "start_ms": 33633,
+        "end_ms": 34967,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1009,
+          1010,
+          1011,
+          1012,
+          1013,
+          1014,
+          1015,
+          1016,
+          1017,
+          1018,
+          1019,
+          1020,
+          1021,
+          1022,
+          1023,
+          1024,
+          1025,
+          1026,
+          1027,
+          1028,
+          1029,
+          1030,
+          1031,
+          1032,
+          1033,
+          1034,
+          1035,
+          1036,
+          1037,
+          1038,
+          1039,
+          1040,
+          1041,
+          1042,
+          1043,
+          1044,
+          1045,
+          1046,
+          1047,
+          1048,
+          1049
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 41,
+              "total_frame_count": 41,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 41,
+          "total_frame_count": 41,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            1009,
+            1049
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 41,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 11,
+            "early_position": [
+              0.08664662341583126,
+              0.42260469794875766
+            ],
+            "late_position": [
+              0.17813939205205886,
+              0.40825640546341674
+            ],
+            "median_velocity": [
+              0.07971169137426416,
+              -0.018314734925457297
+            ],
+            "duration_s": 1.334,
+            "composite_vector": [
+              0.197828164929496,
+              -0.03878014887590095
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-018-9ff8d105fd40:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 177.83210683016145,
+        "unit": "deg",
+        "event_id": "fs02-018-9ff8d105fd40",
+        "person_track_id": 1,
+        "start_ms": 43500,
+        "end_ms": 44267,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1305,
+          1306,
+          1307,
+          1308,
+          1309,
+          1310,
+          1311,
+          1312,
+          1313,
+          1314,
+          1315,
+          1316,
+          1317,
+          1318,
+          1319,
+          1320,
+          1321,
+          1322,
+          1323,
+          1324,
+          1325,
+          1326,
+          1327,
+          1328
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 24,
+              "total_frame_count": 24,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 24,
+          "total_frame_count": 24,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            1305,
+            1328
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 24,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 6,
+            "early_position": [
+              0.19782174543316156,
+              0.402511996099049
+            ],
+            "late_position": [
+              0.12524858978235534,
+              0.3995473812923299
+            ],
+            "median_velocity": [
+              -0.10853555313150734,
+              -0.003825213975075215
+            ],
+            "duration_s": 0.767,
+            "composite_vector": [
+              -0.15581992490267235,
+              -0.005898553925601747
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-021-c11da26c738b:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": -178.5733355145463,
+        "unit": "deg",
+        "event_id": "fs02-021-c11da26c738b",
+        "person_track_id": 1,
+        "start_ms": 49833,
+        "end_ms": 50667,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1495,
+          1496,
+          1497,
+          1498,
+          1499,
+          1500,
+          1501,
+          1502,
+          1503,
+          1504,
+          1505,
+          1506,
+          1507,
+          1508,
+          1509,
+          1510,
+          1511,
+          1512,
+          1513,
+          1514,
+          1515,
+          1516,
+          1517,
+          1518,
+          1519,
+          1520
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 26,
+              "total_frame_count": 26,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 26,
+          "total_frame_count": 26,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            1495,
+            1520
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 26,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 7,
+            "early_position": [
+              0.19756466246907772,
+              0.3989745435198829
+            ],
+            "late_position": [
+              0.08610804275976658,
+              0.4015308649006666
+            ],
+            "median_velocity": [
+              -0.19264624790916213,
+              0.0050610967898720915
+            ],
+            "duration_s": 0.834,
+            "composite_vector": [
+              -0.27212359046555235,
+              0.0067772761035370345
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-026-956493641bcc:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 2.4791532384840393,
+        "unit": "deg",
+        "event_id": "fs02-026-956493641bcc",
+        "person_track_id": 1,
+        "start_ms": 67100,
+        "end_ms": 68633,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025,
+          2026,
+          2027,
+          2028,
+          2029,
+          2030,
+          2031,
+          2032,
+          2033,
+          2034,
+          2035,
+          2036,
+          2037,
+          2038,
+          2039,
+          2040,
+          2041,
+          2042,
+          2043,
+          2044,
+          2045,
+          2046,
+          2047,
+          2048,
+          2049,
+          2050,
+          2051,
+          2052,
+          2053,
+          2054,
+          2055,
+          2056,
+          2057,
+          2058,
+          2059
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 47,
+              "total_frame_count": 47,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 47,
+          "total_frame_count": 47,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            2013,
+            2059
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 47,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 12,
+            "early_position": [
+              0.07116431206093035,
+              0.40028407236385033
+            ],
+            "late_position": [
+              0.20976087588403433,
+              0.3925214168373683
+            ],
+            "median_velocity": [
+              0.12220251042878542,
+              -0.004141600756307279
+            ],
+            "duration_s": 1.533,
+            "composite_vector": [
+              0.32593301231043204,
+              -0.01411172948590109
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-029-63c5e7f25599:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": -174.8966610995653,
+        "unit": "deg",
+        "event_id": "fs02-029-63c5e7f25599",
+        "person_track_id": 1,
+        "start_ms": 72500,
+        "end_ms": 73667,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2175,
+          2176,
+          2177,
+          2178,
+          2179,
+          2180,
+          2181,
+          2182,
+          2183,
+          2184,
+          2185,
+          2186,
+          2187,
+          2188,
+          2189,
+          2190,
+          2191,
+          2192,
+          2193,
+          2194,
+          2195,
+          2196,
+          2197,
+          2198,
+          2199,
+          2200,
+          2201,
+          2202,
+          2203,
+          2204,
+          2205,
+          2206,
+          2207,
+          2208,
+          2209,
+          2210
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 36,
+              "total_frame_count": 36,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 36,
+          "total_frame_count": 36,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            2175,
+            2210
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 36,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 9,
+            "early_position": [
+              0.23762245556930428,
+              0.39636114130801703
+            ],
+            "late_position": [
+              0.14022487506687392,
+              0.4034245111550603
+            ],
+            "median_velocity": [
+              -0.09918654941435526,
+              0.010258892766159568
+            ],
+            "duration_s": 1.167,
+            "composite_vector": [
+              -0.21314828366898295,
+              0.01903549770515147
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-034-e220583889f8:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 15.602444314513724,
+        "unit": "deg",
+        "event_id": "fs02-034-e220583889f8",
+        "person_track_id": 1,
+        "start_ms": 86533,
+        "end_ms": 87500,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2596,
+          2597,
+          2598,
+          2599,
+          2600,
+          2601,
+          2602,
+          2603,
+          2604,
+          2605,
+          2606,
+          2607,
+          2608,
+          2609,
+          2610,
+          2611,
+          2612,
+          2613,
+          2614,
+          2615,
+          2616,
+          2617,
+          2618,
+          2619,
+          2620,
+          2621,
+          2622,
+          2623,
+          2624,
+          2625
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 26,
+              "total_frame_count": 30,
+              "fraction": 0.8666666666666667,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 26,
+          "total_frame_count": 30,
+          "fraction": 0.8666666666666667,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            2596,
+            2625
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 30,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 8,
+            "early_position": [
+              0.016085495875002145,
+              0.4392711391843577
+            ],
+            "late_position": [
+              0.1105424616305864,
+              0.4168738756711067
+            ],
+            "median_velocity": [
+              0.11564918582327671,
+              -0.03641091038264865
+            ],
+            "duration_s": 0.967,
+            "composite_vector": [
+              0.20628972844669283,
+              -0.05760661385327224
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-037-17670ef7e7d4:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": -170.34619108611992,
+        "unit": "deg",
+        "event_id": "fs02-037-17670ef7e7d4",
+        "person_track_id": 1,
+        "start_ms": 90867,
+        "end_ms": 91367,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2726,
+          2727,
+          2728,
+          2729,
+          2730,
+          2731,
+          2732,
+          2733,
+          2734,
+          2735,
+          2736,
+          2737,
+          2738,
+          2739,
+          2740,
+          2741
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 16,
+              "total_frame_count": 16,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 16,
+          "total_frame_count": 16,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            2726,
+            2741
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 16,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 4,
+            "early_position": [
+              0.28112424412556203,
+              0.38379899535374695
+            ],
+            "late_position": [
+              0.2536591800322554,
+              0.39126847108590596
+            ],
+            "median_velocity": [
+              -0.05834771862828023,
+              0.0043300070558506985
+            ],
+            "duration_s": 0.5,
+            "composite_vector": [
+              -0.05663892340744674,
+              0.009634479260084353
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS02-M01:fs02-040-f1efaa49a3d3:launch_direction_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS02-M01",
+        "feature_name": "launch_direction_deg",
+        "label_zh": "启动方向（图像代理）",
+        "value": 9.406584259388485,
+        "unit": "deg",
+        "event_id": "fs02-040-f1efaa49a3d3",
+        "person_track_id": 1,
+        "start_ms": 96700,
+        "end_ms": 97000,
+        "definition_zh": "原文P0258允许无球轨迹时仅输出启动方向；当前为完整FS02候选窗的髋中心图像方向代理，不判断方向正确性。",
+        "source_ref": "CARD-FS:word/document.xml:P0258",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2901,
+          2902,
+          2903,
+          2904,
+          2905,
+          2906,
+          2907,
+          2908,
+          2909,
+          2910
+        ],
+        "measurement_definition": "FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear",
+                "left_hip",
+                "right_hip"
+              ],
+              "valid_frame_count": 10,
+              "total_frame_count": 10,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear",
+            "left_hip",
+            "right_hip"
+          ],
+          "valid_frame_count": 10,
+          "total_frame_count": 10,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+          "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+          "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+          "endpoint_source_frames": [
+            2901,
+            2910
+          ],
+          "computation_diagnostics": {
+            "valid_samples": 10,
+            "edge_fraction": 0.25,
+            "edge_sample_count": 3,
+            "early_position": [
+              0.18851140174727146,
+              0.39340370185590523
+            ],
+            "late_position": [
+              0.20947079204529118,
+              0.3900528044973595
+            ],
+            "median_velocity": [
+              0.08188360988709525,
+              -0.01397001778260949
+            ],
+            "duration_s": 0.3,
+            "composite_vector": [
+              0.04552447326414829,
+              -0.007541902693328559
+            ],
+            "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+            "direction_source": "hip_displacement_plus_median_velocity_times_duration"
+          },
+          "scope": "FS02_candidate_event_direction_only",
+          "incoming_ball_direction_available": false,
+          "direction_correctness_evaluated": false,
+          "source_clause_complete": false
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-002-cf610670458d:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.04530210807643606,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-002-cf610670458d",
+        "person_track_id": 1,
+        "start_ms": 2933,
+        "end_ms": 3567.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 20,
+              "total_frame_count": 20,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 20,
+          "total_frame_count": 20,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 3567.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              88,
+              89
+            ],
+            [
+              89,
+              90
+            ],
+            [
+              90,
+              91
+            ],
+            [
+              91,
+              92
+            ],
+            [
+              92,
+              93
+            ],
+            [
+              93,
+              94
+            ],
+            [
+              94,
+              95
+            ],
+            [
+              95,
+              96
+            ],
+            [
+              96,
+              97
+            ],
+            [
+              97,
+              98
+            ],
+            [
+              98,
+              99
+            ],
+            [
+              99,
+              100
+            ],
+            [
+              100,
+              101
+            ],
+            [
+              101,
+              102
+            ],
+            [
+              102,
+              103
+            ],
+            [
+              103,
+              104
+            ],
+            [
+              104,
+              105
+            ],
+            [
+              105,
+              106
+            ],
+            [
+              106,
+              107
+            ]
+          ],
+          "observed_duration_ms": 634.0000000000001
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-002-cf610670458d:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 2.908267237037714,
+        "unit": "deg",
+        "event_id": "fs01-002-cf610670458d",
+        "person_track_id": 1,
+        "start_ms": 2933,
+        "end_ms": 3567.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 20,
+              "total_frame_count": 20,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 20,
+          "total_frame_count": 20,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 3567.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            88,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-005-907586925f79:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.048818406557560756,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-005-907586925f79",
+        "person_track_id": 1,
+        "start_ms": 11933,
+        "end_ms": 12467.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          358,
+          359,
+          360,
+          361,
+          362,
+          363,
+          364,
+          365,
+          366,
+          367,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 17,
+              "total_frame_count": 17,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 17,
+          "total_frame_count": 17,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 12467.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              358,
+              359
+            ],
+            [
+              359,
+              360
+            ],
+            [
+              360,
+              361
+            ],
+            [
+              361,
+              362
+            ],
+            [
+              362,
+              363
+            ],
+            [
+              363,
+              364
+            ],
+            [
+              364,
+              365
+            ],
+            [
+              365,
+              366
+            ],
+            [
+              366,
+              367
+            ],
+            [
+              367,
+              368
+            ],
+            [
+              368,
+              369
+            ],
+            [
+              369,
+              370
+            ],
+            [
+              370,
+              371
+            ],
+            [
+              371,
+              372
+            ],
+            [
+              372,
+              373
+            ],
+            [
+              373,
+              374
+            ]
+          ],
+          "observed_duration_ms": 534.0
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-005-907586925f79:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 1.0523899179184555,
+        "unit": "deg",
+        "event_id": "fs01-005-907586925f79",
+        "person_track_id": 1,
+        "start_ms": 11933,
+        "end_ms": 12467.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          358,
+          359,
+          360,
+          361,
+          362,
+          363,
+          364,
+          365,
+          366,
+          367,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 17,
+              "total_frame_count": 17,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 17,
+          "total_frame_count": 17,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 12467.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            358,
+            359,
+            360,
+            361,
+            362,
+            363,
+            364,
+            365,
+            366,
+            367,
+            368,
+            369,
+            370,
+            371,
+            372,
+            373,
+            374
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-009-1bb7df85b6a5:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.14471549943505146,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-009-1bb7df85b6a5",
+        "person_track_id": 1,
+        "start_ms": 19567,
+        "end_ms": 20467.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          587,
+          588,
+          589,
+          590,
+          591,
+          592,
+          593,
+          594,
+          595,
+          596,
+          597,
+          598,
+          599,
+          600,
+          601,
+          602,
+          603,
+          604,
+          605,
+          606,
+          607,
+          608,
+          609,
+          610,
+          611,
+          612,
+          613,
+          614
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 28,
+              "total_frame_count": 28,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 28,
+          "total_frame_count": 28,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 20467.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              587,
+              588
+            ],
+            [
+              588,
+              589
+            ],
+            [
+              589,
+              590
+            ],
+            [
+              590,
+              591
+            ],
+            [
+              591,
+              592
+            ],
+            [
+              592,
+              593
+            ],
+            [
+              593,
+              594
+            ],
+            [
+              594,
+              595
+            ],
+            [
+              595,
+              596
+            ],
+            [
+              596,
+              597
+            ],
+            [
+              597,
+              598
+            ],
+            [
+              598,
+              599
+            ],
+            [
+              599,
+              600
+            ],
+            [
+              600,
+              601
+            ],
+            [
+              601,
+              602
+            ],
+            [
+              602,
+              603
+            ],
+            [
+              603,
+              604
+            ],
+            [
+              604,
+              605
+            ],
+            [
+              605,
+              606
+            ],
+            [
+              606,
+              607
+            ],
+            [
+              607,
+              608
+            ],
+            [
+              608,
+              609
+            ],
+            [
+              609,
+              610
+            ],
+            [
+              610,
+              611
+            ],
+            [
+              611,
+              612
+            ],
+            [
+              612,
+              613
+            ],
+            [
+              613,
+              614
+            ]
+          ],
+          "observed_duration_ms": 900.0000000000001
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-009-1bb7df85b6a5:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 2.086597845734801,
+        "unit": "deg",
+        "event_id": "fs01-009-1bb7df85b6a5",
+        "person_track_id": 1,
+        "start_ms": 19567,
+        "end_ms": 20467.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          587,
+          588,
+          589,
+          590,
+          591,
+          592,
+          593,
+          594,
+          595,
+          596,
+          597,
+          598,
+          599,
+          600,
+          601,
+          602,
+          603,
+          604,
+          605,
+          606,
+          607,
+          608,
+          609,
+          610,
+          611,
+          612,
+          613,
+          614
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 28,
+              "total_frame_count": 28,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 28,
+          "total_frame_count": 28,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 20467.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            587,
+            588,
+            589,
+            590,
+            591,
+            592,
+            593,
+            594,
+            595,
+            596,
+            597,
+            598,
+            599,
+            600,
+            601,
+            602,
+            603,
+            604,
+            605,
+            606,
+            607,
+            608,
+            609,
+            610,
+            611,
+            612,
+            613,
+            614
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-014-57bb7d204d81:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.17968755233972455,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-014-57bb7d204d81",
+        "person_track_id": 1,
+        "start_ms": 30000,
+        "end_ms": 30467.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          900,
+          901,
+          902,
+          903,
+          904,
+          905,
+          906,
+          907,
+          908,
+          909,
+          910,
+          911,
+          912,
+          913,
+          914
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 11,
+              "total_frame_count": 15,
+              "fraction": 0.7333333333333333,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 11,
+          "total_frame_count": 15,
+          "fraction": 0.7333333333333333,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 30467.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              904,
+              905
+            ],
+            [
+              905,
+              906
+            ],
+            [
+              906,
+              907
+            ],
+            [
+              907,
+              908
+            ],
+            [
+              908,
+              909
+            ],
+            [
+              909,
+              910
+            ],
+            [
+              910,
+              911
+            ],
+            [
+              911,
+              912
+            ],
+            [
+              912,
+              913
+            ],
+            [
+              913,
+              914
+            ]
+          ],
+          "observed_duration_ms": 334.00000000000006
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-014-57bb7d204d81:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 1.0855995560533018,
+        "unit": "deg",
+        "event_id": "fs01-014-57bb7d204d81",
+        "person_track_id": 1,
+        "start_ms": 30000,
+        "end_ms": 30467.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          900,
+          901,
+          902,
+          903,
+          904,
+          905,
+          906,
+          907,
+          908,
+          909,
+          910,
+          911,
+          912,
+          913,
+          914
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 11,
+              "total_frame_count": 15,
+              "fraction": 0.7333333333333333,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 11,
+          "total_frame_count": 15,
+          "fraction": 0.7333333333333333,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 30467.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            904,
+            905,
+            906,
+            907,
+            908,
+            909,
+            910,
+            911,
+            912,
+            913,
+            914
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-016-c13a9b46816e:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.11905117715820558,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-016-c13a9b46816e",
+        "person_track_id": 1,
+        "start_ms": 36500,
+        "end_ms": 36733.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1095,
+          1096,
+          1097,
+          1098,
+          1099,
+          1100,
+          1101,
+          1102
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 8,
+              "total_frame_count": 8,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 8,
+          "total_frame_count": 8,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 36733.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              1095,
+              1096
+            ],
+            [
+              1096,
+              1097
+            ],
+            [
+              1097,
+              1098
+            ],
+            [
+              1098,
+              1099
+            ],
+            [
+              1099,
+              1100
+            ],
+            [
+              1100,
+              1101
+            ],
+            [
+              1101,
+              1102
+            ]
+          ],
+          "observed_duration_ms": 233.0
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-016-c13a9b46816e:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 1.4153966559260946,
+        "unit": "deg",
+        "event_id": "fs01-016-c13a9b46816e",
+        "person_track_id": 1,
+        "start_ms": 36500,
+        "end_ms": 36733.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1095,
+          1096,
+          1097,
+          1098,
+          1099,
+          1100,
+          1101,
+          1102
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 8,
+              "total_frame_count": 8,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 8,
+          "total_frame_count": 8,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 36733.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            1095,
+            1096,
+            1097,
+            1098,
+            1099,
+            1100,
+            1101,
+            1102
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-019-afa9d05837e0:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.11960542121410186,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-019-afa9d05837e0",
+        "person_track_id": 1,
+        "start_ms": 44267,
+        "end_ms": 44333.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1328,
+          1329,
+          1330
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 3,
+              "total_frame_count": 3,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 3,
+          "total_frame_count": 3,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 44333.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              1328,
+              1329
+            ],
+            [
+              1329,
+              1330
+            ]
+          ],
+          "observed_duration_ms": 66.0
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-019-afa9d05837e0:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 2.146074042909512,
+        "unit": "deg",
+        "event_id": "fs01-019-afa9d05837e0",
+        "person_track_id": 1,
+        "start_ms": 44267,
+        "end_ms": 44333.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1328,
+          1329,
+          1330
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 3,
+              "total_frame_count": 3,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 3,
+          "total_frame_count": 3,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 44333.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            1328,
+            1329,
+            1330
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-021-b7a0dcd78773:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.07105676438951304,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-021-b7a0dcd78773",
+        "person_track_id": 1,
+        "start_ms": 48833,
+        "end_ms": 48900.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1465,
+          1466,
+          1467
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 3,
+              "total_frame_count": 3,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 3,
+          "total_frame_count": 3,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 48900.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              1465,
+              1466
+            ],
+            [
+              1466,
+              1467
+            ]
+          ],
+          "observed_duration_ms": 67.0
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-021-b7a0dcd78773:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 0.801028914697682,
+        "unit": "deg",
+        "event_id": "fs01-021-b7a0dcd78773",
+        "person_track_id": 1,
+        "start_ms": 48833,
+        "end_ms": 48900.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1465,
+          1466,
+          1467
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 3,
+              "total_frame_count": 3,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 3,
+          "total_frame_count": 3,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 48900.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            1465,
+            1466,
+            1467
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-025-c194304dc6a8:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.13651516674800293,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-025-c194304dc6a8",
+        "person_track_id": 1,
+        "start_ms": 62700,
+        "end_ms": 63067.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1881,
+          1882,
+          1883,
+          1884,
+          1885,
+          1886,
+          1887,
+          1888,
+          1889,
+          1890,
+          1891,
+          1892
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 12,
+              "total_frame_count": 12,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 12,
+          "total_frame_count": 12,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 63067.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              1881,
+              1882
+            ],
+            [
+              1882,
+              1883
+            ],
+            [
+              1883,
+              1884
+            ],
+            [
+              1884,
+              1885
+            ],
+            [
+              1885,
+              1886
+            ],
+            [
+              1886,
+              1887
+            ],
+            [
+              1887,
+              1888
+            ],
+            [
+              1888,
+              1889
+            ],
+            [
+              1889,
+              1890
+            ],
+            [
+              1890,
+              1891
+            ],
+            [
+              1891,
+              1892
+            ]
+          ],
+          "observed_duration_ms": 367.0000000000001
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-025-c194304dc6a8:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 0.8599957192029195,
+        "unit": "deg",
+        "event_id": "fs01-025-c194304dc6a8",
+        "person_track_id": 1,
+        "start_ms": 62700,
+        "end_ms": 63067.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          1881,
+          1882,
+          1883,
+          1884,
+          1885,
+          1886,
+          1887,
+          1888,
+          1889,
+          1890,
+          1891,
+          1892
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 12,
+              "total_frame_count": 12,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 12,
+          "total_frame_count": 12,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 63067.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            1881,
+            1882,
+            1883,
+            1884,
+            1885,
+            1886,
+            1887,
+            1888,
+            1889,
+            1890,
+            1891,
+            1892
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-027-f62b08675442:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.08501818001573332,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-027-f62b08675442",
+        "person_track_id": 1,
+        "start_ms": 68633,
+        "end_ms": 69267.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2059,
+          2060,
+          2061,
+          2062,
+          2063,
+          2064,
+          2065,
+          2066,
+          2067,
+          2068,
+          2069,
+          2070,
+          2071,
+          2072,
+          2073,
+          2074,
+          2075,
+          2076,
+          2077,
+          2078
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 20,
+              "total_frame_count": 20,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 20,
+          "total_frame_count": 20,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 69267.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              2059,
+              2060
+            ],
+            [
+              2060,
+              2061
+            ],
+            [
+              2061,
+              2062
+            ],
+            [
+              2062,
+              2063
+            ],
+            [
+              2063,
+              2064
+            ],
+            [
+              2064,
+              2065
+            ],
+            [
+              2065,
+              2066
+            ],
+            [
+              2066,
+              2067
+            ],
+            [
+              2067,
+              2068
+            ],
+            [
+              2068,
+              2069
+            ],
+            [
+              2069,
+              2070
+            ],
+            [
+              2070,
+              2071
+            ],
+            [
+              2071,
+              2072
+            ],
+            [
+              2072,
+              2073
+            ],
+            [
+              2073,
+              2074
+            ],
+            [
+              2074,
+              2075
+            ],
+            [
+              2075,
+              2076
+            ],
+            [
+              2076,
+              2077
+            ],
+            [
+              2077,
+              2078
+            ]
+          ],
+          "observed_duration_ms": 634.0000000000001
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-027-f62b08675442:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 3.581003890150831,
+        "unit": "deg",
+        "event_id": "fs01-027-f62b08675442",
+        "person_track_id": 1,
+        "start_ms": 68633,
+        "end_ms": 69267.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2059,
+          2060,
+          2061,
+          2062,
+          2063,
+          2064,
+          2065,
+          2066,
+          2067,
+          2068,
+          2069,
+          2070,
+          2071,
+          2072,
+          2073,
+          2074,
+          2075,
+          2076,
+          2077,
+          2078
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 20,
+              "total_frame_count": 20,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 20,
+          "total_frame_count": 20,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 69267.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            2059,
+            2060,
+            2061,
+            2062,
+            2063,
+            2064,
+            2065,
+            2066,
+            2067,
+            2068,
+            2069,
+            2070,
+            2071,
+            2072,
+            2073,
+            2074,
+            2075,
+            2076,
+            2077,
+            2078
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-031-02a87fa829b0:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.03819505873667489,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-031-02a87fa829b0",
+        "person_track_id": 1,
+        "start_ms": 75533,
+        "end_ms": 75967.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2266,
+          2267,
+          2268,
+          2269,
+          2270,
+          2271,
+          2272,
+          2273,
+          2274,
+          2275,
+          2276,
+          2277,
+          2278,
+          2279
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 14,
+              "total_frame_count": 14,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 14,
+          "total_frame_count": 14,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 75967.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              2266,
+              2267
+            ],
+            [
+              2267,
+              2268
+            ],
+            [
+              2268,
+              2269
+            ],
+            [
+              2269,
+              2270
+            ],
+            [
+              2270,
+              2271
+            ],
+            [
+              2271,
+              2272
+            ],
+            [
+              2272,
+              2273
+            ],
+            [
+              2273,
+              2274
+            ],
+            [
+              2274,
+              2275
+            ],
+            [
+              2275,
+              2276
+            ],
+            [
+              2276,
+              2277
+            ],
+            [
+              2277,
+              2278
+            ],
+            [
+              2278,
+              2279
+            ]
+          ],
+          "observed_duration_ms": 434.00000000000017
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-031-02a87fa829b0:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 0.8638747691313065,
+        "unit": "deg",
+        "event_id": "fs01-031-02a87fa829b0",
+        "person_track_id": 1,
+        "start_ms": 75533,
+        "end_ms": 75967.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2266,
+          2267,
+          2268,
+          2269,
+          2270,
+          2271,
+          2272,
+          2273,
+          2274,
+          2275,
+          2276,
+          2277,
+          2278,
+          2279
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 14,
+              "total_frame_count": 14,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 14,
+          "total_frame_count": 14,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 75967.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            2266,
+            2267,
+            2268,
+            2269,
+            2270,
+            2271,
+            2272,
+            2273,
+            2274,
+            2275,
+            2276,
+            2277,
+            2278,
+            2279
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-037-ebd81ecb1406:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.034652319193784906,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-037-ebd81ecb1406",
+        "person_track_id": 1,
+        "start_ms": 90100,
+        "end_ms": 90633.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2703,
+          2704,
+          2705,
+          2706,
+          2707,
+          2708,
+          2709,
+          2710,
+          2711,
+          2712,
+          2713,
+          2714,
+          2715,
+          2716,
+          2717,
+          2718,
+          2719
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 17,
+              "total_frame_count": 17,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 17,
+          "total_frame_count": 17,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 90633.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              2703,
+              2704
+            ],
+            [
+              2704,
+              2705
+            ],
+            [
+              2705,
+              2706
+            ],
+            [
+              2706,
+              2707
+            ],
+            [
+              2707,
+              2708
+            ],
+            [
+              2708,
+              2709
+            ],
+            [
+              2709,
+              2710
+            ],
+            [
+              2710,
+              2711
+            ],
+            [
+              2711,
+              2712
+            ],
+            [
+              2712,
+              2713
+            ],
+            [
+              2713,
+              2714
+            ],
+            [
+              2714,
+              2715
+            ],
+            [
+              2715,
+              2716
+            ],
+            [
+              2716,
+              2717
+            ],
+            [
+              2717,
+              2718
+            ],
+            [
+              2718,
+              2719
+            ]
+          ],
+          "observed_duration_ms": 533.0
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-037-ebd81ecb1406:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 1.6071522920598997,
+        "unit": "deg",
+        "event_id": "fs01-037-ebd81ecb1406",
+        "person_track_id": 1,
+        "start_ms": 90100,
+        "end_ms": 90633.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2703,
+          2704,
+          2705,
+          2706,
+          2707,
+          2708,
+          2709,
+          2710,
+          2711,
+          2712,
+          2713,
+          2714,
+          2715,
+          2716,
+          2717,
+          2718,
+          2719
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 17,
+              "total_frame_count": 17,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 17,
+          "total_frame_count": 17,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 90633.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            2703,
+            2704,
+            2705,
+            2706,
+            2707,
+            2708,
+            2709,
+            2710,
+            2711,
+            2712,
+            2713,
+            2714,
+            2715,
+            2716,
+            2717,
+            2718,
+            2719
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-040-5ca614965f62:head_center_mean_speed_frame_long_edge_s",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_center_mean_speed_frame_long_edge_s",
+        "label_zh": "候选前段头部中心速度",
+        "value": 0.07639415500883609,
+        "unit": "frame_long_edge/s",
+        "event_id": "fs01-040-5ca614965f62",
+        "person_track_id": 1,
+        "start_ms": 95700,
+        "end_ms": 96267.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2871,
+          2872,
+          2873,
+          2874,
+          2875,
+          2876,
+          2877,
+          2878,
+          2879,
+          2880,
+          2881,
+          2882,
+          2883,
+          2884,
+          2885,
+          2886,
+          2887,
+          2888
+        ],
+        "measurement_definition": "鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 18,
+              "total_frame_count": 18,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 18,
+          "total_frame_count": 18,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 96267.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+          "used_adjacent_source_frame_pairs": [
+            [
+              2871,
+              2872
+            ],
+            [
+              2872,
+              2873
+            ],
+            [
+              2873,
+              2874
+            ],
+            [
+              2874,
+              2875
+            ],
+            [
+              2875,
+              2876
+            ],
+            [
+              2876,
+              2877
+            ],
+            [
+              2877,
+              2878
+            ],
+            [
+              2878,
+              2879
+            ],
+            [
+              2879,
+              2880
+            ],
+            [
+              2880,
+              2881
+            ],
+            [
+              2881,
+              2882
+            ],
+            [
+              2882,
+              2883
+            ],
+            [
+              2883,
+              2884
+            ],
+            [
+              2884,
+              2885
+            ],
+            [
+              2885,
+              2886
+            ],
+            [
+              2886,
+              2887
+            ],
+            [
+              2887,
+              2888
+            ]
+          ],
+          "observed_duration_ms": 567.0000000000001
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      },
+      {
+        "observation_id": "source:FS01-M01:fs01-040-5ca614965f62:head_axis_circular_std_deg",
+        "source": "source_aligned",
+        "scope": "source_indicator_window",
+        "status": "measured",
+        "indicator_id": "FS01-M01",
+        "feature_name": "head_axis_circular_std_deg",
+        "label_zh": "候选前段头部轴角波动",
+        "value": 1.4815123851675664,
+        "unit": "deg",
+        "event_id": "fs01-040-5ca614965f62",
+        "person_track_id": 1,
+        "start_ms": 95700,
+        "end_ms": 96267.0,
+        "definition_zh": "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。",
+        "source_ref": "CARD-FS:word/document.xml:P0080",
+        "windows": [],
+        "full_source_rule_satisfied": false,
+        "source_frames": [
+          2871,
+          2872,
+          2873,
+          2874,
+          2875,
+          2876,
+          2877,
+          2878,
+          2879,
+          2880,
+          2881,
+          2882,
+          2883,
+          2884,
+          2885,
+          2886,
+          2887,
+          2888
+        ],
+        "measurement_definition": "双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+        "coverage": {
+          "scope": "inclusive_window_all_sampled_source_frames",
+          "groups": [
+            {
+              "joint_names": [
+                "nose",
+                "left_ear",
+                "right_ear"
+              ],
+              "valid_frame_count": 18,
+              "total_frame_count": 18,
+              "fraction": 1.0,
+              "meets_70_percent": true
+            }
+          ],
+          "required_joint_names": [
+            "nose",
+            "left_ear",
+            "right_ear"
+          ],
+          "valid_frame_count": 18,
+          "total_frame_count": 18,
+          "fraction": 1.0,
+          "passes": true,
+          "threshold": 0.7,
+          "operator": ">=",
+          "source_rule": "below_70_percent_is_unavailable",
+          "point_validity": {
+            "minimum_confidence": 0.25,
+            "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"
+          },
+          "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
+          "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"
+        },
+        "evidence": {
+          "window_scope": "FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+          "takeoff_proxy_ms": 96267.0,
+          "gaze_evaluated": false,
+          "incoming_ball_alignment_evaluated": false,
+          "technical_stability_evaluated": false,
+          "formula": "degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+          "used_source_frames": [
+            2871,
+            2872,
+            2873,
+            2874,
+            2875,
+            2876,
+            2877,
+            2878,
+            2879,
+            2880,
+            2881,
+            2882,
+            2883,
+            2884,
+            2885,
+            2886,
+            2887,
+            2888
+          ],
+          "angle_period_deg": 180
+        },
+        "assessment_status": "measurement_only",
+        "scoring_allowed": false
+      }
+    ],
+    "full_observation_count": 92,
+    "returned_observation_count": 36,
+    "is_truncated": true,
+    "selection_policy": "uniform_time_order_per_measurement_series_including_endpoints_max_12",
+    "observation_selection": {
+      "strategy": "uniform_time_order_per_measurement_series_including_endpoints",
+      "max_observations_per_series": 12,
+      "total_count": 3619,
+      "returned_count": 1428,
+      "is_truncated": true,
+      "count_scope": "validated_input_observations_before_display_sampling",
+      "source_input_already_truncated": false,
+      "reason_zh": "每项测量按时间均匀展示代表窗口并保留首尾；不按数值高低挑选。完整已接收计数保留，完整时序仍在原始分析产物中。"
+    },
+    "summary_zh": "已逐项核对 298 项 Word 标准，保留 3619 项次真实测量与各项不能判断的具体原因。",
+    "limitations_zh": [
+      "相关测量数量不等于已通过或完整可评分的指标数量；同一测量可支持多张卡，但不重复当成独立证据。",
+      "有值仅说明观察到该数值；二维方向变化、覆盖率和模型置信度都不是技术准确率。",
+      "普通视频无法保证看见真实视线、足底受力、拍面角度或触球；缺少这些证据时不填常量，也不自动判为 E。"
+    ]
+  }
+}

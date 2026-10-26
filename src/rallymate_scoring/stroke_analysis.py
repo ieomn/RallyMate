@@ -13,11 +13,14 @@ import statistics
 from typing import Any
 
 from .rotation_analysis import analyze_rotation
+from .process_motion import analyze_motion_transition, analyze_process_motion
+from .pose_observations import measurement_provenance, sample_source_reference
+from .vector_kinematics import WristKinematicsUnavailable, measurement_contract
 from .temporal_recognition import (LABELS, RuleTemporalBackend, TemporalRecognitionBackend,
                                    _classification, build_temporal_window, samples_are_continuous,
                                    validate_recognition, wrist_kinematics)
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v2.0.0"
+ANALYSIS_VERSION = "stroke-motion-analysis-v2.5.1"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
     "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
@@ -54,25 +57,52 @@ def _angle(a: tuple[float, float], b: tuple[float, float], c: tuple[float, float
 
 
 
-def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence: Mapping[str, Any] | None = None, *,
-             temporal_backend: TemporalRecognitionBackend | None = None) -> dict[str, Any] | None:
+def _episode_context(candidate: Mapping[str, Any], all_samples: list[Any]) -> list[Any]:
+    """Use the same continuous local evidence for candidate choice and analysis."""
     side = candidate["racket_hand_candidate"]
     # Context expands preparation/follow-through, but never crosses a missing
     # wrist, identity break, implausible pose jump, or >160 ms observation gap.
     samples = [sample for sample in all_samples if candidate["start_ms"] - 650 <= sample.time <= candidate["end_ms"] + 900]
+    positive_time_steps = [b.time - a.time for a, b in zip(samples, samples[1:]) if b.time > a.time]
+    positive_frame_steps = [b.frame_index - a.frame_index for a, b in zip(samples, samples[1:]) if b.frame_index > a.frame_index]
+    max_time_gap = min(160, statistics.median(positive_time_steps) * 1.8) if positive_time_steps else 160
+    max_frame_gap = statistics.median(positive_frame_steps) * 1.8 if positive_frame_steps else 1
     segments: list[list[Any]] = [[]]
     for sample in samples:
         valid = (sample.track == candidate["person_track_id"]
                  and f"{side}_wrist" in sample.points)
         prev = segments[-1][-1] if segments[-1] else None
-        continuous = prev is None or samples_are_continuous(prev, sample)
+        continuous = prev is None or (samples_are_continuous(prev, sample, max_gap_ms=max_time_gap)
+                    and 0 < sample.frame_index - prev.frame_index <= max_frame_gap
+                    and getattr(prev, "camera_compensated", False) == getattr(sample, "camera_compensated", False)
+                    and valid and _distance(prev.points[f"{side}_wrist"], sample.points[f"{side}_wrist"]) <= 1.5)
         if not valid or not continuous:
             segments.append([])
         if valid:
             segments[-1].append(sample)
     samples = next((segment for segment in segments if segment and segment[0].time <= candidate["start_ms"]
                     and segment[-1].time >= candidate["end_ms"]), [])
-    if len(samples) < 7:
+    return samples if len(samples) >= 7 else []
+
+
+def candidate_hand_evidence(candidate: Mapping[str, Any], samples: list[Any]) -> dict[str, Any]:
+    """Check one hypothesis without borrowing votes from another time window."""
+    context = _episode_context(candidate, samples)
+    evidence = {**racket_hand_evidence(context), "scope": "continuous_episode_context",
+                "start_ms": context[0].time if context else None,
+                "end_ms": context[-1].time if context else None}
+    hand = evidence["hand"]
+    status = ("unavailable_context" if not context else "unresolved" if hand is None
+              else "matched" if hand == candidate["racket_hand_candidate"] else "conflict")
+    return {"status": status, "candidate_side": candidate["racket_hand_candidate"], "hand_evidence": evidence}
+
+
+def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence: Mapping[str, Any] | None = None, *,
+             temporal_backend: TemporalRecognitionBackend | None = None,
+             unavailable_reasons: list[str] | None = None) -> dict[str, Any] | None:
+    side = candidate["racket_hand_candidate"]
+    samples = _episode_context(candidate, all_samples)
+    if not samples:
         return None
     # Hand ownership is scoped to this continuous local context. A distant
     # idle section, identity reuse or the other end of the video cannot vote.
@@ -86,6 +116,10 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         prediction = backend.recognize(window, candidate, hand_evidence)
         if prediction is not None:
             validate_recognition(prediction, window)
+    except WristKinematicsUnavailable as exc:
+        if unavailable_reasons is not None:
+            unavailable_reasons.append(exc.reason_code)
+        return None
     except (ValueError, TypeError, KeyError, RuntimeError, OSError):
         if type(backend) is RuleTemporalBackend:
             raise
@@ -96,20 +130,30 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         # motion. Report the actual fallback source, never pretend the model ran.
         fallback_reason = fallback_reason or "backend_unavailable"
         backend = RuleTemporalBackend()
-        prediction = backend.recognize(window, candidate, hand_evidence)
+        try:
+            prediction = backend.recognize(window, candidate, hand_evidence)
+        except WristKinematicsUnavailable as exc:
+            if unavailable_reasons is not None:
+                unavailable_reasons.append(exc.reason_code)
+            return None
     if prediction is None:
         return None
     validate_recognition(prediction, window)
-    wrists, speed = wrist_kinematics(samples, side)
     preparation_start = next(i for i, sample in enumerate(samples) if sample.time == prediction["start_ms"])
     follow_end = next(i for i, sample in enumerate(samples) if sample.time == prediction["end_ms"])
     phases = prediction["phases"]
     preparation_complete = phases[0]["status"] == "measured"
     follow_complete = phases[-1]["status"] == "measured"
     motion_peak_ms = prediction["peak_ms"]
-    analyzed_speed = speed[preparation_start:follow_end + 1]
-    wrists = wrists[preparation_start:follow_end + 1]
     samples = samples[preparation_start:follow_end + 1]
+    # Recompute on this exact reported source window, using the same helper
+    # as process_motion. Context outside the report cannot change its values.
+    try:
+        wrists, analyzed_speed = wrist_kinematics(samples, side)
+    except WristKinematicsUnavailable as exc:
+        if unavailable_reasons is not None:
+            unavailable_reasons.append(exc.reason_code)
+        return None
     elbow_angles = [_angle(sample.points[f"{side}_shoulder"], sample.points[f"{side}_elbow"], sample.points[f"{side}_wrist"])
                     if all(f"{side}_{joint}" in sample.points for joint in ("shoulder", "elbow", "wrist")) else None
                     for sample in samples]
@@ -123,6 +167,11 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
     valid_elbows = max(elbow_segments, key=len)
     filtered_elbows = [statistics.median(valid_elbows[max(0, i - 1):i + 2]) for i in range(len(valid_elbows))]
     rotation_analysis = analyze_rotation(samples, phases=phases)
+    provenance = measurement_provenance(samples)
+    if provenance:
+        rotation_analysis["measurement_provenance"] = provenance
+        rotation_analysis["quality"]["keypoint_confidence_min"] = None
+        rotation_analysis["score_status"] = "model_estimate_measurement_only"
     metric_notes = []
     elbow_range = round(max(filtered_elbows) - min(filtered_elbows), 1) if len(valid_elbows) >= len(samples) * 0.8 else None
     if elbow_range is None:
@@ -142,15 +191,23 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
                                  "phase_timing_status": prediction["phase_timing_status"]},
         "method": "rule_based" if backend.metadata().get("kind") == "deterministic_rules" else "temporal_backend",
         "contact_confirmed": False, "racket_hand": side,
+        "measurement_provenance": measurement_provenance(samples),
+        "wrist_kinematics": measurement_contract(),
         "phases": phases,
         "metrics": {"duration_ms": samples[-1].time - samples[0].time,
                     "peak_wrist_speed_torso_per_s": round(max(analyzed_speed), 3),
                     "wrist_path_torso": round(sum(_distance(a, b) for a, b in zip(wrists, wrists[1:])), 3),
                     "elbow_extension_deg": elbow_range, **rotation_analysis["metrics"]},
         "rotation_analysis": rotation_analysis,
+        "process_motion": analyze_process_motion(samples, phases, side),
         "metric_notes_zh": metric_notes + ([] if preparation_complete and follow_complete else ["连续画面尚未覆盖完整准备或随挥，缺失阶段不作补全。"]),
         "evidence": {"pose_samples": len(samples), "racket_associated_frames": candidate["evidence"]["racket_associated_frames"],
                      "hand_evidence": dict(hand_evidence), "phase_method": prediction["phase_method"],
+                     "process_continuity": {"selection_epoch": samples[0].selection_epoch,
+                                            "camera_reference_epoch": getattr(samples[0], "camera_reference_epoch", None),
+                                            "camera_compensated": getattr(samples[0], "camera_compensated", False),
+                                            "normalization_basis": getattr(samples[0], "normalization_basis", "full_torso"),
+                                            **sample_source_reference(samples[0])},
                      "court_location_confirmed": False}, "limitations_zh": LIMITATIONS,
     }
 
@@ -209,8 +266,10 @@ def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapp
     families = {family: {"status": "insufficient_evidence", "reason_zh": "", "episodes": [], "summary": {}}
                 for family in ("baseline", "serve", "return")}
     backend = temporal_backend or RuleTemporalBackend()
+    unavailable_by_family: dict[str, list[str]] = defaultdict(list)
     for candidate in candidates:
-        episode = _episode(candidate, primary_tracks.get(candidate["person_track_id"], []), temporal_backend=backend)
+        episode = _episode(candidate, primary_tracks.get(candidate["person_track_id"], []), temporal_backend=backend,
+                           unavailable_reasons=unavailable_by_family[candidate["family"]])
         if episode is not None:
             episodes = families[episode["family"]]["episodes"]
             duplicate = next((i for i, other in enumerate(episodes)
@@ -231,6 +290,17 @@ def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapp
                 episodes[duplicate] = selected
     for value in families.values():
         value["episodes"].sort(key=lambda episode: (episode["start_ms"], episode["person_track_id"]))
+    # Inter-motion intervals need the intervening frames, not merely two
+    # matching track IDs or timestamps. Returns later share this observation.
+    previous_by_track = {}
+    unique_episodes = sorted((episode for family in families.values() for episode in family["episodes"]),
+                             key=lambda episode: (episode["start_ms"], episode["person_track_id"]))
+    for episode in unique_episodes:
+        track = episode["person_track_id"]
+        previous = previous_by_track.get(track)
+        if previous is not None:
+            episode["process_motion"]["transition_from_previous"] = analyze_motion_transition(previous, episode, primary_tracks.get(track, []))
+        previous_by_track[track] = episode
     for episode in families["baseline"]["episodes"]:
         for serve in context_serves or []:
             context = _incoming_ball_context(episode, serve, all_tracks or primary_tracks, ball_observations or [])
@@ -250,6 +320,9 @@ def build_motion_analysis(candidates: list[dict[str, Any]], primary_tracks: Mapp
             value["reason_zh"] = "缺少可连续关联的对手发球、来球轨迹与主球员挥拍证据，暂不能判断接发；不代表没有接发。"
         else:
             value["reason_zh"] = "当前视频未获得足够连续的" + ("发球时序" if family == "serve" else "持拍挥拍") + "证据，暂不能测量；不代表没有该动作。"
+        skipped = len(unavailable_by_family[family])
+        if skipped:
+            value["reason_zh"] += f"已跳过 {skipped} 个手腕观测不连续的动作候选；未跨缺帧计算。"
     return {"schema_version": "1.1.0", "analysis_version": ANALYSIS_VERSION, "temporal_backend": dict(backend.metadata()),
             "method": "rule_based_pose_racket_temporal", "status": "available" if any(f["episodes"] for f in families.values()) else "insufficient_evidence",
             "contact_confirmed": False, "families": families, "limitations_zh": LIMITATIONS}

@@ -1,0 +1,202 @@
+{
+  "validated_at": "2026-10-26T19:10:49.486592+00:00",
+  "all_selected_rows_have_exact_real_native_track_epoch_and_camera_binding": true,
+  "all_artifact_hashes_match_files": true,
+  "runs": [
+    {
+      "sample": "pink",
+      "job_id": "identity-lock-20261027-pink",
+      "original_job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "run_dir": ".codex_tmp/tennis-score-round3-20261027/gpu-identity/pink",
+      "completed_at": "2026-10-26T18:49:28.258399+00:00",
+      "duration_seconds": 127.655,
+      "source_sha256": "C384FB160DFBE3DC3D8A560C69AEE69404BC885D337473CD0D171EA408A2845F",
+      "frame_count": 900,
+      "selected_frames": 458,
+      "native_ok": 458,
+      "native_track_counts": {
+        "1": 458
+      },
+      "selection_segments": [
+        {
+          "source_track_id": 1,
+          "start_ms": 0,
+          "end_ms": 15233,
+          "frames": 458
+        },
+        {
+          "source_track_id": null,
+          "start_ms": 15267,
+          "end_ms": 29967,
+          "frames": 442
+        }
+      ],
+      "candidate_count": 3,
+      "candidates_by_family": {
+        "baseline": 3,
+        "serve": 0
+      },
+      "native_inference_seconds": 39.116,
+      "artifact_sha256": {
+        "frames.jsonl": "DD47EE4B2C09AB3FA238C3449D386E1BDFAF22FC12A5D46F9FDC5C471E875A18",
+        "sam3d_frames.jsonl": "482F11620ED571038B334AF2F8D4953403F99E5D80877A318A6B5DF5B74332AF",
+        "primary-player.jsonl": "396AB253D781EF8205ADD834BD94D48DC787CCB0A09E85909AC475376B30D96E",
+        "action-recognition.json": "5922B3FC984A338F30F702E306ADB00877D01649D89332B20242226D2C5CA683"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "verified_native_epoch_rows": 458,
+      "native_records_unchanged_during_epoch_refresh": true,
+      "postprocessing": {
+        "version": "verified-native-epoch-binding-v1",
+        "selector_version": "primary-player-v0.4.0",
+        "reason": "GPU validation process loaded the selector before the explicit native epoch-field addition. Only copy selection_epoch and camera_reference_epoch from same-frame verified SAM source_binding and request ledger.",
+        "changed_fields": [
+          "selection_epoch",
+          "camera_reference_epoch"
+        ],
+        "subject_selection_and_all_other_fields_unchanged": true,
+        "original_primary_sha256": "EF342B888421E40F1EB8E6921651BEC364FC510077AAD6FAA0FAA9F5F293CF91",
+        "unchanged_source_artifact_sha256": {
+          "frames.jsonl": "DD47EE4B2C09AB3FA238C3449D386E1BDFAF22FC12A5D46F9FDC5C471E875A18",
+          "sam3d_frames.jsonl": "482F11620ED571038B334AF2F8D4953403F99E5D80877A318A6B5DF5B74332AF"
+        }
+      },
+      "final_selection_verified_against_native_requests": true,
+      "final_lock_evidence": "all_source_frames_replayed_final_lock_and_all_selection_decisions_equal",
+      "replay_report": ".codex_tmp\\tennis-score-round3-20261027\\gpu-identity\\final-lock-replay.json"
+    },
+    {
+      "sample": "night",
+      "job_id": "identity-final-fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "original_job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "run_dir": ".codex_tmp/tennis-score-round3-20261027/gpu-identity-final/fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "request_path": "D:\\Projects\\网球\\.codex_tmp\\tennis-score-round3-20261027\\gpu-identity-final\\fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468-request.json",
+      "original_request_sha256": "C57440B153A1065502E5D6058293F431220C91F4C7D49DF275F2853CD9858D85",
+      "completed_at": "2026-10-26T19:09:44.075808+00:00",
+      "duration_seconds": 114.635,
+      "source_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "frame_count": 900,
+      "selected_frames": 710,
+      "native_ok": 710,
+      "native_track_counts": {
+        "1": 416,
+        "86": 294
+      },
+      "candidate_count": 6,
+      "candidates_by_family": {
+        "baseline": 6,
+        "serve": 0
+      },
+      "native_inference_seconds": 59.282,
+      "selector_sha256": {
+        "subject_lock.py": "6EAAAE3F3A5B4AA189B857786FFB7A0D3AA949FDE91E4053409B267313CEA43A",
+        "primary_player.py": "88D73274EE550AEE091666C28988FC370AB92A1D478311417A9EC4B92CFC6844"
+      },
+      "artifact_sha256": {
+        "frames.jsonl": "68919DDC3EB9B3DD2C577492F5223CA2BD2A8987AA8ECD8FB3493B99B09F6826",
+        "sam3d_frames.jsonl": "2C91F15D8A3C79EFC3DD33A67E204D48E7565100D86BC634AF144E19E5CF7FC9",
+        "primary-player.jsonl": "B7C86596912CBAAD8423CC371E6F3C7D88D1645ACF82EB4C98BEE5B8ABE4E774",
+        "action-recognition.json": "C17A41BAE95577D390C8C6013239A3B7AF5AB2B6B3EC57E997E666CAC1B4D52E"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "final_selection_verified_against_native_requests": true,
+      "verified_native_epoch_rows": 710,
+      "final_lock_evidence": "rerun_real_production_pipeline_after_final_freeze",
+      "replay_report": ".codex_tmp\\tennis-score-round3-20261027\\gpu-identity\\final-lock-replay.json"
+    },
+    {
+      "sample": "federer",
+      "job_id": "identity-final-7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "original_job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "run_dir": ".codex_tmp/tennis-score-round3-20261027/gpu-identity-final/7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "request_path": "D:\\Projects\\网球\\.codex_tmp\\tennis-score-round3-20261027\\gpu-identity-final\\7af2d828-9f83-4698-b0e2-4a8bc2c5282d-request.json",
+      "original_request_sha256": "8413D66C019320E8247597C105A421C31524AC812F4AE295066ACD7F810C7695",
+      "completed_at": "2026-10-26T19:10:20.239083+00:00",
+      "duration_seconds": 36.104,
+      "source_sha256": "97569F24772D7A1DC0DD4E3226C526C400E7DEA5AF873FE44C790A49C305129C",
+      "frame_count": 184,
+      "selected_frames": 78,
+      "native_ok": 78,
+      "native_track_counts": {
+        "14": 78
+      },
+      "candidate_count": 0,
+      "candidates_by_family": {
+        "baseline": 0,
+        "serve": 0
+      },
+      "native_inference_seconds": 8.252,
+      "selector_sha256": {
+        "subject_lock.py": "6EAAAE3F3A5B4AA189B857786FFB7A0D3AA949FDE91E4053409B267313CEA43A",
+        "primary_player.py": "88D73274EE550AEE091666C28988FC370AB92A1D478311417A9EC4B92CFC6844"
+      },
+      "artifact_sha256": {
+        "frames.jsonl": "625E3F0EBCAD312D62EDB1D652CD0B8E930EBEC445B5DE80EEE51267838722FA",
+        "sam3d_frames.jsonl": "5F64AE63628B718E62937ADB593566DDDE9E3632F9A4BE0CF45F02B4A4FB74D7",
+        "primary-player.jsonl": "F2F062C3B6746A4556B81E233F69F08D88F656B1992CDB16A52125A570C1FDFC",
+        "action-recognition.json": "E477689247E1A8007C951AC0FFE6FDEE8C946148CA0B8A6B41ED971095219135"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "final_selection_verified_against_native_requests": true,
+      "verified_native_epoch_rows": 78,
+      "final_lock_evidence": "rerun_real_production_pipeline_after_final_freeze",
+      "replay_report": ".codex_tmp\\tennis-score-round3-20261027\\gpu-identity\\final-lock-replay.json"
+    },
+    {
+      "sample": "white",
+      "job_id": "identity-lock-20261027-white",
+      "original_job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "run_dir": ".codex_tmp/tennis-score-round3-20261027/gpu-identity/white",
+      "completed_at": "2026-10-26T18:54:24.960566+00:00",
+      "duration_seconds": 143.746,
+      "source_sha256": "6D14B259E12C5677738134DAEBA6BF40F4A943DBF973D4CDDC784588B8A030A8",
+      "frame_count": 900,
+      "selected_frames": 900,
+      "native_ok": 900,
+      "native_track_counts": {
+        "1": 900
+      },
+      "selection_segments": [
+        {
+          "source_track_id": 1,
+          "start_ms": 0,
+          "end_ms": 29967,
+          "frames": 900
+        }
+      ],
+      "candidate_count": 7,
+      "candidates_by_family": {
+        "baseline": 7,
+        "serve": 0
+      },
+      "native_inference_seconds": 75.394,
+      "artifact_sha256": {
+        "frames.jsonl": "5BC95FF2E836CA0670775AE11D2EBF7FE36F951B1C00039382421D80F376A50F",
+        "sam3d_frames.jsonl": "19737D6AADFD47287795898C859A46DA6AD9AECA5AB92ED755B471C4F178D36E",
+        "primary-player.jsonl": "41543311267C6955A557904A3E64AB792355DFC9927FBF927B4C0B944CF29A08",
+        "action-recognition.json": "2E17A05AF391C63C19B4B4C83241F4AA20989870C5A46BF35B9A5EAD6323030E"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "verified_native_epoch_rows": 900,
+      "native_records_unchanged_during_epoch_refresh": true,
+      "postprocessing": {
+        "version": "verified-native-epoch-binding-v1",
+        "selector_version": "primary-player-v0.4.0",
+        "reason": "GPU validation process loaded the selector before the explicit native epoch-field addition. Only copy selection_epoch and camera_reference_epoch from same-frame verified SAM source_binding and request ledger.",
+        "changed_fields": [
+          "selection_epoch",
+          "camera_reference_epoch"
+        ],
+        "subject_selection_and_all_other_fields_unchanged": true,
+        "original_primary_sha256": "A57CABE503945F99BCA215EB84B8930DDBF426521F8818974AEEDF82EDCE1A95",
+        "unchanged_source_artifact_sha256": {
+          "frames.jsonl": "5BC95FF2E836CA0670775AE11D2EBF7FE36F951B1C00039382421D80F376A50F",
+          "sam3d_frames.jsonl": "19737D6AADFD47287795898C859A46DA6AD9AECA5AB92ED755B471C4F178D36E"
+        }
+      },
+      "final_selection_verified_against_native_requests": true,
+      "final_lock_evidence": "all_source_frames_replayed_final_lock_and_all_selection_decisions_equal",
+      "replay_report": ".codex_tmp\\tennis-score-round3-20261027\\gpu-identity\\final-lock-replay.json"
+    }
+  ]
+}

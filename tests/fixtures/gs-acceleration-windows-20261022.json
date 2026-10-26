@@ -1,0 +1,1648 @@
+{
+  "version": "gs-acceleration-windows-v1.0.0",
+  "created_on": "2026-10-22",
+  "runtime_base_commit": "cb994626ccb08167d633ad7baa00fe321611244f",
+  "annotation_version": "mit-source-m07-visible-boundaries-v1",
+  "annotation_frozen_before_scoring": true,
+  "reviewed_original_frame_count": 195,
+  "policy": {
+    "threshold_tuning": false,
+    "equal_stage_partitioning": false,
+    "generic_phase_relabeling": false,
+    "expert_adjudicated": false,
+    "original_grade_supported": false,
+    "boundary_policy": "Only reviewer-estimated visible start/end candidates are executable. Source prediction, force, gaze, 3D racket release and exact contact remain unverified. Never extend a short source stage to satisfy sampling gates.",
+    "selection_policy": "All twelve previously listed MIT actions were inspected before computing new stage-card outputs; unresolved candidates remain in this inventory.",
+    "frame_review_origin": "OpenCV sequential decode; displayed index bound to pre-existing actual FFmpeg PTS ledger; production replay independently decodes original video again."
+  },
+  "cases": [
+    {
+      "case_id": "ocw-pe.710-2-forehand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-forehand-220k",
+      "input_artifact_sha256": {
+        "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+        "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+        "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+      },
+      "prior_split": "development",
+      "new_label_role": "posthoc_source_stage_review_not_independent_technique_ground_truth",
+      "technique_code": "GS01",
+      "stage_code": "GS01-M07",
+      "source_stage": {
+        "source_start": "持拍手开始主动加速，球拍进入释放准备状态",
+        "source_end": "球拍轨迹与预测击球轨迹开始收敛",
+        "effective": {
+          "start": "持拍手开始主动加速，球拍进入释放准备状态",
+          "end": "球拍轨迹与预测击球轨迹开始收敛"
+        },
+        "boundary_origin": "source",
+        "revision_id": null,
+        "heading_locator": "CARD-GS:word/document.xml:P1794"
+      },
+      "reviews": [
+        {
+          "action_id": "forehand-1",
+          "annotation_id": "forehand-1-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-forehand-220k",
+            "action_id": "forehand-1",
+            "source_frames": [
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-1.jpg",
+            "sha256": "17290bcba662d98a7675ca3f69586a587d7856c606de7b94ecb2b9c32ce99d2a",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 31,
+            "last_source_frame": 47,
+            "start_ms": 2087.0,
+            "end_ms": 3154.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 35,
+              "pts": 211860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 2354.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0035.png",
+              "frame_image_sha256": "822da05cc29171b3ac1e0be6b273769be0a1f4d415e3f9618fb761058ae692fd"
+            },
+            "bracket_source_frames": [
+              33,
+              36
+            ],
+            "bracket": [
+              {
+                "frame_index": 33,
+                "pts": 199800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 2220.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0033.png",
+                "frame_image_sha256": "0dbc762c2fb34fdf3e74a5bd3e22aec6362c5c7547779a4dc747a2fca598460d"
+              },
+              {
+                "frame_index": 36,
+                "pts": 217800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 2420.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0036.png",
+                "frame_image_sha256": "ffec94500e0cdd7e70abfa750129ede9a20467e83ab1ab74dec036fde2a480e8"
+              }
+            ],
+            "visual_observation_zh": "持拍手与高位准备姿态分离后，手臂向低位来球区域连续移动，球拍随后下降展开；加速起点是视觉估计，不是肌力或数值加速度真值。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 39,
+              "pts": 235800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 2620.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0039.png",
+              "frame_image_sha256": "a0a41736f034e52b2d2b503fd5851532ca7df6025b4c5ce1c7c3708a9ce2dc91"
+            },
+            "bracket_source_frames": [
+              38,
+              40
+            ],
+            "bracket": [
+              {
+                "frame_index": 38,
+                "pts": 229860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 2554.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0038.png",
+                "frame_image_sha256": "bd598f49a3108b83c1f3d7a6f9478edc75e934b66d7af73254c60fff0c88e4f8"
+              },
+              {
+                "frame_index": 40,
+                "pts": 241830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 2687.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0040.png",
+                "frame_image_sha256": "9c4cd4c6a02ddc0a1540fa8d8be3017e444115038f9f182e638033f7dd05df3f"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在画面左前低位区域明显接近，随后球方向改变并离开；这里只标二维接近候选，未恢复原文所述预测击球轨迹，也未确认真实接触。"
+          },
+          "source_frames": [
+            35,
+            36,
+            37,
+            38,
+            39
+          ],
+          "uncertainty_ms": 150,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact",
+            "predicted_hitting_trajectory_convergence"
+          ]
+        },
+        {
+          "action_id": "forehand-2",
+          "annotation_id": "forehand-2-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-forehand-220k",
+            "action_id": "forehand-2",
+            "source_frames": [
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104,
+              105,
+              106,
+              107,
+              108,
+              109,
+              110
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-2.jpg",
+            "sha256": "cc5256f5b4aa40278acb1f31396191d54e9938cda81933105c30430b68af9b5e",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 92,
+            "last_source_frame": 110,
+            "start_ms": 6154.0,
+            "end_ms": 7354.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 98,
+              "pts": 589860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 6554.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0098.png",
+              "frame_image_sha256": "8c1379d881f35a5295233318a02715e4d1146640cc469c7af083b1184b67e40b"
+            },
+            "bracket_source_frames": [
+              96,
+              99
+            ],
+            "bracket": [
+              {
+                "frame_index": 96,
+                "pts": 577800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 6420.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0096.png",
+                "frame_image_sha256": "ddc5f999f4bbfdfe6097adb98ef2027221c84e12e54fa6a48de14f62ebca3e2d"
+              },
+              {
+                "frame_index": 99,
+                "pts": 595800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 6620.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0099.png",
+                "frame_image_sha256": "922da4fdc2ba6ab3b1f46dddf435d6d767fb7893b5ec0d2f4734984eb92d54e5"
+              }
+            ],
+            "visual_observation_zh": "持拍手与高位准备姿态分离后，手臂向低位来球区域连续移动，球拍随后下降展开；加速起点是视觉估计，不是肌力或数值加速度真值。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 102,
+              "pts": 613800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 6820.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0102.png",
+              "frame_image_sha256": "9e149f5bb002888cf0e1287105bf7361cf8e9011c1523d52c0b27742abd474fa"
+            },
+            "bracket_source_frames": [
+              101,
+              103
+            ],
+            "bracket": [
+              {
+                "frame_index": 101,
+                "pts": 607860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 6754.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0101.png",
+                "frame_image_sha256": "23135eac0fccbb85833b315f509d4d4db5a2bfda7fa5a269c47176ff71fcee77"
+              },
+              {
+                "frame_index": 103,
+                "pts": 619830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 6887.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0103.png",
+                "frame_image_sha256": "d380d35f3be4492ef2eb553e8acecca409e9c504b6ab711f47390c7629e093f3"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在画面左前低位区域明显接近，随后球方向改变并离开；这里只标二维接近候选，未恢复原文所述预测击球轨迹，也未确认真实接触。"
+          },
+          "source_frames": [
+            98,
+            99,
+            100,
+            101,
+            102
+          ],
+          "uncertainty_ms": 150,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact",
+            "predicted_hitting_trajectory_convergence"
+          ]
+        },
+        {
+          "action_id": "forehand-3",
+          "annotation_id": "forehand-3-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-forehand-220k",
+            "action_id": "forehand-3",
+            "source_frames": [
+              151,
+              152,
+              153,
+              154,
+              155,
+              156,
+              157,
+              158,
+              159,
+              160,
+              161,
+              162,
+              163,
+              164,
+              165,
+              166,
+              167,
+              168,
+              169
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-3.jpg",
+            "sha256": "bfff3312b52723d66c167b46537e3102210deed56c640294d691a810f57013fa",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 151,
+            "last_source_frame": 169,
+            "start_ms": 10087.0,
+            "end_ms": 11287.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 157,
+              "pts": 943830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 10487.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0157.png",
+              "frame_image_sha256": "26f0e53f81141c72893e8ffe201bca5f6528dfcb24f4f650cf373a4f2e9d0f20"
+            },
+            "bracket_source_frames": [
+              155,
+              158
+            ],
+            "bracket": [
+              {
+                "frame_index": 155,
+                "pts": 931860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 10354.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0155.png",
+                "frame_image_sha256": "cff0c25197c3bdc1ccaea87b761f60bd484c3e938881666fc1a87831d32dfb86"
+              },
+              {
+                "frame_index": 158,
+                "pts": 949860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 10554.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0158.png",
+                "frame_image_sha256": "c7a63bcf512fb8943f1ce24cf71dc59fcc31387fbd643f58b546e7eda321cc42"
+              }
+            ],
+            "visual_observation_zh": "持拍手与高位准备姿态分离后，手臂向低位来球区域连续移动，球拍随后下降展开；加速起点是视觉估计，不是肌力或数值加速度真值。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 161,
+              "pts": 967860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 10754.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0161.png",
+              "frame_image_sha256": "8615b24d77b3975b310615f055e60115e4a343c06703f219b12150c97fd220bf"
+            },
+            "bracket_source_frames": [
+              160,
+              162
+            ],
+            "bracket": [
+              {
+                "frame_index": 160,
+                "pts": 961830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 10687.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0160.png",
+                "frame_image_sha256": "1406881109b0da1ba8cda958b5b0f76367192a5136ea31b4b93c0c32f0009735"
+              },
+              {
+                "frame_index": 162,
+                "pts": 973800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 10820.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0162.png",
+                "frame_image_sha256": "e62a78543347fd18312959c7be0f32000258d6321b80ed5a5e19c6f521430558"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在画面左前低位区域明显接近，随后球方向改变并离开；这里只标二维接近候选，未恢复原文所述预测击球轨迹，也未确认真实接触。"
+          },
+          "source_frames": [
+            157,
+            158,
+            159,
+            160,
+            161
+          ],
+          "uncertainty_ms": 150,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact",
+            "predicted_hitting_trajectory_convergence"
+          ]
+        },
+        {
+          "action_id": "forehand-4",
+          "annotation_id": "forehand-4-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-forehand-220k",
+            "action_id": "forehand-4",
+            "source_frames": [
+              215,
+              216,
+              217,
+              218,
+              219,
+              220,
+              221,
+              222,
+              223,
+              224,
+              225,
+              226,
+              227,
+              228,
+              229,
+              230,
+              231
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/forehand-4.jpg",
+            "sha256": "5b90c84fa8225aedefd3779cfd75af7abc6e73735e22719a2f66300d8230873e",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 215,
+            "last_source_frame": 231,
+            "start_ms": 14354.0,
+            "end_ms": 15420.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 219,
+              "pts": 1315800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 14620.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0219.png",
+              "frame_image_sha256": "ed4146115c6c992884e3e32701d5a12b0d3a0643036522a928658c11afeec7da"
+            },
+            "bracket_source_frames": [
+              217,
+              220
+            ],
+            "bracket": [
+              {
+                "frame_index": 217,
+                "pts": 1303830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 14487.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0217.png",
+                "frame_image_sha256": "c8f6b665d464a7c08f0ead050ffcff195402dec1904cfc25c3fd881fa3a32ada"
+              },
+              {
+                "frame_index": 220,
+                "pts": 1321830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 14687.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0220.png",
+                "frame_image_sha256": "f1bd2591d78aae2abae3bcb54daea7e17bbbd1f08a4bbab0c1030290a365ce7f"
+              }
+            ],
+            "visual_observation_zh": "持拍手与高位准备姿态分离后，手臂向低位来球区域连续移动，球拍随后下降展开；加速起点是视觉估计，不是肌力或数值加速度真值。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 223,
+              "pts": 1339830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "timestamp_ms": 14887.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0223.png",
+              "frame_image_sha256": "cfbbc4bda71133ba70048a7a5289eaf450c0b906757abc6f9548d5bd1aac78cc"
+            },
+            "bracket_source_frames": [
+              222,
+              224
+            ],
+            "bracket": [
+              {
+                "frame_index": 222,
+                "pts": 1333800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 14820.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0222.png",
+                "frame_image_sha256": "d6a026149688d9d5a9aa692a3596be4a94f2d048dbad22328606b32336d87d22"
+              },
+              {
+                "frame_index": 224,
+                "pts": 1345860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "timestamp_ms": 14954.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-forehand-220k/frame-0224.png",
+                "frame_image_sha256": "994a2f35ac58957bee7c53da642a0f184abce27fcfe0d718e98014da19ecb612"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在画面左前低位区域明显接近，随后球方向改变并离开；这里只标二维接近候选，未恢复原文所述预测击球轨迹，也未确认真实接触。"
+          },
+          "source_frames": [
+            219,
+            220,
+            221,
+            222,
+            223
+          ],
+          "uncertainty_ms": 150,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact",
+            "predicted_hitting_trajectory_convergence"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "ocw-pe.710-1hand_backhand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-1hand_backhand-220k.mp4",
+      "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+      "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-1hand_backhand-220k",
+      "input_artifact_sha256": {
+        "frames.jsonl": "7896343f0c8b9a29056705ff437b9294b251ca558af67a88875d8d33902a598f",
+        "primary-player.jsonl": "60695c660254a1e6e827deae4694558f54c4768f3330fb61a07f791e49c8409e",
+        "summary.json": "27de6664d1a4e40e414bedd01829e47a0623660a879ce73262f5c1ed173cb0a0"
+      },
+      "prior_split": "held_out_validation",
+      "new_label_role": "posthoc_source_stage_review_not_independent_technique_ground_truth",
+      "technique_code": "GS03",
+      "stage_code": "GS03-M07",
+      "source_stage": {
+        "source_start": "",
+        "source_end": "",
+        "effective": {
+          "start": "持拍腕单手持续加速，非持拍手与球拍分离",
+          "end": "球拍与活动球进入身前接触候选区"
+        },
+        "boundary_origin": "engineering_revision",
+        "revision_id": "stage-boundaries-20261022-GS03-M07",
+        "heading_locator": "CARD-GS:word/document.xml:P6125"
+      },
+      "reviews": [
+        {
+          "action_id": "backhand-1",
+          "annotation_id": "backhand-1-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-1hand_backhand-220k",
+            "action_id": "backhand-1",
+            "source_frames": [
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/backhand-1.jpg",
+            "sha256": "1602f486e28c6830c08b028acb08ca061d822b1cbb47fb5ca52d17ce3525bf86",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 29,
+            "last_source_frame": 45,
+            "start_ms": 1954.0,
+            "end_ms": 3020.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 35,
+              "pts": 211860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "timestamp_ms": 2354.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0035.png",
+              "frame_image_sha256": "02675f853941ef9d755b4171998d7c2dd40cf5b2a803890c83f4988fce9dac40"
+            },
+            "bracket_source_frames": [
+              34,
+              35
+            ],
+            "bracket": [
+              {
+                "frame_index": 34,
+                "pts": 205830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 2287.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0034.png",
+                "frame_image_sha256": "d8ddcc95542abf4c190f62b222dc89398986d9bf0aeb77ab29b815b266fa536b"
+              },
+              {
+                "frame_index": 35,
+                "pts": 211860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 2354.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0035.png",
+                "frame_image_sha256": "02675f853941ef9d755b4171998d7c2dd40cf5b2a803890c83f4988fce9dac40"
+              }
+            ],
+            "visual_observation_zh": "持拍手开始独立向身前运动，非持拍手已解除球拍辅助并向后展开；不把持续加速度当直接物理观测。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 36,
+              "pts": 217800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "timestamp_ms": 2420.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0036.png",
+              "frame_image_sha256": "87a471e499face81b167d1562d45ff225da9362b064b968f689e331364343211"
+            },
+            "bracket_source_frames": [
+              36,
+              37
+            ],
+            "bracket": [
+              {
+                "frame_index": 36,
+                "pts": 217800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 2420.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0036.png",
+                "frame_image_sha256": "87a471e499face81b167d1562d45ff225da9362b064b968f689e331364343211"
+              },
+              {
+                "frame_index": 37,
+                "pts": 223830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 2487.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0037.png",
+                "frame_image_sha256": "71511cdbbb3616f1561877bb4d6e3cce1af1a605f5205bfdbb1971945b723bae"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            35,
+            36
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        },
+        {
+          "action_id": "backhand-2",
+          "annotation_id": "backhand-2-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-1hand_backhand-220k",
+            "action_id": "backhand-2",
+            "source_frames": [
+              86,
+              87,
+              88,
+              89,
+              90,
+              91,
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/backhand-2.jpg",
+            "sha256": "b79c50837a766851d55a7a90c1bb77581f556ef630151e180df93b5168101a20",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 86,
+            "last_source_frame": 100,
+            "start_ms": 5754.0,
+            "end_ms": 6687.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 91,
+              "pts": 547830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "timestamp_ms": 6087.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0091.png",
+              "frame_image_sha256": "8c0800a1e0e36d1266acf855e39fd4ae428b8e45d2dfbebb6e56c975f335b786"
+            },
+            "bracket_source_frames": [
+              90,
+              91
+            ],
+            "bracket": [
+              {
+                "frame_index": 90,
+                "pts": 541800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 6020.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0090.png",
+                "frame_image_sha256": "7db07809820b37943665036c108b01e40e26a5c8984c8a844963722b64001dac"
+              },
+              {
+                "frame_index": 91,
+                "pts": 547830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 6087.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0091.png",
+                "frame_image_sha256": "8c0800a1e0e36d1266acf855e39fd4ae428b8e45d2dfbebb6e56c975f335b786"
+              }
+            ],
+            "visual_observation_zh": "持拍手开始独立向身前运动，非持拍手已解除球拍辅助并向后展开；不把持续加速度当直接物理观测。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 92,
+              "pts": 553860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "timestamp_ms": 6154.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0092.png",
+              "frame_image_sha256": "f6f7667fbe88c3eedb8bbe7786b5eb9f941238979ed4c757820466fc05ee7e11"
+            },
+            "bracket_source_frames": [
+              92,
+              93
+            ],
+            "bracket": [
+              {
+                "frame_index": 92,
+                "pts": 553860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 6154.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0092.png",
+                "frame_image_sha256": "f6f7667fbe88c3eedb8bbe7786b5eb9f941238979ed4c757820466fc05ee7e11"
+              },
+              {
+                "frame_index": 93,
+                "pts": 559800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 6220.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0093.png",
+                "frame_image_sha256": "26fbffbcc7f81b18d1d737e0847a524aff9a9d8706d882efb913ac696f2c1abb"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            91,
+            92
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        },
+        {
+          "action_id": "backhand-3",
+          "annotation_id": "backhand-3-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-1hand_backhand-220k",
+            "action_id": "backhand-3",
+            "source_frames": [
+              146,
+              147,
+              148,
+              149,
+              150,
+              151,
+              152,
+              153,
+              154,
+              155,
+              156,
+              157,
+              158,
+              159
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/backhand-3.jpg",
+            "sha256": "9f4bb72d65c36c0fb35088ee8d1ed42956170722dd838defeffd3d70f66cf354",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 146,
+            "last_source_frame": 159,
+            "start_ms": 9754.0,
+            "end_ms": 10620.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 151,
+              "pts": 907830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "timestamp_ms": 10087.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0151.png",
+              "frame_image_sha256": "553f96d3066d6216c237faf8ead13c32354e965d37dd0520171ee21d5edcdfa4"
+            },
+            "bracket_source_frames": [
+              150,
+              151
+            ],
+            "bracket": [
+              {
+                "frame_index": 150,
+                "pts": 901800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 10020.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0150.png",
+                "frame_image_sha256": "2fe21b729d66c393a2382af3a512584548ab909a4fc85a16f982be8e50764351"
+              },
+              {
+                "frame_index": 151,
+                "pts": 907830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 10087.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0151.png",
+                "frame_image_sha256": "553f96d3066d6216c237faf8ead13c32354e965d37dd0520171ee21d5edcdfa4"
+              }
+            ],
+            "visual_observation_zh": "持拍手开始独立向身前运动，非持拍手已解除球拍辅助并向后展开；不把持续加速度当直接物理观测。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 152,
+              "pts": 913860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "timestamp_ms": 10154.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0152.png",
+              "frame_image_sha256": "7f666bddab85ef140a9c8265945d532891955ca98b7776f64d657cc75bb1a72a"
+            },
+            "bracket_source_frames": [
+              152,
+              153
+            ],
+            "bracket": [
+              {
+                "frame_index": 152,
+                "pts": 913860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 10154.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0152.png",
+                "frame_image_sha256": "7f666bddab85ef140a9c8265945d532891955ca98b7776f64d657cc75bb1a72a"
+              },
+              {
+                "frame_index": 153,
+                "pts": 919800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "timestamp_ms": 10220.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0153.png",
+                "frame_image_sha256": "1741851c6db5f5a386f8b74a556fc27066c619d629bf4378e3830f69308ed532"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            151,
+            152
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        },
+        {
+          "action_id": "backhand-4",
+          "annotation_id": "backhand-4-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-1hand_backhand-220k",
+            "action_id": "backhand-4",
+            "source_frames": [
+              200,
+              201,
+              202,
+              203,
+              204,
+              205,
+              206,
+              207,
+              208,
+              209,
+              210,
+              211,
+              212,
+              213,
+              214
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/backhand-4.jpg",
+            "sha256": "8420e48720525d11d9112dd3af497e80bf869ec64dd93f5dde08ae5808e7e359",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 200,
+            "last_source_frame": 214,
+            "start_ms": 13354.0,
+            "end_ms": 14287.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "phase_unresolved",
+          "reason_codes": [
+            "racket_ball_candidate_region_at_right_image_edge",
+            "active_ball_not_visible_at_estimated_convergence_end"
+          ],
+          "visible_start_candidate": {
+            "frame_index": 205,
+            "pts": 1231830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+            "timestamp_ms": 13687.0,
+            "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-1hand_backhand-220k/frame-0205.png",
+            "frame_image_sha256": "6d921ed7f20c57f556779a148ed4c632f138b6dc9424e0cb113c7824616150ba"
+          },
+          "end_boundary": null,
+          "notes_zh": "单手前挥与非持拍手后展可见，但第206帧球已接近画面右边，第207帧球拍到右边缘且球不可分辨。不能定位M07终点，不送阶段执行器。"
+        }
+      ]
+    },
+    {
+      "case_id": "ocw-pe.710-2-hand_backhand-220k",
+      "source_organization": "MIT OpenCourseWare",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "source_title": "PE.710 Tennis, Spring 2007, Prof. Carol Matsuzaki",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+      "run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+      "input_artifact_sha256": {
+        "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+        "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+        "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+      },
+      "prior_split": "development",
+      "new_label_role": "posthoc_source_stage_review_not_independent_technique_ground_truth",
+      "technique_code": "GS02",
+      "stage_code": "GS02-M07",
+      "source_stage": {
+        "source_start": "",
+        "source_end": "",
+        "effective": {
+          "start": "双腕共同持续向前加速开始",
+          "end": "已跟踪球拍与活动球进入同一接触候选区"
+        },
+        "boundary_origin": "engineering_revision",
+        "revision_id": "stage-boundaries-20261022-GS02-M07",
+        "heading_locator": "CARD-GS:word/document.xml:P3982"
+      },
+      "reviews": [
+        {
+          "action_id": "two_handed_backhand-1",
+          "annotation_id": "two_handed_backhand-1-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-hand_backhand-220k",
+            "action_id": "two_handed_backhand-1",
+            "source_frames": [
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1.jpg",
+            "sha256": "712c5d035e84db1eaa30e6fa2e7f091812433ee356ec132a9b5522e7a4de55cc",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 20,
+            "last_source_frame": 34,
+            "start_ms": 1354.0,
+            "end_ms": 2287.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 26,
+              "pts": 157860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 1754.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0026.png",
+              "frame_image_sha256": "34b279625d8b92edd205f20c991d8960323b2253f6570acd0bc3658301472778"
+            },
+            "bracket_source_frames": [
+              25,
+              26
+            ],
+            "bracket": [
+              {
+                "frame_index": 25,
+                "pts": 151830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 1687.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0025.png",
+                "frame_image_sha256": "4359cdc63983242d25ad6dc4f875b3ff93a7734889f29d35bcaf45de09a6fa2d"
+              },
+              {
+                "frame_index": 26,
+                "pts": 157860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 1754.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0026.png",
+                "frame_image_sha256": "34b279625d8b92edd205f20c991d8960323b2253f6570acd0bc3658301472778"
+              }
+            ],
+            "visual_observation_zh": "双手仍共同随球拍向身体前方连续移动；可见前挥起点，不能确认双手发力配比。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 28,
+              "pts": 169830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 1887.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0028.png",
+              "frame_image_sha256": "71f97c6b2eca90d249c7a7c2ef9df45bcc914a154126730e47334273cf2dcfab"
+            },
+            "bracket_source_frames": [
+              27,
+              28
+            ],
+            "bracket": [
+              {
+                "frame_index": 27,
+                "pts": 163800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 1820.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0027.png",
+                "frame_image_sha256": "f9ca6d18e73df0cd01beb07c72b2669a76741f5fea49e0cf0215280e14a17799"
+              },
+              {
+                "frame_index": 28,
+                "pts": 169830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 1887.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0028.png",
+                "frame_image_sha256": "71f97c6b2eca90d249c7a7c2ef9df45bcc914a154126730e47334273cf2dcfab"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            26,
+            27,
+            28
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        },
+        {
+          "action_id": "two_handed_backhand-2",
+          "annotation_id": "two_handed_backhand-2-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-hand_backhand-220k",
+            "action_id": "two_handed_backhand-2",
+            "source_frames": [
+              76,
+              77,
+              78,
+              79,
+              80,
+              81,
+              82,
+              83,
+              84,
+              85,
+              86,
+              87,
+              88,
+              89,
+              90
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-2.jpg",
+            "sha256": "8f537214034cc37e852cf560ced972859d93ec8fed83d3295a83b4c1e1328843",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 76,
+            "last_source_frame": 90,
+            "start_ms": 5087.0,
+            "end_ms": 6020.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 82,
+              "pts": 493830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 5487.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0082.png",
+              "frame_image_sha256": "a01b74bf796e45d8931f47ed98e989f34fb1eb9953a900a60478d9a742e16341"
+            },
+            "bracket_source_frames": [
+              81,
+              83
+            ],
+            "bracket": [
+              {
+                "frame_index": 81,
+                "pts": 487800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 5420.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0081.png",
+                "frame_image_sha256": "c9ae14d513ce9929e25694a73d999a92285c3f877aee484ac44b11a9202b0768"
+              },
+              {
+                "frame_index": 83,
+                "pts": 499860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 5554.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0083.png",
+                "frame_image_sha256": "f550762ed115db0f9d92e68f987ee3044f97e740f5d76a1546b5eaa01c4d2035"
+              }
+            ],
+            "visual_observation_zh": "双手仍共同随球拍向身体前方连续移动；可见前挥起点，不能确认双手发力配比。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 84,
+              "pts": 505800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 5620.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0084.png",
+              "frame_image_sha256": "49ec2204623d8a31d10e1999ea01719468655cf9392b346cc85135da8875a64d"
+            },
+            "bracket_source_frames": [
+              83,
+              84
+            ],
+            "bracket": [
+              {
+                "frame_index": 83,
+                "pts": 499860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 5554.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0083.png",
+                "frame_image_sha256": "f550762ed115db0f9d92e68f987ee3044f97e740f5d76a1546b5eaa01c4d2035"
+              },
+              {
+                "frame_index": 84,
+                "pts": 505800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 5620.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0084.png",
+                "frame_image_sha256": "49ec2204623d8a31d10e1999ea01719468655cf9392b346cc85135da8875a64d"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            82,
+            83,
+            84
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        },
+        {
+          "action_id": "two_handed_backhand-3",
+          "annotation_id": "two_handed_backhand-3-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-hand_backhand-220k",
+            "action_id": "two_handed_backhand-3",
+            "source_frames": [
+              134,
+              135,
+              136,
+              137,
+              138,
+              139,
+              140,
+              141,
+              142,
+              143,
+              144,
+              145,
+              146,
+              147,
+              148,
+              149
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-3.jpg",
+            "sha256": "d8fcf36e05c8c3faac8526198099a3c30ee2ea20a46fe1fc3dcf1e528dbcd3e9",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 134,
+            "last_source_frame": 149,
+            "start_ms": 8954.0,
+            "end_ms": 9954.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 140,
+              "pts": 841860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 9354.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0140.png",
+              "frame_image_sha256": "b4e648d585a154c9028d6223fc7f0a458b76d30f7139eefa93ece42730f592c9"
+            },
+            "bracket_source_frames": [
+              139,
+              140
+            ],
+            "bracket": [
+              {
+                "frame_index": 139,
+                "pts": 835830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 9287.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0139.png",
+                "frame_image_sha256": "111e89d9bb88e640817a2bd00f89b6840a2a38182f9fc4a36a0a71a4fb0283d8"
+              },
+              {
+                "frame_index": 140,
+                "pts": 841860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 9354.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0140.png",
+                "frame_image_sha256": "b4e648d585a154c9028d6223fc7f0a458b76d30f7139eefa93ece42730f592c9"
+              }
+            ],
+            "visual_observation_zh": "双手仍共同随球拍向身体前方连续移动；可见前挥起点，不能确认双手发力配比。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 141,
+              "pts": 847800,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 9420.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0141.png",
+              "frame_image_sha256": "3ed1df1cdbf1d1067a140924920de3bd7e07fa9fcf9bb7f1199f2a0cd588b04b"
+            },
+            "bracket_source_frames": [
+              141,
+              142
+            ],
+            "bracket": [
+              {
+                "frame_index": 141,
+                "pts": 847800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 9420.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0141.png",
+                "frame_image_sha256": "3ed1df1cdbf1d1067a140924920de3bd7e07fa9fcf9bb7f1199f2a0cd588b04b"
+              },
+              {
+                "frame_index": 142,
+                "pts": 853830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 9487.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0142.png",
+                "frame_image_sha256": "4df7069d24df0474ecd1408acc94e995baa60bf765747bbf7ce5d1172e81a2cf"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            140,
+            141
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        },
+        {
+          "action_id": "two_handed_backhand-4",
+          "annotation_id": "two_handed_backhand-4-source-m07-v1",
+          "person_track_id": 1,
+          "review_method": "human_visible_original_decoded_frames_no_pose_overlay",
+          "reviewer_kind": "nonexpert_agent_visual_estimate",
+          "inspection": {
+            "case_id": "ocw-pe.710-2-hand_backhand-220k",
+            "action_id": "two_handed_backhand-4",
+            "source_frames": [
+              188,
+              189,
+              190,
+              191,
+              192,
+              193,
+              194,
+              195,
+              196,
+              197,
+              198,
+              199,
+              200,
+              201,
+              202,
+              203
+            ],
+            "sheet": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-4.jpg",
+            "sha256": "a0540ecbb951888ef789f90b131240ba58d6865a670d29df5b7bc8370c496e18",
+            "all_listed_frames_viewed": true
+          },
+          "action_context": {
+            "first_source_frame": 188,
+            "last_source_frame": 203,
+            "start_ms": 12554.0,
+            "end_ms": 13554.0
+          },
+          "contact_truth": false,
+          "source_grade_supported": false,
+          "observed_force_or_prediction": false,
+          "decision": "manual_source_stage_candidate",
+          "start_boundary": {
+            "estimate": {
+              "frame_index": 194,
+              "pts": 1165860,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 12954.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0194.png",
+              "frame_image_sha256": "751cd13ab1c9663948ed7ff48cbae5f63d2c6be39599c8a74bc98409e2c8aae1"
+            },
+            "bracket_source_frames": [
+              193,
+              195
+            ],
+            "bracket": [
+              {
+                "frame_index": 193,
+                "pts": 1159830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 12887.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0193.png",
+                "frame_image_sha256": "5faaf95d3e037390d80f2f28136316bdc9512551d88cf5151b147a73eeae33af"
+              },
+              {
+                "frame_index": 195,
+                "pts": 1171800,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 13020.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0195.png",
+                "frame_image_sha256": "b22c1720a73d0b1dcc0a6395283885ace3f1846181167b4687abddcc97237065"
+              }
+            ],
+            "visual_observation_zh": "双手仍共同随球拍向身体前方连续移动；可见前挥起点，不能确认双手发力配比。"
+          },
+          "end_boundary": {
+            "estimate": {
+              "frame_index": 196,
+              "pts": 1177830,
+              "time_base_num": 1,
+              "time_base_den": 90000,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "timestamp_ms": 13087.0,
+              "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0196.png",
+              "frame_image_sha256": "0a9ad6435a7902fc1ea2aefc6e834e54d9a100d2f6aedf1f59edd071ad7aeef2"
+            },
+            "bracket_source_frames": [
+              196,
+              197
+            ],
+            "bracket": [
+              {
+                "frame_index": 196,
+                "pts": 1177830,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 13087.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0196.png",
+                "frame_image_sha256": "0a9ad6435a7902fc1ea2aefc6e834e54d9a100d2f6aedf1f59edd071ad7aeef2"
+              },
+              {
+                "frame_index": 197,
+                "pts": 1183860,
+                "time_base_num": 1,
+                "time_base_den": 90000,
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "timestamp_ms": 13154.0,
+                "frame_image_path": ".codex_tmp/gs-acceleration-validation-20261022/review/ocw-pe.710-2-hand_backhand-220k/frame-0197.png",
+                "frame_image_sha256": "e70fa882521823ceaaeb1cc27cd5f35dc4ec96f8d8bf7d86eae2cae88b91f820"
+              }
+            ],
+            "visual_observation_zh": "活动球与球拍在身体前方的同一区域接近；相邻后帧显示球向外离开。仅作可见接近候选，不认定精确触球时刻。"
+          },
+          "source_frames": [
+            194,
+            195,
+            196
+          ],
+          "uncertainty_ms": 100,
+          "stage_semantics": "reviewer_estimated_source_stage_not_expert_ground_truth",
+          "boundary_evidence_scope": "visible_forward_motion_to_racket_ball_proximity_candidate",
+          "unverified_source_requirements": [
+            "true_active_acceleration",
+            "three_dimensional_racket_release",
+            "real_ball_racket_contact"
+          ]
+        }
+      ]
+    }
+  ]
+}

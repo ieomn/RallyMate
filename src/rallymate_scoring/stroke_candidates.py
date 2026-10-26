@@ -19,8 +19,9 @@ import statistics
 from typing import Any
 
 from .temporal_recognition import TemporalRecognitionBackend, samples_are_continuous
+from .pose_observations import MODEL_ESTIMATE, measurement_provenance, sam_source_bound_points, sample_source_reference
 
-DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.0.0"
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.1.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_POSE_GAP_MS = 160
 LIMITATIONS = [
@@ -48,6 +49,9 @@ class Sample:
     timestamp_source: str | None = None
     normalization_basis: str = "full_torso"
     reference_points: dict[str, tuple[float, float]] = field(default_factory=dict)
+    pose_source: str | None = None
+    observation_semantics: str | None = None
+    source_binding: dict[str, Any] = field(default_factory=dict)
 
 
 def _number(value: Any) -> float | None:
@@ -98,8 +102,16 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
     track, timestamp = pose.get("person_track_id"), frame.get("timestamp_ms")
     if not isinstance(track, int) or isinstance(track, bool) or _number(timestamp) is None:
         return None
-    raw = {item.get("name"): point for item in pose.get("keypoints", [])
-           if isinstance(item, Mapping) and (point := _point(item)) is not None}
+    is_sam = pose.get("source") == "sam3d" or pose.get("keypoint_format") == "mhr70"
+    binding = {}
+    if is_sam:
+        validated = sam_source_bound_points(pose, frame)
+        if validated is None:
+            return None
+        raw, binding = validated
+    else:
+        raw = {item.get("name"): point for item in pose.get("keypoints", [])
+               if isinstance(item, Mapping) and (point := _point(item)) is not None}
     normalization = _normalization(raw)
     if normalization is None:
         return None
@@ -121,14 +133,15 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
         center, scale, basis = normalization
     points = {name: ((point[0] - center[0]) / scale, (point[1] - center[1]) / scale)
               for name, point in raw.items()}
-    return Sample(int(timestamp), int(frame.get("index", 0)), track, center, scale, points, set(),
+    return Sample(timestamp if is_sam else int(timestamp), int(frame.get("index", 0)), track, center, scale, points, set(),
                   raw_wrists_px=raw_wrists, raw_scale=raw_scale,
-                  camera_reference_epoch=camera.get("reference_epoch") if isinstance(camera, Mapping) else None,
+                  camera_reference_epoch=camera.get("reference_epoch") if isinstance(camera, Mapping) else binding.get("camera_reference_epoch"),
                   camera_compensated=isinstance(camera, Mapping) and camera.get("compensation_valid") is True,
-                  point_confidences={item["name"]: float(item["confidence"]) for item in pose.get("keypoints", [])
+                  point_confidences={} if is_sam else {item["name"]: float(item["confidence"]) for item in pose.get("keypoints", [])
                                      if isinstance(item, Mapping) and item.get("name") in raw},
                   timestamp_source=frame.get("timestamp_source"), normalization_basis=basis,
-                  reference_points=raw)
+                  reference_points=raw, pose_source="sam3d" if is_sam else pose.get("source"),
+                  observation_semantics=MODEL_ESTIMATE if is_sam else None, source_binding=binding)
 
 
 def _stabilize_partial_torso_windows(by_track: Mapping[int, list[Sample]]) -> None:
@@ -148,6 +161,7 @@ def _stabilize_partial_torso_windows(by_track: Mapping[int, list[Sample]]) -> No
                 0 < sample.time - previous.time <= MAX_POSE_GAP_MS
                 and sample.selection_epoch == previous.selection_epoch
                 and sample.camera_reference_epoch == previous.camera_reference_epoch
+                and sample_source_reference(sample) == sample_source_reference(previous)
                 and _distance(sample.center, previous.center) / sample.scale < 0.8
                 and 0.65 < sample.scale / previous.scale < 1.55)
             if not continuous and current:
@@ -197,6 +211,12 @@ def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, 
         competitor = next((value for value in choices[1:] if value[1].track != owner.track), None)
         if competitor is not None and competitor[0] - distance < 0.15:
             continue
+        # A box covering both wrists has no evidence for choosing one hand.
+        # Stable sort order must not turn this geometric tie into a left vote.
+        if any(value[1].track == owner.track and value[2] != side
+               and math.isclose(value[0], distance, rel_tol=0, abs_tol=1e-12)
+               for value in choices[1:]):
+            continue
         owner.racket_sides.add(side)
 
 
@@ -238,6 +258,7 @@ def _candidate(segment: list[Sample], side: str, start: int, peak: int, end: int
         "start_ms": first.time, "peak_ms": maximum.time, "end_ms": last.time,
         "start_frame": first.frame_index, "peak_frame": maximum.frame_index, "end_frame": last.frame_index,
         "contact_confirmed": False,
+        "measurement_provenance": measurement_provenance(segment[start:end + 1]),
         "evidence": {"source": "tracked_pose_and_near_wrist_racket_boxes", **evidence},
         "limitations_zh": LIMITATIONS[:2],
     }
@@ -320,6 +341,8 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
 
 
 def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]:
+    from .stroke_analysis import candidate_hand_evidence
+
     candidates = []
     for samples in by_track.values():
         # Both hands can produce reviewable candidates using local racket
@@ -328,9 +351,19 @@ def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]
         for side in ("left", "right"):
             for segment in _segments(samples, side):
                 candidates.extend(_detect_segment(segment, side))
+    # Check ownership before competing hands can suppress each other. The
+    # context and voting gates are exactly those used by episode analysis.
+    # An unresolved alternative is safer than a known hand-side conflict;
+    # this selects a hypothesis, never confirms handedness or technique.
+    ranks = {"matched": 0, "unresolved": 1, "conflict": 2, "unavailable_context": 3}
+    for candidate in candidates:
+        candidate["evidence"]["hand_consistency_before_suppression"] = candidate_hand_evidence(
+            candidate, by_track[candidate["person_track_id"]])
     # Suppress duplicate peaks and both-hand detections of the same motion.
     # Serve wins an overlapping generic swing; identities never suppress each other.
-    candidates.sort(key=lambda item: (item["family"] != "serve", -item["evidence"]["racket_associated_frames"]))
+    candidates.sort(key=lambda item: (item["family"] != "serve",
+                    0 if item["family"] == "serve" else ranks[item["evidence"]["hand_consistency_before_suppression"]["status"]],
+                    -item["evidence"]["racket_associated_frames"]))
     accepted: list[dict[str, Any]] = []
     for candidate in candidates:
         if any(other["person_track_id"] == candidate["person_track_id"]
@@ -433,6 +466,8 @@ def detect_stroke_candidates(
     # primary detection or opponent-context detection uses their geometry.
     _stabilize_partial_torso_windows(all_tracks)
     accepted = _detect_tracks(by_track)
+    from .stroke_review_fallback import build_review_fallback_candidates
+    review_candidates = build_review_fallback_candidates(by_track, accepted)
     # Need the opponent's full tracked serve as context, not the primary filter.
     context_serves = [candidate for candidate in _detect_tracks(all_tracks) if candidate["family"] == "serve"] if selected is not None else []
     counts = Counter(item["family"] for item in accepted)
@@ -443,6 +478,8 @@ def detect_stroke_candidates(
         "scope": "primary_player_timeline" if selected is not None else "all_tracks_independently",
         "candidate_count": len(accepted), "by_family": {"baseline": counts["baseline"], "serve": counts["serve"]},
         "confirmed_contact_count": None, "candidates": accepted,
+        "review_candidates": review_candidates, "review_candidate_count": len(review_candidates),
+        "review_count_semantics": "secondary_motion_windows_for_review_not_confirmed_strokes_or_scores",
         "motion_analysis": build_motion_analysis(accepted, by_track, all_tracks=all_tracks,
                                                   context_serves=context_serves, ball_observations=ball_observations,
                                                   temporal_backend=temporal_backend),

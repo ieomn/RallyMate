@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, Iterable
+
+from rallymate_scoring.pose_observations import sam_source_bound_points
 
 
 CURRENT_COCO_JOINTS = {
@@ -200,6 +203,7 @@ def _minimum_loop_context(summary: dict[str, Any]) -> dict[str, Any]:
         "grade_counts": _mapping(loop.get("grade_counts")),
         "indicator_score_status_counts": indicator_score_status_counts,
         "indicator_grade_counts": indicator_grade_counts,
+        "indicator_blocking_reason_counts": _mapping(loop.get("indicator_feature_validity")),
         "events": events,
         "registry_version": str(registry_version) if registry_version else None,
         "registry_path": str(registry_path_value) if registry_path_value else None,
@@ -250,6 +254,8 @@ def inspect_frame_observations(frames_path: str | Path) -> dict[str, Any]:
     }
     pose_tracks: dict[int, set[int]] = defaultdict(set)
     pose_joint_valid: dict[int, Counter[str]] = defaultdict(Counter)
+    pose_joint_estimated: dict[int, Counter[str]] = defaultdict(Counter)
+    model_estimate_frames: dict[int, set[int]] = defaultdict(set)
     frame_count = 0
 
     with path.open("r", encoding="utf-8") as handle:
@@ -267,11 +273,31 @@ def inspect_frame_observations(frames_path: str | Path) -> dict[str, Any]:
                 if not isinstance(track_id, int):
                     continue
                 pose_tracks[track_id].add(processed_index)
+                if pose.get("source") == "sam3d":
+                    bound = sam_source_bound_points(
+                        pose, {**record.get("frame", {}), "camera_motion": record.get("camera_motion")}
+                    )
+                    if bound is not None:
+                        points, _ = bound
+                        model_estimate_frames[track_id].add(processed_index)
+                        pose_joint_estimated[track_id].update({
+                            point["downstream_joint_id"]
+                            for point in pose.get("keypoints", [])
+                            if point.get("name") in points
+                            and point.get("downstream_joint_id") in CURRENT_COCO_JOINTS
+                        })
+                    # Unknown SAM confidence never establishes confidence-based
+                    # validity, even if a malformed record supplies a number.
+                    continue
                 for point in pose.get("keypoints", []):
                     joint_id = point.get("downstream_joint_id")
+                    confidence = point.get("confidence")
                     if (
                         isinstance(joint_id, str)
-                        and float(point.get("confidence", 0.0)) >= 0.25
+                        and isinstance(confidence, (int, float))
+                        and not isinstance(confidence, bool)
+                        and math.isfinite(confidence)
+                        and 0.25 <= confidence <= 1.0
                     ):
                         pose_joint_valid[track_id][joint_id] += 1
 
@@ -301,6 +327,18 @@ def inspect_frame_observations(frames_path: str | Path) -> dict[str, Any]:
         ),
         "pose_track_count": len(pose_tracks),
         "primary_pose_joint_valid_fraction": joint_valid_fraction,
+        "primary_pose_model_estimate_frame_fraction": round(
+            len(model_estimate_frames.get(primary_pose_track, set())) / max(primary_pose_frames, 1), 4
+        ),
+        "primary_pose_joint_model_estimate_fraction": {
+            joint_id: round(pose_joint_estimated[primary_pose_track][joint_id] / primary_pose_frames, 4)
+            for joint_id in sorted(CURRENT_COCO_JOINTS)
+        } if primary_pose_frames else {},
+        "model_estimate_semantics": {
+            "assessment_status": "measurement_only", "scoring_allowed": False,
+            "confidence_available": False, "visibility_verified": False,
+            "coverage_definition": "source_bound_finite_in_frame_raw_2d_coordinates",
+        },
     }
     for class_name in ("player", "ball", "racket"):
         observations[f"{class_name}_frame_fraction"] = round(
@@ -460,14 +498,10 @@ def _indicator_result(
         reported_scored = int(reported_status_counts.get("scored", 0))
         if valid_count <= 0:
             scoring_status = "unavailable"
-        elif reported_scored > 0 and feasibility_level == "F4":
+        elif reported_scored > 0:
             scoring_status = "scored"
         elif int(reported_status_counts.get("calibration_required", 0)) > 0:
             scoring_status = "calibration_required"
-        elif reported_scored > 0:
-            # A summary cannot elevate an indicator below F4 into formal scoring.
-            scoring_status = "calibration_required"
-            blockers.append("reported_scored_status_rejected_without_F4")
         elif reported_status_counts:
             scoring_status = "unavailable"
         else:
@@ -482,18 +516,11 @@ def _indicator_result(
             if scoring_status == "scored"
             else {}
         )
-        blockers.extend(loop_context["registry_blockers"].get(card["id"], []))
-        if feasibility_level != "F4":
-            blockers.extend(
-                [
-                    "event_ground_truth_required",
-                    "feature_error_not_evaluated",
-                    "coach_calibration_missing",
-                    "independent_test_missing",
-                ]
-            )
-        elif scoring_status != "scored":
-            blockers.append("trusted_calibration_not_loaded_or_no_scored_event")
+        # Report this run's actual reasons. Maturity/approval metadata is not
+        # a physical observation gap and must not be injected as one.
+        blockers.extend(_mapping(loop_validity.get("blocking_reason_code_counts")))
+        if scoring_status == "calibration_required" and not loop_validity.get("blocking_reason_code_counts"):
+            blockers.append("grade_rule_not_defined")
     else:
         valid_count = 0
         total_count = 0
@@ -524,7 +551,7 @@ def _indicator_result(
         "observed_evidence": round(evidence, 4),
         "observed_evidence_status": evidence_status,
         "model_granularity": granularity,
-        "score_ready": scoring_status == "scored" and feasibility_level == "F4",
+        "score_ready": scoring_status == "scored",
         "measurement_status": measurement_status,
         "scoring_status": scoring_status,
         "feasibility_level": feasibility_level,
@@ -544,6 +571,7 @@ def _indicator_result(
         ),
         "grade_counts": grade_counts,
         "blockers": blockers,
+        "maturity_diagnostics": loop_context["registry_blockers"].get(card["id"], []),
         "calculation_contract": card.get("calculation"),
         "required_points_contract": card.get("requiredPoints"),
     }
@@ -607,13 +635,13 @@ def _capability_matrix(
             "granularity": (
                 "versioned_event_grades_no_aggregate_score"
                 if has_scored_events
-                else "configured_features_not_coach_calibrated"
+                else "configured_features_without_explicit_grade_rule"
             ),
             "affected_indicators": loop_indicator_count,
             "next_action": (
                 "monitor_calibration_drift_and_revalidate_independent_test_protocol"
                 if has_scored_events
-                else "collect_manual_event_keypoint_and_multi_coach_truth_then_review_F3"
+                else "implement_source_defined_measurements_and_explicit_grade_rules_where_defined"
             ),
         },
     ]
@@ -772,14 +800,13 @@ def analyze_scoring_readiness(
             "decision": (
                 f"{loop_indicator_count} Pose-only indicators are registered in the runtime "
                 f"loop; {measured_indicator_count} produced at least one valid feature set and "
-                f"{scored_indicator_count} produced ledger-authorized event-level A-E grades. "
+                f"{scored_indicator_count} produced event-level A-E grades from explicit mathematical rules. "
                 "No aggregate score or grade is defined; "
                 f"{outside_loop_count} cards are outside this loop."
                 if scored_indicator_count > 0
                 else f"{loop_indicator_count} Pose-only indicators are registered in the runtime "
                 f"loop and {measured_indicator_count} produced at least one valid feature set. "
-                "Formal A-E remains calibration_required for measured indicators until manual "
-                "truth, coach calibration and independent testing exist; "
+                "Measured values are retained; A-E is absent when no explicit mathematical grade rule is supplied; "
                 f"{outside_loop_count} cards are outside this loop."
                 if loop_indicator_count
                 else "No runtime scoring-loop membership was found. All indicators remain "

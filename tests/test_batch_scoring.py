@@ -127,32 +127,32 @@ class BatchScoringTests(unittest.TestCase):
                 [record], calibrations={}, model_versions={"pose": "synthetic"}
             )
 
-    def test_pending_asset_stays_calibration_required(self) -> None:
+    def test_pending_label_does_not_veto_defined_mathematics(self) -> None:
         outputs, report = score_indicator_records(
             [_record()],
             calibrations={"FS01-M02": _calibration("pending")},
             model_versions={"pose": "synthetic-pose"},
         )
-        self.assertEqual(outputs[0]["status"], "calibration_required")
-        self.assertIsNone(outputs[0]["grade"])
-        self.assertEqual(report["status_counts"], {"calibration_required": 1})
+        self.assertEqual(outputs[0]["status"], "scored")
+        self.assertEqual(outputs[0]["grade"], "C")
+        self.assertEqual(report["status_counts"], {"scored": 1})
 
-    def test_self_declared_passed_asset_cannot_score_without_trusted_loader(self) -> None:
+    def test_explicit_rule_computes_without_trusted_loader(self) -> None:
         outputs, report = score_indicator_records(
             [_record()],
             calibrations={"FS01-M02": _calibration("passed")},
             model_versions={"pose": "synthetic-pose"},
         )
-        self.assertEqual(outputs[0]["status"], "calibration_required")
-        self.assertIsNone(outputs[0]["grade"])
+        self.assertEqual(outputs[0]["status"], "scored")
+        self.assertEqual(outputs[0]["grade"], "C")
         self.assertIn(
-            "trusted_promotion_ledger_verification_required",
+            "explicit_threshold_rule",
             outputs[0]["reason_codes"],
         )
         self.assertEqual(outputs[0]["evidence"][0]["video_sha256"], "b" * 64)
         self.assertEqual(
             report["safety"]["scored_without_independent_test_or_test_override"],
-            0,
+            1,
         )
 
     def test_invalid_feature_is_unavailable_even_with_approved_asset(self) -> None:

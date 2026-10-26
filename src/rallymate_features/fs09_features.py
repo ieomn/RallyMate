@@ -450,7 +450,7 @@ def double_support_low_motion_proxy(
         & (right_ankle_speed[valid_indexes] <= right_envelope)
     )
     duration, evidence, timing_diagnostics = longest_contiguous_duration(timestamp_ms, indexes, mask)
-    return duration or 0, evidence, mask, {
+    diagnostics = {
         **timing_diagnostics,
         "valid_samples": int(valid_indexes.size),
         "left_event_median_envelope_body_s": left_envelope,
@@ -458,6 +458,14 @@ def double_support_low_motion_proxy(
         "envelope_status": "event_adaptive_signal_proxy_not_scoring_threshold",
         "contact_status": "not_observed_from_pose",
     }
+    if duration is None:
+        # No low-motion run is a measured zero only after the finite-sample
+        # gate above. These are evaluated samples, never support endpoints.
+        diagnostics.update(
+            simultaneous_low_motion_interval_observed=False,
+            evaluated_sample_indexes=valid_indexes.tolist(),
+        )
+    return duration or 0, evidence, mask, diagnostics
 
 
 def _validated_phase_timing_series(

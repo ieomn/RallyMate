@@ -177,6 +177,17 @@ class TrajectoryApiTests(unittest.TestCase):
                 )
                 self.assertEqual(response.status_code, 200, response.text)
 
+    def test_trajectory_rejects_duplicate_artifact_keys_with_structured_422(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app, settings, database = self._app(Path(directory))
+            job_id = self._succeeded_job(settings, database)
+            frames = settings.runs_dir / job_id / 'frames.jsonl'
+            frames.write_text('{"frame":{},"frame":{}}\n', encoding='utf-8')
+            with TestClient(app) as client:
+                response = client.get(f'/v1/jobs/{job_id}/trajectory')
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.json()['detail']['code'], 'trajectory_artifact_invalid')
+
     def test_running_preview_reads_complete_prefix_and_refreshes_after_append(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app, settings, database = self._app(Path(directory))

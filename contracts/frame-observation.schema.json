@@ -14,6 +14,7 @@
     "handoff"
   ],
   "properties": {
+    "subject_identity": {"type": "object","required": ["version","subject_id","status","source_track_id","evidence","reason_code"],"properties": {"version": {"const": "subject-lock-v1"},"subject_id": {"enum": ["subject-1",null]},"status": {"enum": ["locked","reidentified","unknown"]},"source_track_id": {"type": ["integer","null"],"minimum": 1},"evidence": {"type": "array","items": {"type": "string"}},"reason_code": {"type": ["string","null"]},"appearance_distance": {"type": ["number","null"],"minimum": 0,"maximum": 1}},"allOf": [{"if": {"properties": {"status": {"const": "unknown"}}},"then": {"properties": {"subject_id": {"type": "null"},"source_track_id": {"type": "null"},"reason_code": {"type": "string","minLength": 1}}},"else": {"properties": {"subject_id": {"const": "subject-1"},"source_track_id": {"type": "integer","minimum": 1},"evidence": {"minItems": 1},"reason_code": {"type": "null"}}}}],"description": "Sequence-local target association, not a verified real-world person identity. Unknown frames must not be grouped under legacy primary_player_id=1."},
     "schema_version": {"enum": ["1.0.0", "1.1.0"]},
     "job_id": {"type": "string"},
     "frame": {
@@ -30,6 +31,7 @@
         "index": {"type": "integer", "minimum": 0},
         "processed_index": {"type": "integer", "minimum": 0},
         "timestamp_ms": {"type": "integer", "minimum": 0},
+        "source_timestamp_ms": {"type": "integer", "minimum": 0, "description": "Absolute rounded source PTS; timestamp_ms remains relative playback time."},
         "width": {"type": "integer", "minimum": 1},
         "height": {"type": "integer", "minimum": 1},
         "coordinate_origin": {"const": "top_left"}
@@ -112,9 +114,9 @@
         ],
         "properties": {
           "person_track_id": {"type": "integer", "minimum": 1},
-          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
           "coordinate_space": {"const": "original_frame"},
-          "keypoint_format": {"enum": ["coco17", "halpe26", "coco_wholebody133"]},
+          "keypoint_format": {"enum": ["coco17", "halpe26", "coco_wholebody133", "mhr70"]},
           "keypoints": {
             "type": "array",
             "minItems": 17,
@@ -153,7 +155,7 @@
                   "maximum": 1
                 },
                 "confidence": {
-                  "type": "number",
+                  "type": ["number", "null"],
                   "minimum": 0,
                   "maximum": 1
                 },
@@ -165,7 +167,47 @@
               }
             }
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"keypoint_format": {"const": "mhr70"}}, "required": ["keypoint_format"]},
+            "then": {
+              "required": ["source", "status", "confidence_semantics", "observation_semantics", "source_binding"],
+              "properties": {
+                "source": {"const": "sam3d"},
+                "status": {"const": "ok"},
+                "confidence": {"type": "null"},
+                "confidence_semantics": {"const": "not_provided_by_sam3d"},
+                "observation_semantics": {"const": "monocular_model_estimate"},
+                "source_binding": {"$ref": "#/$defs/sam_source_binding"},
+                "keypoints": {
+                  "minItems": 70, "maxItems": 70,
+                  "items": {
+                    "required": ["source", "confidence_semantics", "observation_semantics", "observed", "visibility", "in_frame", "raw_x_px", "raw_y_px"],
+                    "properties": {
+                      "source": {"const": "sam3d"},
+                      "confidence_semantics": {"const": "not_provided_by_sam3d"},
+                      "observation_semantics": {"const": "model_estimate"},
+                      "confidence": {"type": "null"},
+                      "observed": {"type": "null"},
+                      "visibility": {"type": "null"},
+                      "in_frame": {"type": "boolean"},
+                      "raw_x_px": {"type": "number"},
+                      "raw_y_px": {"type": "number"}
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "source": {"not": {"const": "sam3d"}},
+                "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "keypoints": {"items": {"properties": {"confidence": {"type": "number", "minimum": 0, "maximum": 1}}}}
+              }
+            }
+          }
+        ]
       }
     },
     "court": {
@@ -215,6 +257,24 @@
         "timebase",
         "downstream_taxonomy"
       ]
+    }
+  },
+  "$defs": {
+    "sam_source_binding": {
+      "type": "object",
+      "required": ["video_sha256", "frame_index", "processed_index", "pts", "time_base_num", "time_base_den", "timestamp_ms", "person_track_id", "selection_epoch", "camera_reference_epoch"],
+      "properties": {
+        "video_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "frame_index": {"type": "integer", "minimum": 0},
+        "processed_index": {"type": "integer", "minimum": 0},
+        "pts": {"type": "integer", "minimum": 0},
+        "time_base_num": {"type": "integer", "minimum": 1},
+        "time_base_den": {"type": "integer", "minimum": 1},
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "person_track_id": {"type": "integer", "minimum": 1},
+        "selection_epoch": {"type": "integer", "minimum": 0},
+        "camera_reference_epoch": {"type": "integer", "minimum": 0}
+      }
     }
   }
 }

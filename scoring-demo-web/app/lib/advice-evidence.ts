@@ -34,15 +34,19 @@ function trustedText(value: unknown, max = 220): string | null {
   return text && text.length <= max && !unsafeText.test(text) && !/[\u0000-\u001f\u007f]/.test(text) ? text : null;
 }
 
-/** Capture suggestions request better evidence; they do not diagnose why inference failed. */
+/** A baseline practice remains useful when no individual technical grade exists. */
+function skillSteps(family: string): string[] {
+  if (family === "serve") return ["先不挥拍，做 2 组、每组 5 次舒适抛球，组间休息，再衔接轻松挥拍。", "同一站位复测 10 次，记录无需追球即可接上挥拍的次数。"];
+  if (family === "footwork") return ["从准备标记出发，接近距离慢球后轻击，再用小步回位，做 2 组、每组 5 球。", "按同样喂球节奏复测 10 球，记录下一球发出前已回位的次数。"];
+  return ["用熟悉的击球方式在小场地接低速球，轻送到大目标区，做 2 组、每组 5 球，组间休息。", "保持来球与目标相同，再做 10 球，记录进入目标区的次数。"];
+}
 function captureSteps(family: string): string[] {
   return [
-    family === "return"
-      ? "如需补充接发证据，请保留对手发球、来球和接球者挥拍的连续画面。"
-      : "如需补充动作证据，请提供从准备到随挥结束的连续片段，尽量让全身、球拍和球入镜。",
-    "可先回看目标动作并标记时间点；补证建议不是对本次未识别原因的判断。",
+    family === "return" ? "下次保留对手发球、来球和接球者挥拍的连续画面。"
+      : "下次固定机位，保留准备到恢复的完整片段，让全身与球拍持续入镜。",
   ];
 }
+const actionName = (value: unknown) => (trustedText(value, 80) ?? "动作").replace(/(?:原文|Word|P\d{3,}|\b(?:FS|GS)\d{2}(?:-M\d{2})?(?:-\d{2})?\b)/giu, "").replace(/候选事件|候选|尚待复核|待复核/g, "").trim() || "动作";
 
 export function unavailableAdviceEvidence(technique: string, status: "no_video" | "analysis_unavailable", reasonCode: string): AdviceEvidence {
   const family = FAMILIES[technique] ?? "unknown";
@@ -58,7 +62,7 @@ export function unavailableAdviceEvidence(technique: string, status: "no_video" 
     status, technique, family, reasonCode,
     explanation: reasons[reasonCode] ?? reasons.analysis_unavailable,
     availableFacts: [], observedPhases: [], missingPhases: [], partialMotion: false,
-    limitations: ["没有可用分析不代表没有发生该动作，也不代表动作有问题。", "文字描述属于用户自述，不能代替视频识别证据。"],
+    limitations: ["当前尚无这项动作的个体测量结论。"],
     nextSteps: status === "no_video"
       ? ["先上传视频并等待分析完成，再选择对应动作查看说明。"]
       : ["确认选中了正确的视频任务，待分析完成后重试；若仍无法读取，请保留任务编号以便排查。"],
@@ -80,11 +84,11 @@ export function adviceEvidenceFromPayload(technique: string, jobId: string, raw:
     const phases = unique(observed.flatMap(row => array(row.phase_statuses).map(record).filter(phase => phase.status === "measured" && phase.evidence_source === "explicit_phase_record").map(phase => PHASES[String(phase.phase)]).filter(Boolean)));
     return {
       ...common, status: "observed", reasonCode: "family_events_observed",
-      explanation: `当前可复核${technique}的候选事件；只有明确记录的阶段可作阶段说明，不能据此推断动作类型准确或完整动作质量。`,
-      availableFacts: unique(observed.map(row => `已关联候选事件：${trustedText(row.name_zh, 80)}（待回放复核）。`)).slice(0, 6),
+      explanation: `已定位与${technique}相关的动作片段，可以结合回放选择一个练习目标。`,
+      availableFacts: unique(observed.map(row => `已定位${actionName(row.name_zh)}相关片段。`)).slice(0, 6),
       observedPhases: phases,
-      limitations: ["候选事件尚待复核，不等于确认球拍触球；动作类型与离地落地也待核实，不说明技术正确、稳定或得分。", "未提供明确证据的阶段与动作原因暂不评价。"],
-      nextSteps: ["结合回放复核已记录的动作事件，只比较有证据支持的部分。"],
+      limitations: ["片段定位不等于确认球拍触球；本页仅说明已测量的动作部分。"],
+      nextSteps: skillSteps(family),
     };
   }
   const recognition = record(payload.action_recognition ?? assessment.action_recognition);
@@ -110,24 +114,23 @@ export function adviceEvidenceFromPayload(technique: string, jobId: string, raw:
     const partial = missing.length > 0 || episodes.some(episode => episode.analysis_status === "partial");
     const phases = unique(perEpisodePhases.flat()).map(phase => PHASES[phase]);
     const facts = [`已获得${episodes.length}段${technique}相关的二维运动测量。`];
-    if (phases.length) facts.push(`部分片段可根据二维运动估计以下阶段：${phases.join("、")}；边界需要回放复核。`);
-    if (partial) facts.push("至少一个动作片段的阶段证据不完整，不能作为完整的准备至随挥分析。");
+    if (phases.length) facts.push(`本次测量覆盖${phases.join("、")}阶段。`);
+    if (partial) facts.push(`部分片段还缺少${missing.map(phase => PHASES[phase]).join("、")}阶段的测量。`);
     return {
       ...common, status: "motion_only", reasonCode: partial ? "partial_motion" : "motion_without_confirmed_contact", partialMotion: partial,
-      explanation: `当前仅有${technique}相关的二维挥拍运动证据${partial ? "，部分动作阶段缺失" : ""}；可以说明测到的运动，但不能判断真实触球、完整技术质量或动作错误原因。`,
+      explanation: `已取得${technique}的画面运动测量${partial ? "，部分动作阶段尚未覆盖" : ""}。先练一个固定任务，再比较下一次的完成情况。`,
       availableFacts: facts, observedPhases: phases, missingPhases: missing.map(phase => PHASES[phase]),
-      limitations: ["动作类型和阶段由姿态与球拍时序规则推断；运动峰值不是触球时刻。", "二维指标受拍摄角度影响，不等同于实际球速、三维转体角或技术评分。", "尚未确认球拍触球，不能据此计算确认击球次数。", ...(partial ? ["缺少的阶段不作质量评价，也不补写成已识别。"] : [])],
-      nextSteps: ["先定位相关片段回看，核对动作类型及估计阶段是否对应实际画面。", ...captureSteps(family).slice(0, 1)],
+      limitations: ["画面运动受拍摄角度影响；运动峰值不是触球时刻，也不代表真实受力。"],
+      nextSteps: skillSteps(family),
     };
   }
   if (!rows.length && !Object.keys(familySummary).length && !Object.keys(motionFamily).length) return unavailableAdviceEvidence(technique, "analysis_unavailable", "artifact_unavailable");
-  const reason = trustedText(motionFamily.reason_zh) ?? trustedText(familySummary.recognition_reason_zh);
   return {
     ...common, status: "insufficient_evidence", reasonCode: "requested_family_not_recognized",
-    explanation: `当前视频尚未得到可用于评价${technique}的有效识别，无法判断该动作是否正确或为何失误。未识别不代表没有该动作，也不代表动作有问题。`,
+    explanation: `本次没有足够的${technique}测量来制定个体纠正方案。可以先完成下面的基础练习，建立自己的记录。`,
     availableFacts: [], observedPhases: [],
-    limitations: [...(reason ? [`分析系统记录：${reason}`] : []), "其他动作的识别结果或分数不能作为该动作的证据。", "尚不能确定未识别的具体原因；下方内容仅用于补充证据，不是动作纠错结论。"],
-    nextSteps: captureSteps(family),
+    limitations: ["基础练习不使用其他动作的分数，也不把缺少测量当作技术缺陷。"],
+    nextSteps: [...skillSteps(family), ...captureSteps(family)],
   };
 }
 

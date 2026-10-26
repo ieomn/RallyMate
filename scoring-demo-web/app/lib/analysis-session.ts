@@ -3,6 +3,19 @@ import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, Traj
 
 export type AnalysisResult = { job: JobProgress; result: DemoResultResponse; trajectory: TrajectoryPreviewResponse | null; assessment: TechniqueAssessmentResponse | null; warning: string | null };
 
+export class AnalysisCancelledError extends Error {
+  constructor() { super("本次分析已取消，服务器已停止处理。"); this.name = "AnalysisCancelledError"; }
+}
+
+/** Poll and cancel responses can arrive out of order. Terminal reports must not regress. */
+export function mergeAnalysisProgress(previous: JobProgress | null, incoming: JobProgress): JobProgress {
+  if (!previous || previous.id !== incoming.id) return incoming;
+  if (["succeeded", "completed", "failed", "cancelled"].includes(previous.status)) return previous;
+  return previous.cancel_requested && ["queued", "running", "processing"].includes(incoming.status)
+    ? { ...incoming, cancel_requested: true, cancel_requested_at: incoming.cancel_requested_at ?? previous.cancel_requested_at }
+    : incoming;
+}
+
 function pause(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     signal.throwIfAborted();
@@ -12,7 +25,17 @@ function pause(ms: number, signal: AbortSignal) {
   });
 }
 
+function preparationTimedOut(error: unknown) {
+  if (!error || typeof error !== "object" || !("status" in error) || error.status !== 504 || !("payload" in error)) return false;
+  const payload = error.payload;
+  const detail = payload && typeof payload === "object" && "detail" in payload ? payload.detail : null;
+  return !!detail && typeof detail === "object" && "code" in detail && detail.code === "report_preparation_timeout";
+}
+
 function retryable(error: unknown) {
+  // An explicit builder deadline is terminal for this read, not a transient
+  // network 504. The user can choose a later fresh read.
+  if (preparationTimedOut(error)) return false;
   const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 0;
   return !status || status === 408 || status === 429 || status >= 500;
 }
@@ -22,7 +45,7 @@ export function reconnectDelay(failures: number, interval = 2000) {
 }
 
 /** Jobs keep running on the analyzer when a tab closes. Only stop watching. */
-export async function watchAnalysis(client: RallyMateApiClient, jobId: string, signal: AbortSignal, onProgress: (job: JobProgress) => void, interval = 2000, onTrajectory?: (trajectory: TrajectoryPreviewResponse) => void): Promise<AnalysisResult> {
+export async function watchAnalysis(client: RallyMateApiClient, jobId: string, signal: AbortSignal, onProgress: (job: JobProgress) => void, interval = 2000, onTrajectory?: (trajectory: TrajectoryPreviewResponse) => void, onResult?: (result: DemoResultResponse) => void): Promise<AnalysisResult> {
   let failures = 0;
   let job: JobProgress = { id: jobId, status: "queued" };
   let lastPreviewAt = -Infinity;
@@ -51,7 +74,8 @@ export async function watchAnalysis(client: RallyMateApiClient, jobId: string, s
       signal.throwIfAborted();
       onProgress(job);
       if (["succeeded", "completed"].includes(job.status)) break;
-      if (["failed", "cancelled"].includes(job.status)) throw new Error(job.error || "视频处理失败，请更换片段后重试");
+      if (job.status === "cancelled") throw new AnalysisCancelledError();
+      if (job.status === "failed") throw new Error(job.error || "视频处理失败，请更换片段后重试");
       // One optional preview at a time. It cannot hold up job polling and is
       // cancelled when observation ends, so stale previews cannot replace a result.
       const rawProcessed = job.progress && typeof job.progress === "object"
@@ -76,33 +100,81 @@ export async function watchAnalysis(client: RallyMateApiClient, jobId: string, s
     watching = false;
     previewController.abort();
   }
+  const reportDeadline = performance.now() + 120000;
   const readResult = async () => {
     for (let attempt = 1; ; attempt += 1) {
-      try { return await client.getDemoResult(jobId, { signal }); }
+      try {
+        const maxWaitMs = reportDeadline - performance.now();
+        if (maxWaitMs <= 0) throw Object.assign(new Error("报告读取已达到本次等待时限，请继续读取结果，无需重新上传。"), { status: 425 });
+        const result = await client.getDemoResult(jobId, { signal, maxWaitMs });
+        signal.throwIfAborted();
+        return result;
+      }
       catch (error) {
         signal.throwIfAborted();
         if (!retryable(error) || attempt >= 3) throw error;
         onProgress({ ...job, message: "推理已完成，正在重试读取动作结果。无需重新上传。" });
-        await pause(reconnectDelay(attempt, interval), signal);
+        await pause(Math.min(reconnectDelay(attempt, interval), Math.max(0, reportDeadline - performance.now())), signal);
+        if (performance.now() >= reportDeadline) throw Object.assign(new Error(
+          "报告读取已达到本次等待时限，请继续读取结果，无需重新上传。", { cause: error }), { status: 425 });
       }
     }
   };
-  const optionalSignal = AbortSignal.any([signal, AbortSignal.timeout(8000)]);
+  const optionalController = new AbortController();
   // Scores are required for the results screen, including an explicit null
   // score for a clip with insufficient observations. Optional overlays can fail.
-  const [primary, trajectory, assessment] = await Promise.allSettled([
-    readResult(),
-    client.getTrajectory(jobId, { signal: optionalSignal, predictionHorizonMs: 0, sampleLimit: 384 }),
-    client.getTechniqueAssessment(jobId, { signal: optionalSignal }),
-  ]);
-  signal.throwIfAborted();
-  if (primary.status === "rejected") throw new Error("推理已完成，结果暂未读取成功。点击“继续读取结果”，无需重新上传。");
-  if (primary.value.job_id !== jobId || primary.value.status !== "ready") throw new Error("结果与当前视频任务不匹配，请重新读取");
-  const finalTrajectory = trajectory.status === "fulfilled" && trajectory.value.job_id === jobId ? trajectory.value : null;
-  return {
-    job, result: primary.value,
-    trajectory: finalTrajectory ?? liveTrajectory,
-    assessment: assessment.status === "fulfilled" ? assessment.value : null,
-    warning: !finalTrajectory || assessment.status === "rejected" ? "部分画面证据暂不可用，动作结果已保留。" : null,
-  };
+  const primaryRead = readResult();
+  try {
+    let primary: DemoResultResponse;
+    try { primary = await primaryRead; }
+    catch (cause) {
+      signal.throwIfAborted();
+      throw new Error(preparationTimedOut(cause)
+        ? "服务器整理报告已超时。可稍后点击“继续读取结果”；本次分析无需重新上传。"
+        : "推理已完成，结果暂未读取成功。点击“继续读取结果”，无需重新上传。", { cause });
+    }
+    signal.throwIfAborted();
+    if (primary.job_id !== jobId || primary.status !== "ready") throw new Error("结果与当前视频任务不匹配，请重新读取");
+    // Publish the required report, or its error, independently of optional reads.
+    // Rendering callbacks are outside the transport retry loop: a UI failure
+    // must not issue the same report request again.
+    onResult?.(primary);
+    signal.throwIfAborted();
+    // Publish the validated report before supplementary reads compete for the
+    // same connection. Their fresh deadline starts after primary delivery.
+    const optionalSignal = AbortSignal.any([signal, optionalController.signal, AbortSignal.timeout(20000)]);
+    const optionalReads = Promise.allSettled([
+      client.getTrajectory(jobId, { signal: optionalSignal, predictionHorizonMs: 0, sampleLimit: 384 }),
+      client.getTechniqueAssessment(jobId, { signal: optionalSignal }),
+    ]);
+    const [trajectory, assessment] = await optionalReads;
+    // Retry each transient failure once with its own fresh deadline.
+    // Successful reads and invalid artifacts are retained.
+    const retryOptional = async <T,>(previous: PromiseSettledResult<T>, read: (retrySignal: AbortSignal) => Promise<T>): Promise<PromiseSettledResult<T>> => {
+      if (previous.status === "fulfilled" || !retryable(previous.reason)) return previous;
+      signal.throwIfAborted();
+      const retrySignal = AbortSignal.any([signal, optionalController.signal, AbortSignal.timeout(20000)]);
+      try {
+        const value = await read(retrySignal);
+        retrySignal.throwIfAborted();
+        return { status: "fulfilled", value };
+      } catch (reason) { return { status: "rejected", reason }; }
+    };
+    const [retriedTrajectory, retriedAssessment] = await Promise.all([
+      retryOptional(trajectory, retrySignal => client.getTrajectory(jobId, { signal: retrySignal, predictionHorizonMs: 0, sampleLimit: 384 })),
+      retryOptional(assessment, retrySignal => client.getTechniqueAssessment(jobId, { signal: retrySignal })),
+    ]);
+    signal.throwIfAborted();
+    const finalTrajectory = retriedTrajectory.status === "fulfilled" && retriedTrajectory.value?.job_id === jobId ? retriedTrajectory.value : null;
+    const finalAssessment = retriedAssessment.status === "fulfilled" && retriedAssessment.value && typeof retriedAssessment.value === "object" && !Array.isArray(retriedAssessment.value)
+      && (retriedAssessment.value.job_id === undefined || retriedAssessment.value.job_id === jobId) ? retriedAssessment.value : null;
+    return {
+      job, result: primary,
+      trajectory: finalTrajectory ?? liveTrajectory,
+      assessment: finalAssessment,
+      warning: !finalTrajectory || !finalAssessment ? "部分画面证据暂不可用，动作结果已保留。" : null,
+    };
+  } finally {
+    optionalController.abort();
+  }
 }

@@ -1,0 +1,43 @@
+{
+  "backend_combined": {
+    "passed": 183,
+    "failed": 0
+  },
+  "tracking_pipeline_contracts": {
+    "passed": 77,
+    "failed": 0,
+    "overlaps_backend_combined": true
+  },
+  "frontend": {
+    "passed": 915,
+    "skipped": 1,
+    "failed": 0,
+    "build": "passed",
+    "lint": "passed",
+    "typecheck": "passed"
+  },
+  "strict_parser": {
+    "offline": 25,
+    "gpu": 4,
+    "wrong_sha_and_job_rejected": true
+  },
+  "published_builder_exact_match": 25,
+  "local_http": {
+    "evaluation_html": 200,
+    "pink_tennis_assessment": 200
+  },
+  "browser": {
+    "local_report_summary": "25 records / 4 real sources / 17 scored records / 72 episodes",
+    "pink_detail": "2 scored target actions and per-candidate rejection reasons",
+    "public_url": "TLS connection closed; Cloudflare DNS query Status=3 (NXDOMAIN)",
+    "public_passed": false,
+    "local_training_app": {
+      "job": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "score_display": "85.6",
+      "target_actions": 2,
+      "pattern_requirements": "2/14",
+      "missing_limitations_visible": true
+    }
+  },
+  "cloudflared_pid_preserved": 42088
+}

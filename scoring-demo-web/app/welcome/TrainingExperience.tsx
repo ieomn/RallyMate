@@ -104,10 +104,11 @@ export function TrainingExperience() {
 
   return <section className="marketing-experience" id="experience" ref={sectionRef} aria-labelledby={`${identifier}-heading`}>
     <div className="mx-heading">
-      <h2 id={`${identifier}-heading`}>有些进步，<br /><span>回看才看得见。</span></h2>
-      <p className="mx-heading-copy">拖动时间轴，<br />回看动作的三个阶段。</p>
+      <h2 id={`${identifier}-heading`}>分析之后，<br /><span>你会看到什么？</span></h2>
+      <p className="mx-heading-copy">先了解报告的交付方式，<br />再决定从哪段训练开始。</p>
     </div>
-
+    <div className="mx-sample-entry"><div><span className="mx-sample-label">只读交付样例 · 虚构格式演示</span><h3>从一个片段，走到下一次关注点。</h3><p>查看观察如何连接片段位置、复盘问题和具体下一步。样例沿用项目已有的虚构标注，没有对应原视频，不代表真实分析结论。</p><a href="/welcome/sample" className="mx-sample-link">打开只读交付样例 <span aria-hidden="true">↗</span></a></div><ol><li><span>01</span><div><strong>这次能看见什么</strong><small>观察、待复核和无法判断，分开呈现</small></div></li><li><span>02</span><div><strong>回到对应片段</strong><small>本页演示位置选择；原片不可播放</small></div></li><li><span>03</span><div><strong>带走下次关注点</strong><small>围绕证据提问，不虚构动作诊断</small></div></li></ol></div>
+    <details className="mx-extra-demo"><summary>展开时间轴操作示意（非视频、非分析结果）</summary>
     <div className="mx-explorer">
       <div className="mx-court-panel">
         <svg className="mx-court" viewBox="0 0 820 520" aria-hidden="true" fill="none">
@@ -162,5 +163,6 @@ export function TrainingExperience() {
         </div>
       </div>
     </div>
+    </details>
   </section>;
 }

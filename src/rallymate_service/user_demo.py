@@ -11,9 +11,11 @@ from rallymate_service.training_evaluation import (
     SCORE_SEMANTICS, build_training_evaluation, validated_training_records,
 )
 from rallymate_scoring.technique_assessment import build_technique_assessment
+from rallymate_scoring.indicator_assessment import build_indicator_assessment
 from rallymate_service.analysis_report import build_analysis_report
+from rallymate_service.process_evaluation import build_process_evaluation
 
-USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.5.0"
+USER_DEMO_RESULT_VERSION = "rallymate-user-demo-result-v1.6.0"
 FORMATION_SCORE_VERSION = "recognizable-motion-information-v1.2.0"
 
 _FORMATION_SCORE_WEIGHTS = {
@@ -182,20 +184,41 @@ def _reject_nonfinite_constant(value: str) -> None:
 
 def load_indicator_feature_records(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
+    options = dict(object_pairs_hook=_duplicate_rejecting_object,
+                   parse_constant=_reject_nonfinite_constant)
     try:
-        text = path.read_text(encoding="utf-8")
-        # Accept a regular JSON export as well as the historical JSONL format.
-        # JSONL remains the fallback because concatenated objects are not one
-        # valid JSON document.
-        try:
-            document = json.loads(
-                text,
-                object_pairs_hook=_duplicate_rejecting_object,
-                parse_constant=_reject_nonfinite_constant,
-            )
-        except json.JSONDecodeError:
-            document = None
-        if document is not None:
+        # JSON Lines records are independently parseable. Keep only each line
+        # alongside the parsed records, not the entire UTF-8 text and a second
+        # splitlines copy (production artifacts can approach a gigabyte).
+        # Preserve support for compact and pretty-printed regular JSON exports.
+        with path.open(encoding="utf-8") as handle:
+            lines = ((number, line) for number, line in enumerate(handle, 1) if line.strip())
+            first = next(lines, None)
+            if first is None:
+                raise UserDemoResultError("indicator features are empty")
+            try:
+                document = json.loads(first[1], **options)
+            except json.JSONDecodeError:
+                handle.seek(0)
+                document = json.load(handle, **options)
+                second = None
+            else:
+                second = next(lines, None)
+            if second is not None:
+                if not isinstance(document, dict):
+                    raise UserDemoResultError(f"indicator feature line {first[0]} is not an object")
+                records.append(document)
+                number, line = second
+                while True:
+                    value = json.loads(line, **options)
+                    if not isinstance(value, dict):
+                        raise UserDemoResultError(f"indicator feature line {number} is not an object")
+                    records.append(value)
+                    following = next(lines, None)
+                    if following is None:
+                        break
+                    number, line = following
+                return records
             if isinstance(document, list):
                 candidates = document
             elif isinstance(document, dict):
@@ -208,20 +231,6 @@ def load_indicator_feature_records(path: Path) -> list[dict[str, Any]]:
             for index, value in enumerate(candidates, start=1):
                 if not isinstance(value, dict):
                     raise UserDemoResultError(f"indicator feature item {index} is not an object")
-                records.append(value)
-        else:
-            for line_number, raw_line in enumerate(text.splitlines(), start=1):
-                if not raw_line.strip():
-                    continue
-                value = json.loads(
-                    raw_line,
-                    object_pairs_hook=_duplicate_rejecting_object,
-                    parse_constant=_reject_nonfinite_constant,
-                )
-                if not isinstance(value, dict):
-                    raise UserDemoResultError(
-                        f"indicator feature line {line_number} is not an object"
-                    )
                 records.append(value)
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise UserDemoResultError(f"cannot read indicator features: {exc}") from exc
@@ -350,17 +359,17 @@ def _formation_assessment(
     )
     if detected_segments == 0:
         status = "not_observed"
-        label_zh = "未提供候选片段"
+        label_zh = "尚未定位运动片段"
     elif measured_indicator_count == expected_indicator_count and amplitude_count == expected_amplitude_count:
         status = "well_formed_information"
-        label_zh = "候选片段有可复核测量"
+        label_zh = "运动片段已有测量"
     elif measured_indicator_count:
         status = "partially_formed_information"
-        label_zh = "候选片段部分可测"
+        label_zh = "部分运动片段可测"
     else:
         status = "limited_information"
-        label_zh = "候选片段待复核，测量不足"
-    explanation_zh = f"{detected_segments} 个候选片段；{measured_indicator_count}/{expected_indicator_count} 项有测量。"
+        label_zh = "运动片段的测量信息不足"
+    explanation_zh = f"{detected_segments} 个运动片段；{measured_indicator_count}/{expected_indicator_count} 项有测量。"
 
     return {
         "status": status,
@@ -383,6 +392,7 @@ def build_user_demo_result(
     indicator_feature_records: Iterable[Mapping[str, Any]],
     *,
     technique_registry_path: Path | None = None,
+    include_derived_assessments: bool = True,
 ) -> dict[str, Any]:
     if not isinstance(summary, Mapping):
         raise UserDemoResultError("summary must be an object")
@@ -480,7 +490,7 @@ def build_user_demo_result(
             summary_zh = "已找到候选片段及可复核的幅度测量；动作类型仍待人工复核。"
         else:
             status = "partially_measured"
-            summary_zh = "已找到部分候选证据，但仍有指标无法稳定测量；动作类型待复核。"
+            summary_zh = "已取得部分运动测量；仍有指标无法稳定测量，动作类型尚未确认。"
 
         amplitudes = _friendly_amplitudes(
             validated_records,
@@ -721,5 +731,12 @@ def build_user_demo_result(
         result["input"] = {"video": {key: video_metadata[key]
             for key in ("duration_ms", "width", "height", "fps", "frame_count")
             if _finite_number(video_metadata.get(key)) is not None and video_metadata[key] > 0}}
-    result["analysis_report"] = build_analysis_report(result, summary=summary)
+    if include_derived_assessments:
+        # The API supplies the richer source/footwork projections once below;
+        # standalone callers retain the original complete result by default.
+        result["process_evaluation"] = build_process_evaluation(summary, records)
+        result["indicator_assessment"] = build_indicator_assessment(
+            summary, records, process_evaluation=result["process_evaluation"],
+        )
+        result["analysis_report"] = build_analysis_report(result, summary=summary)
     return result

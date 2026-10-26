@@ -7,34 +7,39 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from fractions import Fraction
 from typing import Any
 
 import numpy as np
 
 from rallymate_events.associations import SuccessorEventIndex, event_identity, finite_time
-from rallymate_features.coordinates import body_scale
+from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION, body_scale, point_series, validated_camera_transform
 from rallymate_features.geometry import angle_three_points_deg
-from rallymate_features.schemas import PoseSequence
+from rallymate_features.schemas import PoseSequence, model_bindings_continuous, model_geometry_evidence, validated_source_time_binding
 from rallymate_features.validity import DEFAULT_KEYPOINT_CONFIDENCE_MIN
 from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 
 
-VERSION = "source-aligned-fs-measurements-v1.1.0"
+VERSION = "source-aligned-fs-measurements-v1.2.0"
 SOURCE_PHASE_VERSION = "source-preload-turning-point-v1.0.0"
+PRELOAD_REFERENCE_VERSION = "fs01-preload-reference-translation-v1.0.0"
 JOINTS = ("left_shoulder", "right_shoulder", "left_hip", "right_hip",
           "left_knee", "right_knee", "left_ankle", "right_ankle")
 HIPS, KNEES, ANKLES = JOINTS[2:4], JOINTS[4:6], JOINTS[6:8]
+HEAD = ("nose", "left_ear", "right_ear")  # Word J004/J006/J007; eyes are J008/J009.
 MAX_GAP_MS = 160  # Existing engineering time-gap policy; not a Word grade threshold.
 SOURCE_LOCATORS = {
     "FS01-M02": ("CARD-FS:word/document.xml:P0115", "CARD-FS:word/document.xml:P0127"),
     "FS01-M04": ("CARD-FS:word/document.xml:P0185", "CARD-FS:word/document.xml:P0197"),
     "FS01-M05": ("CARD-FS:word/document.xml:P0220", "CARD-FS:word/document.xml:P0232"),
     "FS09-M05": ("CARD-FS:word/document.xml:P1644", "CARD-FS:word/document.xml:P1656"),
+    "FS02-M01": ("CARD-FS:word/document.xml:P0258", "CARD-FS:word/document.xml:P0270"),
+    "FS01-M01": ("CARD-FS:word/document.xml:P0080", "CARD-FS:word/document.xml:P0092"),
 }
 CORE_GROUPS = {"FS01-M02": (HIPS, KNEES), "FS01-M04": (ANKLES,),
-               "FS01-M05": (ANKLES, HIPS), "FS09-M05": (JOINTS,)}
+               "FS01-M05": (ANKLES, HIPS), "FS09-M05": (JOINTS,), "FS02-M01": (HEAD, HIPS), "FS01-M01": (HEAD,)}
 SOURCE_REQUIRED_JOINTS = {"FS01-M02": JOINTS, "FS01-M04": HIPS + KNEES + ANKLES,
-                          "FS01-M05": JOINTS, "FS09-M05": JOINTS}
+                          "FS01-M05": JOINTS, "FS09-M05": JOINTS, "FS02-M01": HEAD + HIPS, "FS01-M01": HEAD}
 
 
 def _mapping(value: Any) -> Mapping:
@@ -71,7 +76,7 @@ class SourceAlignedContext:
         required_joints = required_joints or tuple(dict.fromkeys(name for group in groups for name in group))
         valid = np.logical_and.reduce([self.masks[name][indexes] for name in required_joints])
         total, count = int(indexes.size), int(valid.sum())
-        return {"scope": "inclusive_window_all_sampled_source_frames", "groups": rows,
+        result = {"scope": "inclusive_window_all_sampled_source_frames", "groups": rows,
                 "required_joint_names": list(required_joints), "valid_frame_count": count,
                 "total_frame_count": total, "fraction": count / total if total else None,
                 "passes": bool(total and count * 10 >= total * 7),
@@ -80,6 +85,14 @@ class SourceAlignedContext:
                     "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"},
                 "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
                 "interpretation": "conservative_simultaneous_required_joint_mask; Word_does_not_define_confidence_or_joint_combination_protocol"}
+
+        if self.sequence.model_estimate_bindings is not None:
+            result.update(semantics="model_estimate_geometry_not_verified_visibility", visibility_verified=False,
+                source_visibility_70_percent_verified=None,
+                point_validity={"minimum_confidence": None, "semantics": "strict_source_bound_finite_in_frame_model_geometry"},
+                group_semantics="all_named_model_geometries_simultaneously_available_in_each_counted_frame",
+                interpretation="engineering_geometry_support_only; Word_visibility_not_verified")
+        return result
 
     def window_reason(self, indexes: np.ndarray, start: float, end: float, *, minimum_samples: int = 2) -> str | None:
         sequence = self.sequence
@@ -90,6 +103,8 @@ class SourceAlignedContext:
         times, frames = sequence.timestamp_ms[indexes], sequence.source_frames[indexes]
         if not np.isfinite(times).all() or np.any(np.diff(times) <= 0) or np.any(np.diff(times) > MAX_GAP_MS) or np.any(np.diff(frames) != 1):
             return "source_time_or_frame_gap"
+        if sequence.model_estimate_bindings is not None and (any(sequence.model_estimate_bindings[i] is None for i in indexes) or any(not model_bindings_continuous(sequence, a, b) for a, b in zip(indexes, indexes[1:]))):
+            return "source_model_binding_discontinuity"
         if sequence.camera_motion_status is None or sequence.camera_reference_epochs is None:
             return "camera_reference_unverified"
         if any(sequence.camera_motion_status[i] not in {"reference", "stationary", "compensated"} for i in indexes):
@@ -138,15 +153,17 @@ def prepare_source_aligned_context(sequence: PoseSequence,
         return cached
     points, masks = {}, {}
     size = len(sequence.timestamp_ms)
-    for name in JOINTS:
-        xy = np.asarray(sequence.keypoints_xy.get(name, np.full((size, 2), np.nan)), dtype=float).copy()
-        confidence = np.asarray(sequence.confidence.get(name, np.full(size, np.nan)), dtype=float)
-        valid = np.isfinite(xy).all(axis=1) & np.isfinite(confidence) & (confidence >= DEFAULT_KEYPOINT_CONFIDENCE_MIN) & (confidence <= 1)
-        xy[~valid] = np.nan
+    for name in JOINTS + HEAD:
+        xy, valid = point_series(sequence, name, confidence_min=DEFAULT_KEYPOINT_CONFIDENCE_MIN)
+        if sequence.model_estimate_bindings is None:
+            valid &= np.asarray(sequence.confidence.get(name, np.full(size, np.nan))) <= 1
+            xy[~valid] = np.nan
         points[name], masks[name] = xy, valid
     hip = (points["left_hip"] + points["right_hip"]) / 2
     shoulders = (points["left_shoulder"] + points["right_shoulder"]) / 2
-    clean_sequence = replace(sequence, keypoints_xy=points, confidence={name: np.where(masks[name], sequence.confidence.get(name, np.nan), np.nan) for name in JOINTS})
+    clean_sequence = replace(sequence, keypoints_xy=points, confidence={
+        name: np.where(masks[name], sequence.confidence.get(name, np.full(size, np.nan)), np.nan)
+        for name in JOINTS + HEAD}, model_estimate_masks={name: masks[name] for name in JOINTS + HEAD} if sequence.model_estimate_bindings is not None else {})
     scale, _ = body_scale(clean_sequence)
     knees = {side: 180 - angle_three_points_deg(points[f"{side}_hip"], points[f"{side}_knee"], points[f"{side}_ankle"])
              for side in ("left", "right")}
@@ -188,7 +205,7 @@ def _event_quality_gate(event: Mapping) -> dict | None:
         flags.append("confirmed_id_switch_present")
     # Reuse the established public policy: candidate jump/swap/identity flags
     # are not confirmed measurement failures. Confirmed switches are.
-    indicator = "FS09-M05" if event.get("event_code") == "FS09" else "FS01-M02"
+    indicator = {"FS09": "FS09-M05", "FS02": "FS02-M02"}.get(event.get("event_code"), "FS01-M02")
     try:
         return evaluate_indicator_event_quality(indicator, flags)
     except ValueError:
@@ -254,7 +271,11 @@ def _row(context: SourceAlignedContext, *, event: Mapping, indicator: str, name:
             "window_ms": {"start_ms": start, "end_ms": end}, "definition": definition,
             "coverage": coverage, "source_ref": SOURCE_LOCATORS[indicator][0], "evidence": evidence,
             "value_semantics": "observed_image_plane_quantity_not_technique_grade",
-            "zero_semantics": "measured_zero_is_not_missing_and_does_not_assign_E_grade"}
+            "zero_semantics": "measured_zero_is_not_missing_and_does_not_assign_E_grade",
+            **({**model_geometry_evidence(context.sequence, indexes, JOINTS + HEAD), "confidence": None,
+                "value_semantics": "model_estimate_image_plane_quantity_not_verified_visibility_or_technique_grade",
+                "reason": "model_estimate_measurement" if valid else reason or "measurement_not_observed"}
+               if context.sequence.model_estimate_bindings is not None else {})}
 
 
 def _scale(context: SourceAlignedContext, indexes: np.ndarray) -> float | None:
@@ -289,7 +310,8 @@ def _speed_summary(context: SourceAlignedContext, indexes: np.ndarray, scale: fl
             "derivative_policy": "adjacent_observed_intervals_only_no_interpolation_no_cross_gap_stencil"}
 
 
-def locate_source_preload(context: SourceAlignedContext, event: Mapping) -> dict:
+def locate_source_preload(context: SourceAlignedContext, event: Mapping, *,
+                          identity_validator=None, subject_validator=None) -> dict:
     """Find an observed pre-takeoff dip, preserving the original phase intact.
 
     Two increasing and two decreasing observed changes reject a lone pose
@@ -308,8 +330,13 @@ def locate_source_preload(context: SourceAlignedContext, event: Mapping) -> dict
     if reason is not None:
         return {**result, "repair_reason": reason}
     indexes = context.indexes(event["start_ms"], takeoff)
-    reason = (_identity_reason(context, event) or context.window_reason(indexes, event["start_ms"], takeoff)
-              or context.subject_window_reason(indexes, event))
+    # The current card application can retain candidate-only diagnostics while
+    # independently checking every source-frame binding. Legacy callers keep
+    # the original identity policy unless they explicitly supply validators.
+    identity_validator = identity_validator or _identity_reason
+    subject_validator = subject_validator or (lambda context, indexes, event: context.subject_window_reason(indexes, event))
+    reason = (identity_validator(context, event) or context.window_reason(indexes, event["start_ms"], takeoff)
+              or subject_validator(context, indexes, event))
     if reason is not None:
         return {**result, "repair_reason": reason}
     if indexes.size < 5:
@@ -353,6 +380,131 @@ def locate_source_preload(context: SourceAlignedContext, event: Mapping) -> dict
             "numerical_coordinate_epsilon": epsilon}
 
 
+def _preload_reference_translation(context: SourceAlignedContext, event: Mapping, *, phase: Mapping,
+                                   start: float, end: float, indexes: np.ndarray,
+                                   reason: str | None) -> list[dict]:
+    """FS candidate-local translation; do not reuse GS stage labels or ankle height.
+
+    PoseSequence coordinates already contain the validated camera transform.
+    Recover reference pixels once, then use one median torso length for the
+    whole observed window. Sample/duration, torso-size and confidence checks
+    match preparation_translation; none is a Word grading threshold.
+    """
+    from rallymate_scoring.preparation_translation import MIN_DURATION_MS, MIN_SAMPLES
+
+    sequence, required = context.sequence, JOINTS[:4]
+    metadata = sequence.coordinate_metadata
+    evidence = {"measurement_version": PRELOAD_REFERENCE_VERSION,
+                "phase_semantics": "unvalidated_pose_candidate_not_ground_truth",
+                "source_phase": dict(phase), "source_clause_complete": False,
+                "coordinate_system": "stable_camera_reference_image_x_right_y_down",
+                "normalization": "median_observed_full_torso_scale_fixed_per_candidate_window",
+                "formula": "dy_px=hip_y_reference_px[last]-hip_y_reference_px[first]; dy_torso=dy_px/median(norm(shoulder_midpoint_px-hip_midpoint_px))",
+                "minimum_samples": MIN_SAMPLES, "minimum_duration_ms": MIN_DURATION_MS,
+                "gate_origin": "existing_preparation_translation_measurement_policy_not_Word_grade_threshold",
+                "sign_convention": "image_down_positive", "is_metric_or_3d": False,
+                "is_ground_truth": False}
+    reason = reason or context.window_reason(indexes, start, end, minimum_samples=MIN_SAMPLES)
+    reason = reason or context.subject_window_reason(indexes, event)
+    if not reason and (sequence.timestamp_ms[indexes[0]] != start or sequence.timestamp_ms[indexes[-1]] != end):
+        reason = "exact_phase_endpoint_observation_missing"
+    if (metadata.get("contract_version") != COORDINATE_CONTRACT_VERSION
+            or metadata.get("coordinate_system") != "camera_reference_xy_divided_by_source_long_edge"):
+        reason = reason or "stable_reference_coordinate_contract_unverified"
+    dimensions = sequence.frame_dimensions_px
+    transforms = sequence.frame_transforms_to_reference
+    applied = set(_mapping(metadata.get("camera_compensation")).get("applied_source_frames", []))
+    if dimensions is None or transforms is None:
+        reason = reason or "stable_reference_pixel_geometry_unavailable"
+    elif indexes.size:
+        sizes = np.asarray(dimensions[indexes], dtype=float)
+        if (not np.isfinite(sizes).all() or np.any(sizes <= 0) or not np.all(sizes == sizes[0])):
+            reason = reason or "frame_dimensions_missing_or_changed"
+        if any(int(sequence.source_frames[i]) not in applied
+               or validated_camera_transform({"compensation_valid": True,
+                                               "matrix_to_reference": transforms[i]}) is None for i in indexes):
+            reason = reason or "stable_reference_transform_unverified"
+    times = None
+    exact_times = None
+    if sequence.model_estimate_bindings is not None:
+        if indexes.size and all(sequence.model_estimate_bindings[i] is not None for i in indexes):
+            bindings = [sequence.model_estimate_bindings[i] for i in indexes]
+            exact_times = [Fraction(b["pts"] * b["time_base_num"] * 1000, b["time_base_den"]) for b in bindings]
+            evidence.update(time_basis="bound_source_pts", source_track_id=bindings[0]["person_track_id"],
+                            selection_epoch=bindings[0]["selection_epoch"])
+    elif indexes.size:
+        bindings = [validated_source_time_binding(sequence.source_time_bindings.get(int(sequence.source_frames[i])))
+                    for i in indexes]
+        if all(binding is not None for binding in bindings):
+            keys = ("video_sha256", "primary_player_id", "person_track_id", "selection_epoch",
+                    "camera_reference_epoch", "time_base_num", "time_base_den")
+            tracks = _mapping(event.get("track_diagnostics")).get("source_track_ids")
+            matches = all(
+                binding["frame_index"] == int(sequence.source_frames[i])
+                and binding["video_timestamp_ms"] == sequence.timestamp_ms[i]
+                and binding["primary_player_id"] == sequence.primary_player_id == event.get("person_track_id")
+                and tracks == [binding["person_track_id"]]
+                and sequence.camera_reference_epochs is not None
+                and binding["camera_reference_epoch"] == sequence.camera_reference_epochs[i]
+                and all(binding[key] == bindings[0][key] for key in keys)
+                for i, binding in zip(indexes, bindings))
+            matches = matches and all(b["processed_index"] == a["processed_index"] + 1
+                                      for a, b in zip(bindings, bindings[1:]))
+            if matches:
+                exact_times = [Fraction(b["pts"] * b["time_base_num"] * 1000, b["time_base_den"]) for b in bindings]
+                evidence.update(time_basis="bound_source_pts", source_track_id=bindings[0]["person_track_id"],
+                                selection_epoch=bindings[0]["selection_epoch"])
+            else:
+                reason = reason or "source_decoder_binding_discontinuity"
+    # Rounded playback milliseconds never decide the exact duration boundary.
+    if exact_times is None:
+        reason = reason or "decoder_pts_provenance_unavailable_for_reference_translation"
+    else:
+        times = np.asarray([float(value) for value in exact_times])
+        duration_exact = exact_times[-1] - exact_times[0]
+        duration = float(duration_exact)
+        evidence.update(source_duration_ms=duration, source_timestamps_ms=times.tolist())
+        gaps = [b - a for a, b in zip(exact_times, exact_times[1:])]
+        video_gaps = np.diff(sequence.timestamp_ms[indexes])
+        if (not np.isfinite(times).all() or any(gap <= 0 or gap > MAX_GAP_MS for gap in gaps)
+                or any(abs(gap - Fraction(str(float(video_gap)))) > Fraction(101, 100)
+                       for gap, video_gap in zip(gaps, video_gaps))):
+            reason = reason or "source_time_or_frame_gap"
+        elif duration_exact < MIN_DURATION_MS:
+            reason = reason or "reference_translation_window_below_80_ms"
+    valid = np.logical_and.reduce([context.masks[name][indexes] for name in required])
+    if sequence.model_estimate_bindings is None:
+        # Same 0.35 confidence floor as preparation_translation._point; SAM
+        # uses bound finite model geometry and never fabricates confidence.
+        valid &= np.logical_and.reduce([np.asarray(sequence.confidence.get(name, np.full(len(sequence.timestamp_ms), np.nan)))[indexes] >= .35 for name in required])
+    if not valid.all():
+        reason = reason or "reference_translation_required_joints_not_continuous"
+    displacement, normalized = None, None
+    if not reason:
+        long_edge = float(np.max(dimensions[indexes[0]]))
+        hips = context.hip[indexes] * long_edge
+        shoulders = (context.points["left_shoulder"][indexes] + context.points["right_shoulder"][indexes]) * long_edge / 2
+        scales = np.linalg.norm(shoulders - hips, axis=1)
+        if not np.isfinite(scales).all() or np.any(scales < 12):
+            reason = "reference_translation_torso_scale_below_12_px"
+        else:
+            scale = float(np.median(scales))
+            displacement = float(hips[-1, 1] - hips[0, 1])
+            normalized = displacement / scale
+            evidence.update(fixed_torso_scale_px=scale, hip_reference_y_start_px=float(hips[0, 1]),
+                            hip_reference_y_end_px=float(hips[-1, 1]),
+                            camera_reference_epoch=sequence.camera_reference_epochs[indexes[0]],
+                            frame_dimensions_px=dimensions[indexes[0]].tolist())
+    return [_row(context, event=event, indicator="FS01-M02", name=name, label=label, unit=unit,
+                 start=start, end=end, indexes=indexes, required=required, reason=reason,
+                 value=value, evidence=evidence, minimum_samples=MIN_SAMPLES, definition=definition)
+            for name, label, unit, value, definition in (
+                ("preload_hip_reference_dy_px", "预加载候选髋纵向位移（稳定参考像素）", "px", displacement,
+                 "同一预加载下降转折候选窗内，稳定相机参考髋中点末帧纵坐标减首帧，画面向下为正；不减踝位置，不确认真实重心或完整预加载。"),
+                ("preload_hip_reference_dy_torso", "预加载候选髋纵向位移（固定躯干尺度）", "torso", normalized,
+                 "稳定参考髋纵向像素位移除以同窗肩中点到髋中点距离的固定中位数；画面向下为正，与旧相对踝body量独立，不换算等级。"))]
+
+
 def _preload(context: SourceAlignedContext, event: Mapping, reason: str | None) -> list[dict]:
     indicator = "FS01-M02"
     start, end = event["start_ms"], event["end_ms"]
@@ -362,6 +514,7 @@ def _preload(context: SourceAlignedContext, event: Mapping, reason: str | None) 
     else:
         reason = reason or phase["repair_reason"]
     indexes = context.indexes(start, end)
+    reference_reason = reason
     scale = _scale(context, indexes)
     reason = reason or (None if scale is not None else "body_scale_unavailable")
     endpoints = bool(indexes.size >= 2 and context.sequence.timestamp_ms[indexes[0]] == start
@@ -386,11 +539,13 @@ def _preload(context: SourceAlignedContext, event: Mapping, reason: str | None) 
          "median absolute change in adjacent observed image-plane body-center interval speeds divided by interval-midpoint time difference; not a calibrated continuity score"),
     ]
     values[definitions[-1][0]] = speed["rate"]
-    return [_row(context, event=event, indicator=indicator, name=name, label=label, unit=unit, definition=definition,
+    rows = [_row(context, event=event, indicator=indicator, name=name, label=label, unit=unit, definition=definition,
                  start=start, end=end, required=required, reason=reason, value=values.get(name), indexes=indexes,
                  evidence={"phase_key": "preload_ms", "phase_semantics": "unvalidated_pose_candidate_not_ground_truth",
                            "source_phase": phase, "body_scale": scale, **({"speed_continuity_observations": speed} if name == definitions[-1][0] else {})})
             for name, label, unit, required, definition in definitions]
+    return rows + _preload_reference_translation(context, event, phase=phase, start=start, end=end,
+                                                indexes=indexes, reason=reference_reason)
 
 
 def _post_slowdown_ratio(context: SourceAlignedContext, event: Mapping, reason: str | None) -> list[dict]:
@@ -481,6 +636,76 @@ def _transition(context: SourceAlignedContext, event: Mapping, indicator: str, r
     return [row, stability], association
 
 
+def _head_stability(context: SourceAlignedContext, event: Mapping, reason: str | None) -> list[dict]:
+    """Early candidate segment only; head motion does not verify gaze or timing."""
+    stop,phase_reason = _phase(event,"takeoff_proxy_ms")
+    start,end=event["start_ms"],stop if stop is not None else event["end_ms"]
+    indexes=context.indexes(start,end)
+    reason=reason or phase_reason or context.window_reason(indexes,start,end,minimum_samples=3)
+    valid=np.logical_and.reduce([context.masks[name][indexes] for name in HEAD])
+    centers=np.mean(np.stack([context.points[name][indexes] for name in HEAD]),axis=0)
+    dt=np.diff(context.sequence.timestamp_ms[indexes])/1000
+    pairs=valid[:-1]&valid[1:]&(dt>0)&(dt<=MAX_GAP_MS/1000)
+    speed=None
+    speed_reason=reason
+    if context.sequence.coordinate_metadata.get("contract_version")!="isotropic-frame-long-edge-v1.1.0":
+        speed_reason=speed_reason or "isotropic_coordinate_contract_unverified"
+    if not speed_reason and int(pairs.sum())>=2:
+        speed=float(np.sum(np.linalg.norm(np.diff(centers,axis=0)[pairs],axis=1))/np.sum(dt[pairs]))
+    ears=context.points["right_ear"][indexes]-context.points["left_ear"][indexes]
+    axes_valid=valid&(np.linalg.norm(ears,axis=1)>1e-6)
+    angles=np.arctan2(ears[axes_valid,1],ears[axes_valid,0])
+    deviation=None
+    if not reason and angles.size>=3:
+        resultant=float(abs(np.mean(np.exp(2j*angles))))
+        if resultant>1e-12:
+            deviation=float(np.degrees(np.sqrt(max(0.,-2*np.log(min(resultant,1.)))))/2)
+    common={"window_scope":"FS01_candidate_start_to_takeoff_proxy_not_confirmed_pre_split_stage",
+            "takeoff_proxy_ms":stop,"gaze_evaluated":False,"incoming_ball_alignment_evaluated":False,
+            "technical_stability_evaluated":False}
+    return [
+        _row(context,event=event,indicator="FS01-M01",name="head_center_mean_speed_frame_long_edge_s",
+             label="候选前段头部中心速度",unit="frame_long_edge/s",start=start,end=end,required=HEAD,
+             definition="鼻和双耳二维质心在稳定画面参照中的相邻有效帧累计路程/这些相邻帧真实时长之和，按画面长边归一化；不跨缺测求速度，不判稳定与否。",
+             reason=speed_reason,value=speed,indexes=indexes,minimum_samples=3,
+             evidence={**common,"formula":"sum(norm(C[i+1]-C[i]))/sum(delta_t[i]); C=(nose+left_ear+right_ear)/3; adjacent_valid_pairs_only",
+                 "used_adjacent_source_frame_pairs":[[int(context.sequence.source_frames[indexes[i]]),int(context.sequence.source_frames[indexes[i+1]])] for i in np.flatnonzero(pairs)],
+                 "observed_duration_ms":float(np.sum(dt[pairs])*1000)}),
+        _row(context,event=event,indicator="FS01-M01",name="head_axis_circular_std_deg",label="候选前段头部轴角波动",
+             unit="deg",start=start,end=end,required=HEAD,definition="双耳无方向投影轴的180°周期圆标准差：sqrt(-2 ln|mean(exp(2iθ))|)/2；只描述已观测轴角分布，不确认真实头朝向或注视。",
+             reason=reason,value=deviation,indexes=indexes,minimum_samples=3,
+             evidence={**common,"formula":"degrees(sqrt(-2*ln(abs(mean(exp(2j*theta))))))/2",
+                       "used_source_frames":[int(f) for f in context.sequence.source_frames[indexes[axes_valid]]],
+                       "angle_period_deg":180}),
+    ]
+
+
+def _launch_direction(context: SourceAlignedContext, event: Mapping, reason: str | None) -> list[dict]:
+    """Only the P0258 direction subclause; no ball/target correctness inference."""
+    from rallymate_features.fs01_fs02_features import summarize_fs01_fs02_event_feature
+    indexes = context.indexes(event["start_ms"], event["end_ms"])
+    scale = _scale(context, indexes)
+    value, evidence = None, {}
+    reason = reason or context.subject_window_reason(indexes, event)
+    reason = reason or (None if scale is not None else "body_scale_unavailable")
+    if reason is None:
+        measured = summarize_fs01_fs02_event_feature("launch_direction_deg", context.sequence, indexes, scale)
+        value = measured.value
+        evidence = {"formula": "atan2(-v_y,v_x), v=smoothed_hip_edge_displacement+median_smoothed_hip_velocity*event_duration",
+                    "feature_version": "fs01-fs02-pose-proxies-v0.7.0",
+                    "coordinate_convention": "0_deg_image_right_90_deg_image_up",
+                    "endpoint_source_frames": [int(context.sequence.source_frames[i]) for i in measured.evidence_indexes],
+                    "computation_diagnostics": measured.diagnostics,
+                    "scope": "FS02_candidate_event_direction_only",
+                    "incoming_ball_direction_available": False, "direction_correctness_evaluated": False,
+                    "source_clause_complete": False}
+        reason = None if value is not None else measured.reason
+    return [_row(context, event=event, indicator="FS02-M01", name="launch_direction_deg", label="启动方向（图像代理）", unit="deg",
+        definition="FS02候选完整窗口内平滑髋中心端点位移与中位速度乘时长的向量和方向，右为0°、上为90°；原文允许无球轨迹时仅输出启动方向，此操作定义不等于原文完整来球方向判断。",
+        start=event["start_ms"], end=event["end_ms"], required=HEAD + HIPS, reason=reason, value=value,
+        indexes=indexes, evidence=evidence)]
+
+
 def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, Any], *,
                                     events: Sequence[Mapping[str, Any]],
                                     context: SourceAlignedContext | None = None) -> dict[str, Any]:
@@ -493,11 +718,12 @@ def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, 
     start, end = finite_time(event.get("start_ms")), finite_time(event.get("end_ms"))
     if start is None or end is None or start >= end:
         return {**result, "status": "unavailable", "reason": "invalid_event_window"}
-    if event.get("event_code") not in {"FS01", "FS09"}:
+    if event.get("event_code") not in {"FS01", "FS02", "FS09"}:
         return {**result, "status": "not_applicable"}
     indexes = context.indexes(start, end)
+    result.update(model_geometry_evidence(sequence, indexes, JOINTS + HEAD))
     reason = _identity_reason(context, event) or context.window_reason(indexes, start, end)
-    for indicator in (("FS01-M02", "FS01-M04", "FS01-M05") if event["event_code"] == "FS01" else ("FS09-M05",)):
+    for indicator in {"FS01": ("FS01-M02", "FS01-M04", "FS01-M05", "FS01-M01"), "FS02": ("FS02-M01",), "FS09": ("FS09-M05",)}[event["event_code"]]:
         core_coverage = context.coverage(indexes, CORE_GROUPS[indicator], SOURCE_REQUIRED_JOINTS[indicator])
         indicator_reason = reason or (None if core_coverage["passes"] else "source_required_joint_coverage_below_70_percent")
         association = None
@@ -505,6 +731,10 @@ def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, 
             rows = _preload(context, event, indicator_reason)
         elif indicator == "FS01-M04":
             rows = _post_slowdown_ratio(context, event, indicator_reason)
+        elif indicator == "FS02-M01":
+            rows = _launch_direction(context, event, indicator_reason)
+        elif indicator == "FS01-M01":
+            rows = _head_stability(context, event, indicator_reason)
         else:
             rows, association = _transition(context, event, indicator, indicator_reason)
         available = any(row["status"] == "measured" for row in rows)
@@ -519,6 +749,12 @@ def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, 
         if indicator == "FS09-M05":
             unresolved.append("double_support_is_pose_proxy_not_confirmed_contact")
             limitations.append("FS10未由本模块识别；仅关联输入中已存在的同人FS10或FS02候选。")
+        if indicator == "FS02-M01":
+            unresolved.extend(["incoming_ball_direction_not_bound", "direction_correctness_not_evaluated"])
+            limitations.append("仅输出启动方向图像代理；未绑定活动球轨迹，不判断与来球方向是否一致，亦未确认垫步落地和真实第一步边界。")
+        if indicator == "FS01-M01":
+            unresolved.extend(["true_gaze_unobservable","opponent_contact_and_incoming_ball_not_bound","pre_split_stage_not_confirmed"])
+            limitations.append("仅描述FS01候选起点至起跳代理的头部局部运动；未确认原文垫步前正式窗口，不判真正盯球、时机正确或头部稳定合格。")
         if association is not None and association["link_measurement_status"] != "measured":
             unresolved.append("observed_successor_identity_and_continuity_not_established")
         result["indicators"].append({"indicator_id": indicator, "status": "partial" if available else "unavailable",

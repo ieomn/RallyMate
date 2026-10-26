@@ -318,7 +318,7 @@ class ScoringTruthEventHandoffTests(unittest.TestCase):
     def test_extra_fourth_video_is_rejected_even_after_manifest_rehash(self) -> None:
         target = self._copy("extra-fourth")
         extra_path = target / "media" / FOURTH_VIDEO.name
-        os.link(FOURTH_VIDEO, extra_path)
+        shutil.copyfile(FOURTH_VIDEO, extra_path)
         manifest_path = target / MANIFEST_NAME
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         extra_raw = FOURTH_VIDEO.read_bytes()

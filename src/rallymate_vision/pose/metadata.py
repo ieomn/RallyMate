@@ -9,6 +9,36 @@ from typing import Any
 
 SCHEMA_DATA_PATH = Path(__file__).parent / "data" / "keypoint_schemas.json"
 
+# Pinned upstream sam_3d_body/metadata/mhr70.py, original_keypoint_info.
+# MHR omits wrists from the first body block; they are indexes 41 and 62.
+MHR70_NAMES = (
+    "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+    "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+    "left_hip", "right_hip", "left_knee", "right_knee", "left_ankle", "right_ankle",
+    "left_big_toe_tip", "left_small_toe_tip", "left_heel",
+    "right_big_toe_tip", "right_small_toe_tip", "right_heel",
+    *(f"right_{finger}_{part}" for finger in ("thumb", "index", "middle", "ring", "pinky")
+      for part in ("tip", "first_joint", "second_joint", "third_joint")),
+    "right_wrist",
+    *(f"left_{finger}_{part}" for finger in ("thumb", "index", "middle", "ring", "pinky")
+      for part in ("tip", "first_joint", "second_joint", "third_joint")),
+    "left_wrist", "left_olecranon", "right_olecranon", "left_cubital_fossa",
+    "right_cubital_fossa", "left_acromion", "right_acromion", "neck",
+)
+
+
+def _mhr70_schema(coco17: dict[str, Any]) -> dict[str, Any]:
+    downstream = {point["name"]: point["downstream_joint_id"] for point in coco17["keypoints"]}
+    return {
+        "count": 70,
+        "source": "Meta SAM 3D Body sam_3d_body/metadata/mhr70.py original_keypoint_info",
+        "source_url": "https://github.com/facebookresearch/sam-3d-body/blob/b5c765a0d89d789985e186d396315e7590887b94/sam_3d_body/metadata/mhr70.py",
+        "mapping_semantics": "exact_named_body_landmarks_only_no_synthetic_midpoints",
+        "confidence_semantics": "not_provided_by_sam3d",
+        "keypoints": [{"index": index, "name": name, "downstream_joint_id": downstream.get(name)}
+                      for index, name in enumerate(MHR70_NAMES)],
+    }
+
 
 def _coco_wholebody133_schema(coco17: dict[str, Any]) -> dict[str, Any]:
     """Build the official COCO-WholeBody 133-point order.
@@ -97,6 +127,7 @@ def load_keypoint_schemas() -> dict[str, Any]:
         "coco_wholebody133",
         _coco_wholebody133_schema(formats["coco17"]),
     )
+    formats.setdefault("mhr70", _mhr70_schema(formats["coco17"]))
     for format_name, definition in formats.items():
         keypoints = definition.get("keypoints", [])
         if len(keypoints) != definition.get("count"):

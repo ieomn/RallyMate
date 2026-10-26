@@ -36,7 +36,8 @@ export function analysisProgress(job: JobProgress | null, now = Date.now()) {
   const phase = typeof details.phase === "string" ? details.phase : job?.stage ?? "";
   const terminal = ["succeeded", "completed"].includes(job?.status ?? "");
   const failed = ["failed", "cancelled"].includes(job?.status ?? "");
-  const title = failed ? "分析已停止" : terminal ? "正在读取训练报告" : job?.status === "queued" ? "视频已接收，等待分析" : stageTitles[phase] ?? "正在分析你的动作";
+  const cancelling = !terminal && !failed && job?.cancel_requested === true;
+  const title = job?.status === "cancelled" ? "分析已取消" : failed ? "分析已停止" : terminal ? "正在读取训练报告" : cancelling ? "正在取消分析" : job?.status === "queued" ? "视频已接收，等待分析" : stageTitles[phase] ?? "正在分析你的动作";
   const reportStage = terminal || ["writing_results", "finalizing", "scoring_readiness"].includes(phase);
   const completed = positiveNumber(details.completed_items);
   const total = positiveNumber(details.total_items);
@@ -49,13 +50,13 @@ export function analysisProgress(job: JobProgress | null, now = Date.now()) {
       : "";
   const started = timestamp(job?.started_at ?? job?.created_at ?? job?.createdAt);
   const updated = timestamp(job?.updated_at);
-  const completedAt = timestamp(job?.completed_at);
+  const completedAt = timestamp(job?.cancelled_at ?? job?.completed_at);
   const elapsedEnd = terminal || failed ? completedAt ?? updated : now;
-  const elapsed = started !== null && elapsedEnd !== null && elapsedEnd >= started ? `已用时 ${formatElapsed((elapsedEnd - started) / 1000)}` : "";
+  const elapsed = started !== null && elapsedEnd !== null && elapsedEnd >= started ? `${terminal || failed ? "该任务处理耗时" : "服务器已处理"} ${formatElapsed((elapsedEnd - started) / 1000)}` : "";
   const stale = !terminal && !failed && updated !== null && now - updated >= 60000;
   return {
     title, phase, percent, reportStage, elapsed, count,
-    detail: terminal ? "分析已完成，报告读取完成后会自动显示。" : "可离开此页，稍后回到视频分析继续查看。",
+    detail: terminal ? "视频分析已完成，正在整理并读取报告；这一步完成后才会显示完整结果。" : cancelling ? "取消请求已接收，正在等待服务器确认停止。" : job?.status === "cancelled" ? "服务器已确认停止处理，可选择新视频。" : typeof job?.message === "string" && job.message.includes("重连") ? job.message : "可离开此页，稍后回到视频分析继续查看。处理时间随片段长度、模型与排队情况变化。",
     notice: stale ? `已有 ${Math.floor((now - updated!) / 60000)} 分钟未收到新进度。无需重新上传，可稍后继续查看。` : "",
   };
 }

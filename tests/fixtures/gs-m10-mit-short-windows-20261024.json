@@ -1,0 +1,905 @@
+{
+  "version": "gs-m10-mit-short-windows-v1.0.0",
+  "semantics": "frozen_short_window_counterexamples_not_positive_score_coverage",
+  "source_run_dir": ".codex_tmp/gs-card-validation-20261022/runs/card-ocw-pe.710-2-hand_backhand-220k",
+  "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+  "source_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+  "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+  "frozen_visual_audit_sha256": "e5159d1b8f94b90f6a0819e2ae0df5fdb22024eec0d1e31cb055f5c7ca31936b",
+  "annotation_origin": "independently_viewed_original_images_before_any_M10_scores",
+  "boundary_policy_note": "Early recovery-to-first-foot-motion candidates retained as frozen short-window counterexamples; first recovery foot motion is not certified as the next independent action.",
+  "annotations": {
+    "version": "gs-stage-annotations-v1.0.0",
+    "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+    "input_artifact_sha256": {
+      "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+      "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+      "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+    },
+    "actions": [
+      {
+        "action_id": "two_handed_backhand-1-recovery-observation-v1",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 900,
+        "end_ms": 2554.0
+      },
+      {
+        "action_id": "two_handed_backhand-2-recovery-observation-v1",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 4650,
+        "end_ms": 6354.0
+      },
+      {
+        "action_id": "two_handed_backhand-3-recovery-observation-v1",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 8550,
+        "end_ms": 10220.0
+      },
+      {
+        "action_id": "two_handed_backhand-4-recovery-observation-v1",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 12150,
+        "end_ms": 13820.0
+      }
+    ],
+    "stages": [
+      {
+        "annotation_id": "two_handed_backhand-1-recovery-observation-v1-m10",
+        "action_id": "two_handed_backhand-1-recovery-observation-v1",
+        "technique_code": "GS02",
+        "stage_code": "GS02-M10",
+        "person_track_id": 1,
+        "start_ms": 2420,
+        "end_ms": 2554,
+        "binding": {
+          "method": "manual_anchor",
+          "version": "mit-thbh-recovery-visual-source-audit-v1.0.0",
+          "source": "original_frame_visual_observation_2026-10-24_old_engineering_boundary_candidate_not_complete_M10_ground_truth",
+          "uncertainty_ms": 133.0,
+          "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+        },
+        "recovery_reference_observation": {
+          "version": "gs-ready-reference-v1.0.0",
+          "method": "manual_visual_observation",
+          "action_id": "two_handed_backhand-1-recovery-observation-v1",
+          "person_track_id": 1,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "start_frame": {
+            "frame_index": 7,
+            "pts": 43830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "end_frame": {
+            "frame_index": 10,
+            "pts": 61830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "source": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+          "source_description": "Original video pre-action body direction only; not racket grip, full ready-posture truth or 3D direction.",
+          "uncertainty_ms": 67,
+          "semantics": "independent_pre_action_body_ready_reference_not_technical_ground_truth"
+        }
+      },
+      {
+        "annotation_id": "two_handed_backhand-2-recovery-observation-v1-m10",
+        "action_id": "two_handed_backhand-2-recovery-observation-v1",
+        "technique_code": "GS02",
+        "stage_code": "GS02-M10",
+        "person_track_id": 1,
+        "start_ms": 6220,
+        "end_ms": 6354,
+        "binding": {
+          "method": "manual_anchor",
+          "version": "mit-thbh-recovery-visual-source-audit-v1.0.0",
+          "source": "original_frame_visual_observation_2026-10-24_old_engineering_boundary_candidate_not_complete_M10_ground_truth",
+          "uncertainty_ms": 67.0,
+          "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+        },
+        "recovery_reference_observation": {
+          "version": "gs-ready-reference-v1.0.0",
+          "method": "manual_visual_observation",
+          "action_id": "two_handed_backhand-2-recovery-observation-v1",
+          "person_track_id": 1,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "start_frame": {
+            "frame_index": 50,
+            "pts": 301860,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "end_frame": {
+            "frame_index": 52,
+            "pts": 313830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "source": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+          "source_description": "Original video pre-action body direction only; not racket grip, full ready-posture truth or 3D direction.",
+          "uncertainty_ms": 67,
+          "semantics": "independent_pre_action_body_ready_reference_not_technical_ground_truth"
+        }
+      },
+      {
+        "annotation_id": "two_handed_backhand-3-recovery-observation-v1-m10",
+        "action_id": "two_handed_backhand-3-recovery-observation-v1",
+        "technique_code": "GS02",
+        "stage_code": "GS02-M10",
+        "person_track_id": 1,
+        "start_ms": 9954,
+        "end_ms": 10220,
+        "binding": {
+          "method": "manual_anchor",
+          "version": "mit-thbh-recovery-visual-source-audit-v1.0.0",
+          "source": "original_frame_visual_observation_2026-10-24_old_engineering_boundary_candidate_not_complete_M10_ground_truth",
+          "uncertainty_ms": 67.0,
+          "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+        },
+        "recovery_reference_observation": {
+          "version": "gs-ready-reference-v1.0.0",
+          "method": "manual_visual_observation",
+          "action_id": "two_handed_backhand-3-recovery-observation-v1",
+          "person_track_id": 1,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "start_frame": {
+            "frame_index": 106,
+            "pts": 637830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "end_frame": {
+            "frame_index": 109,
+            "pts": 655830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "source": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+          "source_description": "Original video pre-action body direction only; not racket grip, full ready-posture truth or 3D direction.",
+          "uncertainty_ms": 67,
+          "semantics": "independent_pre_action_body_ready_reference_not_technical_ground_truth"
+        }
+      },
+      {
+        "annotation_id": "two_handed_backhand-4-recovery-observation-v1-m10",
+        "action_id": "two_handed_backhand-4-recovery-observation-v1",
+        "technique_code": "GS02",
+        "stage_code": "GS02-M10",
+        "person_track_id": 1,
+        "start_ms": 13620,
+        "end_ms": 13820,
+        "binding": {
+          "method": "manual_anchor",
+          "version": "mit-thbh-recovery-visual-source-audit-v1.0.0",
+          "source": "original_frame_visual_observation_2026-10-24_old_engineering_boundary_candidate_not_complete_M10_ground_truth",
+          "uncertainty_ms": 67.0,
+          "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+        },
+        "recovery_reference_observation": {
+          "version": "gs-ready-reference-v1.0.0",
+          "method": "manual_visual_observation",
+          "action_id": "two_handed_backhand-4-recovery-observation-v1",
+          "person_track_id": 1,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "start_frame": {
+            "frame_index": 169,
+            "pts": 1015830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "end_frame": {
+            "frame_index": 172,
+            "pts": 1033830,
+            "time_base_num": 1,
+            "time_base_den": 90000
+          },
+          "source": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+          "source_description": "Original video pre-action body direction only; not racket grip, full ready-posture truth or 3D direction.",
+          "uncertainty_ms": 67,
+          "semantics": "independent_pre_action_body_ready_reference_not_technical_ground_truth"
+        }
+      }
+    ]
+  },
+  "observations": [
+    {
+      "annotation_id": "two_handed_backhand-1-recovery-observation-v1-m10",
+      "source_frames": [
+        36,
+        37,
+        38
+      ],
+      "reference_frames": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "start_boundary": {
+        "estimate": {
+          "frame_index": 36,
+          "pts": 217800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 2420.0
+        },
+        "bracket": [
+          {
+            "frame_index": 35,
+            "pts": 211860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 2354.0
+          },
+          {
+            "frame_index": 37,
+            "pts": 223830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 2487.0
+          }
+        ],
+        "meaning": "双手随挥末端后的球拍回收开始；不确认力学减速或精确握拍状态"
+      },
+      "end_boundary": {
+        "estimate": {
+          "frame_index": 38,
+          "pts": 229860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 2554.0
+        },
+        "bracket": [
+          {
+            "frame_index": 37,
+            "pts": 223830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 2487.0
+          },
+          {
+            "frame_index": 40,
+            "pts": 241830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 2687.0
+          }
+        ],
+        "meaning": "后方脚可见开始离开随挥停留位置，下一回位步开始；不确认足底接触或承重"
+      },
+      "source_pngs": [
+        {
+          "frame_index": 36,
+          "source_binding": {
+            "frame_index": 36,
+            "pts": 217800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0036.png",
+          "png_sha256": "0d1cb7871707f759a00a8b6984d5f5d50ff302c49142f08e7d27ed52491e0a3a"
+        },
+        {
+          "frame_index": 37,
+          "source_binding": {
+            "frame_index": 37,
+            "pts": 223830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0037.png",
+          "png_sha256": "7d47b1945c5bf10ed647bf9aff139d7fc3f3ea73b5adb4263e6a8d2872dff950"
+        },
+        {
+          "frame_index": 38,
+          "source_binding": {
+            "frame_index": 38,
+            "pts": 229860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0038.png",
+          "png_sha256": "65e10b5cffc7e0f77f93d8261446aef7631699e471f841169a6c34bbddaf29ec"
+        }
+      ],
+      "reference_pngs": [
+        {
+          "frame_index": 7,
+          "source_binding": {
+            "frame_index": 7,
+            "pts": 43830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0007.png",
+          "png_sha256": "38a28ea9acf26b5ab2a12cc49e0c36bdeba9ec6b2e5587a114b44847e3db66e4"
+        },
+        {
+          "frame_index": 8,
+          "source_binding": {
+            "frame_index": 8,
+            "pts": 49860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0008.png",
+          "png_sha256": "567a569fc357d3febfc752a5ed2da2c2d2b10d800f851c0aec1027fc122e46c2"
+        },
+        {
+          "frame_index": 9,
+          "source_binding": {
+            "frame_index": 9,
+            "pts": 55800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0009.png",
+          "png_sha256": "8c9deb925ba0fe2ac23aada659323082cb5203a51ffd85b110e2b1794656a26b"
+        },
+        {
+          "frame_index": 10,
+          "source_binding": {
+            "frame_index": 10,
+            "pts": 61830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0010.png",
+          "png_sha256": "6add8867d40bbcfde6e8afc6e4e6acf44dff7e82c067ac6ddef2ccb4999e7c7e"
+        }
+      ],
+      "historical_action_unchanged": {
+        "action_id": "two_handed_backhand-1",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 900,
+        "end_ms": 2100
+      }
+    },
+    {
+      "annotation_id": "two_handed_backhand-2-recovery-observation-v1-m10",
+      "source_frames": [
+        93,
+        94,
+        95
+      ],
+      "reference_frames": [
+        50,
+        51,
+        52
+      ],
+      "start_boundary": {
+        "estimate": {
+          "frame_index": 93,
+          "pts": 559800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 6220.0
+        },
+        "bracket": [
+          {
+            "frame_index": 92,
+            "pts": 553860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 6154.0
+          },
+          {
+            "frame_index": 94,
+            "pts": 565830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 6287.0
+          }
+        ],
+        "meaning": "双手随挥末端后的球拍回收开始；不确认力学减速或精确握拍状态"
+      },
+      "end_boundary": {
+        "estimate": {
+          "frame_index": 95,
+          "pts": 571860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 6354.0
+        },
+        "bracket": [
+          {
+            "frame_index": 94,
+            "pts": 565830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 6287.0
+          },
+          {
+            "frame_index": 96,
+            "pts": 577800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 6420.0
+          }
+        ],
+        "meaning": "后方脚可见开始离开随挥停留位置，下一回位步开始；不确认足底接触或承重"
+      },
+      "source_pngs": [
+        {
+          "frame_index": 93,
+          "source_binding": {
+            "frame_index": 93,
+            "pts": 559800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0093.png",
+          "png_sha256": "248eb50a91e8bf50a6ea5122dd4ff1b9089c38f396e9d6146d650bc603d59f91"
+        },
+        {
+          "frame_index": 94,
+          "source_binding": {
+            "frame_index": 94,
+            "pts": 565830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0094.png",
+          "png_sha256": "939bc491c9f8a23e39df7f4d705637a75f86459ab5328402c116bb8b3c52f790"
+        },
+        {
+          "frame_index": 95,
+          "source_binding": {
+            "frame_index": 95,
+            "pts": 571860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0095.png",
+          "png_sha256": "cdfa433118645925a1a80982cecc3d6f14eb192e02824aaab86cf6eab9b54a92"
+        }
+      ],
+      "reference_pngs": [
+        {
+          "frame_index": 50,
+          "source_binding": {
+            "frame_index": 50,
+            "pts": 301860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0050.png",
+          "png_sha256": "1efb31c470371ebb15b9188e45af157d420558171efcd564a786931e2b2ea919"
+        },
+        {
+          "frame_index": 51,
+          "source_binding": {
+            "frame_index": 51,
+            "pts": 307800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0051.png",
+          "png_sha256": "93910fce204619b88710c335a18207bb0d749c9164533e1eb3ffcf22fd92279c"
+        },
+        {
+          "frame_index": 52,
+          "source_binding": {
+            "frame_index": 52,
+            "pts": 313830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0052.png",
+          "png_sha256": "b6d5aedde70090bdc20c7284bf5b868b3526a7c8a64b1f14b4bee4642a7150a4"
+        }
+      ],
+      "historical_action_unchanged": {
+        "action_id": "two_handed_backhand-2",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 4650,
+        "end_ms": 5800
+      }
+    },
+    {
+      "annotation_id": "two_handed_backhand-3-recovery-observation-v1-m10",
+      "source_frames": [
+        149,
+        150,
+        151,
+        152,
+        153
+      ],
+      "reference_frames": [
+        106,
+        107,
+        108,
+        109
+      ],
+      "start_boundary": {
+        "estimate": {
+          "frame_index": 149,
+          "pts": 895860,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 9954.0
+        },
+        "bracket": [
+          {
+            "frame_index": 148,
+            "pts": 889830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 9887.0
+          },
+          {
+            "frame_index": 150,
+            "pts": 901800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 10020.0
+          }
+        ],
+        "meaning": "双手随挥末端后的球拍回收开始；不确认力学减速或精确握拍状态"
+      },
+      "end_boundary": {
+        "estimate": {
+          "frame_index": 153,
+          "pts": 919800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 10220.0
+        },
+        "bracket": [
+          {
+            "frame_index": 152,
+            "pts": 913860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 10154.0
+          },
+          {
+            "frame_index": 154,
+            "pts": 925830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 10287.0
+          }
+        ],
+        "meaning": "后方脚可见开始离开随挥停留位置，下一回位步开始；不确认足底接触或承重"
+      },
+      "source_pngs": [
+        {
+          "frame_index": 149,
+          "source_binding": {
+            "frame_index": 149,
+            "pts": 895860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0149.png",
+          "png_sha256": "1342bb45dae7307fa4d5fa92f7753bbfe36e232cbf6eef442e005925b79be0bd"
+        },
+        {
+          "frame_index": 150,
+          "source_binding": {
+            "frame_index": 150,
+            "pts": 901800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0150.png",
+          "png_sha256": "faf87cbac009a37a1e14a012372555ad9ec34b3498b412d0f625b28759a8f2f2"
+        },
+        {
+          "frame_index": 151,
+          "source_binding": {
+            "frame_index": 151,
+            "pts": 907830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0151.png",
+          "png_sha256": "29a051e3831d0fce36da2fa15d092b533b6cad21eb199cf89ffdb7d46cb4861f"
+        },
+        {
+          "frame_index": 152,
+          "source_binding": {
+            "frame_index": 152,
+            "pts": 913860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0152.png",
+          "png_sha256": "0859354ab031bf200601095feb459aaf33ba81111f5c909ac000ecfd8872eac9"
+        },
+        {
+          "frame_index": 153,
+          "source_binding": {
+            "frame_index": 153,
+            "pts": 919800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0153.png",
+          "png_sha256": "16f5b04f07a2483b690eec6b98c221ca25b15e9015a4e32c7992d4a559c937e2"
+        }
+      ],
+      "reference_pngs": [
+        {
+          "frame_index": 106,
+          "source_binding": {
+            "frame_index": 106,
+            "pts": 637830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0106.png",
+          "png_sha256": "0287f1d004b7564d9182dc03dd302985f730697ddd64b8841c9a95435c901817"
+        },
+        {
+          "frame_index": 107,
+          "source_binding": {
+            "frame_index": 107,
+            "pts": 643860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0107.png",
+          "png_sha256": "f5c1ce26d909806966781085621bca72438a3b8b75f706e99b7ba7d881d91acc"
+        },
+        {
+          "frame_index": 108,
+          "source_binding": {
+            "frame_index": 108,
+            "pts": 649800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0108.png",
+          "png_sha256": "18e7ef16a7ae5b8103385e614b83efda33454cc5a06127ae9829791125f81b99"
+        },
+        {
+          "frame_index": 109,
+          "source_binding": {
+            "frame_index": 109,
+            "pts": 655830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0109.png",
+          "png_sha256": "ba135322a8cd9d8e19df399bb24e68c30d1baff58917fc00e1ae85c19c159ec9"
+        }
+      ],
+      "historical_action_unchanged": {
+        "action_id": "two_handed_backhand-3",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 8550,
+        "end_ms": 9750
+      }
+    },
+    {
+      "annotation_id": "two_handed_backhand-4-recovery-observation-v1-m10",
+      "source_frames": [
+        204,
+        205,
+        206,
+        207
+      ],
+      "reference_frames": [
+        169,
+        170,
+        171,
+        172
+      ],
+      "start_boundary": {
+        "estimate": {
+          "frame_index": 204,
+          "pts": 1225800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 13620.0
+        },
+        "bracket": [
+          {
+            "frame_index": 203,
+            "pts": 1219860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 13554.0
+          },
+          {
+            "frame_index": 205,
+            "pts": 1231830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 13687.0
+          }
+        ],
+        "meaning": "双手随挥末端后的球拍回收开始；不确认力学减速或精确握拍状态"
+      },
+      "end_boundary": {
+        "estimate": {
+          "frame_index": 207,
+          "pts": 1243800,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "timestamp_ms": 13820.0
+        },
+        "bracket": [
+          {
+            "frame_index": 206,
+            "pts": 1237860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 13754.0
+          },
+          {
+            "frame_index": 208,
+            "pts": 1249830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+            "timestamp_ms": 13887.0
+          }
+        ],
+        "meaning": "后方脚可见开始离开随挥停留位置，下一回位步开始；不确认足底接触或承重"
+      },
+      "source_pngs": [
+        {
+          "frame_index": 204,
+          "source_binding": {
+            "frame_index": 204,
+            "pts": 1225800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0204.png",
+          "png_sha256": "d0548d06c492cfbd04d0eff085a7c7e8b799c84d133d11fc0a3ff055bbc583ec"
+        },
+        {
+          "frame_index": 205,
+          "source_binding": {
+            "frame_index": 205,
+            "pts": 1231830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0205.png",
+          "png_sha256": "e4f7e8dc5749b2117b0a4db77459b3b6f6b3642b80a2cce2e4907bc305d76b69"
+        },
+        {
+          "frame_index": 206,
+          "source_binding": {
+            "frame_index": 206,
+            "pts": 1237860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0206.png",
+          "png_sha256": "d886f15d32b7b57a307047e1bedcf1cb5aabae8e8baf43f7c40008013dd9ad4c"
+        },
+        {
+          "frame_index": 207,
+          "source_binding": {
+            "frame_index": 207,
+            "pts": 1243800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0207.png",
+          "png_sha256": "617e42082e96994cc588758f4e35b28d1b1b29185e3d9d55388cb3c5f3c414f5"
+        }
+      ],
+      "reference_pngs": [
+        {
+          "frame_index": 169,
+          "source_binding": {
+            "frame_index": 169,
+            "pts": 1015830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0169.png",
+          "png_sha256": "65af8bfa400540634970cfd1eff819f4484d0f8bce13a367fc9a2b2add20474d"
+        },
+        {
+          "frame_index": 170,
+          "source_binding": {
+            "frame_index": 170,
+            "pts": 1021860,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0170.png",
+          "png_sha256": "76a6e250dce6744691a69b759803a091b9a2c5a1c9ac3a4dc8d605f3fe6a50d2"
+        },
+        {
+          "frame_index": 171,
+          "source_binding": {
+            "frame_index": 171,
+            "pts": 1027800,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0171.png",
+          "png_sha256": "047ea80bd9f07b781c55fded92a348d2adfca4724c87d8cde770a6654ed7521b"
+        },
+        {
+          "frame_index": 172,
+          "source_binding": {
+            "frame_index": 172,
+            "pts": 1033830,
+            "time_base_num": 1,
+            "time_base_den": 90000,
+            "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf"
+          },
+          "png_path": ".codex_tmp/recovery-source-audit-20261024/thbh-original-0172.png",
+          "png_sha256": "0afc494acbc9d0b491672836f1b230d19eea03f99f37529bae0527bbd0c9c8e2"
+        }
+      ],
+      "historical_action_unchanged": {
+        "action_id": "two_handed_backhand-4",
+        "technique_code": "GS02",
+        "person_track_id": 1,
+        "start_ms": 12150,
+        "end_ms": 13350
+      }
+    }
+  ]
+}

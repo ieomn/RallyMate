@@ -9,7 +9,7 @@ import numpy as np
 from rallymate_events.schemas import validate_event_record
 from rallymate_features.coordinates import body_center, body_scale, hip_center, point_series
 from rallymate_features.kinematics import irregular_derivative, scalar_acceleration, speed
-from rallymate_features.schemas import PoseSequence
+from rallymate_features.schemas import PoseSequence, model_bindings_continuous, model_geometry_evidence
 from rallymate_features.smoothing import smooth_series
 
 
@@ -861,11 +861,14 @@ def detect_pose_events(
     camera_status = sequence.camera_motion_status
     camera_allowed = (np.asarray([status in {"stationary", "reference", "compensated"} for status in camera_status])
                       if camera_status is not None else np.ones(timestamps.size, dtype=bool))
+    if sequence.model_estimate_bindings is not None:
+        camera_allowed &= np.asarray([binding is not None for binding in sequence.model_estimate_bindings])
     if not camera_allowed.any():
         return []
     camera_epochs = sequence.camera_reference_epochs
     epoch_breaks = (camera_epochs is not None and any(a != b for a, b in zip(camera_epochs, camera_epochs[1:])))
-    if not camera_allowed.all() or epoch_breaks:
+    model_breaks = any(not model_bindings_continuous(sequence, i - 1, i) for i in range(1, len(timestamps)))
+    if not camera_allowed.all() or epoch_breaks or model_breaks:
         # Split BEFORE smoothing/derivatives. Merely masking a camera interval
         # would let the short-gap interpolator bridge a pan/cut and invent a
         # large body velocity in the next otherwise stable window.
@@ -874,7 +877,7 @@ def detect_pose_events(
         run_start = None
         for i in range(len(camera_allowed) + 1):
             valid = i < len(camera_allowed) and camera_allowed[i]
-            reset = i > 0 and i < len(camera_allowed) and camera_epochs is not None and camera_epochs[i] != camera_epochs[i - 1]
+            reset = i > 0 and i < len(camera_allowed) and ((camera_epochs is not None and camera_epochs[i] != camera_epochs[i - 1]) or not model_bindings_continuous(sequence, i - 1, i))
             if run_start is not None and (not valid or reset):
                 windows.append((run_start, i - 1))
                 run_start = None
@@ -884,18 +887,7 @@ def detect_pose_events(
             if end - start + 1 < 8:
                 continue
             window = slice(start, end + 1)
-            part = replace(sequence, timestamp_ms=sequence.timestamp_ms[window],
-                           source_frames=sequence.source_frames[window],
-                           keypoints_xy={name: values[window] for name, values in sequence.keypoints_xy.items()},
-                           confidence={name: values[window] for name, values in sequence.confidence.items()},
-                           frame_dimensions_px=(sequence.frame_dimensions_px[window]
-                                                if sequence.frame_dimensions_px is not None else None),
-                           frame_transforms_to_reference=(sequence.frame_transforms_to_reference[window]
-                                                          if sequence.frame_transforms_to_reference is not None else None),
-                           camera_reference_epochs=(sequence.camera_reference_epochs[window]
-                                                    if sequence.camera_reference_epochs is not None else None),
-                           camera_motion_status=(sequence.camera_motion_status[window]
-                                                 if sequence.camera_motion_status is not None else None))
+            part = sequence.slice(window)
             result = detect_pose_events(part, source_id=f"{source_id}|camera-window:{int(part.source_frames[0])}",
                                         video_id=video_id)
             for event in result:
@@ -1438,4 +1430,10 @@ def detect_pose_events(
                 ),
             ]
         )
+    if sequence.model_estimate_bindings is not None:
+        for event in events:
+            indexes = np.flatnonzero((timestamps >= event["start_ms"]) & (timestamps <= event["end_ms"]))
+            event.update(model_geometry_evidence(sequence, indexes))
+            event["confidence_semantics"] = "engineering_event_geometry_coverage_and_prominence_not_pose_confidence_or_visibility"
+            event["provenance"]["kinematic_coverage_semantics"] = "source_bound_model_geometry_not_verified_visibility"
     return sorted(events, key=lambda item: (item["start_ms"], item["event_code"]))

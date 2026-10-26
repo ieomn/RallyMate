@@ -163,6 +163,62 @@ class TrajectoryPreviewTests(unittest.TestCase):
             with patch("rallymate_vision.trajectory.MAX_FRAMES_ARTIFACT_LINES", 1):
                 with self.assertRaisesRegex(TrajectoryExtractionError, "line limit"):
                     build_trajectory_preview(path)
+            with patch("rallymate_vision.trajectory.MAX_OBSERVATION_POINTS", 1):
+                with self.assertRaisesRegex(TrajectoryExtractionError, "observation limit"):
+                    build_trajectory_preview(path)
+
+    def test_single_line_limit_is_checked_before_json_or_partial_tail(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(Path(directory), [_frame(0, ball_x=0.2)])
+            line_size = path.stat().st_size
+            with patch("rallymate_vision.trajectory.MAX_FRAMES_LINE_BYTES", line_size):
+                self.assertEqual(build_trajectory_preview(path)["source"]["frame_count"], 1)
+            for allow_partial in (False, True):
+                with self.subTest(allow_partial=allow_partial), patch(
+                    "rallymate_vision.trajectory.MAX_FRAMES_LINE_BYTES", line_size - 1
+                ), patch("rallymate_vision.trajectory.json.loads") as parse:
+                    with self.assertRaisesRegex(TrajectoryExtractionError, "single-line byte limit"):
+                        build_trajectory_preview(path, allow_partial=allow_partial)
+                    parse.assert_not_called()
+            # An oversized unterminated running-job tail must not bypass the cap.
+            path.write_bytes(b'{"padding":"' + b'x' * 1024)
+            with patch("rallymate_vision.trajectory.MAX_FRAMES_LINE_BYTES", 512):
+                with self.assertRaisesRegex(TrajectoryExtractionError, "single-line byte limit"):
+                    build_trajectory_preview(path, allow_partial=True)
+
+    def test_duplicate_keys_and_nonfinite_numbers_fail_even_in_unused_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "frames.jsonl"
+            prefix = json.dumps(_frame(0, ball_x=0.2))[:-1]
+            cases = {
+                'duplicate_top_level': prefix + ',"frame":{}}\n',
+                'duplicate_nested': prefix + ',"unused":{"x":1,"x":2}}\n',
+                **{number: prefix + ',"unused":' + number + '}\n'
+                   for number in ('NaN', 'Infinity', '-Infinity', '1e309', '-1e309')},
+            }
+            for label, payload in cases.items():
+                path.write_text(payload, encoding="utf-8")
+                for allow_partial in (False, True):
+                    with self.subTest(case=label, allow_partial=allow_partial):
+                        with self.assertRaisesRegex(TrajectoryExtractionError, "invalid frames JSON at line 1"):
+                            build_trajectory_preview(path, allow_partial=allow_partial)
+
+    def test_bounded_reader_keeps_valid_payload_and_live_utf8_tail_semantics(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(Path(directory), [_frame(0, ball_x=0.2), _frame(1, ball_x=0.3)])
+            expected = build_trajectory_preview(path)
+            rows = [_frame(0, ball_x=0.2), _frame(1, ball_x=0.3)]
+            for row in rows:
+                row['unused_pose_fields'] = {'padding': 'x' * 4096, 'finite': 1e100}
+            self._write(Path(directory), rows)
+            self.assertEqual(build_trajectory_preview(path), expected)
+            with path.open('ab') as stream:
+                stream.write(b'{"unused":"\xe4\xbd')
+            partial = build_trajectory_preview(path, allow_partial=True)
+            partial['source']['is_partial'] = False
+            self.assertEqual(partial, expected)
+            with self.assertRaisesRegex(TrajectoryExtractionError, "line 3"):
+                build_trajectory_preview(path)
 
     def test_prediction_reaches_long_requested_horizon_with_bounded_points(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

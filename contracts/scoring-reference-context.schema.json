@@ -21,7 +21,7 @@
       "type": "object",
       "required": ["kind", "created_at", "created_by"],
       "properties": {
-        "kind": {"enum": ["coach_declared_training_target", "manual_event_adjudication"]},
+        "kind": {"enum": ["coach_declared_training_target", "manual_event_adjudication", "explicit_training_target"]},
         "created_at": {"type": "string", "format": "date-time"},
         "created_by": {"type": ["string", "null"], "minLength": 1}
       },
@@ -32,7 +32,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["observation_id", "event_id", "event_code", "start_ms", "end_ms", "indicator_id", "semantic_key", "status", "target_direction_deg", "coordinate_frame", "confidence", "observer_id", "reviewer_id", "reason"],
+        "required": ["observation_id", "event_id", "event_code", "start_ms", "end_ms", "indicator_id", "semantic_key", "status", "target_direction_deg", "coordinate_frame", "reason"],
         "properties": {
           "observation_id": {"type": "string", "minLength": 1},
           "event_id": {"type": "string", "minLength": 1},
@@ -41,7 +41,7 @@
           "end_ms": {"type": "integer", "minimum": 1},
           "indicator_id": {"const": "FS02-M02"},
           "semantic_key": {"const": "target_direction"},
-          "status": {"enum": ["pending", "accepted", "unobservable"]},
+          "status": {"enum": ["pending", "accepted", "provided", "unobservable"]},
           "target_direction_deg": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
           "coordinate_frame": {"type": ["string", "null"], "enum": ["image_plane", null]},
           "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
@@ -51,14 +51,11 @@
         },
         "allOf": [
           {
-            "if": {"properties": {"status": {"const": "accepted"}}},
+            "if": {"properties": {"status": {"enum": ["accepted", "provided"]}}},
             "then": {
               "properties": {
                 "target_direction_deg": {"type": "number"},
                 "coordinate_frame": {"const": "image_plane"},
-                "confidence": {"type": "number"},
-                "observer_id": {"type": "string", "minLength": 1},
-                "reviewer_id": {"type": "string", "minLength": 1},
                 "reason": {"type": "null"}
               }
             },

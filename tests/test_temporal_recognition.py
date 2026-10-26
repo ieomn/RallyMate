@@ -8,6 +8,7 @@ import unittest
 from rallymate_scoring.stroke_candidates import _associate_rackets, _sample, detect_stroke_candidates
 from rallymate_scoring.temporal_recognition import (
     HALPE26_JOINTS, RuleTemporalBackend, build_temporal_window, validate_recognition,
+    _classification,
 )
 from test_stroke_analysis import make_frame, swing
 
@@ -86,6 +87,15 @@ class TemporalWindowTests(unittest.TestCase):
 
 
 class TemporalPipelineTests(unittest.TestCase):
+    def test_known_opposite_racket_hand_is_reported_as_conflict_not_missing_evidence(self):
+        samples = samples_from(swing())
+        conflict = _classification(samples, "left", {"hand": "right"}, "baseline")
+        missing = _classification(samples, "left", {"hand": None}, "baseline")
+        self.assertEqual(conflict["label"], "unclassified")
+        self.assertIn("不一致", conflict["reason_zh"])
+        self.assertNotIn("关联不足", conflict["reason_zh"])
+        self.assertIn("关联不足", missing["reason_zh"])
+
     def test_rules_are_explicitly_untrained_and_phase_contract_is_serializable(self):
         result = detect_stroke_candidates(swing())
         metadata = result["motion_analysis"]["temporal_backend"]

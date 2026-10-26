@@ -5,8 +5,10 @@ import math
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from rallymate_scoring.stroke_candidates import detect_stroke_candidates, recognize_strokes_from_artifacts
+from rallymate_scoring.stroke_candidates import (detect_stroke_candidates, recognize_strokes_from_artifacts,
+                                                _associate_rackets, _detect_tracks, _sample)
 from rallymate_scoring.technique_assessment import build_technique_assessment
 
 
@@ -103,6 +105,67 @@ class StrokeCandidateTests(unittest.TestCase):
             other["person_track_id"] = 2
             item["poses"].append(other)
         self.assertEqual(detect_stroke_candidates(frames)["candidate_count"], 0)
+
+    def test_one_racket_box_covering_both_wrists_cannot_vote_left_by_iteration_order(self):
+        item = frame(0, left=(-.1, .6), right=(.1, .6))
+        item["detections"][0]["bbox_px"] = [280, 300, 320, 330]
+        sample = _sample(item["poses"][0], item["frame"])
+        _associate_rackets([sample], item["detections"])
+        self.assertEqual(sample.racket_sides, set())
+        # Equal positive distances are ambiguous too, not only inside-box zeroes.
+        sample = _sample(item["poses"][0], item["frame"])
+        item["detections"][0]["bbox_px"] = [295, 305, 305, 315]
+        _associate_rackets([sample], item["detections"])
+        self.assertEqual(sample.racket_sides, set())
+
+    def test_hand_consistent_candidate_survives_higher_support_opposite_hypothesis_once(self):
+        frames = swing()
+        candidate = detect_stroke_candidates(frames)["candidates"][0]
+        for hand in ("left", "right"):
+            samples = []
+            for item in frames:
+                sample = _sample(item["poses"][0], item["frame"])
+                _associate_rackets([sample], item["detections"])
+                if hand == "left":
+                    swap = lambda name: name.replace("left", "tmp").replace("right", "left").replace("tmp", "right")
+                    sample.points = {swap(name): point for name, point in sample.points.items()}
+                    sample.racket_sides = {swap(side) for side in sample.racket_sides}
+                samples.append(sample)
+            hypotheses = {}
+            for side in ("left", "right"):
+                value = deepcopy(candidate)
+                value.update(candidate_id=f"hypothesis-{side}", racket_hand_candidate=side)
+                value["evidence"]["racket_associated_frames"] = 2 if side == hand else 30
+                hypotheses[side] = value
+            # Inject the two detector hypotheses, while using real sampled
+            # wrists, independent racket votes, context validation and NMS.
+            with patch("rallymate_scoring.stroke_candidates._detect_segment",
+                       side_effect=lambda segment, side: [deepcopy(hypotheses[side])]):
+                selected = _detect_tracks({1: samples})
+            self.assertEqual(len(selected), 1)
+            self.assertEqual(selected[0]["racket_hand_candidate"], hand)
+            proof = selected[0]["evidence"]["hand_consistency_before_suppression"]
+            self.assertEqual(proof["status"], "matched")
+            self.assertEqual(proof["hand_evidence"]["hand"], hand)
+
+    def test_unknown_hand_hypothesis_survives_conflict_without_borrowing_other_window_votes(self):
+        samples = [_sample(item["poses"][0], item["frame"]) for item in swing()]
+        for i, sample in enumerate(samples):
+            sample.racket_sides = {"right"} if i < 8 else set()
+        hypotheses = {side: {"candidate_id": side, "family": "baseline", "person_track_id": 1,
+            "racket_hand_candidate": side, "start_ms": 600 if side == "left" else 900,
+            "peak_ms": 1000, "end_ms": 1200,
+            "evidence": {"racket_associated_frames": 30 if side == "left" else 2}}
+            for side in ("left", "right")}
+        with patch("rallymate_scoring.stroke_candidates._detect_segment",
+                   side_effect=lambda segment, side: [deepcopy(hypotheses[side])]):
+            selected = _detect_tracks({1: samples})
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0]["racket_hand_candidate"], "right")
+        proof = selected[0]["evidence"]["hand_consistency_before_suppression"]
+        self.assertEqual(proof["status"], "unresolved")
+        self.assertIsNone(proof["hand_evidence"]["hand"])
+        self.assertEqual(proof["hand_evidence"]["separated_wrist_racket_votes"], {"right": 3})
 
     def test_repeated_motion_after_recovery_produces_separate_intervals(self):
         frames = swing()

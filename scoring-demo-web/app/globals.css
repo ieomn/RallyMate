@@ -400,12 +400,14 @@ footer .brand small { color: rgba(255,255,255,.35); }
 .ball-trajectory-stage { position:relative; aspect-ratio:16/10; overflow:hidden; background:linear-gradient(160deg,#204a3d,#10231e); }
 .ball-trajectory-video { display:block; width:100%; height:100%; object-fit:contain; background:#080c0a; }
 .ball-trajectory-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-.pose-skeleton-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-.pose-bones-halo line { stroke:#092417; stroke-opacity:.68; stroke-width:5px; stroke-linecap:round; }
-.pose-bones line { stroke:#e4ffc2; stroke-width:2.7px; stroke-linecap:round; stroke-opacity:.95; }
-.pose-bones .pose-side-left { stroke:#9bf2d1; }
-.pose-bones .pose-side-right { stroke:#e1f49c; }
-.pose-joints circle { fill:#fffbed; fill-opacity:.97; stroke:#2f7059; stroke-width:1.2px; }
+.motion-focus-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.motion-focus-bones line { stroke:#b5f3e8; stroke-width:2px; stroke-linecap:round; opacity:.85; }
+.motion-focus-joint { fill:#163c44; stroke:#e1fbff; stroke-width:1.5px; }
+.motion-focus-trails line { stroke:#8ce8f3; stroke-width:2.5px; stroke-linecap:round; }
+.motion-focus-hand circle { fill:#173b4833; stroke:#e1fbff; stroke-width:1.5px; }
+.motion-focus-hand .motion-focus-core { fill:#c9f8ff; stroke:none; }
+.motion-focus-foot { fill:#b0e9ef33; stroke:#d3f7fc; stroke-width:1.5px; }
+.motion-focus-caption { margin:0; padding:8px 16px; color:#a6b9b9; font-size:11px; line-height:1.7; }
 .replay-overlay-switches { display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:11px 16px; border-top:1px solid #ffffff16; color:#e3ebdd; }
 .replay-overlay-switches label { display:inline-flex; align-items:center; gap:7px; font-size:12px; cursor:pointer; white-space:nowrap; }
 .replay-overlay-switches input { accent-color:#cbe89a; width:15px; height:15px; }

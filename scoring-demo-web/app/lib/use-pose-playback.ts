@@ -8,6 +8,7 @@ export type PoseWindowLoader = (startMs: number, signal: AbortSignal) => Promise
 export function usePosePlayback({ atMs, jobId, loadWindow, initialPreview, enabled }: { atMs: number; jobId?: string; loadWindow?: PoseWindowLoader; initialPreview?: PosePreviewResponse | null; enabled: boolean }) {
   const start = poseWindowStart(atMs);
   const cache = useRef(new Map<string, PosePreviewResponse>());
+  const [cachedWindows, setCachedWindows] = useState(new Map<string, PosePreviewResponse>());
   const [state, setState] = useState<{ jobId?: string; start: number; preview: PosePreviewResponse | null; error: string | null } | null>(null);
   useEffect(() => {
     if (!loadWindow || !enabled) return;
@@ -15,6 +16,7 @@ export function usePosePlayback({ atMs, jobId, loadWindow, initialPreview, enabl
     const store = (key: number, preview: PosePreviewResponse) => {
       cache.current.set(`${jobId ?? ""}:${key}`, preview);
       while (cache.current.size > 4) cache.current.delete(cache.current.keys().next().value!);
+      setCachedWindows(new Map(cache.current));
     };
     const read = async (windowStart: number) => {
       const cached = cache.current.get(`${jobId ?? ""}:${windowStart}`);
@@ -31,11 +33,15 @@ export function usePosePlayback({ atMs, jobId, loadWindow, initialPreview, enabl
       // Prefetch just one following window; no full-video pose download.
       void read(start + POSE_WINDOW_MS).catch(() => {});
     }).catch(error => {
-      if (!controller.signal.aborted) setState({ jobId, start, preview: null, error: error instanceof Error ? error.message : "人体骨架暂时无法读取。" });
+      if (!controller.signal.aborted) setState({ jobId, start, preview: null, error: error instanceof Error ? error.message : "动作标记暂时无法读取。" });
     });
     return () => controller.abort();
   }, [start, jobId, loadWindow, enabled]);
   const supplied = initialPreview ? normalizePosePreview(initialPreview, jobId) : null;
   const current = state?.start === start && state.jobId === jobId ? state : null;
-  return { preview: supplied ?? current?.preview ?? null, error: current?.error ?? null, pending: Boolean(enabled && loadWindow && !supplied && !current) };
+  // A prefetched window is immediately usable during the boundary render, before
+  // the effect publishes its matching state. Never carry a previous window pose.
+  const cached = cachedWindows.get(`${jobId ?? ""}:${start}`) ?? null;
+  const preview = supplied ?? current?.preview ?? cached;
+  return { preview, error: current?.error ?? null, pending: Boolean(enabled && loadWindow && !preview && !current) };
 }

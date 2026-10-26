@@ -1,0 +1,9 @@
+.product-app .report-replay-area { margin-bottom:20px; }
+.product-app .training-replay-intro { margin:6px 0 0; color:var(--product-muted); font-size:13px; line-height:1.7; }
+.product-app .report-replay .ball-trajectory-stage { width:min(100%,calc(min(520px,65vh) * var(--replay-aspect,1.777778))); max-height:none; }
+.product-app .report-replay .ball-trajectory-viewer:fullscreen .ball-trajectory-stage { width:auto; max-height:calc(100dvh - 145px); }
+.product-app .replay-overlay-switches.is-prominent { padding:12px 18px; border-top:1px solid var(--product-border); background:#101317; }
+.product-app .replay-overlay-switches.is-prominent span { flex-basis:auto; font-size:12px; }
+.product-app .replay-segments { margin-top:8px; padding:0 20px; border:1px solid var(--product-border); border-radius:10px; background:var(--product-panel); }
+.product-app .replay-segments > summary { padding:14px 0; cursor:pointer; color:var(--product-muted); font-size:13px; }
+.product-app .replay-segments .report-timeline { margin:0 0 16px; }

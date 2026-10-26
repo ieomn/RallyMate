@@ -359,7 +359,7 @@ class TechnicalReviewStore:
             result["hash_is_identity_signature_or_trusted_timestamp"] = False
             result["coach_label_candidates"] = self._label_candidates(result["entries"])
             result["intake_requirements"] = [
-                "确认原视频、人物、事件及阶段边界；系统候选事件不等于已接受的人工事件。",
+                "确认视频、人物和所选动作时段；系统定位的运动时段仍需评审人结合画面确认。",
                 "独立教练盲评、争议裁定，并按视频来源划分标定集与独立测试集。",
                 "现有 truth_pack 仅覆盖 FS01、FS02、FS09 的 13 项；其他来源指标需要扩展合同及验证。",
                 "提交原始 CSV、来源包与必要的事件/关键点/语义审查；导出候选不等于已通过 intake。",
@@ -403,10 +403,10 @@ class TechnicalReviewStore:
         else:
             rule = catalog.visual_rules.get(submission.visual_rule_id)
             _require(rule is not None and submission.indicator_id is None,
-                     "unknown_visual_rule", "视觉条目不在已核验的 246 条原文中。")
+                     "unknown_visual_rule", "该技术要点不在当前支持的观察项目中。")
             _require(submission.status in {"observed", "not_observed", "unassessable"} and submission.grade is None
                      and submission.event_source == "manual_interval", "invalid_visual_review",
-                     "视觉原文仅可记录人工时段中的观察情况，不能填写 A～E 等级。")
+                     "这类技术要点仅记录所选时段的观察情况，不能填写 A～E 等级。")
             _require(submission.status == "unassessable" or submission.observability == "observable",
                      "visual_without_observation", "确认出现或未出现前，需人工确认画面具备充分观察条件。")
         bounds = context["video"]
@@ -425,7 +425,7 @@ class TechnicalReviewStore:
         else:
             _require(submission.event_id is None, "manual_interval_has_event", "人工时段不能冒用系统事件编号。")
         if submission.status == "graded":
-            _require(rule["manual_grading_allowed"], "source_rule_blocked", "该指标原文存在缺失或错误，只能记录无法评价。")
+            _require(rule["manual_grading_allowed"], "source_rule_blocked", "该指标的动作要求尚未完整明确，只能记录无法评价。")
             _require(submission.grade is not None and submission.observability == "observable",
                      "grade_without_observation", "只有人工确认充分可观察时才能填写 A～E 等级。")
         else:

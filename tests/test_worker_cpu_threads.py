@@ -105,23 +105,35 @@ class WorkerCpuThreadTests(unittest.TestCase):
         self.assertEqual(
             configured,
             {
-                "torch_interop": 4,
+                "torch_interop": 1,
                 "torch_intraop": 4,
-                "opencv": 4,
+                "opencv": 1,
                 "requested": 4,
             },
         )
-        self.assertEqual(fake_torch.calls, [("interop", 4), ("intraop", 4)])
-        self.assertEqual(fake_cv2.calls, [4])
+        self.assertEqual(fake_torch.calls, [("interop", 1), ("intraop", 4)])
+        self.assertEqual(fake_cv2.calls, [1])
+
+    def test_larger_intraop_budget_does_not_expand_other_pools(self) -> None:
+        fake_torch = _FakeTorch(intraop=4, interop=1)
+        fake_cv2 = _FakeCv2(threads=1)
+        with patch.dict(sys.modules, {"torch": fake_torch, "cv2": fake_cv2}):
+            configured = worker.configure_cpu_thread_pools(20)
+
+        self.assertEqual(configured["torch_intraop"], 20)
+        self.assertEqual(configured["torch_interop"], 1)
+        self.assertEqual(configured["opencv"], 1)
+        self.assertEqual(fake_torch.calls, [("intraop", 20)])
+        self.assertEqual(fake_cv2.calls, [])
 
     def test_same_limit_is_idempotent_for_torch_interop(self) -> None:
-        fake_torch = _FakeTorch(intraop=4, interop=4)
+        fake_torch = _FakeTorch(intraop=4, interop=1)
         fake_torch.interop_error = RuntimeError("must not be called twice")
-        fake_cv2 = _FakeCv2(threads=4)
+        fake_cv2 = _FakeCv2(threads=1)
         with patch.dict(sys.modules, {"torch": fake_torch, "cv2": fake_cv2}):
             configured = worker.configure_cpu_thread_pools(4)
 
-        self.assertEqual(configured["torch_interop"], 4)
+        self.assertEqual(configured["torch_interop"], 1)
         self.assertEqual(fake_torch.calls, [])
         self.assertEqual(fake_cv2.calls, [])
 
@@ -132,7 +144,7 @@ class WorkerCpuThreadTests(unittest.TestCase):
         with patch.dict(sys.modules, {"torch": fake_torch, "cv2": fake_cv2}):
             with self.assertRaisesRegex(
                 worker.CpuThreadConfigurationError,
-                "Torch inter-op CPU threads to 4 before model loading.*current=20",
+                "Torch inter-op CPU threads to 1 before model loading.*current=20",
             ):
                 worker.configure_cpu_thread_pools(4)
 
@@ -173,11 +185,60 @@ class WorkerCpuThreadTests(unittest.TestCase):
                 "Yolo26Perception",
                 side_effect=lambda **kwargs: events.append("model") or object(),
             ),
+            patch.object(
+                worker,
+                "observe_cpu_thread_pools",
+                side_effect=lambda: events.append("observe")
+                or {"torch_intraop": 4, "torch_interop": 1, "opencv": 1},
+            ),
         ):
             runner = worker.PersistentVisionRunner(settings)
 
-        self.assertEqual(events, ["validate", "threads", "device", "model"])
+        self.assertEqual(events, ["validate", "threads", "device", "model", "observe"])
         self.assertEqual(runner.cpu_thread_configuration, {"requested": 4})
+        self.assertEqual(
+            runner.cpu_thread_configuration_after_model_load,
+            {"torch_intraop": 4, "torch_interop": 1, "opencv": 1},
+        )
+
+    def test_model_import_override_is_observed_without_reconfiguring(self) -> None:
+        fake_torch = _FakeTorch()
+        fake_cv2 = _FakeCv2()
+        settings = Mock(cpu_threads=4, device="0")
+
+        def load_models(**_kwargs):
+            # Simulate a library changing a process-global pool during import.
+            fake_torch.intraop = 2
+            return object()
+
+        with (
+            patch.dict(sys.modules, {"torch": fake_torch, "cv2": fake_cv2}),
+            patch.object(worker, "resolve_device", return_value="0"),
+            patch.object(worker, "Yolo26Perception", side_effect=load_models),
+            self.assertLogs(worker.LOGGER, level="WARNING") as logged,
+        ):
+            runner = worker.PersistentVisionRunner(settings)
+
+        self.assertEqual(runner.cpu_thread_configuration["torch_intraop"], 4)
+        self.assertEqual(
+            runner.cpu_thread_configuration_after_model_load,
+            {"torch_intraop": 2, "torch_interop": 1, "opencv": 1},
+        )
+        self.assertEqual(fake_torch.calls, [("interop", 1), ("intraop", 4)])
+        self.assertEqual(fake_cv2.calls, [1])
+        self.assertIn("Model imports changed CPU thread pools", logged.output[0])
+        self.assertIn("'torch_intraop': 2", logged.output[0])
+
+    def test_observation_failure_cannot_report_configured_values_as_actual(self) -> None:
+        fake_torch = _FakeTorch(intraop=4, interop=1)
+        fake_torch.get_num_threads = Mock(side_effect=RuntimeError("unavailable"))
+        with patch.dict(sys.modules, {"torch": fake_torch, "cv2": _FakeCv2(threads=1)}):
+            with self.assertRaisesRegex(
+                worker.CpuThreadConfigurationError,
+                "failed to observe CPU thread counts after model loading.*unavailable",
+            ):
+                worker.observe_cpu_thread_pools()
+        self.assertEqual(fake_torch.calls, [])
 
     def test_thread_configuration_failure_prevents_device_and_model_loading(self) -> None:
         settings = Mock()
@@ -189,7 +250,7 @@ class WorkerCpuThreadTests(unittest.TestCase):
                 worker,
                 "configure_cpu_thread_pools",
                 side_effect=worker.CpuThreadConfigurationError(
-                    "failed to set Torch inter-op CPU threads to 4"
+                    "failed to set Torch inter-op CPU threads to 1"
                 ),
             ),
             patch.object(worker, "resolve_device") as resolve_device,
@@ -197,7 +258,7 @@ class WorkerCpuThreadTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(
                 worker.CpuThreadConfigurationError,
-                "Torch inter-op CPU threads to 4",
+                "Torch inter-op CPU threads to 1",
             ):
                 worker.PersistentVisionRunner(settings)
 

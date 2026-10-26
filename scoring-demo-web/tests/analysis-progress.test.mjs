@@ -23,14 +23,14 @@ test("report generation and result loading are explicit and never guessed from p
   assert.equal(analysisProgress({ id: "a", status: "running", progress: { phase: "finalizing", percent: 98 } }).title, "正在生成训练报告");
   assert.equal(analysisProgress({ id: "a", status: "succeeded", progress: { percent: 100 } }).title, "正在读取训练报告");
   const finished = analysisProgress({ id: "a", status: "succeeded", started_at: "2026-10-04T10:00:00Z", completed_at: "2026-10-04T10:02:30Z", updated_at: "2026-10-04T10:02:30Z" }, Date.parse("2026-10-04T12:00:00Z"));
-  assert.equal(finished.elapsed, "已用时 2 分 30 秒");
+  assert.equal(finished.elapsed, "该任务处理耗时 2 分 30 秒");
 });
 
 test("stale progress is visible without inventing a failed or completed job", () => {
   const job = { id: "a", status: "running", started_at: "2026-10-04T10:00:00Z", updated_at: "2026-10-04T10:07:00Z", progress: { phase: "extracting_features", percent: 94 } };
   const state = analysisProgress(job, Date.parse("2026-10-04T10:09:00Z"));
   assert.equal(state.percent, 94);
-  assert.equal(state.elapsed, "已用时 9 分 00 秒");
+  assert.equal(state.elapsed, "服务器已处理 9 分 00 秒");
   assert.match(state.notice, /2 分钟/);
   assert.equal(analysisProgress(job, Date.parse("2026-10-04T10:09:30Z")).notice, state.notice);
   assert.equal(analysisProgress({ ...job, status: "succeeded" }, Date.parse("2026-10-04T10:09:00Z")).notice, "");

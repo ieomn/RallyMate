@@ -36,7 +36,7 @@ from rallymate_features.fs09_features import (
     raw_fs09_series,
     summarize_fs09_event_feature,
 )
-from rallymate_features.schemas import EventInterval, FeatureResult, PoseSequence
+from rallymate_features.schemas import model_bindings_continuous, model_geometry_evidence, EventInterval, FeatureResult, PoseSequence
 from rallymate_features.smoothing import smooth_series
 from rallymate_features.temporal import longest_contiguous_duration
 
@@ -818,6 +818,37 @@ def _fs09_event_summary_feature(
             if 0 <= int(index) < sequence.source_frames.size
         }
     )
+    zero_support_evidence: dict[str, Any] = {}
+    if (feature_name == "double_support_proxy_duration_ms"
+            and sequence.model_estimate_bindings is not None
+            and is_valid and summary.value == 0 and not evidence_indexes
+            and summary.diagnostics.get("simultaneous_low_motion_interval_observed") is False):
+        evaluated_indexes = indexes[valid_mask[indexes]]
+        if (evaluated_indexes.size >= 3
+                and summary.diagnostics.get("evaluated_sample_indexes") == evaluated_indexes.tolist()
+                and np.isfinite(summary.smoothed_series["left_ankle_speed"][evaluated_indexes]).all()
+                and np.isfinite(summary.smoothed_series["right_ankle_speed"][evaluated_indexes]).all()
+                and np.all(summary.smoothed_series["simultaneous_low_motion_mask"][evaluated_indexes] == 0)):
+            # Prepared signals can interpolate a missing sample. Such a sample
+            # is not original bilateral geometry evidence for a measured zero.
+            source_valid = (
+                np.isfinite(summary.raw_series["left_ankle_speed"][evaluated_indexes])
+                & np.isfinite(summary.raw_series["right_ankle_speed"][evaluated_indexes])
+                & sequence.model_estimate_masks["left_ankle"][evaluated_indexes]
+                & sequence.model_estimate_masks["right_ankle"][evaluated_indexes]
+            )
+            supported_indexes = evaluated_indexes[source_valid]
+            if supported_indexes.size >= 3:
+                # These are evaluated samples, never support-interval endpoints.
+                evidence_indexes = supported_indexes.tolist()
+                zero_support_evidence = {
+                    "source_frame_semantics": "evaluated_samples_no_simultaneous_low_motion_run",
+                    "simultaneous_low_motion_interval_observed": False,
+                }
+            else:
+                is_valid = False
+                summary = replace(summary, value=None,
+                                  reason="insufficient_source_bound_joint_ankle_speed_samples")
     return FeatureResult(
         feature_name=feature_name,
         feature_version=definition["version"],
@@ -865,6 +896,7 @@ def _fs09_event_summary_feature(
             "measurement_status": "pose_proxy_not_calibrated_for_grade",
             "score_threshold_version": None,
             "smoothing": {"max_gap_ms": 160, "radius_ms": 100},
+            **zero_support_evidence,
             **(
                 {
                     "evidence_contract": (
@@ -1144,24 +1176,29 @@ def _camera_window_for_event(sequence: PoseSequence, event: EventInterval) -> Po
     """
     statuses = sequence.camera_motion_status
     epochs = sequence.camera_reference_epochs
-    if statuses is None and epochs is None:
+    if statuses is None and epochs is None and sequence.model_estimate_bindings is None:
         return sequence
     if statuses is None:
         statuses = ("unavailable",) * len(sequence.timestamp_ms)
     allowed = np.asarray([status in {"reference", "stationary", "compensated"} for status in statuses])
-    if allowed.all() and (epochs is None or len(set(epochs)) <= 1):
+    if sequence.model_estimate_bindings is not None:
+        allowed &= np.asarray([binding is not None for binding in sequence.model_estimate_bindings])
+    model_continuous = all(model_bindings_continuous(sequence, i-1, i) for i in range(1, len(sequence.timestamp_ms)))
+    if allowed.all() and (epochs is None or len(set(epochs)) <= 1) and model_continuous:
         return sequence
     times = sequence.timestamp_ms
     first = int(np.searchsorted(times, event.start_ms, side="right") - 1)
     last = int(np.searchsorted(times, event.end_ms, side="left"))
     if first < 0 or last >= times.size or not allowed[first:last + 1].all():
         return None
+    if any(not model_bindings_continuous(sequence, i-1, i) for i in range(first+1, last+1)):
+        return None
     epoch = epochs[first] if epochs is not None else None
     if epochs is not None and any(value != epoch for value in epochs[first:last + 1]):
         return None
-    while first > 0 and allowed[first - 1] and (epochs is None or epochs[first - 1] == epoch):
+    while first > 0 and allowed[first - 1] and (epochs is None or epochs[first - 1] == epoch) and model_bindings_continuous(sequence, first-1, first):
         first -= 1
-    while last + 1 < times.size and allowed[last + 1] and (epochs is None or epochs[last + 1] == epoch):
+    while last + 1 < times.size and allowed[last + 1] and (epochs is None or epochs[last + 1] == epoch) and model_bindings_continuous(sequence, last, last+1):
         last += 1
     cached = _CAMERA_WINDOW_CACHE.get(id(sequence))
     if cached is None or cached[0] is not sequence:
@@ -1200,14 +1237,7 @@ def _camera_window_for_event(sequence: PoseSequence, event: EventInterval) -> Po
             "applied_source_frames": [value for value in compensation.get("applied_source_frames", []) if value in frame_set],
             "reference_epochs": [epoch] if epoch is not None else [],
         }
-    part = replace(sequence, timestamp_ms=times[window], source_frames=source_frames,
-                   keypoints_xy={name: values[window] for name, values in sequence.keypoints_xy.items()},
-                   confidence={name: values[window] for name, values in sequence.confidence.items()},
-                   frame_dimensions_px=dimensions, coordinate_metadata=metadata,
-                   camera_motion_status=statuses[window],
-                   frame_transforms_to_reference=(sequence.frame_transforms_to_reference[window]
-                                                  if sequence.frame_transforms_to_reference is not None else None),
-                   camera_reference_epochs=epochs[window] if epochs is not None else None)
+    part = sequence.slice(window, coordinate_metadata=metadata)
     cached[1][key] = part
     return part
 
@@ -1229,11 +1259,41 @@ def _camera_blocked_feature(sequence: PoseSequence, event: EventInterval, name: 
     )
 
 
+def _model_feature(result: FeatureResult, sequence: PoseSequence, event: EventInterval) -> FeatureResult:
+    if sequence.model_estimate_bindings is None:
+        return result
+    indexes = np.flatnonzero((sequence.timestamp_ms >= event.start_ms) & (sequence.timestamp_ms <= event.end_ms))
+    provenance = {**result.provenance, **model_geometry_evidence(sequence, indexes)}
+    frames = sorted(set(result.source_frames))
+    envelope = result.provenance.get("envelope_diagnostics", {})
+    window = provenance.get("source_window")
+    stable_mask = result.smoothed_value.get("stable_mask") if isinstance(result.smoothed_value, dict) else None
+    if (result.feature_name == "stability_duration_ms" and result.valid is True and result.value == 0
+            and not frames and isinstance(window, dict)
+            and envelope.get("reason") == "computed_provisional_event_adaptive_envelope"
+            and envelope.get("longest_run_local_indexes") is None
+            and envelope.get("valid_sample_count", 0) >= 3
+            and envelope.get("valid_fraction", 0) >= MIN_VALID_FRACTION
+            and isinstance(stable_mask, list) and len(stable_mask) == len(window["source_frames"])
+            and all(value is False for value in stable_mask)):
+        # A measured zero has an evaluated window, but no stable subinterval.
+        # Bind that actual window without inventing stable endpoint samples.
+        frames = list(window["source_frames"])
+        provenance.update(source_frame_semantics="evaluated_window_no_stable_run", stable_interval_observed=False)
+    if result.feature_name in {"first_step_displacement_body", "launch_foot_motion_duration_ms",
+            "launch_foot_slowdown_to_post_hip_direction_ms", "launch_foot_speed_drop_body_s",
+            "launch_foot_speed_peak_body_s", "post_step_hip_direction_consistency"}:
+        summary = result.smoothed_value.get("summary", {}) if isinstance(result.smoothed_value, dict) else {}
+        provenance["selected_side"] = summary.get("selected_side")
+    return replace(result, confidence=None, provenance=provenance,
+                   source_frames=frames)
+
+
 def compute_feature(sequence: PoseSequence, event: EventInterval, feature_name: str) -> FeatureResult:
     window = _camera_window_for_event(sequence, event)
     if window is None:
-        return _camera_blocked_feature(sequence, event, feature_name)
-    return _compute_feature(window, event, feature_name)
+        return _model_feature(_camera_blocked_feature(sequence, event, feature_name), sequence, event)
+    return _model_feature(_compute_feature(window, event, feature_name), window, event)
 
 
 def compute_event_features(
@@ -1244,5 +1304,5 @@ def compute_event_features(
     names = feature_names or SCORING_FEATURE_NAMES
     window = _camera_window_for_event(sequence, event)
     if window is None:
-        return [_camera_blocked_feature(sequence, event, name) for name in names]
-    return [_compute_feature(window, event, name) for name in names]
+        return [_model_feature(_camera_blocked_feature(sequence, event, name), sequence, event) for name in names]
+    return [_model_feature(_compute_feature(window, event, name), window, event) for name in names]

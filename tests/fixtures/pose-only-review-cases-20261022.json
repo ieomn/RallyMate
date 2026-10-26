@@ -1,0 +1,870 @@
+{
+  "schema_version": "pose-only-review-cases-v1",
+  "policy_freeze_record_sha256": "9259419e991f48c5e4cf7a89e5b5d95e52878ac7860cd38afed4ba05db49a2de",
+  "policy_freeze_record": {
+    "version": "pose-only-arm-motion-review-v1.0.0",
+    "frozen_at_utc": "2026-10-22T07:34:08.049825+00:00",
+    "policy": {
+      "semantics": "engineering_hypotheses_not_calibrated_tennis_criteria",
+      "minimum_joint_confidence": 0.35,
+      "minimum_samples": 7,
+      "duration_ms": [
+        300,
+        1000
+      ],
+      "peak_margin_ms": 100,
+      "minimum_wrist_net_excursion_torso": 0.8,
+      "minimum_wrist_path_efficiency": 0.55,
+      "minimum_peak_wrist_speed_torso_per_second": 2.0,
+      "maximum_endpoint_speed_fraction_of_peak": 0.65,
+      "minimum_elbow_net_excursion_torso": 0.25,
+      "minimum_elbow_wrist_net_cosine": 0.25,
+      "minimum_wrist_to_elbow_net_excursion_ratio": 1.1,
+      "minimum_image_shoulder_axis_range_deg": 8.0,
+      "maximum_image_shoulder_axis_speed_deg_per_second": 600.0,
+      "minimum_peak_wrist_y_below_shoulder_torso": -0.2,
+      "same_side_peak_suppression_ms": 600,
+      "filter_version": "within-contiguous-segment-coordinate-median-radius1-v1",
+      "normalization": "camera_reference_points_minus_each_frame_shoulder_midpoint_divided_by_segment_median_full_torso_scale",
+      "speed": "central_difference_of_filtered_wrist_using_exact_decoder_pts_seconds",
+      "endpoint_speed": "max_of_first_two_and_last_two_internal_central_difference_speeds_respectively",
+      "elbow_wrist_cooperation": "net_elbow_dot_net_wrist/(norm_elbow*norm_wrist)>=0.25_and_elbow_net>=0.25_and_wrist_net/elbow_net>=1.1",
+      "shoulder_axis": "unwrapped_atan2(right_shoulder-left_shoulder)_image_plane_degrees_not_3D_rotation",
+      "missing_data": "split_no_interpolation_no_smoothing_across_missing_source_frame_or_joint",
+      "source_scope": "one_video_one_selected_person_one_selection_epoch_one_camera_epoch_one_timebase"
+    },
+    "module_sha256": "c670c567c4f1bedef9beb1253fcf8f16e8ef36ed07977110fc22491114f21f21",
+    "statement": "Before first new candidate replay on any real sequence; engineering hypotheses. ATP eight windows transferred to development. No claim of pre-existing independent validation.",
+    "pre_first_replay_review_updates": [
+      {
+        "change": "Bound start/end enumeration to the same feasible <=1s window; add filter-context and fixed-scale audit inputs; no threshold or candidate criterion changes.",
+        "module_sha256": "8447c857ddb1e3dd4ab19f7a27f883db6b36f41a802292978ac48fa31b4f7a1c"
+      }
+    ]
+  },
+  "dataset_policy": "ATP Nadal eight failed windows are development now. All previously inspected sources are development/challenge, never independent holdout here. Only the new Wimbledon clip was annotated before first inference with unchanged frozen policy. Existing single-handed MIT backhand holdout is not used.",
+  "annotation_policy": "Nonexpert image-plane visible-forward-motion windows, not contacts or technical grading. Negative intervals explicitly distinguish recovery/ready/hand gestures; all other unlabelled intervals remain unadjudicated for negative-only cases. No source image or media is committed.",
+  "cases": [
+    {
+      "id": "atp-nadal-left-forehand",
+      "source_url": "https://www.youtube.com/watch?v=W8JJJ2j5hOM",
+      "local_video": ".codex_tmp/card-video-lefty-heldout-20261022/media/atp-nadal-forehand-rome.mp4",
+      "video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+      "run_dir": ".codex_tmp/card-video-lefty-heldout-20261022/runs/atp-nadal-left-forehand",
+      "annotations": [
+        {
+          "id": "atp-lefty-1",
+          "action_type": "two_handed_backhand",
+          "start_ms": 8220,
+          "end_ms": 8620,
+          "anchor_ms": 8400,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 205,
+              "pts": 104960,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 8200.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 210,
+              "pts": 107520,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 8400.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "end_ms": {
+              "source_frame_index": 215,
+              "pts": 110080,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 8600.0,
+              "distance_from_visual_estimate_ms": 20.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-2",
+          "action_type": "forehand",
+          "start_ms": 10960,
+          "end_ms": 11360,
+          "anchor_ms": 11140,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 274,
+              "pts": 140288,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 10960.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 278,
+              "pts": 142336,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 11120.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "end_ms": {
+              "source_frame_index": 284,
+              "pts": 145408,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 11360.0,
+              "distance_from_visual_estimate_ms": 0.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-3",
+          "action_type": "forehand",
+          "start_ms": 13860,
+          "end_ms": 14260,
+          "anchor_ms": 14040,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 346,
+              "pts": 177152,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 13840.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 351,
+              "pts": 179712,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 14040.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "end_ms": {
+              "source_frame_index": 356,
+              "pts": 182272,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 14240.0,
+              "distance_from_visual_estimate_ms": 20.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-4",
+          "action_type": "forehand",
+          "start_ms": 16960,
+          "end_ms": 17360,
+          "anchor_ms": 17140,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 424,
+              "pts": 217088,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 16960.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 428,
+              "pts": 219136,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 17120.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "end_ms": {
+              "source_frame_index": 434,
+              "pts": 222208,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 17360.0,
+              "distance_from_visual_estimate_ms": 0.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-5",
+          "action_type": "forehand",
+          "start_ms": 19920,
+          "end_ms": 20320,
+          "anchor_ms": 20100,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 498,
+              "pts": 254976,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 19920.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 502,
+              "pts": 257024,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 20080.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "end_ms": {
+              "source_frame_index": 508,
+              "pts": 260096,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 20320.0,
+              "distance_from_visual_estimate_ms": 0.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-6",
+          "action_type": "two_handed_backhand",
+          "start_ms": 22900,
+          "end_ms": 23300,
+          "anchor_ms": 23080,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 572,
+              "pts": 292864,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 22880.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 577,
+              "pts": 295424,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 23080.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "end_ms": {
+              "source_frame_index": 582,
+              "pts": 297984,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 23280.0,
+              "distance_from_visual_estimate_ms": 20.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-7",
+          "action_type": "forehand",
+          "start_ms": 25580,
+          "end_ms": 25980,
+          "anchor_ms": 25760,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 639,
+              "pts": 327168,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 25560.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 644,
+              "pts": 329728,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 25760.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "end_ms": {
+              "source_frame_index": 649,
+              "pts": 332288,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 25960.0,
+              "distance_from_visual_estimate_ms": 20.0
+            }
+          }
+        },
+        {
+          "id": "atp-lefty-8",
+          "action_type": "forehand",
+          "start_ms": 28320,
+          "end_ms": 28720,
+          "anchor_ms": 28500,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "left"
+          ],
+          "anchor_is_contact": false,
+          "context": "Visible forward swing / early follow-through; dominant hand is distinct from participating wrist",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 708,
+              "pts": 362496,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 28320.0,
+              "distance_from_visual_estimate_ms": 0.0
+            },
+            "anchor_ms": {
+              "source_frame_index": 712,
+              "pts": 364544,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 28480.0,
+              "distance_from_visual_estimate_ms": 20.0
+            },
+            "end_ms": {
+              "source_frame_index": 718,
+              "pts": 367616,
+              "time_base_num": 1,
+              "time_base_den": 12800,
+              "actual_timestamp_ms": 28720.0,
+              "distance_from_visual_estimate_ms": 0.0
+            }
+          }
+        }
+      ],
+      "split": "observed_development",
+      "negative_intervals": [],
+      "negative_annotation_scope": "No negative intervals asserted in this case. Unmatched candidate means no match to the listed visible forward-motion windows, not an exhaustive certified false-tennis-action label."
+    },
+    {
+      "id": "usopen-nadal-left-dominant-backhand",
+      "source_url": "https://www.youtube.com/watch?v=27RlSf17Z4A",
+      "local_video": ".codex_tmp/card-video-lefty-heldout-20261022/media/usopen-nadal-2018.mp4",
+      "video_sha256": "e2f4314048dd6dfb29a376d6c5d5ffe2357aac1132b0ef592890df2eb3bb4da1",
+      "run_dir": ".codex_tmp/card-video-lefty-heldout-20261022/runs/usopen-nadal-left-dominant-backhand",
+      "annotations": [
+        {
+          "id": "usopen-twohand-1",
+          "action_type": "two_handed_backhand",
+          "start_ms": 48280,
+          "end_ms": 48600,
+          "anchor_ms": 48400,
+          "anchor_uncertainty_ms": 100,
+          "boundary_uncertainty_ms": 60,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "Both hands visibly participate; no one-hand laterality judgment",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 1447,
+              "pts": 1448447,
+              "time_base_num": 1,
+              "time_base_den": 30000,
+              "actual_timestamp_ms": 48281.566666666666,
+              "distance_from_visual_estimate_ms": 1.5666666666656965
+            },
+            "anchor_ms": {
+              "source_frame_index": 1451,
+              "pts": 1452451,
+              "time_base_num": 1,
+              "time_base_den": 30000,
+              "actual_timestamp_ms": 48415.03333333333,
+              "distance_from_visual_estimate_ms": 15.033333333332848
+            },
+            "end_ms": {
+              "source_frame_index": 1457,
+              "pts": 1458457,
+              "time_base_num": 1,
+              "time_base_den": 30000,
+              "actual_timestamp_ms": 48615.23333333333,
+              "distance_from_visual_estimate_ms": 15.233333333329938
+            }
+          }
+        },
+        {
+          "id": "usopen-twohand-2",
+          "action_type": "two_handed_backhand",
+          "start_ms": 50980,
+          "end_ms": 51300,
+          "anchor_ms": 51100,
+          "anchor_uncertainty_ms": 100,
+          "boundary_uncertainty_ms": 60,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "Both hands visibly participate; no one-hand laterality judgment",
+          "decoder_source_references": {
+            "start_ms": {
+              "source_frame_index": 1528,
+              "pts": 1529528,
+              "time_base_num": 1,
+              "time_base_den": 30000,
+              "actual_timestamp_ms": 50984.26666666667,
+              "distance_from_visual_estimate_ms": 4.266666666670062
+            },
+            "anchor_ms": {
+              "source_frame_index": 1531,
+              "pts": 1532531,
+              "time_base_num": 1,
+              "time_base_den": 30000,
+              "actual_timestamp_ms": 51084.36666666667,
+              "distance_from_visual_estimate_ms": 15.633333333331393
+            },
+            "end_ms": {
+              "source_frame_index": 1537,
+              "pts": 1538537,
+              "time_base_num": 1,
+              "time_base_den": 30000,
+              "actual_timestamp_ms": 51284.566666666666,
+              "distance_from_visual_estimate_ms": 15.433333333334303
+            }
+          }
+        }
+      ],
+      "split": "previously_observed_challenge_no_independence",
+      "negative_intervals": [],
+      "negative_annotation_scope": "No negative intervals asserted in this case. Unmatched candidate means no match to the listed visible forward-motion windows, not an exhaustive certified false-tennis-action label."
+    },
+    {
+      "id": "ocw-pe.710-2-forehand-220k",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-forehand-220k.mp4",
+      "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+      "run_dir": ".codex_tmp/card-video-validation-20261022/runs/ocw-pe.710-2-forehand-220k",
+      "annotations": [
+        {
+          "id": "forehand-1",
+          "action_type": "forehand",
+          "start_ms": 2400,
+          "end_ms": 2950,
+          "anchor_ms": 2700,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "forehand-2",
+          "action_type": "forehand",
+          "start_ms": 6500,
+          "end_ms": 7150,
+          "anchor_ms": 6900,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "forehand-3",
+          "action_type": "forehand",
+          "start_ms": 10400,
+          "end_ms": 11050,
+          "anchor_ms": 10800,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "forehand-4",
+          "action_type": "forehand",
+          "start_ms": 14700,
+          "end_ms": 15200,
+          "anchor_ms": 15000,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        }
+      ],
+      "split": "existing_development",
+      "negative_intervals": [
+        {
+          "start_ms": 600,
+          "end_ms": 1300,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        },
+        {
+          "start_ms": 3800,
+          "end_ms": 5500,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        },
+        {
+          "start_ms": 8000,
+          "end_ms": 9400,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        },
+        {
+          "start_ms": 12300,
+          "end_ms": 13500,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        }
+      ],
+      "negative_annotation_scope": "Listed intervals only; nonexpert review from contact sheets, not an exhaustive frame-by-frame or blinded expert negative annotation of the full source. Unmatched candidate means no match to the annotated forward-motion windows, not a certified non-tennis action."
+    },
+    {
+      "id": "ocw-pe.710-2-hand_backhand-220k",
+      "source_url": "https://ocw.mit.edu/courses/pe-710-tennis-spring-2007/pages/video/",
+      "local_video": ".codex_tmp/card-video-validation-20261022/media/ocw-pe.710-2-hand_backhand-220k.mp4",
+      "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+      "run_dir": ".codex_tmp/card-video-validation-20261022/runs/ocw-pe.710-2-hand_backhand-220k",
+      "annotations": [
+        {
+          "id": "two_handed_backhand-1",
+          "action_type": "two_handed_backhand",
+          "start_ms": 1650,
+          "end_ms": 2100,
+          "anchor_ms": 1850,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "two_handed_backhand-2",
+          "action_type": "two_handed_backhand",
+          "start_ms": 5400,
+          "end_ms": 5800,
+          "anchor_ms": 5600,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "two_handed_backhand-3",
+          "action_type": "two_handed_backhand",
+          "start_ms": 9300,
+          "end_ms": 9750,
+          "anchor_ms": 9550,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "two_handed_backhand-4",
+          "action_type": "two_handed_backhand",
+          "start_ms": 12900,
+          "end_ms": 13350,
+          "anchor_ms": 13150,
+          "anchor_uncertainty_ms": 150,
+          "eligible_wrist_sides": [
+            "left",
+            "right"
+          ],
+          "anchor_is_contact": false
+        }
+      ],
+      "split": "existing_development",
+      "negative_intervals": [
+        {
+          "start_ms": 2800,
+          "end_ms": 4000,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        },
+        {
+          "start_ms": 6600,
+          "end_ms": 8000,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        },
+        {
+          "start_ms": 10600,
+          "end_ms": 11800,
+          "behavior": "ready_or_recovery_non_forward_swing"
+        }
+      ],
+      "negative_annotation_scope": "Listed intervals only; nonexpert review from contact sheets, not an exhaustive frame-by-frame or blinded expert negative annotation of the full source. Unmatched candidate means no match to the annotated forward-motion windows, not a certified non-tennis action."
+    },
+    {
+      "id": "gs05-macci-forehand-slice",
+      "source_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "run_dir": ".codex_tmp/card-video-extension-20261022/runs/gs05-macci-forehand-slice",
+      "annotations": [
+        {
+          "id": "forehand-slice-1",
+          "action_type": "forehand_slice",
+          "start_ms": 46050,
+          "end_ms": 46650,
+          "anchor_ms": 46320,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "self-fed slice demonstration"
+        },
+        {
+          "id": "forehand-slice-2",
+          "action_type": "forehand_slice",
+          "start_ms": 48350,
+          "end_ms": 48900,
+          "anchor_ms": 48600,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "self-fed slice demonstration"
+        },
+        {
+          "id": "forehand-slice-3",
+          "action_type": "forehand_slice",
+          "start_ms": 50550,
+          "end_ms": 51150,
+          "anchor_ms": 50800,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "self-fed slice demonstration"
+        },
+        {
+          "id": "forehand-slice-4",
+          "action_type": "forehand_slice",
+          "start_ms": 60850,
+          "end_ms": 61300,
+          "anchor_ms": 61040,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "slow shadow slice demonstration; no ball contact"
+        },
+        {
+          "id": "forehand-slice-5",
+          "action_type": "forehand_slice",
+          "start_ms": 62050,
+          "end_ms": 62600,
+          "anchor_ms": 62320,
+          "anchor_uncertainty_ms": 160,
+          "boundary_uncertainty_ms": 160,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false,
+          "context": "slow shadow slice demonstration; no ball contact"
+        }
+      ],
+      "split": "previously_observed_challenge_no_independence",
+      "negative_intervals": [],
+      "negative_annotation_scope": "No negative intervals asserted in this case. Unmatched candidate means no match to the listed visible forward-motion windows, not an exhaustive certified false-tennis-action label."
+    },
+    {
+      "id": "rick-explanation-negative",
+      "source_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "run_dir": ".codex_tmp/pose-only-review-development-20261022/runs/rick-explanation-negative",
+      "annotations": [],
+      "split": "development_negative_hand_gestures",
+      "negative_intervals": [
+        {
+          "start_ms": 64000,
+          "end_ms": 74000,
+          "behavior": "standing_explanation_hand_gestures_not_forward_swing"
+        }
+      ],
+      "negative_annotation_scope": "Listed intervals only; nonexpert review from contact sheets, not an exhaustive frame-by-frame or blinded expert negative annotation of the full source. Unmatched candidate means no match to the annotated forward-motion windows, not a certified non-tennis action. The complete tested 64–74 s interval has a broad explanatory-hand-gesture segment label, but it has not been independently adjudicated on every source frame."
+    },
+    {
+      "id": "fs-usta-return-footwork-heldout",
+      "source_url": "https://www.usta.com/en/home/play/adult-tennis/tennis-at-home/cardio-tennis-with-michael-harper--high-performance-footwork.html",
+      "local_video": ".codex_tmp/card-video-extension-20261022/media/usta-footwork.mp4",
+      "video_sha256": "80ba340c0f4a6d0c49d84d74e3a6ca4132345eb6d887950c74c1a6f5678d32b0",
+      "run_dir": ".codex_tmp/card-video-extension-20261022/runs/fs-usta-return-footwork-heldout",
+      "annotations": [],
+      "split": "previously_observed_recovery_negative",
+      "negative_intervals": [
+        {
+          "start_ms": 393460,
+          "end_ms": 394628,
+          "behavior": "recovery_run_after_shadow_swing",
+          "boundary_uncertainty_ms": 167
+        },
+        {
+          "start_ms": 396363,
+          "end_ms": 397530,
+          "behavior": "recovery_run_after_shadow_swing",
+          "boundary_uncertainty_ms": 167
+        },
+        {
+          "start_ms": 399099,
+          "end_ms": 400267,
+          "behavior": "recovery_run_after_shadow_swing",
+          "boundary_uncertainty_ms": 167
+        },
+        {
+          "start_ms": 402068,
+          "end_ms": 403169,
+          "behavior": "recovery_run_after_shadow_swing",
+          "boundary_uncertainty_ms": 167
+        },
+        {
+          "start_ms": 404704,
+          "end_ms": 405972,
+          "behavior": "recovery_run_after_shadow_swing",
+          "boundary_uncertainty_ms": 167
+        },
+        {
+          "start_ms": 407674,
+          "end_ms": 408742,
+          "behavior": "recovery_run_after_shadow_swing",
+          "boundary_uncertainty_ms": 167
+        }
+      ],
+      "negative_annotation_scope": "Listed intervals only; nonexpert review from contact sheets, not an exhaustive frame-by-frame or blinded expert negative annotation of the full source. Unmatched candidate means no match to the annotated forward-motion windows, not a certified non-tennis action. Six recovery intervals reuse the prior independent footwork visual review; this is previously observed challenge material for the new experiment, despite the historical case identifier."
+    },
+    {
+      "id": "wimbledon-konta-new-validation",
+      "split": "frozen_independent_validation_for_pose_only_v1",
+      "source_url": "https://www.youtube.com/watch?v=55RL1fEKZvI",
+      "source_organization": "Wimbledon",
+      "title": "Johanna Konta practices at Wimbledon 2017 for first time",
+      "channel_id": "UCNa8NxMgSm7m4Ii9d4QGk1Q",
+      "channel_is_verified": true,
+      "local_video": ".codex_tmp/pose-only-review-development-20261022/validation-source/wimbledon-konta-practice.mp4",
+      "video_sha256": "cb4ed2d619e06ed17f1026e5f510b37482979d94866208b118a1f2327e01f020",
+      "source_interval_ms": [
+        0,
+        8160
+      ],
+      "run_dir": ".codex_tmp/pose-only-review-development-20261022/runs/wimbledon-konta-new-validation",
+      "annotation_policy": "Nonexpert source-frame estimates finalized before first YOLO inference/new-candidate replay; thresholds already frozen. No exact contact labels; first uninterrupted shot only.",
+      "annotations": [
+        {
+          "id": "konta-forehand-1",
+          "action_type": "forehand",
+          "start_ms": 840,
+          "end_ms": 1240,
+          "anchor_ms": 1000,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "konta-forehand-2",
+          "action_type": "forehand",
+          "start_ms": 3360,
+          "end_ms": 3760,
+          "anchor_ms": 3520,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        },
+        {
+          "id": "konta-forehand-3",
+          "action_type": "forehand",
+          "start_ms": 6080,
+          "end_ms": 6480,
+          "anchor_ms": 6240,
+          "anchor_uncertainty_ms": 120,
+          "boundary_uncertainty_ms": 80,
+          "eligible_wrist_sides": [
+            "right"
+          ],
+          "anchor_is_contact": false
+        }
+      ],
+      "negative_intervals": [
+        {
+          "start_ms": 1600,
+          "end_ms": 2500,
+          "behavior": "recovery_ready_adjustment"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 5200,
+          "behavior": "recovery_ready_adjustment"
+        },
+        {
+          "start_ms": 6800,
+          "end_ms": 8100,
+          "behavior": "recovery_ready_adjustment"
+        }
+      ],
+      "limits": [
+        "Camera gently pans, coach behind player; selection must be checked",
+        "Frame cut about8.2s is excluded",
+        "Three manually observed right-arm forehands; no expert adjudication"
+      ],
+      "visual_evidence_sha256": "4ea5788fed977d19a314f1a3985ba97c4213faf80f796da787261d36f09ebd6f",
+      "annotation_frozen_at_utc": "2026-10-22T07:40:26.974675+00:00",
+      "negative_annotation_scope": "Listed intervals only; nonexpert review from contact sheets, not an exhaustive frame-by-frame or blinded expert negative annotation of the full source. Unmatched candidate means no match to the annotated forward-motion windows, not a certified non-tennis action."
+    }
+  ],
+  "baseline_replay_archive_head": "3a3c5f8e500adac2ccd386b62f54b2630c7a2c45",
+  "policy_after_observation": "No criteria or thresholds changed after the first real replay or Wimbledon validation. Audit metadata and bounded/unbounded performance comparisons do not change candidate policy. Any future tuning using Wimbledon must reclassify it as development."
+}

@@ -1,0 +1,24 @@
+.report-delivery-status { color: #c6d7c1; font-size: .9rem; margin: 0 0 20px; line-height: 1.65; }
+.processing-percent-scope { display: block; font-size: 12px; font-weight: 500; color: #c0c8c4; white-space: nowrap; }
+.product-progress-track.is-organizing { background: #24302a; }
+.product-progress-track.is-organizing > span { opacity: .5; background: repeating-linear-gradient(115deg, #a3df3c 0 16px, #699525 16px 32px); }
+.recovery-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.coach-question-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.coach-question-options .product-secondary { white-space: normal; text-align: left; font-size: 13px; }
+.report-support-tools { margin-block: 28px; color: #b7c3ba; }
+.product-app :is(button, a, input, select, textarea, summary):focus-visible,
+.product-shell :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid #b9ec70; outline-offset: 4px; }
+.product-processing-meta, .replay-caption, .product-upload-footnote { color: #b6c4ba; }
+.product-report-nav button, .product-secondary, .report-disclosure > summary, .report-replay-details > summary { min-height: 44px; }
+@media (max-width: 640px) {
+  .product-recovery { flex-wrap: wrap; }
+  .recovery-actions { width: 100%; }
+  .recovery-actions > button { flex: 1 1 150px; }
+  .product-processing-heading { gap: 12px; }
+  .product-processing-meta { flex-wrap: wrap; gap: 8px; }
+  .product-page-heading h1 { overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

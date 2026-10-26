@@ -7,6 +7,7 @@ from pathlib import Path
 
 from rallymate_scoring.granularity import (
     analyze_scoring_readiness,
+    inspect_frame_observations,
     static_model_capability,
 )
 from rallymate_scoring.report import write_analysis_report
@@ -32,6 +33,39 @@ POSE_WAVE_V2_INDICATORS = (
 
 
 class ScoringReadinessTests(unittest.TestCase):
+    def test_unknown_or_invalid_confidence_never_counts_as_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            frames = Path(directory) / "frames.jsonl"
+            values = [None, "0.9", True, float("nan"), float("inf"), -1, 1.1, .24, .25, .9]
+            records = [{"poses": [{"person_track_id": 1, "keypoints": [
+                {"downstream_joint_id": "J004", "confidence": confidence}
+            ]}]} for confidence in values]
+            frames.write_text("\n".join(json.dumps(row) for row in records), encoding="utf-8")
+            evidence = inspect_frame_observations(frames)
+            self.assertEqual(evidence["primary_pose_joint_valid_fraction"]["J004"], .2)
+            self.assertEqual(evidence["primary_pose_joint_model_estimate_fraction"]["J004"], 0)
+
+    def test_sam_source_bound_geometry_is_separate_from_confidence_validity(self) -> None:
+        from tests.test_sam3d_scoring import sam_frame, frame
+        with tempfile.TemporaryDirectory() as directory:
+            frames = Path(directory) / "frames.jsonl"
+            good = sam_frame(frame(0))
+            missing_binding = sam_frame(frame(1))
+            del missing_binding["poses"][0]["source_binding"]
+            out_of_frame = sam_frame(frame(2))
+            for point in out_of_frame["poses"][0]["keypoints"]:
+                point["in_frame"] = False
+            records = [good, missing_binding, out_of_frame]
+            frames.write_text("\n".join(json.dumps(row) for row in records), encoding="utf-8")
+            report = analyze_scoring_readiness({}, frames)
+            evidence = report["observed_model_evidence"]
+            self.assertEqual(report["summary"]["score_ready"], 0)
+            self.assertTrue(all(value == 0 for value in evidence["primary_pose_joint_valid_fraction"].values()))
+            self.assertEqual(evidence["primary_pose_joint_model_estimate_fraction"]["J123"], .3333)
+            self.assertFalse(evidence["model_estimate_semantics"]["confidence_available"])
+            self.assertFalse(evidence["model_estimate_semantics"]["scoring_allowed"])
+            self.assertEqual(records[0]["poses"][0]["confidence"], None)
+
     def _frames(self, path: Path, count: int = 10) -> None:
         with path.open("w", encoding="utf-8") as handle:
             for index in range(count):

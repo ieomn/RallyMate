@@ -7,11 +7,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const compiled = new Map();
 function compiledUrl(file) {
+  // Keep source JSON imports shared with production, without a generated copy.
+  if (file.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(file, "utf8")}`).toString("base64")}`;
   if (compiled.has(file.href)) return compiled.get(file.href);
   let js = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(`${name}.ts`, file);
+    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, file);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, file)) : import.meta.resolve(name))}`;
   });
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
@@ -44,9 +46,9 @@ test("known source conflicts are explicit and original A-E remains a reference",
     const rule = catalog.rules.find(item => item.id === id);
     assert.equal(reviewRuleResult(rule, null).status, "source_needs_review");
     const html = renderToStaticMarkup(createElement(Panel, { result: null, catalog, initialIndicatorId: id }));
-    assert.match(html, /原文待核实/);
+    assert.match(html, /动作要求待明确/);
     assert.match(html, /尚未判定本次视频属于其中任何一级/);
-    assert.match(html, /全部原文指标 298/);
+    assert.match(html, /全部技术指标 298/);
   }
 });
 
@@ -54,7 +56,7 @@ test("visual optional stages are disclosed without automatic penalties", () => {
   assert.equal(catalog.visual_techniques.length, 24);
   assert.ok(catalog.visual_techniques.flatMap(item => item.phases).some(phase => phase.optional));
   const html = renderToStaticMarkup(createElement(Panel, { result: null, catalog }));
-  assert.match(html, /原文可选/);
+  assert.match(html, /可选阶段/);
   assert.match(html, /缺少时不自动扣分/);
   assert.doesNotMatch(html, /C:\\Users|xwechat_files/);
 });
@@ -64,4 +66,18 @@ test("a direct request for a later indicator starts on its containing page", () 
   assert.match(html, /2 \/ 2/);
   assert.match(html, /<p>FS09-M05<\/p>/);
   assert.match(html, /aria-pressed="true"><span>制动急停/);
+});
+
+
+test("display omits document names and paragraph locators without rewriting source contracts", async () => {
+  const before = JSON.stringify(catalog);
+  const html = renderToStaticMarkup(createElement(Panel, { result: null, catalog }));
+  assert.doesNotMatch(html, /原文|word\/document\.xml|\.docx?|P\d{4,6}/i);
+  for (const source of catalog.source_documents) assert.ok(!html.includes(source.name));
+  const { productText } = await import(compiledUrl(new URL("../app/lib/presentation-text.ts", import.meta.url)));
+  const legacy = "原文P0080允许无球时保留头部稳定相关量；当前仅描述候选前段头部速度和轴角波动，不确认真正盯球、正确时机或技术稳定性。";
+  const shown = productText(legacy);
+  assert.doesNotMatch(shown, /原文|P0080/);
+  assert.match(shown, /不能据此确认实际视线/);
+  assert.equal(JSON.stringify(catalog), before);
 });

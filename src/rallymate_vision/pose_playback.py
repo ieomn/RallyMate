@@ -1,8 +1,9 @@
-"""Bounded, observed-only skeleton replay from existing frame artifacts.
+"""Bounded skeleton replay with separate raw and presentation-only frames.
 
 Coordinates remain in the original video frame. Camera stabilization and body
 normalization belong to measurement code, never to a video overlay. No boxes,
-missing joints, interpolated poses or inferred player identities are emitted.
+raw missing joints or inferred player identities are added to ``frames``.
+``display_frames`` records explicitly bounded, provenance-labelled repairs.
 """
 from __future__ import annotations
 
@@ -13,9 +14,12 @@ from pathlib import Path
 from typing import Any
 
 from rallymate_vision.pose.metadata import keypoint_schema
+from rallymate_vision.display_continuity import MAX_DISPLAY_GAP_MS, build_display_frames, display_statistics
+from rallymate_vision.display_score import load_display_score_policy, recover_rtmpose_display_points
+from rallymate_scoring.pose_observations import sam_source_bound_points
 
 
-POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.0.0"
+POSE_PLAYBACK_VERSION = "observed-pose-playback-v1.3.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_WINDOW_MS = 10_000
 MAX_SAMPLE_LIMIT = 600
@@ -26,6 +30,7 @@ MAX_PRIMARY_BYTES = 256 * 1024 * 1024
 MAX_ARTIFACT_LINES = 2_000_000
 MAX_LINE_BYTES = 1024 * 1024
 JOINT_NAMES = tuple(item["name"] for item in keypoint_schema("halpe26")["keypoints"])
+MHR70_DISPLAY = json.loads((Path(__file__).parent / "pose" / "data" / "mhr70_display.json").read_text(encoding="utf-8"))
 SKELETON_EDGES = [
     ["nose", "left_eye"], ["nose", "right_eye"], ["left_eye", "left_ear"], ["right_eye", "right_ear"],
     ["head", "neck"], ["neck", "left_shoulder"], ["neck", "right_shoulder"],
@@ -106,7 +111,29 @@ def _primary_rows(path: Path, *, allow_partial: bool) -> Iterator[Mapping[str, A
         yield row
 
 
-def _keypoints(pose: Mapping[str, Any], width: int, height: int) -> list[dict[str, Any]]:
+def _keypoints(pose: Mapping[str, Any], width: int, height: int, frame: Mapping | None = None) -> list[dict[str, Any]]:
+    if pose.get("source") == "sam3d" or pose.get("keypoint_format") == "mhr70":
+        estimate = sam_source_bound_points(pose, frame or {})
+        if estimate is None:
+            return []
+        # The scoring validator verifies the complete native index/name contract
+        # and source binding, but intentionally maps only 17 body landmarks.
+        # Display all native points without extending that scoring mapping.
+        result = []
+        for point in pose["keypoints"]:
+            if (point.get("source") != "sam3d" or point.get("observation_semantics") != "model_estimate"
+                    or point.get("confidence_semantics") != "not_provided_by_sam3d"
+                    or any(key not in point or point[key] is not None for key in ("confidence", "observed", "visibility"))):
+                continue
+            x, y = _finite(point.get("raw_x_px")), _finite(point.get("raw_y_px"))
+            if point.get("in_frame") is not True or x is None or y is None or not (0 <= x < width and 0 <= y < height):
+                continue
+            result.append({"name": point["name"], "native_index": point["index"],
+                           "x": round(x / width, 6), "y": round(y / height, 6),
+                           "raw_x_px": x, "raw_y_px": y, "in_frame": True, "confidence": None,
+                           "confidence_semantics": "not_provided_by_sam3d", "source": "model_estimate",
+                           "observation_semantics": "model_estimate"})
+        return result
     if pose.get("coordinate_space") is not None and pose.get("coordinate_space") != "original_frame":
         return []
     points = pose.get("keypoints")
@@ -164,6 +191,20 @@ def _select_pose(record: Mapping[str, Any], frame: Mapping[str, Any], primary: M
     return poses[0], "single_visible_person", None
 
 
+def _display_identity_evidence(record: Mapping[str, Any], primary: Mapping[str, Any] | None) -> dict:
+    detections = record.get("detections") if isinstance(record.get("detections"), list) else []
+    poses = record.get("poses") if isinstance(record.get("poses"), list) else []
+    return {
+        "primary_player_id": primary.get("primary_player_id") if primary and _integer(primary.get("primary_player_id"), 1) else None,
+        "identity_ambiguous": primary.get("identity_ambiguous") if primary else None,
+        "selected_source_track_id": primary.get("source_track_id") if primary else None,
+        "primary_selection_status": primary.get("selection_status") if primary else None,
+        "pose_track_ids": [item["person_track_id"] for item in poses if isinstance(item, Mapping) and _integer(item.get("person_track_id"), 1)],
+        "observed_track_ids": {item["track_id"] for item in detections if isinstance(item, Mapping) and item.get("class_name") == "player" and _integer(item.get("track_id"), 1)}
+                              | {item["person_track_id"] for item in poses if isinstance(item, Mapping) and _integer(item.get("person_track_id"), 1)},
+    }
+
+
 def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None = None,
                         start_ms: int = 0, duration_ms: int = MAX_WINDOW_MS,
                         sample_limit: int = MAX_SAMPLE_LIMIT, allow_partial: bool = False) -> dict[str, Any]:
@@ -175,6 +216,8 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     primary_rows = _primary_rows(primary_timeline_path, allow_partial=allow_partial) if has_primary else iter(())
     current_primary = next(primary_rows, None)
     frames, dimensions = [], set()
+    context, verified_indexes, recovered_points, identity_evidence = [], set(), {}, {}
+    score_policy = load_display_score_policy(frames_path)
     preceding, next_after_start = None, None
     previous_time, previous_index, previous_processed = None, -1, -1
     previous_track, epoch = None, 0
@@ -193,13 +236,16 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 frames[-1]["valid_until_ms"] = min(frames[-1]["valid_until_ms"], timestamp)
             if preceding is not None and not frames:
                 preceding["valid_until_ms"] = min(preceding["valid_until_ms"], timestamp)
+            if context:
+                context[-1]["valid_until_ms"] = min(context[-1]["valid_until_ms"], timestamp)
             while current_primary is not None and current_primary["processed_index"] < processed:
                 current_primary = next(primary_rows, None)
             primary = current_primary if current_primary is not None and current_primary["processed_index"] == processed else None
             pose, selection, reason = _select_pose(record, frame, primary, has_primary)
             width, height = frame.get("width"), frame.get("height")
             valid_dimensions = _integer(width, 1) and _integer(height, 1) and max(width, height) <= 65_536
-            points = _keypoints(pose, width, height) if pose is not None and valid_dimensions else []
+            model_frame = {**frame, "camera_motion": record.get("camera_motion")}
+            points = _keypoints(pose, width, height, model_frame) if pose is not None and valid_dimensions else []
             if frame.get("timestamp_source") == "fps_fallback":
                 points, reason = [], "source_timestamp_unverified"
             elif not valid_dimensions:
@@ -218,10 +264,32 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 "source_keypoint_format": pose.get("keypoint_format") if pose is not None and isinstance(pose.get("keypoint_format"), str) else None,
                 "keypoints": points, "reason_code": reason,
             }
+            if pose is not None and (pose.get("source") == "sam3d" or pose.get("keypoint_format") == "mhr70"):
+                # Preserve the source label even for invalid/empty estimates so
+                # downstream display repair cannot fill them as observations.
+                observed.update(pose_source="sam3d", observation_semantics="monocular_model_estimate")
+                estimate = sam_source_bound_points(pose, model_frame)
+                if estimate is not None:
+                    observed["source_binding"] = estimate[1]
+                    if "source_timestamp_ms" in frame:
+                        observed["source_timestamp_ms"] = frame["source_timestamp_ms"]
+            if start_ms - MAX_DISPLAY_GAP_MS <= timestamp <= end_ms + MAX_DISPLAY_GAP_MS:
+                if len(context) >= MAX_WINDOW_FRAMES + MAX_SAMPLE_LIMIT:
+                    raise PosePlaybackError("pose display context exceeds the bounded frame limit")
+                context.append(observed)
+                if frame.get("timestamp_source") == "decoder_pts":
+                    verified_indexes.add(index)
+                    if pose is not None and valid_dimensions:
+                        recovered_points[index] = recover_rtmpose_display_points(
+                            pose, width, height, frame_job_id=record.get("job_id"), policy=score_policy)
+                identity_evidence[index] = _display_identity_evidence(record, primary)
             if timestamp >= start_ms and next_after_start is None:
                 next_after_start = observed
-            if timestamp >= end_ms:
+            previous_time, previous_index, previous_processed, previous_track = timestamp, index, processed, track
+            if timestamp > end_ms + MAX_DISPLAY_GAP_MS:
                 break
+            if timestamp >= end_ms:
+                continue
             if timestamp >= start_ms:
                 if len(frames) >= MAX_WINDOW_FRAMES:
                     raise PosePlaybackError("pose window exceeds the bounded frame limit")
@@ -230,7 +298,6 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
                 frames.append(observed)
             else:
                 preceding = observed
-            previous_time, previous_index, previous_processed, previous_track = timestamp, index, processed, track
     finally:
         close = getattr(primary_rows, "close", None)
         if close is not None:
@@ -252,19 +319,38 @@ def build_pose_playback(frames_path: Path, *, primary_timeline_path: Path | None
     if display_count > sample_limit:
         indexes = {round(index * (display_count - 1) / (sample_limit - 1)) for index in range(sample_limit)} if sample_limit > 1 else {0}
         frames = [frame for index, frame in enumerate(frames) if index in indexes]
+    native_mhr = any(row.get("pose_source") == "sam3d" for row in context)
+    if native_mhr:
+        # Legacy score recovery and gap interpolation require observed numeric
+        # confidence. Neither applies to unverified monocular model estimates.
+        # A window has one named schema. Do not relabel detector landmarks as
+        # native MHR points if a malformed artifact mixes model families.
+        for row in context:
+            if row.get("pose_source") != "sam3d":
+                row["keypoints"] = []
+        display_context = context
+    else:
+        display_context, _ = build_display_frames(context, verified_frame_indexes=verified_indexes,
+                                                  recovered_points=recovered_points, identity_evidence=identity_evidence)
+    requested_indexes = {frame["frame_index"] for frame in frames}
+    display_frames = [row for row in display_context if row["frame_index"] in requested_indexes]
+    display_continuity = display_statistics(display_frames)
     width, height = next(iter(dimensions)) if len(dimensions) == 1 else (None, None)
     return {
         "schema_version": "1.0.0", "version": POSE_PLAYBACK_VERSION, "result_kind": "observed_pose_playback",
-        "coordinate_space": "normalized_frame_0_1", "joint_schema": "halpe26_named",
-        "keypoint_names": list(JOINT_NAMES), "skeleton_edges": [edge[:] for edge in SKELETON_EDGES],
+        "coordinate_space": "normalized_frame_0_1", "joint_schema": "mhr70_named" if native_mhr else "halpe26_named",
+        "keypoint_names": MHR70_DISPLAY["keypoint_names"][:] if native_mhr else list(JOINT_NAMES),
+        "skeleton_edges": [edge[:] for edge in (MHR70_DISPLAY["skeleton_edges"] if native_mhr else SKELETON_EDGES)],
         "min_keypoint_confidence": MIN_KEYPOINT_CONFIDENCE, "interpolation": "none",
         "frames": frames,
+        "display_frames": display_frames, "display_continuity": display_continuity,
         "source": {"frames_path": "frames.jsonl", "primary_timeline_path": "primary-player.jsonl" if has_primary else None,
                    "requested_start_ms": start_ms, "requested_end_ms": end_ms, "width": width, "height": height,
                    "observed_frames_in_window": observed_count, "returned_frames": len(frames),
                    "includes_preceding_observation": bool(include_preceding),
                    "is_sampled": display_count > sample_limit, "is_partial": allow_partial,
                    "timestamp_semantics": "source_frame_timestamp_ms", "min_keypoint_confidence": MIN_KEYPOINT_CONFIDENCE,
+                   "timestamp_rounding_tolerance_ms": .5 if frames and all(row["frame_index"] in verified_indexes for row in frames) else 0,
                    "selection_source": "primary_player_timeline" if has_primary else "single_visible_person_only",
                    "max_display_age_ms": MAX_DISPLAY_AGE_MS},
     }

@@ -321,7 +321,7 @@ class CalibratedScoringCliTests(unittest.TestCase):
             run_bundle_ledger_path,
         )
 
-    def test_cli_requires_trusted_ledger_for_production_asset(self) -> None:
+    def test_cli_computes_explicit_math_with_or_without_legacy_ledgers(self) -> None:
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -336,95 +336,27 @@ class CalibratedScoringCliTests(unittest.TestCase):
                 runtime_bindings_path,
                 run_bundle_ledger_path,
             ) = self._production_command(directory, fixture, features, summary)
-            blocked = subprocess.run(
-                base_command, cwd=root, capture_output=True, text=True, check=False
-            )
-            self.assertNotEqual(blocked.returncode, 0)
-            self.assertIn("trusted promotion ledger", blocked.stderr)
-
-            process = subprocess.run(
-                authorized_command,
-                cwd=root,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            self.assertEqual(process.returncode, 0, process.stderr)
+            baseline = subprocess.run(base_command, cwd=root, capture_output=True, text=True, check=False)
+            self.assertEqual(baseline.returncode, 0, baseline.stderr)
             result = json.loads(output.read_text(encoding="utf-8").strip())
+            self.assertEqual((result["status"], result["grade"]), ("scored", "C"))
+            self.assertFalse(result["accuracy_validated"])
+            process = subprocess.run(authorized_command, cwd=root, capture_output=True, text=True, check=False)
+            self.assertEqual(process.returncode, 0, process.stderr)
+            updated = json.loads(output.read_text(encoding="utf-8").strip())
+            self.assertEqual(updated["grade"], result["grade"])
+            self.assertNotIn("trusted_promotion_ledger", updated["model_versions"])
             audit = json.loads(audit_path.read_text(encoding="utf-8"))
-            self.assertEqual(result["status"], "scored")
-            self.assertEqual(result["grade"], "C")
-            self.assertEqual(
-                result["model_versions"]["trusted_promotion_ledger"], "ledger-v1"
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_promotion_ledger"],
-                str(ledger_path.resolve()),
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_runtime_profile_bindings"],
-                str(runtime_bindings_path.resolve()),
-            )
-            lifecycle_path = directory / "registry-lifecycle.json"
-            registry_path = directory / "feasibility-registry.json"
-            self.assertEqual(
-                audit["inputs"]["registry_lifecycle_manifest"],
-                str(lifecycle_path.resolve()),
-            )
-            self.assertEqual(
-                audit["inputs"]["registry_lifecycle_manifest_sha256"],
-                hashlib.sha256(lifecycle_path.read_bytes()).hexdigest(),
-            )
-            self.assertEqual(
-                audit["inputs"]["registry_lifecycle_authority_version"],
-                "test-registry-lifecycle-v1",
-            )
-            self.assertEqual(
-                audit["inputs"]["registry_lifecycle_authority_slot"],
-                "roles.runtime_feasibility",
-            )
-            self.assertEqual(
-                audit["inputs"]["registry_lifecycle_role"],
-                "runtime_feasibility",
-            )
-            self.assertEqual(
-                audit["inputs"]["feasibility_registry"],
-                str(registry_path.resolve()),
-            )
-            self.assertEqual(
-                audit["inputs"]["feasibility_registry_raw_file_sha256"],
-                hashlib.sha256(registry_path.read_bytes()).hexdigest(),
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_scoring_run_bundles"],
-                str(run_bundle_ledger_path.resolve()),
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_scoring_run_bundle_entry_id"],
-                "synthetic-video-run-v1",
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_scoring_run_bundle_ledger_id"],
-                "operator-run-bundles",
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_scoring_run_bundle_authority_id"],
-                "release-owner",
-            )
-            self.assertEqual(
-                audit["inputs"]["trusted_scoring_run_bundle_review_id"],
-                "synthetic-run-review-v1",
-            )
-            self.assertEqual(
-                result["model_versions"]["trusted_scoring_run_bundle_ledger"],
-                "run-bundles-v1",
-            )
+            self.assertIsNone(audit["inputs"]["registry_lifecycle_manifest"])
+            self.assertEqual(audit["inputs"]["registry_lifecycle_authority_slot"], "explicit_input")
+            self.assertEqual(audit["inputs"]["feasibility_registry_raw_file_sha256"],
+                             hashlib.sha256((directory / "feasibility-registry.json").read_bytes()).hexdigest())
 
-    def test_registry_path_pin_rejects_non_runtime_artifacts_without_outputs(
+    def test_registry_copies_and_unregistered_paths_are_accepted(
         self,
     ) -> None:
         root = Path(__file__).resolve().parents[1]
-        for case in ("historical", "unregistered", "same_byte_copy"):
+        for case in ("unregistered", "same_byte_copy"):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
                 directory = Path(temporary)
                 fixture = _lifecycle_runtime_fixture()
@@ -454,12 +386,11 @@ class CalibratedScoringCliTests(unittest.TestCase):
                     check=False,
                 )
 
-                self.assertNotEqual(process.returncode, 0)
-                self.assertIn("lifecycle-authorized", process.stderr)
-                self.assertFalse(output.exists())
-                self.assertFalse(report.exists())
+                self.assertEqual(process.returncode, 0, process.stderr)
+                self.assertTrue(output.exists())
+                self.assertTrue(report.exists())
 
-    def test_operator_authorized_bundle_requires_current_lifecycle_provenance(
+    def test_input_without_lifecycle_annotation_can_be_rescored(
         self,
     ) -> None:
         root = Path(__file__).resolve().parents[1]
@@ -504,10 +435,9 @@ class CalibratedScoringCliTests(unittest.TestCase):
                 text=True,
                 check=False,
             )
-            self.assertNotEqual(process.returncode, 0)
-            self.assertIn("registry lifecycle provenance", process.stderr)
-            self.assertFalse(output.exists())
-            self.assertFalse(report.exists())
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertTrue(output.exists())
+            self.assertTrue(report.exists())
 
     def test_production_rejects_deleted_event_quality_flag_without_outputs(self) -> None:
         root = Path(__file__).resolve().parents[1]
@@ -571,7 +501,7 @@ class CalibratedScoringCliTests(unittest.TestCase):
                 self.assertFalse(output.exists())
                 self.assertFalse(report.exists())
 
-    def test_production_requires_operator_run_bundle_ledger(self) -> None:
+    def test_rescoring_does_not_require_operator_ledger(self) -> None:
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -591,13 +521,12 @@ class CalibratedScoringCliTests(unittest.TestCase):
                 check=False,
             )
 
-            self.assertNotEqual(process.returncode, 0)
-            self.assertIn("--trusted-scoring-run-bundles", process.stderr)
-            self.assertFalse(output.exists())
-            self.assertFalse(report.exists())
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertTrue(output.exists())
+            self.assertTrue(report.exists())
             self.assertTrue(ledger.exists())
 
-    def test_coordinated_bundle_rewrite_fails_external_trust_root(self) -> None:
+    def test_consistent_explicit_input_is_not_rejected_by_old_approval_ledger(self) -> None:
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -636,12 +565,11 @@ class CalibratedScoringCliTests(unittest.TestCase):
                 command, cwd=root, capture_output=True, text=True, check=False
             )
 
-            self.assertNotEqual(process.returncode, 0)
-            self.assertIn("operator-controlled ledger", process.stderr)
-            self.assertFalse(output.exists())
-            self.assertFalse(report.exists())
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertTrue(output.exists())
+            self.assertTrue(report.exists())
 
-    def test_summary_raw_file_bytes_not_only_canonical_json_are_bound(self) -> None:
+    def test_current_summary_bytes_are_hashed_without_old_approval_ledger(self) -> None:
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -659,10 +587,9 @@ class CalibratedScoringCliTests(unittest.TestCase):
                 command, cwd=root, capture_output=True, text=True, check=False
             )
 
-            self.assertNotEqual(process.returncode, 0)
-            self.assertIn("operator-controlled ledger", process.stderr)
-            self.assertFalse(output.exists())
-            self.assertFalse(report.exists())
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertTrue(output.exists())
+            self.assertTrue(report.exists())
 
     def test_ledger_authorized_summary_video_id_must_match_view(self) -> None:
         root = Path(__file__).resolve().parents[1]
@@ -683,7 +610,7 @@ class CalibratedScoringCliTests(unittest.TestCase):
 
             self.assertNotEqual(process.returncode, 0)
             self.assertIn(
-                "run-bundle video_id does not exactly match runtime view evidence",
+                "scoring summary video_id does not match runtime view evidence",
                 process.stderr,
             )
             self.assertFalse(output.exists())

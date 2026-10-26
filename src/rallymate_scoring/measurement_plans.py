@@ -11,11 +11,12 @@ from typing import Any
 from rallymate_scoring.feasibility import (
     feasibility_event_codes,
     indicator_ids_at_or_above,
+    measurement_feature_names,
     load_feasibility_registry,
     validate_feasibility_registry,
 )
 from rallymate_events.rules import EVENT_DETECTOR_VERSION, PHASE_CANDIDATE_VERSION
-from rallymate_features.event_features import FEATURE_LIBRARY_VERSION
+from rallymate_features.event_features import FEATURE_LIBRARY_VERSION, FEATURE_DEFINITIONS
 from rallymate_scoring.indicator_requirements import canonical_sha256, required_phase_keys
 
 
@@ -284,7 +285,7 @@ def compile_measurement_plan(
     card: dict[str, Any],
     metric_registry_version: str,
     *,
-    current_f2_indicator_ids: set[str],
+    current_feature_indicator_ids: set[str],
     current_event_codes: set[str],
     next_pose_wave_indicator_ids: set[str],
     feasibility_registry_version: str,
@@ -305,11 +306,9 @@ def compile_measurement_plan(
     event_code = str(card["eventCode"])
     dependencies = sorted(set(card.get("dependencies", [])))
     required_joint_ids = sorted(set(re.findall(r"J\d{3}", str(card.get("requiredPoints", "")))))
-    blockers: set[str] = {"coach_calibration_missing", "independent_test_missing"}
+    blockers: set[str] = {"grade_rule_not_defined"}
     if event_code not in current_event_codes:
-        blockers.update({"event_localization_not_implemented", "event_ground_truth_missing"})
-    else:
-        blockers.add("event_ground_truth_missing")
+        blockers.add("event_localization_not_implemented")
     for primitive_id in primitives:
         status = PRIMITIVE_CATALOG[primitive_id]["implementation_status"]
         if status == "dedicated_trajectory_required":
@@ -323,12 +322,13 @@ def compile_measurement_plan(
         elif status != "implemented_core":
             blockers.add("feature_implementation_required")
     indicator_id = str(card["id"])
-    if indicator_id in current_f2_indicator_ids:
+    if indicator_id in current_feature_indicator_ids:
+        # Retain this legacy wire value; membership comes from implemented
+        # feature functions, never a maturity or approval label.
         runtime_status = "implemented_f2_calibration_required"
         # A registered F2 vector can be a partial proxy for a source clause.
         # Never erase the clause-level implementation gap merely because
         # a feature with the same indicator ID is measurable.
-        blockers.add("feature_error_not_evaluated")
     elif any(dependency in dependencies for dependency in ("ball", "racket", "court")):
         runtime_status = "dependency_implementation_required"
     elif event_code not in current_event_codes:
@@ -366,6 +366,7 @@ def compile_measurement_plan(
         "runtime_status": runtime_status,
         "next_implementation_wave": indicator_id in next_pose_wave_indicator_ids,
         "current_blockers": sorted(blockers),
+        "maturity_diagnostics": ["event_ground_truth_missing", "feature_error_not_evaluated"],
         "output_policy": {
             "when_valid_features": "calibration_required",
             "when_invalid_or_missing": "unavailable",
@@ -426,9 +427,14 @@ def build_measurement_plan_registry(
     feasibility = _load_build_feasibility_registry(feasibility_registry)
     current_f2_indicator_ids = indicator_ids_at_or_above(feasibility, "F2")
     current_event_codes = feasibility_event_codes(feasibility)
+    current_feature_indicator_ids = {
+        str(item["indicator_id"]) for item in feasibility["indicators"]
+        if str(item["indicator_id"]).split("-", 1)[0] in current_event_codes
+        and set(measurement_feature_names(item)).issubset(FEATURE_DEFINITIONS)
+    }
     cards = metric_registry["cards"]
     card_ids = {str(card["id"]) for card in cards}
-    unknown_f2_ids = current_f2_indicator_ids - card_ids
+    unknown_f2_ids = {str(item["indicator_id"]) for item in feasibility["indicators"]} - card_ids
     if unknown_f2_ids:
         raise ValueError(
             "feasibility registry contains unknown metric indicator IDs: "
@@ -436,7 +442,7 @@ def build_measurement_plan_registry(
         )
     next_pose_wave_indicator_ids = _next_pose_wave_indicator_ids(
         cards,
-        current_f2_indicator_ids=current_f2_indicator_ids,
+        current_f2_indicator_ids=current_feature_indicator_ids,
         current_event_codes=current_event_codes,
     )
     feasibility_version = str(feasibility["registry_version"])
@@ -445,7 +451,7 @@ def build_measurement_plan_registry(
         compile_measurement_plan(
             card,
             metric_version,
-            current_f2_indicator_ids=current_f2_indicator_ids,
+            current_feature_indicator_ids=current_feature_indicator_ids,
             current_event_codes=current_event_codes,
             next_pose_wave_indicator_ids=next_pose_wave_indicator_ids,
             feasibility_registry_version=feasibility_version,
@@ -477,13 +483,15 @@ def build_measurement_plan_registry(
             "runtime_status_counts": dict(runtime_counts),
             "current_f2_indicator_ids": sorted(current_f2_indicator_ids),
             "current_f2_indicator_count": len(current_f2_indicator_ids),
+            "implemented_feature_indicator_ids": sorted(current_feature_indicator_ids),
+            "implemented_feature_indicator_count": len(current_feature_indicator_ids),
             "current_event_codes": sorted(current_event_codes),
             "next_pose_wave_indicator_ids": sorted(next_pose_wave_indicator_ids),
             "next_pose_wave_count": len(next_pose_wave_indicator_ids),
             "primitive_usage_counts": dict(primitive_counts.most_common()),
             "decision": (
                 "Every metric card now has a traceable executable-or-blocked measurement plan. "
-                "Current F2 state is derived from the versioned feasibility registry; "
+                "Feature availability is derived from implemented functions independently of F0-F4; "
                 "plans never imply accuracy or A-E readiness."
             ),
         },

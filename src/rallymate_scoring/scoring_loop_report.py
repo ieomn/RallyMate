@@ -333,8 +333,7 @@ def _legal_event_grade(
     status = score.get("status", record.get("scoring_status"))
     grade = score.get("grade", record.get("grade"))
     if (
-        indicator.get("feasibility_level") == "F4"
-        and status == "scored"
+        status == "scored"
         and grade in _GRADES
     ):
         return str(grade)
@@ -547,7 +546,7 @@ def build_scoring_loop_report_html(result: dict[str, Any]) -> str:
                     feature_records_by_key,
                 )
             )
-        blockers = indicator.get("current_blockers", [])
+        blockers = sorted({reason for sample in samples for reason in sample.get("reason_codes", [])})
         if isinstance(blockers, list):
             blocker_text = "；".join(str(item) for item in blockers) or "无"
         else:
@@ -568,7 +567,7 @@ def build_scoring_loop_report_html(result: dict[str, Any]) -> str:
             f'<small>measurement feature_status {_h(dict(measurement_states))}</small><br>'
             f'<small>scoring_feature_status {_h(dict(scoring_feature_states))}</small></td>'
             f'<td>score.status <code>{_h(dict(scoring_states))}</code><br>'
-            f'<small>合法 F4 事件级等级分布 '
+            f'<small>按明确规则计算的事件级等级分布 '
             f'{_h(dict(grade_states) if grade_states else "无")}</small></td>'
             f'<td>{instances}</td>'
             f'<td>{_h(blocker_text)}</td>'
@@ -582,14 +581,14 @@ def build_scoring_loop_report_html(result: dict[str, Any]) -> str:
     scoring_reference_context = summary.get("scoring_reference_context", {})
     if legal_grade_counts:
         scoring_explanation = (
-            "仅通过 F4、独立测试和受信晋级账本授权的事件实例输出 A～E；"
+            "具有所需有效输入和明确数学规则的事件实例输出 A～E；"
             "其余实例仍为 calibration_required 或 unavailable。"
             "等级是事件级单指标结果，本轮不设计总分。"
         )
     else:
         scoring_explanation = (
             "有效特征只进入 calibration_required；无效特征进入 unavailable。"
-            "没有教练真值标定时不输出 A～E，未评价不显示成数字 0。"
+            "没有数学等级规则时保留测量，不擅自生成 A～E，未评价不显示成数字 0。"
         )
     phase_error_details = event_eval.get("phase_boundary_by_name", {})
     return f"""<!doctype html>
@@ -602,10 +601,10 @@ h1,h2,h3,h4,h5{{line-height:1.25}}section{{background:white;border:1px solid #c9
 <h1>RallyMate 最小可行评分闭环</h1>
 <p>视频/任务：<code>{_h(summary["video_id"])}</code> · 闭环版本 <code>{_h(summary["loop_version"])}</code> · 报告版本 <code>{_h(SCORING_LOOP_REPORT_VERSION)}</code> · 当前状态 <code>{_h(summary["status"])}</code></p>
 <section><h2>测量与评分状态</h2><p><strong>{_h(result_state.get("ui_message_zh", "结果不可解释为零分"))}</strong></p>
-<p>特征测量：<code>{_h(result_state.get("measurement_status"))}</code> · 已测指标定义：<code>{_h(result_state.get("measured_indicator_count"))}/{_h(result_state.get("target_indicator_count"))}</code> · 正式评分：<code>{_h(result_state.get("scoring_status"))}</code> · 合法 F4 事件级 A～E 分布：<code>{_h(dict(legal_grade_counts) if legal_grade_counts else "无")}</code> · 总等级：<code>未设计</code>。</p>
+<p>特征测量：<code>{_h(result_state.get("measurement_status"))}</code> · 已测指标定义：<code>{_h(result_state.get("measured_indicator_count"))}/{_h(result_state.get("target_indicator_count"))}</code> · 正式评分：<code>{_h(result_state.get("scoring_status"))}</code> · 按明确规则计算的事件级 A～E 分布：<code>{_h(dict(legal_grade_counts) if legal_grade_counts else "无")}</code> · 总等级：<code>未设计</code>。</p>
 <p>事件实例状态：<code>{_h(score_counts)}</code>。{_h(scoring_explanation)}</p></section>
 <section><h2>评分参考上下文</h2><p>目标方向参考状态：<code>{_h(scoring_reference_context.get("status", "not_provided"))}</code> · FS02 目标事件：<code>{_h(scoring_reference_context.get("target_event_count", 0))}</code> · 可计算方向对齐误差：<code>{_h(scoring_reference_context.get("available_alignment_count", 0))}</code>。</p>
-<p>该层只接受教练/操作员显式给出的目标方向，并计算人体运动方向相对目标方向的角度误差；不会从人体运动反推“目标”，也不会生成等级或 A～E 阈值。</p><details><summary>上下文审计字段</summary><pre>{_h(_json_text(scoring_reference_context, max_chars=8_000))}</pre></details></section>
+<p>该层接受显式给出的独立目标方向上下文，并计算人体运动方向相对目标方向的角度误差；不会从人体运动反推“目标”，也不会生成等级或 A～E 阈值。</p><details><summary>上下文审计字段</summary><pre>{_h(_json_text(scoring_reference_context, max_chars=8_000))}</pre></details></section>
 <section><h2>事件时间轴（规则候选，非真值）</h2>{_timeline(events)}
 <p>Event F1：<code>{_h(event_eval.get("event_f1"))}</code>；Segment IoU：<code>{_h(event_eval.get("mean_segment_iou"))}</code>；起止 Boundary MAE / P95：<code>{_h(event_eval.get("boundary_mae_ms"))}</code> / <code>{_h(event_eval.get("boundary_p95_ms"))}</code>；关键阶段 Boundary MAE / P95 / 有效率：<code>{_h(event_eval.get("phase_boundary_mae_ms"))}</code> / <code>{_h(event_eval.get("phase_boundary_p95_ms"))}</code> / <code>{_h(event_eval.get("phase_boundary_valid_rate"))}</code>。人工事件真值缺失时这些字段保持空值。</p>
 <details><summary>按关键阶段的边界误差</summary><pre>{_h(_json_text(phase_error_details, max_chars=12_000))}</pre></details></section>
@@ -617,22 +616,26 @@ h1,h2,h3,h4,h5{{line-height:1.25}}section{{background:white;border:1px solid #c9
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     records = []
-    for line_number, line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(), start=1
-    ):
-        if not line.strip():
-            continue
-        try:
-            record = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise ValueError(
-                f"invalid JSONL report fact at {path}:{line_number}"
-            ) from exc
-        if not isinstance(record, dict):
-            raise ValueError(
-                f"JSONL report fact must be an object at {path}:{line_number}"
-            )
-        records.append(record)
+    line_number = 0
+    with path.open("r", encoding="utf-8") as handle:
+        for physical_line in handle:
+            # Keep str.splitlines' existing separator/line-number semantics,
+            # without retaining the complete file text and all its line copies.
+            for line in physical_line.splitlines():
+                line_number += 1
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"invalid JSONL report fact at {path}:{line_number}"
+                    ) from exc
+                if not isinstance(record, dict):
+                    raise ValueError(
+                        f"JSONL report fact must be an object at {path}:{line_number}"
+                    )
+                records.append(record)
     return records
 
 

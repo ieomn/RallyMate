@@ -1,0 +1,61 @@
+{
+  "schema_version": "tennis-round3-final-audit-summary-v1",
+  "final_cpu_directory": "offline-published",
+  "selector_parent_directory": "offline-final",
+  "final_gpu_directory": "gpu-audited-current",
+  "records": 25,
+  "old_scored_records": 18,
+  "new_scored_records": 17,
+  "old_scored_windows": 80,
+  "new_scored_windows": 72,
+  "manual_old_window_reviews": 37,
+  "context_files": 12,
+  "context_actions": 23,
+  "context_validity_counts": {
+    "valid": 19,
+    "invalid": 4
+  },
+  "measured_profile_counts": {
+    "generic": 53,
+    "baseline_two_hand_backhand": 5,
+    "baseline_forehand": 10,
+    "backhand_slice": 2,
+    "baseline_one_hand_backhand": 2
+  },
+  "measured_pattern_metric_counts": {
+    "pattern_phase_continuity": 72,
+    "pattern_two_hand_coupling": 5,
+    "pattern_center_transfer": 5,
+    "pattern_forward_swing": 4,
+    "pattern_preparation_coupling": 2,
+    "pattern_slice_path": 1
+  },
+  "pattern_requirement_status_counts": {
+    "measured_proxy": 89,
+    "not_measured": 155
+  },
+  "projected_sequence_real_measurements": 0,
+  "restored_false_negative_windows": 7,
+  "cpu_errors": 0,
+  "cpu_code_changed": false,
+  "selector_parent_chain_verified": true,
+  "gpu_records": 4,
+  "gpu_independent_new_sources": 0,
+  "gpu_final_selected_native_total": 2146,
+  "gpu_proposed_candidates": 16,
+  "gpu_accepted_windows": 9,
+  "gpu_code_changed": false,
+  "newly_unscored": [
+    "davis-cup-2018-05"
+  ],
+  "limitations": [
+    "All prior examples/results were seen: regression, not independent holdout.",
+    "Human-reviewed phase invalidity is explicitly separated from automatic selector/model improvement.",
+    "Nineteen accepted windows have reviewed types, fifty-three remain generic.",
+    "Forehand slice and every return variant still lack reliable real source-bound validation.",
+    "Complete serve has separate manual-window metric evidence, but no accepted automatic serve profile.",
+    "No real measured projected hip-thorax sequence; do not infer chronology from static posture.",
+    "Existing four GPU runs repeat prior sources and are not new independent subjects.",
+    "Frozen-pose fallback cannot create native poses for newly selected people; missing native frames stay missing."
+  ]
+}

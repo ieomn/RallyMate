@@ -74,7 +74,7 @@ class MeasurementPlanTests(unittest.TestCase):
             self.registry["summary"]["current_f2_indicator_ids"],
         )
 
-    def test_changing_feasibility_maturity_changes_plans_without_code_list(self) -> None:
+    def test_maturity_downgrade_does_not_hide_implemented_features(self) -> None:
         downgraded = copy.deepcopy(self.feasibility)
         fs09_m01 = next(
             item
@@ -88,12 +88,13 @@ class MeasurementPlanTests(unittest.TestCase):
         )
         by_id = {plan["indicator_id"]: plan for plan in registry["plans"]}
         self.assertEqual(12, registry["summary"]["current_f2_indicator_count"])
-        self.assertEqual(1, registry["summary"]["next_pose_wave_count"])
+        self.assertEqual(0, registry["summary"]["next_pose_wave_count"])
+        self.assertEqual(13, registry["summary"]["implemented_feature_indicator_count"])
         self.assertEqual(
-            "feature_implementation_required",
+            "implemented_f2_calibration_required",
             by_id["FS09-M01"]["runtime_status"],
         )
-        self.assertTrue(by_id["FS09-M01"]["next_implementation_wave"])
+        self.assertFalse(by_id["FS09-M01"]["next_implementation_wave"])
 
     def test_existing_f3_or_f4_metric_remains_feature_measurable(self) -> None:
         promoted = copy.deepcopy(self.feasibility)
@@ -108,6 +109,17 @@ class MeasurementPlanTests(unittest.TestCase):
             "implemented_f2_calibration_required",
             by_id[indicator_id]["runtime_status"],
         )
+
+    def test_maturity_cannot_invent_a_missing_feature_implementation(self) -> None:
+        changed = copy.deepcopy(self.feasibility)
+        item = changed["indicators"][0]
+        item["feasibility_level"] = "F4"
+        item["required_features"].append("no_such_feature")
+        if "measurement_features" in item:
+            item["measurement_features"].append("no_such_feature")
+        item.pop("feature_availability", None)
+        registry = build_measurement_plan_registry(feasibility_registry=changed)
+        self.assertNotIn(item["indicator_id"], registry["summary"]["implemented_feature_indicator_ids"])
 
     def test_no_plan_can_emit_a_grade_or_threshold_without_calibration(self) -> None:
         self.assertEqual("forbidden", self.registry["policy"]["grade_without_calibration"])

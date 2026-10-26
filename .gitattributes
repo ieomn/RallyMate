@@ -59,3 +59,7 @@
 # Preserve their original CRLF bytes on every platform; normalization breaks validation.
 /metric-feasibility-pose-wave-v2.json -text whitespace=cr-at-eol
 /indicator-scoring-requirements-pose-wave-v1.json -text whitespace=cr-at-eol
+
+# Preserve byte-verified upstream license notices, including original whitespace.
+/third_party/roma/LICENSE -text whitespace=-blank-at-eol
+/third_party/roma/NOTICE -text whitespace=-blank-at-eol

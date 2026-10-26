@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from copy import deepcopy
 from pathlib import Path
+import time
 
 import numpy as np
 
@@ -71,6 +73,12 @@ class Yolo26Perception:
         self.pose_confidence = pose_confidence
         self.ball_refinement_imgsz = ball_refinement_imgsz
         self.detect_model = YOLO(str(detect_model))
+        if pose_backend_name == "sam3d" and pose_backend_instance is None:
+            from rallymate_vision.sam3d_adapter import Sam3DPoseAdapter
+            pose_backend_instance = Sam3DPoseAdapter(
+                pose_model, device=device, runtime=pose_runtime,
+                profile=pose_profile, config_path=pose_config,
+            )
         self.pose_backend = pose_backend_instance or build_pose_backend(
             pose_backend_name,
             model_path=pose_model,
@@ -82,7 +90,8 @@ class Yolo26Perception:
             config_path=pose_config,
             native_keypoint_format=pose_native_keypoint_format,
         )
-        self.pose_estimator = PoseEstimator(self.pose_backend)
+        self.pose_estimator = (self.pose_backend if pose_backend_name == "sam3d"
+                               else PoseEstimator(self.pose_backend))
         pose_metadata = self.pose_backend.metadata()
         self.pose_model_path = Path(pose_metadata.model_path)
         # Temporary compatibility attribute for tooling that inspected the
@@ -95,6 +104,8 @@ class Yolo26Perception:
         ]
 
     def detect(self, frame: np.ndarray) -> list[dict]:
+        started = time.perf_counter()
+        self.last_detection_timing = {}
         height, width = frame.shape[:2]
         result = self.detect_model.predict(
             frame,
@@ -104,24 +115,58 @@ class Yolo26Perception:
             device=self.device,
             verbose=False,
         )[0]
+        self.last_detection_timing["base_predict_wall_ms"] = (time.perf_counter() - started) * 1000
+        # Ultralytics publishes these per-image stage measurements itself.
+        for key, value in (getattr(result, "speed", None) or {}).items():
+            if isinstance(value, (int, float)):
+                self.last_detection_timing[f"base_{key}_ms"] = value
+        decode_started = time.perf_counter()
         detections = self._decode_detections(result, width, height)
-        # HD tennis balls can shrink to only a few pixels at the base input
-        # size. Refine this class alone; player/racket boxes and low-resolution
-        # inputs retain their existing inference path.
-        refinement_size = self.ball_refinement_imgsz
+        self.last_detection_timing["base_output_transfer_decode_ms"] = (time.perf_counter() - decode_started) * 1000
+        # Refinement uses the same source pixels, never reconstructed detail.
+        # The native-size 720p branch is deliberately gated: indiscriminate
+        # upscaling adds small background candidates as well as real balls.
+        refinement_size, refinement_confidence = self._ball_refinement_policy(width, height, detections)
         ball_classes = [key for key, name in self.detect_model.names.items()
                         if self.TARGET_ALIASES.get(name) == "ball"]
-        if (refinement_size and max(width, height) >= 1600
-                and self.detect_imgsz < refinement_size and ball_classes):
+        if refinement_size and ball_classes:
+            refine_started = time.perf_counter()
             refined = self.detect_model.predict(
-                frame, imgsz=refinement_size, conf=max(self.detect_confidence, 0.25),
+                frame, imgsz=refinement_size, conf=refinement_confidence,
                 classes=ball_classes, device=self.device, verbose=False,
             )[0]
+            self.last_detection_timing["refinement_predict_wall_ms"] = (time.perf_counter() - refine_started) * 1000
+            for key, value in (getattr(refined, "speed", None) or {}).items():
+                if isinstance(value, (int, float)):
+                    self.last_detection_timing[f"refinement_{key}_ms"] = value
             extras = [item for item in self._decode_detections(refined, width, height)
                       if item["class_name"] == "ball"
+                      and item["confidence"] >= refinement_confidence
                       and self._small_ball_refinement(item, width, height)]
             detections = self._merge_ball_scales(detections, extras)
-        return self._deduplicate(detections)
+        detections = self._deduplicate(detections)
+        self.last_detection_timing["total_wall_ms"] = (time.perf_counter() - started) * 1000
+        return detections
+
+    def _ball_refinement_policy(self, width: int, height: int, detections: list[dict]) -> tuple[int | None, float]:
+        """Choose one bounded extra scale without assuming the active ball ID."""
+        configured = self.ball_refinement_imgsz
+        minimum = max(self.detect_confidence, 0.25)
+        if not configured or configured <= self.detect_imgsz:
+            return None, minimum
+        longest, shortest = max(width, height), min(width, height)
+        if longest >= 1600:
+            # Preserve the existing HD policy and its original confidence gate.
+            return configured, minimum
+        minimum = max(self.detect_confidence, 0.35)
+        if longest < 1280 or shortest < 720:
+            return None, minimum
+        if any(item["class_name"] == "ball" and item["confidence"] >= 0.5 for item in detections):
+            return None, minimum
+        # A multiple of 32 no larger than the original long edge avoids asking
+        # the detector to invent resolution in this additional 720p branch.
+        native_size = min(configured, longest // 32 * 32)
+        return (native_size if native_size > self.detect_imgsz else None), minimum
 
     @classmethod
     def _decode_detections(cls, result, width: int, height: int) -> list[dict]:
@@ -206,11 +251,16 @@ class Yolo26Perception:
         return kept + balls
 
     def detection_metadata(self) -> dict:
-        return {"policy_version": "hd-ball-multiscale-v1.0.0",
+        return {"policy_version": "adaptive-ball-multiscale-v1.1.0",
                 "base_imgsz": self.detect_imgsz,
                 "ball_refinement_imgsz": self.ball_refinement_imgsz,
-                "minimum_source_long_edge": 1600,
+                "minimum_source_long_edge": 1280,
+                "hd_unconditional_minimum_long_edge": 1600,
                 "refinement_min_confidence": max(self.detect_confidence, 0.25),
+                "native_refinement": {"minimum_short_edge": 720, "maximum_long_edge_exclusive": 1600,
+                                      "minimum_confidence": max(self.detect_confidence, 0.35),
+                                      "skip_if_base_ball_confidence_at_least": 0.5,
+                                      "resize_cap": "source_long_edge_floor_multiple_32"},
                 "refinement_max_short_side_fraction": 0.03,
                 "semantics": "additional_model_observations_not_interpolated_points"}
 
@@ -253,12 +303,34 @@ class Yolo26Perception:
         frame: np.ndarray,
         player_detections: Sequence[dict],
         max_players: int,
+        *,
+        source_binding: dict | None = None,
     ) -> list[dict]:
-        return self.pose_estimator.estimate(
-            frame,
-            player_detections,
-            max_players,
+        self.last_pose_association_diagnostics = None
+        if self.pose_backend.metadata().backend == "sam3d":
+            poses = self.pose_estimator.estimate(
+                frame, player_detections, max_players, source_binding=source_binding,
+            )
+        else:
+            poses = self.pose_estimator.estimate(
+                frame,
+                player_detections,
+                max_players,
+            )
+        self.last_pose_association_diagnostics = deepcopy(
+            getattr(self.pose_estimator, "last_association_diagnostics", None)
         )
+        return poses
 
     def pose_metadata(self) -> dict:
+        if callable(getattr(self.pose_backend, "details", None)):
+            return self.pose_backend.details()
         return self.pose_backend.metadata().to_dict()
+
+    def pose_frame_records(self) -> list[dict]:
+        return getattr(self.pose_backend, "last_records", [])
+
+    def close(self) -> None:
+        close = getattr(self.pose_backend, "close", None)
+        if callable(close):
+            close()

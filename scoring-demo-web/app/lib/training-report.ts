@@ -1,6 +1,7 @@
 import type { AnalysisReport, DemoResultResponse, MotionAnalysis } from "./api-types";
 import { footworkEpisodes } from "./footwork-review";
 import { hasMeasurement } from "./measurement-evidence";
+import { tennisAssessmentOf } from "./tennis-assessment";
 
 export type ReportMoment = { id: string; label: string; kind: "footwork" | "rotation"; startMs: number; endMs: number; note: string };
 export type ReportFocus = { id: string; title: string; detail: string; label: string; moment?: ReportMoment };
@@ -36,23 +37,31 @@ export function analysisReportOf(value: unknown): AnalysisReport | null {
 export function reportMoments(result: DemoResultResponse | null, motion?: MotionAnalysis | null): ReportMoment[] {
   const footwork = footworkEpisodes(result?.footwork_review).map(episode => ({
     id: `footwork:${episode.event_id}`, label: episode.name_zh, kind: "footwork" as const,
-    startMs: episode.start_ms, endMs: episode.end_ms, note: "步伐规则候选",
+    startMs: episode.start_ms, endMs: episode.end_ms, note: "步伐动作",
   }));
   const rotations = Object.values(motion?.families ?? {}).flatMap(family => family?.episodes ?? []).filter(episode =>
     Number.isFinite(episode.start_ms) && Number.isFinite(episode.end_ms) && episode.start_ms >= 0 && episode.end_ms > episode.start_ms,
   ).map(episode => ({
     id: `rotation:${episode.episode_id}`, label: episode.classification.label_zh, kind: "rotation" as const,
-    startMs: episode.start_ms, endMs: episode.end_ms, note: "挥拍运动 · 触球未确认",
+    startMs: episode.start_ms, endMs: episode.end_ms, note: "挥拍动作",
   }));
   return [...footwork, ...rotations].sort((a, b) => a.startMs - b.startMs || a.id.localeCompare(b.id));
 }
 
 export function reportFocus(result: DemoResultResponse | null, motion?: MotionAnalysis | null): ReportFocus[] {
   if (!result) return [];
+  const tennis = tennisAssessmentOf(result);
+  if (tennis) return tennis.improvements.map(item => ({
+    id: `tennis:${item.dimension_id}`, title: item.title, detail: item.action, label: "训练重点",
+    moment: item.start_ms !== null && item.end_ms !== null ? {
+      id: `tennis:${item.dimension_id}`, label: item.title, kind: item.dimension_id === "movement" ? "footwork" as const : "rotation" as const,
+      startMs: item.start_ms, endMs: item.end_ms, note: item.observation,
+    } : undefined,
+  }));
   const report = analysisReportOf(result.analysis_report);
   const moments = reportMoments(result, motion);
   if (report?.focus_areas.length) return report.focus_areas.map(item => ({
-    id: item.id, title: item.title_zh, detail: item.summary_zh, label: item.kind === "review" ? "本次复核重点" : "下次拍摄建议",
+    id: item.id, title: item.title_zh, detail: item.summary_zh, label: item.kind === "review" ? "训练重点" : "下次拍摄建议",
     moment: item.start_ms !== null && item.end_ms !== null && moments.some(moment => item.start_ms! >= moment.startMs && item.end_ms! <= moment.endMs) ? { id: item.id, label: item.title_zh, kind: item.id.startsWith("footwork") ? "footwork" : "rotation", startMs: item.start_ms, endMs: item.end_ms, note: item.basis_zh } : undefined,
   }));
   const indicators = result.training_evaluation?.indicator_evaluations ?? [];
@@ -60,14 +69,15 @@ export function reportFocus(result: DemoResultResponse | null, motion?: MotionAn
   const rotationEpisodes = Object.values(motion?.families ?? {}).flatMap(family => family?.episodes ?? []);
   const measuredRotation = rotationEpisodes.some(episode => Object.values(episode.rotation_analysis?.metric_evidence ?? {}).some(item => item.status === "measured"));
   return [
-    { id: "footwork", title: measuredFootwork.length ? "步伐：先回看启动与制动" : "步伐：补足脚部连续画面", label: measuredFootwork.length ? "本次复核重点" : "下次拍摄建议", detail: measuredFootwork.length ? "对照候选片段检查双脚移动和身体停稳的顺序。已有测量可逐项查看，暂不据此判定脚步好坏。" : "让双脚与身体持续留在画面内，保留动作前后的准备和恢复，便于分别测量启动、调整与制动。", moment: moments.find(item => item.kind === "footwork") },
-    { id: "rotation", title: measuredRotation ? "转体：对照准备与随挥" : "转体：保持肩髋清晰可见", label: measuredRotation ? "本次复核重点" : "下次拍摄建议", detail: measuredRotation ? "结合动作阶段回看肩线和髋线的变化。二维投影可帮助定位复核区间，不能代表真实三维转体角度。" : "固定相机，尽量减少肩部与髋部遮挡。肩线或髋线不可测时，其余可测指标仍会保留。", moment: moments.find(item => item.kind === "rotation") },
+    { id: "footwork", title: measuredFootwork.length ? "步伐：先回看启动与制动" : "步伐：补足脚部连续画面", label: measuredFootwork.length ? "训练重点" : "下次拍摄建议", detail: measuredFootwork.length ? "对照候选片段检查双脚移动和身体停稳的顺序。已有测量可逐项查看，暂不据此判定脚步好坏。" : "让双脚与身体持续留在画面内，保留动作前后的准备和恢复，便于分别测量启动、调整与制动。", moment: moments.find(item => item.kind === "footwork") },
+    { id: "rotation", title: measuredRotation ? "转体：对照准备与随挥" : "转体：保持肩髋清晰可见", label: measuredRotation ? "训练重点" : "下次拍摄建议", detail: measuredRotation ? "结合动作阶段回看肩线和髋线的变化。二维投影可帮助定位复核区间，不能代表真实三维转体角度。" : "固定相机，尽量减少肩部与髋部遮挡。肩线或髋线不可测时，其余可测指标仍会保留。", moment: moments.find(item => item.kind === "rotation") },
   ];
 }
 
 export function replayMoment(moment: Pick<ReportMoment, "startMs">, jobId?: string) {
-  window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs: moment.startMs, jobId } }));
-  document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs: moment.startMs, jobId, preferOriginal: true } }));
+  const reduceMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById("evidence")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 export type RecentReport = { id: string; name: string; viewedAt: string };

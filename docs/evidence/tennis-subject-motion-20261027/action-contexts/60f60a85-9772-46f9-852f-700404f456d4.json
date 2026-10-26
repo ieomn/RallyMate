@@ -1,0 +1,108 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+  "sample_id": "holdout-ordinary-outdoor-side",
+  "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "fd7313ac258b9b64cff8",
+      "person_track_id": 2,
+      "start_ms": 7333,
+      "peak_ms": 7625,
+      "end_ms": 7917,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_forehand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 0,
+      "human_subject_id": "holdout-ordinary-outdoor-side:person-A",
+      "racket_hand": "right",
+      "racket_hand_basis": "源帧可见右手持拍；双反的持拍手结合该同一主体相邻清晰正手/握拍位置确认，不依据自动active_arm。",
+      "raw_detector_candidate_peak_ms": 7083,
+      "evidence": {
+        "contact_sheet": "action-sheets/holdout-ordinary-outdoor-side-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 7000.0,
+            "nearest_primary_timestamp_ms": 7000,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 7333.334,
+            "nearest_primary_timestamp_ms": 7333,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 7516.667,
+            "nearest_primary_timestamp_ms": 7500,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 7666.667,
+            "nearest_primary_timestamp_ms": 7667,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 7816.667,
+            "nearest_primary_timestamp_ms": 7833,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 8062.5,
+            "nearest_primary_timestamp_ms": 8042,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 8378.333,
+            "nearest_primary_timestamp_ms": 8375,
+            "old_source_track_id": 2
+          },
+          {
+            "requested_timestamp_ms": 8457.333,
+            "nearest_primary_timestamp_ms": 8458,
+            "old_source_track_id": 2
+          }
+        ],
+        "observation_zh": "白衣黑短裤目标；左臂指向前方、右手单手后引拍及前挥，最终对侧随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 7000.0,
+          "peak_ms": 7666.667,
+          "end_ms": 8458.333
+        },
+        "limitations": [
+          "sampled_frames_not_contact_truth"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      },
+      "up_direction_2d": [
+        0.0,
+        -1.0
+      ],
+      "up_direction_2d_verified": true,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "frames": [
+          {
+            "contact_sheet": "action-sheets/holdout-ordinary-outdoor-side-direction-reference.jpg",
+            "timestamp_ms": 7000,
+            "requested_sheet_timestamp_ms": 7000.0,
+            "source_frame_index": 168,
+            "source_timestamp_evidence": "actual decoded source frames.jsonl timestamp; requested contact-sheet time differs at most 1ms"
+          }
+        ],
+        "up_observation_zh": "建筑柱、围网立柱或球网柱在参考画面中竖直，未见画面滚转；只核验屏幕向上，未提供无法可靠确定的向网投影方向。",
+        "direction_accuracy": "manual image up reference only; no 3D gravity calibration",
+        "camera_reference_epoch": 0,
+        "coordinate_system": "image_pixels_x_right_y_down"
+      },
+      "direction_reference_timestamp_ms": 7000
+    }
+  ]
+}

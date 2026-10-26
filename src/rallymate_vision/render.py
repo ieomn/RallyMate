@@ -100,7 +100,7 @@ def annotate_frame(
     quality_color = (0, 220, 0) if quality["status"] == "ok" else (0, 180, 255)
     status_text = (
         f"frame={frame_index} t={timestamp_ms / 1000:.2f}s "
-        f"quality={quality['status']} pose=RTMPose"
+        f"quality={quality['status']} pose=observed"
     )
     cv2.rectangle(canvas, (0, 0), (min(canvas.shape[1], 760), 38), (0, 0, 0), -1)
     cv2.putText(

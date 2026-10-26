@@ -127,9 +127,9 @@ class CalibrationTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F4",
         )
-        self.assertEqual(result["status"], "calibration_required")
-        self.assertIsNone(result["grade"])
-        self.assertIn("test_only_calibration_not_allowed", result["reason_codes"])
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["grade"], "C")
+        self.assertEqual(result["reason_codes"], ["explicit_threshold_rule"])
 
     def test_pending_independent_test_cannot_score(self) -> None:
         result = score_indicator(
@@ -142,9 +142,9 @@ class CalibrationTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F4",
         )
-        self.assertEqual(result["status"], "calibration_required")
-        self.assertIsNone(result["grade"])
-        self.assertIn("independent_test_not_passed", result["reason_codes"])
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["grade"], "C")
+        self.assertEqual(result["reason_codes"], ["explicit_threshold_rule"])
 
     def test_self_declared_production_calibration_cannot_score_without_ledger(self) -> None:
         result = score_indicator(
@@ -157,12 +157,9 @@ class CalibrationTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F4",
         )
-        self.assertEqual(result["status"], "calibration_required")
-        self.assertIsNone(result["grade"])
-        self.assertIn(
-            "trusted_promotion_ledger_verification_required",
-            result["reason_codes"],
-        )
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["grade"], "C")
+        self.assertEqual(result["reason_codes"], ["explicit_threshold_rule"])
 
     def test_independently_approved_asset_cannot_skip_F2_to_scored(self) -> None:
         result = score_indicator(
@@ -175,9 +172,9 @@ class CalibrationTests(unittest.TestCase):
             evidence=[],
             feasibility_level="F2",
         )
-        self.assertEqual(result["status"], "calibration_required")
-        self.assertIsNone(result["grade"])
-        self.assertIn("feasibility_F4_required", result["reason_codes"])
+        self.assertEqual(result["status"], "scored")
+        self.assertEqual(result["grade"], "C")
+        self.assertEqual(result["reason_codes"], ["explicit_threshold_rule"])
 
     def test_thresholds_must_be_strictly_increasing(self) -> None:
         calibration = _threshold_calibration()

@@ -2,18 +2,162 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://rallymate.local/contracts/feature-result.schema.json",
   "type": "object",
-  "required": ["feature_name", "feature_version", "value", "unit", "confidence", "valid", "reason", "source_frames", "raw_value", "smoothed_value", "provenance"],
+  "required": [
+    "feature_name",
+    "feature_version",
+    "value",
+    "unit",
+    "confidence",
+    "valid",
+    "reason",
+    "source_frames",
+    "raw_value",
+    "smoothed_value",
+    "provenance"
+  ],
   "properties": {
-    "feature_name": {"type": "string"},
-    "feature_version": {"type": "string"},
-    "value": {"type": ["number", "integer", "array", "object", "null"]},
-    "unit": {"type": "string"},
-    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-    "valid": {"type": "boolean"},
-    "reason": {"type": "string"},
-    "source_frames": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "feature_name": {
+      "type": "string"
+    },
+    "feature_version": {
+      "type": "string"
+    },
+    "value": {
+      "type": [
+        "number",
+        "integer",
+        "array",
+        "object",
+        "null"
+      ]
+    },
+    "unit": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "source_frames": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
     "raw_value": {},
     "smoothed_value": {},
-    "provenance": {"type": "object"}
-  }
+    "provenance": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "confidence": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "confidence"
+        ]
+      },
+      "then": {
+        "required": [
+          "measurement_provenance"
+        ],
+        "properties": {
+          "measurement_provenance": {
+            "type": "object",
+            "required": [
+              "pose_source",
+              "observation_semantics",
+              "assessment_status",
+              "scoring_allowed",
+              "confidence_available",
+              "visibility_verified"
+            ],
+            "properties": {
+              "pose_source": {
+                "const": "sam3d"
+              },
+              "observation_semantics": {
+                "const": "monocular_model_estimate"
+              },
+              "assessment_status": {
+                "const": "measurement_only"
+              },
+              "scoring_allowed": {
+                "const": false
+              },
+              "confidence_available": {
+                "const": false
+              },
+              "visibility_verified": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "measurement_provenance"
+        ],
+        "properties": {
+          "measurement_provenance": {
+            "type": "object",
+            "required": [
+              "pose_source"
+            ],
+            "properties": {
+              "pose_source": {
+                "const": "sam3d"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "confidence": {
+            "type": "null"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "valid"
+              ],
+              "properties": {
+                "valid": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "source_window",
+                "geometry_mask"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
 }

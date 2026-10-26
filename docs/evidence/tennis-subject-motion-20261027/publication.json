@@ -1,0 +1,396 @@
+{
+  "version": "tennis-review-publication-v1",
+  "applied": true,
+  "created_at_utc": "2026-10-26T19:12:02.952942+00:00",
+  "evaluation_sha256": "4728ff0a05892a9df850a37490a5bd0779255782b57664f9de1d158e6fb87d36",
+  "original_inputs_unchanged": true,
+  "jobs": [
+    {
+      "job_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "sample_id": "development-ordinary-a",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "ce7aaad4485565f9314bae2f1cfddf09bcc6302e049315165e3ed4e733e59576",
+        "sam3d_frames.jsonl": "341aab8eb9dabfc2a17072645b5fce6e35c61b06cbf288cbc2c985f3679ddbea",
+        "frames.jsonl": "db77e85af24a36548205424f1d53e0798a6963d43becf9c086b6082242aecf78",
+        "summary.json": "cbe6d3ef7f36fbda86767f927e1c27872fb6091024de39ae49e3a08e6be0d9ea"
+      },
+      "published": {
+        "tennis-subject-selection.json": "92300521260331e611706c0fa71ea555ed67e11910c43867f82f76b3cb527489"
+      },
+      "expected_score": 87.43,
+      "expected_episodes": 14
+    },
+    {
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "sample_id": "development-sharapova",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "38428769ec3fd0639bbfab18d4dbbd5a6ec60597cf7458b7c2b2a57b2db49ce4",
+        "sam3d_frames.jsonl": "cc71056080f701ffd82d92c8e7fa784d3b49531660e308951dc2813033acc397",
+        "frames.jsonl": "507b90dd16df22637754719f0b9b4f6fdd8c718e4e20a3b9970b253c7b03ccfd",
+        "summary.json": "4799e4436d402adf9f9d098e7f0161cd9aea0862af9f9a2c27b579d35bc3551d"
+      },
+      "published": {
+        "tennis-subject-selection.json": "a4097c0aec0988e393acca4ec48cdc8b296d96a09992a0a059592bd658efb3ed",
+        "action-context.json": "80d1c27525d9a9bb7eff27aeaa2ee6cdcbecc572a36d154da59bcbe92a5a06c9"
+      },
+      "expected_score": 95.38,
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "sample_id": "regression-ordinary-b",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "1fec53ef7d177834d408c0735ae2640c91436a73526f888615e13451adba8029",
+        "sam3d_frames.jsonl": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759",
+        "frames.jsonl": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+        "summary.json": "2d8fda7ae9543c6326bc8c0afaed89c9321236be30a0f87eb9446dbe028f07b4"
+      },
+      "published": {
+        "tennis-subject-selection.json": "06a2c320292174ffe4a840295a1dcaaa5e55853b81a2459e588f76d62c96a7e8",
+        "action-context.json": "180dbef8d6f60a068c596a2661402b1db94b22c218b48af4a6fcd878309a76da"
+      },
+      "expected_score": 91.56,
+      "expected_episodes": 4
+    },
+    {
+      "job_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "sample_id": "regression-nadal",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "e5b02009ec99c699927b418888203d723faf1512c7fd83b7dbf5a8cfc3e98194",
+        "sam3d_frames.jsonl": "57f979030ef30aad94177846f93157a9f1e89a8e343212bbd2fce26634fb0a2d",
+        "frames.jsonl": "8c22c227144adc496f1d43159c5ff6895aa96aaba8b250ab36ee77c6b8b88e86",
+        "summary.json": "d372d3d804f30b7410e5cfa7c9f0a852029b0d4176e678f216ca3416c97747fd"
+      },
+      "published": {
+        "tennis-subject-selection.json": "2a53941673d5ddd338de6a04084e3285982e52558242acbe85242fb67840d4ad"
+      },
+      "expected_score": 92.44,
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "7e166b3a-5a2c-4820-92a4-8bec782bd775",
+      "sample_id": "repeat-ordinary-a",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "217bbea31cbbe3dca5b400bef48277e739c58ff018b54f0979dbfd6f4c1eea1f",
+        "sam3d_frames.jsonl": "b9b8f0a09f4c834499ef664b6948fa2480075a1aa4d4efcd2c06c4ec6359a4ef",
+        "frames.jsonl": "0329d8b932692415645668379ccce9a1692320343dbc15b848c2d0dcf30fd9df",
+        "summary.json": "6e381de774dea9ae632e5ca89224013a3ae8a6143f7475625d2622dac620181b"
+      },
+      "published": {
+        "tennis-subject-selection.json": "f57855c239a24f2c112a0f0c62f6764dc1d1c41854403e8f34c0b895b78cb5c8"
+      },
+      "expected_score": 87.43,
+      "expected_episodes": 14
+    },
+    {
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "sample_id": "holdout-ordinary-indoor-white",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "203e2e5a6cc734b6d538199f0df82e1a39506b8032ac3f9291df1551d365462e",
+        "sam3d_frames.jsonl": "c89a42ef44d03603b15016338eabe94f98302594fabe048861e9ad4c77f98d6b",
+        "frames.jsonl": "0639c442aebe4df60e1516533d9f163504ec1c1c6916e3a2cde1dbf404d3f769",
+        "summary.json": "da634c9ed6057502f010bd6f1a5f8e4e3d80259f233045dc1f0da2f99b7d0a16"
+      },
+      "published": {
+        "tennis-subject-selection.json": "2148c4fa4808128313bd3f9c87ec0d3dd7803ab3d1e6a88cbc170fbb366591f1",
+        "action-context.json": "fd9759003ad12b7a01f1c31ce6f3f7e41899b88ee8eea77aa4f6d6e0f381dc12"
+      },
+      "expected_score": 75.12,
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "sample_id": "holdout-ordinary-lowres-close",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "595c51a4171a7ef5daf80f6d009fc2b7b5427a874ca5ec00d0193d117a52042d",
+        "sam3d_frames.jsonl": "e9c80f2dffe2e9e2abfa52285e77868dccfd339ee517ed0787dadd7514159ad5",
+        "frames.jsonl": "82fe182e3596ca928f903552462b2a85d9742c441a4916dbb5df987af9057f74",
+        "summary.json": "91c907e5c2e4e8aeb44ebe6b42395aec66209462018bb14dffaac5bfe29f69b7"
+      },
+      "published": {
+        "tennis-subject-selection.json": "c3d72bc8f4fb0112572f7529d086045b97ebc65ee250a72a9fd35963bdddaa28",
+        "action-context.json": "bf4f877e68a99b7f3eeb99550aabc8521b35bd0eaf365fc9f6af6cc465a0f8d5"
+      },
+      "expected_score": 92.02,
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "669348f1a7715332645d7e30430d7de6e140144b85b6c24be2d6b3aefff19bb9",
+        "sam3d_frames.jsonl": "31d953b0f3a399f056b664e76d7e8924d94cfcf35c2b286f456bb1265f000545",
+        "frames.jsonl": "02d99a68ad9968f9d4abe5f425b3dd3fce5f4e74362a289f1c3bdee3ad2beaa3",
+        "summary.json": "048e0424d3c146fe9da015990d9e9a180ef932aa006ed6511e7374ca0282a9f4"
+      },
+      "published": {
+        "tennis-subject-selection.json": "3cec78ada81a2016e4de8acb1e47893d20610aca9c586a8943b6c8f825351612",
+        "action-context.json": "87186e365e75ad978ad5be74f9f4290ef36c02056fd8d86de162fb98c6decc36"
+      },
+      "expected_score": 88.05,
+      "expected_episodes": 4
+    },
+    {
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "sample_id": "holdout-ordinary-night",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "56116066bc028fd0bae934eb2325198fc8dd6b8c646bda9c733dc28500053ea2",
+        "sam3d_frames.jsonl": "099d73ef3b3d409ef45857109eafe18e65b77d0fe998e7deb144102c64ca0722",
+        "frames.jsonl": "0e99aad20db2154a9583cc118ea76f8b012390d4278e813449ac589c28d6a213",
+        "summary.json": "1a7c8672fdf53c433f00431af2153949e777224919bedae1133e65309d7484f2"
+      },
+      "published": {
+        "tennis-subject-selection.json": "189f53df4c6ee5db33d38b7e1ee5367a9ea1793128e983c725bc489f1c514ed0",
+        "action-context.json": "1413514c7bd873794cb565e1ab395e369be294bae18d3caa3ea2e227063d2493"
+      },
+      "expected_score": 82.8,
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "cbda48bb5a473d6a606fd4349313071d40abea675f223d044e77c6c6f9859f94",
+        "sam3d_frames.jsonl": "c682455a280bbfc8d06d919607acccaba8830f57f6903989b7093a93b4b82cb3",
+        "frames.jsonl": "353eed638d15bea5465bcb9435108898f0d260b22f55ea1845826acc5665ce4d",
+        "summary.json": "760e9d1ed85cfbaaaf3f72413f981764edbd51e687ed0643c4078cfd475fce5c"
+      },
+      "published": {
+        "tennis-subject-selection.json": "567067853a203900d00b823a9fb4f38f9188f75363b1576918548670dd221701",
+        "action-context.json": "e61e7aef219325ecbd7eaf10bcece14a931ec2839d23d39d837dad32fa8de182"
+      },
+      "expected_score": 85.63,
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "sample_id": "holdout-ordinary-user-existing",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "80c8bb88414d600f4569c9714233f34663a1eab1ac85553fd1bbcc04c8d0c988",
+        "sam3d_frames.jsonl": "b5745755c515c29f210905a6927940e8d65733584114799349189eb5391fbacf",
+        "frames.jsonl": "8f331d4f71477e07f072430130c573874eea79bcf9ec5fe47574eefa8b2f2e66",
+        "summary.json": "134c25b3fd731c824e192d4b2c35e40ea3630dcb01bc16e6e23a51c6d04507a6"
+      },
+      "published": {
+        "tennis-subject-selection.json": "859bddb09ded9d8fc75abeca52915d575b4671fdc893f074f55ecc036c9854ea"
+      },
+      "expected_score": 93.31,
+      "expected_episodes": 4
+    },
+    {
+      "job_id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+      "sample_id": "white-360p-crf35",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "a251198cd77bd7f265ecbf909bf94f0205fa9ba9f66e482fee85e99b9b48319f",
+        "sam3d_frames.jsonl": "f8f3325bc2b9e9a63f3117d438aab40129d8a89f4ea2db63064510b442a987b8",
+        "frames.jsonl": "4a0db18a610878929e20def705534b48a0927342e7d40cea7b7729dc52b2ce65",
+        "summary.json": "cad249a2483164d9bee6f8a61299540e38e14b6d49e5e1c1d728cfcb79681a92"
+      },
+      "published": {
+        "tennis-subject-selection.json": "390af1d40fe0374071b300e7aa3898ec964871572b7af10b29c42a7102b4832f"
+      },
+      "expected_score": 80.89,
+      "expected_episodes": 1
+    },
+    {
+      "job_id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+      "sample_id": "white-mirror",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "28d3b307a78c8b790caab3f8e3555779ff103c0d8cbf2b13c379bcfa04aeb691",
+        "sam3d_frames.jsonl": "e1730e3fd8faaf4b9b117f7a0e57740099cf75be92a921da66a99712af05c051",
+        "frames.jsonl": "2f40b99c5210dbd19a6947da29c3a1b04d0e9d08b451d4d5aedf1ebff3bb4f1c",
+        "summary.json": "60a279a0ab024522ae2a35fbac7c18707ee1acb6402f7bb0059ce1c8f7fae85f"
+      },
+      "published": {
+        "tennis-subject-selection.json": "d27e40b9f7f0c805df0ed536b193b32f3fecdfe1719ac913459cac2f44271a6f"
+      },
+      "expected_score": 74.99,
+      "expected_episodes": 6
+    },
+    {
+      "job_id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+      "sample_id": "rola-ncaa-2013",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "c959121ad180b64dc616244fedf8615e2930a217e34e9f4b0664f7dcb5fe4c1a",
+        "sam3d_frames.jsonl": "8a3ac49ccce6dd20e33cc2a93d6397a3a8db69c9f8cf7f2bddd5e17a122ae488",
+        "frames.jsonl": "f491ea74eba8f76151b49e863dade423720afe45b4dac82cdd22946c8146dcf5",
+        "summary.json": "422184a23893f7912632b4b6760c742af5ebe7cf00287c21d8f0a43c8ad2d906"
+      },
+      "published": {
+        "tennis-subject-selection.json": "8bf33314433cdaff6eab13cd2d5110767d1899e6ac9b5bb22c7c67c6c39da4a5"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "86cc4b1f99913d4d3fb92f515429c040604b06af7134c5c7af7019f67c4858be",
+        "sam3d_frames.jsonl": "5545b8e287c59a033d35e27ec3ec7322feb4bc72d87c1e6edc90d09e0d70ceea",
+        "frames.jsonl": "93a3f8e54b0a2bf20d12c21073946b16538c71d02571933a0df25ad0f3dbd1dd",
+        "summary.json": "5b268103613b5d482cad6fcd3cb62fae4fd05462e2c25c4454cdaba53a4da9e2"
+      },
+      "published": {
+        "tennis-subject-selection.json": "1dda436811879648f6d403fceb720d4a5e241ef811bf77ecec840526b349ae01"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "e0a62ad9-9422-4635-a254-e375819a971c",
+      "sample_id": "davis-cup-2018-04",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "fb6c2ebed922b10913f8d13478747338f46abae18817d5f3cee39aca9c6c9a84",
+        "sam3d_frames.jsonl": "e59c548c6478c5381a806cd8105430774739f3aeb2294e8b248b6ca73ebeaf6c",
+        "frames.jsonl": "782136b904d0321bf2b53829dca3628978e376fc32e69ba5398696fde4657f24",
+        "summary.json": "4d34d0342bccee042b812914a570ca171c60c7131d20e33068c63749f3c6de57"
+      },
+      "published": {
+        "tennis-subject-selection.json": "e3739b403c698c45be844d3c3016aeb91ef4ba2fa1814630216365d51f4e7264"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "sample_id": "davis-cup-2018-05",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "02b94e61ae8e39e5828cdef90f3344cf55ea71a5b1b20cfd868c4d627da4863e",
+        "sam3d_frames.jsonl": "978996d9f520cae77fe887e1778a119831e3b7612b376d9eea154c8d385cdd27",
+        "frames.jsonl": "53264f8345baedce2a9640dfc4ab3bb5171aaacb22772aedf374afe20f1ac0d1",
+        "summary.json": "eba1f0eacbae226935f3b2c85704d678f85de9c6b3908bdcd06298335f23eae9"
+      },
+      "published": {
+        "tennis-subject-selection.json": "0109083d8dd2ffb0ad361b99b654e4b3cc08319b4b839ab67b567307bb19a388",
+        "action-context.json": "d95495ca365d277875baa8ee533d284416361d8b9c6fdce57f6ce10562c1cea0"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "cca490320aacd5939fa194a94b37b149534a4afff9b06fe6b60d105f625d7541",
+        "sam3d_frames.jsonl": "61bacb55cdc72d90a93f25b3264362e534e2cc7767ebf6a019496806552720c5",
+        "frames.jsonl": "7c453f17ab7eb2ebfd15a77696647a3615e4ad776ad9f13dce26ec105cc4cdc5",
+        "summary.json": "80b4f294466c01dc487e5e61038411339447519097683afb289f26298e5e201b"
+      },
+      "published": {
+        "tennis-subject-selection.json": "e3a4931d8bb47501e140d4b999418e6f1fb790c6469432f613662a371d7877af",
+        "action-context.json": "60b2f17db4c95894142ba0621e9397ae0fbccb1bbc2e20d1fc77ba40f816eae7"
+      },
+      "expected_score": 92.09,
+      "expected_episodes": 1
+    },
+    {
+      "job_id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "9c7f153a050a2ce45cf4cbc45277245dcfc55f0262a66baa8a84487bc5b8c221",
+        "sam3d_frames.jsonl": "3a8287cc364c0713918474b29c3f86c4af319410e360bc7e40f011ea41d46723",
+        "frames.jsonl": "7f123116e4624255e74ee540692c4f04fe377770dbae8a02964d5c3dbaaa3a2e",
+        "summary.json": "e29be2691a2732490dd2c62c9e698dcbeff60ee822b7899b5f5845d2b4d0a4e2"
+      },
+      "published": {
+        "tennis-subject-selection.json": "e0dd65fc58a129d3d115fae5117bc899eb913d4898524ee024901a665a7df6cd"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "ecbdb94b041bdb26e69d0388f433b9f6c331420ffe589bffe0264081524ed02a",
+        "sam3d_frames.jsonl": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d",
+        "frames.jsonl": "0e0780814153be2d5e2c602873942cb3ccc992c7720cd197464178ae0304b8df",
+        "summary.json": "e34639c3bcab56f608c7584467a5bbfaa981dc36bb2dc6e80373b3f40e6370b0"
+      },
+      "published": {
+        "tennis-subject-selection.json": "6ac047f9f4c7aaaeb5538bcb111d3fa0e378cdf613a097245f78363acae100b0",
+        "action-context.json": "4be86b1941c13e0a0fe93af865819aeb0338d758c092aaaed3713d079b5d85a7"
+      },
+      "expected_score": 81.32,
+      "expected_episodes": 1
+    },
+    {
+      "job_id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "ed8268bf9f23bbfabb6de14a1cb02adca0282dc7c6cff354de39999680d57ab7",
+        "sam3d_frames.jsonl": "e2fdd175a67e8e55c341d1395fb596eddd8f4a47978876882d3ae2d05df6f914",
+        "frames.jsonl": "c0a366752dfacd5a315053e12516735e69f5137ab4ea5f5b182ae84a3e981a2c",
+        "summary.json": "1be2c19f2d41fba20585931969af176a8a41561e51033eccba0ccb15c22fbdc9"
+      },
+      "published": {
+        "tennis-subject-selection.json": "d4da38cd05af1f37ab1f2afd507600c87bf9aa9be8d2f9d18ad61cee194b1222"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "sample_id": "djokovic-usopen-2012",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "70a47167b0044f3d762bb8e1fd559c8fd76c6f5e4e7a2807c2e233edc0068481",
+        "sam3d_frames.jsonl": "03722efc5465311765420d922e02caf2370bc93d6b31adb1f3932b6ff35f7062",
+        "frames.jsonl": "34b9c0d21cd0f5ae156b8cb8ad6b0eeacaf95a544b7cbc3d402d3ec2d01ca783",
+        "summary.json": "9bc5addcf6745388b6a2595fa7b09fd71b28f8a94c34d70b27fa090fe3f332ce"
+      },
+      "published": {
+        "tennis-subject-selection.json": "ff5c6ff0b3f80e86bf80f4a5cba4040654b99af8bff15bbe7c60e5985519a839",
+        "action-context.json": "028f16675c3248b3cb82f1eb1aed12af24e54e9caef3f890653167058fc72ecf"
+      },
+      "expected_score": 84.04,
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "sample_id": "schiavone-usopen-2012",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "6b4a50a18d5942b8d04555db94fabf8abbf425f5583425def942f0622c83a6cd",
+        "sam3d_frames.jsonl": "a72d1257fc3eae64a922edfd68f93ca99556a580fc5920078b4ce72d0319803f",
+        "frames.jsonl": "9743e765c380a15d2ee46db06b96070cead5e1694e87dd03c1179f32fef84a7b",
+        "summary.json": "83bf47cbb5a56d2ce31392558c15c266af9a724ddf54b48d11ff5f6cfe3635c6"
+      },
+      "published": {
+        "tennis-subject-selection.json": "3599fa6ae067502ef9acd93c62d3222e5b99198e5fbd015b2de809cec3af1372",
+        "action-context.json": "1e25353eece3a05148add150c0bf5d5d37982eaac052e5e5ef967f9d11928a74"
+      },
+      "expected_score": 87.94,
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "sample_id": "federer-cilic-usopen-2012",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "a22d3f3fc3adf5e884d234ed32388eebcf78fdd4a4a516093be38e02945e21ed",
+        "sam3d_frames.jsonl": "5ccdd54db43182ac82c9c40df07cfbd9031eaddc89a48f72a4f1191fcac0fc28",
+        "frames.jsonl": "5d5204d1f6b25abf80373b102077a0fc542af561006010fb7bc8ba0d27c0acb9",
+        "summary.json": "d799b3d760725682de5a5d06533c078dd105a1525e387e9931068f6f8fda3b4c"
+      },
+      "published": {
+        "tennis-subject-selection.json": "eddb07aa88d0aa46f3be0ae8133c2bcb94c4a9f2bc9eea61b058ac731ce99124"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    },
+    {
+      "job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "original_artifact_sha256": {
+        "primary-player.jsonl": "5cef921ea77a5334e7dfbdf70c24efb3a51e43294fd8e6f186706a5be438f4af",
+        "sam3d_frames.jsonl": "e92f458bd0700a85c39a68a2e0c044d8bd5856da282fb8fc9ed30b58e5ec71a4",
+        "frames.jsonl": "c17fb06f87e993f9d1e4d7def2b858b7438380db309ff872977b9f0dbab16c35",
+        "summary.json": "27971e1d3623a60e6a22a1ba0249980824d4950aa5d500a5d5ff1e133edea224"
+      },
+      "published": {
+        "tennis-subject-selection.json": "95f733678bfd4abc6c9a9b61319405c0a47351d36a15d5172258f6ae65fb7e5e"
+      },
+      "expected_score": null,
+      "expected_episodes": 0
+    }
+  ]
+}

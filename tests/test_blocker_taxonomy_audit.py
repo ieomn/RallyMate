@@ -54,7 +54,22 @@ class BlockerTaxonomyAuditTests(unittest.TestCase):
         rebuilt = copy.deepcopy(self.payload)
         checked_in.pop("generated_at")
         rebuilt.pop("generated_at")
-        self.assertEqual(checked_in, rebuilt)
+        # A project-directory junction may give the same immutable evidence
+        # two absolute spellings after a disk migration. Resolve only actual
+        # path fields; every content digest and numerical result stays exact.
+        def canonical_paths(value):
+            if isinstance(value, list):
+                return [canonical_paths(item) for item in value]
+            if isinstance(value, dict):
+                return {
+                    key: str(Path(item).resolve(strict=True))
+                    if key in {"path", "baseline_runs_root", "replay_runs_root"}
+                    else canonical_paths(item)
+                    for key, item in value.items()
+                }
+            return value
+
+        self.assertEqual(canonical_paths(checked_in), canonical_paths(rebuilt))
 
     def test_invalid_safety_claim_is_rejected(self) -> None:
         payload = copy.deepcopy(self.payload)

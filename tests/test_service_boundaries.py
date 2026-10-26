@@ -19,6 +19,23 @@ from rallymate_service.database import JobDatabase
 
 
 class ServiceBoundaryTests(unittest.TestCase):
+    def test_explicit_registry_uses_validated_content_without_path_approval(self) -> None:
+        source = Path(__file__).resolve().parents[1] / "metric-feasibility-pose-wave-v2.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            registry = root / "operator-rules.json"
+            registry.write_bytes(source.read_bytes())
+            settings = self._settings(
+                root,
+                scoring_feasibility_registry=registry,
+                scoring_registry_lifecycle_manifest=root / "absent-manifest.json",
+            )
+            authority = settings.resolved_scoring_registry_authority
+            self.assertEqual(authority.path, registry.resolve())
+            self.assertEqual(authority.lifecycle, "explicit_input")
+            self.assertEqual(authority.file_sha256, hashlib.sha256(registry.read_bytes()).hexdigest())
+            settings.validate_license()
+
     def _settings(self, root: Path, **overrides) -> ServiceSettings:
         detect = root / "detect.pt"
         pose = root / "pose.pt"
@@ -262,6 +279,35 @@ class ServiceBoundaryTests(unittest.TestCase):
             target.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "source_sha256"):
                 technique_catalog(target)
+
+    def test_explicit_scoring_rules_do_not_require_manual_approval_assets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            settings = self._settings(root, scoring_calibration_assets=(root / "rules.json",),
+                                      scoring_trusted_promotion_ledger=None,
+                                      scoring_trusted_runtime_profile_bindings=None,
+                                      scoring_runtime_view_evidence_dir=None)
+            settings.validate_license(check_registry_authority=False)
+
+    def test_readiness_accepts_mathematical_rules_without_release_ledgers(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rule = root / "rules.json"
+            rule.write_text(json.dumps({
+                "backend": "threshold_rule", "indicator_id": "FS01-M02",
+                "threshold_version": "unit-test-math-not-real-grades",
+                "primary_feature": "bilateral_foot_rise_min_body",
+                "primary_feature_version": "test", "unit": "body",
+                "direction": "higher_is_better", "thresholds": [1, 2, 3, 4],
+            }), encoding="utf-8")
+            settings = self._settings(root, scoring_calibration_assets=(rule,),
+                                      scoring_trusted_promotion_ledger=None,
+                                      scoring_trusted_runtime_profile_bindings=None,
+                                      scoring_runtime_view_evidence_dir=None)
+            app = create_app(settings, JobDatabase(settings.database_path))
+            with TestClient(app) as client:
+                payload = client.get("/health/ready").json()
+            self.assertEqual(payload["status"], "ready", payload["reasons"])
 
     def test_calibration_assets_cannot_live_in_job_writable_roots(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

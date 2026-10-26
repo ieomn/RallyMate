@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
 import secrets
 import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
+from importlib.resources import files
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -42,6 +44,16 @@ from rallymate_scoring.technique_assessment import (
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase
+from rallymate_service.original_video import (
+    OriginalVideoUnavailable, original_video_descriptor, verify_original_video,
+)
+from rallymate_service.original_video_response import OriginalVideoResponse
+from rallymate_service.mesh_preview import MESH_ARTIFACTS, MESH_VIDEOS, mesh_preview_descriptor, mesh_preview_status
+from rallymate_service.deployment_identity import load_deployment_identity
+from rallymate_service.pose_request_diagnostics import (
+    PoseRequestDiagnosticsMiddleware, bind_pose_request_diagnostics,
+    pose_diagnostic_stage, pose_request_diagnostics_enabled, record_pose_phase,
+)
 from rallymate_service.technical_review import (
     MAX_BODY_BYTES,
     TechnicalReviewError,
@@ -50,12 +62,28 @@ from rallymate_service.technical_review import (
 )
 from rallymate_service.footwork_review import load_footwork_review
 from rallymate_service.analysis_report import build_analysis_report
+from rallymate_service.process_evaluation import build_process_evaluation
+from rallymate_service.swing_kinematics import build_swing_kinematics
+from rallymate_service.tennis_assessment import build_tennis_assessment
+from rallymate_scoring.indicator_assessment import build_indicator_assessment
+from rallymate_service.card_execution import VERSION as CARD_EXECUTION_VERSION, build_card_execution_report
+from rallymate_scoring.card_rule_catalog import VERSION as CARD_RULE_VERSION
 from rallymate_service.report_compatibility import (
     DEFAULT_REPORT_CONTRACT,
     ReportContract,
     project_report,
 )
 from rallymate_service.source_assessment import load_source_aligned_assessment
+from rallymate_service.foot_crossing_candidates import load_foot_crossing_candidates
+from rallymate_service.report_evidence_transport import (
+    ReportTransport, ReportEvidenceTransportError, pack_report_evidence,
+)
+from rallymate_service.report_delivery_cache import (
+    REPORT_PROCESS_VERSION, DeliveryError, ReportDelivery, ReportDeliveryCache,
+    artifact_signature,
+)
+from rallymate_service.report_delivery_store import report_builder_fingerprint, persistent_report_key
+from rallymate_service.advice_context import AdviceTechnique, AdviceContextTooLarge, project_advice_context
 from rallymate_service.user_demo import (
     UserDemoResultError,
     build_user_demo_result,
@@ -96,12 +124,12 @@ ALLOWED_ARTIFACTS = {
     "indicator-measurement-portfolio.json",
     "scoring-cycle-measurement.json",
     "source-aligned-measurements.json",
-}
+} | MESH_ARTIFACTS
 INLINE_PREVIEW_ARTIFACTS = {
     "annotated.mp4",
     "analysis-report.html",
     "scoring-loop-report.html",
-}
+} | MESH_VIDEOS
 _REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _PATH_FIELD_PATTERN = re.compile(
     r"(?:^|_)(?:path|directory|dir|file)$|(?:_path)$", re.IGNORECASE
@@ -277,6 +305,9 @@ def _public_job(
             "updated_at",
             "started_at",
             "completed_at",
+            "cancel_requested",
+            "cancel_requested_at",
+            "cancelled_at",
             "attempts",
             "progress",
             "error",
@@ -296,10 +327,14 @@ def _public_job(
     if job.get("status") == "succeeded":
         summary = job.get("summary") or {}
         public["scoring_state"] = summary.get("scoring_state")
+        mesh_preview = mesh_preview_descriptor(job, public_base_url)
+        public["sam3d_mesh"] = mesh_preview
+        public["sam3d_mesh_status"] = mesh_preview_status(job, mesh_preview)
         public["artifact_urls"] = {
             name: _public_url(f"/v1/jobs/{job['id']}/artifacts/{name}", public_base_url)
             for name in sorted(ALLOWED_ARTIFACTS)
             if (Path(job["output_dir"]) / name).exists()
+            and (name not in MESH_ARTIFACTS or mesh_preview is not None)
         }
         public["demo_result_url"] = _public_url(
             f"/v1/jobs/{job['id']}/demo-result", public_base_url
@@ -376,6 +411,7 @@ def create_app(
     # ``not_ready`` diagnostic for unapproved historical overrides.
     service_settings.validate_license(check_registry_authority=False)
     service_settings.ensure_directories()
+    deployment_identity = load_deployment_identity(Path(__file__).resolve().parents[2])
     db = database or JobDatabase(service_settings.database_path)
     technical_reviews = TechnicalReviewStore(service_settings.data_root / "technical-reviews.sqlite3")
     # Cache bounded previews only while the underlying frame snapshot matches.
@@ -386,6 +422,62 @@ def create_app(
     pose_cache_lock = Lock()
     action_cache: OrderedDict[tuple, dict] = OrderedDict()
     action_cache_lock = Lock()
+    report_builder_version = report_builder_fingerprint(Path(__file__).resolve().parents[1])
+    report_process_at_start = REPORT_PROCESS_VERSION
+    report_delivery_cache = ReportDeliveryCache(storage_dir=service_settings.data_root / "report-delivery-cache")
+
+    def packaged_report_rules_identity() -> tuple:
+        resources = sorted((item for item in files("rallymate_scoring").joinpath("data").iterdir()
+                            if item.is_file()), key=lambda item: item.name)
+        return tuple((str(item), hashlib.sha256(item.read_bytes()).hexdigest()) for item in resources)
+
+    packaged_rules_at_start = packaged_report_rules_identity()
+
+    def current_packaged_rules_identity() -> tuple:
+        current = packaged_report_rules_identity()
+        if current != packaged_rules_at_start:
+            # Some scoring catalogues deliberately use process-local no-arg
+            # caches. Rebuilding a report after a live package edit could mix
+            # versions; fail closed until an ordinary service restart reloads
+            # all catalogues together. External registries remain dynamic.
+            raise DeliveryError(503, "report_rules_changed_restart_required",
+                                "Packaged report rules changed; restart the service before preparing reports.")
+        return current
+
+    def report_source_key(job: dict, contract: ReportContract, transport: ReportTransport) -> tuple:
+        # Numerical report media links are fixed to its own artifact snapshot.
+        # Background mesh files live behind the independent /mesh-preview
+        # resource and must not invalidate a report while it is being built.
+        # Include every other public artifact, even missing ones, so newly
+        # published evidence still invalidates a previous response.
+        # Stat-only identities cannot detect same-size rewrites with restored
+        # mtime (Windows ctime is creation time). Hash every body dependency.
+        body_dependencies = {"summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl",
+                             "indicator-features.jsonl", "source-aligned-measurements.json", "sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}
+        artifacts = tuple(artifact_signature(Path(job["output_dir"]) / name,
+                                            content_hash=name in body_dependencies)
+                          for name in sorted((ALLOWED_ARTIFACTS - MESH_ARTIFACTS) | {"sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}))
+        registry = service_settings.resolved_technique_registry
+        # These small resources are content-addressed, including an external
+        # registry whose operator might preserve file size/modification time.
+        registry_identity = list(current_packaged_rules_identity())
+        resources = []
+        if registry is not None:
+            resources.append(registry)
+        for resource in resources:
+            try:
+                digest = hashlib.sha256(resource.read_bytes()).hexdigest()
+            except FileNotFoundError:
+                digest = None
+            registry_identity.append((str(resource), digest))
+        summary_digest = hashlib.sha256(json.dumps(job.get("summary"), ensure_ascii=False,
+            sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
+        return (REPORT_PROCESS_VERSION, API_VERSION, DETECTOR_VERSION, ANALYSIS_VERSION,
+                job["id"], str(Path(job["output_dir"]).resolve()), job["status"],
+                bool(job.get("cancel_requested")), job.get("updated_at"), summary_digest,
+                artifacts, tuple(registry_identity), contract, transport,
+                json.dumps(original_video_descriptor(job, service_settings), sort_keys=True),
+                service_settings.public_base_url, _should_redact_public(service_settings))
 
     def summary_with_actions(job: dict) -> dict:
         summary = dict(job.get("summary") or {})
@@ -395,13 +487,8 @@ def create_app(
                                             and motion.get("analysis_version") == ANALYSIS_VERSION):
             return summary
         paths = [Path(job["output_dir"]) / name for name in ("frames.jsonl", "primary-player.jsonl")]
-        def signature(path):
-            try:
-                stat = path.stat()
-                return (str(path), stat.st_mtime_ns, stat.st_size)
-            except OSError:
-                return (str(path), None, None)
-        key = (DETECTOR_VERSION, ANALYSIS_VERSION, *(signature(path) for path in paths))
+        key = (DETECTOR_VERSION, ANALYSIS_VERSION,
+               *(artifact_signature(path, content_hash=True) for path in paths))
         with action_cache_lock:
             if key not in action_cache:
                 action_cache[key] = recognize_strokes_from_artifacts(*paths)
@@ -415,7 +502,12 @@ def create_app(
     async def lifespan(_: FastAPI):
         db.initialize()
         technical_reviews.initialize()
-        yield
+        # Generated mannequin replay is retired from the product. Do not
+        # instantiate its runtime: legacy flags must not restart paid work.
+        try:
+            yield
+        finally:
+            await run_in_threadpool(report_delivery_cache.close)
 
     app = FastAPI(
         title="RallyMate Vision API",
@@ -435,11 +527,13 @@ def create_app(
     app.state.settings = service_settings
     app.state.database = db
     app.state.technical_reviews = technical_reviews
+    app.state.report_delivery_cache = report_delivery_cache
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
         request_id = _safe_request_id(request.headers.get("X-Request-ID"))
         request.state.request_id = request_id
+        bind_pose_request_diagnostics(request)
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
         return response
@@ -452,9 +546,11 @@ def create_app(
         allow_origins=list(service_settings.cors_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256", "Idempotency-Key"],
         expose_headers=["X-Request-ID"],
     )
+    if pose_request_diagnostics_enabled():
+        app.add_middleware(PoseRequestDiagnosticsMiddleware)
     def authorize(
         request: Request,
         authorization: str | None = Header(default=None),
@@ -508,6 +604,7 @@ def create_app(
             "api_version": API_VERSION,
             "compatibility_version": API_COMPATIBILITY_VERSION,
             "environment": service_settings.environment,
+            "deployment": deployment_identity.public_status(),
             "public_base_url": service_settings.public_base_url,
             "authentication": {
                 "scheme": "bearer" if service_settings.api_key is not None else "none",
@@ -580,36 +677,6 @@ def create_app(
         for index, path in enumerate(service_settings.scoring_calibration_assets):
             if not path.exists():
                 reasons.append(f"scoring_calibration_asset[{index}] is missing: {path}")
-        if service_settings.scoring_calibration_assets:
-            ledger_path = service_settings.scoring_trusted_promotion_ledger
-            if ledger_path is None:
-                reasons.append("scoring_trusted_promotion_ledger is not configured")
-            elif not ledger_path.exists():
-                reasons.append(
-                    f"scoring_trusted_promotion_ledger is missing: {ledger_path}"
-                )
-            binding_path = (
-                service_settings.scoring_trusted_runtime_profile_bindings
-            )
-            if binding_path is None:
-                reasons.append(
-                    "scoring_trusted_runtime_profile_bindings is not configured"
-                )
-            elif not binding_path.exists():
-                reasons.append(
-                    "scoring_trusted_runtime_profile_bindings is missing: "
-                    f"{binding_path}"
-                )
-            evidence_dir = service_settings.scoring_runtime_view_evidence_dir
-            if evidence_dir is None:
-                reasons.append(
-                    "scoring_runtime_view_evidence_dir is not configured"
-                )
-            elif not evidence_dir.exists() or not evidence_dir.is_dir():
-                reasons.append(
-                    "scoring_runtime_view_evidence_dir is missing: "
-                    f"{evidence_dir}"
-                )
         if not reasons and service_settings.scoring_calibration_assets:
             assert registry_authority is not None
             try:
@@ -619,9 +686,6 @@ def create_app(
                         service_settings.scoring_trusted_promotion_ledger
                     ),
                     feasibility_registry=registry_authority.payload,
-                )
-                load_trusted_runtime_binding_registry(
-                    service_settings.scoring_trusted_runtime_profile_bindings
                 )
             except Exception as exc:
                 reasons.append(f"scoring calibration validation failed: {exc}")
@@ -709,7 +773,7 @@ def create_app(
                 item["indicator_id"]: item["feasibility_level"]
                 for item in registry["indicators"]
             },
-            "grade_policy": "calibration_required_without_coach_ground_truth",
+            "grade_policy": "evaluate_explicit_mathematical_rules_without_release_approval",
             "configured_production_calibration_asset_count": len(
                 service_settings.scoring_calibration_assets
             ),
@@ -1047,12 +1111,29 @@ def create_app(
         if job is None:
             raise HTTPException(404, "job not found")
         job["summary"] = summary_with_actions(job)
-        return _public_job(
+        result = _public_job(
             job,
             service_settings.public_base_url,
             redact_summary=_should_redact_public(service_settings),
             report_contract=report_contract,
         )
+        result["original_video"] = original_video_descriptor(job, service_settings)
+        return result
+
+    @app.post("/v1/jobs/{job_id}/cancel")
+    def cancel_job(job_id: str, response: Response,
+                   report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
+                   _: None = Depends(authorize)) -> dict:
+        job = db.request_cancel(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        response.headers["Cache-Control"] = "no-store"
+        job["summary"] = summary_with_actions(job)
+        result = _public_job(job, service_settings.public_base_url,
+                             redact_summary=_should_redact_public(service_settings),
+                             report_contract=report_contract)
+        result["original_video"] = original_video_descriptor(job, service_settings)
+        return result
 
     def technical_review_job(job_id: str) -> dict:
         job = db.get_job(job_id)
@@ -1095,14 +1176,9 @@ def create_app(
         except TechnicalReviewError as exc:
             raise HTTPException(exc.status, exc.detail()) from exc
 
-    @app.get("/v1/jobs/{job_id}/demo-result")
-    def get_demo_result(job_id: str, report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
-                        _: None = Depends(authorize)) -> dict:
-        job = db.get_job(job_id)
-        if job is None:
-            raise HTTPException(404, "job not found")
-        if job["status"] != "succeeded":
-            raise HTTPException(409, "job has not succeeded")
+    def build_demo_payload(job: dict, report_contract: ReportContract,
+                           report_transport: ReportTransport) -> dict:
+        job_id = job["id"]
         indicator_features_path = Path(job["output_dir"]) / "indicator-features.jsonl"
         # A successful run can legitimately contain no measured indicator
         # records (for example a short clip with no detectable motion).  Keep
@@ -1119,6 +1195,7 @@ def create_app(
                 summary,
                 records,
                 technique_registry_path=service_settings.resolved_technique_registry,
+                include_derived_assessments=False,
             )
         except TechniqueRegistrySnapshotError as exc:
             raise HTTPException(
@@ -1136,7 +1213,24 @@ def create_app(
             service_settings.public_base_url,
             redact_summary=_should_redact_public(service_settings),
         )
-        result["artifact_urls"] = public_job["artifact_urls"]
+        result["artifact_urls"] = {
+            name: url for name, url in public_job["artifact_urls"].items()
+            if name not in MESH_ARTIFACTS
+        }
+        # Keep cached report bytes independent of concurrent renderer output.
+        # This is only a bootstrap hint: the browser immediately resolves a
+        # declared mesh task via the small, uncached /mesh-preview endpoint.
+        # A ready preview also uses that route, rather than baking mutable
+        # descriptors or URLs into the numerical report's content identity.
+        declared_artifacts = (job.get("summary") or {}).get("artifacts")
+        declared_mesh = declared_artifacts.get("sam3d_mesh") if isinstance(declared_artifacts, dict) else None
+        declared_mesh_status = declared_mesh.get("status") if isinstance(declared_mesh, dict) else None
+        result["sam3d_mesh"] = None
+        result["sam3d_mesh_status"] = (
+            "pending" if declared_mesh_status in {"pending", "ready"}
+            else "failed" if declared_mesh_status == "failed" else "unavailable"
+        )
+        result["original_video"] = original_video_descriptor(job, service_settings)
         result["trajectory_url"] = public_job["trajectory_url"]
         result["technique_assessment_url"] = public_job["technique_assessment_url"]
         loop_summary = summary.get("minimum_scoring_loop")
@@ -1154,8 +1248,131 @@ def create_app(
             video_sha256=loop_provenance.get("video_sha256"),
             frames_sha256=loop_provenance.get("frames_sha256"),
         )
+        result["process_evaluation"] = build_process_evaluation(
+            summary, records, footwork_review=result["footwork_review"],
+        )
+        result["swing_kinematics"] = build_swing_kinematics(Path(job["output_dir"]), summary)
+        result["tennis_assessment"] = build_tennis_assessment(
+            summary, Path(job["output_dir"]), job_id=job_id,
+        )
+        result["indicator_assessment"] = build_indicator_assessment(
+            summary, records, source_assessment=result["source_aligned_assessment"],
+            process_evaluation=result["process_evaluation"],
+        )
+        try:
+            card_execution = build_card_execution_report(Path(job["output_dir"]))
+            if card_execution.get("source_run_id") != job_id:
+                raise ValueError("card_report_job_binding_mismatch")
+            result["card_execution"] = card_execution
+        except (OSError, ValueError, TypeError, KeyError, OverflowError):
+            result["card_execution"] = {
+                "version": CARD_EXECUTION_VERSION, "rule_version": CARD_RULE_VERSION,
+                "status": "unavailable", "source_run_id": job_id,
+                "reason_codes": ["raw_card_execution_evidence_unavailable"],
+                "cards": [], "overall_score": None,
+                "limitations": ["本次逐卡计算所需的原始帧证据缺失、身份不一致或校验未通过，暂不能生成逐卡结果。"],
+            }
         result["analysis_report"] = build_analysis_report(result, summary=summary)
-        return project_report(result, report_contract)
+        projected = project_report(result, report_contract)
+        if report_transport == 'model-proof-pool-v1':
+            try:
+                return pack_report_evidence(projected)
+            except ReportEvidenceTransportError as exc:
+                raise HTTPException(500, 'report evidence transport is unavailable') from exc
+        return projected
+
+    @app.get("/v1/jobs/{job_id}/demo-result")
+    def get_demo_result(job_id: str, report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
+                        report_transport: ReportTransport = Query('native'),
+                        report_delivery: ReportDelivery = Query('inline'),
+                        _: None = Depends(authorize)) -> dict:
+        scope = (job_id, report_contract, report_transport)
+
+        def preparing_response(pending=None):
+            if pending is not None and pending.error is not None:
+                raise HTTPException(pending.error.status, pending.error.detail(),
+                                    headers={"Retry-After": "5", "Cache-Control": "no-store"})
+            return JSONResponse(status_code=202, content={"job_id": job_id, "status": "preparing",
+                "report_delivery": "deferred-v1", "retry_after_ms": 1000},
+                headers={"Retry-After": "1", "Cache-Control": "no-store"})
+
+        if report_delivery == "deferred-v1" and report_transport == "model-proof-pool-v1":
+            pending = report_delivery_cache.pending_result(scope)
+            if pending is not None:
+                # Poll only terminal/cancellation state, not the multi-megabyte
+                # summary JSON. No response bytes are delivered by this path.
+                state = db.execution_state(job_id)
+                if state is None:
+                    raise HTTPException(404, "job not found")
+                if state["status"] != "succeeded" or state.get("cancel_requested"):
+                    raise HTTPException(409, "job has not succeeded or was cancelled")
+                return preparing_response(pending)
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] != "succeeded" or job.get("cancel_requested"):
+            raise HTTPException(409, "job has not succeeded or was cancelled")
+        if report_delivery == "inline":
+            try:
+                current_packaged_rules_identity()
+            except DeliveryError as exc:
+                raise HTTPException(exc.status, exc.detail()) from exc
+            return build_demo_payload(job, report_contract, report_transport)
+        if report_transport != "model-proof-pool-v1":
+            raise HTTPException(422, {"code": "report_delivery_requires_pool",
+                "message": "Deferred delivery requires model-proof-pool-v1 transport."})
+        pending = report_delivery_cache.pending_result(scope)
+        if pending is not None:
+            return preparing_response(pending)
+        try:
+            key = report_source_key(job, report_contract, report_transport)
+        except DeliveryError as exc:
+            raise HTTPException(exc.status, exc.detail()) from exc
+        except (OSError, ValueError) as exc:
+            raise HTTPException(500, {"code": "report_source_unavailable",
+                "message": "Report source identity is unavailable."}) from exc
+
+        def source_is_current():
+            current = db.get_job(job_id)
+            return (current is not None and current["status"] == "succeeded"
+                and not current.get("cancel_requested")
+                and report_source_key(current, report_contract, report_transport) == key)
+
+        def build_bytes():
+            try:
+                payload = build_demo_payload(job, report_contract, report_transport)
+                return json.dumps(payload, ensure_ascii=False, separators=(",", ":"),
+                                  allow_nan=False).encode("utf-8")
+            except HTTPException as exc:
+                # Keep the original HTTP status but do not leak arbitrary
+                # nested exceptions into the asynchronous transport envelope.
+                raise DeliveryError(exc.status_code, "report_preparation_failed",
+                                    "Report preparation failed.") from exc
+
+        # An explicit in-process invalidation must also bypass disk entries.
+        # Ordinary restart nonces do not affect the stable builder fingerprint.
+        persistent_version = (report_builder_version if REPORT_PROCESS_VERSION == report_process_at_start
+                              else report_builder_version + ":" + REPORT_PROCESS_VERSION)
+        delivery = report_delivery_cache.request(key, build_bytes, source_is_current, scope=scope,
+            persistent_key=persistent_report_key(persistent_version, key))
+        if delivery.state == "error":
+            raise HTTPException(delivery.error.status, delivery.error.detail(),
+                                headers={"Retry-After": "5", "Cache-Control": "no-store"})
+        if delivery.state == "ready":
+            # The cache rechecks this request's source snapshot outside its
+            # lock immediately before handing out a ready body.
+            return Response(content=delivery.body, media_type="application/json",
+                            headers={"Cache-Control": "no-store"})
+        return preparing_response()
+
+    @app.get("/v1/jobs/{job_id}/mesh-preview")
+    def get_mesh_preview(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        media = mesh_preview_descriptor(job, service_settings.public_base_url)
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"job_id": job_id, "status": mesh_preview_status(job, media), "sam3d_mesh": media}
 
     @app.get("/v1/jobs/{job_id}/trajectory")
     def get_trajectory(
@@ -1233,17 +1450,43 @@ def create_app(
                 },
             ) from exc
 
+    @app.get("/v1/jobs/{job_id}/tennis-assessment")
+    def get_tennis_assessment(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] != "succeeded":
+            raise HTTPException(409, "tennis assessment requires a succeeded job")
+        response.headers["Cache-Control"] = "no-store"
+        # Re-evaluate saved motion with the current rubric. Historical videos do
+        # not need another GPU run or the large per-card evidence report.
+        return build_tennis_assessment(
+            summary_with_actions(job), Path(job["output_dir"]), job_id=job_id,
+        )
+
+    @app.get("/v1/jobs/{job_id}/swing-kinematics")
+    def get_swing_kinematics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] != "succeeded":
+            raise HTTPException(409, "swing measurements require a succeeded job")
+        response.headers["Cache-Control"] = "no-store"
+        return build_swing_kinematics(Path(job["output_dir"]), job.get("summary") or {})
+
     @app.get("/v1/jobs/{job_id}/pose-preview")
     def get_pose_preview(
         job_id: str,
         response: Response,
+        request: Request,
         start_ms: int = Query(0, ge=0, description="Start of the source-video playback window."),
         duration_ms: int = Query(10_000, ge=1, le=10_000),
         sample_limit: int = Query(600, ge=1, le=600),
         _: None = Depends(authorize),
     ) -> dict:
         """Read a bounded skeleton window without rerunning pose inference."""
-        job = db.get_job(job_id)
+        with pose_diagnostic_stage(request, "db_get_job"):
+            job = db.get_job(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
         if job["status"] not in {"running", "succeeded"}:
@@ -1256,21 +1499,26 @@ def create_app(
             def signature(path: Path) -> tuple:
                 stat = path.stat() if path.is_file() else None
                 return (str(path), stat.st_mtime_ns, stat.st_size) if stat else (str(path), None, None)
-            cache_key = (signature(frames_path), signature(primary_path), job["status"], start_ms, duration_ms, sample_limit)
+            cache_key = (signature(frames_path), signature(primary_path), signature(frames_path.with_name("summary.json")),
+                         job["status"], start_ms, duration_ms, sample_limit)
+            record_pose_phase(request, "pose_lock_wait")
             with pose_cache_lock:
                 payload = pose_cache.get(cache_key)
+                record_pose_phase(request, "pose_lock_acquired", cache_hit=payload is not None)
                 if payload is None:
-                    payload = build_pose_playback(
-                        frames_path, primary_timeline_path=primary_path,
-                        start_ms=start_ms, duration_ms=duration_ms, sample_limit=sample_limit,
-                        allow_partial=job["status"] == "running",
-                    )
+                    with pose_diagnostic_stage(request, "build"):
+                        payload = build_pose_playback(
+                            frames_path, primary_timeline_path=primary_path,
+                            start_ms=start_ms, duration_ms=duration_ms, sample_limit=sample_limit,
+                            allow_partial=job["status"] == "running",
+                        )
                     payload["job_id"] = job_id
                     pose_cache[cache_key] = payload
                     while len(pose_cache) > 16:
                         pose_cache.popitem(last=False)
                 pose_cache.move_to_end(cache_key)
             response.headers["Cache-Control"] = "no-store"
+            record_pose_phase(request, "route_return")
             return payload
         except (PosePlaybackError, OSError) as exc:
             raise HTTPException(422, {"code": "pose_playback_artifact_invalid",
@@ -1327,6 +1575,49 @@ def create_app(
         )
         return project_report(result, report_contract)
 
+    @app.get("/v1/jobs/{job_id}/foot-crossing-candidates")
+    def get_foot_crossing_candidates(
+        job_id: str,
+        expected_artifact_sha256: str | None = Query(default=None, pattern=r"^[0-9a-fA-F]{64}$"),
+        _: None = Depends(authorize),
+    ) -> JSONResponse:
+        # A separately published, read-only snapshot; never compute or backfill here.
+        headers = {"Cache-Control": "private, no-store"}
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found", headers=headers)
+        if job["status"] != "succeeded" or job.get("cancel_requested"):
+            raise HTTPException(409, "job has not succeeded or was cancelled", headers=headers)
+        return JSONResponse(load_foot_crossing_candidates(
+            service_settings.data_root, job, expected_artifact_sha256=expected_artifact_sha256,
+        ), headers=headers)
+
+    @app.get("/v1/jobs/{job_id}/advice-evidence")
+    def get_advice_evidence(job_id: str, technique: AdviceTechnique = Query(...),
+                            _: None = Depends(authorize)) -> JSONResponse:
+        assessment = get_technique_assessment(job_id, report_contract='current')
+        try:
+            return JSONResponse(project_advice_context(job_id, assessment, technique))
+        except AdviceContextTooLarge as exc:
+            raise HTTPException(422, {'code': 'advice_context_limit',
+                                      'message': 'Complete advice context exceeds the response limit.'}) from exc
+
+    @app.get("/v1/jobs/{job_id}/original-video")
+    def get_original_video(job_id: str, _: None = Depends(authorize)) -> Response:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        try:
+            original = verify_original_video(job, service_settings)
+        except OriginalVideoUnavailable as exc:
+            raise HTTPException(409, str(exc)) from exc
+        # Retain FileResponse Range/If-Range handling with a compliant 416 unit. Never put
+        # bearer credentials, database paths or uploaded filenames in this URL.
+        return OriginalVideoResponse(original.path, filename=f"{job_id}-original{original.path.suffix.lower()}",
+                            content_disposition_type="inline",
+                            headers={"Cache-Control": "private, no-store",
+                                     "X-Content-Type-Options": "nosniff"})
+
     @app.get("/v1/jobs/{job_id}/artifacts/{artifact_name}")
     def get_artifact(
         job_id: str,
@@ -1341,6 +1632,8 @@ def create_app(
             raise HTTPException(404, "job not found")
         if job["status"] != "succeeded":
             raise HTTPException(409, "job has not succeeded")
+        if artifact_name in MESH_ARTIFACTS and mesh_preview_descriptor(job) is None:
+            raise HTTPException(404, "mesh preview is not ready")
         artifact = Path(job["output_dir"]) / artifact_name
         if not artifact.exists():
             raise HTTPException(404, "artifact not found")

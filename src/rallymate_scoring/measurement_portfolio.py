@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from rallymate_scoring.feasibility import measurement_feature_names
+from rallymate_scoring.model_measurement_contract import has_model_measurement_context
 
 
 PORTFOLIO_VERSION = "indicator-measurement-portfolio-v1.0.0"
@@ -18,7 +19,9 @@ class MeasurementPortfolioError(ValueError):
     pass
 
 
-def _feature_confidence_summary(record: dict[str, Any]) -> tuple[float, float]:
+def _feature_confidence_summary(record: dict[str, Any]) -> tuple[float | None, float | None]:
+    if has_model_measurement_context(record, *record.get("features", [])):
+        return None, None
     values = [float(item["confidence"]) for item in record.get("features", [])]
     if not values:
         return 0.0, 0.0
@@ -33,8 +36,8 @@ def _measurement_rank(
         str(record.get("quality_gate", {}).get("status")), -1
     )
     return (
-        -minimum,
-        -mean,
+        float("inf") if minimum is None else -minimum,
+        float("inf") if mean is None else -mean,
         -float(event.get("confidence", 0.0)),
         -gate_rank,
         int(event["start_ms"]),
@@ -50,7 +53,7 @@ def _diagnostic_rank(
     _, mean = _feature_confidence_summary(record)
     return (
         -valid_count,
-        -mean,
+        float("inf") if mean is None else -mean,
         -float(event.get("confidence", 0.0)),
         int(event["start_ms"]),
         str(record["event_id"]),
@@ -67,6 +70,7 @@ def _event_reference(
         "end_ms": int(event["end_ms"]),
         "person_track_id": record["person_track_id"],
         "event_confidence": float(event.get("confidence", 0.0)),
+        **{key: event[key] for key in ("measurement_provenance", "source_window", "geometry_mask", "confidence_semantics") if key in event},
     }
 
 
@@ -77,7 +81,8 @@ def _feature_vector(record: dict[str, Any]) -> list[dict[str, Any]]:
             "feature_version": str(item["feature_version"]),
             "value": item.get("value"),
             "unit": str(item["unit"]),
-            "confidence": float(item["confidence"]),
+            "confidence": None if has_model_measurement_context(item) else float(item["confidence"]),
+            **{key: item[key] for key in ("measurement_provenance", "source_window", "geometry_mask", "required_joints_used", "selected_side") if key in item},
             "valid": item.get("valid") is True,
             "reason": str(item["reason"]),
             "source_frames": [int(frame) for frame in item.get("source_frames", [])],

@@ -5,6 +5,19 @@ export const hasMeasurement = (item: IndicatorEvaluation) => item.available !== 
 export const candidateName = (name: string) => name.includes("候选") ? name : `${name}（候选）`;
 export const MEASUREMENT_CONTRACT = "isotropic-frame-long-edge-v1.1.0";
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+/** A missing grade does not establish that calibration is the only remaining step. */
+export function technicalAssessmentState(value: unknown, measured?: boolean): { status: string; label_zh: string } {
+  const item = record(value), provenance = record(item.measurement_provenance);
+  const reasonCodes = Array.isArray(item.reason_codes) ? item.reason_codes : [];
+  if ([item.status_reason, item.technical_score_status, ...reasonCodes].includes("grade_rule_not_defined")) return { status: "scoring_not_implemented", label_zh: "计分规则尚未定义" };
+  if (item.recognition_status === "candidate" || item.status === "candidate") return { status: "candidate_confirmation_required", label_zh: "动作待确认" };
+  if ([item.status, item.status_reason, item.technical_score_status].some(status => ["not_implemented", "scoring_not_implemented", "contact_control_rule_not_implemented"].includes(String(status)))) return { status: "scoring_not_implemented", label_zh: "评分尚未实现" };
+  if (item.observed === false || item.status === "not_observed" || item.technical_score_status === "not_observed") return { status: "not_observed", label_zh: "本次未观测" };
+  if ([item.status, item.technical_score_status].includes("source_rule_conflict")) return { status: "source_rule_conflict", label_zh: "动作要求待明确" };
+  if (provenance.pose_source === "sam3d" && provenance.observation_semantics === "monocular_model_estimate" && provenance.scoring_allowed === false) return { status: "model_estimate_measurement_only", label_zh: "模型估计，仅作测量" };
+  if (measured === false || item.available === false || item.technical_score_status === "evidence_insufficient") return { status: "evidence_insufficient", label_zh: "测量证据不足" };
+  return { status: "incomplete_scoring_evidence", label_zh: "尚缺完整评分依据" };
+}
 export const EVIDENCE_SCORE_SEMANTICS = "measurement_evidence_quality";
 /** Only explicitly identified evidence scores are compatible with this display. */
 export function evidenceReferenceScore(value: unknown): number | null {
@@ -54,11 +67,11 @@ export function normalizeMeasurementResult(result: DemoResultResponse): DemoResu
   const normalizeIndicator = (item: IndicatorEvaluation): IndicatorEvaluation => ({
     ...item, score_0_to_100: hasMeasurement(item) ? evidenceReferenceScore(item) : null, technical_score_0_to_100: null,
     technical_grade: null, formal_grade: null,
-    score_semantics: item.score_semantics === EVIDENCE_SCORE_SEMANTICS ? EVIDENCE_SCORE_SEMANTICS : "descriptive_measurement_evidence_no_aggregate_score", technical_score_status: "calibration_required",
+    score_semantics: item.score_semantics === EVIDENCE_SCORE_SEMANTICS ? EVIDENCE_SCORE_SEMANTICS : "descriptive_measurement_evidence_no_aggregate_score", technical_score_status: technicalAssessmentState(item, hasMeasurement(item)).status,
     available: hasMeasurement(item), component_weights: item.score_semantics === EVIDENCE_SCORE_SEMANTICS ? item.component_weights : {}, effective_component_weights: item.score_semantics === EVIDENCE_SCORE_SEMANTICS ? item.effective_component_weights : {},
     level_zh: hasMeasurement(item) ? "有可复核测量" : "测量证据不足",
-    summary_zh: `${count(item.measured_instance_count)}/${count(item.total_instance_count)} 个候选片段可测；技术评分待教练标定。`,
-    observation_zh: item.observation_zh && !/(?:参考分|[0-9]+\s*[/／]\s*100|表现较稳定|动作做得[好差])/u.test(item.observation_zh) ? item.observation_zh : "请结合逐项测量和候选片段回放复核。",
+    summary_zh: `${count(item.measured_instance_count)}/${count(item.total_instance_count)} 个运动片段可测；${technicalAssessmentState(item, hasMeasurement(item)).label_zh}。`,
+    observation_zh: item.observation_zh && !/(?:参考分|[0-9]+\s*[/／]\s*100|表现较稳定|动作做得[好差])/u.test(item.observation_zh) ? item.observation_zh : "请结合逐项测量和运动片段回放复核。",
     suggestion_zh: "先复核候选动作和测量证据；当前不据此给出技术优劣判断。",
   });
   const indicators = measurementIndicators(result).map(normalizeIndicator);
@@ -71,17 +84,17 @@ export function normalizeMeasurementResult(result: DemoResultResponse): DemoResu
     training_evaluation: training ? {
       ...training, score_0_to_100: measured > 0 ? evidenceReferenceScore(training) : null, technical_score_0_to_100: null,
       technical_grade: null, formal_grade: null,
-      score_semantics: training.score_semantics === EVIDENCE_SCORE_SEMANTICS ? EVIDENCE_SCORE_SEMANTICS : "descriptive_measurement_evidence_no_aggregate_score", technical_score_status: "calibration_required",
+      score_semantics: training.score_semantics === EVIDENCE_SCORE_SEMANTICS ? EVIDENCE_SCORE_SEMANTICS : "descriptive_measurement_evidence_no_aggregate_score", technical_score_status: technicalAssessmentState(training, measured > 0).status,
       available: measured > 0, evaluated_indicator_count: measured, total_indicator_count: indicators.length,
       label_zh: "测量证据参考分（Beta）", level_zh: measured ? "有可复核测量" : "测量证据不足",
-      summary_zh: `${indicators.length} 项中有 ${measured} 项有测量；候选动作待复核，技术评分待教练标定。`,
-      meaning_zh: "参考分反映测量证据的完整程度；高分不代表动作正确或技术水平更高，技术评分待教练标定。",
+      summary_zh: `${indicators.length} 项指标中有 ${measured} 项有测量；动作类型尚未确认，${technicalAssessmentState(training, measured > 0).label_zh}。`,
+      meaning_zh: "参考分反映测量证据的完整程度；高分不代表动作正确或技术水平更高。技术评分还需对应动作、正式阶段及完整规则证据。",
       strengths_zh: [], priorities_zh: [], component_weights: training.score_semantics === EVIDENCE_SCORE_SEMANTICS ? training.component_weights : {},
       action_evaluations: undefined, indicator_evaluations: indicators,
     } : undefined,
     actions: result.actions?.map(action => ({
       ...action, name_zh: action.event_code.startsWith("FS") ? candidateName(action.name_zh) : action.name_zh,
-      summary_zh: `${count(action.detected_segments)} 个候选片段，动作类型待复核。`,
+      summary_zh: `${count(action.detected_segments)} 个运动片段，动作类型尚未确认。`,
       performance_assessment: { score_0_to_100: action.indicator_evaluations?.some(hasMeasurement) ? evidenceReferenceScore(action.performance_assessment) : null, score_semantics: EVIDENCE_SCORE_SEMANTICS, technical_score_0_to_100: null, technical_grade: null, formal_grade: null, level_zh: "测量证据参考分（Beta）" },
       indicator_evaluations: action.indicator_evaluations?.map(normalizeIndicator),
       formation_assessment: undefined,

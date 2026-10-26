@@ -1,0 +1,85 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+  "sample_id": "holdout-ordinary-lowres-close",
+  "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+  "prior_results_seen": true,
+  "direction_policy": "not_provided_without_independent_fixed_camera_reference",
+  "actions": [
+    {
+      "episode_id": "f2e5e28ee45f6fc2668e",
+      "person_track_id": 6,
+      "start_ms": 4433,
+      "peak_ms": 4767,
+      "end_ms": 5033,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "technique": "baseline_two_hand_backhand",
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "人工仅确认此源动作主体与类别；不构成教练评分真值或精确触球验证。"
+      },
+      "camera_reference_epoch": 15,
+      "human_subject_id": "holdout-ordinary-lowres-close:person-A",
+      "racket_hand_basis": "该双反窗可确认两手共同握拍，不能可靠辨认主握拍手，因此未提供racket_hand。",
+      "raw_detector_candidate_peak_ms": 5067,
+      "evidence": {
+        "contact_sheet": "action-sheets/holdout-ordinary-lowres-close-e01.jpg",
+        "frames": [
+          {
+            "requested_timestamp_ms": 4100.0,
+            "nearest_primary_timestamp_ms": 4100,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 4400.0,
+            "nearest_primary_timestamp_ms": 4400,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 4550.0,
+            "nearest_primary_timestamp_ms": 4533,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 4700.0,
+            "nearest_primary_timestamp_ms": 4700,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 4850.0,
+            "nearest_primary_timestamp_ms": 4833,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 5133.334,
+            "nearest_primary_timestamp_ms": 5133,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 5486.667,
+            "nearest_primary_timestamp_ms": 5500,
+            "old_source_track_id": 6
+          },
+          {
+            "requested_timestamp_ms": 5565.667,
+            "nearest_primary_timestamp_ms": 5567,
+            "old_source_track_id": 6
+          }
+        ],
+        "observation_zh": "黑衣白裙目标；双手共同握拍在反手侧低位准备后跨身随挥。",
+        "reviewed_window_ms": {
+          "start_ms": 4100.0,
+          "peak_ms": 4700.0,
+          "end_ms": 5566.667
+        },
+        "limitations": [
+          "small_training_space_and_low_resolution"
+        ],
+        "scope": "manual visual technique label; not automated classification or coach ground truth"
+      }
+    }
+  ]
+}

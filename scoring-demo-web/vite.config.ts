@@ -59,6 +59,9 @@ export default defineConfig(async ({ mode }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    // Keep content-hashed assets used by the running server and open browser
+    // tabs during an in-place build; vinext's CLI reads this flag too.
+    build: { emptyOutDir: false },
     server: {
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }

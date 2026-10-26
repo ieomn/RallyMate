@@ -1,0 +1,3910 @@
+{
+  "provenance": {
+    "kind": "actual_original_video_GS_artifact_outputs",
+    "envelope": "test_only_unified_envelope_for_standalone_service_outputs_not_HTTP_validation",
+    "warning": "sampled_racket_hands_not_dominant_hand_or_continuous_racket_hold;no_new_positive_wrist_speed"
+  },
+  "reports": [
+    {
+      "original_report_sha256": "743a1faf656a105e5bef92b66212f2c06deeaa25c6e627942a9cb134f8066d8c",
+      "original_service_version": "gs-card-execution-v1.0.0",
+      "report": {
+        "version": "card-execution-v1.0.0",
+        "rule_version": "card-rules-v1.0.0",
+        "source_run_id": "card-ocw-pe.710-2-forehand-220k",
+        "input": {
+          "source": "frame_observations_primary_selection_decoder_pts_and_explicit_stage_annotations",
+          "source_frame_count": 249,
+          "decoder_frame_count": 249,
+          "annotation_count": 1,
+          "action_count": 1,
+          "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+          "input_artifact_sha256": {
+            "frames.jsonl": "140d69438fc482bbdbfdb827ab0caea4fe9a012b00a9dbdcd0950213f4d6d38c",
+            "primary-player.jsonl": "6c6d2bae161639398e41e9be944285df610ddf2c4acd3e2eb862b4a465512f46",
+            "summary.json": "2b06c4e2ebde0afe728fb749e088b86569e586e8b3c34cb08f1058f54a9f3dd9"
+          },
+          "annotation_document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+          "catalogue_sha256": "1c41382a15166ca653e36197e1bcffc963361770633681d14c181422c3439aff",
+          "annotation_digest_kind": "canonical_json_sorted_utf8_v1",
+          "catalogue_digest_kind": "canonical_json_sorted_utf8_v1",
+          "artifact_digest_kind": "raw_file_sha256",
+          "saved_grades_trusted": false,
+          "artifact_files_verified": true,
+          "decoder_verified_from_original_video": true,
+          "service_eligible": true,
+          "annotation_version": "gs-stage-annotations-v1.0.0",
+          "source_job_id": "card-ocw-pe.710-2-forehand-220k"
+        },
+        "cards": [
+          {
+            "indicator_id": "GS01-M07-01",
+            "event_code": "GS01",
+            "stage_code": "GS01-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "持拍手主动加速",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "required_condition_evidence_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS01-M07-01",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "forehand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-forehand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2620,
+                  "person_track_id": 1,
+                  "selection_epoch": 9,
+                  "camera_reference_epoch": 4,
+                  "camera_compensated": true,
+                  "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                  "video_id": "card-ocw-pe.710-2-forehand-220k",
+                  "event_code": "GS01",
+                  "stage_code": "GS01-M07",
+                  "stage_id": "GS01-M07",
+                  "event_id": "forehand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_condition_evidence_missing"
+                ],
+                "conditions": [
+                  {
+                    "key": "wrist_speed_increase_torso_s",
+                    "metric": "wrist_speed_increase_torso_s",
+                    "value": null,
+                    "operator": "gte",
+                    "passed": null,
+                    "threshold": 0.4,
+                    "unit": "torso/s",
+                    "evidence": {
+                      "feature_name": "wrist_speed_increase_torso_s",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "torso/s",
+                      "required_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_wrist",
+                        "right_wrist"
+                      ],
+                      "geometry_gate_passed": false,
+                      "valid_frame_count": 0,
+                      "total_frame_count": 5,
+                      "source_frames": [
+                        35,
+                        36,
+                        37,
+                        38,
+                        39
+                      ],
+                      "statistics": {},
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "reason_codes": [
+                        "continuous_endpoint_window_missing"
+                      ],
+                      "semantics": "image_plane_visual_proxy"
+                    },
+                    "reason": "metric_not_computed_or_incomplete"
+                  }
+                ],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "measurement_version": "card-kinematics-v1.0.0",
+                "quality": {
+                  "required_joint_names": [
+                    "left_hip",
+                    "left_shoulder",
+                    "left_wrist",
+                    "right_hip",
+                    "right_shoulder",
+                    "right_wrist"
+                  ],
+                  "valid_frame_count": 4,
+                  "total_frame_count": 5,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "minimum_fraction": 0.7,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage"
+                },
+                "event_code": "GS01",
+                "action_id": "forehand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T034",
+                  "rubric_sha256": "5961e132e817b6552bf6b7b54fc26c773403dce5cd57e748effeff48d47541a3"
+                },
+                "source_annotation": {
+                  "annotation_id": "forehand-1-source-m07-v1",
+                  "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS01-M07-02",
+            "event_code": "GS01",
+            "stage_code": "GS01-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "manual_review",
+            "name_zh": "球拍滞后达到最大",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "review_required",
+            "reason_codes": [
+              "required_observable_not_recoverable_from_pose"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "review_required": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS01-M07-02",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "forehand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-forehand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2620,
+                  "person_track_id": 1,
+                  "selection_epoch": 9,
+                  "camera_reference_epoch": 4,
+                  "camera_compensated": true,
+                  "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                  "video_id": "card-ocw-pe.710-2-forehand-220k",
+                  "event_code": "GS01",
+                  "stage_code": "GS01-M07",
+                  "stage_id": "GS01-M07",
+                  "event_id": "forehand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "review_required",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_observable_not_recoverable_from_pose"
+                ],
+                "conditions": [],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "event_code": "GS01",
+                "action_id": "forehand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T035",
+                  "rubric_sha256": "6a5f408cd107f447254940b81597112f13f39cacd70015d140feca29c71787e6"
+                },
+                "source_annotation": {
+                  "annotation_id": "forehand-1-source-m07-v1",
+                  "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS01-M07-03",
+            "event_code": "GS01",
+            "stage_code": "GS01-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "manual_review",
+            "name_zh": "拍头主动释放",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "review_required",
+            "reason_codes": [
+              "required_observable_not_recoverable_from_pose"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "review_required": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS01-M07-03",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "forehand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-forehand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2620,
+                  "person_track_id": 1,
+                  "selection_epoch": 9,
+                  "camera_reference_epoch": 4,
+                  "camera_compensated": true,
+                  "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                  "video_id": "card-ocw-pe.710-2-forehand-220k",
+                  "event_code": "GS01",
+                  "stage_code": "GS01-M07",
+                  "stage_id": "GS01-M07",
+                  "event_id": "forehand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "review_required",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_observable_not_recoverable_from_pose"
+                ],
+                "conditions": [],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "event_code": "GS01",
+                "action_id": "forehand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T036",
+                  "rubric_sha256": "73300c35012565c281eaeb09044c1ac07c6893b6b35ab16b94c46f4cdd185efb"
+                },
+                "source_annotation": {
+                  "annotation_id": "forehand-1-source-m07-v1",
+                  "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS01-M07-04",
+            "event_code": "GS01",
+            "stage_code": "GS01-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "非持拍手维持身体动态稳定",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "proxy_scored",
+            "reason_codes": [],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "proxy_scored": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS01-M07-04",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "forehand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-forehand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2620,
+                  "person_track_id": 1,
+                  "selection_epoch": 9,
+                  "camera_reference_epoch": 4,
+                  "camera_compensated": true,
+                  "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                  "video_id": "card-ocw-pe.710-2-forehand-220k",
+                  "event_code": "GS01",
+                  "stage_code": "GS01-M07",
+                  "stage_id": "GS01-M07",
+                  "event_id": "forehand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "proxy_scored",
+                "original_grade": null,
+                "proxy_grade": "A",
+                "score": 100,
+                "reason_codes": [],
+                "conditions": [
+                  {
+                    "key": "hip_inside_ankle_support_fraction.mean",
+                    "metric": "hip_inside_ankle_support_fraction.mean",
+                    "value": 1.0,
+                    "operator": "gte",
+                    "passed": true,
+                    "threshold": 0.8,
+                    "unit": "fraction",
+                    "evidence": {
+                      "feature_name": "hip_inside_ankle_support_fraction",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "fraction",
+                      "required_joint_names": [
+                        "left_hip",
+                        "right_hip",
+                        "left_ankle",
+                        "right_ankle"
+                      ],
+                      "total_frame_count": 5,
+                      "valid_frame_count": 5,
+                      "fraction": 1.0,
+                      "geometry_gate_passed": true,
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "denominator": "all_decoder_samples_in_bound_stage",
+                      "source_frames": [
+                        35,
+                        36,
+                        37,
+                        38,
+                        39
+                      ],
+                      "valid_source_frames": [
+                        35,
+                        36,
+                        37,
+                        38,
+                        39
+                      ],
+                      "reason_codes": [
+                        "partial_window_cannot_establish_change"
+                      ],
+                      "statistics": {
+                        "mean": 1.0,
+                        "median": 1.0,
+                        "range": 0.0,
+                        "min": 1.0,
+                        "max": 1.0
+                      },
+                      "semantics": "image_plane_visual_proxy"
+                    }
+                  },
+                  {
+                    "key": "trunk_tilt_deg.range",
+                    "metric": "trunk_tilt_deg.range",
+                    "value": 5.796157221705846,
+                    "operator": "lte",
+                    "passed": true,
+                    "threshold": 15,
+                    "unit": "deg",
+                    "evidence": {
+                      "feature_name": "trunk_tilt_deg",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "deg",
+                      "required_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip"
+                      ],
+                      "total_frame_count": 5,
+                      "valid_frame_count": 5,
+                      "fraction": 1.0,
+                      "geometry_gate_passed": true,
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "denominator": "all_decoder_samples_in_bound_stage",
+                      "source_frames": [
+                        35,
+                        36,
+                        37,
+                        38,
+                        39
+                      ],
+                      "valid_source_frames": [
+                        35,
+                        36,
+                        37,
+                        38,
+                        39
+                      ],
+                      "reason_codes": [
+                        "partial_window_cannot_establish_change"
+                      ],
+                      "statistics": {
+                        "mean": 17.371450270260986,
+                        "median": 16.60171492044397,
+                        "range": 5.796157221705846,
+                        "min": 14.593945680681907,
+                        "max": 20.390102902387753
+                      },
+                      "semantics": "image_plane_visual_proxy"
+                    }
+                  }
+                ],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "measurement_version": "card-kinematics-v1.0.0",
+                "quality": {
+                  "required_joint_names": [
+                    "left_ankle",
+                    "left_hip",
+                    "left_shoulder",
+                    "right_ankle",
+                    "right_hip",
+                    "right_shoulder"
+                  ],
+                  "valid_frame_count": 5,
+                  "total_frame_count": 5,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "minimum_fraction": 0.7,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage"
+                },
+                "condition_completion_fraction": 1.0,
+                "semantics": "engineering_visual_condition_completion_not_original_technical_grade",
+                "event_code": "GS01",
+                "action_id": "forehand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T037",
+                  "rubric_sha256": "f234aab41935b286a6a1209023434e40f81900267c165c469d0e063c49f81653"
+                },
+                "source_annotation": {
+                  "annotation_id": "forehand-1-source-m07-v1",
+                  "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS01-M07-05",
+            "event_code": "GS01",
+            "stage_code": "GS01-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "manual_review",
+            "name_zh": "球拍轨迹逐渐向预测击球点收敛",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "review_required",
+            "reason_codes": [
+              "required_observable_not_recoverable_from_pose"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "review_required": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS01-M07-05",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "forehand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-forehand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2620,
+                  "person_track_id": 1,
+                  "selection_epoch": 9,
+                  "camera_reference_epoch": 4,
+                  "camera_compensated": true,
+                  "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                  "video_id": "card-ocw-pe.710-2-forehand-220k",
+                  "event_code": "GS01",
+                  "stage_code": "GS01-M07",
+                  "stage_id": "GS01-M07",
+                  "event_id": "forehand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "review_required",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_observable_not_recoverable_from_pose"
+                ],
+                "conditions": [],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "event_code": "GS01",
+                "action_id": "forehand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T038",
+                  "rubric_sha256": "8ebe7ade50d02f20f6b022fd00dbd7b4a9252bbf54e3e577907b8d09c9483ee4"
+                },
+                "source_annotation": {
+                  "annotation_id": "forehand-1-source-m07-v1",
+                  "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                    "uncertainty_ms": 150,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "forehand-1",
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                    "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS01",
+                    "action_window_ms": {
+                      "start_ms": 2087.0,
+                      "end_ms": 3154.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 38,
+                        "pts": 229860,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2554.0,
+                        "selection_epoch": 9,
+                        "camera_reference_epoch": 4
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "stage_windows": [
+          {
+            "annotation_id": "forehand-1-source-m07-v1",
+            "action_id": "forehand-1",
+            "stage_code": "GS01-M07",
+            "requested_window_ms": {
+              "start_ms": 2354.0,
+              "end_ms": 2620.0
+            },
+            "window": {
+              "start_ms": 2354,
+              "end_ms": 2620,
+              "person_track_id": 1,
+              "selection_epoch": 9,
+              "camera_reference_epoch": 4,
+              "camera_compensated": true,
+              "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+              "video_id": "card-ocw-pe.710-2-forehand-220k",
+              "event_code": "GS01",
+              "stage_code": "GS01-M07",
+              "stage_id": "GS01-M07",
+              "event_id": "forehand-1-source-m07-v1",
+              "stage_binding": {
+                "method": "manual_anchor",
+                "version": "mit-source-m07-visible-boundaries-v1",
+                "source": "gs-acceleration-windows-20261022.json#forehand-1-source-m07-v1",
+                "uncertainty_ms": 150,
+                "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+              },
+              "racket_side_binding": {
+                "version": "manual-racket-side-observation-v1.0.0",
+                "method": "manual_visual_observation",
+                "action_id": "forehand-1",
+                "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                "person_track_id": 1,
+                "measurement_wrist_side": "right",
+                "observed_racket_hands": "right",
+                "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-forehand-220k/forehand-1",
+                "source_description": "Original front-oblique frame shows the racket handle in the anatomical right hand; left arm is separated and bent away.",
+                "uncertainty_ms": 100,
+                "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                "source_frames": [
+                  {
+                    "frame_index": 38,
+                    "pts": 229860,
+                    "time_base_num": 1,
+                    "time_base_den": 90000
+                  }
+                ],
+                "technique_code": "GS01",
+                "action_window_ms": {
+                  "start_ms": 2087.0,
+                  "end_ms": 3154.0
+                },
+                "document_version": "gs-stage-annotations-v1.0.0",
+                "document_sha256": "145ca89b41a2d7aab75f9eb4d3900ce79a6659937ca4c4f351340063224e8d40",
+                "digest_kind": "canonical_json_sorted_utf8_v1",
+                "verification": "source_frames_matched_to_decoder_and_selected_person",
+                "evidence_scope": "sampled_frames_only",
+                "expert_adjudicated": false,
+                "dominant_hand_established": false,
+                "continuous_racket_hold_established": false,
+                "source_frame_bindings": [
+                  {
+                    "frame_index": 38,
+                    "pts": 229860,
+                    "time_base_num": 1,
+                    "time_base_den": 90000,
+                    "video_sha256": "3c3dbc120084e7ec1341e5ee0db4ec403fa553204d0ca92d06e9138d7bb71a50",
+                    "person_track_id": 1,
+                    "timestamp_ms": 2554.0,
+                    "selection_epoch": 9,
+                    "camera_reference_epoch": 4
+                  }
+                ],
+                "stage_continuity_verified": true
+              },
+              "racket_side": "right"
+            },
+            "source_frames": [
+              35,
+              36,
+              37,
+              38,
+              39
+            ],
+            "observed_source_frame_count": 5,
+            "source_pts": [
+              {
+                "frame_index": 35,
+                "pts": 211860,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 36,
+                "pts": 217800,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 37,
+                "pts": 223830,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 38,
+                "pts": 229860,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 39,
+                "pts": 235800,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              }
+            ],
+            "reason_codes": [],
+            "indicator_ids": [
+              "GS01-M07-01",
+              "GS01-M07-02",
+              "GS01-M07-03",
+              "GS01-M07-04",
+              "GS01-M07-05"
+            ]
+          }
+        ],
+        "summary": {
+          "version": "card-evaluation-v1.0.0",
+          "grade_points": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "D": 40,
+            "E": 20
+          },
+          "channels": {
+            "original": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "visual_proxy": {
+              "score": 100.0,
+              "scored_cards": 1,
+              "applicable_cards": 248,
+              "coverage": 0.004032258064516129,
+              "scored_event_instances": 1,
+              "per_card": {
+                "GS01-M07-04": 100.0
+              }
+            },
+            "manual": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            }
+          },
+          "status_counts": {
+            "unavailable": 1,
+            "review_required": 3,
+            "proxy_scored": 1
+          },
+          "conflicting_event_instances": 0,
+          "overall_score": null,
+          "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+          "weight_policy": "equal_card_weight_after_event_mean",
+          "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+        },
+        "observed_type_summary": {
+          "version": "card-evaluation-v1.0.0",
+          "grade_points": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "D": 40,
+            "E": 20
+          },
+          "channels": {
+            "original": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 51,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "visual_proxy": {
+              "score": 100.0,
+              "scored_cards": 1,
+              "applicable_cards": 51,
+              "coverage": 0.0196078431372549,
+              "scored_event_instances": 1,
+              "per_card": {
+                "GS01-M07-04": 100.0
+              }
+            },
+            "manual": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 51,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            }
+          },
+          "status_counts": {
+            "unavailable": 1,
+            "review_required": 3,
+            "proxy_scored": 1
+          },
+          "conflicting_event_instances": 0,
+          "overall_score": null,
+          "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+          "weight_policy": "equal_card_weight_after_event_mean",
+          "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+        },
+        "coverage": {
+          "source_gs_card_count": 248,
+          "annotated_stage_count": 1,
+          "executed_card_count": 5,
+          "computed_card_instance_count": 5,
+          "run_card_status_counts": {
+            "not_executed": 46,
+            "unavailable": 1,
+            "review_required": 3,
+            "proxy_scored": 1,
+            "not_observed": 197
+          },
+          "instance_status_counts": {
+            "unavailable": 1,
+            "review_required": 3,
+            "proxy_scored": 1
+          },
+          "original_auto_graded_card_count": 0,
+          "registered_automatic_source_stage_detectors": 0
+        },
+        "overall_score": null,
+        "missing_policy": "exclude_from_grade_keep_in_applicable_card_coverage",
+        "limitations": [
+          "manual_stage_annotations_are_estimates_not_expert_ground_truth",
+          "source_stage_technical_behavior_not_established_by_2d_proxy",
+          "no_automatic_ten_stage_gs_locator_registered",
+          "missing_stage_never_inferred_from_three_generic_swing_phases",
+          "monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility"
+        ]
+      }
+    },
+    {
+      "original_report_sha256": "87a2de227e039282dd50ddbaec6c3c1bdfbfeace28bfd17ff4a031216590b587",
+      "original_service_version": "gs-card-execution-v1.0.0",
+      "report": {
+        "version": "card-execution-v1.0.0",
+        "rule_version": "card-rules-v1.0.0",
+        "source_run_id": "card-ocw-pe.710-1hand_backhand-220k",
+        "input": {
+          "source": "frame_observations_primary_selection_decoder_pts_and_explicit_stage_annotations",
+          "source_frame_count": 232,
+          "decoder_frame_count": 232,
+          "annotation_count": 1,
+          "action_count": 1,
+          "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+          "input_artifact_sha256": {
+            "frames.jsonl": "7896343f0c8b9a29056705ff437b9294b251ca558af67a88875d8d33902a598f",
+            "primary-player.jsonl": "60695c660254a1e6e827deae4694558f54c4768f3330fb61a07f791e49c8409e",
+            "summary.json": "27de6664d1a4e40e414bedd01829e47a0623660a879ce73262f5c1ed173cb0a0"
+          },
+          "annotation_document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+          "catalogue_sha256": "1c41382a15166ca653e36197e1bcffc963361770633681d14c181422c3439aff",
+          "annotation_digest_kind": "canonical_json_sorted_utf8_v1",
+          "catalogue_digest_kind": "canonical_json_sorted_utf8_v1",
+          "artifact_digest_kind": "raw_file_sha256",
+          "saved_grades_trusted": false,
+          "artifact_files_verified": true,
+          "decoder_verified_from_original_video": true,
+          "service_eligible": true,
+          "annotation_version": "gs-stage-annotations-v1.0.0",
+          "source_job_id": "card-ocw-pe.710-1hand_backhand-220k"
+        },
+        "cards": [
+          {
+            "indicator_id": "GS03-M07-01",
+            "event_code": "GS03",
+            "stage_code": "GS03-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "持拍手单手加速",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "stage_source_observations_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS03-M07-01",
+                "rule_version": "card-rules-v1.0.0",
+                "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                "event_id": "backhand-1-source-m07-v1",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2420,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                  "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                  "event_code": "GS03",
+                  "stage_code": "GS03-M07",
+                  "stage_id": "GS03-M07",
+                  "event_id": "backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "source_grade_supported": false,
+                "reason_codes": [
+                  "stage_source_observations_missing"
+                ],
+                "conditions": [],
+                "event_code": "GS03",
+                "action_id": "backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T131",
+                  "rubric_sha256": "5232e7d0162a271e47c0ac58aea39bb7231419af2a11e8443f4a75fa9df514ec"
+                },
+                "source_annotation": {
+                  "annotation_id": "backhand-1-source-m07-v1",
+                  "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS03-M07-02",
+            "event_code": "GS03",
+            "stage_code": "GS03-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "manual_review",
+            "name_zh": "球拍持续释放",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "stage_source_observations_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS03-M07-02",
+                "rule_version": "card-rules-v1.0.0",
+                "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                "event_id": "backhand-1-source-m07-v1",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2420,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                  "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                  "event_code": "GS03",
+                  "stage_code": "GS03-M07",
+                  "stage_id": "GS03-M07",
+                  "event_id": "backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "source_grade_supported": false,
+                "reason_codes": [
+                  "stage_source_observations_missing"
+                ],
+                "conditions": [],
+                "event_code": "GS03",
+                "action_id": "backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T132",
+                  "rubric_sha256": "b862255413ddd59971170edc474e920220dc50d4aaa305a5907af48d3b95eb47"
+                },
+                "source_annotation": {
+                  "annotation_id": "backhand-1-source-m07-v1",
+                  "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS03-M07-03",
+            "event_code": "GS03",
+            "stage_code": "GS03-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "非持拍手自然张开",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "stage_source_observations_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS03-M07-03",
+                "rule_version": "card-rules-v1.0.0",
+                "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                "event_id": "backhand-1-source-m07-v1",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2420,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                  "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                  "event_code": "GS03",
+                  "stage_code": "GS03-M07",
+                  "stage_id": "GS03-M07",
+                  "event_id": "backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "source_grade_supported": false,
+                "reason_codes": [
+                  "stage_source_observations_missing"
+                ],
+                "conditions": [],
+                "event_code": "GS03",
+                "action_id": "backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T133",
+                  "rubric_sha256": "a4876b9cbdedb7ee4079ce1e74af5f8577b51587dd8354b89df79ae555f5498a"
+                },
+                "source_annotation": {
+                  "annotation_id": "backhand-1-source-m07-v1",
+                  "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS03-M07-04",
+            "event_code": "GS03",
+            "stage_code": "GS03-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "身体继续旋转",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "stage_source_observations_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS03-M07-04",
+                "rule_version": "card-rules-v1.0.0",
+                "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                "event_id": "backhand-1-source-m07-v1",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2420,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                  "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                  "event_code": "GS03",
+                  "stage_code": "GS03-M07",
+                  "stage_id": "GS03-M07",
+                  "event_id": "backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "source_grade_supported": false,
+                "reason_codes": [
+                  "stage_source_observations_missing"
+                ],
+                "conditions": [],
+                "event_code": "GS03",
+                "action_id": "backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T134",
+                  "rubric_sha256": "07a9c7886227a3133fe456cf78601090f95d021cc94a9894b644a9d0cef87ee6"
+                },
+                "source_annotation": {
+                  "annotation_id": "backhand-1-source-m07-v1",
+                  "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS03-M07-05",
+            "event_code": "GS03",
+            "stage_code": "GS03-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "重心持续前移",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "stage_source_observations_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS03-M07-05",
+                "rule_version": "card-rules-v1.0.0",
+                "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                "event_id": "backhand-1-source-m07-v1",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 2354,
+                  "end_ms": 2420,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                  "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+                  "event_code": "GS03",
+                  "stage_code": "GS03-M07",
+                  "stage_id": "GS03-M07",
+                  "event_id": "backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "source_grade_supported": false,
+                "reason_codes": [
+                  "stage_source_observations_missing"
+                ],
+                "conditions": [],
+                "event_code": "GS03",
+                "action_id": "backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T135",
+                  "rubric_sha256": "95ba541e10109cbb5fc1307dfd47cc61148904fdada7e4ec62a4970bd88f2ac0"
+                },
+                "source_annotation": {
+                  "annotation_id": "backhand-1-source-m07-v1",
+                  "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "backhand-1",
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "right",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                    "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS03",
+                    "action_window_ms": {
+                      "start_ms": 1954.0,
+                      "end_ms": 3020.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 36,
+                        "pts": 217800,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                        "person_track_id": 1,
+                        "timestamp_ms": 2420.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "stage_windows": [
+          {
+            "annotation_id": "backhand-1-source-m07-v1",
+            "action_id": "backhand-1",
+            "stage_code": "GS03-M07",
+            "requested_window_ms": {
+              "start_ms": 2354.0,
+              "end_ms": 2420.0
+            },
+            "window": {
+              "start_ms": 2354,
+              "end_ms": 2420,
+              "person_track_id": 1,
+              "selection_epoch": 11,
+              "camera_reference_epoch": 5,
+              "camera_compensated": true,
+              "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+              "video_id": "card-ocw-pe.710-1hand_backhand-220k",
+              "event_code": "GS03",
+              "stage_code": "GS03-M07",
+              "stage_id": "GS03-M07",
+              "event_id": "backhand-1-source-m07-v1",
+              "stage_binding": {
+                "method": "manual_anchor",
+                "version": "mit-source-m07-visible-boundaries-v1",
+                "source": "gs-acceleration-windows-20261022.json#backhand-1-source-m07-v1",
+                "uncertainty_ms": 100,
+                "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+              },
+              "racket_side_binding": {
+                "version": "manual-racket-side-observation-v1.0.0",
+                "method": "manual_visual_observation",
+                "action_id": "backhand-1",
+                "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                "person_track_id": 1,
+                "measurement_wrist_side": "right",
+                "observed_racket_hands": "right",
+                "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-1hand_backhand-220k/backhand-1",
+                "source_description": "Original back-oblique frame shows the right arm extended to the racket handle while the left hand is separate behind the body.",
+                "uncertainty_ms": 100,
+                "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                "source_frames": [
+                  {
+                    "frame_index": 36,
+                    "pts": 217800,
+                    "time_base_num": 1,
+                    "time_base_den": 90000
+                  }
+                ],
+                "technique_code": "GS03",
+                "action_window_ms": {
+                  "start_ms": 1954.0,
+                  "end_ms": 3020.0
+                },
+                "document_version": "gs-stage-annotations-v1.0.0",
+                "document_sha256": "259ae19535fe5a126f9a6bf8958a1f88358c30e644199ce3234f17a0f99a85e4",
+                "digest_kind": "canonical_json_sorted_utf8_v1",
+                "verification": "source_frames_matched_to_decoder_and_selected_person",
+                "evidence_scope": "sampled_frames_only",
+                "expert_adjudicated": false,
+                "dominant_hand_established": false,
+                "continuous_racket_hold_established": false,
+                "source_frame_bindings": [
+                  {
+                    "frame_index": 36,
+                    "pts": 217800,
+                    "time_base_num": 1,
+                    "time_base_den": 90000,
+                    "video_sha256": "a3b31127782c69e18635bb9082d000577b2152ef571cb0a1b45836630ee9f8d2",
+                    "person_track_id": 1,
+                    "timestamp_ms": 2420.0,
+                    "selection_epoch": 11,
+                    "camera_reference_epoch": 5
+                  }
+                ],
+                "stage_continuity_verified": true
+              },
+              "racket_side": "right"
+            },
+            "source_frames": [
+              35,
+              36
+            ],
+            "observed_source_frame_count": 2,
+            "source_pts": [
+              {
+                "frame_index": 35,
+                "pts": 211860,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 36,
+                "pts": 217800,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              }
+            ],
+            "reason_codes": [
+              "stage_source_observations_missing"
+            ],
+            "indicator_ids": [
+              "GS03-M07-01",
+              "GS03-M07-02",
+              "GS03-M07-03",
+              "GS03-M07-04",
+              "GS03-M07-05"
+            ]
+          }
+        ],
+        "summary": {
+          "version": "card-evaluation-v1.0.0",
+          "grade_points": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "D": 40,
+            "E": 20
+          },
+          "channels": {
+            "original": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "visual_proxy": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "manual": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            }
+          },
+          "status_counts": {
+            "unavailable": 5
+          },
+          "conflicting_event_instances": 0,
+          "overall_score": null,
+          "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+          "weight_policy": "equal_card_weight_after_event_mean",
+          "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+        },
+        "observed_type_summary": {
+          "version": "card-evaluation-v1.0.0",
+          "grade_points": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "D": 40,
+            "E": 20
+          },
+          "channels": {
+            "original": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 49,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "visual_proxy": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 49,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "manual": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 49,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            }
+          },
+          "status_counts": {
+            "unavailable": 5
+          },
+          "conflicting_event_instances": 0,
+          "overall_score": null,
+          "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+          "weight_policy": "equal_card_weight_after_event_mean",
+          "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+        },
+        "coverage": {
+          "source_gs_card_count": 248,
+          "annotated_stage_count": 1,
+          "executed_card_count": 5,
+          "computed_card_instance_count": 5,
+          "run_card_status_counts": {
+            "not_observed": 199,
+            "not_executed": 44,
+            "unavailable": 5
+          },
+          "instance_status_counts": {
+            "unavailable": 5
+          },
+          "original_auto_graded_card_count": 0,
+          "registered_automatic_source_stage_detectors": 0
+        },
+        "overall_score": null,
+        "missing_policy": "exclude_from_grade_keep_in_applicable_card_coverage",
+        "limitations": [
+          "manual_stage_annotations_are_estimates_not_expert_ground_truth",
+          "source_stage_technical_behavior_not_established_by_2d_proxy",
+          "no_automatic_ten_stage_gs_locator_registered",
+          "missing_stage_never_inferred_from_three_generic_swing_phases",
+          "monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility"
+        ]
+      }
+    },
+    {
+      "original_report_sha256": "b87a920805520cc48b626805dcfa8b7f5844161e5869d6f6051d0f0abe93dc4e",
+      "original_service_version": "gs-card-execution-v1.0.0",
+      "report": {
+        "version": "card-execution-v1.0.0",
+        "rule_version": "card-rules-v1.0.0",
+        "source_run_id": "card-ocw-pe.710-2-hand_backhand-220k",
+        "input": {
+          "source": "frame_observations_primary_selection_decoder_pts_and_explicit_stage_annotations",
+          "source_frame_count": 223,
+          "decoder_frame_count": 223,
+          "annotation_count": 1,
+          "action_count": 1,
+          "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+          "input_artifact_sha256": {
+            "frames.jsonl": "b5c5e9720a315a25966cac94c1835e61637f4c326ea3ed449b66b886f5610998",
+            "primary-player.jsonl": "587c2e7ea4e99ec630cf313177e3204ae70c5bce8fc3ee7041574e729a80a358",
+            "summary.json": "b9f6794ebeb71252108b3882f82e062123f1786e9b26021f28e744bc9dd656ab"
+          },
+          "annotation_document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+          "catalogue_sha256": "1c41382a15166ca653e36197e1bcffc963361770633681d14c181422c3439aff",
+          "annotation_digest_kind": "canonical_json_sorted_utf8_v1",
+          "catalogue_digest_kind": "canonical_json_sorted_utf8_v1",
+          "artifact_digest_kind": "raw_file_sha256",
+          "saved_grades_trusted": false,
+          "artifact_files_verified": true,
+          "decoder_verified_from_original_video": true,
+          "service_eligible": true,
+          "annotation_version": "gs-stage-annotations-v1.0.0",
+          "source_job_id": "card-ocw-pe.710-2-hand_backhand-220k"
+        },
+        "cards": [
+          {
+            "indicator_id": "GS02-M07-01",
+            "event_code": "GS02",
+            "stage_code": "GS02-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "双手共同加速",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "joint_union_geometry_below_70_percent",
+              "required_condition_evidence_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS02-M07-01",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "two_handed_backhand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 1754,
+                  "end_ms": 1887,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                  "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                  "event_code": "GS02",
+                  "stage_code": "GS02-M07",
+                  "stage_id": "GS02-M07",
+                  "event_id": "two_handed_backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "joint_union_geometry_below_70_percent",
+                  "required_condition_evidence_missing"
+                ],
+                "conditions": [
+                  {
+                    "key": "wrist_speed_increase_torso_s",
+                    "metric": "wrist_speed_increase_torso_s",
+                    "value": null,
+                    "operator": "gte",
+                    "passed": null,
+                    "threshold": 0.4,
+                    "unit": "torso/s",
+                    "evidence": {
+                      "feature_name": "wrist_speed_increase_torso_s",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "torso/s",
+                      "required_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip",
+                        "left_wrist",
+                        "right_wrist"
+                      ],
+                      "geometry_gate_passed": false,
+                      "valid_frame_count": 0,
+                      "total_frame_count": 3,
+                      "source_frames": [
+                        26,
+                        27,
+                        28
+                      ],
+                      "statistics": {},
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "reason_codes": [
+                        "continuous_endpoint_window_missing"
+                      ],
+                      "semantics": "image_plane_visual_proxy"
+                    },
+                    "reason": "metric_not_computed_or_incomplete"
+                  }
+                ],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "measurement_version": "card-kinematics-v1.0.0",
+                "quality": {
+                  "required_joint_names": [
+                    "left_hip",
+                    "left_shoulder",
+                    "left_wrist",
+                    "right_hip",
+                    "right_shoulder",
+                    "right_wrist"
+                  ],
+                  "valid_frame_count": 2,
+                  "total_frame_count": 3,
+                  "geometry_gate_passed": false,
+                  "visibility_verified": false,
+                  "minimum_fraction": 0.7,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage"
+                },
+                "event_code": "GS02",
+                "action_id": "two_handed_backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T083",
+                  "rubric_sha256": "7dc634a0c12779c407ca5d24ad254fa68a3b2c0a3b0805ea264c09c1bfd0ac49"
+                },
+                "source_annotation": {
+                  "annotation_id": "two_handed_backhand-1-source-m07-v1",
+                  "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS02-M07-02",
+            "event_code": "GS02",
+            "stage_code": "GS02-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "manual_review",
+            "name_zh": "球拍持续释放",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "review_required",
+            "reason_codes": [
+              "required_observable_not_recoverable_from_pose"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "review_required": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS02-M07-02",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "two_handed_backhand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 1754,
+                  "end_ms": 1887,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                  "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                  "event_code": "GS02",
+                  "stage_code": "GS02-M07",
+                  "stage_id": "GS02-M07",
+                  "event_id": "two_handed_backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "review_required",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_observable_not_recoverable_from_pose"
+                ],
+                "conditions": [],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "event_code": "GS02",
+                "action_id": "two_handed_backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T084",
+                  "rubric_sha256": "05564caa175f2b1e257f1b917d86a74c3c56c54448bd52d3069f6ae62dcb8385"
+                },
+                "source_annotation": {
+                  "annotation_id": "two_handed_backhand-1-source-m07-v1",
+                  "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS02-M07-03",
+            "event_code": "GS02",
+            "stage_code": "GS02-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "manual_review",
+            "name_zh": "持续盯球",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "review_required",
+            "reason_codes": [
+              "required_observable_not_recoverable_from_pose"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "review_required": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS02-M07-03",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "two_handed_backhand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 1754,
+                  "end_ms": 1887,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                  "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                  "event_code": "GS02",
+                  "stage_code": "GS02-M07",
+                  "stage_id": "GS02-M07",
+                  "event_id": "two_handed_backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "review_required",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_observable_not_recoverable_from_pose"
+                ],
+                "conditions": [],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "event_code": "GS02",
+                "action_id": "two_handed_backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T085",
+                  "rubric_sha256": "0b6df5ef4206ec40164cb98cb1ae6133775d2007d782b0b70cded8508f378550"
+                },
+                "source_annotation": {
+                  "annotation_id": "two_handed_backhand-1-source-m07-v1",
+                  "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS02-M07-04",
+            "event_code": "GS02",
+            "stage_code": "GS02-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "身体继续转动",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "required_condition_evidence_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS02-M07-04",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "two_handed_backhand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 1754,
+                  "end_ms": 1887,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                  "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                  "event_code": "GS02",
+                  "stage_code": "GS02-M07",
+                  "stage_id": "GS02-M07",
+                  "event_id": "two_handed_backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_condition_evidence_missing"
+                ],
+                "conditions": [
+                  {
+                    "key": "shoulder_axis_deg.range",
+                    "metric": "shoulder_axis_deg.range",
+                    "value": null,
+                    "operator": "gte",
+                    "passed": null,
+                    "threshold": 8,
+                    "unit": "deg",
+                    "evidence": {
+                      "feature_name": "shoulder_axis_deg",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "deg",
+                      "required_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder"
+                      ],
+                      "total_frame_count": 3,
+                      "valid_frame_count": 2,
+                      "fraction": 0.6666666666666666,
+                      "geometry_gate_passed": false,
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "denominator": "all_decoder_samples_in_bound_stage",
+                      "source_frames": [
+                        26,
+                        27,
+                        28
+                      ],
+                      "valid_source_frames": [
+                        26,
+                        28
+                      ],
+                      "reason_codes": [
+                        "required_joint_geometry_below_70_percent"
+                      ],
+                      "statistics": {},
+                      "semantics": "image_plane_visual_proxy"
+                    },
+                    "reason": "metric_not_computed_or_incomplete"
+                  },
+                  {
+                    "key": "hip_axis_deg.range",
+                    "metric": "hip_axis_deg.range",
+                    "value": null,
+                    "operator": "gte",
+                    "passed": null,
+                    "threshold": 4,
+                    "unit": "deg",
+                    "evidence": {
+                      "feature_name": "hip_axis_deg",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "deg",
+                      "required_joint_names": [
+                        "left_hip",
+                        "right_hip"
+                      ],
+                      "total_frame_count": 3,
+                      "valid_frame_count": 2,
+                      "fraction": 0.6666666666666666,
+                      "geometry_gate_passed": false,
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "denominator": "all_decoder_samples_in_bound_stage",
+                      "source_frames": [
+                        26,
+                        27,
+                        28
+                      ],
+                      "valid_source_frames": [
+                        26,
+                        28
+                      ],
+                      "reason_codes": [
+                        "required_joint_geometry_below_70_percent"
+                      ],
+                      "statistics": {},
+                      "semantics": "image_plane_visual_proxy"
+                    },
+                    "reason": "metric_not_computed_or_incomplete"
+                  }
+                ],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "measurement_version": "card-kinematics-v1.0.0",
+                "quality": {
+                  "required_joint_names": [
+                    "left_hip",
+                    "left_shoulder",
+                    "right_hip",
+                    "right_shoulder"
+                  ],
+                  "valid_frame_count": 3,
+                  "total_frame_count": 3,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "minimum_fraction": 0.7,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage"
+                },
+                "event_code": "GS02",
+                "action_id": "two_handed_backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T086",
+                  "rubric_sha256": "26c140d7e76d8aae07d85d2b9cfd6905d2e9ed1faf0ec91f27677b19b1c89ff8"
+                },
+                "source_annotation": {
+                  "annotation_id": "two_handed_backhand-1-source-m07-v1",
+                  "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "indicator_id": "GS02-M07-05",
+            "event_code": "GS02",
+            "stage_code": "GS02-M07",
+            "rule_version": "card-rules-v1.0.0",
+            "rule_kind": "visual_proxy",
+            "name_zh": "重心持续前移",
+            "runtime_engine": "gs-card-execution-v1.0.0",
+            "run_status": "unavailable",
+            "reason_codes": [
+              "required_condition_evidence_missing"
+            ],
+            "original_grade": null,
+            "source_grade_supported": false,
+            "instance_count": 1,
+            "instance_status_counts": {
+              "unavailable": 1
+            },
+            "instances": [
+              {
+                "version": "gs-card-execution-v1.0.0",
+                "indicator_id": "GS02-M07-05",
+                "rule_version": "card-rules-v1.0.0",
+                "event_id": "two_handed_backhand-1-source-m07-v1",
+                "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                "person_track_id": 1,
+                "window": {
+                  "start_ms": 1754,
+                  "end_ms": 1887,
+                  "person_track_id": 1,
+                  "selection_epoch": 11,
+                  "camera_reference_epoch": 5,
+                  "camera_compensated": true,
+                  "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                  "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+                  "event_code": "GS02",
+                  "stage_code": "GS02-M07",
+                  "stage_id": "GS02-M07",
+                  "event_id": "two_handed_backhand-1-source-m07-v1",
+                  "stage_binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_binding": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  },
+                  "racket_side": "right"
+                },
+                "status": "unavailable",
+                "original_grade": null,
+                "proxy_grade": null,
+                "score": null,
+                "reason_codes": [
+                  "required_condition_evidence_missing"
+                ],
+                "conditions": [
+                  {
+                    "key": "hip_displacement_torso",
+                    "metric": "hip_displacement_torso",
+                    "value": null,
+                    "operator": "gte",
+                    "passed": null,
+                    "threshold": 0.15,
+                    "unit": "torso",
+                    "evidence": {
+                      "feature_name": "hip_displacement_torso",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "torso",
+                      "required_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip"
+                      ],
+                      "geometry_gate_passed": false,
+                      "valid_frame_count": 0,
+                      "total_frame_count": 3,
+                      "source_frames": [
+                        26,
+                        27,
+                        28
+                      ],
+                      "statistics": {},
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "reason_codes": [
+                        "continuous_endpoint_window_missing"
+                      ],
+                      "semantics": "image_plane_visual_proxy"
+                    },
+                    "reason": "metric_not_computed_or_incomplete"
+                  },
+                  {
+                    "key": "trunk_tilt_deg.range",
+                    "metric": "trunk_tilt_deg.range",
+                    "value": 9.99644637571371,
+                    "operator": "lte",
+                    "passed": true,
+                    "threshold": 20,
+                    "unit": "deg",
+                    "evidence": {
+                      "feature_name": "trunk_tilt_deg",
+                      "feature_version": "card-kinematics-v1.0.0",
+                      "unit": "deg",
+                      "required_joint_names": [
+                        "left_shoulder",
+                        "right_shoulder",
+                        "left_hip",
+                        "right_hip"
+                      ],
+                      "total_frame_count": 3,
+                      "valid_frame_count": 3,
+                      "fraction": 1.0,
+                      "geometry_gate_passed": true,
+                      "visibility_verified": false,
+                      "image_bounds_verified": false,
+                      "denominator": "all_decoder_samples_in_bound_stage",
+                      "source_frames": [
+                        26,
+                        27,
+                        28
+                      ],
+                      "valid_source_frames": [
+                        26,
+                        27,
+                        28
+                      ],
+                      "reason_codes": [
+                        "partial_window_cannot_establish_change"
+                      ],
+                      "statistics": {
+                        "mean": 11.039716401445531,
+                        "median": 10.010277238740786,
+                        "range": 9.99644637571371,
+                        "min": 6.556212794941051,
+                        "max": 16.55265917065476
+                      },
+                      "semantics": "image_plane_visual_proxy"
+                    }
+                  }
+                ],
+                "source_grade_supported": false,
+                "threshold_basis": "engineering_v1_uncalibrated",
+                "measurement_version": "card-kinematics-v1.0.0",
+                "quality": {
+                  "required_joint_names": [
+                    "left_hip",
+                    "left_shoulder",
+                    "right_hip",
+                    "right_shoulder"
+                  ],
+                  "valid_frame_count": 3,
+                  "total_frame_count": 3,
+                  "geometry_gate_passed": true,
+                  "visibility_verified": false,
+                  "minimum_fraction": 0.7,
+                  "image_bounds_verified": false,
+                  "denominator": "all_decoder_samples_in_bound_stage"
+                },
+                "event_code": "GS02",
+                "action_id": "two_handed_backhand-1",
+                "source": {
+                  "document_id": "CARD-GS",
+                  "document_sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0",
+                  "table": "T087",
+                  "rubric_sha256": "4f4e97c6330d07bdf093b2d548073c869e438cd594bfadb4f93f688fd6a7a3b4"
+                },
+                "source_annotation": {
+                  "annotation_id": "two_handed_backhand-1-source-m07-v1",
+                  "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                  "digest_kind": "canonical_json_sorted_utf8_v1",
+                  "binding": {
+                    "method": "manual_anchor",
+                    "version": "mit-source-m07-visible-boundaries-v1",
+                    "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                    "uncertainty_ms": 100,
+                    "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+                  },
+                  "racket_side_observation": {
+                    "version": "manual-racket-side-observation-v1.0.0",
+                    "method": "manual_visual_observation",
+                    "action_id": "two_handed_backhand-1",
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "measurement_wrist_side": "right",
+                    "observed_racket_hands": "both",
+                    "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                    "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                    "uncertainty_ms": 100,
+                    "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                    "source_frames": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000
+                      }
+                    ],
+                    "technique_code": "GS02",
+                    "action_window_ms": {
+                      "start_ms": 1354.0,
+                      "end_ms": 2287.0
+                    },
+                    "document_version": "gs-stage-annotations-v1.0.0",
+                    "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                    "digest_kind": "canonical_json_sorted_utf8_v1",
+                    "verification": "source_frames_matched_to_decoder_and_selected_person",
+                    "evidence_scope": "sampled_frames_only",
+                    "expert_adjudicated": false,
+                    "dominant_hand_established": false,
+                    "continuous_racket_hold_established": false,
+                    "source_frame_bindings": [
+                      {
+                        "frame_index": 28,
+                        "pts": 169830,
+                        "time_base_num": 1,
+                        "time_base_den": 90000,
+                        "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                        "person_track_id": 1,
+                        "timestamp_ms": 1887.0,
+                        "selection_epoch": 11,
+                        "camera_reference_epoch": 5
+                      }
+                    ],
+                    "stage_continuity_verified": true
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "stage_windows": [
+          {
+            "annotation_id": "two_handed_backhand-1-source-m07-v1",
+            "action_id": "two_handed_backhand-1",
+            "stage_code": "GS02-M07",
+            "requested_window_ms": {
+              "start_ms": 1754.0,
+              "end_ms": 1887.0
+            },
+            "window": {
+              "start_ms": 1754,
+              "end_ms": 1887,
+              "person_track_id": 1,
+              "selection_epoch": 11,
+              "camera_reference_epoch": 5,
+              "camera_compensated": true,
+              "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+              "video_id": "card-ocw-pe.710-2-hand_backhand-220k",
+              "event_code": "GS02",
+              "stage_code": "GS02-M07",
+              "stage_id": "GS02-M07",
+              "event_id": "two_handed_backhand-1-source-m07-v1",
+              "stage_binding": {
+                "method": "manual_anchor",
+                "version": "mit-source-m07-visible-boundaries-v1",
+                "source": "gs-acceleration-windows-20261022.json#two_handed_backhand-1-source-m07-v1",
+                "uncertainty_ms": 100,
+                "semantics": "reviewer_estimated_source_stage_not_expert_ground_truth"
+              },
+              "racket_side_binding": {
+                "version": "manual-racket-side-observation-v1.0.0",
+                "method": "manual_visual_observation",
+                "action_id": "two_handed_backhand-1",
+                "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                "person_track_id": 1,
+                "measurement_wrist_side": "right",
+                "observed_racket_hands": "both",
+                "source": "gs-racket-side-observations-20261022.json#ocw-pe.710-2-hand_backhand-220k/two_handed_backhand-1",
+                "source_description": "Original back-oblique frame and neighboring sequence show both forearms converging on the racket handle. The anatomical right wrist is selected only as the measurement wrist, not as a claim of dominant hand.",
+                "uncertainty_ms": 100,
+                "semantics": "visually_observed_racket_holding_wrist_not_dominant_hand",
+                "source_frames": [
+                  {
+                    "frame_index": 28,
+                    "pts": 169830,
+                    "time_base_num": 1,
+                    "time_base_den": 90000
+                  }
+                ],
+                "technique_code": "GS02",
+                "action_window_ms": {
+                  "start_ms": 1354.0,
+                  "end_ms": 2287.0
+                },
+                "document_version": "gs-stage-annotations-v1.0.0",
+                "document_sha256": "534f298a9129aa69ce34d2c18d6b58e96c5dd81d5ffb615bc59b4e9da1629b47",
+                "digest_kind": "canonical_json_sorted_utf8_v1",
+                "verification": "source_frames_matched_to_decoder_and_selected_person",
+                "evidence_scope": "sampled_frames_only",
+                "expert_adjudicated": false,
+                "dominant_hand_established": false,
+                "continuous_racket_hold_established": false,
+                "source_frame_bindings": [
+                  {
+                    "frame_index": 28,
+                    "pts": 169830,
+                    "time_base_num": 1,
+                    "time_base_den": 90000,
+                    "video_sha256": "e954e9fbccec41bcd7761b00e0cf62ecea74e3130cf812d6a50233357ecb8cbf",
+                    "person_track_id": 1,
+                    "timestamp_ms": 1887.0,
+                    "selection_epoch": 11,
+                    "camera_reference_epoch": 5
+                  }
+                ],
+                "stage_continuity_verified": true
+              },
+              "racket_side": "right"
+            },
+            "source_frames": [
+              26,
+              27,
+              28
+            ],
+            "observed_source_frame_count": 3,
+            "source_pts": [
+              {
+                "frame_index": 26,
+                "pts": 157860,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 27,
+                "pts": 163800,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              },
+              {
+                "frame_index": 28,
+                "pts": 169830,
+                "time_base_num": 1,
+                "time_base_den": 90000
+              }
+            ],
+            "reason_codes": [],
+            "indicator_ids": [
+              "GS02-M07-01",
+              "GS02-M07-02",
+              "GS02-M07-03",
+              "GS02-M07-04",
+              "GS02-M07-05"
+            ]
+          }
+        ],
+        "summary": {
+          "version": "card-evaluation-v1.0.0",
+          "grade_points": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "D": 40,
+            "E": 20
+          },
+          "channels": {
+            "original": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "visual_proxy": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "manual": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 248,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            }
+          },
+          "status_counts": {
+            "unavailable": 3,
+            "review_required": 2
+          },
+          "conflicting_event_instances": 0,
+          "overall_score": null,
+          "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+          "weight_policy": "equal_card_weight_after_event_mean",
+          "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+        },
+        "observed_type_summary": {
+          "version": "card-evaluation-v1.0.0",
+          "grade_points": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "D": 40,
+            "E": 20
+          },
+          "channels": {
+            "original": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 49,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "visual_proxy": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 49,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            },
+            "manual": {
+              "score": null,
+              "scored_cards": 0,
+              "applicable_cards": 49,
+              "coverage": 0.0,
+              "scored_event_instances": 0,
+              "per_card": {}
+            }
+          },
+          "status_counts": {
+            "unavailable": 3,
+            "review_required": 2
+          },
+          "conflicting_event_instances": 0,
+          "overall_score": null,
+          "missing_policy": "exclude_from_score_keep_in_applicable_coverage",
+          "weight_policy": "equal_card_weight_after_event_mean",
+          "uncertainty": "engineering_proxy_thresholds_uncalibrated_no_accuracy_claim"
+        },
+        "coverage": {
+          "source_gs_card_count": 248,
+          "annotated_stage_count": 1,
+          "executed_card_count": 5,
+          "computed_card_instance_count": 5,
+          "run_card_status_counts": {
+            "not_observed": 199,
+            "not_executed": 44,
+            "unavailable": 3,
+            "review_required": 2
+          },
+          "instance_status_counts": {
+            "unavailable": 3,
+            "review_required": 2
+          },
+          "original_auto_graded_card_count": 0,
+          "registered_automatic_source_stage_detectors": 0
+        },
+        "overall_score": null,
+        "missing_policy": "exclude_from_grade_keep_in_applicable_card_coverage",
+        "limitations": [
+          "manual_stage_annotations_are_estimates_not_expert_ground_truth",
+          "source_stage_technical_behavior_not_established_by_2d_proxy",
+          "no_automatic_ten_stage_gs_locator_registered",
+          "missing_stage_never_inferred_from_three_generic_swing_phases",
+          "monocular_geometry_does_not_establish_gaze_force_racket_contact_or_visibility"
+        ]
+      }
+    }
+  ]
+}

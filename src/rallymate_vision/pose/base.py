@@ -23,10 +23,13 @@ class PoseModelMetadata:
     config_path: str | None = None
     config_sha256: str | None = None
     pose_score_semantics: str = "backend_defined"
+    person_association_policy_version: str | None = None
 
     def to_dict(self) -> dict:
         value = asdict(self)
         value["input_size"] = list(self.input_size)
+        if self.person_association_policy_version is None:
+            value.pop("person_association_policy_version")
         return value
 
 
@@ -37,6 +40,8 @@ class PoseBackendOutput:
     keypoints_xy: np.ndarray
     keypoint_scores: np.ndarray
     pose_score: float
+    person_bbox_xyxy: tuple[float, float, float, float] | None = None
+    person_association: dict | None = None
 
     def __post_init__(self) -> None:
         xy = np.asarray(self.keypoints_xy)
@@ -59,3 +64,16 @@ class PoseBackend(Protocol):
     ) -> list[PoseBackendOutput | None]: ...
 
     def metadata(self) -> PoseModelMetadata: ...
+
+
+@runtime_checkable
+class TargetedPoseBackend(Protocol):
+    """Optional capability; original detector boxes use ROI-local pixels."""
+
+    def infer_targeted(
+        self,
+        rois: Sequence[np.ndarray],
+        target_boxes_xyxy: Sequence[Sequence[float]],
+        *,
+        timestamps_ms: Sequence[int] | None = None,
+    ) -> list[PoseBackendOutput | None]: ...

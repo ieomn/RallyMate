@@ -1,0 +1,96 @@
+{
+  "version": "tennis-selector-false-negative-audit-v1",
+  "comparison": "round2 vs offline-cpu-pass3",
+  "unique_lost_windows_reviewed": 7,
+  "repeat_ordinary_a_is_duplicate_not_additional_evidence": true,
+  "findings": [
+    {
+      "sample_id": "development-ordinary-a",
+      "episode_id": "bdad188205f683a88d45",
+      "old_source_track_id": 70,
+      "start_ms": 23800.0,
+      "end_ms": 25600.0,
+      "contact_sheet": "action-sheets/development-ordinary-a-e05.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_forehand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    },
+    {
+      "sample_id": "development-ordinary-a",
+      "episode_id": "f3d3a75483416dc64edc",
+      "old_source_track_id": 89,
+      "start_ms": 31033.333,
+      "end_ms": 32733.333,
+      "contact_sheet": "action-sheets/development-ordinary-a-e06.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_forehand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    },
+    {
+      "sample_id": "development-ordinary-a",
+      "episode_id": "35bd5afac9db445261f8",
+      "old_source_track_id": 89,
+      "start_ms": 54100.0,
+      "end_ms": 55666.667,
+      "contact_sheet": "action-sheets/development-ordinary-a-e10.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_forehand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    },
+    {
+      "sample_id": "development-ordinary-a",
+      "episode_id": "9dc61d4ad386442b5690",
+      "old_source_track_id": 89,
+      "start_ms": 57200.0,
+      "end_ms": 58933.333,
+      "contact_sheet": "action-sheets/development-ordinary-a-e11.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_forehand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "episode_id": "f2e5e28ee45f6fc2668e",
+      "old_source_track_id": 6,
+      "start_ms": 4100.0,
+      "end_ms": 5566.667,
+      "contact_sheet": "action-sheets/holdout-ordinary-lowres-close-e01.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_two_hand_backhand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "episode_id": "8ad2c81d9e5608070d6c",
+      "old_source_track_id": 6,
+      "start_ms": 12633.333,
+      "end_ms": 13833.333,
+      "contact_sheet": "action-sheets/holdout-ordinary-lowres-close-e02.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_two_hand_backhand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    },
+    {
+      "sample_id": "regression-nadal",
+      "episode_id": "fbe0a2b08202a11285b6",
+      "old_source_track_id": 1,
+      "start_ms": 8000.0,
+      "end_ms": 9280.0,
+      "contact_sheet": "action-sheets/regression-nadal-e01.jpg",
+      "manual_initial_subject_match": true,
+      "old_technique": "baseline_two_hand_backhand",
+      "interpretation": "new selector false rejection of visible same subject; must not count as a correctness improvement",
+      "restored_in_final_assessment": true
+    }
+  ],
+  "final_resolved_windows": 7,
+  "final_assessment_set": "offline-published",
+  "selector_full_run_evaluation_sha256": "5acd34a841558ad144ae11116753e075c78076744e4077cc21c64c43d81fc90b",
+  "selector_agent_window_evidence_sha256": "ccdceb54dacf4f91fd43d5250f025923787eea95bdaf38cc8d9ebfff188ab40e"
+}

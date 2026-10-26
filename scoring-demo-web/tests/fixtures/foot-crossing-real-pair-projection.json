@@ -1,0 +1,173 @@
+{
+  "provenance": {
+    "source": {
+      "path": "C:\\Users\\Admin\\Documents\\网球\\.codex_tmp\\autodl-sam-coordination-20261018\\scoring-fs03-crossing-candidate-v2\\local-comparison\\rtmpose-pairs.json",
+      "bytes": 162805,
+      "sha256": "b49ff2d3dfaff3bd71cc08793b50c69125aa9cc6b208e546da0b165d1bed99b6"
+    },
+    "reader": {
+      "path": "C:\\Users\\Admin\\Documents\\网球\\src\\rallymate_service\\foot_crossing_candidates.py",
+      "bytes": 33321,
+      "sha256": "ecd1d494508b1019a7bbea57360bbfe2e6e75271ae5892c887b98f1e1e67e880"
+    },
+    "contract": {
+      "path": "C:\\Users\\Admin\\Documents\\网球\\.codex_tmp\\autodl-sam-coordination-20261018\\fs03-candidate-backend-integration-v1\\backend-contract-v1.json",
+      "bytes": 7358,
+      "sha256": "8dc5113adf435b6d62d7c6fa16c099b15218dc8be3bc5e512c670dfbc53c0dad"
+    },
+    "source_row_sha256": "5e6b71dedd4c23f9076c1e6d6efce9a280d4c3ab06bba0a2532033de73fc2ebd",
+    "source_frames": [
+      170,
+      171
+    ],
+    "source_pts": [
+      3400,
+      3420
+    ],
+    "source_timebase": [
+      [
+        1,
+        600
+      ],
+      [
+        1,
+        600
+      ]
+    ]
+  },
+  "scope": "Actual saved RTMPose v2 170->171 row projected by the recorded pure backend _candidate. No candidate recomputation. Tests wrap this row in synthetic identity/counts only, not a live/published result or full97 statistics.",
+  "candidate": {
+    "source_frames": [
+      170,
+      171
+    ],
+    "signed_ankle_order_px": [
+      4.980228596988902,
+      -16.057832219499478
+    ],
+    "candidate_quality_status": "suspect",
+    "parent_event_count": 1,
+    "parent_source_association_counts": {
+      "weak_source_track_association": 1
+    },
+    "parent_source_association_policy": "existing_source_conflicts_excluded;legacy_track_only_association_is_weak_not_fully_verified",
+    "source_interval_ms": [
+      {
+        "numerator": 17000,
+        "denominator": 3,
+        "approx_ms": 5666.666666666667
+      },
+      {
+        "numerator": 5700,
+        "denominator": 1,
+        "approx_ms": 5700.0
+      }
+    ],
+    "source_bindings": [
+      {
+        "frame_index": 170,
+        "processed_index": 170,
+        "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+        "pts": 3400,
+        "time_base_num": 1,
+        "time_base_den": 600,
+        "source_timestamp_ms": 5667,
+        "video_timestamp_ms": 5667,
+        "timestamp_source": "decoder_pts",
+        "primary_player_id": 1,
+        "person_track_id": 1,
+        "selection_epoch": 0,
+        "camera_reference_epoch": 0
+      },
+      {
+        "frame_index": 171,
+        "processed_index": 171,
+        "video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+        "pts": 3420,
+        "time_base_num": 1,
+        "time_base_den": 600,
+        "source_timestamp_ms": 5700,
+        "video_timestamp_ms": 5700,
+        "timestamp_source": "decoder_pts",
+        "primary_player_id": 1,
+        "person_track_id": 1,
+        "selection_epoch": 0,
+        "camera_reference_epoch": 0
+      }
+    ],
+    "processed_indexes": [
+      170,
+      171
+    ],
+    "axis": {
+      "source": "two_frame_hip_midpoint_displacement_in_camera_reference_image",
+      "source_frames": [
+        170,
+        171
+      ],
+      "source_pts": [
+        3400,
+        3420
+      ],
+      "time_base": [
+        1,
+        600
+      ],
+      "fixed_within_pair": true,
+      "hip_displacement_px": [
+        -4.861719258090886,
+        1.6285872734638929
+      ],
+      "hip_displacement_length_px": 5.127242012210888,
+      "numeric_resolution_floor_px": 8.983444647163085e-13,
+      "available": true,
+      "unit_vector": [
+        -0.9482133370167352,
+        0.3176341724430595
+      ],
+      "movement_direction_reliability": "unverified",
+      "physical_or_tactical_movement_axis_verified": false
+    },
+    "local_joint_diagnostics": {
+      "source_frames": [
+        170,
+        171
+      ],
+      "participating_joints": [
+        "left_hip",
+        "right_hip",
+        "left_ankle",
+        "right_ankle"
+      ],
+      "processed_to_source": [
+        {
+          "processed_index": 170,
+          "source_frame_index": 170
+        },
+        {
+          "processed_index": 171,
+          "source_frame_index": 171
+        }
+      ],
+      "input_frame_index_domain": "processed_index",
+      "output_frame_index_domain": "source_frame_index",
+      "assessment_status": "source_track_matched_diagnostics_available",
+      "empty_lists_prove_no_anomaly": false,
+      "keypoint_jump_candidate_frames_by_joint": {
+        "right_ankle": [
+          171
+        ]
+      },
+      "swap_evidence_truncated": false,
+      "left_right_swap_candidate_joint_pairs": []
+    },
+    "quality": {
+      "support_semantics": "confidence_qualified_image_points",
+      "rtm_confidence_min": 0.35
+    },
+    "candidate_only": true,
+    "scoring_allowed": false,
+    "formal_step_verified": false,
+    "technical_grade": null
+  }
+}

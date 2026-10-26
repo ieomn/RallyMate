@@ -544,19 +544,19 @@ class FS02ProductionScoringContextTests(unittest.TestCase):
         self.assertEqual(context_evidence["event_id"], event["event_id"])
 
         identity_mutations = (
-            ("missing_video_id", "video_id", None, "runtime_view_video_mismatch"),
-            ("wrong_video_id", "video_id", "other-video", "runtime_view_video_mismatch"),
+            ("missing_video_id", "video_id", None, "source_video_id_missing"),
+            ("wrong_video_id", "video_id", "other-video", "source_video_id_mismatch"),
             (
                 "missing_video_sha256",
                 "video_sha256",
                 None,
-                "runtime_view_video_sha256_missing",
+                "source_video_sha256_missing",
             ),
             (
                 "wrong_video_sha256",
                 "video_sha256",
                 "9" * 64,
-                "runtime_view_video_sha256_mismatch",
+                "source_video_sha256_mismatch",
             ),
         )
         for name, field, value, expected_reason in identity_mutations:
@@ -580,17 +580,17 @@ class FS02ProductionScoringContextTests(unittest.TestCase):
                     feasibility_level="F4",
                     event_quality_flags=[],
                 )
-                self.assertEqual(blocked["status"], "calibration_required")
+                self.assertEqual(blocked["status"], "unavailable")
                 self.assertIsNone(blocked["grade"])
                 self.assertIn(expected_reason, blocked["reason_codes"])
 
         for name, field, value, expected_reason in (
-            ("primary_wrong_video_id", "video_id", "other-video", "runtime_view_video_mismatch"),
+            ("primary_wrong_video_id", "video_id", "other-video", "source_video_id_mismatch"),
             (
                 "primary_missing_video_sha256",
                 "video_sha256",
                 None,
-                "runtime_view_video_sha256_missing",
+                "source_video_sha256_missing",
             ),
         ):
             evidence = copy.deepcopy(scored["evidence"])
@@ -613,7 +613,7 @@ class FS02ProductionScoringContextTests(unittest.TestCase):
                     feasibility_level="F4",
                     event_quality_flags=[],
                 )
-                self.assertEqual(blocked["status"], "calibration_required")
+                self.assertEqual(blocked["status"], "unavailable")
                 self.assertIsNone(blocked["grade"])
                 self.assertIn(expected_reason, blocked["reason_codes"])
 

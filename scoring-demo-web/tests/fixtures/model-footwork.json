@@ -1,0 +1,3012 @@
+{
+  "review": {
+    "schema_version": "1.1.0",
+    "review_version": "footwork-independent-measurements-v1.1.0",
+    "status": "available",
+    "reason": null,
+    "reason_zh": null,
+    "episodes": [
+      {
+        "event_id": "model-fs02",
+        "video_id": "video-a",
+        "event_code": "FS02",
+        "name_zh": "第一步启动",
+        "person_track_id": 1,
+        "start_ms": 300,
+        "end_ms": 400,
+        "indicators": [
+          {
+            "indicator_id": "FS02-M02",
+            "name_zh": "重心向来球方向转换",
+            "feature_status": "measured",
+            "scoring_status": "unavailable",
+            "features": [
+              {
+                "feature_name": "body_center_speed_body_s",
+                "name_zh": "身体中心峰值速度",
+                "value": 0.5,
+                "unit": "body/s",
+                "confidence": null,
+                "measurement_provenance": {
+                  "pose_source": "sam3d",
+                  "observation_semantics": "monocular_model_estimate",
+                  "assessment_status": "measurement_only",
+                  "scoring_allowed": false,
+                  "confidence_available": false,
+                  "visibility_verified": false
+                },
+                "source_window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "source_frames": [
+                    9,
+                    10,
+                    11,
+                    12
+                  ],
+                  "video_timestamps_ms": [
+                    300,
+                    333,
+                    367,
+                    400
+                  ],
+                  "source_timestamps_ms": [
+                    75300,
+                    75333,
+                    75367,
+                    75400
+                  ],
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3,
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "source_bindings": [
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 9,
+                      "processed_index": 0,
+                      "pts": 75300,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75300,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 10,
+                      "processed_index": 1,
+                      "pts": 75333,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75333,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 11,
+                      "processed_index": 2,
+                      "pts": 75367,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75367,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 12,
+                      "processed_index": 3,
+                      "pts": 75400,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75400,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    }
+                  ]
+                },
+                "geometry_mask": {
+                  "left_shoulder": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "right_shoulder": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "left_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "right_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ]
+                },
+                "source_track_id": 17,
+                "required_joints": [
+                  "left_shoulder",
+                  "right_shoulder",
+                  "left_hip",
+                  "right_hip"
+                ]
+              },
+              {
+                "feature_name": "launch_direction_deg",
+                "name_zh": "启动方向角",
+                "value": 0,
+                "unit": "deg",
+                "confidence": null,
+                "measurement_provenance": {
+                  "pose_source": "sam3d",
+                  "observation_semantics": "monocular_model_estimate",
+                  "assessment_status": "measurement_only",
+                  "scoring_allowed": false,
+                  "confidence_available": false,
+                  "visibility_verified": false
+                },
+                "source_window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "source_frames": [
+                    9,
+                    10,
+                    11,
+                    12
+                  ],
+                  "video_timestamps_ms": [
+                    300,
+                    333,
+                    367,
+                    400
+                  ],
+                  "source_timestamps_ms": [
+                    75300,
+                    75333,
+                    75367,
+                    75400
+                  ],
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3,
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "source_bindings": [
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 9,
+                      "processed_index": 0,
+                      "pts": 75300,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75300,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 10,
+                      "processed_index": 1,
+                      "pts": 75333,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75333,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 11,
+                      "processed_index": 2,
+                      "pts": 75367,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75367,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 12,
+                      "processed_index": 3,
+                      "pts": 75400,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75400,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    }
+                  ]
+                },
+                "geometry_mask": {
+                  "left_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "right_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ]
+                },
+                "source_track_id": 17,
+                "required_joints": [
+                  "left_hip",
+                  "right_hip"
+                ]
+              }
+            ],
+            "measurements": [
+              {
+                "feature_name": "body_center_speed_body_s",
+                "name_zh": "身体中心峰值速度",
+                "value": 0.5,
+                "unit": "body/s",
+                "confidence": null,
+                "status": "measured",
+                "reason_codes": [],
+                "reason_zh": "单目模型估计的二维几何；关键点置信度与可见性未知，仅作候选测量，不判断技术等级。",
+                "review_hint_zh": null,
+                "window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "scope": "event_interval"
+                },
+                "source_frames": [
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "feature_version": "test-model-footwork-v1",
+                "review_version": "footwork-independent-measurements-v1.1.0",
+                "required_joints": [
+                  "left_shoulder",
+                  "right_shoulder",
+                  "left_hip",
+                  "right_hip"
+                ],
+                "view_semantics": "image_plane_proxy",
+                "view_label_required": false,
+                "aggregate_feature_status": "measured",
+                "measurement_provenance": {
+                  "pose_source": "sam3d",
+                  "observation_semantics": "monocular_model_estimate",
+                  "assessment_status": "measurement_only",
+                  "scoring_allowed": false,
+                  "confidence_available": false,
+                  "visibility_verified": false
+                },
+                "source_window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "source_frames": [
+                    9,
+                    10,
+                    11,
+                    12
+                  ],
+                  "video_timestamps_ms": [
+                    300,
+                    333,
+                    367,
+                    400
+                  ],
+                  "source_timestamps_ms": [
+                    75300,
+                    75333,
+                    75367,
+                    75400
+                  ],
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3,
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "source_bindings": [
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 9,
+                      "processed_index": 0,
+                      "pts": 75300,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75300,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 10,
+                      "processed_index": 1,
+                      "pts": 75333,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75333,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 11,
+                      "processed_index": 2,
+                      "pts": 75367,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75367,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 12,
+                      "processed_index": 3,
+                      "pts": 75400,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75400,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    }
+                  ]
+                },
+                "geometry_mask": {
+                  "left_shoulder": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "right_shoulder": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "left_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "right_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ]
+                },
+                "source_track_id": 17
+              },
+              {
+                "feature_name": "hip_center_relative_to_ankle_support",
+                "name_zh": "髋中心相对支撑区域位置",
+                "value": null,
+                "unit": "ratio",
+                "confidence": null,
+                "status": "unavailable",
+                "reason_codes": [
+                  "feature_record_missing"
+                ],
+                "reason_zh": "该项没有独立测量记录。",
+                "review_hint_zh": "回放所列区间，确认所需关节可见；重新分析后查看该项证据。",
+                "window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "scope": "event_interval"
+                },
+                "source_frames": [],
+                "feature_version": null,
+                "review_version": "footwork-independent-measurements-v1.1.0",
+                "required_joints": [
+                  "left_hip",
+                  "right_hip",
+                  "left_ankle",
+                  "right_ankle"
+                ],
+                "view_semantics": "image_plane_proxy",
+                "view_label_required": false,
+                "aggregate_feature_status": "measured"
+              },
+              {
+                "feature_name": "torso_lean_deg",
+                "name_zh": "躯干倾斜",
+                "value": null,
+                "unit": "deg",
+                "confidence": null,
+                "status": "unavailable",
+                "reason_codes": [
+                  "feature_record_missing"
+                ],
+                "reason_zh": "该项没有独立测量记录。",
+                "review_hint_zh": "回放所列区间，确认所需关节可见；重新分析后查看该项证据。",
+                "window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "scope": "event_interval"
+                },
+                "source_frames": [],
+                "feature_version": null,
+                "review_version": "footwork-independent-measurements-v1.1.0",
+                "required_joints": [
+                  "left_shoulder",
+                  "right_shoulder",
+                  "left_hip",
+                  "right_hip"
+                ],
+                "view_semantics": "image_plane_proxy",
+                "view_label_required": false,
+                "aggregate_feature_status": "measured"
+              },
+              {
+                "feature_name": "launch_direction_deg",
+                "name_zh": "启动方向角",
+                "value": 0,
+                "unit": "deg",
+                "confidence": null,
+                "status": "measured",
+                "reason_codes": [],
+                "reason_zh": "单目模型估计的二维几何；关键点置信度与可见性未知，仅作候选测量，不判断技术等级。",
+                "review_hint_zh": null,
+                "window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "scope": "event_interval"
+                },
+                "source_frames": [
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "feature_version": "test-model-footwork-v1",
+                "review_version": "footwork-independent-measurements-v1.1.0",
+                "required_joints": [
+                  "left_hip",
+                  "right_hip"
+                ],
+                "view_semantics": "image_plane_proxy",
+                "view_label_required": false,
+                "aggregate_feature_status": "measured",
+                "measurement_provenance": {
+                  "pose_source": "sam3d",
+                  "observation_semantics": "monocular_model_estimate",
+                  "assessment_status": "measurement_only",
+                  "scoring_allowed": false,
+                  "confidence_available": false,
+                  "visibility_verified": false
+                },
+                "source_window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "source_frames": [
+                    9,
+                    10,
+                    11,
+                    12
+                  ],
+                  "video_timestamps_ms": [
+                    300,
+                    333,
+                    367,
+                    400
+                  ],
+                  "source_timestamps_ms": [
+                    75300,
+                    75333,
+                    75367,
+                    75400
+                  ],
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3,
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "source_bindings": [
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 9,
+                      "processed_index": 0,
+                      "pts": 75300,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75300,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 10,
+                      "processed_index": 1,
+                      "pts": 75333,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75333,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 11,
+                      "processed_index": 2,
+                      "pts": 75367,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75367,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    },
+                    {
+                      "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "frame_index": 12,
+                      "processed_index": 3,
+                      "pts": 75400,
+                      "time_base_num": 1,
+                      "time_base_den": 1000,
+                      "timestamp_ms": 75400,
+                      "person_track_id": 17,
+                      "selection_epoch": 2,
+                      "camera_reference_epoch": 3
+                    }
+                  ]
+                },
+                "geometry_mask": {
+                  "left_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ],
+                  "right_hip": [
+                    true,
+                    true,
+                    true,
+                    true
+                  ]
+                },
+                "source_track_id": 17
+              },
+              {
+                "feature_name": "target_direction_alignment_error_deg",
+                "name_zh": "目标方向偏差",
+                "value": null,
+                "unit": "deg",
+                "confidence": null,
+                "status": "unavailable",
+                "reason_codes": [
+                  "feature_record_missing",
+                  "target_direction_not_observed"
+                ],
+                "reason_zh": "该项没有独立测量记录。",
+                "review_hint_zh": "回放所列区间，确认所需关节可见；重新分析后查看该项证据。",
+                "window": {
+                  "start_ms": 300,
+                  "end_ms": 400,
+                  "scope": "event_interval"
+                },
+                "source_frames": [],
+                "feature_version": null,
+                "review_version": "footwork-independent-measurements-v1.1.0",
+                "required_joints": [],
+                "view_semantics": "independent_target_context",
+                "view_label_required": false,
+                "aggregate_feature_status": "measured"
+              }
+            ],
+            "measurement_status": "partial",
+            "measured_feature_count": 2,
+            "expected_feature_count": 5
+          }
+        ],
+        "measurement_provenance": {
+          "pose_source": "sam3d",
+          "observation_semantics": "monocular_model_estimate",
+          "assessment_status": "measurement_only",
+          "scoring_allowed": false,
+          "confidence_available": false,
+          "visibility_verified": false
+        },
+        "source_window": {
+          "start_ms": 300,
+          "end_ms": 400,
+          "source_frames": [
+            9,
+            10,
+            11,
+            12
+          ],
+          "video_timestamps_ms": [
+            300,
+            333,
+            367,
+            400
+          ],
+          "source_timestamps_ms": [
+            75300,
+            75333,
+            75367,
+            75400
+          ],
+          "person_track_id": 17,
+          "selection_epoch": 2,
+          "camera_reference_epoch": 3,
+          "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source_bindings": [
+            {
+              "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "frame_index": 9,
+              "processed_index": 0,
+              "pts": 75300,
+              "time_base_num": 1,
+              "time_base_den": 1000,
+              "timestamp_ms": 75300,
+              "person_track_id": 17,
+              "selection_epoch": 2,
+              "camera_reference_epoch": 3
+            },
+            {
+              "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "frame_index": 10,
+              "processed_index": 1,
+              "pts": 75333,
+              "time_base_num": 1,
+              "time_base_den": 1000,
+              "timestamp_ms": 75333,
+              "person_track_id": 17,
+              "selection_epoch": 2,
+              "camera_reference_epoch": 3
+            },
+            {
+              "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "frame_index": 11,
+              "processed_index": 2,
+              "pts": 75367,
+              "time_base_num": 1,
+              "time_base_den": 1000,
+              "timestamp_ms": 75367,
+              "person_track_id": 17,
+              "selection_epoch": 2,
+              "camera_reference_epoch": 3
+            },
+            {
+              "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "frame_index": 12,
+              "processed_index": 3,
+              "pts": 75400,
+              "time_base_num": 1,
+              "time_base_den": 1000,
+              "timestamp_ms": 75400,
+              "person_track_id": 17,
+              "selection_epoch": 2,
+              "camera_reference_epoch": 3
+            }
+          ]
+        },
+        "geometry_mask": {
+          "left_shoulder": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "right_shoulder": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "left_hip": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "right_hip": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "track_diagnostics": {
+          "source_track_ids": [
+            17
+          ]
+        }
+      }
+    ],
+    "episode_count": 1,
+    "returned_episode_count": 1,
+    "is_truncated": false,
+    "measurement_summary": {
+      "measured_feature_count": 2,
+      "unavailable_feature_count": 3,
+      "partial_indicator_count": 1,
+      "measured_indicator_count": 0,
+      "scope": "all_bound_episodes_including_truncated"
+    },
+    "limitations_zh": [
+      "步伐事件是视频运动代理片段，不代表真实脚步数、击球次数或正式技术等级。",
+      "身体尺度归一化数值不是米制距离；脚部运动代理不等于实际离地、触地或受力。"
+    ],
+    "rejected_event_count": 0,
+    "rejected_indicator_count": 0
+  },
+  "process": {
+    "version": "process-evaluation-v1.1.0",
+    "semantics": "observable_motion_process_reference",
+    "is_calibrated": false,
+    "overall_score": null,
+    "dimensions": [
+      {
+        "id": "movement",
+        "name_zh": "移动质量",
+        "score": null,
+        "status": "partial",
+        "summary_zh": "已观察 2 项过程测量，1 段样本。已有单目模型估计的二维过程测量；关键点置信度和可见性未提供，当前仅显示测量，不生成技术分。",
+        "criteria": [
+          {
+            "id": "movement_target_alignment",
+            "label_zh": "启动方向与独立目标的一致性",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少当前坐标版本、独立审核目标方向或有效事件绑定，暂不评价目标方向一致性。",
+            "rule_zh": "目标须独立提供并经不同人员审核；缺失目标时不将实际移动方向当作目标。",
+            "source": "indicator_features.FS02-M02.scoring_context",
+            "start_ms": 300,
+            "end_ms": 400,
+            "episode_id": "model-fs02"
+          },
+          {
+            "id": "footwork_FS02-M02_body_center_speed_body_s",
+            "label_zh": "模型估计 · 身体中心峰值速度",
+            "status": "measured",
+            "value": 0.5,
+            "unit": "body/s",
+            "score": null,
+            "reason_zh": "单目模型估计的二维步伐几何；关键点置信度与可见性未知，不确认真实触地、受力或技术等级。",
+            "rule_zh": "仅展示通过独立测量检查的原始特征值；不换算技术分，不使用置信度或覆盖率计分。",
+            "source": "indicator_features.FS02-M02.features.body_center_speed_body_s",
+            "start_ms": 300,
+            "end_ms": 400,
+            "episode_id": "model-fs02",
+            "indicator_id": "FS02-M02",
+            "feature_name": "body_center_speed_body_s",
+            "video_id": "video-a",
+            "person_track_id": 1,
+            "source_frames": [
+              9,
+              10,
+              11,
+              12
+            ],
+            "feature_version": "test-model-footwork-v1",
+            "window_scope": "event_interval",
+            "measurement_semantics": "image_plane_proxy_not_source_card_grade",
+            "quality": {
+              "measurement_status": "measured",
+              "confidence": null,
+              "reason_codes": [],
+              "aggregate_feature_status": "measured",
+              "required_joints": [
+                "left_shoulder",
+                "right_shoulder",
+                "left_hip",
+                "right_hip"
+              ],
+              "review_version": "footwork-independent-measurements-v1.1.0"
+            },
+            "measurement_provenance": {
+              "pose_source": "sam3d",
+              "observation_semantics": "monocular_model_estimate",
+              "assessment_status": "measurement_only",
+              "scoring_allowed": false,
+              "confidence_available": false,
+              "visibility_verified": false
+            },
+            "source_window": {
+              "start_ms": 300,
+              "end_ms": 400,
+              "source_frames": [
+                9,
+                10,
+                11,
+                12
+              ],
+              "video_timestamps_ms": [
+                300,
+                333,
+                367,
+                400
+              ],
+              "source_timestamps_ms": [
+                75300,
+                75333,
+                75367,
+                75400
+              ],
+              "person_track_id": 17,
+              "selection_epoch": 2,
+              "camera_reference_epoch": 3,
+              "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source_bindings": [
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 9,
+                  "processed_index": 0,
+                  "pts": 75300,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75300,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                },
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 10,
+                  "processed_index": 1,
+                  "pts": 75333,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75333,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                },
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 11,
+                  "processed_index": 2,
+                  "pts": 75367,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75367,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                },
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 12,
+                  "processed_index": 3,
+                  "pts": 75400,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75400,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                }
+              ]
+            },
+            "geometry_mask": {
+              "left_shoulder": [
+                true,
+                true,
+                true,
+                true
+              ],
+              "right_shoulder": [
+                true,
+                true,
+                true,
+                true
+              ],
+              "left_hip": [
+                true,
+                true,
+                true,
+                true
+              ],
+              "right_hip": [
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            "source_track_id": 17,
+            "assessment_status": "measurement_only",
+            "full_source_rule_satisfied": false
+          },
+          {
+            "id": "footwork_FS02-M02_launch_direction_deg",
+            "label_zh": "模型估计 · 启动方向角",
+            "status": "measured",
+            "value": 0.0,
+            "unit": "deg",
+            "score": null,
+            "reason_zh": "单目模型估计的二维步伐几何；关键点置信度与可见性未知，不确认真实触地、受力或技术等级。",
+            "rule_zh": "仅展示通过独立测量检查的原始特征值；不换算技术分，不使用置信度或覆盖率计分。",
+            "source": "indicator_features.FS02-M02.features.launch_direction_deg",
+            "start_ms": 300,
+            "end_ms": 400,
+            "episode_id": "model-fs02",
+            "indicator_id": "FS02-M02",
+            "feature_name": "launch_direction_deg",
+            "video_id": "video-a",
+            "person_track_id": 1,
+            "source_frames": [
+              9,
+              10,
+              11,
+              12
+            ],
+            "feature_version": "test-model-footwork-v1",
+            "window_scope": "event_interval",
+            "measurement_semantics": "image_plane_proxy_not_source_card_grade",
+            "quality": {
+              "measurement_status": "measured",
+              "confidence": null,
+              "reason_codes": [],
+              "aggregate_feature_status": "measured",
+              "required_joints": [
+                "left_hip",
+                "right_hip"
+              ],
+              "review_version": "footwork-independent-measurements-v1.1.0"
+            },
+            "measurement_provenance": {
+              "pose_source": "sam3d",
+              "observation_semantics": "monocular_model_estimate",
+              "assessment_status": "measurement_only",
+              "scoring_allowed": false,
+              "confidence_available": false,
+              "visibility_verified": false
+            },
+            "source_window": {
+              "start_ms": 300,
+              "end_ms": 400,
+              "source_frames": [
+                9,
+                10,
+                11,
+                12
+              ],
+              "video_timestamps_ms": [
+                300,
+                333,
+                367,
+                400
+              ],
+              "source_timestamps_ms": [
+                75300,
+                75333,
+                75367,
+                75400
+              ],
+              "person_track_id": 17,
+              "selection_epoch": 2,
+              "camera_reference_epoch": 3,
+              "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "source_bindings": [
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 9,
+                  "processed_index": 0,
+                  "pts": 75300,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75300,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                },
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 10,
+                  "processed_index": 1,
+                  "pts": 75333,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75333,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                },
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 11,
+                  "processed_index": 2,
+                  "pts": 75367,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75367,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                },
+                {
+                  "video_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "frame_index": 12,
+                  "processed_index": 3,
+                  "pts": 75400,
+                  "time_base_num": 1,
+                  "time_base_den": 1000,
+                  "timestamp_ms": 75400,
+                  "person_track_id": 17,
+                  "selection_epoch": 2,
+                  "camera_reference_epoch": 3
+                }
+              ]
+            },
+            "geometry_mask": {
+              "left_hip": [
+                true,
+                true,
+                true,
+                true
+              ],
+              "right_hip": [
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            "source_track_id": 17,
+            "assessment_status": "measurement_only",
+            "full_source_rule_satisfied": false
+          }
+        ],
+        "criteria_selection": {
+          "full_count": 3,
+          "returned_count": 3,
+          "is_truncated": false,
+          "policy": "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature",
+          "max_footwork_observations_per_feature": 12,
+          "count_scope": "all_validated_input_episodes_before_display_sampling"
+        },
+        "score_scope": "engineering_subcriterion_reference",
+        "score_scope_zh": "仅启动方向与独立训练目标的一致性参考；不代表垫步、调整、支撑、制动等全部移动质量。",
+        "score_covers_all_source_cards": false,
+        "status_reason": "model_estimate_measurement_only",
+        "status_reason_zh": "已有单目模型估计的二维过程测量；关键点置信度和可见性未提供，当前仅显示测量，不生成技术分。",
+        "source_basis": {
+          "version": "training-dimensions-v1.0.0",
+          "card_ids": [
+            "FS01-M01",
+            "FS01-M02",
+            "FS01-M03",
+            "FS01-M04",
+            "FS01-M05",
+            "FS02-M01",
+            "FS02-M02",
+            "FS02-M03",
+            "FS02-M04",
+            "FS02-M05",
+            "FS03-M01",
+            "FS03-M02",
+            "FS03-M03",
+            "FS03-M04",
+            "FS03-M05",
+            "FS04-M01",
+            "FS04-M02",
+            "FS04-M03",
+            "FS04-M04",
+            "FS04-M05",
+            "FS05-M01",
+            "FS05-M02",
+            "FS05-M03",
+            "FS05-M04",
+            "FS05-M05",
+            "FS06-M01",
+            "FS06-M02",
+            "FS06-M03",
+            "FS06-M04",
+            "FS06-M05",
+            "FS07-M01",
+            "FS07-M02",
+            "FS07-M03",
+            "FS07-M04",
+            "FS07-M05",
+            "FS08-M01",
+            "FS08-M02",
+            "FS08-M03",
+            "FS08-M04",
+            "FS08-M05",
+            "FS09-M01",
+            "FS09-M02",
+            "FS09-M03",
+            "FS09-M04",
+            "FS09-M05",
+            "GS01-M02-01",
+            "GS01-M02-02",
+            "GS01-M02-03",
+            "GS01-M02-04",
+            "GS01-M02-05",
+            "GS02-M02-01",
+            "GS02-M02-02",
+            "GS02-M02-03",
+            "GS02-M02-04",
+            "GS02-M02-05",
+            "GS03-M02-01",
+            "GS03-M02-02",
+            "GS03-M02-03",
+            "GS03-M02-04",
+            "GS03-M02-05",
+            "GS04-M02-01",
+            "GS04-M02-02",
+            "GS04-M02-03",
+            "GS04-M02-04",
+            "GS04-M02-05",
+            "GS05-M02-01",
+            "GS05-M02-02",
+            "GS05-M02-03",
+            "GS05-M02-04",
+            "GS05-M02-05"
+          ],
+          "card_count": 70,
+          "grouping_origin": "proposed_source_stage_grouping",
+          "proposed_not_original": true,
+          "grouping_rule_zh": "FS01–FS09；全部 GS 技术的 M02 启动移动。",
+          "semantics": "source_catalogue_membership_not_runtime_measurement_or_score_coverage",
+          "source_reference_version": "scoring-reference-20261004",
+          "source_reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+          "source_documents": [
+            {
+              "id": "CARD-FS",
+              "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+            },
+            {
+              "id": "CARD-GS",
+              "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0"
+            }
+          ],
+          "source_anchors": [
+            {
+              "source_id": "FS02-M01",
+              "locator": "CARD-FS:word/document.xml:P0258",
+              "reason_zh": "来球方向与启动方向；无球轨迹时不判方向正确性。"
+            },
+            {
+              "source_id": "GS01-M02",
+              "locator": "CARD-GS:word/document.xml:P0592",
+              "reason_zh": "启动、调整步伐并移动到击球位置。"
+            }
+          ],
+          "source_blockers": [
+            {
+              "indicator_id": "GS03-M02-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M02-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M02-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M02-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M02-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M02-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M02-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M02-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M02-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M02-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            }
+          ]
+        },
+        "scored_rule_count": 0,
+        "total_rule_count": 3,
+        "scoring_rule_count": 1,
+        "sample_count": 1,
+        "scored_sample_count": 0,
+        "total_sample_count": 1,
+        "measured_criterion_count": 2,
+        "aggregation": "none",
+        "measurement_input_scope": {
+          "source": "footwork_review",
+          "available_event_count": 1,
+          "returned_event_count": 1,
+          "is_truncated": false,
+          "reason_zh": "步伐数量基于已读取并通过验证的事件；展示采样不改变这些统计，不将未读取事件记为已测。"
+        }
+      },
+      {
+        "id": "preparation",
+        "name_zh": "准备与引拍",
+        "score": null,
+        "status": "unavailable",
+        "summary_zh": "当前没有可用准备候选测量；还需对应动作类型、正式阶段与原卡等级条件。",
+        "criteria": [
+          {
+            "id": "preparation_duration",
+            "label_zh": "引拍阶段持续时间",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少连续的引拍阶段观测。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "preparation_direction",
+            "label_zh": "引拍腕部运动方向",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少引拍方向实测。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          }
+        ],
+        "criteria_selection": {
+          "full_count": 2,
+          "returned_count": 2,
+          "is_truncated": false,
+          "policy": "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature",
+          "max_footwork_observations_per_feature": 12,
+          "count_scope": "all_validated_input_episodes_before_display_sampling"
+        },
+        "score_scope": "observation_only",
+        "score_scope_zh": "报告已测准备时长、腕部方向及逐关节局部几何；三段运动估计不等于原卡正式阶段，尚缺适用动作确认与完整等级条件。",
+        "score_covers_all_source_cards": false,
+        "status_reason": "measurement_missing_and_rule_not_calibrated",
+        "status_reason_zh": "当前没有可用准备候选测量；还需对应动作类型、正式阶段与原卡等级条件。",
+        "source_basis": {
+          "version": "training-dimensions-v1.0.0",
+          "card_ids": [
+            "GS01-M01-01",
+            "GS01-M01-02",
+            "GS01-M01-03",
+            "GS01-M01-04",
+            "GS01-M01-05",
+            "GS01-M03-01",
+            "GS01-M03-02",
+            "GS01-M03-03",
+            "GS01-M03-04",
+            "GS01-M03-05",
+            "GS02-M01-01",
+            "GS02-M01-02",
+            "GS02-M01-03",
+            "GS02-M01-04",
+            "GS02-M01-05",
+            "GS02-M03-01",
+            "GS02-M03-02",
+            "GS02-M03-03",
+            "GS02-M03-04",
+            "GS02-M03-05",
+            "GS03-M01-01",
+            "GS03-M01-02",
+            "GS03-M01-03",
+            "GS03-M01-04",
+            "GS03-M03-01",
+            "GS03-M03-02",
+            "GS03-M03-03",
+            "GS03-M03-04",
+            "GS03-M03-05",
+            "GS04-M01-01",
+            "GS04-M01-02",
+            "GS04-M01-03",
+            "GS04-M01-04",
+            "GS04-M03-01",
+            "GS04-M03-02",
+            "GS04-M03-03",
+            "GS04-M03-04",
+            "GS04-M03-05",
+            "GS04-M04-01",
+            "GS04-M04-02",
+            "GS04-M04-03",
+            "GS04-M04-04",
+            "GS04-M04-05",
+            "GS04-M05-01",
+            "GS04-M05-02",
+            "GS04-M05-03",
+            "GS04-M05-04",
+            "GS04-M05-05",
+            "GS04-M06-01",
+            "GS04-M06-02",
+            "GS04-M06-03",
+            "GS04-M06-04",
+            "GS04-M06-05",
+            "GS05-M01-01",
+            "GS05-M01-02",
+            "GS05-M01-03",
+            "GS05-M01-04",
+            "GS05-M01-05",
+            "GS05-M03-01",
+            "GS05-M03-02",
+            "GS05-M03-03",
+            "GS05-M03-04",
+            "GS05-M03-05",
+            "GS05-M04-01",
+            "GS05-M04-02",
+            "GS05-M04-03",
+            "GS05-M04-04",
+            "GS05-M04-05",
+            "GS05-M05-01",
+            "GS05-M05-02",
+            "GS05-M05-03",
+            "GS05-M05-04",
+            "GS05-M05-05",
+            "GS05-M06-01",
+            "GS05-M06-02",
+            "GS05-M06-03",
+            "GS05-M06-04",
+            "GS05-M06-05"
+          ],
+          "card_count": 78,
+          "grouping_origin": "proposed_source_stage_grouping",
+          "proposed_not_original": true,
+          "grouping_rule_zh": "全部 GS 技术的 M01/M03；另含 GS04/GS05 切削的 M04 重心支撑、M05 高位引拍、M06 拍面打开。",
+          "semantics": "source_catalogue_membership_not_runtime_measurement_or_score_coverage",
+          "source_reference_version": "scoring-reference-20261004",
+          "source_reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+          "source_documents": [
+            {
+              "id": "CARD-FS",
+              "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+            },
+            {
+              "id": "CARD-GS",
+              "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0"
+            }
+          ],
+          "source_anchors": [
+            {
+              "source_id": "GS01-M01",
+              "locator": "CARD-GS:word/document.xml:P0369",
+              "reason_zh": "准备姿态、观察来球与垫步启动。"
+            },
+            {
+              "source_id": "GS01-M03",
+              "locator": "CARD-GS:word/document.xml:P0815",
+              "reason_zh": "单位转体、辅助引拍、后摆与加载支撑腿。"
+            },
+            {
+              "source_id": "GS04-M05",
+              "locator": "CARD-GS:word/document.xml:P7869",
+              "reason_zh": "建立切削高位准备状态。"
+            },
+            {
+              "source_id": "GS04-M06",
+              "locator": "CARD-GS:word/document.xml:P8093",
+              "reason_zh": "拍面打开阶段结束才进入切削方向。"
+            }
+          ],
+          "source_blockers": [
+            {
+              "indicator_id": "GS02-M01-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_rule_conflict",
+                  "message": "“盯球观察”定义是双手握拍；“双手建立协调握拍”定义是观察来球。当前识别点/反馈又混合名称和定义语义，不能仅交换名称就视为修复。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M01-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_rule_conflict",
+                  "message": "“盯球观察”定义是双手握拍；“双手建立协调握拍”定义是观察来球。当前识别点/反馈又混合名称和定义语义，不能仅交换名称就视为修复。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M03-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M03-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M03-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M03-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M03-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M01-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M01-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M01-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M01-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M03-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M03-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M03-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M03-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M03-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M01-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M01-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M01-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS04-M01-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            }
+          ]
+        },
+        "scored_rule_count": 0,
+        "total_rule_count": 2,
+        "scoring_rule_count": 0,
+        "sample_count": 0,
+        "scored_sample_count": 0,
+        "total_sample_count": 0,
+        "measured_criterion_count": 0,
+        "aggregation": "none"
+      },
+      {
+        "id": "swing",
+        "name_zh": "挥拍协调",
+        "score": null,
+        "status": "unavailable",
+        "summary_zh": "当前缺少可计算腕速趋势的连续测量；即使趋势可测，它仍仅覆盖一个工程子项。",
+        "criteria": [
+          {
+            "id": "acceleration_trend",
+            "label_zh": "挥拍加速趋势参考",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少连续腕速加速阶段。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "swing_direction",
+            "label_zh": "加速挥拍腕部运动方向",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少加速阶段的方向测量。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "swing_direction_consistency",
+            "label_zh": "挥拍路径方向一致性",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少加速阶段的连续方向路径测量。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "swing_direction_reversals",
+            "label_zh": "挥拍路径局部反向次数",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少加速阶段的局部转向测量。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "hip_to_shoulder_peak_delay",
+            "label_zh": "髋至肩二维运动峰值时差",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少可定位的髋肩峰值。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "shoulder_to_wrist_peak_delay",
+            "label_zh": "肩至腕二维运动峰值时差",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少可定位的肩腕峰值。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          }
+        ],
+        "criteria_selection": {
+          "full_count": 6,
+          "returned_count": 6,
+          "is_truncated": false,
+          "policy": "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature",
+          "max_footwork_observations_per_feature": 12,
+          "count_scope": "all_validated_input_episodes_before_display_sampling"
+        },
+        "score_scope": "engineering_subcriterion_reference",
+        "score_scope_zh": "仅腕速加速趋势的工程子项参考；不代表全部挥拍协调、动力传递或原卡等级。",
+        "score_covers_all_source_cards": false,
+        "status_reason": "continuous_motion_measurement_missing",
+        "status_reason_zh": "当前缺少可计算腕速趋势的连续测量；即使趋势可测，它仍仅覆盖一个工程子项。",
+        "source_basis": {
+          "version": "training-dimensions-v1.0.0",
+          "card_ids": [
+            "GS01-M04-01",
+            "GS01-M04-02",
+            "GS01-M04-03",
+            "GS01-M04-04",
+            "GS01-M04-05",
+            "GS01-M04-06",
+            "GS01-M05-01",
+            "GS01-M05-02",
+            "GS01-M05-03",
+            "GS01-M05-04",
+            "GS01-M05-05",
+            "GS01-M05-06",
+            "GS01-M06-01",
+            "GS01-M06-02",
+            "GS01-M06-03",
+            "GS01-M06-04",
+            "GS01-M06-05",
+            "GS01-M07-01",
+            "GS01-M07-02",
+            "GS01-M07-03",
+            "GS01-M07-04",
+            "GS01-M07-05",
+            "GS02-M04-01",
+            "GS02-M04-02",
+            "GS02-M04-03",
+            "GS02-M04-04",
+            "GS02-M04-05",
+            "GS02-M05-01",
+            "GS02-M05-02",
+            "GS02-M05-03",
+            "GS02-M05-04",
+            "GS02-M05-05",
+            "GS02-M06-01",
+            "GS02-M06-02",
+            "GS02-M06-03",
+            "GS02-M06-04",
+            "GS02-M06-05",
+            "GS02-M07-01",
+            "GS02-M07-02",
+            "GS02-M07-03",
+            "GS02-M07-04",
+            "GS02-M07-05",
+            "GS03-M04-01",
+            "GS03-M04-02",
+            "GS03-M04-03",
+            "GS03-M04-04",
+            "GS03-M04-05",
+            "GS03-M05-01",
+            "GS03-M05-02",
+            "GS03-M05-03",
+            "GS03-M05-04",
+            "GS03-M05-05",
+            "GS03-M06-01",
+            "GS03-M06-02",
+            "GS03-M06-03",
+            "GS03-M06-04",
+            "GS03-M06-05",
+            "GS03-M07-01",
+            "GS03-M07-02",
+            "GS03-M07-03",
+            "GS03-M07-04",
+            "GS03-M07-05",
+            "GS04-M07-01",
+            "GS04-M07-02",
+            "GS04-M07-03",
+            "GS04-M07-04",
+            "GS04-M07-05",
+            "GS05-M07-01",
+            "GS05-M07-02",
+            "GS05-M07-03",
+            "GS05-M07-04",
+            "GS05-M07-05"
+          ],
+          "card_count": 72,
+          "grouping_origin": "proposed_source_stage_grouping",
+          "proposed_not_original": true,
+          "grouping_rule_zh": "GS01/GS02/GS03 的 M04–M07；GS04/GS05 切削的 M07。",
+          "semantics": "source_catalogue_membership_not_runtime_measurement_or_score_coverage",
+          "source_reference_version": "scoring-reference-20261004",
+          "source_reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+          "source_documents": [
+            {
+              "id": "CARD-FS",
+              "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+            },
+            {
+              "id": "CARD-GS",
+              "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0"
+            }
+          ],
+          "source_anchors": [
+            {
+              "source_id": "GS01-M04",
+              "locator": "CARD-GS:word/document.xml:P1038",
+              "reason_zh": "蹬地与身体运动。"
+            },
+            {
+              "source_id": "GS01-M05",
+              "locator": "CARD-GS:word/document.xml:P1305",
+              "reason_zh": "骨盆旋转与动力传递。"
+            },
+            {
+              "source_id": "GS01-M06",
+              "locator": "CARD-GS:word/document.xml:P1572",
+              "reason_zh": "胸廓旋转与手臂加速准备。"
+            },
+            {
+              "source_id": "GS01-M07",
+              "locator": "CARD-GS:word/document.xml:P1795",
+              "reason_zh": "手臂加速与球拍释放。"
+            }
+          ],
+          "source_blockers": [
+            {
+              "indicator_id": "GS02-M04-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M04-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M04-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M04-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M04-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M05-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M05-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M05-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M05-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M05-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M06-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M06-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M06-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M06-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M06-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M07-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M07-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M07-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M07-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M07-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M04-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M04-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M04-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M04-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M04-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M05-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M05-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M05-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M05-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M05-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M06-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M06-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M06-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M06-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M06-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M07-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M07-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M07-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M07-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M07-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            }
+          ]
+        },
+        "scored_rule_count": 0,
+        "total_rule_count": 6,
+        "scoring_rule_count": 1,
+        "sample_count": 0,
+        "scored_sample_count": 0,
+        "total_sample_count": 0,
+        "measured_criterion_count": 0,
+        "aggregation": "none"
+      },
+      {
+        "id": "contact",
+        "name_zh": "触球控制",
+        "score": null,
+        "status": "unavailable",
+        "summary_zh": "触球控制量化规则尚未实现；当前没有将触球姿态、拍面控制与经验证触球事件绑定评价。",
+        "criteria": [
+          {
+            "id": "confirmed_contact",
+            "label_zh": "真实触球证据",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "动作候选、球拍可见或腕速峰值都不能证明触球；当前未提供经验证的触球事件。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "contact_posture_control",
+            "label_zh": "触球时姿态控制",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "尚未将姿态稳定、身体控制测量绑定到经验证触球时段；准备或挥拍候选不能直接代替触球时段。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "racket_face_control",
+            "label_zh": "触球时拍面与球拍控制",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "尚未实现经验证触球时段内的拍面与球拍控制评价；腕部关键点不能代替拍面测量。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          }
+        ],
+        "criteria_selection": {
+          "full_count": 3,
+          "returned_count": 3,
+          "is_truncated": false,
+          "policy": "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature",
+          "max_footwork_observations_per_feature": 12,
+          "count_scope": "all_validated_input_episodes_before_display_sampling"
+        },
+        "score_scope": "observation_only",
+        "score_scope_zh": "触球控制关注触球时的姿态、拍面与球拍控制；当前尚未实现该维度的量化评分。",
+        "score_covers_all_source_cards": false,
+        "status_reason": "contact_control_rule_not_implemented",
+        "status_reason_zh": "触球控制量化规则尚未实现；当前没有将触球姿态、拍面控制与经验证触球事件绑定评价。",
+        "source_basis": {
+          "version": "training-dimensions-v1.0.0",
+          "card_ids": [
+            "GS01-M08-01",
+            "GS01-M08-02",
+            "GS01-M08-03",
+            "GS01-M08-04",
+            "GS01-M08-05",
+            "GS02-M08-01",
+            "GS02-M08-02",
+            "GS02-M08-03",
+            "GS02-M08-04",
+            "GS02-M08-05",
+            "GS03-M08-01",
+            "GS03-M08-02",
+            "GS03-M08-03",
+            "GS03-M08-04",
+            "GS03-M08-05",
+            "GS04-M08-01",
+            "GS04-M08-02",
+            "GS04-M08-03",
+            "GS04-M08-04",
+            "GS04-M08-05",
+            "GS05-M08-01",
+            "GS05-M08-02",
+            "GS05-M08-03",
+            "GS05-M08-04",
+            "GS05-M08-05"
+          ],
+          "card_count": 25,
+          "grouping_origin": "proposed_source_stage_grouping",
+          "proposed_not_original": true,
+          "grouping_rule_zh": "全部 GS 技术的 M08；评价触球动作与控制，不包含独立落点目标命中率。",
+          "semantics": "source_catalogue_membership_not_runtime_measurement_or_score_coverage",
+          "source_reference_version": "scoring-reference-20261004",
+          "source_reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+          "source_documents": [
+            {
+              "id": "CARD-FS",
+              "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+            },
+            {
+              "id": "CARD-GS",
+              "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0"
+            }
+          ],
+          "source_anchors": [
+            {
+              "source_id": "GS01-M08",
+              "locator": "CARD-GS:word/document.xml:P2018",
+              "reason_zh": "拍球接触，控制方向、速度及旋转。"
+            },
+            {
+              "source_id": "GS01-M08-01",
+              "locator": "CARD-GS:word/document.xml:P2036",
+              "reason_zh": "稳定击球姿态。"
+            },
+            {
+              "source_id": "GS02-M08-02",
+              "locator": "CARD-GS:word/document.xml:P4270",
+              "reason_zh": "稳定拍面、触球及方向控制。"
+            }
+          ],
+          "source_blockers": [
+            {
+              "indicator_id": "GS02-M08-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M08-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M08-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M08-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M08-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M08-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M08-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M08-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M08-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M08-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            }
+          ]
+        },
+        "scored_rule_count": 0,
+        "total_rule_count": 3,
+        "scoring_rule_count": 0,
+        "sample_count": 0,
+        "scored_sample_count": 0,
+        "total_sample_count": 0,
+        "measured_criterion_count": 0,
+        "aggregation": "none"
+      },
+      {
+        "id": "follow_through",
+        "name_zh": "随挥与衔接",
+        "score": null,
+        "status": "unavailable",
+        "summary_zh": "当前缺少可计算腕速趋势的连续测量；即使趋势可测，它仍仅覆盖一个工程子项。",
+        "criteria": [
+          {
+            "id": "deceleration_trend",
+            "label_zh": "随挥减速趋势参考",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少连续随挥腕速曲线。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "terminal_speed_ratio",
+            "label_zh": "随挥末端与峰值腕速之比",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少连续随挥末端和峰值腕速。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          },
+          {
+            "id": "follow_duration",
+            "label_zh": "随挥阶段持续时间",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "缺少完整随挥阶段。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          }
+        ],
+        "criteria_selection": {
+          "full_count": 3,
+          "returned_count": 3,
+          "is_truncated": false,
+          "policy": "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature",
+          "max_footwork_observations_per_feature": 12,
+          "count_scope": "all_validated_input_episodes_before_display_sampling"
+        },
+        "score_scope": "engineering_subcriterion_reference",
+        "score_scope_zh": "仅腕速减速趋势的工程子项参考；不代表收拍完整、回位合理或下一拍衔接质量。",
+        "score_covers_all_source_cards": false,
+        "status_reason": "continuous_motion_measurement_missing",
+        "status_reason_zh": "当前缺少可计算腕速趋势的连续测量；即使趋势可测，它仍仅覆盖一个工程子项。",
+        "source_basis": {
+          "version": "training-dimensions-v1.0.0",
+          "card_ids": [
+            "FS10-M01",
+            "FS10-M02",
+            "FS10-M03",
+            "FS10-M04",
+            "FS10-M05",
+            "GS01-M09-01",
+            "GS01-M09-02",
+            "GS01-M09-03",
+            "GS01-M09-04",
+            "GS01-M09-05",
+            "GS01-M10-01",
+            "GS01-M10-02",
+            "GS01-M10-03",
+            "GS01-M10-04",
+            "GS02-M09-01",
+            "GS02-M09-02",
+            "GS02-M09-03",
+            "GS02-M09-04",
+            "GS02-M09-05",
+            "GS02-M10-01",
+            "GS02-M10-02",
+            "GS02-M10-03",
+            "GS02-M10-04",
+            "GS03-M09-01",
+            "GS03-M09-02",
+            "GS03-M09-03",
+            "GS03-M09-04",
+            "GS03-M09-05",
+            "GS03-M10-01",
+            "GS03-M10-02",
+            "GS03-M10-03",
+            "GS03-M10-04",
+            "GS03-M10-05",
+            "GS04-M09-01",
+            "GS04-M09-02",
+            "GS04-M09-03",
+            "GS04-M09-04",
+            "GS04-M09-05",
+            "GS04-M10-01",
+            "GS04-M10-02",
+            "GS04-M10-03",
+            "GS04-M10-04",
+            "GS04-M10-05",
+            "GS05-M09-01",
+            "GS05-M09-02",
+            "GS05-M09-03",
+            "GS05-M09-04",
+            "GS05-M09-05",
+            "GS05-M10-01",
+            "GS05-M10-02",
+            "GS05-M10-03",
+            "GS05-M10-04",
+            "GS05-M10-05"
+          ],
+          "card_count": 53,
+          "grouping_origin": "proposed_source_stage_grouping",
+          "proposed_not_original": true,
+          "grouping_rule_zh": "全部 GS 技术的 M09/M10，加 FS10 回位与下一拍衔接。",
+          "semantics": "source_catalogue_membership_not_runtime_measurement_or_score_coverage",
+          "source_reference_version": "scoring-reference-20261004",
+          "source_reference_sha256": "3f58ebdc561912cbe43211678475bcc07db84a6dff8247024d0c1be2ba70a812",
+          "source_documents": [
+            {
+              "id": "CARD-FS",
+              "sha256": "8b49a066398c1b59e749a921fad5b943e49c6f1f16b82e5df5d6d996ddbfe41e"
+            },
+            {
+              "id": "CARD-GS",
+              "sha256": "151f4a551806fa3d1e5f4db3310efcf51c844b2c19266d283cc9a6dde0f416e0"
+            }
+          ],
+          "source_anchors": [
+            {
+              "source_id": "GS01-M09",
+              "locator": "CARD-GS:word/document.xml:P2241",
+              "reason_zh": "继续旋转挥拍并完成收拍。"
+            },
+            {
+              "source_id": "GS01-M10",
+              "locator": "CARD-GS:word/document.xml:P2464",
+              "reason_zh": "恢复平衡、持拍控制与下一拍准备。"
+            },
+            {
+              "source_id": "FS10-M05",
+              "locator": "CARD-FS:word/document.xml:P1822",
+              "reason_zh": "回位后稳定及后续 FS01/FS02 衔接。"
+            }
+          ],
+          "source_blockers": [
+            {
+              "indicator_id": "GS01-M10-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_rule_conflict",
+                  "message": "调整身体姿态并建立下一拍准备状态的定义为“GS-02 双手反手”。前后端完整复制了此源异常。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M09-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M09-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M09-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M09-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M09-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M10-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M10-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M10-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS02-M10-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M09-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M09-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M09-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M09-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M09-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M10-01",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M10-02",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M10-03",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M10-04",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            },
+            {
+              "indicator_id": "GS03-M10-05",
+              "manual_grading_allowed": false,
+              "blockers": [
+                {
+                  "code": "source_boundaries_missing",
+                  "message": "原文缺少阶段开始和结束定义，人工选择时段不能补正原文。"
+                }
+              ]
+            }
+          ]
+        },
+        "scored_rule_count": 0,
+        "total_rule_count": 3,
+        "scoring_rule_count": 1,
+        "sample_count": 0,
+        "scored_sample_count": 0,
+        "total_sample_count": 0,
+        "measured_criterion_count": 0,
+        "aggregation": "none"
+      },
+      {
+        "id": "transition",
+        "name_zh": "两次之间的衔接",
+        "score": null,
+        "status": "unavailable",
+        "summary_zh": "缺少连续动作间隔证据；该补充项也未定义技术评分。",
+        "criteria": [
+          {
+            "id": "between_motion_interval",
+            "label_zh": "相邻候选动作的时间间隔",
+            "status": "unavailable",
+            "value": null,
+            "unit": "",
+            "score": null,
+            "reason_zh": "至少需要同一主体的两段独立动作；真实回位衔接还需中间姿态和来球证据。",
+            "rule_zh": "缺失证据不补零、不代入其他维度，不生成技术分。",
+            "source": "unavailable",
+            "start_ms": null,
+            "end_ms": null,
+            "episode_id": null
+          }
+        ],
+        "criteria_selection": {
+          "full_count": 1,
+          "returned_count": 1,
+          "is_truncated": false,
+          "policy": "all_scoring_criteria_and_uniform_time_ordered_unscored_measurements_per_feature",
+          "max_footwork_observations_per_feature": 12,
+          "count_scope": "all_validated_input_episodes_before_display_sampling"
+        },
+        "score_scope": "observation_only",
+        "score_scope_zh": "仅报告相邻候选动作的时间间隔；不据间隔推断回位质量或准备就绪。",
+        "score_covers_all_source_cards": false,
+        "status_reason": "continuous_between_motion_evidence_missing",
+        "status_reason_zh": "缺少连续动作间隔证据；该补充项也未定义技术评分。",
+        "source_basis": {
+          "version": "training-dimensions-v1.0.0",
+          "card_ids": [],
+          "card_count": 0,
+          "grouping_origin": "proposed_source_stage_grouping",
+          "proposed_not_original": true,
+          "parent_dimension_id": "follow_through",
+          "source_blockers": [],
+          "semantics": "supplementary_observation_no_duplicate_card_membership",
+          "grouping_rule_zh": "衔接作为随挥与衔接维度的补充观测；来源卡只在该主维度登记一次。"
+        },
+        "scored_rule_count": 0,
+        "total_rule_count": 1,
+        "scoring_rule_count": 0,
+        "sample_count": 0,
+        "scored_sample_count": 0,
+        "total_sample_count": 0,
+        "measured_criterion_count": 0,
+        "aggregation": "none"
+      }
+    ],
+    "display_dimension_ids": [
+      "movement",
+      "preparation",
+      "swing",
+      "contact",
+      "follow_through"
+    ],
+    "supplementary_dimension_ids": [
+      "transition"
+    ],
+    "summary_zh": "按原文阶段目的提出五组训练展示，298 张卡每卡仅归一组；这不是原文规定的五维总评。现有数值仍只代表工程子项，动作间隔作为随挥与衔接的补充观察。",
+    "overall_reason_zh": "缺少完整可验证的维度评分与原文总评权重，不以已有工程子项或剩余维度合成总分。",
+    "scored_dimension_count": 0,
+    "total_dimension_count": 6,
+    "episode_count": 0,
+    "limitations_zh": [
+      "阶段边界也由腕部运动曲线估计；此分仅描述曲线趋势，不能独立验证动作正确性、真实受力或发力效率。",
+      "引拍、挥拍方向与肩髋腕峰序是二维过程观察，不能代替球场方向、实际受力或技术正确性。",
+      "触球控制按原文关注触球姿态、拍面、球拍与球的关系；出球落点和目标命中率属于另行定义的结果统计，不是本轴的统一门槛。",
+      "来源卡数量只表示展示分组，不表示本次测量覆盖或评分完成；原文冲突与缺失阶段边界保持不变。"
+    ],
+    "rule_origin": "explicit_engineering_trial_not_word_rubric_or_coach_calibration"
+  }
+}

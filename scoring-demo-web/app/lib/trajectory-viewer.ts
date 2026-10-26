@@ -62,7 +62,7 @@ export function trajectoryDisplayOpacity(points: TrajectoryPoint[], medianConfid
 export function trajectoryAvailability(trajectory: TrajectoryPreviewResponse | null, pending = false, error?: string | null) {
   const reconstruction = trajectory?.ball.reconstruction;
   if (!trajectory) {
-    if (error) return { state: "error", title: "球路数据未能加载", description: "视频仍可正常回放。可重新读取任务结果以恢复球路数据。" };
+    if (error) return { state: "error", title: "球路数据未能加载", description: "球路数据暂不可用。可重新读取任务结果。" };
     if (pending) return { state: "pending", title: "正在分析视频", description: "可靠球路会随分析进度更新，并与视频同步显示。" };
     return { state: "unavailable", title: "暂无球路数据", description: "本次结果未提供可用球路，不影响已有视频和动作结果的查看。" };
   }

@@ -41,6 +41,18 @@ def _sources() -> dict[str, dict[str, str]]:
 
 
 class CycleMeasurementTests(unittest.TestCase):
+    def test_model_cycle_keeps_unknown_confidence_and_measurement_provenance(self):
+        from tests.test_sam_footwork import model_report_fixture
+        report = build_scoring_cycle_measurement(**model_report_fixture())
+        selected = report["representative_cycle"]
+        self.assertIsNone(selected["selection_quality"]["minimum_required_feature_confidence"])
+        self.assertIsNone(selected["selection_quality"]["mean_required_feature_confidence"])
+        self.assertFalse(selected["measurement_provenance"]["scoring_allowed"])
+        self.assertTrue(all(item["feature_vector"][0]["confidence"] is None for item in selected["indicator_measurements"]))
+        if Draft202012Validator:
+            schema = json.loads((ROOT / "contracts/scoring-cycle-measurement.schema.json").read_text())
+            Draft202012Validator(schema).validate(report)
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.registry = json.loads(
