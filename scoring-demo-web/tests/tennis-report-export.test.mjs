@@ -28,11 +28,11 @@ function input() {
   }));
   return { mode: "live", uploadState: "complete", job: { id: job, status: "succeeded" },
     evidence: { jobId: job, result: { job_id: job, input: { video: { sha256: sha, duration_ms: 10000 } },
-      tennis_assessment: { version: "tennis-action-assessment-v1.0.0", status: "scored", source_run_id: job, source_video_sha256: sha,
+      tennis_assessment: { version: "tennis-action-assessment-v1.1.0", status: "scored", source_run_id: job, source_video_sha256: sha,
         source_timestamp_semantics: "original_decoder_pts", overall_score: 70, dimensions,
         strengths: [{ title: "随挥连续", observation: "随挥动作连续完成" }],
         improvements: [{ dimension_id: "movement", title: "保持弹性支撑", observation: "准备时膝部屈曲较少", action: "保持弹性屈膝后再挥拍", drill: "慢球练习两组，每组十次", retest: "用相同喂球复测十次", start_ms: 1000, end_ms: 2000 }],
-        rubric: { version: "tennis-action-rubric-v1.0.0", semantics: "engineering_action_quality", coach_calibrated: false,
+        rubric: { version: "tennis-action-rubric-v1.1.0", semantics: "engineering_action_quality", coach_calibrated: false,
           identity_labels_used: false, confidence_used_in_score: false, aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" },
       },
     } },
@@ -72,6 +72,19 @@ test("a foreign assessment never replaces this video's score or authorizes an em
   assert.equal(trainingScoreOf(source.evidence.result).score, null);
   assert.equal(tennisAssessmentOf(source.evidence.result), null);
   assert.throws(() => buildReportBackup(source), /不能导出空报告/);
+});
+
+test("an unavailable report preserves the actual reason instead of inventing a camera problem", async () => {
+  const source = input(), assessment = source.evidence.result.tennis_assessment;
+  assessment.status = "unavailable"; assessment.overall_score = null;
+  assessment.reason_zh = "动作姿态记录缺失或来源校验未通过。";
+  assessment.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics = []; });
+  assessment.strengths = []; assessment.improvements = [];
+  const report = buildPracticeReport(source), text = renderReportMarkdown(report);
+  assert.match(text, /本次动作暂未评分/); assert.match(text, /来源校验未通过/); assert.doesNotMatch(text, /未完整入镜/);
+  const encoded = JSON.stringify(buildReportBackup(source));
+  const restored = await readReportJson({ size: Buffer.byteLength(encoded), text: async () => encoded });
+  assert.equal(tennisAssessmentOf(restored.result).reason_zh, assessment.reason_zh);
 });
 
 test("a valid assessment cannot be exported under another wrapper task", () => {

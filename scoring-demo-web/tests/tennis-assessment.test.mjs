@@ -49,6 +49,15 @@ test("unknown rubrics, duplicate dimensions and ungrounded scores cannot enter t
   }
 });
 
+test("the old saturated score scale cannot survive validation or late-result retention", () => {
+  const old = tennisFixture(); old.version = "tennis-action-assessment-v1.0.0"; old.rubric.version = "tennis-action-rubric-v1.0.0";
+  assert.equal(parse(old), null);
+  const incoming = tennisResult(); delete incoming.tennis_assessment;
+  assert.equal(retainTennisAssessment(incoming, { ...tennisResult(), tennis_assessment: old }).tennis_assessment, undefined);
+  const mixed = tennisFixture(); mixed.rubric.version = "tennis-action-rubric-v1.0.0";
+  assert.equal(parse(mixed), null);
+});
+
 test("mixed actions use their measured contribution weights instead of averaging unlike metric IDs equally", () => {
   const report = tennisFixture(), dimension = report.dimensions[0], metric = dimension.metrics[0];
   dimension.metrics = [{ ...metric, score: 80, weight: 100 / 101 }, { ...metric, id: "serve_support", score: 20, weight: 1 / 101 }];
@@ -93,6 +102,10 @@ test("default summary shows one score, five dimensions and two actionable drills
   assert.equal((html.match(/class="tennis-radar-value"/g) ?? []).length, 5);
   assert.equal((html.match(/class="tennis-drill"/g) ?? []).length, 2);
   assert.equal((html.match(/怎么练/g) ?? []).length, 2); assert.equal((html.match(/复测目标/g) ?? []).length, 2);
+  assert.match(html, /本次分析了 2 段挥拍/);
+  assert.match(html, /试验评分，不代表竞技等级/);
+  assert.match(html, /继续保持/); assert.match(html, /随挥后能恢复准备姿势/);
+  assert.match(html, /对应片段 1\.0–2\.2 秒/);
   assert.doesNotMatch(html, /置信|算法|规则未实现|P0080|Word|technical|coach_calibrated|触球质量/);
 });
 
@@ -116,6 +129,10 @@ test("unavailable and offline states use one clear action instead of a page of e
   const report = tennisFixture(); report.status = "unavailable"; report.overall_score = null;
   report.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics.forEach(m => { m.score = null; m.value = null; m.observation_count = 0; }); });
   const html = render(parse(report)); assert.match(html, /先完成移动/); assert.doesNotMatch(html, /tennis-radar|tennis-score-number|正在生成/);
+  report.reason_zh = "动作姿态记录缺失或来源校验未通过。";
+  assert.match(render(parse(report)), /来源校验未通过/);
+  assert.doesNotMatch(render(parse(report)), /未完整入镜/);
+  report.reason_zh = { unsafe: true }; assert.equal(parse(report), null);
 });
 
 test("late supplemental results retain a loaded score only for the same job and independently bound video", () => {

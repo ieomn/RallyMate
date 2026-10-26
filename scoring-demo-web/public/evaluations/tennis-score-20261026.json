@@ -1,0 +1,5768 @@
+{
+  "before_distribution": {
+    "unit": "equal_weight_source_group_mean_not_action_or_clip",
+    "groups": [
+      {
+        "split": "development",
+        "source_group": "ordinary-850cb",
+        "label": "ordinary",
+        "score": 93.63,
+        "videos": 1
+      },
+      {
+        "split": "development",
+        "source_group": "sharapova",
+        "label": "professional",
+        "score": 98.99,
+        "videos": 1
+      },
+      {
+        "split": "regression",
+        "source_group": "ordinary-ece12",
+        "label": "ordinary",
+        "score": 89.02,
+        "videos": 1
+      },
+      {
+        "split": "regression",
+        "source_group": "nadal",
+        "label": "professional",
+        "score": 99.14,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "196b89276dedbd2232f1ca3131da99a0",
+        "label": "ordinary",
+        "score": 84.3,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+        "label": "ordinary",
+        "score": 95.67,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+        "label": "ordinary",
+        "score": 90.81,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "user-video-01e86002f21704680103700397b8352743",
+        "label": "ordinary",
+        "score": 97.92,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "2012-usopen-jc-demiace",
+        "label": "professional",
+        "score": 93.265,
+        "videos": 2
+      }
+    ],
+    "all": {
+      "attempted_groups": 15,
+      "unscored_or_invalid_groups": 6,
+      "unscored_groups": 6,
+      "groups": 9,
+      "minimum": 84.3,
+      "maximum": 99.14,
+      "mean": 93.63833333333334,
+      "at_least_90": 7,
+      "professional_groups": 3,
+      "ordinary_groups": 6,
+      "professional_mean": 97.13166666666666,
+      "ordinary_mean": 91.89166666666667,
+      "professional_above_ordinary_pair_fraction": 0.8333333333333334,
+      "pairs": 18
+    },
+    "holdout": {
+      "attempted_groups": 11,
+      "unscored_or_invalid_groups": 6,
+      "unscored_groups": 6,
+      "groups": 5,
+      "minimum": 84.3,
+      "maximum": 97.92,
+      "mean": 92.393,
+      "at_least_90": 4,
+      "professional_groups": 1,
+      "ordinary_groups": 4,
+      "professional_mean": 93.265,
+      "ordinary_mean": 92.175,
+      "professional_above_ordinary_pair_fraction": 0.5,
+      "pairs": 4
+    }
+  },
+  "after_distribution": {
+    "unit": "equal_weight_source_group_mean_not_action_or_clip",
+    "groups": [
+      {
+        "split": "development",
+        "source_group": "ordinary-850cb",
+        "label": "ordinary",
+        "score": 88.36,
+        "videos": 1
+      },
+      {
+        "split": "development",
+        "source_group": "sharapova",
+        "label": "professional",
+        "score": 95.77,
+        "videos": 1
+      },
+      {
+        "split": "regression",
+        "source_group": "ordinary-ece12",
+        "label": "ordinary",
+        "score": 85.32,
+        "videos": 1
+      },
+      {
+        "split": "regression",
+        "source_group": "nadal",
+        "label": "professional",
+        "score": 92.12,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "196b89276dedbd2232f1ca3131da99a0",
+        "label": "ordinary",
+        "score": 75.85,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+        "label": "ordinary",
+        "score": 92.33,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+        "label": "ordinary",
+        "score": 88.66,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "user-video-01e86002f21704680103700397b8352743",
+        "label": "ordinary",
+        "score": 93.45,
+        "videos": 1
+      },
+      {
+        "split": "holdout",
+        "source_group": "2012-usopen-jc-demiace",
+        "label": "professional",
+        "score": 87.155,
+        "videos": 2
+      }
+    ],
+    "all": {
+      "attempted_groups": 15,
+      "unscored_or_invalid_groups": 6,
+      "unscored_groups": 6,
+      "groups": 9,
+      "minimum": 75.85,
+      "maximum": 95.77,
+      "mean": 88.77944444444444,
+      "at_least_90": 4,
+      "professional_groups": 3,
+      "ordinary_groups": 6,
+      "professional_mean": 91.68166666666667,
+      "ordinary_mean": 87.32833333333333,
+      "professional_above_ordinary_pair_fraction": 0.6666666666666666,
+      "pairs": 18
+    },
+    "holdout": {
+      "attempted_groups": 11,
+      "unscored_or_invalid_groups": 6,
+      "unscored_groups": 6,
+      "groups": 5,
+      "minimum": 75.85,
+      "maximum": 93.45,
+      "mean": 87.489,
+      "at_least_90": 2,
+      "professional_groups": 1,
+      "ordinary_groups": 4,
+      "professional_mean": 87.155,
+      "ordinary_mean": 87.57249999999999,
+      "professional_above_ordinary_pair_fraction": 0.25,
+      "pairs": 4
+    }
+  },
+  "rubric_version": "tennis-action-rubric-v1.1.0",
+  "engine_sha256": {
+    "tennis_assessment.py": "1831939f00953052a3ec9dea67509308fc8d7840a86d5ae134e93e38c8159838",
+    "tennis_profiles.py": "c07ee7b35184a60e3a385ce77ef4045b2bc7afdf0d1462a91dd27a980a6dffae",
+    "tennis_coaching.py": "1b7bda6e29e46aca22913449ad22381459d6003cd175024b64d3afa6dc025c16",
+    "swing_kinematics.py": "c932aaa5717978a5f7d159a150b828f94d9dbd341dbc5f649e528442b2af3833"
+  },
+  "manifest_sha256": "1c67c4044cca505c076e72ec8541fbb4c21a302e666f9df6d6590e7013515bb6",
+  "created_at_utc": "2026-10-26T11:59:57.658255+00:00",
+  "samples": [
+    {
+      "sample_id": "development-ordinary-a",
+      "job_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "source_group": "ordinary-850cb",
+      "split": "development",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 88.36,
+      "episodes": 14,
+      "dimension_scores": {
+        "movement": 89.16,
+        "preparation": 70.3,
+        "coordination": 89.68,
+        "striking": 98.55,
+        "follow_through": 94.1
+      },
+      "metric_scores": {
+        "knee_load": 99.4,
+        "support_control": 99.99,
+        "leg_extension_continuity": 68.1,
+        "coil": 70.29,
+        "preparation_sync": 70.32,
+        "release_sequence": 85.9,
+        "coil_release": 93.46,
+        "head_control": 97.23,
+        "arm_space": 99.86,
+        "follow_path": 100.0,
+        "recovery_control": 88.6,
+        "follow_deceleration": 92.92
+      },
+      "metric_values": {
+        "knee_load": 41.18226,
+        "support_control": 2.72861,
+        "leg_extension_continuity": 0.68095,
+        "coil": 12.23155,
+        "preparation_sync": 0.23443,
+        "release_sequence": 0.10623,
+        "coil_release": 0.68727,
+        "head_control": 0.03632,
+        "arm_space": 0.8674,
+        "follow_path": 1.04547,
+        "recovery_control": 1.06215,
+        "follow_deceleration": 0.92917
+      },
+      "families": {
+        "baseline": 14
+      },
+      "arms": {
+        "right": 12,
+        "left": 2
+      },
+      "reason": "已分析 14 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 88.36,
+          "episodes": 14
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.8878795000000537,
+          0.8459744000001592,
+          0.8911912000003213
+        ],
+        "pure_cpu_median_seconds": 0.8878795000000537,
+        "uncached_builder_seconds": 2.104155499999706,
+        "cached_builder_seconds": 0.0590543000002981
+      },
+      "strengths": [
+        {
+          "title": "手臂有伸展空间",
+          "observation": "综合本次已测动作，主挥拍时手臂保持了舒展空间。测量汇总：主挥拍时肩到手腕的平均距离约为手臂长度的 87%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.05 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 6°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 43733.333,
+          "end_ms": 45166.667
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 19%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 14300.0,
+          "end_ms": 16066.667
+        }
+      ],
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 2911,
+        "duration_ms": 97033
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 24,
+        "accepted_count": 14,
+        "rejected_count": 10,
+        "rejection_counts": {
+          "candidate_overlap_duplicate": 1,
+          "candidate_source_or_complete_phase_unverified": 9
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "cbe6d3ef7f36fbda86767f927e1c27872fb6091024de39ae49e3a08e6be0d9ea",
+        "primary-player.jsonl": "ce7aaad4485565f9314bae2f1cfddf09bcc6302e049315165e3ed4e733e59576",
+        "sam3d_frames.jsonl": "341aab8eb9dabfc2a17072645b5fce6e35c61b06cbf288cbc2c985f3679ddbea"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 58200,
+      "metric_observation_counts": {
+        "knee_load": 14,
+        "support_control": 14,
+        "leg_extension_continuity": 14,
+        "coil": 14,
+        "preparation_sync": 9,
+        "release_sequence": 14,
+        "coil_release": 14,
+        "head_control": 14,
+        "arm_space": 14,
+        "follow_path": 14,
+        "recovery_control": 14,
+        "follow_deceleration": 6
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 8
+      },
+      "name": "普通 A · 开发集",
+      "before": {
+        "score": 93.63,
+        "episodes": 14,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 84.84,
+          "coordination": 89.68,
+          "striking": 99.34,
+          "follow_through": 94.27
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 91.72,
+          "preparation_sync": 70.32,
+          "release_sequence": 85.9,
+          "coil_release": 93.46,
+          "head_control": 98.67,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 88.53
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.8797214000001077,
+            0.9203416000000288,
+            0.8972910999996202
+          ],
+          "pure_cpu_median_seconds": 0.8972910999996202,
+          "uncached_builder_seconds": 2.0806776999997965,
+          "cached_builder_seconds": 0.05828639999981533
+        }
+      }
+    },
+    {
+      "sample_id": "development-sharapova",
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "source_group": "sharapova",
+      "split": "development",
+      "evaluation_label": "professional",
+      "source_video_sha256": "2CDB8821DA6D75FAB11B4C04C46EEA1B93B4D0ED078D5DCA498443D56209B9D6",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 95.77,
+      "episodes": 2,
+      "dimension_scores": {
+        "movement": 97.29,
+        "preparation": 81.55,
+        "coordination": 100.0,
+        "striking": 100.0,
+        "follow_through": 100.0
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 91.88,
+        "coil": 75.4,
+        "preparation_sync": 100.0,
+        "release_sequence": 100.0,
+        "coil_release": 100.0,
+        "head_control": 100.0,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 100.0,
+        "follow_deceleration": 100.0
+      },
+      "metric_values": {
+        "knee_load": 68.52585,
+        "support_control": 3.57997,
+        "leg_extension_continuity": 0.91885,
+        "coil": 15.8302,
+        "preparation_sync": 0.14286,
+        "release_sequence": 0.0,
+        "coil_release": 0.81866,
+        "head_control": 0.0323,
+        "arm_space": 0.89718,
+        "follow_path": 1.20854,
+        "recovery_control": 0.0,
+        "follow_deceleration": 1.0
+      },
+      "families": {
+        "baseline": 2
+      },
+      "arms": {
+        "left": 1,
+        "right": 1
+      },
+      "reason": "已分析 2 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 95.77,
+          "episodes": 2
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.14248250000036933,
+          0.13514320000012958,
+          0.15580540000019028
+        ],
+        "pure_cpu_median_seconds": 0.14248250000036933,
+        "uncached_builder_seconds": 0.3759820000000218,
+        "cached_builder_seconds": 0.01374789999999848
+      },
+      "strengths": [
+        {
+          "title": "伸展与挥出衔接顺畅",
+          "observation": "综合本次已测动作，下肢伸展、身体转动与主挥拍的先后衔接较顺畅。"
+        },
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 3%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 10°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 15515.5,
+          "end_ms": 17083.733
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 84%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 15515.5,
+          "end_ms": 17083.733
+        }
+      ],
+      "source_url": "https://commons.wikimedia.org/wiki/File:Maria_Sharapova_on_Amelia_Island.ogv",
+      "source_license": {
+        "name": "CC BY 2.0",
+        "author": "javajoba",
+        "url": "https://creativecommons.org/licenses/by/2.0/",
+        "modifications": "Existing 20-second local transcode; native poses reused."
+      },
+      "video": {
+        "width": 500,
+        "height": 376,
+        "fps": 29.97,
+        "frame_count": 601,
+        "duration_ms": 20053
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 2,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "4799e4436d402adf9f9d098e7f0161cd9aea0862af9f9a2c27b579d35bc3551d",
+        "primary-player.jsonl": "38428769ec3fd0639bbfab18d4dbbd5a6ec60597cf7458b7c2b2a57b2db49ce4",
+        "sam3d_frames.jsonl": "cc71056080f701ffd82d92c8e7fa784d3b49531660e308951dc2813033acc397"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 600600,
+      "metric_observation_counts": {
+        "knee_load": 2,
+        "support_control": 2,
+        "leg_extension_continuity": 2,
+        "coil": 2,
+        "preparation_sync": 1,
+        "release_sequence": 2,
+        "coil_release": 2,
+        "head_control": 2,
+        "arm_space": 2,
+        "follow_path": 2,
+        "recovery_control": 2,
+        "follow_deceleration": 1
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "name": "Sharapova · 开发集",
+      "before": {
+        "score": 98.99,
+        "episodes": 2,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 94.95,
+          "coordination": 100.0,
+          "striking": 100.0,
+          "follow_through": 100.0
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 93.26,
+          "preparation_sync": 100.0,
+          "release_sequence": 100.0,
+          "coil_release": 100.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 100.0
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.14558949999991455,
+            0.1403824999997596,
+            0.14576510000006238
+          ],
+          "pure_cpu_median_seconds": 0.14558949999991455,
+          "uncached_builder_seconds": 0.3762943000001542,
+          "cached_builder_seconds": 0.013275900000280672
+        }
+      }
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "source_group": "ordinary-ece12",
+      "split": "regression",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "DA6AAE350366ACDD2DCF45C7B1D585909719F91427192815D327E806395254C8",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 85.32,
+      "episodes": 5,
+      "dimension_scores": {
+        "movement": 90.16,
+        "preparation": 71.33,
+        "coordination": 74.78,
+        "striking": 95.41,
+        "follow_through": 94.92
+      },
+      "metric_scores": {
+        "knee_load": 98.39,
+        "support_control": 100.0,
+        "leg_extension_continuity": 72.1,
+        "coil": 66.69,
+        "preparation_sync": 82.17,
+        "release_sequence": 69.57,
+        "coil_release": 80.0,
+        "head_control": 95.56,
+        "arm_space": 95.26,
+        "follow_path": 100.0,
+        "recovery_control": 91.4,
+        "follow_deceleration": 91.79
+      },
+      "metric_values": {
+        "knee_load": 50.96349,
+        "support_control": 3.61016,
+        "leg_extension_continuity": 0.72102,
+        "coil": 10.51328,
+        "preparation_sync": 0.18462,
+        "release_sequence": 0.25217,
+        "coil_release": 0.66816,
+        "head_control": 0.04679,
+        "arm_space": 0.82443,
+        "follow_path": 2.17407,
+        "recovery_control": 0.93338,
+        "follow_deceleration": 0.91788
+      },
+      "families": {
+        "baseline": 5
+      },
+      "arms": {
+        "right": 3,
+        "left": 2
+      },
+      "reason": "已分析 5 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 85.32,
+          "episodes": 5
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.2977098000001206,
+          0.2865921000002345,
+          0.2941832000001341
+        ],
+        "pure_cpu_median_seconds": 0.2941832000001341,
+        "uncached_builder_seconds": 0.7600360000001274,
+        "cached_builder_seconds": 0.022662600000330713
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 5%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 2.17 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 4°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 0.0,
+          "end_ms": 1333.333
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 0.0,
+          "end_ms": 1333.333
+        }
+      ],
+      "video": {
+        "width": 720,
+        "height": 1280,
+        "fps": 29.8302,
+        "frame_count": 1230,
+        "duration_ms": 41233
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 5,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "2d8fda7ae9543c6326bc8c0afaed89c9321236be30a0f87eb9446dbe028f07b4",
+        "primary-player.jsonl": "1fec53ef7d177834d408c0735ae2640c91436a73526f888615e13451adba8029",
+        "sam3d_frames.jsonl": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 24720,
+      "metric_observation_counts": {
+        "knee_load": 5,
+        "support_control": 5,
+        "leg_extension_continuity": 5,
+        "coil": 5,
+        "preparation_sync": 3,
+        "release_sequence": 5,
+        "coil_release": 5,
+        "head_control": 5,
+        "arm_space": 5,
+        "follow_path": 5,
+        "recovery_control": 5,
+        "follow_deceleration": 3
+      },
+      "episode_quality_reason_counts": {
+        "preparation_start_clipped_by_source_boundary": 1,
+        "follow_deceleration_recovery_trough_unobserved": 2
+      },
+      "name": "普通 B · 既有回归",
+      "before": {
+        "score": 89.02,
+        "episodes": 5,
+        "dimension_scores": {
+          "movement": 99.38,
+          "preparation": 77.23,
+          "coordination": 74.78,
+          "striking": 98.33,
+          "follow_through": 95.38
+        },
+        "metric_scores": {
+          "knee_load": 98.76,
+          "support_control": 100.0,
+          "coil": 75.11,
+          "preparation_sync": 82.17,
+          "release_sequence": 69.57,
+          "coil_release": 80.0,
+          "head_control": 96.65,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 90.75
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.2835863000000245,
+            0.28339590000041426,
+            0.2699761000003491
+          ],
+          "pure_cpu_median_seconds": 0.28339590000041426,
+          "uncached_builder_seconds": 0.7729736999999659,
+          "cached_builder_seconds": 0.024006999999983236
+        }
+      }
+    },
+    {
+      "sample_id": "regression-nadal",
+      "job_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "source_group": "nadal",
+      "split": "regression",
+      "evaluation_label": "professional",
+      "source_video_sha256": "40C86A99FFA88D2B891EDA5B16AA55CBF51EE4C5E8D625FE9AAAB997C1CEEF85",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 92.12,
+      "episodes": 2,
+      "dimension_scores": {
+        "movement": 89.29,
+        "preparation": 77.01,
+        "coordination": 100.0,
+        "striking": 98.34,
+        "follow_through": 95.95
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 67.87,
+        "coil": 77.01,
+        "release_sequence": 100.0,
+        "coil_release": 100.0,
+        "head_control": 97.01,
+        "arm_space": 99.68,
+        "follow_path": 100.0,
+        "recovery_control": 97.53,
+        "follow_deceleration": 90.32
+      },
+      "metric_values": {
+        "knee_load": 72.91408,
+        "support_control": 3.95243,
+        "leg_extension_continuity": 0.67871,
+        "coil": 17.21443,
+        "release_sequence": 0.0,
+        "coil_release": 0.80054,
+        "head_control": 0.04632,
+        "arm_space": 0.89324,
+        "follow_path": 1.83272,
+        "recovery_control": 0.42312,
+        "follow_deceleration": 0.90316
+      },
+      "families": {
+        "baseline": 2
+      },
+      "arms": {
+        "right": 1,
+        "left": 1
+      },
+      "reason": "已分析 2 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 92.12,
+          "episodes": 2
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.1447611000003235,
+          0.14694760000020324,
+          0.13926700000001802
+        ],
+        "pure_cpu_median_seconds": 0.1447611000003235,
+        "uncached_builder_seconds": 0.3528447000003325,
+        "cached_builder_seconds": 0.011886099999628641
+      },
+      "strengths": [
+        {
+          "title": "伸展与挥出衔接顺畅",
+          "observation": "综合本次已测动作，下肢伸展、身体转动与主挥拍的先后衔接较顺畅。"
+        },
+        {
+          "title": "手臂有伸展空间",
+          "observation": "综合本次已测动作，主挥拍时手臂保持了舒展空间。测量汇总：主挥拍时肩到手腕的平均距离约为手臂长度的 89%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 9°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 19560.0,
+          "end_ms": 21360.0
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 36%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 19560.0,
+          "end_ms": 21360.0
+        }
+      ],
+      "source_url": "https://www.youtube.com/watch?v=W8JJJ2j5hOM",
+      "source_license": {
+        "name": "ATP copyrighted source; no media redistribution",
+        "author": "ATP",
+        "modifications": "Existing local normal-speed reference; saved poses reused, no new download."
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 25.0,
+        "frame_count": 1538,
+        "duration_ms": 61520
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 2,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "d372d3d804f30b7410e5cfa7c9f0a852029b0d4176e678f216ca3416c97747fd",
+        "primary-player.jsonl": "e5b02009ec99c699927b418888203d723faf1512c7fd83b7dbf5a8cfc3e98194",
+        "sam3d_frames.jsonl": "57f979030ef30aad94177846f93157a9f1e89a8e343212bbd2fce26634fb0a2d"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          12800
+        ]
+      ],
+      "first_selected_decoder_pts": 102400,
+      "last_selected_decoder_pts": 396288,
+      "metric_observation_counts": {
+        "knee_load": 2,
+        "support_control": 2,
+        "leg_extension_continuity": 2,
+        "coil": 2,
+        "release_sequence": 2,
+        "coil_release": 2,
+        "head_control": 2,
+        "arm_space": 2,
+        "follow_path": 2,
+        "recovery_control": 2,
+        "follow_deceleration": 2
+      },
+      "episode_quality_reason_counts": {
+        "preparation_start_clipped_by_source_boundary": 1
+      },
+      "name": "Nadal · 既有回归",
+      "before": {
+        "score": 99.14,
+        "episodes": 2,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 100.0,
+          "coordination": 100.0,
+          "striking": 96.92,
+          "follow_through": 98.77
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 100.0,
+          "release_sequence": 100.0,
+          "coil_release": 100.0,
+          "head_control": 93.85,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 97.53
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.14198799999985567,
+            0.14355960000011692,
+            0.13954819999980828
+          ],
+          "pure_cpu_median_seconds": 0.14198799999985567,
+          "uncached_builder_seconds": 0.3652212999995754,
+          "cached_builder_seconds": 0.013019299999996292
+        }
+      }
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "job_id": "7e166b3a-5a2c-4820-92a4-8bec782bd775",
+      "source_group": "ordinary-850cb",
+      "split": "robustness",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 88.36,
+      "episodes": 14,
+      "dimension_scores": {
+        "movement": 89.16,
+        "preparation": 70.3,
+        "coordination": 89.68,
+        "striking": 98.55,
+        "follow_through": 94.1
+      },
+      "metric_scores": {
+        "knee_load": 99.4,
+        "support_control": 99.99,
+        "leg_extension_continuity": 68.09,
+        "coil": 70.29,
+        "preparation_sync": 70.32,
+        "release_sequence": 85.9,
+        "coil_release": 93.46,
+        "head_control": 97.23,
+        "arm_space": 99.86,
+        "follow_path": 100.0,
+        "recovery_control": 88.6,
+        "follow_deceleration": 92.92
+      },
+      "metric_values": {
+        "knee_load": 41.18226,
+        "support_control": 2.72861,
+        "leg_extension_continuity": 0.68095,
+        "coil": 12.23155,
+        "preparation_sync": 0.23443,
+        "release_sequence": 0.10623,
+        "coil_release": 0.68727,
+        "head_control": 0.03632,
+        "arm_space": 0.8674,
+        "follow_path": 1.04547,
+        "recovery_control": 1.06215,
+        "follow_deceleration": 0.92917
+      },
+      "families": {
+        "baseline": 14
+      },
+      "arms": {
+        "right": 12,
+        "left": 2
+      },
+      "reason": "已分析 14 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 88.36,
+          "episodes": 14
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.8687261000000035,
+          0.8756356000003507,
+          0.9012942999997904
+        ],
+        "pure_cpu_median_seconds": 0.8756356000003507,
+        "uncached_builder_seconds": 2.164745199999743,
+        "cached_builder_seconds": 0.07624650000025213
+      },
+      "strengths": [
+        {
+          "title": "手臂有伸展空间",
+          "observation": "综合本次已测动作，主挥拍时手臂保持了舒展空间。测量汇总：主挥拍时肩到手腕的平均距离约为手臂长度的 87%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.05 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 6°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 43733.333,
+          "end_ms": 45166.667
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 19%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 14300.0,
+          "end_ms": 16066.667
+        }
+      ],
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 2911,
+        "duration_ms": 97033
+      },
+      "include_in_distribution": false,
+      "paired_reference_job": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "candidate_accounting": {
+        "proposed_count": 24,
+        "accepted_count": 14,
+        "rejected_count": 10,
+        "rejection_counts": {
+          "candidate_overlap_duplicate": 1,
+          "candidate_source_or_complete_phase_unverified": 9
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "6e381de774dea9ae632e5ca89224013a3ae8a6143f7475625d2622dac620181b",
+        "primary-player.jsonl": "217bbea31cbbe3dca5b400bef48277e739c58ff018b54f0979dbfd6f4c1eea1f",
+        "sam3d_frames.jsonl": "b9b8f0a09f4c834499ef664b6948fa2480075a1aa4d4efcd2c06c4ec6359a4ef"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 58200,
+      "metric_observation_counts": {
+        "knee_load": 14,
+        "support_control": 14,
+        "leg_extension_continuity": 14,
+        "coil": 14,
+        "preparation_sync": 9,
+        "release_sequence": 14,
+        "coil_release": 14,
+        "head_control": 14,
+        "arm_space": 14,
+        "follow_path": 14,
+        "recovery_control": 14,
+        "follow_deceleration": 6
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 8
+      },
+      "name": "普通 A · 重复推理",
+      "before": {
+        "score": 93.63,
+        "episodes": 14,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 84.84,
+          "coordination": 89.68,
+          "striking": 99.34,
+          "follow_through": 94.27
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 91.72,
+          "preparation_sync": 70.32,
+          "release_sequence": 85.9,
+          "coil_release": 93.46,
+          "head_control": 98.67,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 88.53
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.8460758999999598,
+            0.8770873999997093,
+            0.8400722999999743
+          ],
+          "pure_cpu_median_seconds": 0.8460758999999598,
+          "uncached_builder_seconds": 2.1705486999999266,
+          "cached_builder_seconds": 0.05569160000004558
+        }
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "6D14B259E12C5677738134DAEBA6BF40F4A943DBF973D4CDDC784588B8A030A8",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 75.85,
+      "episodes": 5,
+      "dimension_scores": {
+        "movement": 76.4,
+        "preparation": 46.47,
+        "coordination": 68.79,
+        "striking": 98.54,
+        "follow_through": 89.06
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 29.19,
+        "coil": 40.52,
+        "preparation_sync": 100.0,
+        "release_sequence": 80.0,
+        "coil_release": 57.58,
+        "head_control": 100.0,
+        "arm_space": 97.08,
+        "follow_path": 100.0,
+        "recovery_control": 75.43,
+        "follow_deceleration": 92.77
+      },
+      "metric_values": {
+        "knee_load": 54.34795,
+        "support_control": 3.04026,
+        "leg_extension_continuity": 0.29194,
+        "coil": 6.15665,
+        "preparation_sync": 0.11765,
+        "release_sequence": 0.2,
+        "coil_release": 0.47201,
+        "head_control": 0.02574,
+        "arm_space": 0.83249,
+        "follow_path": 2.0413,
+        "recovery_control": 2.06902,
+        "follow_deceleration": 0.92769
+      },
+      "families": {
+        "baseline": 5
+      },
+      "arms": {
+        "right": 5
+      },
+      "reason": "已分析 5 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 75.85,
+          "episodes": 5
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.30538769999975557,
+          0.30405430000018896,
+          0.3168908000002375
+        ],
+        "pure_cpu_median_seconds": 0.30538769999975557,
+        "uncached_builder_seconds": 0.509146200000032,
+        "cached_builder_seconds": 0.01119010000002163
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 3%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 2.04 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 3°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 300.0,
+          "end_ms": 2000.0
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把准备的转动释放出去",
+          "observation": "这段准备后的肩髋相对转动，在主挥拍中释放较少。姿态估计：准备后的肩髋相对转角在挥出时减少约 23%。",
+          "action": "引拍后让身体转动继续带动手臂，保持顺势挥出，不要在准备姿态上停住。",
+          "drill": "做 2 组、每组 8 次半速空挥，从转肩准备连续做到随挥；让同伴观察躯干是否中途停住。",
+          "retest": "用相同机位复测，检查主挥拍时身体与手臂是否继续一起运动。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 5100.0,
+          "end_ms": 6600.0
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "original_seconds": 79.23333333333333,
+        "clip_seconds": 30.0
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 2377,
+        "duration_ms": 79233
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 7,
+        "accepted_count": 5,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1,
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "da634c9ed6057502f010bd6f1a5f8e4e3d80259f233045dc1f0da2f99b7d0a16",
+        "primary-player.jsonl": "203e2e5a6cc734b6d538199f0df82e1a39506b8032ac3f9291df1551d365462e",
+        "sam3d_frames.jsonl": "c89a42ef44d03603b15016338eabe94f98302594fabe048861e9ad4c77f98d6b"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 17980,
+      "metric_observation_counts": {
+        "knee_load": 5,
+        "support_control": 5,
+        "leg_extension_continuity": 5,
+        "coil": 5,
+        "preparation_sync": 1,
+        "release_sequence": 5,
+        "coil_release": 5,
+        "head_control": 5,
+        "arm_space": 5,
+        "follow_path": 5,
+        "recovery_control": 5,
+        "follow_deceleration": 4
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "evaluation_validity": "valid",
+      "name": "普通 · 室内白裙",
+      "before": {
+        "score": 84.3,
+        "episodes": 5,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 63.71,
+          "coordination": 68.79,
+          "striking": 100.0,
+          "follow_through": 88.98
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 59.68,
+          "preparation_sync": 100.0,
+          "release_sequence": 80.0,
+          "coil_release": 57.58,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 77.97
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.2995846000003439,
+            0.3043499000000338,
+            0.3016225999999733
+          ],
+          "pure_cpu_median_seconds": 0.3016225999999733,
+          "uncached_builder_seconds": 0.520607899999959,
+          "cached_builder_seconds": 0.009906999999657273
+        }
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 92.33,
+      "episodes": 2,
+      "dimension_scores": {
+        "movement": 83.33,
+        "preparation": 100.0,
+        "coordination": 78.34,
+        "striking": 100.0,
+        "follow_through": 100.0
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 50.0,
+        "coil": 100.0,
+        "preparation_sync": 100.0,
+        "release_sequence": 56.67,
+        "coil_release": 100.0,
+        "head_control": 100.0,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 100.0,
+        "follow_deceleration": 100.0
+      },
+      "metric_values": {
+        "knee_load": 35.83018,
+        "support_control": 4.08597,
+        "leg_extension_continuity": 0.5,
+        "coil": 18.05076,
+        "preparation_sync": 0.1131,
+        "release_sequence": 0.21667,
+        "coil_release": 0.75857,
+        "head_control": 0.03223,
+        "arm_space": 0.87681,
+        "follow_path": 1.8071,
+        "recovery_control": 0.0,
+        "follow_deceleration": 1.0
+      },
+      "families": {
+        "baseline": 2
+      },
+      "arms": {
+        "left": 2
+      },
+      "reason": "已分析 2 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 92.33,
+          "episodes": 2
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.14433269999972254,
+          0.13745590000007724,
+          0.1417914000003293
+        ],
+        "pure_cpu_median_seconds": 0.1417914000003293,
+        "uncached_builder_seconds": 0.2634602999996787,
+        "cached_builder_seconds": 0.007314800000131072
+      },
+      "strengths": [
+        {
+          "title": "引拍有身体转动",
+          "observation": "综合本次已测动作，引拍时肩与髋形成了适度的相对转动。测量汇总：准备后半段平均肩髋相对转角约 18°。"
+        },
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 3%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 4100.0,
+          "end_ms": 5566.667
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 0%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 12633.333,
+          "end_ms": 13833.333
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 320,
+        "height": 568,
+        "fps": 29.979195561719834,
+        "original_seconds": 48.06666666666666,
+        "clip_seconds": 20.0
+      },
+      "video": {
+        "width": 320,
+        "height": 568,
+        "fps": 29.9792,
+        "frame_count": 1441,
+        "duration_ms": 48066
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 2,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "91c907e5c2e4e8aeb44ebe6b42395aec66209462018bb14dffaac5bfe29f69b7",
+        "primary-player.jsonl": "595c51a4171a7ef5daf80f6d009fc2b7b5427a874ca5ec00d0193d117a52042d",
+        "sam3d_frames.jsonl": "e9c80f2dffe2e9e2abfa52285e77868dccfd339ee517ed0787dadd7514159ad5"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 11980,
+      "metric_observation_counts": {
+        "knee_load": 2,
+        "support_control": 2,
+        "leg_extension_continuity": 2,
+        "coil": 2,
+        "preparation_sync": 2,
+        "release_sequence": 2,
+        "coil_release": 2,
+        "head_control": 2,
+        "arm_space": 2,
+        "follow_path": 2,
+        "recovery_control": 2,
+        "follow_deceleration": 1
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "evaluation_validity": "valid",
+      "name": "普通 · 低清近景",
+      "before": {
+        "score": 95.67,
+        "episodes": 2,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 100.0,
+          "coordination": 78.34,
+          "striking": 100.0,
+          "follow_through": 100.0
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 100.0,
+          "preparation_sync": 100.0,
+          "release_sequence": 56.67,
+          "coil_release": 100.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 100.0
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.15504169999985606,
+            0.13412700000026234,
+            0.13356930000009015
+          ],
+          "pure_cpu_median_seconds": 0.13412700000026234,
+          "uncached_builder_seconds": 0.2662054000002172,
+          "cached_builder_seconds": 0.007735799999863957
+        }
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "A77B8FF8052A1EB98BECE24728804998600035B9D9EFF14BE048AB67BE075043",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 88.66,
+      "episodes": 4,
+      "dimension_scores": {
+        "movement": 93.1,
+        "preparation": 89.28,
+        "coordination": 61.0,
+        "striking": 99.94,
+        "follow_through": 100.0
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 79.31,
+        "coil": 85.7,
+        "preparation_sync": 100.0,
+        "release_sequence": 49.34,
+        "coil_release": 72.65,
+        "head_control": 100.0,
+        "arm_space": 99.89,
+        "follow_path": 100.0,
+        "recovery_control": 100.0
+      },
+      "metric_values": {
+        "knee_load": 59.93952,
+        "support_control": 3.36636,
+        "leg_extension_continuity": 0.79307,
+        "coil": 13.81205,
+        "preparation_sync": 0.05556,
+        "release_sequence": 0.37829,
+        "coil_release": 0.49203,
+        "head_control": 0.01872,
+        "arm_space": 0.87046,
+        "follow_path": 1.4341,
+        "recovery_control": 0.09535
+      },
+      "families": {
+        "baseline": 4
+      },
+      "arms": {
+        "right": 3,
+        "left": 1
+      },
+      "reason": "已分析 4 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 88.66,
+          "episodes": 4
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.18117229999961637,
+          0.201374400000077,
+          0.19014540000034685
+        ],
+        "pure_cpu_median_seconds": 0.19014540000034685,
+        "uncached_builder_seconds": 0.39488230000006297,
+        "cached_builder_seconds": 0.008823300000130985
+      },
+      "strengths": [
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.43 倍。"
+        },
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 2%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 27875.0,
+          "end_ms": 29875.0
+        },
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 8°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 27875.0,
+          "end_ms": 29875.0
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 960,
+        "height": 544,
+        "fps": 24.0,
+        "original_seconds": 479.8333333333333,
+        "clip_seconds": 30.0
+      },
+      "video": {
+        "width": 960,
+        "height": 544,
+        "fps": 24.0,
+        "frame_count": 11516,
+        "duration_ms": 479833
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 4,
+        "accepted_count": 4,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "048e0424d3c146fe9da015990d9e9a180ef932aa006ed6511e7374ca0282a9f4",
+        "primary-player.jsonl": "669348f1a7715332645d7e30430d7de6e140144b85b6c24be2d6b3aefff19bb9",
+        "sam3d_frames.jsonl": "31d953b0f3a399f056b664e76d7e8924d94cfcf35c2b286f456bb1265f000545"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 17975,
+      "metric_observation_counts": {
+        "knee_load": 4,
+        "support_control": 4,
+        "leg_extension_continuity": 4,
+        "coil": 4,
+        "preparation_sync": 2,
+        "release_sequence": 4,
+        "coil_release": 4,
+        "head_control": 4,
+        "arm_space": 4,
+        "follow_path": 4,
+        "recovery_control": 4
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 4
+      },
+      "evaluation_validity": "valid",
+      "name": "普通 · 室外侧拍",
+      "before": {
+        "score": 90.81,
+        "episodes": 4,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 93.06,
+          "coordination": 61.0,
+          "striking": 100.0,
+          "follow_through": 100.0
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 90.75,
+          "preparation_sync": 100.0,
+          "release_sequence": 49.34,
+          "coil_release": 72.65,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 100.0
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.19771159999982046,
+            0.18445109999993292,
+            0.1941353999995954
+          ],
+          "pure_cpu_median_seconds": 0.1941353999995954,
+          "uncached_builder_seconds": 0.37509899999986374,
+          "cached_builder_seconds": 0.008768499999860069
+        }
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "source_group": "c235227fffcd3290b60572d0c3f9cc85",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 86.12,
+      "episodes": 4,
+      "dimension_scores": {
+        "movement": 96.5,
+        "preparation": 53.51,
+        "coordination": 85.94,
+        "striking": 98.81,
+        "follow_through": 95.83
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 89.51,
+        "coil": 53.51,
+        "release_sequence": 96.88,
+        "coil_release": 75.0,
+        "head_control": 100.0,
+        "arm_space": 97.61,
+        "follow_path": 100.0,
+        "recovery_control": 87.5,
+        "follow_deceleration": 100.0
+      },
+      "metric_values": {
+        "knee_load": 53.65658,
+        "support_control": 3.21721,
+        "leg_extension_continuity": 0.89506,
+        "coil": 10.25227,
+        "release_sequence": 0.01562,
+        "coil_release": 0.53256,
+        "head_control": 0.03404,
+        "arm_space": 0.79816,
+        "follow_path": 2.2213,
+        "recovery_control": 1.15277,
+        "follow_deceleration": 1.0
+      },
+      "families": {
+        "baseline": 4
+      },
+      "arms": {
+        "right": 4
+      },
+      "reason": "已分析 4 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 86.12,
+          "episodes": 4
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.21744280000029903,
+          0.21066749999999956,
+          0.214527900000121
+        ],
+        "pure_cpu_median_seconds": 0.214527900000121,
+        "uncached_builder_seconds": 0.4164694999999483,
+        "cached_builder_seconds": 0.010751400000117428
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 3%。"
+        },
+        {
+          "title": "准备有屈膝参与",
+          "observation": "综合本次已测动作，准备阶段已出现清晰屈膝。测量汇总：准备时段平均屈膝约 54°。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 2°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 24433.333,
+          "end_ms": 26166.667
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把准备的转动释放出去",
+          "observation": "这段准备后的肩髋相对转动，在主挥拍中释放较少。姿态估计：准备后的肩髋相对转角在挥出时减少约 14%。",
+          "action": "引拍后让身体转动继续带动手臂，保持顺势挥出，不要在准备姿态上停住。",
+          "drill": "做 2 组、每组 8 次半速空挥，从转肩准备连续做到随挥；让同伴观察躯干是否中途停住。",
+          "retest": "用相同机位复测，检查主挥拍时身体与手臂是否继续一起运动。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 24433.333,
+          "end_ms": 26166.667
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 960,
+        "height": 544,
+        "fps": 30.0,
+        "original_seconds": 217.43333333333334,
+        "clip_seconds": 30.0
+      },
+      "video": {
+        "width": 960,
+        "height": 544,
+        "fps": 30.0,
+        "frame_count": 6523,
+        "duration_ms": 217433
+      },
+      "include_in_distribution": false,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 4,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1,
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "1a7c8672fdf53c433f00431af2153949e777224919bedae1133e65309d7484f2",
+        "primary-player.jsonl": "56116066bc028fd0bae934eb2325198fc8dd6b8c646bda9c733dc28500053ea2",
+        "sam3d_frames.jsonl": "099d73ef3b3d409ef45857109eafe18e65b77d0fe998e7deb144102c64ca0722"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 17980,
+      "metric_observation_counts": {
+        "knee_load": 4,
+        "support_control": 4,
+        "leg_extension_continuity": 4,
+        "coil": 4,
+        "release_sequence": 4,
+        "coil_release": 4,
+        "head_control": 4,
+        "arm_space": 4,
+        "follow_path": 4,
+        "recovery_control": 4,
+        "follow_deceleration": 4
+      },
+      "episode_quality_reason_counts": {
+        "preparation_start_clipped_by_source_boundary": 1
+      },
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "0至13秒主框为黄色衣击球者，镜头约14至15秒移离目标且短暂在空边缘误框；16至19秒选中另一侧白衣持拍/喂球者（track60），21至29.97秒再回黄色衣击球者（track86）。原片摇镜导致整段拼接不同人，不能作为同一人的有效技术评分。",
+      "name": "普通 · 夜间",
+      "before": {
+        "score": 87.57,
+        "episodes": 4,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 60.21,
+          "coordination": 85.94,
+          "striking": 97.97,
+          "follow_through": 93.75
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 60.21,
+          "release_sequence": 96.88,
+          "coil_release": 75.0,
+          "head_control": 100.0,
+          "arm_space": 95.95,
+          "follow_path": 100.0,
+          "recovery_control": 87.5
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.20975499999985914,
+            0.19949019999967277,
+            0.21100220000016634
+          ],
+          "pure_cpu_median_seconds": 0.20975499999985914,
+          "uncached_builder_seconds": 0.38795159999972384,
+          "cached_builder_seconds": 0.009175800000321033
+        }
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "source_group": "c2485607c23646e706d9c4aae89e668e",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "C384FB160DFBE3DC3D8A560C69AEE69404BC885D337473CD0D171EA408A2845F",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 80.75,
+      "episodes": 6,
+      "dimension_scores": {
+        "movement": 84.54,
+        "preparation": 59.17,
+        "coordination": 68.98,
+        "striking": 97.97,
+        "follow_through": 93.08
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 53.62,
+        "coil": 41.05,
+        "preparation_sync": 95.41,
+        "release_sequence": 58.29,
+        "coil_release": 79.68,
+        "head_control": 100.0,
+        "arm_space": 95.93,
+        "follow_path": 100.0,
+        "recovery_control": 83.38,
+        "follow_deceleration": 100.0
+      },
+      "metric_values": {
+        "knee_load": 43.36148,
+        "support_control": 2.42257,
+        "leg_extension_continuity": 0.53617,
+        "coil": 7.21723,
+        "preparation_sync": 0.13929,
+        "release_sequence": 0.22776,
+        "coil_release": 0.73087,
+        "head_control": 0.03217,
+        "arm_space": 0.84386,
+        "follow_path": 1.5578,
+        "recovery_control": 1.49677,
+        "follow_deceleration": 1.0
+      },
+      "families": {
+        "baseline": 6
+      },
+      "arms": {
+        "right": 4,
+        "left": 2
+      },
+      "reason": "已分析 6 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 80.75,
+          "episodes": 6
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.2451390999999603,
+          0.26431129999991754,
+          0.2638397000000623
+        ],
+        "pure_cpu_median_seconds": 0.2638397000000623,
+        "uncached_builder_seconds": 0.4789724999995997,
+        "cached_builder_seconds": 0.011482299999897805
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 3%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.56 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 3°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 0.0,
+          "end_ms": 1400.0
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 16300.0,
+          "end_ms": 17900.0
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "original_seconds": 72.33333333333333,
+        "clip_seconds": 30.0
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 2170,
+        "duration_ms": 72333
+      },
+      "include_in_distribution": false,
+      "candidate_accounting": {
+        "proposed_count": 7,
+        "accepted_count": 6,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "760e9d1ed85cfbaaaf3f72413f981764edbd51e687ed0643c4078cfd475fce5c",
+        "primary-player.jsonl": "cbda48bb5a473d6a606fd4349313071d40abea675f223d044e77c6c6f9859f94",
+        "sam3d_frames.jsonl": "c682455a280bbfc8d06d919607acccaba8830f57f6903989b7093a93b4b82cb3"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 17980,
+      "metric_observation_counts": {
+        "knee_load": 6,
+        "support_control": 6,
+        "leg_extension_continuity": 6,
+        "coil": 6,
+        "preparation_sync": 4,
+        "release_sequence": 6,
+        "coil_release": 6,
+        "head_control": 6,
+        "arm_space": 6,
+        "follow_path": 6,
+        "recovery_control": 6,
+        "follow_deceleration": 3
+      },
+      "episode_quality_reason_counts": {
+        "preparation_start_clipped_by_source_boundary": 1,
+        "follow_deceleration_recovery_trough_unobserved": 3
+      },
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "0至15秒主框为粉衣击球者（track1），镜头约16秒转向另一半场米白衣击球者（track56），17至29.97秒持续该另一人。虽然两者均为用户ordinary标签，整段轨迹拼接两个人，个人技术评分有效性不成立。",
+      "name": "普通 · 室内粉衣",
+      "before": {
+        "score": 84.89,
+        "episodes": 6,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 66.56,
+          "coordination": 68.98,
+          "striking": 96.59,
+          "follow_through": 92.3
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 52.14,
+          "preparation_sync": 95.41,
+          "release_sequence": 58.29,
+          "coil_release": 79.68,
+          "head_control": 100.0,
+          "arm_space": 93.17,
+          "follow_path": 100.0,
+          "recovery_control": 84.59
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.2459681999998793,
+            0.2436585999998897,
+            0.25342760000012277
+          ],
+          "pure_cpu_median_seconds": 0.2459681999998793,
+          "uncached_builder_seconds": 0.46588729999984935,
+          "cached_builder_seconds": 0.010308700000223325
+        }
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "job_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "source_group": "user-video-01e86002f21704680103700397b8352743",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "0399205F23F838F2785718AE93BA8A1F853BDB8A8B95164B526C8974E1DD15E7",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 93.45,
+      "episodes": 4,
+      "dimension_scores": {
+        "movement": 94.02,
+        "preparation": 75.14,
+        "coordination": 100.0,
+        "striking": 99.34,
+        "follow_through": 98.77
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 82.06,
+        "coil": 75.47,
+        "preparation_sync": 74.6,
+        "release_sequence": 100.0,
+        "coil_release": 100.0,
+        "head_control": 100.0,
+        "arm_space": 98.69,
+        "follow_path": 100.0,
+        "recovery_control": 98.68,
+        "follow_deceleration": 97.62
+      },
+      "metric_values": {
+        "knee_load": 72.88004,
+        "support_control": 3.06552,
+        "leg_extension_continuity": 0.82056,
+        "coil": 14.72719,
+        "preparation_sync": 0.15643,
+        "release_sequence": 0.0,
+        "coil_release": 0.81555,
+        "head_control": 0.03563,
+        "arm_space": 0.91791,
+        "follow_path": 0.86703,
+        "recovery_control": 0.21773,
+        "follow_deceleration": 0.97624
+      },
+      "families": {
+        "baseline": 4
+      },
+      "arms": {
+        "right": 4
+      },
+      "reason": "已分析 4 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 93.45,
+          "episodes": 4
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.16858589999992546,
+          0.17214860000012777,
+          0.17671840000002703
+        ],
+        "pure_cpu_median_seconds": 0.17214860000012777,
+        "uncached_builder_seconds": 0.46879989999979443,
+        "cached_builder_seconds": 0.01576359999990018
+      },
+      "strengths": [
+        {
+          "title": "伸展与挥出衔接顺畅",
+          "observation": "综合本次已测动作，下肢伸展、身体转动与主挥拍的先后衔接较顺畅。"
+        },
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 4%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "把转体和引拍连起来",
+          "observation": "这段身体转动与手臂引拍进入前段动作的时间差较大。姿态估计：转体与引拍进入各自前段动作的时间差约占准备时段的 42%。",
+          "action": "看到来球后，让转肩与引拍作为一次准备动作完成，再进入挥拍。",
+          "drill": "做 2 组、每组 8 次慢球练习：准备、挥出、恢复各连续完成，先降低球速，减少引拍中途停顿。",
+          "retest": "录 8 次同类击球，检查肩部准备和手臂引拍进入前段动作的时间是否更接近。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 15100.0,
+          "end_ms": 16533.333
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 54%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 5100.0,
+          "end_ms": 6233.333
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 720,
+        "height": 1280,
+        "fps": 30.0,
+        "original_seconds": 26.7
+      },
+      "video": {
+        "width": 720,
+        "height": 1280,
+        "fps": 30.0,
+        "frame_count": 801,
+        "duration_ms": 26700
+      },
+      "include_in_distribution": true,
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 4,
+        "rejected_count": 2,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 2
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "134c25b3fd731c824e192d4b2c35e40ea3630dcb01bc16e6e23a51c6d04507a6",
+        "primary-player.jsonl": "80c8bb88414d600f4569c9714233f34663a1eab1ac85553fd1bbcc04c8d0c988",
+        "sam3d_frames.jsonl": "b5745755c515c29f210905a6927940e8d65733584114799349189eb5391fbacf"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          90000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 2400000,
+      "metric_observation_counts": {
+        "knee_load": 4,
+        "support_control": 4,
+        "leg_extension_continuity": 4,
+        "coil": 4,
+        "preparation_sync": 3,
+        "release_sequence": 4,
+        "coil_release": 4,
+        "head_control": 4,
+        "arm_space": 4,
+        "follow_path": 4,
+        "recovery_control": 4,
+        "follow_deceleration": 4
+      },
+      "episode_quality_reason_counts": {
+        "preparation_start_clipped_by_source_boundary": 1
+      },
+      "evaluation_validity": "valid",
+      "quality_warning": "24.00至26.67秒片尾头像被识别为人体（track77）；主评测提供的四个评分窗口均早于该片尾，分别[2.033,3.5]、[5.1,6.233]、[7.333,8.767]、[15.1,16.533]秒，故评分窗口有效性保留；用户ordinary标签不变。",
+      "name": "普通 · 用户既有视频",
+      "before": {
+        "score": 97.92,
+        "episodes": 4,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 90.47,
+          "coordination": 100.0,
+          "striking": 100.0,
+          "follow_through": 99.14
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 100.0,
+          "preparation_sync": 74.6,
+          "release_sequence": 100.0,
+          "coil_release": 100.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 99.6,
+          "recovery_control": 98.68
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.1640320999999858,
+            0.16104799999993702,
+            0.16633479999973133
+          ],
+          "pure_cpu_median_seconds": 0.1640320999999858,
+          "uncached_builder_seconds": 0.4446956000001592,
+          "cached_builder_seconds": 0.015865599999870028
+        }
+      }
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "job_id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "split": "robustness",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "89D9C60D9C2290EBD1ECE6E26028D9676520065C0ACF650F0055C2119AEC54DA",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 76.52,
+      "episodes": 1,
+      "dimension_scores": {
+        "movement": 96.56,
+        "preparation": 22.07,
+        "coordination": 89.64,
+        "striking": 96.18,
+        "follow_through": 78.14
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 89.69,
+        "coil": 22.07,
+        "release_sequence": 100.0,
+        "coil_release": 79.28,
+        "head_control": 100.0,
+        "arm_space": 92.36,
+        "follow_path": 56.28,
+        "recovery_control": 100.0
+      },
+      "metric_values": {
+        "knee_load": 54.86915,
+        "support_control": 2.65641,
+        "leg_extension_continuity": 0.89692,
+        "coil": 3.31038,
+        "release_sequence": 0.0,
+        "coil_release": 0.44641,
+        "head_control": 0.03947,
+        "arm_space": 0.8126,
+        "follow_path": 0.08768,
+        "recovery_control": 0.0
+      },
+      "families": {
+        "baseline": 1
+      },
+      "arms": {
+        "left": 1
+      },
+      "reason": "已分析 1 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 76.52,
+          "episodes": 1
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.22374039999976958,
+          0.18325740000000224,
+          0.19224609999992026
+        ],
+        "pure_cpu_median_seconds": 0.19224609999992026,
+        "uncached_builder_seconds": 0.40016030000015235,
+        "cached_builder_seconds": 0.011067299999922398
+      },
+      "strengths": [
+        {
+          "title": "准备有屈膝参与",
+          "observation": "综合本次已测动作，准备阶段已出现清晰屈膝。测量汇总：准备时段平均屈膝约 55°。"
+        },
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 4%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 3°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 333.333,
+          "end_ms": 1200.0
+        },
+        {
+          "dimension_id": "follow_through",
+          "title": "挥出后继续完成随挥",
+          "observation": "这段主挥拍后的手臂延展与连续性，是本次优先改进的环节。姿态估计：挥出后的手腕运行距离约为此前的 0.09 倍。",
+          "action": "让手臂顺势完成随挥，再恢复准备，不要在挥出后马上刹住。",
+          "drill": "做 2 组、每组 8 次半速挥拍，每次连续完成挥出和随挥；动作自然结束后再开始下一次。",
+          "retest": "用相同机位复测 8 次，检查手臂是否继续顺势运行，减少突然停拍。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 333.333,
+          "end_ms": 1200.0
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 640,
+        "height": 360,
+        "fps": 30.0,
+        "clip_seconds": 30.0
+      },
+      "video": {
+        "width": 640,
+        "height": 360,
+        "fps": 30.0,
+        "frame_count": 900,
+        "duration_ms": 30000
+      },
+      "include_in_distribution": false,
+      "paired_reference_job": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "candidate_accounting": {
+        "proposed_count": 2,
+        "accepted_count": 1,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_lacks_continuous_complete_motion": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "cad249a2483164d9bee6f8a61299540e38e14b6d49e5e1c1d728cfcb79681a92",
+        "primary-player.jsonl": "a251198cd77bd7f265ecbf909bf94f0205fa9ba9f66e482fee85e99b9b48319f",
+        "sam3d_frames.jsonl": "f8f3325bc2b9e9a63f3117d438aab40129d8a89f4ea2db63064510b442a987b8"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 460288,
+      "metric_observation_counts": {
+        "knee_load": 1,
+        "support_control": 1,
+        "leg_extension_continuity": 1,
+        "coil": 1,
+        "release_sequence": 1,
+        "coil_release": 1,
+        "head_control": 1,
+        "arm_space": 1,
+        "follow_path": 1,
+        "recovery_control": 1
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "evaluation_validity": "invalid_measurement_consistency",
+      "invalid_reason": "同一动作压缩后由右手识别为左手，5个动作仅保留1个且随挥边界提前；不能据此给受测者确定的动作缺点。",
+      "name": "白裙 · 360p 压缩",
+      "before": {
+        "score": 80.83,
+        "episodes": 1,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 36.35,
+          "coordination": 89.64,
+          "striking": 100.0,
+          "follow_through": 78.14
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 36.35,
+          "release_sequence": 100.0,
+          "coil_release": 79.28,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 56.28,
+          "recovery_control": 100.0
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.17303139999967243,
+            0.18291899999985617,
+            0.17858150000029127
+          ],
+          "pure_cpu_median_seconds": 0.17858150000029127,
+          "uncached_builder_seconds": 0.4237542000000758,
+          "cached_builder_seconds": 0.010429800000110845
+        }
+      }
+    },
+    {
+      "sample_id": "white-mirror",
+      "job_id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "split": "robustness",
+      "evaluation_label": "ordinary",
+      "source_video_sha256": "E7DD1F13849FAFBFDD74E73B49B66EFF008B7248B520A9DC2B01774419508E93",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 75.48,
+      "episodes": 6,
+      "dimension_scores": {
+        "movement": 75.69,
+        "preparation": 44.44,
+        "coordination": 65.06,
+        "striking": 98.81,
+        "follow_through": 93.42
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 27.08,
+        "coil": 35.63,
+        "preparation_sync": 88.46,
+        "release_sequence": 80.11,
+        "coil_release": 50.0,
+        "head_control": 99.95,
+        "arm_space": 97.68,
+        "follow_path": 96.58,
+        "recovery_control": 86.32,
+        "follow_deceleration": 98.55
+      },
+      "metric_values": {
+        "knee_load": 46.88862,
+        "support_control": 2.97922,
+        "leg_extension_continuity": 0.27077,
+        "coil": 5.34501,
+        "preparation_sync": 0.11538,
+        "release_sequence": 0.1828,
+        "coil_release": 0.50218,
+        "head_control": 0.02587,
+        "arm_space": 0.84739,
+        "follow_path": 2.13908,
+        "recovery_control": 1.15681,
+        "follow_deceleration": 0.98555
+      },
+      "families": {
+        "baseline": 6
+      },
+      "arms": {
+        "left": 6
+      },
+      "reason": "已分析 6 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 75.48,
+          "episodes": 6
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.28411740000001373,
+          0.28851429999986067,
+          0.2972805999997945
+        ],
+        "pure_cpu_median_seconds": 0.28851429999986067,
+        "uncached_builder_seconds": 0.5228922000001148,
+        "cached_builder_seconds": 0.010672800000065763
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 3%。"
+        },
+        {
+          "title": "首次恢复前降速连续",
+          "observation": "综合本次已测动作，主挥拍到首次恢复前，手腕速度较连续地下降。测量汇总：主挥拍到首次恢复前，净降速占手腕总速度变化约 99%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 1°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 28300.0,
+          "end_ms": 29366.667
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把准备的转动释放出去",
+          "observation": "这段准备后的肩髋相对转动，在主挥拍中释放较少。姿态估计：准备后的肩髋相对转角在挥出时减少约 13%。",
+          "action": "引拍后让身体转动继续带动手臂，保持顺势挥出，不要在准备姿态上停住。",
+          "drill": "做 2 组、每组 8 次半速空挥，从转肩准备连续做到随挥；让同伴观察躯干是否中途停住。",
+          "retest": "用相同机位复测，检查主挥拍时身体与手臂是否继续一起运动。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 5100.0,
+          "end_ms": 6000.0
+        }
+      ],
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "clip_seconds": 30.0
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 900,
+        "duration_ms": 30000
+      },
+      "include_in_distribution": false,
+      "paired_reference_job": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "candidate_accounting": {
+        "proposed_count": 6,
+        "accepted_count": 6,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "60a279a0ab024522ae2a35fbac7c18707ee1acb6402f7bb0059ce1c8f7fae85f",
+        "primary-player.jsonl": "28d3b307a78c8b790caab3f8e3555779ff103c0d8cbf2b13c379bcfa04aeb691",
+        "sam3d_frames.jsonl": "e1730e3fd8faaf4b9b117f7a0e57740099cf75be92a921da66a99712af05c051"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 460288,
+      "metric_observation_counts": {
+        "knee_load": 6,
+        "support_control": 6,
+        "leg_extension_continuity": 6,
+        "coil": 6,
+        "preparation_sync": 2,
+        "release_sequence": 6,
+        "coil_release": 6,
+        "head_control": 6,
+        "arm_space": 6,
+        "follow_path": 6,
+        "recovery_control": 6,
+        "follow_deceleration": 5
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "evaluation_validity": "valid",
+      "name": "白裙 · 水平镜像",
+      "before": {
+        "score": 82.12,
+        "episodes": 6,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 53.71,
+          "coordination": 65.06,
+          "striking": 100.0,
+          "follow_through": 91.82
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 46.76,
+          "preparation_sync": 88.46,
+          "release_sequence": 80.11,
+          "coil_release": 50.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 96.3,
+          "recovery_control": 87.34
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.2600508999998965,
+            0.27320060000010926,
+            0.2752661999998054
+          ],
+          "pure_cpu_median_seconds": 0.27320060000010926,
+          "uncached_builder_seconds": 0.528973699999824,
+          "cached_builder_seconds": 0.01126639999984036
+        }
+      }
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "job_id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+      "source_group": "blaz-rola-ncaa-2013-zootennis",
+      "split": "holdout",
+      "evaluation_label": "unknown",
+      "source_video_sha256": "F73BE59FF8D86C998DF7AAC4CEDAF6D912133B27390AB66211B8B204D5E60154",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "识别到 1 个动作候选，但没有片段同时满足来源一致、阶段完整和连续主球员姿态要求。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.1429349000000002,
+          0.1448847999999998,
+          0.14846170000009806
+        ],
+        "pure_cpu_median_seconds": 0.1448847999999998,
+        "uncached_builder_seconds": 0.4046834000000672,
+        "cached_builder_seconds": 0.012989700000161974
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://commons.wikimedia.org/wiki/File:Bla%C5%BE_Rola_NCAAs_2013.webm",
+      "source_license": {
+        "name": "CC BY 3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/",
+        "author": "ZooTennis.com (tenniskalamazoo)",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "media": {
+        "width": 640,
+        "height": 480,
+        "fps": 29.97002997002997,
+        "clip_seconds": 25.025000000000002
+      },
+      "video": {
+        "width": 640,
+        "height": 480,
+        "fps": 29.97,
+        "frame_count": 750,
+        "duration_ms": 25025
+      },
+      "include_in_distribution": false,
+      "pre_score_observations": "Left-handed player with white shirt and red shorts; net partly obscures lower body. First 25 seconds include continuous groundstroke play; no score inspected.",
+      "verified_identity": "Blaz Rola; NCAA singles final 2013 (elite collegiate at capture)",
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "422184a23893f7912632b4b6760c742af5ebe7cf00287c21d8f0a43c8ad2d906",
+        "primary-player.jsonl": "c959121ad180b64dc616244fedf8615e2930a217e34e9f4b0664f7dcb5fe4c1a",
+        "sam3d_frames.jsonl": "8a3ac49ccce6dd20e33cc2a93d6397a3a8db69c9f8cf7f2bddd5e17a122ae488"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 749749,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "8.976–20.754秒内主目标多次选中场边线审（track17，337/750帧），不能把该视频整段分数归于来源命名球员。保留原始结果与失败，不裁剪有利窗口。",
+      "name": "Rola · 2013 大学赛事",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.14526100000011866,
+            0.14606849999972837,
+            0.13991829999986294
+          ],
+          "pure_cpu_median_seconds": 0.14526100000011866,
+          "uncached_builder_seconds": 0.3798764000002848,
+          "cached_builder_seconds": 0.013135700000020734
+        }
+      }
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "job_id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+      "source_group": "tsitsipas-alcaraz-french-open-2023-hameltion",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "03E5C94CEAD59642F851A5899453D1BBA6EC8AFAB36439D005E2345B082E9C5B",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "尚无足够连续的主球员挥拍姿态。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.0008689999999660358,
+          0.0005575999998654879,
+          0.00044660000003204914
+        ],
+        "pure_cpu_median_seconds": 0.0005575999998654879,
+        "uncached_builder_seconds": 0.07474059999958627,
+        "cached_builder_seconds": 0.006524500000068656
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://commons.wikimedia.org/wiki/File:Wave_at_Alcaraz%E2%80%93Tsitsipas_practice_at_the_2023_French_Open.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "Hameltion",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "clip_seconds": 8.333333333333334
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 250,
+        "duration_ms": 8333
+      },
+      "include_in_distribution": false,
+      "pre_score_observations": "Distant elevated camera pans toward crowd. No complete clearly visible swing in sampled frames. Expected rejection/negative coverage test; individual selected track must be checked.",
+      "verified_identity": "Stefanos Tsitsipas serving side; Carlos Alcaraz opposite; source identifies practice players",
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "5b268103613b5d482cad6fcd3cb62fae4fd05462e2c25c4454cdaba53a4da9e2",
+        "primary-player.jsonl": "86cc4b1f99913d4d3fb92f515429c040604b06af7134c5c7af7019f67c4858be",
+        "sam3d_frames.jsonl": "5545b8e287c59a033d35e27ec3ec7322feb4bc72d87c1e6edc90d09e0d70ceea"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "first_selected_decoder_pts": 60928,
+      "last_selected_decoder_pts": 60928,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "0.00、4.15、8.30秒绿框均跟随场外椅旁人员，未跟随场内来源命名练习球员；原始输出不得作为职业球员有效评分。",
+      "name": "Tsitsipas / Alcaraz · 远景",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.0007694000000810775,
+            0.00039000000015221303,
+            0.00036229999977877014
+          ],
+          "pure_cpu_median_seconds": 0.00039000000015221303,
+          "uncached_builder_seconds": 0.0743440000001101,
+          "cached_builder_seconds": 0.005946600000243052
+        }
+      }
+    },
+    {
+      "sample_id": "davis-cup-2018-04",
+      "job_id": "e0a62ad9-9422-4635-a254-e375819a971c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "A2B0D27FCDCDAB2652A2B92C2BB22AD19DDCAB06B32501A636622CE90F0DA31A",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "尚无足够连续的主球员挥拍姿态。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.01908259999981965,
+          0.017772100000001956,
+          0.016315400000166846
+        ],
+        "pure_cpu_median_seconds": 0.017772100000001956,
+        "uncached_builder_seconds": 0.08530829999972411,
+        "cached_builder_seconds": 0.005523799999991752
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://commons.wikimedia.org/wiki/File:2018_Davis_Cup_Americas_Zone_-_Uruguay_vs_Mexico_-_04.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "NaBUru38",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 29.97002997002997,
+        "clip_seconds": 7.007000000000001
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 29.97,
+        "frame_count": 210,
+        "duration_ms": 7007
+      },
+      "include_in_distribution": false,
+      "pre_score_observations": "Doubles, multiple people, elevated diagonal camera; identity only at named match group level.",
+      "verified_identity": "2018 Davis Cup Uruguay-Mexico doubles group: Rodrigo Arus, Nicolas Xiviller, Santiago Gonzalez, Miguel Angel Reyes-Varela; individual track not yet verified",
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "4d34d0342bccee042b812914a570ca171c60c7131d20e33068c63749f3c6de57",
+        "primary-player.jsonl": "fb6c2ebed922b10913f8d13478747338f46abae18817d5f3cee39aca9c6c9a84",
+        "sam3d_frames.jsonl": "e59c548c6478c5381a806cd8105430774739f3aeb2294e8b248b6ca73ebeaf6c"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "first_selected_decoder_pts": 120120,
+      "last_selected_decoder_pts": 209209,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "0.00、2.00、3.47秒主框为右侧椅旁蓝衣坐姿人员；6.97秒同track11已漂移至场内网前球员，身份不连续。不能把该整段输出归为同一职业球员有效评分。",
+      "name": "戴维斯杯 · 双打 04",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.01704459999973551,
+            0.016734199999973498,
+            0.015097599999990052
+          ],
+          "pure_cpu_median_seconds": 0.016734199999973498,
+          "uncached_builder_seconds": 0.10036239999999452,
+          "cached_builder_seconds": 0.007296499999938533
+        }
+      }
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "741364DF8F7295E25CFDDF97A03D28D1BA43B1AC07E571A32DE76A8157BEEACF",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 77.67,
+      "episodes": 1,
+      "dimension_scores": {
+        "movement": 100.0,
+        "preparation": 28.29,
+        "coordination": 73.91,
+        "striking": 86.16,
+        "follow_through": 100.0
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 100.0,
+        "coil": 28.29,
+        "release_sequence": 47.83,
+        "coil_release": 100.0,
+        "head_control": 72.32,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 100.0
+      },
+      "metric_values": {
+        "knee_load": 41.28891,
+        "support_control": 2.90052,
+        "leg_extension_continuity": 1.0,
+        "coil": 4.24281,
+        "release_sequence": 0.26087,
+        "coil_release": 0.92546,
+        "head_control": 0.09152,
+        "arm_space": 0.99438,
+        "follow_path": 1.80509,
+        "recovery_control": 0.0
+      },
+      "families": {
+        "baseline": 1
+      },
+      "arms": {
+        "left": 1
+      },
+      "reason": "已分析 1 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 77.67,
+          "episodes": 1
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.06775379999999132,
+          0.07576840000001539,
+          0.06923800000004121
+        ],
+        "pure_cpu_median_seconds": 0.06923800000004121,
+        "uncached_builder_seconds": 0.187927800000125,
+        "cached_builder_seconds": 0.008461899999929301
+      },
+      "strengths": [
+        {
+          "title": "准备有屈膝参与",
+          "observation": "综合本次已测动作，准备阶段已出现清晰屈膝。测量汇总：准备时段平均屈膝约 41°。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.81 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 4°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 0.0,
+          "end_ms": 1768.433
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 0.0,
+          "end_ms": 1768.433
+        }
+      ],
+      "source_url": "https://commons.wikimedia.org/wiki/File:2018_Davis_Cup_Americas_Zone_-_Uruguay_vs_Mexico_-_05.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "NaBUru38",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 29.97002997002997,
+        "clip_seconds": 12.012
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 29.97,
+        "frame_count": 360,
+        "duration_ms": 12012
+      },
+      "include_in_distribution": false,
+      "pre_score_observations": "Same-source follow-up clip, never counted as another independent player/source.",
+      "verified_identity": "Same Davis Cup doubles group, adjacent video; not independent",
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 1,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "eba1f0eacbae226935f3b2c85704d678f85de9c6b3908bdcd06298335f23eae9",
+        "primary-player.jsonl": "02b94e61ae8e39e5828cdef90f3344cf55ea71a5b1b20cfd868c4d627da4863e",
+        "sam3d_frames.jsonl": "978996d9f520cae77fe887e1778a119831e3b7612b376d9eea154c8d385cdd27"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 359359,
+      "metric_observation_counts": {
+        "knee_load": 1,
+        "support_control": 1,
+        "leg_extension_continuity": 1,
+        "coil": 1,
+        "release_sequence": 1,
+        "coil_release": 1,
+        "head_control": 1,
+        "arm_space": 1,
+        "follow_path": 1,
+        "recovery_control": 1
+      },
+      "episode_quality_reason_counts": {
+        "preparation_start_clipped_by_source_boundary": 1,
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "0.00、2.00秒主框为底线发球者，4.00、6.00秒切换为白帽网前搭档，11.98秒又回底线球员；虽均属同一来源命名职业双打群体，但整段轨迹拼接不同球员，不能作为同一个人的技术评分。",
+      "name": "戴维斯杯 · 双打 05（同源）",
+      "before": {
+        "score": 89.31,
+        "episodes": 1,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 72.63,
+          "coordination": 73.91,
+          "striking": 100.0,
+          "follow_through": 100.0
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 72.63,
+          "release_sequence": 47.83,
+          "coil_release": 100.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 100.0
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.06698580000011134,
+            0.07060890000002473,
+            0.0701997000001029
+          ],
+          "pure_cpu_median_seconds": 0.0701997000001029,
+          "uncached_builder_seconds": 0.1909600999997565,
+          "cached_builder_seconds": 0.008025099999940721
+        }
+      }
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "source_video_sha256": "1E3876016515703773C4FF37CF91306976D3D8C23B7F585B81F8CF3D797D51BA",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 73.29,
+      "episodes": 1,
+      "dimension_scores": {
+        "movement": 66.67,
+        "preparation": 92.85,
+        "coordination": 11.11,
+        "striking": 100.0,
+        "follow_through": 95.84
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 0.0,
+        "coil": 100.0,
+        "preparation_sync": 85.71,
+        "release_sequence": 22.22,
+        "coil_release": 0.0,
+        "head_control": 100.0,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 91.67
+      },
+      "metric_values": {
+        "knee_load": 47.34372,
+        "support_control": 1.77776,
+        "leg_extension_continuity": 0.0,
+        "coil": 18.38091,
+        "preparation_sync": 0.2,
+        "release_sequence": 0.38889,
+        "coil_release": 0.0,
+        "head_control": 0.03914,
+        "arm_space": 0.88964,
+        "follow_path": 1.57927,
+        "recovery_control": 1.08326
+      },
+      "families": {
+        "baseline": 1
+      },
+      "arms": {
+        "left": 1
+      },
+      "reason": "已分析 1 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 73.29,
+          "episodes": 1
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.026604199999837874,
+          0.028625899999951798,
+          0.02925790000017514
+        ],
+        "pure_cpu_median_seconds": 0.028625899999951798,
+        "uncached_builder_seconds": 0.04397509999989779,
+        "cached_builder_seconds": 0.002079899999898771
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 4%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.58 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "coordination",
+          "title": "把准备的转动释放出去",
+          "observation": "这段准备后的肩髋相对转动，在主挥拍中释放较少。姿态估计：准备后的肩髋相对转角在挥出时减少约 0%。",
+          "action": "引拍后让身体转动继续带动手臂，保持顺势挥出，不要在准备姿态上停住。",
+          "drill": "做 2 组、每组 8 次半速空挥，从转肩准备连续做到随挥；让同伴观察躯干是否中途停住。",
+          "retest": "用相同机位复测，检查主挥拍时身体与手臂是否继续一起运动。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 266.933,
+          "end_ms": 1351.35
+        },
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 0%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 266.933,
+          "end_ms": 1351.35
+        }
+      ],
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.3680333333333334
+      },
+      "video": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.9401,
+        "frame_count": 82,
+        "duration_ms": 1368
+      },
+      "include_in_distribution": false,
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 1,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "80b4f294466c01dc487e5e61038411339447519097683afb289f26298e5e201b",
+        "primary-player.jsonl": "cca490320aacd5939fa194a94b37b149534a4afff9b06fe6b60d105f625d7541",
+        "sam3d_frames.jsonl": "61bacb55cdc72d90a93f25b3264362e534e2cc7767ebf6a019496806552720c5"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 81081,
+      "metric_observation_counts": {
+        "knee_load": 1,
+        "support_control": 1,
+        "leg_extension_continuity": 1,
+        "coil": 1,
+        "preparation_sync": 1,
+        "release_sequence": 1,
+        "coil_release": 1,
+        "head_control": 1,
+        "arm_space": 1,
+        "follow_path": 1,
+        "recovery_control": 1
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 1
+      },
+      "evaluation_validity": "valid",
+      "name": "双机位 · 室外侧视",
+      "before": {
+        "score": 79.96,
+        "episodes": 1,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 92.85,
+          "coordination": 11.11,
+          "striking": 100.0,
+          "follow_through": 95.84
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 100.0,
+          "preparation_sync": 85.71,
+          "release_sequence": 22.22,
+          "coil_release": 0.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 91.67
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.020635700000184443,
+            0.0218035000002601,
+            0.021739400000114983
+          ],
+          "pure_cpu_median_seconds": 0.021739400000114983,
+          "uncached_builder_seconds": 0.0425148999997873,
+          "cached_builder_seconds": 0.0020547000003716676
+        }
+      }
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "job_id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "source_video_sha256": "82337E2C228455DA4E431C8DD07672C3452018AB781603D9E0FE5D1B8C8E403B",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "尚无足够连续的主球员挥拍姿态。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.020077300000139076,
+          0.018838500000128988,
+          0.017136500000106025
+        ],
+        "pure_cpu_median_seconds": 0.018838500000128988,
+        "uncached_builder_seconds": 0.03383459999986371,
+        "cached_builder_seconds": 0.0020598000000973116
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.3680333333333334
+      },
+      "video": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.9401,
+        "frame_count": 82,
+        "duration_ms": 1368
+      },
+      "include_in_distribution": false,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "e29be2691a2732490dd2c62c9e698dcbeff60ee822b7899b5f5845d2b4d0a4e2",
+        "primary-player.jsonl": "9c7f153a050a2ce45cf4cbc45277245dcfc55f0262a66baa8a84487bc5b8c221",
+        "sam3d_frames.jsonl": "3a8287cc364c0713918474b29c3f86c4af319410e360bc7e40f011ea41d46723"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 81081,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "valid",
+      "name": "双机位 · 室外顶视",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.01798850000022867,
+            0.017589399999906163,
+            0.018087200000081793
+          ],
+          "pure_cpu_median_seconds": 0.01798850000022867,
+          "uncached_builder_seconds": 0.038444300000264775,
+          "cached_builder_seconds": 0.001956300000074407
+        }
+      }
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "source_video_sha256": "109C2A048F61D85F707255413EFAC3728CBFF228E783BEF825BAC1C0D41799FF",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 80.9,
+      "episodes": 1,
+      "dimension_scores": {
+        "movement": 83.46,
+        "preparation": 51.87,
+        "coordination": 81.48,
+        "striking": 100.0,
+        "follow_through": 87.7
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 99.88,
+        "leg_extension_continuity": 50.51,
+        "coil": 51.87,
+        "release_sequence": 62.96,
+        "coil_release": 100.0,
+        "head_control": 100.0,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 81.88,
+        "follow_deceleration": 81.23
+      },
+      "metric_values": {
+        "knee_load": 34.85599,
+        "support_control": 1.79259,
+        "leg_extension_continuity": 0.50515,
+        "coil": 7.78112,
+        "release_sequence": 0.18519,
+        "coil_release": 0.89917,
+        "head_control": 0.01028,
+        "arm_space": 0.96973,
+        "follow_path": 0.70029,
+        "recovery_control": 0.58934,
+        "follow_deceleration": 0.81232
+      },
+      "families": {
+        "baseline": 1
+      },
+      "arms": {
+        "right": 1
+      },
+      "reason": "已分析 1 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 80.9,
+          "episodes": 1
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.031158599999798753,
+          0.029194599999755155,
+          0.030567899999823567
+        ],
+        "pure_cpu_median_seconds": 0.030567899999823567,
+        "uncached_builder_seconds": 0.048573600000054284,
+        "cached_builder_seconds": 0.00215699999989738
+      },
+      "strengths": [
+        {
+          "title": "头颈相对躯干平稳",
+          "observation": "综合本次已测动作，主挥拍时头颈相对躯干的位置变化较小。测量汇总：头颈相对躯干的位置变化约为躯干长度的 1%。"
+        },
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 0.70 倍。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 8°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 66.733,
+          "end_ms": 1685.017
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 66.733,
+          "end_ms": 1685.017
+        }
+      ],
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.7017
+      },
+      "video": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.9401,
+        "frame_count": 102,
+        "duration_ms": 1701
+      },
+      "include_in_distribution": false,
+      "candidate_accounting": {
+        "proposed_count": 1,
+        "accepted_count": 1,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "e34639c3bcab56f608c7584467a5bbfaa981dc36bb2dc6e80373b3f40e6370b0",
+        "primary-player.jsonl": "ecbdb94b041bdb26e69d0388f433b9f6c331420ffe589bffe0264081524ed02a",
+        "sam3d_frames.jsonl": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 101101,
+      "metric_observation_counts": {
+        "knee_load": 1,
+        "support_control": 1,
+        "leg_extension_continuity": 1,
+        "coil": 1,
+        "release_sequence": 1,
+        "coil_release": 1,
+        "head_control": 1,
+        "arm_space": 1,
+        "follow_path": 1,
+        "recovery_control": 1,
+        "follow_deceleration": 1
+      },
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "valid",
+      "name": "双机位 · 室内侧视",
+      "before": {
+        "score": 86.36,
+        "episodes": 1,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 59.37,
+          "coordination": 81.48,
+          "striking": 100.0,
+          "follow_through": 90.94
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 59.37,
+          "release_sequence": 62.96,
+          "coil_release": 100.0,
+          "head_control": 100.0,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 81.88
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.0254917000002024,
+            0.02491310000004887,
+            0.033057799999824056
+          ],
+          "pure_cpu_median_seconds": 0.0254917000002024,
+          "uncached_builder_seconds": 0.057110199999897304,
+          "cached_builder_seconds": 0.0034316000001126667
+        }
+      }
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "job_id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "source_video_sha256": "0EE64E2754EFDECBE77CD6EEB67DA45122C79001B6E9E90E657A114C9EF2E3A0",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "尚无足够连续的主球员挥拍姿态。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.019541299999673356,
+          0.020593499999904452,
+          0.02152509999996255
+        ],
+        "pure_cpu_median_seconds": 0.020593499999904452,
+        "uncached_builder_seconds": 0.04096320000007836,
+        "cached_builder_seconds": 0.002378799999860348
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.7017
+      },
+      "video": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.9401,
+        "frame_count": 102,
+        "duration_ms": 1701
+      },
+      "include_in_distribution": false,
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "1be2c19f2d41fba20585931969af176a8a41561e51033eccba0ccb15c22fbdc9",
+        "primary-player.jsonl": "ed8268bf9f23bbfabb6de14a1cb02adca0282dc7c6cff354de39999680d57ab7",
+        "sam3d_frames.jsonl": "e2fdd175a67e8e55c341d1395fb596eddd8f4a47978876882d3ae2d05df6f914"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 101101,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "valid",
+      "name": "双机位 · 室内顶视",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.01938270000027842,
+            0.019946099999742728,
+            0.021849199999905977
+          ],
+          "pure_cpu_median_seconds": 0.019946099999742728,
+          "uncached_builder_seconds": 0.03928589999986798,
+          "cached_builder_seconds": 0.0030635999996775354
+        }
+      }
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "source_group": "2012-usopen-jc-demiace",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "80F91CB924C32026754031B24730B3888C33BD0078DBC3EC3A432F836A86BE68",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 86.13,
+      "episodes": 5,
+      "dimension_scores": {
+        "movement": 87.83,
+        "preparation": 67.45,
+        "coordination": 82.58,
+        "striking": 92.79,
+        "follow_through": 100.0
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 99.9,
+        "leg_extension_continuity": 63.59,
+        "coil": 53.5,
+        "preparation_sync": 100.0,
+        "release_sequence": 85.15,
+        "coil_release": 80.0,
+        "head_control": 85.58,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 100.0
+      },
+      "metric_values": {
+        "knee_load": 68.95914,
+        "support_control": 3.24119,
+        "leg_extension_continuity": 0.63591,
+        "coil": 13.39109,
+        "preparation_sync": 0.0303,
+        "release_sequence": 0.07426,
+        "coil_release": 0.67585,
+        "head_control": 0.07072,
+        "arm_space": 0.93158,
+        "follow_path": 1.97367,
+        "recovery_control": 0.03327
+      },
+      "families": {
+        "baseline": 5
+      },
+      "arms": {
+        "left": 3,
+        "right": 2
+      },
+      "reason": "已分析 5 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 86.13,
+          "episodes": 5
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.14492250000012064,
+          0.14858270000013363,
+          0.14421310000034282
+        ],
+        "pure_cpu_median_seconds": 0.14492250000012064,
+        "uncached_builder_seconds": 0.25434679999989385,
+        "cached_builder_seconds": 0.006095400000049267
+      },
+      "strengths": [
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 1.97 倍。"
+        },
+        {
+          "title": "手臂有伸展空间",
+          "observation": "综合本次已测动作，主挥拍时手臂保持了舒展空间。测量汇总：主挥拍时肩到手腕的平均距离约为手臂长度的 93%。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "preparation",
+          "title": "让身体参与引拍",
+          "observation": "这段引拍时肩髋相对转动较少。姿态估计：准备后半段平均肩髋相对转角约 3°。",
+          "action": "以转肩带动引拍，再自然转回挥出，避免只把手臂向后拉；不要强行扭腰。",
+          "drill": "做 2 组、每组 8 次慢速空挥：双手在身前起始，转肩引拍，再连续完成挥出与随挥。",
+          "retest": "同机位录 8 次，检查身体准备与手臂引拍是否一起发生，挥出前没有停住等手。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 3086.417,
+          "end_ms": 4921.583
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把准备的转动释放出去",
+          "observation": "这段准备后的肩髋相对转动，在主挥拍中释放较少。姿态估计：准备后的肩髋相对转角在挥出时减少约 4%。",
+          "action": "引拍后让身体转动继续带动手臂，保持顺势挥出，不要在准备姿态上停住。",
+          "drill": "做 2 组、每组 8 次半速空挥，从转肩准备连续做到随挥；让同伴观察躯干是否中途停住。",
+          "retest": "用相同机位复测，检查主挥拍时身体与手臂是否继续一起运动。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 17142.125,
+          "end_ms": 18727.042
+        }
+      ],
+      "source_url": "https://commons.wikimedia.org/wiki/File:2012_US_Open_Djokovic_point.webm",
+      "source_license": {
+        "name": "CC BY-SA 2.0",
+        "url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "author": "JC (demiace)",
+        "attribution": "JC (demiace) / CC BY-SA 2.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976023976023978,
+        "clip_seconds": 19.561208333333333
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976,
+        "frame_count": 469,
+        "duration_ms": 19561
+      },
+      "include_in_distribution": true,
+      "pre_score_observations": "Foreground white cap/shirt blue shorts, full body visible through most rally, moving camera and zoom late.",
+      "verified_identity": "Novak Djokovic (source caption attribution; main target visually consistent with the source-named foreground player, not biometric identification)",
+      "candidate_accounting": {
+        "proposed_count": 8,
+        "accepted_count": 5,
+        "rejected_count": 3,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 3
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "9bc5addcf6745388b6a2595fa7b09fd71b28f8a94c34d70b27fa090fe3f332ce",
+        "primary-player.jsonl": "70a47167b0044f3d762bb8e1fd559c8fd76c6f5e4e7a2807c2e233edc0068481",
+        "sam3d_frames.jsonl": "03722efc5465311765420d922e02caf2370bc93d6b31adb1f3932b6ff35f7062"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          24000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 468468,
+      "metric_observation_counts": {
+        "knee_load": 5,
+        "support_control": 5,
+        "leg_extension_continuity": 5,
+        "coil": 5,
+        "preparation_sync": 3,
+        "release_sequence": 5,
+        "coil_release": 5,
+        "head_control": 5,
+        "arm_space": 5,
+        "follow_path": 5,
+        "recovery_control": 5
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 5
+      },
+      "evaluation_validity": "valid",
+      "name": "Djokovic 比赛来源 · 2012 美网",
+      "before": {
+        "score": 91.89,
+        "episodes": 5,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 77.46,
+          "coordination": 82.58,
+          "striking": 99.39,
+          "follow_through": 100.0
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 67.8,
+          "preparation_sync": 100.0,
+          "release_sequence": 85.15,
+          "coil_release": 80.0,
+          "head_control": 98.78,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 100.0
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.13917700000001787,
+            0.14522709999982908,
+            0.13783969999985857
+          ],
+          "pure_cpu_median_seconds": 0.13917700000001787,
+          "uncached_builder_seconds": 0.2529223000001366,
+          "cached_builder_seconds": 0.007833399999981339
+        }
+      }
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "source_group": "2012-usopen-jc-demiace",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "F9F712C4C9C92A7ABA942BAB7C33C8A38FBA48D3877FDED3660D17DB36215AC8",
+      "evaluation_status": "evaluated",
+      "status": "scored",
+      "score": 88.18,
+      "episodes": 3,
+      "dimension_scores": {
+        "movement": 76.27,
+        "preparation": 94.72,
+        "coordination": 85.45,
+        "striking": 89.5,
+        "follow_through": 94.97
+      },
+      "metric_scores": {
+        "knee_load": 100.0,
+        "support_control": 100.0,
+        "leg_extension_continuity": 28.82,
+        "coil": 99.38,
+        "preparation_sync": 71.43,
+        "release_sequence": 84.72,
+        "coil_release": 86.18,
+        "head_control": 79.0,
+        "arm_space": 100.0,
+        "follow_path": 100.0,
+        "recovery_control": 89.94
+      },
+      "metric_values": {
+        "knee_load": 66.09576,
+        "support_control": 4.09507,
+        "leg_extension_continuity": 0.28815,
+        "coil": 26.80258,
+        "preparation_sync": 0.25,
+        "release_sequence": 0.07639,
+        "coil_release": 0.62546,
+        "head_control": 0.0815,
+        "arm_space": 0.95908,
+        "follow_path": 2.52392,
+        "recovery_control": 1.14703
+      },
+      "families": {
+        "baseline": 3
+      },
+      "arms": {
+        "right": 3
+      },
+      "reason": "已分析 3 个连续动作片段。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": 88.18,
+          "episodes": 3
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.09347440000010465,
+          0.09800050000012561,
+          0.09923239999989164
+        ],
+        "pure_cpu_median_seconds": 0.09800050000012561,
+        "uncached_builder_seconds": 0.18214000000034503,
+        "cached_builder_seconds": 0.00546070000018517
+      },
+      "strengths": [
+        {
+          "title": "挥出后继续随挥",
+          "observation": "综合本次已测动作，主挥拍后手臂继续运行，随挥较连贯。测量汇总：挥出后的手腕运行距离约为此前的 2.52 倍。"
+        },
+        {
+          "title": "引拍有身体转动",
+          "observation": "综合本次已测动作，引拍时肩与髋形成了适度的相对转动。测量汇总：准备后半段平均肩髋相对转角约 27°。"
+        }
+      ],
+      "improvements": [
+        {
+          "dimension_id": "movement",
+          "title": "把屈膝准备接成连续伸展",
+          "observation": "这段准备到挥出之间，未显示清晰的连续伸展。姿态估计：下肢伸展连贯性为 0%，微小角度变化已作保守处理。",
+          "action": "从舒适屈膝开始，顺势伸展接上挥出；不要来回蹲起，也不必把膝盖锁直。",
+          "drill": "做 2 组、每组 8 次半速挥拍：屈膝准备后一次连续伸展，接上手臂挥出和完整随挥；组间休息 30 秒。",
+          "retest": "同机位录 8 次，检查准备到挥出之间是否减少反复屈伸，保持一次连续伸展。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 625.625,
+          "end_ms": 2168.833
+        },
+        {
+          "dimension_id": "coordination",
+          "title": "把下肢、躯干和手臂接起来",
+          "observation": "这段下肢伸展、身体转动与手臂挥出的衔接不够清晰。",
+          "action": "从有弹性的支撑开始，让伸展、转动与挥出连续接上，不要逐段停顿。",
+          "drill": "做 2 组、每组 8 次半速挥拍：准备后连续挥出，完整随挥，再恢复准备。先求顺畅，再提高速度。",
+          "retest": "同机位复测 8 次，查看下肢伸展后躯干与手臂是否顺势接上，减少身体停住后才挥手的情况。先以 8 次中至少 6 次做到为目标。",
+          "start_ms": 6715.042,
+          "end_ms": 8091.417
+        }
+      ],
+      "source_url": "https://commons.wikimedia.org/wiki/File:2012_US_Open_Schiavone_rally.webm",
+      "source_license": {
+        "name": "CC BY-SA 2.0",
+        "url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "author": "JC (demiace)",
+        "attribution": "JC (demiace) / CC BY-SA 2.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976023976023978,
+        "clip_seconds": 17.017
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976,
+        "frame_count": 408,
+        "duration_ms": 17017
+      },
+      "include_in_distribution": true,
+      "pre_score_observations": "Foreground white shirt black shorts, forehand and one-handed backhand rally; camera pan cuts body at late clip.",
+      "verified_identity": "Francesca Schiavone (source caption attribution; main target visually consistent with the source-named foreground player, not biometric identification)",
+      "candidate_accounting": {
+        "proposed_count": 4,
+        "accepted_count": 3,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "candidate_source_or_complete_phase_unverified": 1
+        }
+      },
+      "artifact_sha256": {
+        "summary.json": "83bf47cbb5a56d2ce31392558c15c266af9a724ddf54b48d11ff5f6cfe3635c6",
+        "primary-player.jsonl": "6b4a50a18d5942b8d04555db94fabf8abbf425f5583425def942f0622c83a6cd",
+        "sam3d_frames.jsonl": "a72d1257fc3eae64a922edfd68f93ca99556a580fc5920078b4ce72d0319803f"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          24000
+        ]
+      ],
+      "first_selected_decoder_pts": 0,
+      "last_selected_decoder_pts": 407407,
+      "metric_observation_counts": {
+        "knee_load": 3,
+        "support_control": 3,
+        "leg_extension_continuity": 3,
+        "coil": 3,
+        "preparation_sync": 1,
+        "release_sequence": 3,
+        "coil_release": 3,
+        "head_control": 3,
+        "arm_space": 3,
+        "follow_path": 3,
+        "recovery_control": 3
+      },
+      "episode_quality_reason_counts": {
+        "follow_deceleration_recovery_trough_unobserved": 3,
+        "preparation_start_clipped_by_source_boundary": 2
+      },
+      "evaluation_validity": "valid",
+      "name": "Schiavone 比赛来源 · 2012 美网",
+      "before": {
+        "score": 94.64,
+        "episodes": 3,
+        "dimension_scores": {
+          "movement": 100.0,
+          "preparation": 95.24,
+          "coordination": 85.45,
+          "striking": 97.53,
+          "follow_through": 94.97
+        },
+        "metric_scores": {
+          "knee_load": 100.0,
+          "support_control": 100.0,
+          "coil": 100.0,
+          "preparation_sync": 71.43,
+          "release_sequence": 84.72,
+          "coil_release": 86.18,
+          "head_control": 95.07,
+          "arm_space": 100.0,
+          "follow_path": 100.0,
+          "recovery_control": 89.94
+        },
+        "timings": {
+          "pure_cpu_seconds": [
+            0.1013625000000502,
+            0.09137139999984356,
+            0.09455380000008518
+          ],
+          "pure_cpu_median_seconds": 0.09455380000008518,
+          "uncached_builder_seconds": 0.16379849999975704,
+          "cached_builder_seconds": 0.006007700000282057
+        }
+      }
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "source_group": "2012-usopen-jc-demiace",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "97569F24772D7A1DC0DD4E3226C526C400E7DEA5AF873FE44C790A49C305129C",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "尚无足够连续的主球员挥拍姿态。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.0016295999998874322,
+          0.0012020999997730542,
+          0.0011827000002995192
+        ],
+        "pure_cpu_median_seconds": 0.0012020999997730542,
+        "uncached_builder_seconds": 0.03447359999972832,
+        "cached_builder_seconds": 0.002772900000309164
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://commons.wikimedia.org/wiki/File:Federer_v._Clilic_Practice_with_Crowd.webm",
+      "source_license": {
+        "name": "CC BY-SA 2.0",
+        "url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "author": "JC (demiace)",
+        "attribution": "JC (demiace) / CC BY-SA 2.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976023976023978,
+        "clip_seconds": 7.674333333333333
+      },
+      "video": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976,
+        "frame_count": 184,
+        "duration_ms": 7674
+      },
+      "include_in_distribution": false,
+      "pre_score_observations": "Spectators dominate foreground, brief distant serve and severe pan/occlusion; expected technical rejection retained.",
+      "verified_identity": "Roger Federer and Marin Cilic (source title); do not infer which is primary without tracking evidence",
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "d799b3d760725682de5a5d06533c078dd105a1525e387e9931068f6f8fda3b4c",
+        "primary-player.jsonl": "a22d3f3fc3adf5e884d234ed32388eebcf78fdd4a4a516093be38e02945e21ed",
+        "sam3d_frames.jsonl": "5ccdd54db43182ac82c9c40df07cfbd9031eaddc89a48f72a4f1191fcac0fc28"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          24000
+        ]
+      ],
+      "first_selected_decoder_pts": 133133,
+      "last_selected_decoder_pts": 138138,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "0.00秒主框为前景观众；1.00至4.00秒为近侧持拍球员；5.00秒转向场边白衣人员；6.01、7.01、7.63秒转向前景观众。整段多次跨人，不能作为Federer或Cilic个人有效评分。",
+      "name": "Federer / Cilic 训练来源",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.001771299999745679,
+            0.0012329999999565189,
+            0.0011961000000155764
+          ],
+          "pure_cpu_median_seconds": 0.0012329999999565189,
+          "uncached_builder_seconds": 0.032204900000124326,
+          "cached_builder_seconds": 0.0028059000001121603
+        }
+      }
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "source_group": "2024-usopen-dimitrov-tiafoe-oleg-yunakov",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "source_video_sha256": "6919F4C50814602F5CF8496DDAEE2BA1514840956F50850C85E434E4EA043A7A",
+      "evaluation_status": "evaluated",
+      "status": "unavailable",
+      "score": null,
+      "episodes": 0,
+      "dimension_scores": {
+        "movement": null,
+        "preparation": null,
+        "coordination": null,
+        "striking": null,
+        "follow_through": null
+      },
+      "metric_scores": {},
+      "metric_values": {},
+      "families": {},
+      "arms": {},
+      "reason": "尚无足够连续的主球员挥拍姿态。",
+      "checks": {
+        "repeat_exact": true,
+        "public_builder_matches": true,
+        "cached_builder_matches": true,
+        "input_files_unchanged": true
+      },
+      "variants": {
+        "moving_rigid_and_scale": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "static": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        },
+        "wrong_source": {
+          "passed": true,
+          "score": null,
+          "episodes": 0
+        }
+      },
+      "timings": {
+        "pure_cpu_seconds": [
+          0.029628799999954936,
+          0.028754200000093988,
+          0.03002459999970597
+        ],
+        "pure_cpu_median_seconds": 0.029628799999954936,
+        "uncached_builder_seconds": 0.2752657000000909,
+        "cached_builder_seconds": 0.02577079999991838
+      },
+      "strengths": [],
+      "improvements": [],
+      "source_url": "https://commons.wikimedia.org/wiki/File:2024_US_Open._Grigor_Dimitrov_vs._Frances_Tiafoe.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "Oleg Yunakov",
+        "attribution": "Oleg Yunakov / CC BY-SA 4.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 60.0,
+        "clip_seconds": 29.916666666666668
+      },
+      "video": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 60.0,
+        "frame_count": 1795,
+        "duration_ms": 29916
+      },
+      "include_in_distribution": false,
+      "pre_score_observations": "Source names both match players; first full original clip chosen before scores.",
+      "verified_identity": "Grigor Dimitrov and Frances Tiafoe (source caption); match group only pending primary-track visual audit",
+      "candidate_accounting": {
+        "proposed_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rejection_counts": {}
+      },
+      "artifact_sha256": {
+        "summary.json": "27971e1d3623a60e6a22a1ba0249980824d4950aa5d500a5d5ff1e133edea224",
+        "primary-player.jsonl": "5cef921ea77a5334e7dfbdf70c24efb3a51e43294fd8e6f186706a5be438f4af",
+        "sam3d_frames.jsonl": "e92f458bd0700a85c39a68a2e0c044d8bd5856da282fb8fc9ed30b58e5ec71a4"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "first_selected_decoder_pts": 175360,
+      "last_selected_decoder_pts": 459264,
+      "metric_observation_counts": {},
+      "episode_quality_reason_counts": {},
+      "evaluation_validity": "invalid_subject_tracking",
+      "invalid_reason": "4.00、5.00秒track3主框转到远端底线后墙边人员，而持拍发球者在场内下方弯腰；6至23秒多在远端球员（track2），24至26秒转场边人员/看台，29.90秒转看台观众（track181）。既含比赛动作期间误选，也含结束摇镜误选，不能作为同一职业球员的整段有效技术评分。",
+      "name": "Dimitrov / Tiafoe 比赛来源",
+      "before": {
+        "score": null,
+        "episodes": 0,
+        "dimension_scores": {
+          "movement": null,
+          "preparation": null,
+          "coordination": null,
+          "striking": null,
+          "follow_through": null
+        },
+        "metric_scores": {},
+        "timings": {
+          "pure_cpu_seconds": [
+            0.02554229999987001,
+            0.026781900000059977,
+            0.033751200000097015
+          ],
+          "pure_cpu_median_seconds": 0.026781900000059977,
+          "uncached_builder_seconds": 0.28046580000000176,
+          "cached_builder_seconds": 0.019362200000159646
+        }
+      }
+    }
+  ],
+  "supplement": {
+    "conclusions": [
+      "本轮未通过职业/普通等级区分验证。分数饱和减少，但独立留出排序没有改善；新版仅作为可见动作的试验评分，不用于竞技等级排名。",
+      "可评分来源组中，90 分以上由 7/9 变为 4/9。同一动作的 439 项共有指标中，99 分以上由 358 项变为 323 项；饱和有所缓解，仍未消除。",
+      "新增留出尝试 11 个来源组，5 组有可归属的评分；其余 6 组未评分或主目标归属失败，均保留。有效职业来源组 1，普通来源组 4。",
+      "留出集按来源组均分两两比较，职业高于普通的比例从旧版 50.0% 变为新版 25.0%（4 对）。这是小样本描述性排序，不是竞技等级识别准确率；未为排序重新调阈值。",
+      "作为敏感性检查，若连主目标核验失败的原始分数也按来源标签计入，职业高于普通为 33.3%（12 对）。该结果含混入其他人物的输出，只用于披露剔除的影响，不作为有效球员评价。",
+      "分数衡量可见动作的部分质量。普通与职业仍可能重叠；击球姿态等指标仍偏饱和，单目骨架没有提供真实发力、球速、落点或比赛决策证据。"
+    ],
+    "robustness": [
+      "repeat-ordinary-a：原片 14 动作，变体 14 动作，按同一时间窗配对 14 个；丢失或无法配对 0 个原片动作。配对动作最大绝对分差 0.00 分，挥拍手识别改变 0 个，结束边界最多提前 0.00 秒。画质变更没有改变真实挥拍手，识别改变属于测量不稳定。",
+      "white-360p-crf35：原片 5 动作，变体 1 动作，按同一时间窗配对 1 个；丢失或无法配对 4 个原片动作。配对动作最大绝对分差 2.59 分，挥拍手识别改变 1 个，结束边界最多提前 0.80 秒。画质变更没有改变真实挥拍手，识别改变属于测量不稳定。",
+      "white-mirror：原片 5 动作，变体 6 动作，按同一时间窗配对 5 个；丢失或无法配对 0 个原片动作。配对动作最大绝对分差 11.48 分，挥拍手识别改变 5 个，结束边界最多提前 0.60 秒。水平镜像预期左右手对调。",
+      "mendeley-crosscourt-outdoor-01：mendeley-outdoor-side-view-OCS01 1 动作 / 73.29；mendeley-outdoor-top-view-OCT01 0 动作 / 未评分。这是短片完整度与视角覆盖测试，不能据此声称角度不影响评分。",
+      "mendeley-crosscourt-indoor-01：mendeley-indoor-side-view-ICS01 1 动作 / 80.9；mendeley-indoor-top-view-ICT01 0 动作 / 未评分。这是短片完整度与视角覆盖测试，不能据此声称角度不影响评分。"
+    ],
+    "paired_actions": [
+      {
+        "sample_id": "repeat-ordinary-a",
+        "method": "one_to_one_greedy_maximum_window_IoU_at_least_0.35_same_family_peak_difference_at_most_500ms",
+        "reference_actions": 14,
+        "variant_actions": 14,
+        "matched_actions": 14,
+        "unmatched_reference_actions": 0,
+        "unmatched_variant_actions": 0,
+        "matches": [
+          {
+            "reference_episode": "d681e9ff2467b6aef0ba",
+            "variant_episode": "d681e9ff2467b6aef0ba",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              89200.0,
+              89933.333,
+              90900.0
+            ],
+            "variant_window_ms": [
+              89200.0,
+              89933.333,
+              90900.0
+            ],
+            "reference_score": 94.931,
+            "variant_score": 94.931,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "14521a1461ce4b190d84",
+            "variant_episode": "14521a1461ce4b190d84",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              69200.0,
+              70000.0,
+              70833.333
+            ],
+            "variant_window_ms": [
+              69200.0,
+              70000.0,
+              70833.333
+            ],
+            "reference_score": 93.88,
+            "variant_score": 93.88,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "9700bde5f55a99d5ed62",
+            "variant_episode": "9700bde5f55a99d5ed62",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "left",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              59400.0,
+              60066.667,
+              60966.667
+            ],
+            "variant_window_ms": [
+              59400.0,
+              60066.667,
+              60966.667
+            ],
+            "reference_score": 93.839,
+            "variant_score": 93.839,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "9dc61d4ad386442b5690",
+            "variant_episode": "9dc61d4ad386442b5690",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              57200.0,
+              57933.333,
+              58933.333
+            ],
+            "variant_window_ms": [
+              57200.0,
+              57933.333,
+              58933.333
+            ],
+            "reference_score": 86.505,
+            "variant_score": 86.505,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "35bd5afac9db445261f8",
+            "variant_episode": "35bd5afac9db445261f8",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              54100.0,
+              54800.0,
+              55666.667
+            ],
+            "variant_window_ms": [
+              54100.0,
+              54800.0,
+              55666.667
+            ],
+            "reference_score": 95.833,
+            "variant_score": 95.833,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "54f60aaba08284697cbb",
+            "variant_episode": "54f60aaba08284697cbb",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              46900.0,
+              47566.667,
+              48566.667
+            ],
+            "variant_window_ms": [
+              46900.0,
+              47566.667,
+              48566.667
+            ],
+            "reference_score": 91.358,
+            "variant_score": 91.358,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "1736974c810539ba0486",
+            "variant_episode": "1736974c810539ba0486",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "left",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              43733.333,
+              44333.333,
+              45166.667
+            ],
+            "variant_window_ms": [
+              43733.333,
+              44333.333,
+              45166.667
+            ],
+            "reference_score": 64.198,
+            "variant_score": 64.198,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "5b9e83e1145f8cbd42aa",
+            "variant_episode": "5b9e83e1145f8cbd42aa",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              37900.0,
+              38400.0,
+              39366.667
+            ],
+            "variant_window_ms": [
+              37900.0,
+              38400.0,
+              39366.667
+            ],
+            "reference_score": 91.0,
+            "variant_score": 91.0,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "f3d3a75483416dc64edc",
+            "variant_episode": "f3d3a75483416dc64edc",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              31033.333,
+              31733.333,
+              32733.333
+            ],
+            "variant_window_ms": [
+              31033.333,
+              31733.333,
+              32733.333
+            ],
+            "reference_score": 86.224,
+            "variant_score": 86.224,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "bdad188205f683a88d45",
+            "variant_episode": "bdad188205f683a88d45",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              23800.0,
+              24700.0,
+              25600.0
+            ],
+            "variant_window_ms": [
+              23800.0,
+              24700.0,
+              25600.0
+            ],
+            "reference_score": 89.89,
+            "variant_score": 89.89,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "d157f2cd1f909fab36d8",
+            "variant_episode": "d157f2cd1f909fab36d8",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              14300.0,
+              15000.0,
+              16066.667
+            ],
+            "variant_window_ms": [
+              14300.0,
+              15000.0,
+              16066.667
+            ],
+            "reference_score": 78.56,
+            "variant_score": 78.56,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "9e1ea3767d3b4d6a627a",
+            "variant_episode": "9e1ea3767d3b4d6a627a",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              9833.333,
+              10666.667,
+              11700.0
+            ],
+            "variant_window_ms": [
+              9833.333,
+              10666.667,
+              11700.0
+            ],
+            "reference_score": 91.532,
+            "variant_score": 91.532,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "bfc354bd9e949f3d5060",
+            "variant_episode": "bfc354bd9e949f3d5060",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              4633.333,
+              6466.667,
+              7166.667
+            ],
+            "variant_window_ms": [
+              4633.333,
+              6466.667,
+              7166.667
+            ],
+            "reference_score": 86.895,
+            "variant_score": 86.895,
+            "delta": 0.0
+          },
+          {
+            "reference_episode": "aa405ec7db42df93a1e0",
+            "variant_episode": "aa405ec7db42df93a1e0",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "right",
+            "reference_window_ms": [
+              2033.333,
+              2833.333,
+              3666.667
+            ],
+            "variant_window_ms": [
+              2033.333,
+              2833.333,
+              3666.667
+            ],
+            "reference_score": 92.346,
+            "variant_score": 92.346,
+            "delta": 0.0
+          }
+        ]
+      },
+      {
+        "sample_id": "white-360p-crf35",
+        "method": "one_to_one_greedy_maximum_window_IoU_at_least_0.35_same_family_peak_difference_at_most_500ms",
+        "reference_actions": 5,
+        "variant_actions": 1,
+        "matched_actions": 1,
+        "unmatched_reference_actions": 4,
+        "unmatched_variant_actions": 0,
+        "matches": [
+          {
+            "reference_episode": "e67754f8fae9419d2ba7",
+            "variant_episode": "5ec55f607ca2f6f71918",
+            "window_iou": 0.5098,
+            "peak_delta_ms": 66.667,
+            "reference_arm": "right",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              300.0,
+              1100.0,
+              2000.0
+            ],
+            "variant_window_ms": [
+              333.333,
+              1033.333,
+              1200.0
+            ],
+            "reference_score": 79.111,
+            "variant_score": 76.519,
+            "delta": -2.592
+          }
+        ]
+      },
+      {
+        "sample_id": "white-mirror",
+        "method": "one_to_one_greedy_maximum_window_IoU_at_least_0.35_same_family_peak_difference_at_most_500ms",
+        "reference_actions": 5,
+        "variant_actions": 6,
+        "matched_actions": 5,
+        "unmatched_reference_actions": 0,
+        "unmatched_variant_actions": 1,
+        "matches": [
+          {
+            "reference_episode": "bbb4c9d6adf5876e2ae6",
+            "variant_episode": "bbb4c9d6adf5876e2ae6",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              21833.333,
+              22566.667,
+              23966.667
+            ],
+            "variant_window_ms": [
+              21833.333,
+              22566.667,
+              23966.667
+            ],
+            "reference_score": 77.925,
+            "variant_score": 85.151,
+            "delta": 7.225
+          },
+          {
+            "reference_episode": "7f69fc9a9d8eacc3041a",
+            "variant_episode": "e400fc9575c90f7382e0",
+            "window_iou": 1.0,
+            "peak_delta_ms": 433.333,
+            "reference_arm": "right",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              16700.0,
+              17500.0,
+              18700.0
+            ],
+            "variant_window_ms": [
+              16700.0,
+              17066.667,
+              18700.0
+            ],
+            "reference_score": 92.252,
+            "variant_score": 86.99,
+            "delta": -5.262
+          },
+          {
+            "reference_episode": "e67754f8fae9419d2ba7",
+            "variant_episode": "0bb4febe096cb4af56a6",
+            "window_iou": 1.0,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              300.0,
+              1100.0,
+              2000.0
+            ],
+            "variant_window_ms": [
+              300.0,
+              1100.0,
+              2000.0
+            ],
+            "reference_score": 79.111,
+            "variant_score": 82.316,
+            "delta": 3.205
+          },
+          {
+            "reference_episode": "d8c45df52b772d0dba5c",
+            "variant_episode": "5b169ea0c1a61ef103fe",
+            "window_iou": 0.7679,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              11933.333,
+              12833.333,
+              13666.667
+            ],
+            "variant_window_ms": [
+              11800.0,
+              12833.333,
+              13366.667
+            ],
+            "reference_score": 73.252,
+            "variant_score": 72.475,
+            "delta": -0.777
+          },
+          {
+            "reference_episode": "4bb491f2e1c1fb6fda9f",
+            "variant_episode": "4bb491f2e1c1fb6fda9f",
+            "window_iou": 0.6,
+            "peak_delta_ms": 0.0,
+            "reference_arm": "right",
+            "variant_arm": "left",
+            "reference_window_ms": [
+              5100.0,
+              5633.333,
+              6600.0
+            ],
+            "variant_window_ms": [
+              5100.0,
+              5633.333,
+              6000.0
+            ],
+            "reference_score": 56.716,
+            "variant_score": 68.2,
+            "delta": 11.484
+          }
+        ]
+      }
+    ],
+    "performance": [
+      {
+        "id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:20:34.858176+00:00",
+        "started_at": "2026-10-26T11:20:34.982365+00:00",
+        "completed_at": "2026-10-26T11:23:16.340781+00:00",
+        "error": null,
+        "sample_id": "holdout-ordinary-indoor-white",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 161.358416,
+        "native_rows": 900,
+        "unique_frame_indices": 900,
+        "native_inference_median_ms": 80.90985000001183,
+        "native_inference_sum_seconds": 75.5751843999983,
+        "peak_cuda_allocated_gib": 3.4680380821228027
+      },
+      {
+        "id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:20:34.895904+00:00",
+        "started_at": "2026-10-26T11:23:16.385031+00:00",
+        "completed_at": "2026-10-26T11:24:38.253901+00:00",
+        "error": null,
+        "sample_id": "holdout-ordinary-lowres-close",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 81.86887,
+        "native_rows": 599,
+        "unique_frame_indices": 599,
+        "native_inference_median_ms": 79.07959999988634,
+        "native_inference_sum_seconds": 47.69834680000076,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "60f60a85-9772-46f9-852f-700404f456d4",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:20:35.478854+00:00",
+        "started_at": "2026-10-26T11:24:38.280497+00:00",
+        "completed_at": "2026-10-26T11:26:40.013261+00:00",
+        "error": null,
+        "sample_id": "holdout-ordinary-outdoor-side",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 121.732764,
+        "native_rows": 720,
+        "unique_frame_indices": 720,
+        "native_inference_median_ms": 80.46394999996664,
+        "native_inference_sum_seconds": 63.19666940000366,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:20:35.600319+00:00",
+        "started_at": "2026-10-26T11:26:40.052082+00:00",
+        "completed_at": "2026-10-26T11:29:07.711493+00:00",
+        "error": null,
+        "sample_id": "holdout-ordinary-night",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 147.659411,
+        "native_rows": 900,
+        "unique_frame_indices": 900,
+        "native_inference_median_ms": 80.15690000001996,
+        "native_inference_sum_seconds": 74.27116149999665,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:20:35.671747+00:00",
+        "started_at": "2026-10-26T11:29:07.755105+00:00",
+        "completed_at": "2026-10-26T11:31:41.676683+00:00",
+        "error": null,
+        "sample_id": "holdout-ordinary-indoor-pink",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 153.921578,
+        "native_rows": 900,
+        "unique_frame_indices": 900,
+        "native_inference_median_ms": 81.07429999984106,
+        "native_inference_sum_seconds": 73.06924689999732,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+        "status": "succeeded",
+        "created_at": "2026-10-26T01:06:24.973423+00:00",
+        "started_at": "2026-10-26T01:06:25.465993+00:00",
+        "completed_at": "2026-10-26T01:09:57.104558+00:00",
+        "error": null,
+        "sample_id": "holdout-ordinary-user-existing",
+        "reused_saved_pose": true,
+        "end_to_end_seconds": 211.638565,
+        "native_rows": 1506,
+        "unique_frame_indices": 801,
+        "native_inference_median_ms": 79.34745000056864,
+        "native_inference_sum_seconds": 121.10071500000049,
+        "peak_cuda_allocated_gib": 3.4680380821228027
+      },
+      {
+        "id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:21:42.774547+00:00",
+        "started_at": "2026-10-26T11:31:41.722110+00:00",
+        "completed_at": "2026-10-26T11:34:01.070310+00:00",
+        "error": null,
+        "sample_id": "white-360p-crf35",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 139.3482,
+        "native_rows": 900,
+        "unique_frame_indices": 900,
+        "native_inference_median_ms": 79.8314499999151,
+        "native_inference_sum_seconds": 72.76985240000499,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:21:44.940144+00:00",
+        "started_at": "2026-10-26T11:34:01.111933+00:00",
+        "completed_at": "2026-10-26T11:36:57.995528+00:00",
+        "error": null,
+        "sample_id": "white-mirror",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 176.883595,
+        "native_rows": 900,
+        "unique_frame_indices": 900,
+        "native_inference_median_ms": 84.25180000006094,
+        "native_inference_sum_seconds": 76.98878119999995,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:23:55.885233+00:00",
+        "started_at": "2026-10-26T11:36:58.052452+00:00",
+        "completed_at": "2026-10-26T11:39:09.791725+00:00",
+        "error": null,
+        "sample_id": "rola-ncaa-2013",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 131.739273,
+        "native_rows": 1208,
+        "unique_frame_indices": 750,
+        "native_inference_median_ms": 79.0130999999974,
+        "native_inference_sum_seconds": 93.93581159999712,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:23:57.021274+00:00",
+        "started_at": "2026-10-26T11:39:09.815991+00:00",
+        "completed_at": "2026-10-26T11:40:09.119042+00:00",
+        "error": null,
+        "sample_id": "tsitsipas-alcaraz-2023",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 59.303051,
+        "native_rows": 500,
+        "unique_frame_indices": 250,
+        "native_inference_median_ms": 80.51275000002533,
+        "native_inference_sum_seconds": 40.635425499997375,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "e0a62ad9-9422-4635-a254-e375819a971c",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:23:57.107188+00:00",
+        "started_at": "2026-10-26T11:40:09.134679+00:00",
+        "completed_at": "2026-10-26T11:40:59.522199+00:00",
+        "error": null,
+        "sample_id": "davis-cup-2018-04",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 50.38752,
+        "native_rows": 420,
+        "unique_frame_indices": 210,
+        "native_inference_median_ms": 78.37369999992916,
+        "native_inference_sum_seconds": 33.27388369999745,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:23:57.230668+00:00",
+        "started_at": "2026-10-26T11:40:59.534580+00:00",
+        "completed_at": "2026-10-26T11:42:31.230964+00:00",
+        "error": null,
+        "sample_id": "davis-cup-2018-05",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 91.696384,
+        "native_rows": 719,
+        "unique_frame_indices": 360,
+        "native_inference_median_ms": 79.13719999987734,
+        "native_inference_sum_seconds": 57.25073630000633,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:28:28.243984+00:00",
+        "started_at": "2026-10-26T11:42:31.254046+00:00",
+        "completed_at": "2026-10-26T11:42:47.255027+00:00",
+        "error": null,
+        "sample_id": "mendeley-outdoor-side-view-OCS01",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 16.000981,
+        "native_rows": 82,
+        "unique_frame_indices": 82,
+        "native_inference_median_ms": 80.79600000019127,
+        "native_inference_sum_seconds": 6.666523000000325,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:28:28.330115+00:00",
+        "started_at": "2026-10-26T11:42:47.267028+00:00",
+        "completed_at": "2026-10-26T11:43:03.868548+00:00",
+        "error": null,
+        "sample_id": "mendeley-outdoor-top-view-OCT01",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 16.60152,
+        "native_rows": 82,
+        "unique_frame_indices": 82,
+        "native_inference_median_ms": 80.78070000010484,
+        "native_inference_sum_seconds": 6.7484975000015766,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:28:28.413182+00:00",
+        "started_at": "2026-10-26T11:43:03.879817+00:00",
+        "completed_at": "2026-10-26T11:43:23.699259+00:00",
+        "error": null,
+        "sample_id": "mendeley-indoor-side-view-ICS01",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 19.819442,
+        "native_rows": 102,
+        "unique_frame_indices": 102,
+        "native_inference_median_ms": 81.35709999987739,
+        "native_inference_sum_seconds": 8.397586199997932,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:28:28.501099+00:00",
+        "started_at": "2026-10-26T11:43:23.712884+00:00",
+        "completed_at": "2026-10-26T11:43:43.826587+00:00",
+        "error": null,
+        "sample_id": "mendeley-indoor-top-view-ICT01",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 20.113703,
+        "native_rows": 102,
+        "unique_frame_indices": 102,
+        "native_inference_median_ms": 80.94409999966956,
+        "native_inference_sum_seconds": 8.2444715000006,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:34:06.199959+00:00",
+        "started_at": "2026-10-26T11:43:43.837593+00:00",
+        "completed_at": "2026-10-26T11:45:03.285662+00:00",
+        "error": null,
+        "sample_id": "djokovic-usopen-2012",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 79.448069,
+        "native_rows": 469,
+        "unique_frame_indices": 469,
+        "native_inference_median_ms": 77.7554000001146,
+        "native_inference_sum_seconds": 36.81103749999147,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:34:06.341137+00:00",
+        "started_at": "2026-10-26T11:45:03.323371+00:00",
+        "completed_at": "2026-10-26T11:46:10.400159+00:00",
+        "error": null,
+        "sample_id": "schiavone-usopen-2012",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 67.076788,
+        "native_rows": 408,
+        "unique_frame_indices": 408,
+        "native_inference_median_ms": 78.11885000023722,
+        "native_inference_sum_seconds": 32.224185499999294,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:34:06.470086+00:00",
+        "started_at": "2026-10-26T11:46:10.428895+00:00",
+        "completed_at": "2026-10-26T11:46:38.044238+00:00",
+        "error": null,
+        "sample_id": "federer-cilic-usopen-2012",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 27.615343,
+        "native_rows": 184,
+        "unique_frame_indices": 184,
+        "native_inference_median_ms": 77.62709999974504,
+        "native_inference_sum_seconds": 14.42783739999959,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      },
+      {
+        "id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+        "status": "succeeded",
+        "created_at": "2026-10-26T11:34:06.866186+00:00",
+        "started_at": "2026-10-26T11:46:38.054948+00:00",
+        "completed_at": "2026-10-26T11:51:32.462845+00:00",
+        "error": null,
+        "sample_id": "dimitrov-tiafoe-usopen-2024",
+        "reused_saved_pose": false,
+        "end_to_end_seconds": 294.407897,
+        "native_rows": 1795,
+        "unique_frame_indices": 1795,
+        "native_inference_median_ms": 80.27510000010807,
+        "native_inference_sum_seconds": 133.88629929999797,
+        "peak_cuda_allocated_gib": 3.4405899047851562
+      }
+    ],
+    "common_metric_saturation": {
+      "observations": 439,
+      "old_at_least_99": 358,
+      "new_at_least_99": 323
+    },
+    "raw_identity_label_sensitivity": {
+      "unit": "equal_weight_source_group_mean_not_action_or_clip",
+      "groups": [
+        {
+          "split": "development",
+          "source_group": "ordinary-850cb",
+          "label": "ordinary",
+          "score": 88.36,
+          "videos": 1
+        },
+        {
+          "split": "development",
+          "source_group": "sharapova",
+          "label": "professional",
+          "score": 95.77,
+          "videos": 1
+        },
+        {
+          "split": "regression",
+          "source_group": "ordinary-ece12",
+          "label": "ordinary",
+          "score": 85.32,
+          "videos": 1
+        },
+        {
+          "split": "regression",
+          "source_group": "nadal",
+          "label": "professional",
+          "score": 92.12,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "196b89276dedbd2232f1ca3131da99a0",
+          "label": "ordinary",
+          "score": 75.85,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+          "label": "ordinary",
+          "score": 92.33,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+          "label": "ordinary",
+          "score": 88.66,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "c235227fffcd3290b60572d0c3f9cc85",
+          "label": "ordinary",
+          "score": 86.12,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "c2485607c23646e706d9c4aae89e668e",
+          "label": "ordinary",
+          "score": 80.75,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "user-video-01e86002f21704680103700397b8352743",
+          "label": "ordinary",
+          "score": 93.45,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+          "label": "professional",
+          "score": 77.67,
+          "videos": 1
+        },
+        {
+          "split": "holdout",
+          "source_group": "2012-usopen-jc-demiace",
+          "label": "professional",
+          "score": 87.155,
+          "videos": 2
+        }
+      ],
+      "all": {
+        "attempted_groups": 15,
+        "unscored_or_invalid_groups": 3,
+        "unscored_groups": 3,
+        "groups": 12,
+        "minimum": 75.85,
+        "maximum": 95.77,
+        "mean": 86.96291666666667,
+        "at_least_90": 4,
+        "professional_groups": 4,
+        "ordinary_groups": 8,
+        "professional_mean": 88.17875000000001,
+        "ordinary_mean": 86.355,
+        "professional_above_ordinary_pair_fraction": 0.59375,
+        "pairs": 32
+      },
+      "holdout": {
+        "attempted_groups": 11,
+        "unscored_or_invalid_groups": 3,
+        "unscored_groups": 3,
+        "groups": 8,
+        "minimum": 75.85,
+        "maximum": 93.45,
+        "mean": 85.248125,
+        "at_least_90": 2,
+        "professional_groups": 2,
+        "ordinary_groups": 6,
+        "professional_mean": 82.4125,
+        "ordinary_mean": 86.19333333333333,
+        "professional_above_ordinary_pair_fraction": 0.3333333333333333,
+        "pairs": 12
+      }
+    },
+    "cpu_paired_timing": {
+      "samples": 25,
+      "median_before_seconds": 0.14198799999985567,
+      "median_after_seconds": 0.1447611000003235,
+      "median_increment_seconds": 0.003446700000040437
+    },
+    "performance_summary": "本机 RTX 5070 Ti / Core Ultra 7 265K。保存姿态 CPU 评分耗时中位数范围 0.001–0.888 秒；同输入旧版/新版的中位耗时 0.142/0.145 秒，逐样本增量中位数 +0.003 秒。19 个新增视频完整分析耗时 16.0–294.4 秒（不含排队，包含解码、推理和产物生成）。其中 18 份产出分数的计算为 0.029–0.888 秒；含姿态文件读取的首次构建为 0.044–2.165 秒。新增评分本身不调用 GPU 模型；CPU 测量未清除操作系统文件缓存，测量时后台3D预览可能并行运行，微小耗时差不能视为严格性能提升。"
+  }
+}

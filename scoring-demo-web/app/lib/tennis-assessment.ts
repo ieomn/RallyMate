@@ -2,7 +2,7 @@ import type { DemoResultResponse } from "./api-types";
 
 export const TENNIS_DIMENSIONS = [
   { id: "movement", label: "移动支撑" }, { id: "preparation", label: "准备引拍" },
-  { id: "coordination", label: "挥拍协调" }, { id: "striking", label: "击球姿态" },
+  { id: "coordination", label: "动作协调" }, { id: "striking", label: "击球姿态" },
   { id: "follow_through", label: "随挥恢复" },
 ] as const;
 export type TennisDimensionId = typeof TENNIS_DIMENSIONS[number]["id"];
@@ -11,12 +11,13 @@ export type TennisDimension = { id: TennisDimensionId; label: string; score: num
 export type TennisImprovement = { dimension_id: TennisDimensionId; title: string; observation: string; action: string; drill: string; retest: string; start_ms: number | null; end_ms: number | null };
 export type TennisEpisode = { episode_id: string; family: "baseline" | "serve" | "return"; start_ms: number; peak_ms: number; end_ms: number };
 export type TennisAssessment = {
-  version: "tennis-action-assessment-v1.0.0"; status: "scored" | "partial" | "unavailable";
+  version: "tennis-action-assessment-v1.1.0"; status: "scored" | "partial" | "unavailable";
   source_run_id: string; source_video_sha256: string; source_timestamp_semantics: "original_decoder_pts";
   overall_score: number | null; dimensions: TennisDimension[];
+  reason_zh?: string;
   episodes?: TennisEpisode[];
   strengths: { title: string; observation: string }[]; improvements: TennisImprovement[];
-  rubric: { version: "tennis-action-rubric-v1.0.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
+  rubric: { version: "tennis-action-rubric-v1.1.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
     identity_labels_used: false; confidence_used_in_score: false; aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" };
 };
 export type TennisAssessmentContext = { jobId: string; videoSha256: string; durationMs?: number | null };
@@ -61,11 +62,12 @@ export function tennisAssessmentContext(result: DemoResultResponse | null): Tenn
 /** Validate before display, persistence, or export; missing measurements never become zero. */
 export function validatedTennisAssessment(value: unknown, context: TennisAssessmentContext): TennisAssessment | null {
   const report = record(value), rubric = record(report?.rubric);
-  if (!report || !context.jobId || !hash(context.videoSha256) || report.version !== "tennis-action-assessment-v1.0.0"
+  if (!report || !context.jobId || !hash(context.videoSha256) || report.version !== "tennis-action-assessment-v1.1.0"
     || report.source_run_id !== context.jobId || !hash(report.source_video_sha256) || report.source_video_sha256.toLowerCase() !== context.videoSha256.toLowerCase()
     || report.source_timestamp_semantics !== "original_decoder_pts" || !["scored", "partial", "unavailable"].includes(String(report.status))
     || !score(report.overall_score) || !Array.isArray(report.dimensions) || report.dimensions.length !== 5
-    || !rubric || rubric.version !== "tennis-action-rubric-v1.0.0" || rubric.semantics !== "engineering_action_quality"
+    || report.reason_zh !== undefined && !text(report.reason_zh)
+    || !rubric || rubric.version !== "tennis-action-rubric-v1.1.0" || rubric.semantics !== "engineering_action_quality"
     || rubric.coach_calibrated !== false || rubric.identity_labels_used !== false || rubric.confidence_used_in_score !== false
     || rubric.aggregation !== "mean_episode_dimension_scores_then_equal_dimension_mean"
     || context.durationMs !== undefined && context.durationMs !== null && (!finite(context.durationMs) || context.durationMs <= 0)) return null;
@@ -114,10 +116,11 @@ export function validatedTennisAssessment(value: unknown, context: TennisAssessm
     improvements.push({ dimension_id: dimension.id, title: item.title as string, observation: item.observation as string, action: item.action as string,
       drill: item.drill as string, retest: item.retest as string, start_ms: hasTime ? start as number : null, end_ms: hasTime ? end as number : null });
   }
-  return { version: "tennis-action-assessment-v1.0.0", status: report.status as TennisAssessment["status"], source_run_id: context.jobId,
+  return { version: "tennis-action-assessment-v1.1.0", status: report.status as TennisAssessment["status"], source_run_id: context.jobId,
     source_video_sha256: report.source_video_sha256, source_timestamp_semantics: "original_decoder_pts", overall_score: report.overall_score,
-    dimensions, strengths, improvements, ...(report.episodes === undefined ? {} : { episodes: navigationEpisodes(report.episodes, context.durationMs) }),
-    rubric: { version: "tennis-action-rubric-v1.0.0", semantics: "engineering_action_quality", coach_calibrated: false,
+    dimensions, strengths, improvements, ...(typeof report.reason_zh === "string" ? { reason_zh: report.reason_zh } : {}),
+    ...(report.episodes === undefined ? {} : { episodes: navigationEpisodes(report.episodes, context.durationMs) }),
+    rubric: { version: "tennis-action-rubric-v1.1.0", semantics: "engineering_action_quality", coach_calibrated: false,
       identity_labels_used: false, confidence_used_in_score: false, aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" } };
 }
 

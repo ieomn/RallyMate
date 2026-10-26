@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 
-from rallymate_service.tennis_assessment import analyze_tennis_assessment, build_tennis_assessment, _segments, _bound_windows, _score_window, _local_speed, _smooth, _angular_continuity
+from rallymate_service.tennis_assessment import analyze_tennis_assessment, build_tennis_assessment, _segments, _bound_windows, _score_window, _local_speed, _smooth, _angular_continuity, _time_mean, _leg_extension_continuity, _follow_deceleration, _follow_active_fraction
 from tests.test_sam3d_evaluation import _frame
 
 
@@ -130,7 +130,10 @@ class TennisAssessmentTests(unittest.TestCase):
             else:
                 bad["person_track_id"] = 999
             actual = analyze_tennis_assessment(timeline, records, video_sha256="a" * 64, source_run_id="test-run", motion_episodes=[bad] + episodes())
-            self.assertEqual(actual, expected)
+            self.assertEqual(actual["candidate_accounting"]["rejected_count"], 1)
+            self.assertEqual(actual["candidate_accounting"]["rejection_counts"], {"candidate_source_or_complete_phase_unverified": 1})
+            self.assertEqual({k: v for k, v in actual.items() if k != "candidate_accounting"},
+                             {k: v for k, v in expected.items() if k != "candidate_accounting"})
 
     def test_nonzero_source_pts_origin_preserves_media_time_and_score(self):
         timeline, records = inputs()
@@ -378,6 +381,96 @@ class TennisAssessmentTests(unittest.TestCase):
         self.assertEqual(metrics["preparation_sync"]["observation_count"], 0)
         self.assertIsNotNone(metrics["coil"]["score"])
         self.assertIsNotNone(report["overall_score"])
+
+    def test_stage_integration_weights_elapsed_pts_and_does_not_bridge_missing_data(self):
+        # The first interval is nine times longer; counting samples would give
+        # 66.7 instead of the observed-time trapezoidal mean of 55.
+        self.assertAlmostEqual(_time_mean([0., 100., 100.], [0., 900., 1000.]), 55.)
+        self.assertEqual(_time_mean([20., 20., 20.], [12., 43., 98.]), 20.)
+        self.assertIsNone(_time_mean([100., np.nan, 100.], [0., 50., 100.]))
+        self.assertIsNone(_time_mean([100., 100., 100.], [0., 50., 50.]))
+
+    def test_same_leg_continuity_distinguishes_static_crouch_and_repeated_extension(self):
+        times = np.arange(25) * 40.
+        smooth = np.r_[np.full(11, 55.), np.linspace(52., 20., 14)]
+        rows = [{"left_knee_flexion": float(k), "right_knee_flexion": 55.} for k in smooth]
+        expected = _leg_extension_continuity(rows, times, 11, 23)
+        self.assertAlmostEqual(expected, 1.)
+        # Early preparation bouncing is outside the 200 ms lead-in and should
+        # not be mistaken for stop/start motion during the forward swing.
+        early = deepcopy(rows)
+        for i in range(5):
+            early[i]["left_knee_flexion"] = 100. if i % 2 else 5.
+        self.assertEqual(_leg_extension_continuity(early, times, 11, 23), expected)
+        repeated = deepcopy(rows)
+        for i in (15, 16, 17):
+            repeated[i]["left_knee_flexion"] += 22.
+        self.assertLess(_leg_extension_continuity(repeated, times, 11, 23), .8)
+        static = [{"left_knee_flexion": 65., "right_knee_flexion": 65.} for _ in rows]
+        self.assertEqual(_leg_extension_continuity(static, times, 11, 23), 0.)
+        for row in rows:
+            row["left_knee_flexion"] = row["right_knee_flexion"] = None
+        self.assertIsNone(_leg_extension_continuity(rows, times, 11, 23))
+
+    def test_follow_deceleration_does_not_fabricate_constant_speed_measurement(self):
+        times = np.arange(30) * 40.
+        wrist = np.column_stack((times / 1000, times * 0, times * 0))
+        self.assertIsNone(_follow_deceleration(wrist, times, 8))
+        # A decreasing trace without an observed recovery boundary cannot
+        # establish a complete deceleration measurement, even if it is smooth.
+        for clock in (times, np.r_[0., np.cumsum(np.tile([31., 49.], 15))]):
+            seconds = clock / 1000
+            path = np.column_stack((4 * seconds - seconds ** 2, seconds * 0, seconds * 0))
+            self.assertIsNone(_follow_deceleration(path, clock, 8))
+
+    def test_first_natural_recovery_is_not_penalized_as_late_follow_through(self):
+        times = np.arange(-200., 601., 20.)
+        speed = np.interp(times, [-200, 0, 80, 160, 240, 320, 400, 600], [5, 10, 7, 3, 6, 4, 1.5, 1])
+        x = np.r_[0., np.cumsum((speed[1:] + speed[:-1]) / 2 * np.diff(times) / 1000)]
+        wrist = np.column_stack((x, x * 0, x * 0))
+        # The later deliberate recovery ends at a lower speed. Using the global
+        # 450 ms minimum incorrectly reduced this motion to 87.8 points.
+        reasons = []
+        self.assertAlmostEqual(_follow_deceleration(wrist, times, 10, reasons), 1.)
+        self.assertEqual(reasons, [])
+        clipped = []
+        self.assertIsNone(_follow_deceleration(wrist[:19], times[:19], 10, clipped))
+        self.assertTrue(clipped)
+
+    def test_serve_position_anchor_is_not_assumed_to_be_a_wrist_speed_peak(self):
+        times = np.arange(-200., 601., 20.)
+        speed = np.interp(times, [-200, 0, 80, 160, 240, 320, 400, 600], [5, 10, 13, 10, 7, 4, 2, 1])
+        x = np.r_[0., np.cumsum((speed[1:] + speed[:-1]) / 2 * np.diff(times) / 1000)]
+        wrist = np.column_stack((x, x * 0, x * 0))
+        reasons = []
+        self.assertIsNone(_follow_deceleration(wrist, times, 10, reasons))
+        self.assertEqual(reasons, ["follow_deceleration_anchor_not_wrist_speed_peak"])
+
+    def test_follow_activity_uses_elapsed_phase_boundary_with_variable_frame_rate(self):
+        # Same path: still for 30 ms, then moving at 0.5 torso/s. The early VFR
+        # frames are dense, but must not dominate either the boundary or mean.
+        for times in (np.arange(0., 451., 15.), np.array([0., 10., 20., 30., 150., 300., 450.])):
+            positions = np.maximum(times - 30., 0.) * .5 / 1000
+            self.assertAlmostEqual(_follow_active_fraction(np.diff(positions), times, 0), .9)
+
+    def test_public_result_contains_no_internal_reference_document_identifiers(self):
+        for result in (calculate(*inputs()), build_tennis_assessment({})):
+            serialized = json.dumps(result)
+            self.assertNotIn("internal_sources", serialized)
+            self.assertNotIn("VIS-SV", serialized)
+            self.assertNotIn("P0030", serialized)
+
+    def test_unscored_motion_candidates_are_accounted_for_without_fake_scores(self):
+        timeline, records = inputs()
+        for record in records:
+            record["keypoints_3d"] = deepcopy(records[0]["keypoints_3d"])
+        report = calculate(timeline, records)
+        self.assertIsNone(report["overall_score"])
+        self.assertEqual(report["candidate_accounting"], {
+            "proposed_count": 3, "accepted_count": 0, "rejected_count": 3,
+            "rejection_counts": {"candidate_lacks_continuous_complete_motion": 3}})
+        self.assertIn("3", report["reason_zh"])
+        self.assertEqual(report["improvements"], [])
 
 
 if __name__ == "__main__":

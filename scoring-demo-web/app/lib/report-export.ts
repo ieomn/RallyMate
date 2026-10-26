@@ -217,9 +217,9 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
   const tennis = tennisAssessmentOf(input.evidence.result ?? null);
   if (tennis) {
     const sections: ReportSection[] = [{
-      title: tennis.overall_score === null ? "本次动作未完整入镜" : `动作评分：${numberText(tennis.overall_score)} / 100`,
+      title: tennis.overall_score === null ? "本次动作暂未评分" : `动作评分：${numberText(tennis.overall_score)} / 100`,
       paragraphs: [videoName, tennis.overall_score === null
-        ? "请固定相机，让全身保持入镜，并完整拍下准备、挥拍和随挥。"
+        ? text(tennis.reason_zh, "本次没有形成可评分的完整动作，请查看回放中的准备、挥拍和随挥是否完整。")
         : "根据本次连续动作的支撑、准备、协调、击球姿态与随挥表现计算。"],
       columns: ["动作维度", "得分"], rows: tennis.dimensions.map(dimension => [
         text(dimension.label), dimension.score === null ? "画面不足" : numberText(dimension.score, " / 100"),

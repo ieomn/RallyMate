@@ -1,0 +1,1232 @@
+{
+  "schema_version": "tennis-validation-manifest-v1",
+  "purpose": "Sanitized reevaluation manifest. Job IDs resolve only with authorized local frozen pose artifacts; no source pixels or private paths are distributed.",
+  "source_frozen_manifest_sha256": "1c67c4044cca505c076e72ec8541fbb4c21a302e666f9df6d6590e7013515bb6",
+  "source_audit_frozen_at_utc": "2026-10-26T11:55:26.733898+00:00",
+  "split_frozen_before_new_scores": true,
+  "split_policy": "Two source groups for development; known baseline B/Nadal for regression; all newly introduced source groups held out. Identical or transformed clips stay in one group; labels are evaluator-only. Cross-source person identity is not universally verified.",
+  "hash_scope_note": "The source_frozen_manifest_sha256 identifies the original frozen local manifest, not this sanitized derivative. Existing media/artifact hashes are copied verbatim. Reevaluation of this file produces its own manifest digest.",
+  "samples": [
+    {
+      "sample_id": "development-ordinary-a",
+      "job_id": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "source_group": "ordinary-850cb",
+      "split": "development",
+      "evaluation_label": "ordinary",
+      "include_in_distribution": true,
+      "source_video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+      "reuse_saved_pose": true,
+      "evaluation_validity": "valid",
+      "frozen_artifact_sha256": {
+        "summary.json": "cbe6d3ef7f36fbda86767f927e1c27872fb6091024de39ae49e3a08e6be0d9ea",
+        "primary-player.jsonl": "ce7aaad4485565f9314bae2f1cfddf09bcc6302e049315165e3ed4e733e59576",
+        "sam3d_frames.jsonl": "341aab8eb9dabfc2a17072645b5fce6e35c61b06cbf288cbc2c985f3679ddbea"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 2870,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 2911,
+        "duration_ms": 97033
+      }
+    },
+    {
+      "sample_id": "development-sharapova",
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "source_group": "sharapova",
+      "split": "development",
+      "evaluation_label": "professional",
+      "include_in_distribution": true,
+      "source_video_sha256": "2CDB8821DA6D75FAB11B4C04C46EEA1B93B4D0ED078D5DCA498443D56209B9D6",
+      "reuse_saved_pose": true,
+      "source_url": "https://commons.wikimedia.org/wiki/File:Maria_Sharapova_on_Amelia_Island.ogv",
+      "source_license": {
+        "name": "CC BY 2.0",
+        "author": "javajoba",
+        "url": "https://creativecommons.org/licenses/by/2.0/",
+        "modifications": "Existing 20-second local transcode; native poses reused."
+      },
+      "evaluation_validity": "valid",
+      "frozen_artifact_sha256": {
+        "summary.json": "4799e4436d402adf9f9d098e7f0161cd9aea0862af9f9a2c27b579d35bc3551d",
+        "primary-player.jsonl": "38428769ec3fd0639bbfab18d4dbbd5a6ec60597cf7458b7c2b2a57b2db49ce4",
+        "sam3d_frames.jsonl": "cc71056080f701ffd82d92c8e7fa784d3b49531660e308951dc2813033acc397"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "selected_native_records": 599,
+      "media": {
+        "width": 500,
+        "height": 376,
+        "fps": 29.97,
+        "frame_count": 601,
+        "duration_ms": 20053
+      }
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "source_group": "ordinary-ece12",
+      "split": "regression",
+      "evaluation_label": "ordinary",
+      "include_in_distribution": true,
+      "source_video_sha256": "DA6AAE350366ACDD2DCF45C7B1D585909719F91427192815D327E806395254C8",
+      "reuse_saved_pose": true,
+      "evaluation_validity": "valid",
+      "frozen_artifact_sha256": {
+        "summary.json": "2d8fda7ae9543c6326bc8c0afaed89c9321236be30a0f87eb9446dbe028f07b4",
+        "primary-player.jsonl": "1fec53ef7d177834d408c0735ae2640c91436a73526f888615e13451adba8029",
+        "sam3d_frames.jsonl": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 1153,
+      "media": {
+        "width": 720,
+        "height": 1280,
+        "fps": 29.8302,
+        "frame_count": 1230,
+        "duration_ms": 41233
+      }
+    },
+    {
+      "sample_id": "regression-nadal",
+      "job_id": "a5410328-c3e5-4420-ae76-5040541aae4b",
+      "source_group": "nadal",
+      "split": "regression",
+      "evaluation_label": "professional",
+      "include_in_distribution": true,
+      "source_video_sha256": "40C86A99FFA88D2B891EDA5B16AA55CBF51EE4C5E8D625FE9AAAB997C1CEEF85",
+      "reuse_saved_pose": true,
+      "source_url": "https://www.youtube.com/watch?v=W8JJJ2j5hOM",
+      "source_license": {
+        "name": "ATP copyrighted source; no media redistribution",
+        "author": "ATP",
+        "modifications": "Existing local normal-speed reference; saved poses reused, no new download."
+      },
+      "evaluation_validity": "valid",
+      "frozen_artifact_sha256": {
+        "summary.json": "d372d3d804f30b7410e5cfa7c9f0a852029b0d4176e678f216ca3416c97747fd",
+        "primary-player.jsonl": "e5b02009ec99c699927b418888203d723faf1512c7fd83b7dbf5a8cfc3e98194",
+        "sam3d_frames.jsonl": "57f979030ef30aad94177846f93157a9f1e89a8e343212bbd2fce26634fb0a2d"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          12800
+        ]
+      ],
+      "selected_native_records": 575,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 25.0,
+        "frame_count": 1538,
+        "duration_ms": 61520
+      }
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "job_id": "7e166b3a-5a2c-4820-92a4-8bec782bd775",
+      "source_group": "ordinary-850cb",
+      "split": "robustness",
+      "evaluation_label": "ordinary",
+      "include_in_distribution": false,
+      "source_video_sha256": "71D3F59B7A8B966EF7645CAC412CB03679376F70A2F080D270391A32697D7FA9",
+      "reuse_saved_pose": true,
+      "paired_reference_job": "7863b90f-407a-469e-a05d-aaef6946e56c",
+      "evaluation_validity": "valid",
+      "frozen_artifact_sha256": {
+        "summary.json": "6e381de774dea9ae632e5ca89224013a3ae8a6143f7475625d2622dac620181b",
+        "primary-player.jsonl": "217bbea31cbbe3dca5b400bef48277e739c58ff018b54f0979dbfd6f4c1eea1f",
+        "sam3d_frames.jsonl": "b9b8f0a09f4c834499ef664b6948fa2480075a1aa4d4efcd2c06c4ec6359a4ef"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 2870,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "frame_count": 2911,
+        "duration_ms": 97033
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "valid",
+      "include_in_distribution": true,
+      "source_video_sha256": "6D14B259E12C5677738134DAEBA6BF40F4A943DBF973D4CDDC784588B8A030A8",
+      "selected_sha256": "6D14B259E12C5677738134DAEBA6BF40F4A943DBF973D4CDDC784588B8A030A8",
+      "source_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "input_source_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "start_ms": 0,
+      "end_ms": 30000,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "original_seconds": 79.23333333333333,
+        "clip_seconds": 30.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "evaluation_identity": "ordinary_user",
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "submitted_at": "2026-10-26T11:20:34.867554+00:00",
+      "http_status": 202,
+      "reason": "Frozen first continuous 20-30 seconds before viewing scores; covers camera/lighting/distance. User states all FULL-TEST are ordinary users.",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾主框为相同着装的持拍击球者；稀疏采样核验不能替代逐帧认证。用户ordinary标签保持。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "da634c9ed6057502f010bd6f1a5f8e4e3d80259f233045dc1f0da2f99b7d0a16",
+        "primary-player.jsonl": "203e2e5a6cc734b6d538199f0df82e1a39506b8032ac3f9291df1551d365462e",
+        "sam3d_frames.jsonl": "c89a42ef44d03603b15016338eabe94f98302594fabe048861e9ad4c77f98d6b"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 900
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "source_group": "3ae77ee3271d67de171585a5c39ddd69",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "valid",
+      "include_in_distribution": true,
+      "source_video_sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9",
+      "selected_sha256": "D5194DF6070DA253DEF5DB599E4F81847F4BEF3E146AB0A5D39F7F077F9CB5D9",
+      "source_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+      "input_source_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+      "start_ms": 0,
+      "end_ms": 20000,
+      "media": {
+        "width": 320,
+        "height": 568,
+        "fps": 29.979195561719834,
+        "original_seconds": 48.06666666666666,
+        "clip_seconds": 20.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "evaluation_identity": "ordinary_user",
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "submitted_at": "2026-10-26T11:20:34.905607+00:00",
+      "http_status": 202,
+      "reason": "Frozen first continuous 20-30 seconds before viewing scores; covers camera/lighting/distance. User states all FULL-TEST are ordinary users.",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sample_interval_seconds": 1,
+        "finding": "1至19.95秒每秒采样均为黑衣白裙持拍者；0秒只有进入画面前的持拍手臂及身体边缘，属于源视频近裁剪问题。track1/6/60变化未观察到换人。保留低清、近裁剪局限。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "91c907e5c2e4e8aeb44ebe6b42395aec66209462018bb14dffaac5bfe29f69b7",
+        "primary-player.jsonl": "595c51a4171a7ef5daf80f6d009fc2b7b5427a874ca5ec00d0193d117a52042d",
+        "sam3d_frames.jsonl": "e9c80f2dffe2e9e2abfa52285e77868dccfd339ee517ed0787dadd7514159ad5"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 595
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "source_group": "5ef291ecd05405b7897677a9d06aa4cd",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "valid",
+      "include_in_distribution": true,
+      "source_video_sha256": "A77B8FF8052A1EB98BECE24728804998600035B9D9EFF14BE048AB67BE075043",
+      "selected_sha256": "A77B8FF8052A1EB98BECE24728804998600035B9D9EFF14BE048AB67BE075043",
+      "source_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "input_source_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "start_ms": 0,
+      "end_ms": 30000,
+      "media": {
+        "width": 960,
+        "height": 544,
+        "fps": 24.0,
+        "original_seconds": 479.8333333333333,
+        "clip_seconds": 30.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "evaluation_identity": "ordinary_user",
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "submitted_at": "2026-10-26T11:20:35.491739+00:00",
+      "http_status": 202,
+      "reason": "Frozen first continuous 20-30 seconds before viewing scores; covers camera/lighting/distance. User states all FULL-TEST are ordinary users.",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾主框为相同着装的持拍击球者；稀疏采样核验不能替代逐帧认证。用户ordinary标签保持。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "048e0424d3c146fe9da015990d9e9a180ef932aa006ed6511e7374ca0282a9f4",
+        "primary-player.jsonl": "669348f1a7715332645d7e30430d7de6e140144b85b6c24be2d6b3aefff19bb9",
+        "sam3d_frames.jsonl": "31d953b0f3a399f056b664e76d7e8924d94cfcf35c2b286f456bb1265f000545"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 719
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "source_group": "c235227fffcd3290b60572d0c3f9cc85",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "selected_sha256": "41AE2B5C12A92E8883B159F0963741451D42A515BB82F11194DEC1F4FB1C05D6",
+      "source_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "input_source_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "start_ms": 0,
+      "end_ms": 30000,
+      "media": {
+        "width": 960,
+        "height": 544,
+        "fps": 30.0,
+        "original_seconds": 217.43333333333334,
+        "clip_seconds": 30.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "evaluation_identity": "ordinary_user",
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "0至13秒主框为黄色衣击球者，镜头约14至15秒移离目标且短暂在空边缘误框；16至19秒选中另一侧白衣持拍/喂球者（track60），21至29.97秒再回黄色衣击球者（track86）。原片摇镜导致整段拼接不同人，不能作为同一人的有效技术评分。",
+      "submitted_at": "2026-10-26T11:20:35.610957+00:00",
+      "http_status": 202,
+      "reason": "Frozen first continuous 20-30 seconds before viewing scores; covers camera/lighting/distance. User states all FULL-TEST are ordinary users.",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "finding": "0至13秒主框为黄色衣击球者，镜头约14至15秒移离目标且短暂在空边缘误框；16至19秒选中另一侧白衣持拍/喂球者（track60），21至29.97秒再回黄色衣击球者（track86）。原片摇镜导致整段拼接不同人，不能作为同一人的有效技术评分。",
+        "raw_result_preserved": true,
+        "favorable_recrop_performed": false
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "1a7c8672fdf53c433f00431af2153949e777224919bedae1133e65309d7484f2",
+        "primary-player.jsonl": "56116066bc028fd0bae934eb2325198fc8dd6b8c646bda9c733dc28500053ea2",
+        "sam3d_frames.jsonl": "099d73ef3b3d409ef45857109eafe18e65b77d0fe998e7deb144102c64ca0722"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 894
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "source_group": "c2485607c23646e706d9c4aae89e668e",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "C384FB160DFBE3DC3D8A560C69AEE69404BC885D337473CD0D171EA408A2845F",
+      "selected_sha256": "C384FB160DFBE3DC3D8A560C69AEE69404BC885D337473CD0D171EA408A2845F",
+      "source_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "input_source_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "start_ms": 0,
+      "end_ms": 30000,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "original_seconds": 72.33333333333333,
+        "clip_seconds": 30.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "evaluation_identity": "ordinary_user",
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "0至15秒主框为粉衣击球者（track1），镜头约16秒转向另一半场米白衣击球者（track56），17至29.97秒持续该另一人。虽然两者均为用户ordinary标签，整段轨迹拼接两个人，个人技术评分有效性不成立。",
+      "submitted_at": "2026-10-26T11:20:35.681893+00:00",
+      "http_status": 202,
+      "reason": "Frozen first continuous 20-30 seconds before viewing scores; covers camera/lighting/distance. User states all FULL-TEST are ordinary users.",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "finding": "0至15秒主框为粉衣击球者（track1），镜头约16秒转向另一半场米白衣击球者（track56），17至29.97秒持续该另一人。虽然两者均为用户ordinary标签，整段轨迹拼接两个人，个人技术评分有效性不成立。",
+        "raw_result_preserved": true,
+        "favorable_recrop_performed": false
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "760e9d1ed85cfbaaaf3f72413f981764edbd51e687ed0643c4078cfd475fce5c",
+        "primary-player.jsonl": "cbda48bb5a473d6a606fd4349313071d40abea675f223d044e77c6c6f9859f94",
+        "sam3d_frames.jsonl": "c682455a280bbfc8d06d919607acccaba8830f57f6903989b7093a93b4b82cb3"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          600
+        ]
+      ],
+      "selected_native_records": 899
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "job_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "source_group": "user-video-01e86002f21704680103700397b8352743",
+      "split": "holdout",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "valid",
+      "include_in_distribution": true,
+      "source_video_sha256": "0399205F23F838F2785718AE93BA8A1F853BDB8A8B95164B526C8974E1DD15E7",
+      "selected_sha256": "0399205F23F838F2785718AE93BA8A1F853BDB8A8B95164B526C8974E1DD15E7",
+      "source_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+      "input_source_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+      "reuse_saved_pose": true,
+      "media": {
+        "width": 720,
+        "height": 1280,
+        "fps": 30.0,
+        "original_seconds": 26.7
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "identity_label_caveat": "Stadium broadcast context visible; preserved user-supplied ordinary label, not relabelled from appearance.",
+      "subject_audit_status": "valid_scored_windows_with_end_card_false_detection",
+      "quality_warning": "24.00至26.67秒片尾头像被识别为人体（track77）；主评测提供的四个评分窗口均早于该片尾，分别[2.033,3.5]、[5.1,6.233]、[7.333,8.767]、[15.1,16.533]秒，故评分窗口有效性保留；用户ordinary标签不变。",
+      "evaluation_caveats": "片尾头像误检发生在主评测确认的四个评分窗口外；当前按评分窗口valid保留raw及ordinary标签，不将片尾误框等同评分动作污染。",
+      "reason": "Existing completed user job; no resubmission.",
+      "primary_target_audit": {
+        "status": "contains_end_card_false_detection",
+        "finding": "24.00、25.00、26.00、26.67秒片尾社交平台头像被track77当成人体；首中帧为持拍球员。用户ordinary标签及主分析记录按约定保留，不依据画面猜职业，也不因该样本分数而剔除。",
+        "raw_result_preserved": true
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "134c25b3fd731c824e192d4b2c35e40ea3630dcb01bc16e6e23a51c6d04507a6",
+        "primary-player.jsonl": "80c8bb88414d600f4569c9714233f34663a1eab1ac85553fd1bbcc04c8d0c988",
+        "sam3d_frames.jsonl": "b5745755c515c29f210905a6927940e8d65733584114799349189eb5391fbacf"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          90000
+        ]
+      ],
+      "selected_native_records": 726
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "job_id": "a9893f2e-c048-4096-9e21-6a8acfe00858",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "split": "robustness",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "invalid_measurement_consistency",
+      "include_in_distribution": false,
+      "source_video_sha256": "89D9C60D9C2290EBD1ECE6E26028D9676520065C0ACF650F0055C2119AEC54DA",
+      "selected_sha256": "89D9C60D9C2290EBD1ECE6E26028D9676520065C0ACF650F0055C2119AEC54DA",
+      "source_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+      "input_source_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+      "original_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "paired_reference_job": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "transform": "scale=-2:360",
+      "crf": 35,
+      "start_ms": 0,
+      "end_ms": 30000,
+      "media": {
+        "width": 640,
+        "height": 360,
+        "fps": 30.0,
+        "clip_seconds": 30.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "invalid_reason": "同一动作压缩后由右手识别为左手，5个动作仅保留1个且随挥边界提前；不能据此给受测者确定的动作缺点。",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾主框为相同着装的持拍击球者；稀疏采样核验不能替代逐帧认证。用户ordinary标签保持。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "cad249a2483164d9bee6f8a61299540e38e14b6d49e5e1c1d728cfcb79681a92",
+        "primary-player.jsonl": "a251198cd77bd7f265ecbf909bf94f0205fa9ba9f66e482fee85e99b9b48319f",
+        "sam3d_frames.jsonl": "f8f3325bc2b9e9a63f3117d438aab40129d8a89f4ea2db63064510b442a987b8"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "selected_native_records": 900
+    },
+    {
+      "sample_id": "white-mirror",
+      "job_id": "09de927f-1a8f-4e5b-8283-96964fcfebcb",
+      "source_group": "196b89276dedbd2232f1ca3131da99a0",
+      "split": "robustness",
+      "evaluation_label": "ordinary",
+      "evaluation_validity": "valid",
+      "include_in_distribution": false,
+      "source_video_sha256": "E7DD1F13849FAFBFDD74E73B49B66EFF008B7248B520A9DC2B01774419508E93",
+      "selected_sha256": "E7DD1F13849FAFBFDD74E73B49B66EFF008B7248B520A9DC2B01774419508E93",
+      "source_sha256": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+      "input_source_sha256": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+      "original_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "paired_reference_job": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "transform": "hflip",
+      "crf": 18,
+      "start_ms": 0,
+      "end_ms": 30000,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "clip_seconds": 30.0
+      },
+      "source_license": {
+        "type": "user_provided",
+        "publication_permission": false
+      },
+      "identity_label_basis": "User explicitly states provided videos/FULL-TEST are ordinary users; independently verified competition level is unavailable.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾主框为相同着装的持拍击球者；稀疏采样核验不能替代逐帧认证。用户ordinary标签保持。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "60a279a0ab024522ae2a35fbac7c18707ee1acb6402f7bb0059ce1c8f7fae85f",
+        "primary-player.jsonl": "28d3b307a78c8b790caab3f8e3555779ff103c0d8cbf2b13c379bcfa04aeb691",
+        "sam3d_frames.jsonl": "e1730e3fd8faaf4b9b117f7a0e57740099cf75be92a921da66a99712af05c051"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "selected_native_records": 900
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "job_id": "3cd4fa26-3fef-42d6-bdbc-afe40823b2f7",
+      "source_group": "blaz-rola-ncaa-2013-zootennis",
+      "split": "holdout",
+      "evaluation_label": "unknown",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "F73BE59FF8D86C998DF7AAC4CEDAF6D912133B27390AB66211B8B204D5E60154",
+      "selected_sha256": "F73BE59FF8D86C998DF7AAC4CEDAF6D912133B27390AB66211B8B204D5E60154",
+      "input_source_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+      "original_sha256": "2171da2bc08e95b258e0ac620c81f8a1def620d6f9cd2476938f2ff506ef2255",
+      "start_ms": 0,
+      "end_ms": 25025,
+      "media": {
+        "width": 640,
+        "height": 480,
+        "fps": 29.97002997002997,
+        "clip_seconds": 25.025000000000002
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:Bla%C5%BE_Rola_NCAAs_2013.webm",
+      "source_license": {
+        "name": "CC BY 3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/",
+        "author": "ZooTennis.com (tenniskalamazoo)",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "verified_identity": "Blaz Rola; NCAA singles final 2013 (elite collegiate at capture)",
+      "identity_sources": [
+        "https://www.atptour.com/en/players/-/RA51/bio",
+        "https://www.itftennis.com/en/players/blaz-rola/800271802/slo/mt/s/overview/"
+      ],
+      "pre_score_observations": "Left-handed player with white shirt and red shorts; net partly obscures lower body. First 25 seconds include continuous groundstroke play; no score inspected.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "8.976–20.754秒内主目标多次选中场边线审（track17，337/750帧），不能把该视频整段分数归于来源命名球员。保留原始结果与失败，不裁剪有利窗口。",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "wrong_target_track_ids": [
+          17
+        ],
+        "wrong_target_interval_ms": [
+          8976,
+          20754
+        ],
+        "wrong_target_frames": 337,
+        "total_frames": 750,
+        "finding": "Primary selection jumps from source-named white/red athlete to dark-shirt line official. The whole submitted clip remains an invalid subject-tracking attempt; no favorable recrop was made."
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "422184a23893f7912632b4b6760c742af5ebe7cf00287c21d8f0a43c8ad2d906",
+        "primary-player.jsonl": "c959121ad180b64dc616244fedf8615e2930a217e34e9f4b0664f7dcb5fe4c1a",
+        "sam3d_frames.jsonl": "8a3ac49ccce6dd20e33cc2a93d6397a3a8db69c9f8cf7f2bddd5e17a122ae488"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "selected_native_records": 736
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "job_id": "6062e1e6-19dc-414a-ae1f-20ab703d96bf",
+      "source_group": "tsitsipas-alcaraz-french-open-2023-hameltion",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "03E5C94CEAD59642F851A5899453D1BBA6EC8AFAB36439D005E2345B082E9C5B",
+      "selected_sha256": "03E5C94CEAD59642F851A5899453D1BBA6EC8AFAB36439D005E2345B082E9C5B",
+      "input_source_sha256": "03e5c94cead59642f851a5899453d1bba6ec8afab36439d005e2345b082e9c5b",
+      "original_sha256": "69864006ab5aa826a83d4acfec41e95ead87f0595f21d8918038df3aaae3a321",
+      "start_ms": 0,
+      "end_ms": 8333,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "clip_seconds": 8.333333333333334
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:Wave_at_Alcaraz%E2%80%93Tsitsipas_practice_at_the_2023_French_Open.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "Hameltion",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "verified_identity": "Stefanos Tsitsipas serving side; Carlos Alcaraz opposite; source identifies practice players",
+      "identity_sources": [],
+      "pre_score_observations": "Distant elevated camera pans toward crowd. No complete clearly visible swing in sampled frames. Expected rejection/negative coverage test; individual selected track must be checked.",
+      "subject_audit_status": "wrong_target",
+      "invalid_reason": "0.00、4.15、8.30秒绿框均跟随场外椅旁人员，未跟随场内来源命名练习球员；原始输出不得作为职业球员有效评分。",
+      "primary_target_audit": {
+        "status": "wrong_target",
+        "finding": "Primary green box follows a distant person beside chairs outside court; it does not follow either visibly active named practice player. Do not treat a produced score as athlete skill."
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "5b268103613b5d482cad6fcd3cb62fae4fd05462e2c25c4454cdaba53a4da9e2",
+        "primary-player.jsonl": "86cc4b1f99913d4d3fb92f515429c040604b06af7134c5c7af7019f67c4858be",
+        "sam3d_frames.jsonl": "5545b8e287c59a033d35e27ec3ec7322feb4bc72d87c1e6edc90d09e0d70ceea"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "selected_native_records": 1
+    },
+    {
+      "sample_id": "davis-cup-2018-04",
+      "job_id": "e0a62ad9-9422-4635-a254-e375819a971c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "A2B0D27FCDCDAB2652A2B92C2BB22AD19DDCAB06B32501A636622CE90F0DA31A",
+      "selected_sha256": "A2B0D27FCDCDAB2652A2B92C2BB22AD19DDCAB06B32501A636622CE90F0DA31A",
+      "input_source_sha256": "a2b0d27fcdcdab2652a2b92c2bb22ad19ddcab06b32501a636622ce90f0da31a",
+      "original_sha256": "2a4a1a7a05f47274b8648e5e0418215e071f757975e4983cf7702792b9a68879",
+      "start_ms": 0,
+      "end_ms": 7007,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 29.97002997002997,
+        "clip_seconds": 7.007000000000001
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:2018_Davis_Cup_Americas_Zone_-_Uruguay_vs_Mexico_-_04.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "NaBUru38",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "verified_identity": "2018 Davis Cup Uruguay-Mexico doubles group: Rodrigo Arus, Nicolas Xiviller, Santiago Gonzalez, Miguel Angel Reyes-Varela; individual track not yet verified",
+      "identity_sources": [
+        "https://commons.wikimedia.org/wiki/File:2018_Davis_Cup_Americas_Zone_-_Uruguay_vs_Mexico_-_04.webm",
+        "https://www.elpais.com.uy/ovacion/tenis/un-punto-que-valio-el-ascenso",
+        "https://en.wikipedia.org/wiki/2018_Davis_Cup_Americas_Zone_Group_II"
+      ],
+      "primary_tie_source": "https://www.daviscup.com/en/draws-results/tie.aspx?id=M-DC-2018-G2-AM-M-URU-MEX-01",
+      "primary_tie_source_status": "Redirected to generic results page; match roster corroborated in dated report and tournament summary.",
+      "pre_score_observations": "Doubles, multiple people, elevated diagonal camera; identity only at named match group level.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "0.00、2.00、3.47秒主框为右侧椅旁蓝衣坐姿人员；6.97秒同track11已漂移至场内网前球员，身份不连续。不能把该整段输出归为同一职业球员有效评分。",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "finding": "0.00、2.00、3.47秒主框为右侧椅旁蓝衣坐姿人员；6.97秒同track11已漂移至场内网前球员，身份不连续。不能把该整段输出归为同一职业球员有效评分。",
+        "raw_result_preserved": true,
+        "favorable_recrop_performed": false
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "4d34d0342bccee042b812914a570ca171c60c7131d20e33068c63749f3c6de57",
+        "primary-player.jsonl": "fb6c2ebed922b10913f8d13478747338f46abae18817d5f3cee39aca9c6c9a84",
+        "sam3d_frames.jsonl": "e59c548c6478c5381a806cd8105430774739f3aeb2294e8b248b6ca73ebeaf6c"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "selected_native_records": 85
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "source_group": "davis-cup-uruguay-mexico-2018-naburu38",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "741364DF8F7295E25CFDDF97A03D28D1BA43B1AC07E571A32DE76A8157BEEACF",
+      "selected_sha256": "741364DF8F7295E25CFDDF97A03D28D1BA43B1AC07E571A32DE76A8157BEEACF",
+      "input_source_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "original_sha256": "ba7cf5df784b6d3fe8aace141cd379adfc25bc2b0003be29c4669bafa92052dd",
+      "start_ms": 0,
+      "end_ms": 12012,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 29.97002997002997,
+        "clip_seconds": 12.012
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:2018_Davis_Cup_Americas_Zone_-_Uruguay_vs_Mexico_-_05.webm",
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "NaBUru38",
+        "modifications": "Reencoded WebM as H.264 without audio; first 25 seconds only for Rola; same license applies to modified media."
+      },
+      "verified_identity": "Same Davis Cup doubles group, adjacent video; not independent",
+      "identity_sources": [
+        "https://commons.wikimedia.org/wiki/File:2018_Davis_Cup_Americas_Zone_-_Uruguay_vs_Mexico_-_04.webm",
+        "https://www.elpais.com.uy/ovacion/tenis/un-punto-que-valio-el-ascenso",
+        "https://en.wikipedia.org/wiki/2018_Davis_Cup_Americas_Zone_Group_II"
+      ],
+      "primary_tie_source": "https://www.daviscup.com/en/draws-results/tie.aspx?id=M-DC-2018-G2-AM-M-URU-MEX-01",
+      "primary_tie_source_status": "Redirected to generic results page; match roster corroborated in dated report and tournament summary.",
+      "pre_score_observations": "Same-source follow-up clip, never counted as another independent player/source.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "0.00、2.00秒主框为底线发球者，4.00、6.00秒切换为白帽网前搭档，11.98秒又回底线球员；虽均属同一来源命名职业双打群体，但整段轨迹拼接不同球员，不能作为同一个人的技术评分。",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "finding": "0.00、2.00秒主框为底线发球者，4.00、6.00秒切换为白帽网前搭档，11.98秒又回底线球员；虽均属同一来源命名职业双打群体，但整段轨迹拼接不同球员，不能作为同一个人的技术评分。",
+        "raw_result_preserved": true,
+        "favorable_recrop_performed": false
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "eba1f0eacbae226935f3b2c85704d678f85de9c6b3908bdcd06298335f23eae9",
+        "primary-player.jsonl": "02b94e61ae8e39e5828cdef90f3344cf55ea71a5b1b20cfd868c4d627da4863e",
+        "sam3d_frames.jsonl": "978996d9f520cae77fe887e1778a119831e3b7612b376d9eea154c8d385cdd27"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          30000
+        ]
+      ],
+      "selected_native_records": 317
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "evaluation_validity": "valid",
+      "include_in_distribution": false,
+      "source_video_sha256": "1E3876016515703773C4FF37CF91306976D3D8C23B7F585B81F8CF3D797D51BA",
+      "selected_sha256": "1E3876016515703773C4FF37CF91306976D3D8C23B7F585B81F8CF3D797D51BA",
+      "input_source_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+      "publisher_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.3680333333333334
+      },
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "file_source_url": "https://data.mendeley.com/public-files/datasets/75m8vz7jr2/files/7b23909b-bd26-4bf9-8a55-f8b32596d6af/file_downloaded",
+      "file_id": "7b23909b-bd26-4bf9-8a55-f8b32596d6af",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "pair_id": "mendeley-crosscourt-outdoor-01",
+      "view": "Side-View",
+      "pairing_evidence": "Dataset methods explicitly pair same category/view index; selected number01 for side/top, exact matching duration and visually matching stroke progression. Absolute cross-camera synchronization not independently calibrated.",
+      "pre_score_selection": "First cross-court shot 01, indoor and outdoor, selected before viewing any model score. Clip length 1.37/1.70 seconds is retained; rejected/incomplete results must be counted.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾均为该动作的持拍击球者；侧视与俯视可见同一动作进程。身份与职业等级没有单独核验，保持unknown/robustness_only。",
+        "limitation": "稀疏视觉核验不是逐帧身份认证；室内俯视存在检测缺帧，原始缺帧保留。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "80b4f294466c01dc487e5e61038411339447519097683afb289f26298e5e201b",
+        "primary-player.jsonl": "cca490320aacd5939fa194a94b37b149534a4afff9b06fe6b60d105f625d7541",
+        "sam3d_frames.jsonl": "61bacb55cdc72d90a93f25b3264362e534e2cc7767ebf6a019496806552720c5"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "selected_native_records": 82
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "job_id": "f351fbbc-a9d5-429d-8984-0e1aaca6efbb",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "evaluation_validity": "valid",
+      "include_in_distribution": false,
+      "source_video_sha256": "82337E2C228455DA4E431C8DD07672C3452018AB781603D9E0FE5D1B8C8E403B",
+      "selected_sha256": "82337E2C228455DA4E431C8DD07672C3452018AB781603D9E0FE5D1B8C8E403B",
+      "input_source_sha256": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+      "publisher_sha256": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.3680333333333334
+      },
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "file_source_url": "https://data.mendeley.com/public-files/datasets/75m8vz7jr2/files/402dde2c-76f6-4cfd-8700-dd960923faf8/file_downloaded",
+      "file_id": "402dde2c-76f6-4cfd-8700-dd960923faf8",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "pair_id": "mendeley-crosscourt-outdoor-01",
+      "view": "Top-View",
+      "pairing_evidence": "Dataset methods explicitly pair same category/view index; selected number01 for side/top, exact matching duration and visually matching stroke progression. Absolute cross-camera synchronization not independently calibrated.",
+      "pre_score_selection": "First cross-court shot 01, indoor and outdoor, selected before viewing any model score. Clip length 1.37/1.70 seconds is retained; rejected/incomplete results must be counted.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾均为该动作的持拍击球者；侧视与俯视可见同一动作进程。身份与职业等级没有单独核验，保持unknown/robustness_only。",
+        "limitation": "稀疏视觉核验不是逐帧身份认证；室内俯视存在检测缺帧，原始缺帧保留。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "e29be2691a2732490dd2c62c9e698dcbeff60ee822b7899b5f5845d2b4d0a4e2",
+        "primary-player.jsonl": "9c7f153a050a2ce45cf4cbc45277245dcfc55f0262a66baa8a84487bc5b8c221",
+        "sam3d_frames.jsonl": "3a8287cc364c0713918474b29c3f86c4af319410e360bc7e40f011ea41d46723"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "selected_native_records": 82
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "evaluation_validity": "valid",
+      "include_in_distribution": false,
+      "source_video_sha256": "109C2A048F61D85F707255413EFAC3728CBFF228E783BEF825BAC1C0D41799FF",
+      "selected_sha256": "109C2A048F61D85F707255413EFAC3728CBFF228E783BEF825BAC1C0D41799FF",
+      "input_source_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "publisher_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.7017
+      },
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "file_source_url": "https://data.mendeley.com/public-files/datasets/75m8vz7jr2/files/656a30e3-84f2-4287-8603-ff553a799810/file_downloaded",
+      "file_id": "656a30e3-84f2-4287-8603-ff553a799810",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "pair_id": "mendeley-crosscourt-indoor-01",
+      "view": "Side-View",
+      "pairing_evidence": "Dataset methods explicitly pair same category/view index; selected number01 for side/top, exact matching duration and visually matching stroke progression. Absolute cross-camera synchronization not independently calibrated.",
+      "pre_score_selection": "First cross-court shot 01, indoor and outdoor, selected before viewing any model score. Clip length 1.37/1.70 seconds is retained; rejected/incomplete results must be counted.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾均为该动作的持拍击球者；侧视与俯视可见同一动作进程。身份与职业等级没有单独核验，保持unknown/robustness_only。",
+        "limitation": "稀疏视觉核验不是逐帧身份认证；室内俯视存在检测缺帧，原始缺帧保留。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "e34639c3bcab56f608c7584467a5bbfaa981dc36bb2dc6e80373b3f40e6370b0",
+        "primary-player.jsonl": "ecbdb94b041bdb26e69d0388f433b9f6c331420ffe589bffe0264081524ed02a",
+        "sam3d_frames.jsonl": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "selected_native_records": 102
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "job_id": "74eb4425-1174-4f56-aaa3-90752d4f187b",
+      "source_group": "mendeley-75m8vz7jr2-v4-all-participants",
+      "split": "robustness",
+      "evaluation_label": "unknown",
+      "evaluation_validity": "valid",
+      "include_in_distribution": false,
+      "source_video_sha256": "0EE64E2754EFDECBE77CD6EEB67DA45122C79001B6E9E90E657A114C9EF2E3A0",
+      "selected_sha256": "0EE64E2754EFDECBE77CD6EEB67DA45122C79001B6E9E90E657A114C9EF2E3A0",
+      "input_source_sha256": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+      "publisher_sha256": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 59.94005994005994,
+        "clip_seconds": 1.7017
+      },
+      "source_url": "https://data.mendeley.com/datasets/75m8vz7jr2/4",
+      "file_source_url": "https://data.mendeley.com/public-files/datasets/75m8vz7jr2/files/4d7764be-834f-4d39-acf9-f448cff6ef46/file_downloaded",
+      "file_id": "4d7764be-834f-4d39-acf9-f448cff6ef46",
+      "source_license": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "Kalin Guanlun Lai, Hsu-Chun Huang, Shang-Yi Lin, Wei-Ting Lin, Kawuu Weicheng Lin",
+        "modifications": "None; original publisher clip submitted as downloaded."
+      },
+      "pair_id": "mendeley-crosscourt-indoor-01",
+      "view": "Top-View",
+      "pairing_evidence": "Dataset methods explicitly pair same category/view index; selected number01 for side/top, exact matching duration and visually matching stroke progression. Absolute cross-camera synchronization not independently calibrated.",
+      "pre_score_selection": "First cross-court shot 01, indoor and outdoor, selected before viewing any model score. Clip length 1.37/1.70 seconds is retained; rejected/incomplete results must be counted.",
+      "subject_audit_status": "sampled_frames_target_consistent",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sampled_fractions": [
+          0,
+          0.5,
+          1
+        ],
+        "finding": "首中尾均为该动作的持拍击球者；侧视与俯视可见同一动作进程。身份与职业等级没有单独核验，保持unknown/robustness_only。",
+        "limitation": "稀疏视觉核验不是逐帧身份认证；室内俯视存在检测缺帧，原始缺帧保留。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "1be2c19f2d41fba20585931969af176a8a41561e51033eccba0ccb15c22fbdc9",
+        "primary-player.jsonl": "ed8268bf9f23bbfabb6de14a1cb02adca0282dc7c6cff354de39999680d57ab7",
+        "sam3d_frames.jsonl": "e2fdd175a67e8e55c341d1395fb596eddd8f4a47978876882d3ae2d05df6f914"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          60000
+        ]
+      ],
+      "selected_native_records": 102
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "source_group": "2012-usopen-jc-demiace",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "valid",
+      "include_in_distribution": true,
+      "source_video_sha256": "80F91CB924C32026754031B24730B3888C33BD0078DBC3EC3A432F836A86BE68",
+      "selected_sha256": "80F91CB924C32026754031B24730B3888C33BD0078DBC3EC3A432F836A86BE68",
+      "input_source_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "original_sha256": "0258d7c06fb175e52beb0a2238da3984a45bffc39454aa04d4c814da3779d999",
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976023976023978,
+        "clip_seconds": 19.561208333333333
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:2012_US_Open_Djokovic_point.webm",
+      "original_source_url": "https://www.flickr.com/photos/demiace/7863451406",
+      "source_license": {
+        "name": "CC BY-SA 2.0",
+        "url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "author": "JC (demiace)",
+        "attribution": "JC (demiace) / CC BY-SA 2.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "verified_identity": "Novak Djokovic (source caption attribution; main target visually consistent with the source-named foreground player, not biometric identification)",
+      "pre_score_observations": "Foreground white cap/shirt blue shorts, full body visible through most rally, moving camera and zoom late.",
+      "selection_policy": "All newly found legally reusable 2012/2024 tennis footage retained, including crowded/panning failures; no outcome inspected.",
+      "subject_audit_status": "subject_tracking_passed_sampled_audit",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sample_interval_seconds": 1,
+        "main_source_track_id": 1,
+        "finding": "每秒采样及末帧均为来源命名的前景持拍球员，未见跨人；全轨迹track1。姓名依来源说明归属，并非人脸识别。",
+        "limitation": "采样核验不能证明采样间没有瞬时错误；原视频后段摄影推近使脚部/部分身体出画，原片完整保留并纳入质量门控。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "9bc5addcf6745388b6a2595fa7b09fd71b28f8a94c34d70b27fa090fe3f332ce",
+        "primary-player.jsonl": "70a47167b0044f3d762bb8e1fd559c8fd76c6f5e4e7a2807c2e233edc0068481",
+        "sam3d_frames.jsonl": "03722efc5465311765420d922e02caf2370bc93d6b31adb1f3932b6ff35f7062"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          24000
+        ]
+      ],
+      "selected_native_records": 469
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "source_group": "2012-usopen-jc-demiace",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "valid",
+      "include_in_distribution": true,
+      "source_video_sha256": "F9F712C4C9C92A7ABA942BAB7C33C8A38FBA48D3877FDED3660D17DB36215AC8",
+      "selected_sha256": "F9F712C4C9C92A7ABA942BAB7C33C8A38FBA48D3877FDED3660D17DB36215AC8",
+      "input_source_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+      "original_sha256": "964059dfa99763aab2da785185315d6dfd36c0d3f02a5f65f15fe3b17a8ec738",
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976023976023978,
+        "clip_seconds": 17.017
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:2012_US_Open_Schiavone_rally.webm",
+      "original_source_url": "https://www.flickr.com/photos/demiace/7924718034",
+      "source_license": {
+        "name": "CC BY-SA 2.0",
+        "url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "author": "JC (demiace)",
+        "attribution": "JC (demiace) / CC BY-SA 2.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "verified_identity": "Francesca Schiavone (source caption attribution; main target visually consistent with the source-named foreground player, not biometric identification)",
+      "pre_score_observations": "Foreground white shirt black shorts, forehand and one-handed backhand rally; camera pan cuts body at late clip.",
+      "selection_policy": "All newly found legally reusable 2012/2024 tennis footage retained, including crowded/panning failures; no outcome inspected.",
+      "subject_audit_status": "subject_tracking_passed_sampled_audit",
+      "primary_target_audit": {
+        "status": "sampled_frames_target_consistent",
+        "sample_interval_seconds": 1,
+        "main_source_track_id": 1,
+        "finding": "每秒采样及末帧均为来源命名的前景持拍球员，未见跨人；全轨迹track1。姓名依来源说明归属，并非人脸识别。",
+        "limitation": "采样核验不能证明采样间没有瞬时错误；原视频后段摄影推近使脚部/部分身体出画，原片完整保留并纳入质量门控。"
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "83bf47cbb5a56d2ce31392558c15c266af9a724ddf54b48d11ff5f6cfe3635c6",
+        "primary-player.jsonl": "6b4a50a18d5942b8d04555db94fabf8abbf425f5583425def942f0622c83a6cd",
+        "sam3d_frames.jsonl": "a72d1257fc3eae64a922edfd68f93ca99556a580fc5920078b4ce72d0319803f"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          24000
+        ]
+      ],
+      "selected_native_records": 406
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "job_id": "7af2d828-9f83-4698-b0e2-4a8bc2c5282d",
+      "source_group": "2012-usopen-jc-demiace",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "97569F24772D7A1DC0DD4E3226C526C400E7DEA5AF873FE44C790A49C305129C",
+      "selected_sha256": "97569F24772D7A1DC0DD4E3226C526C400E7DEA5AF873FE44C790A49C305129C",
+      "input_source_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+      "original_sha256": "7bc5c5ed3a14b68033f8f650312b5f808340478aa35e9241c47f7d970512e42f",
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps": 23.976023976023978,
+        "clip_seconds": 7.674333333333333
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:Federer_v._Clilic_Practice_with_Crowd.webm",
+      "original_source_url": "https://www.flickr.com/photos/demiace/7856682140",
+      "source_license": {
+        "name": "CC BY-SA 2.0",
+        "url": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "author": "JC (demiace)",
+        "attribution": "JC (demiace) / CC BY-SA 2.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "verified_identity": "Roger Federer and Marin Cilic (source title); do not infer which is primary without tracking evidence",
+      "pre_score_observations": "Spectators dominate foreground, brief distant serve and severe pan/occlusion; expected technical rejection retained.",
+      "selection_policy": "All newly found legally reusable 2012/2024 tennis footage retained, including crowded/panning failures; no outcome inspected.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "0.00秒主框为前景观众；1.00至4.00秒为近侧持拍球员；5.00秒转向场边白衣人员；6.01、7.01、7.63秒转向前景观众。整段多次跨人，不能作为Federer或Cilic个人有效评分。",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "finding": "0.00秒主框为前景观众；1.00至4.00秒为近侧持拍球员；5.00秒转向场边白衣人员；6.01、7.01、7.63秒转向前景观众。整段多次跨人，不能作为Federer或Cilic个人有效评分。",
+        "raw_result_preserved": true,
+        "favorable_recrop_performed": false
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "d799b3d760725682de5a5d06533c078dd105a1525e387e9931068f6f8fda3b4c",
+        "primary-player.jsonl": "a22d3f3fc3adf5e884d234ed32388eebcf78fdd4a4a516093be38e02945e21ed",
+        "sam3d_frames.jsonl": "5ccdd54db43182ac82c9c40df07cfbd9031eaddc89a48f72a4f1191fcac0fc28"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          24000
+        ]
+      ],
+      "selected_native_records": 6
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "source_group": "2024-usopen-dimitrov-tiafoe-oleg-yunakov",
+      "split": "holdout",
+      "evaluation_label": "professional",
+      "evaluation_validity": "invalid_subject_tracking",
+      "include_in_distribution": false,
+      "source_video_sha256": "6919F4C50814602F5CF8496DDAEE2BA1514840956F50850C85E434E4EA043A7A",
+      "selected_sha256": "6919F4C50814602F5CF8496DDAEE2BA1514840956F50850C85E434E4EA043A7A",
+      "input_source_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "original_sha256": "e7740e59b96550374e807b666903b1b5eec5e44fd8d97940dc9657892da1e209",
+      "media": {
+        "width": 1920,
+        "height": 1080,
+        "fps": 60.0,
+        "clip_seconds": 29.916666666666668
+      },
+      "source_url": "https://commons.wikimedia.org/wiki/File:2024_US_Open._Grigor_Dimitrov_vs._Frances_Tiafoe.webm",
+      "original_source_url": null,
+      "source_license": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "author": "Oleg Yunakov",
+        "attribution": "Oleg Yunakov / CC BY-SA 4.0",
+        "modifications": "Original reencoded to H.264 CRF18 without audio, no timing/crop changes; derivative media retains source license."
+      },
+      "verified_identity": "Grigor Dimitrov and Frances Tiafoe (source caption); match group only pending primary-track visual audit",
+      "pre_score_observations": "Source names both match players; first full original clip chosen before scores.",
+      "selection_policy": "All newly found legally reusable 2012/2024 tennis footage retained, including crowded/panning failures; no outcome inspected.",
+      "subject_audit_status": "mixed_target",
+      "invalid_reason": "4.00、5.00秒track3主框转到远端底线后墙边人员，而持拍发球者在场内下方弯腰；6至23秒多在远端球员（track2），24至26秒转场边人员/看台，29.90秒转看台观众（track181）。既含比赛动作期间误选，也含结束摇镜误选，不能作为同一职业球员的整段有效技术评分。",
+      "primary_target_audit": {
+        "status": "mixed_target",
+        "finding": "4.00、5.00秒track3主框转到远端底线后墙边人员，而持拍发球者在场内下方弯腰；6至23秒多在远端球员（track2），24至26秒转场边人员/看台，29.90秒转看台观众（track181）。既含比赛动作期间误选，也含结束摇镜误选，不能作为同一职业球员的整段有效技术评分。",
+        "raw_result_preserved": true,
+        "favorable_recrop_performed": false
+      },
+      "frozen_artifact_sha256": {
+        "summary.json": "27971e1d3623a60e6a22a1ba0249980824d4950aa5d500a5d5ff1e133edea224",
+        "primary-player.jsonl": "5cef921ea77a5334e7dfbdf70c24efb3a51e43294fd8e6f186706a5be438f4af",
+        "sam3d_frames.jsonl": "e92f458bd0700a85c39a68a2e0c044d8bd5856da282fb8fc9ed30b58e5ec71a4"
+      },
+      "decoder_time_bases": [
+        [
+          1,
+          15360
+        ]
+      ],
+      "selected_native_records": 288
+    }
+  ]
+}

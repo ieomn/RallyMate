@@ -18,19 +18,20 @@ from pathlib import Path
 import numpy as np
 
 from rallymate_service.swing_kinematics import _read_rows, _signature
-from rallymate_service.tennis_coaching import coaching_for_metric
+from rallymate_service.tennis_coaching import coaching_for_metric, strength_for_metric
 from rallymate_service.tennis_profiles import SERVE_METRICS, SERVE_RUBRIC, apply_serve_profile
 from rallymate_vision.sam3d_evaluation import COORDINATES_3D, _binding_error, _time
 
-VERSION = "tennis-action-assessment-v1.0.0"
-RUBRIC_VERSION = "tennis-action-rubric-v1.0.0"
+VERSION = "tennis-action-assessment-v1.1.0"
+RUBRIC_VERSION = "tennis-action-rubric-v1.1.0"
 DIMENSIONS = (("movement", "移动支撑"), ("preparation", "准备引拍"),
-              ("coordination", "发力协调"), ("striking", "击球姿态"),
+              ("coordination", "动作协调"), ("striking", "击球姿态"),
               ("follow_through", "随挥恢复"))
 # low, plateau start, plateau end, high: continuous bounded trapezoid.
 METRICS = {
     "movement": (("knee_load", "下肢蓄势参与", "deg", "准备阶段有明确屈膝，为后续伸展做准备"),
-                 ("support_control", "准备站距", "hip_width", "双足自然分开形成准备站距，不以越宽为越好")),
+                 ("support_control", "准备站距", "hip_width", "双足自然分开形成准备站距，不以越宽为越好"),
+                 ("leg_extension_continuity", "下肢伸展连贯", "ratio", "临近挥拍时同一腿连贯伸展，减少反复屈伸，不追求锁直膝盖")),
     "preparation": (("coil", "转体蓄势", "deg", "肩髋保持适度相对转动"),
                     ("preparation_sync", "引拍协同", "phase_fraction", "手臂引拍与身体准备接近同步")),
     "coordination": (("release_sequence", "伸展释放衔接", "phase_fraction", "下肢伸展、躯干释放与主挥拍连续衔接"),
@@ -38,7 +39,8 @@ METRICS = {
     "striking": (("head_control", "头颈控制", "torso", "主挥拍期间头颈相对躯干保持平稳"),
                  ("arm_space", "手臂伸展空间", "arm_length", "主挥拍时保留舒展的手臂空间")),
     "follow_through": (("follow_path", "随挥延展", "ratio", "主挥拍后继续完成手臂运动"),
-                       ("recovery_control", "恢复衔接", "ratio", "随挥后保持动作连续、减少突然往返，并重新屈膝准备")),
+                       ("recovery_control", "恢复衔接", "ratio", "随挥后保持动作连续、减少突然往返，并重新屈膝准备"),
+                       ("follow_deceleration", "随挥速度衔接", "ratio", "主挥拍之后自然减速，减少短时反复加速，不要求停住球拍")),
 }
 DRILLS = {
     "movement": ("屈膝准备与支撑", "准备时先放低重心，再完成挥拍，保持自然站距。", "做 2 组每组 10 次：小步调整、屈膝准备、挥拍、回到准备姿势。", "用相同机位录 10 次连续挥拍，对比准备屈膝和支撑控制两项是否提高。"),
@@ -270,13 +272,14 @@ def _summary_episodes(summary):
     return [e for key, e in by_id.items() if key not in conflicts]
 
 
-def _bound_windows(segments, episodes, sha):
+def _bound_windows(segments, episodes, sha, rejection_counts=None):
     """An independent phase candidate bounds scoring; any-arm peaks alone do not.
 
     A single detected action is counted once, never once per arm/peak/fragment.
     Classification text and old FS condition scores play no part in selection.
     """
     out, seen_intervals = [], []
+    rejected = rejection_counts if rejection_counts is not None else Counter()
     ordered = []
     for candidate in sorted(episodes, key=lambda e: (e.get("start_ms", 0), e.get("episode_id", ""))):
         lo, mid, hi = (candidate.get(k) for k in ("start_ms", "peak_ms", "end_ms"))
@@ -291,8 +294,10 @@ def _bound_windows(segments, episodes, sha):
                 or not any(segment and segment[0]["track"] == candidate.get("person_track_id")
                            and segment[0]["reference"] == (reference.get("source_selection_epoch"), reference.get("camera_reference_epoch"))
                            and segment[0]["time"] <= mid <= segment[-1]["time"] for segment in segments)):
+            rejected["candidate_source_or_complete_phase_unverified"] += 1
             continue
         if any(max(lo, prior["start_ms"]) < min(hi, prior["end_ms"]) for prior in ordered):
+            rejected["candidate_overlap_duplicate"] += 1
             continue
         ordered.append(candidate)
     for candidate_index, episode in enumerate(ordered):
@@ -336,7 +341,8 @@ def _bound_windows(segments, episodes, sha):
             wrist = wrists[side]
             if paths[side] < .45 or not np.isfinite(wrist).all() or np.linalg.norm(np.ptp(wrist, axis=0)) < .25:
                 continue
-            active_ms = sum(np.diff(t[a:b])[np.linalg.norm(np.diff(wrist, axis=0), axis=1) > .012])
+            step_ms = np.diff(t[a:b])
+            active_ms = sum(step_ms[np.linalg.norm(np.diff(wrist, axis=0), axis=1) / (step_ms / 1000) > .36])
             if active_ms < 160:
                 continue
             speed = _local_speed(wrist, t[a:b])
@@ -369,6 +375,8 @@ def _bound_windows(segments, episodes, sha):
             chosen = max(choices, key=lambda item: item[1][1] - item[1][0])
             out.append(chosen)
             seen_intervals.append((start, end))
+        else:
+            rejected["candidate_lacks_continuous_complete_motion"] += 1
     return out
 
 
@@ -378,6 +386,113 @@ def _valid(values, minimum=.7):
     if a.ndim > 1:
         finite = finite.all(axis=1)
     return a if len(a) and finite.mean() >= minimum else None
+
+
+def _time_mean(values, times, minimum=.7):
+    """Trapezoidal mean on observed adjacent PTS; missing samples are not filled.
+
+    Frame counts would overweight high-frame-rate portions of a VFR video.
+    Coverage is elapsed time with two valid endpoints, not pose confidence.
+    """
+    values, times = np.asarray(values, dtype=float), np.asarray(times, dtype=float)
+    if len(values) < 2 or len(values) != len(times) or not np.isfinite(times).all():
+        return None
+    dt = np.diff(times)
+    if not (dt > 0).all():
+        return None
+    valid = np.isfinite(values[:-1]) & np.isfinite(values[1:])
+    covered = float(dt[valid].sum())
+    if covered <= 0 or covered / float(dt.sum()) < minimum:
+        return None
+    return float(np.sum(dt[valid] * (values[:-1][valid] + values[1:][valid]) / 2) / covered)
+
+
+def _temporal_median(values, times, radius_ms=60.):
+    """Suppress isolated estimation spikes over elapsed time, never fill gaps."""
+    values, times = np.asarray(values, dtype=float), np.asarray(times, dtype=float)
+    output = values.copy()
+    for i, t in enumerate(times):
+        window = values[np.abs(times - t) <= radius_ms]
+        if np.isfinite(values[i]) and np.isfinite(window).all():
+            output[i] = np.median(window)
+    return output
+
+
+def _leg_extension_continuity(rows, times, prep_end, peak):
+    """Net same-leg extension / total flexion variation near the forward swing.
+
+    The preparatory load apex is sought only from 200 ms before acceleration;
+    earlier split steps and waiting bounces are outside this measurement.
+    No preferred knee depth, actual force, or ground contact is inferred.
+    """
+    start = int(np.searchsorted(times, times[prep_end - 1] - 200))
+    choices = []
+    for leg in ("left", "right"):
+        values = _valid([row[f"{leg}_knee_flexion"] for row in rows[start:peak + 1]], minimum=1.)
+        if values is None or len(values) < 5:
+            continue
+        values = _temporal_median(values, times[start:peak + 1])
+        prep_count = prep_end - start
+        apex = max(range(prep_count), key=lambda i: (round(values[i], 7), i))
+        trace = values[apex:]
+        net = max(0., float(trace[0] - trace[-1]))
+        travel = float(np.abs(np.diff(trace)).sum())
+        # A continuous three-degree denominator floor prevents tiny estimation
+        # changes receiving full credit; this is not a target knee excursion.
+        ratio = net / max(travel, 3.)
+        choices.append((net, ratio))
+    return max(choices, key=lambda item: item[0])[1] if choices else None
+
+
+def _follow_deceleration(wrist, times, peak, reason_codes=None):
+    """Net speed reduction / total speed variation before the first recovery.
+
+    Search at most 450 ms for the FIRST local trough supported by 80 ms of
+    renewed movement. Later recovery acceleration is outside the measurement.
+    A serve's overhead-position pivot is not automatically a wrist-speed peak.
+    Absent an observed speed peak and recovery trough, this measure is missing.
+    """
+    def unavailable(code):
+        if reason_codes is not None:
+            reason_codes.append(code)
+        return None
+    speed = _local_speed(wrist, times)
+    if len(speed) < 7 or not np.isfinite(speed).all() or times[-1] - times[peak] < 160:
+        return unavailable("follow_deceleration_incomplete_window")
+    # The centered five-observation fit already suppresses a joint spike.
+    # Another median would erase short, genuine recovery troughs at 50/60 fps.
+    local = speed[np.abs(times - times[peak]) <= 60]
+    if speed[peak] < float(np.max(local)) - 1e-7:
+        return unavailable("follow_deceleration_anchor_not_wrist_speed_peak")
+    end = int(np.searchsorted(times, times[peak] + 450, side="right"))
+    stop = None
+    for i in range(peak + 2, end):
+        if times[i] + 80 > times[-1] + 1e-7:
+            break
+        left = int(np.searchsorted(times, times[i] - 80))
+        right = int(np.searchsorted(times, times[i] + 80, side="right"))
+        before, after = speed[max(peak, left):i], speed[i + 1:right]
+        if (len(before) < 2 or len(after) < 2 or speed[i] >= speed[peak] - 1e-7
+                or np.min(before) < speed[i] - 1e-7 or np.min(after) < speed[i] - 1e-7):
+            continue
+        # A supported return to motion identifies the boundary. Tiny noisy
+        # sign changes alone do not establish a recovery phase.
+        if float(np.max(after) - speed[i]) >= .1 * speed[peak]:
+            stop = i
+            break
+    if stop is None:
+        return unavailable("follow_deceleration_recovery_trough_unobserved")
+    trace = speed[peak:stop + 1]
+    travel = float(np.abs(np.diff(trace)).sum())
+    return float(np.clip((trace[0] - trace[-1]) / travel, 0, 1)) if travel > 1e-7 else None
+
+
+def _follow_active_fraction(steps, times, peak):
+    """Active share of the first two thirds of elapsed follow-through time."""
+    cutoff = times[peak] + (times[-1] - times[peak]) * 2 / 3
+    step_ms = np.diff(times)[peak:]
+    observed_ms = np.clip(np.minimum(times[peak + 1:], cutoff) - times[peak:-1], 0., None)
+    return float(np.sum(observed_ms[steps[peak:] / (step_ms / 1000) > .36]) / np.sum(observed_ms))
 
 
 def _score_window(segment, window):
@@ -390,22 +505,35 @@ def _score_window(segment, window):
     core_a, core_b = max(0, peak - 2), min(len(rows), peak + 3)
     core, post = rows[core_a:core_b], rows[peak:]
     values = {}
+    quality_codes = ["preparation_start_clipped_by_source_boundary"] if meta.get("preparation_start_clipped") else []
     def put(key, value, score):
         if _finite(float(value)) and _finite(float(score)):
             values[key] = (float(value), float(np.clip(score, 0, 100)))
     knee_preparation = {leg: _valid([row[f"{leg}_knee_flexion"] for row in prep]) for leg in ("left", "right")}
-    loads = [float(np.nanquantile(v, .75)) for v in knee_preparation.values() if v is not None]
+    loads = [(_time_mean(v, t[:prep_end]), _time_mean([_ramp(x, 0, 15) for x in v], t[:prep_end]))
+             for v in knee_preparation.values() if v is not None]
+    loads = [item for item in loads if all(v is not None for v in item)]
     if loads:
-        v = max(loads)
-        put("knee_load", v, _ramp(v, 0, 15))
+        v, score = max(loads, key=lambda item: item[1])
+        put("knee_load", v, score)
     stance = _valid([row["stance_width_hips"] for row in prep])
     if stance is not None and meta["family"] != "serve":
-        v = float(np.nanmedian(stance))
-        put("support_control", v, _ramp(v, .5, 1.))
+        v = _time_mean(stance, t[:prep_end])
+        score = _time_mean([_ramp(x, .5, 1.) for x in stance], t[:prep_end])
+        if v is not None and score is not None:
+            put("support_control", v, score)
+    extension_continuity = _leg_extension_continuity(rows, t, prep_end, peak)
+    if extension_continuity is not None:
+        put("leg_extension_continuity", extension_continuity, 100 * extension_continuity)
     sep = _smooth([row["separation"] for row in rows])
     prep_sep = sep[:prep_end]
     coil = float(np.quantile(prep_sep, .9))
-    put("coil", coil, _band(coil, 0, 15, 45, 80))
+    # The last half of preparation should sustain the turning posture. A single
+    # best sample no longer stands in for the complete preparation phase.
+    settled = int(np.searchsorted(t[:prep_end], (t[0] + t[prep_end - 1]) / 2))
+    settled = min(settled, prep_end - 2)
+    put("coil", _time_mean(prep_sep[settled:], t[settled:prep_end]),
+        _time_mean([_band(x, 0, 15, 45, 80) for x in prep_sep[settled:]], t[settled:prep_end]))
     prep_wrist = wrist[:prep_end]
     distance = np.r_[0, np.cumsum(np.linalg.norm(np.diff(prep_wrist, axis=0), axis=1))]
     delta = float(np.ptp(prep_sep))
@@ -442,25 +570,37 @@ def _score_window(segment, window):
             gap = max(0., t[trunk] - t[lower] - .5 * (t[peak] - t[0]))
             v = (disorder + gap) / max(1., t[peak] - t[0])
             put("release_sequence", v, 100 - _ramp(v, 0, .5))
-    heads = [r["head"] for r in core]
+    # Evaluate the whole forward acceleration, not just a fortunate five-frame
+    # snapshot at its fastest point. Head turns about the torso-up axis remain
+    # excluded, because front/back nose motion is not loss of head control.
+    striking_start = max(0, prep_end - 1)
+    striking_end = min(len(rows), max(peak + 2, int(np.searchsorted(t, t[peak] + 80, side="right"))))
+    striking_rows = rows[striking_start:striking_end]
+    striking_times = t[striking_start:striking_end]
+    heads = [r["head"] for r in striking_rows]
     if sum(v is not None for v in heads) / len(heads) >= .7:
         # Ear midpoint preferred. Ignore front/back nose motion from normal head turns.
         h = np.asarray([v for v in heads if v is not None])[:, :2]
         v = float(np.quantile(np.linalg.norm(h - np.median(h, axis=0), axis=1), .9))
         put("head_control", v, 100 - _ramp(v, .05, .2))
-    reach = _valid([r[f"{side}_reach"] for r in core])
+    reach = _valid([r[f"{side}_reach"] for r in striking_rows])
     if reach is not None:
-        v = float(np.nanmedian(reach))
-        put("arm_space", v, _band(v, .3, .65, 1, 1.15))
+        v = _time_mean(reach, striking_times)
+        score = _time_mean([_band(x, .3, .65, 1, 1.15) for x in reach], striking_times)
+        if v is not None and score is not None:
+            put("arm_space", v, score)
     steps = np.linalg.norm(np.diff(wrist, axis=0), axis=1)
     before, after = float(sum(steps[:peak])), float(sum(steps[peak:]))
     if before >= .12:
         v = after / before
-        post_steps = steps[peak:]
-        active_slice = post_steps[:max(2, int(math.ceil(len(post_steps) * 2 / 3)))]
-        active_fraction = float(np.mean(active_slice > .012))
+        # Clip elapsed intervals at the first two thirds of follow-through,
+        # instead of taking two thirds of its frames in a VFR recording.
+        active_fraction = _follow_active_fraction(steps, t, peak)
         # A long isolated step cannot substitute for a continuous follow-through.
         put("follow_path", v, .5 * _ramp(v, .05, .35) + .5 * _ramp(active_fraction, .35, .8))
+    deceleration = _follow_deceleration(wrist, t, peak, quality_codes)
+    if deceleration is not None:
+        put("follow_deceleration", deceleration, 100 * deceleration)
     post_knee = _valid([r["knee"] for r in post])
     continuity = None
     if len(post) >= 5:
@@ -479,7 +619,7 @@ def _score_window(segment, window):
             "source_track_id": rows[0]["track"], "source_selection_epoch": rows[0]["reference"][0],
             "camera_reference_epoch": rows[0]["reference"][1], "active_arm": side,
             "candidate_window": {key: meta[key] for key in ("candidate_start_ms", "candidate_peak_ms", "candidate_end_ms")},
-            "quality_reason_codes": ["preparation_start_clipped_by_source_boundary"] if meta.get("preparation_start_clipped") else [],
+            "quality_reason_codes": quality_codes,
             "phase_refinement": "source_bound_serve_overhead_pivot" if meta["family"] == "serve" else "native_3d_active_arm_in_bounded_candidate_context",
             "anchor_semantics": "source_bound_overhead_extension_not_ball_contact" if meta["family"] == "serve" else "body_relative_arm_motion_peak_not_ball_contact",
             "frame_count": len(rows), "metrics": values}
@@ -494,6 +634,7 @@ def _empty(job_id, sha):
                            for key, label in DIMENSIONS],
             "strengths": [], "improvements": [], "episodes": [], "observation_count": 0,
             "reason_zh": "尚无足够连续的主球员挥拍姿态。", "quality_reason_counts": {},
+            "candidate_accounting": {"proposed_count": 0, "accepted_count": 0, "rejected_count": 0, "rejection_counts": {}},
             "rubric": {"version": RUBRIC_VERSION, "semantics": "engineering_action_quality", "coach_calibrated": False,
                        "identity_labels_used": False, "confidence_used_in_score": False,
                        "aggregation": "mean_episode_dimension_scores_then_equal_dimension_mean",
@@ -501,20 +642,26 @@ def _empty(job_id, sha):
                        "coordinate_reference": "per_frame_hip_torso_body_basis", "ball_contact_assumed": False,
                        "score_range": [0, 100], "minimum_metric_coverage": .7,
                        "numeric_rule_origin": "versioned_engineering_initial_rules",
+                       "static_metric_integration": "trapezoidal_actual_pts_mean_of_per_observation_rules_no_missing_interpolation",
+                       "integrated_metric_ids": ["knee_load", "support_control", "coil", "arm_space"],
+                       "missing_metrics_renormalized": True,
+                       "scope": "visible_body_motion_not_competitive_level_or_ball_outcome",
                        "action_window_semantics": "continuous_body_relative_arm_motion_not_verified_ball_strike",
                        "phase_velocity_estimator": "centered_five_observation_linear_fit_actual_decoder_pts",
                        "profiles": ["groundstroke_general", "serve"],
-                       "serve_profile": SERVE_RUBRIC,
+                       "serve_profile": {key: value for key, value in SERVE_RUBRIC.items() if key != "internal_sources"},
                        "rules": {
-                           "knee_load": {"curve": "increasing_saturating_ramp", "knots": [0, 15], "measurement": "full_preparation_per_leg_p75_then_max", "semantics": "preparation_participation_not_unique_optimal_knee_depth"},
-                           "support_control": {"curve": "increasing_saturating_ramp", "knots": [.5, 1.], "geometry": "three_dimensional_ankle_distance_divided_by_hip_width", "semantics": "ready_stance_extent_not_balance_or_ground_reaction", "families": ["baseline", "return"]},
-                           "coil": {"curve": "trapezoid", "knots": [0, 15, 45, 80]},
+                           "knee_load": {"curve": "time_mean_increasing_saturating_ramp", "knots": [0, 15], "measurement": "full_preparation_per_leg_time_mean_then_best_observed_leg", "semantics": "preparation_participation_not_unique_optimal_knee_depth"},
+                           "support_control": {"curve": "time_mean_increasing_saturating_ramp", "knots": [.5, 1.], "geometry": "three_dimensional_ankle_distance_divided_by_hip_width", "semantics": "ready_stance_extent_not_balance_or_ground_reaction", "families": ["baseline", "return"]},
+                           "coil": {"curve": "time_mean_trapezoid", "knots": [0, 15, 45, 80], "phase": "last_half_preparation"},
+                           "leg_extension_continuity": {"curve": "100_times_net_extension_divided_by_max_total_angle_variation_and_3deg", "phase": "preparation_load_apex_within_200ms_before_acceleration_to_wrist_peak", "denominator_floor_deg": 3., "temporal_median_radius_ms": 60., "same_leg_required": True, "true_force_assumed": False},
                            "preparation_sync": {"curve": "decreasing_ramp", "knots": [.15, .5], "minimum_separation_range_deg": 3, "minimum_wrist_path_torso": .12},
                            "release_sequence": {"curve": "decreasing_ramp", "knots": [0, .5], "minimum_joint_range_deg": 3, "simultaneous_tolerance_frames": 1},
                            "coil_release": {"curve": "increasing_saturating_ramp", "knots": [.05, .55], "minimum_preparation_separation_deg": 5},
-                           "head_control": {"curve": "decreasing_ramp", "knots": [.05, .2]},
-                           "arm_space": {"curve": "trapezoid", "knots": [.3, .65, 1, 1.15]},
-                           "follow_path": {"curve": "equal_mean_path_and_sustained_motion", "path_knots": [.05, .35], "active_fraction_knots": [.35, .8]},
+                           "head_control": {"curve": "decreasing_ramp", "knots": [.05, .2], "phase": "acceleration_onset_to_peak_plus_80ms"},
+                           "arm_space": {"curve": "time_mean_trapezoid", "knots": [.3, .65, 1, 1.15], "phase": "acceleration_onset_to_peak_plus_80ms"},
+                           "follow_deceleration": {"curve": "100_times_net_speed_reduction_divided_by_total_speed_variation", "phase": "observed_wrist_speed_peak_to_first_supported_recovery_trough_within_450ms", "trough_lookahead_ms": 80., "minimum_recovery_speed_increase_fraction_of_peak": .1, "velocity_estimator": "centered_five_observation_linear_fit_actual_decoder_pts", "missing_without_complete_boundary": True, "speed_reference": "body_relative_wrist_torso_per_second", "racket_or_ball_speed_assumed": False},
+                           "follow_path": {"curve": "equal_mean_path_and_sustained_motion", "path_knots": [.05, .35], "active_fraction_knots": [.35, .8], "active_speed_floor_torso_per_second": .36, "active_fraction_weighting": "elapsed_decoder_pts"},
                            "recovery_control": {"curve": "equal_mean_angular_motion_continuity_and_knee_load", "excess_velocity_variation_knots": [.5, 4.],
                                                 "angle_noise_floor_deg": 3., "normal_velocity_envelope": "two_times_max_absolute_velocity",
                                                 "angle_semantics": "signed_relative_axis_unwrapped_modulo_180_degrees", "knee_knots": [0, 15]}}}}
@@ -525,10 +672,16 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
     result = _empty(source_run_id, video_sha256.lower())
     result["dimensions"] = []
     segments, reasons = _segments(timeline, records, video_sha256.lower())
-    episodes = [_score_window(segment, window) for segment, window in _bound_windows(segments, motion_episodes, video_sha256.lower())]
+    motion_episodes = list(motion_episodes)
+    rejected = Counter()
+    episodes = [_score_window(segment, window) for segment, window in _bound_windows(segments, motion_episodes, video_sha256.lower(), rejected)]
+    result["candidate_accounting"] = {"proposed_count": len(motion_episodes), "accepted_count": len(episodes),
+                                      "rejected_count": len(motion_episodes) - len(episodes), "rejection_counts": dict(rejected)}
     result["episodes"] = [{**e, "metrics": {k: {"value": round(v[0], 5), "score": round(v[1], 2)} for k, v in e["metrics"].items()}} for e in episodes]
     result["quality_reason_counts"] = dict(reasons)
     result["observation_count"] = len(episodes)
+    if not episodes and motion_episodes:
+        result["reason_zh"] = f"识别到 {len(motion_episodes)} 个动作候选，但没有片段同时满足来源一致、阶段完整和连续主球员姿态要求。"
     families = {e["family"] for e in episodes}
     for identifier, label in DIMENSIONS:
         definitions = dict((row[0], row) for row in (SERVE_METRICS[identifier] if families == {"serve"} else METRICS[identifier]))
@@ -555,8 +708,14 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
         result["overall_score"] = round(float(np.mean([d["score"] for d in available])), 2)
         result["status"] = "scored" if len(available) == 5 else "partial"
         result["reason_zh"] = f"已分析 {len(episodes)} 个连续动作片段。"
-        result["strengths"] = [{"title": d["label"], "observation": f"{d['observation_count']} 次动作中，{d['label']}为 {d['score']:.1f} 分。"}
-                               for d in sorted(available, key=lambda d: -d["score"])[:2] if d["score"] >= 60]
+        result["strengths"] = []
+        for dimension in sorted(available, key=lambda d: -d["score"]):
+            strong = max((m for m in dimension["metrics"] if m["score"] is not None), key=lambda m: m["score"])
+            advice = strength_for_metric(strong["id"], strong["value"], family="serve" if families == {"serve"} else "baseline", score=strong["score"])
+            if advice:
+                result["strengths"].append(advice)
+            if len(result["strengths"]) == 2:
+                break
         for d in sorted(available, key=lambda d: d["score"])[:2]:
             weak = min((m for m in d["metrics"] if m["score"] is not None), key=lambda m: m["score"])
             example = min((e for e in episodes if weak["id"] in e["metrics"]), key=lambda e: e["metrics"][weak["id"]][1])

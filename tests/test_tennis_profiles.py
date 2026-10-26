@@ -35,7 +35,8 @@ def calculate(rows, side="right", recovery_continuity=(.1, 100.)):
                                       "preparation_sync": (0., 100.), "head_control": (0., 100.),
                                       "arm_space": (.98, 100.), "release_sequence": (0., 100.),
                                       "support_control": (.08, 100.), "follow_path": (.8, 100.),
-                                      "knee_load": (55., 100.), "recovery_control": (0., 100.)})
+                                      "knee_load": (55., 100.), "recovery_control": (0., 100.),
+                                      "leg_extension_continuity": (.8, 80.), "follow_deceleration": (.9, 90.)})
 
 
 class TennisServeProfileTests(unittest.TestCase):
@@ -43,7 +44,9 @@ class TennisServeProfileTests(unittest.TestCase):
         result = calculate(serve_rows())
         expected = {metric[0] for metrics in SERVE_METRICS.values() for metric in metrics}
         self.assertEqual(set(result), expected)
-        self.assertEqual(len(result), 9)
+        self.assertEqual(len(result), 11)
+        self.assertEqual(result["leg_extension_continuity"], (.8, 80.))
+        self.assertEqual(result["follow_deceleration"], (.9, 90.))
         self.assertNotIn("coil", result)
         self.assertNotIn("coil_release", result)
         for value, score in result.values():
@@ -61,12 +64,14 @@ class TennisServeProfileTests(unittest.TestCase):
         self.assertEqual(calculate(normal)["knee_load"][1], 100.)
         self.assertEqual(calculate(deep)["knee_load"], (95., 100.))
 
-    def test_loading_uses_whole_preparation_before_the_legs_extend(self):
+    def test_loading_integrates_whole_preparation_instead_of_one_best_posture(self):
         rows = serve_rows()
         for i, row in enumerate(rows[:14]):
             knee = 45. if i < 7 else 0.
             row.update(knee=knee, left_knee_flexion=knee, right_knee_flexion=knee)
-        self.assertEqual(calculate(rows)["knee_load"], (45., 100.))
+        value, score = calculate(rows)["knee_load"]
+        self.assertAlmostEqual(value, 22.5)
+        self.assertAlmostEqual(score, 50.)
 
     def test_serve_stance_width_and_torso_up_projection_do_not_change_scores(self):
         normal, varied = serve_rows(), serve_rows()
