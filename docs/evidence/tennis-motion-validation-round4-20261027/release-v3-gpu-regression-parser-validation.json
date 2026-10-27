@@ -1,0 +1,55 @@
+{
+  "created_at_utc": "2026-10-27T05:56:05.545Z",
+  "passed": true,
+  "count": 4,
+  "parser_sha256": "5b8f2780159bf76e1d8dbdbd9249e146cd4376c343eb7adbde5eed212127f9b0",
+  "parser_unchanged": true,
+  "manifest_sha256": "c54fb6cc91adcabdd7caf3de595ed3b23a419117656503a7e60432358e8731e0",
+  "evaluation_sha256": "efaea777d3ad95fe16aeb06f835372f61eb59cc285c10c70ccc1f2e1ac066882",
+  "results": [
+    {
+      "sample_id": "gpu-pink",
+      "sha256": "a24b07c736e347c9dcb39b2c799cab60d0085428754436de82d216dd20d3d030",
+      "accepted": true,
+      "independent_duration_ms": 72333,
+      "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "score_unchanged": true,
+      "episodes_unchanged": true,
+      "wrong_video_rejected": true,
+      "wrong_job_rejected": true
+    },
+    {
+      "sample_id": "gpu-night",
+      "sha256": "51bac2011de86d342d8bd354d3e6974b08fb39c2d32de1c63f2b466f539935ec",
+      "accepted": true,
+      "independent_duration_ms": 217433,
+      "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "score_unchanged": true,
+      "episodes_unchanged": true,
+      "wrong_video_rejected": true,
+      "wrong_job_rejected": true
+    },
+    {
+      "sample_id": "gpu-federer",
+      "sha256": "170476c43dde47d0a8aa07ca63aa1b653cbfb068618965af387430adf6b968bf",
+      "accepted": true,
+      "independent_duration_ms": 7674,
+      "source_video_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+      "score_unchanged": true,
+      "episodes_unchanged": true,
+      "wrong_video_rejected": true,
+      "wrong_job_rejected": true
+    },
+    {
+      "sample_id": "gpu-white",
+      "sha256": "7527f4ca52fb331131ed2a17e92bcf56768af9f6f4bf8b21d225399e069d25af",
+      "accepted": true,
+      "independent_duration_ms": 79233,
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "score_unchanged": true,
+      "episodes_unchanged": true,
+      "wrong_video_rejected": true,
+      "wrong_job_rejected": true
+    }
+  ]
+}

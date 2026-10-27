@@ -1,0 +1,159 @@
+{
+  "version": "initial-subject-native-binding-proof-v1",
+  "source_video_sha256": "741364DF8F7295E25CFDDF97A03D28D1BA43B1AC07E571A32DE76A8157BEEACF",
+  "frames": 360,
+  "selected_rows": 172,
+  "native_ok_rows": 344,
+  "max_players": 2,
+  "all_selected_rows_bound_to_same_source_frame_track_selection_and_camera_epochs": true,
+  "all_original_source_frame_and_pts_order_preserved": true,
+  "all_artifact_hashes_match_validation_summary": true,
+  "code_changed_during_execution": false,
+  "prefix_rows": [
+    {
+      "processed_index": 15,
+      "timestamp_ms": 500,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 15015,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 234
+      }
+    },
+    {
+      "processed_index": 16,
+      "timestamp_ms": 534,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 16016,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 200
+      }
+    },
+    {
+      "processed_index": 17,
+      "timestamp_ms": 567,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 17017,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 167
+      }
+    },
+    {
+      "processed_index": 18,
+      "timestamp_ms": 601,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 18018,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 133
+      }
+    },
+    {
+      "processed_index": 19,
+      "timestamp_ms": 634,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 19019,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 100
+      }
+    },
+    {
+      "processed_index": 20,
+      "timestamp_ms": 667,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 20020,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 67
+      }
+    },
+    {
+      "processed_index": 21,
+      "timestamp_ms": 701,
+      "person_track_id": 2,
+      "selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "pts": 21021,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "confirmation": {
+        "version": "initial-subject-prefix-v1",
+        "original_status": "unknown",
+        "original_reason_code": "athlete_role_not_established",
+        "confirmation_source_frame_index": 22,
+        "confirmation_timestamp_ms": 734,
+        "lookahead_ms": 33
+      }
+    }
+  ],
+  "candidate_count": 1,
+  "duration_seconds": 75.232,
+  "limitations": [
+    "Initial prefix 0–467ms remains unknown because clothing evidence to the later anchor is insufficient.",
+    "Serve candidate recovered; full follow-through is still unavailable after 2035ms identity interruption and no observed slowdown closure."
+  ],
+  "artifact_sha256": {
+    "frames.jsonl": "4D3E44C1D254BB17EC6830FFEAE8754E817BDF0A4FF8902AD35C2AEBA8E0519D",
+    "sam3d_frames.jsonl": "96BC4C7C4D008A6C0233EC4A58E8A39492C46870BCFE27FDBB12308C8C2AC9A1",
+    "primary-player.jsonl": "ED2F6B3CC7A22A62BBB8744D68F12B7B459AAF1CC9FAE547C03E84B265D448D5",
+    "action-recognition.json": "0D5B31A1422C9B2E5D763321B2E128395F21986D0F653DEA189E5F6FD12DCAAE"
+  },
+  "code_sha256": {
+    "rallymate_scoring/stroke_analysis.py": "AF9765F1D5267F072642CFE4239ACA304E72BA32FD506038E770E91A0DDF272F",
+    "rallymate_scoring/stroke_candidates.py": "2E2F57071E3E3BC0CBD0F37121843FE399E5E14BFE2AE34C901A95F5E8F185AD",
+    "rallymate_scoring/temporal_recognition.py": "F96B4D81278ABB65D8D81DB71659C29149A746DCECA15134F885D2139E39690B",
+    "rallymate_tracking/initial_subject_buffer.py": "41C5F47FDD95D4F797EF2F30E6AC57D40D892CB90E297B03C8552676E2312A66",
+    "rallymate_vision/pipeline.py": "7E2E0896CC11B24278CD21A1CD9D8646EFC09F9B7FB2008C894D804B1C5ABF85"
+  }
+}

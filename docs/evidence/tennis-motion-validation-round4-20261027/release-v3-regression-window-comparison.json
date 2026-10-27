@@ -1,0 +1,625 @@
+{
+  "version": "tennis-action-window-comparison-v1",
+  "reference_sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+  "evaluation_sha256": "fce20197af3fdccaae798acaa634be87d502f4cc5b7c045ded69e86e099c0070",
+  "runner_sha256": "3a3ef4d1d2bb2882ba46695cfef31480937415c44205763030046a368f7fb6d5",
+  "manual_references_used_in_predictions": false,
+  "expert_ground_truth": false,
+  "semantics": "one_to_one_visual_anchor_localization_and_separate_phase_support_not_contact_accuracy",
+  "cases": [
+    {
+      "sample_id": "regression-ordinary-b",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "raw_candidates": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 1,
+        "all_three_phase_observations_covered_count": 1,
+        "matches": [
+          {
+            "manual_action_id": "ordinaryb-serve-1",
+            "prediction_id": "2f0bd5ffd2ad5bbe7912",
+            "window_ms": [
+              333,
+              1367,
+              1500
+            ],
+            "anchor_error_ms": 67,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": true,
+            "observed_technique": "serve",
+            "predicted_family": "serve",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              0,
+              1050
+            ],
+            "prediction_ids": []
+          }
+        ]
+      },
+      "scored_episodes": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 1,
+        "all_three_phase_observations_covered_count": 1,
+        "matches": [
+          {
+            "manual_action_id": "ordinaryb-serve-1",
+            "prediction_id": "2f0bd5ffd2ad5bbe7912",
+            "window_ms": [
+              133.333,
+              1366.667,
+              1766.667
+            ],
+            "anchor_error_ms": 66.667,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": true,
+            "observed_technique": "serve",
+            "predicted_family": "serve",
+            "predicted_profile": "serve",
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              0,
+              1050
+            ],
+            "prediction_ids": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "raw_candidates": {
+        "reference_count": 2,
+        "prediction_count_in_reviewed_intervals": 2,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [
+          {
+            "manual_action_id": "white-fh-5",
+            "prediction_id": "0f11c1bb5000a653670a",
+            "window_ms": [
+              22200,
+              22300,
+              22633
+            ],
+            "anchor_error_ms": -300,
+            "anchor_within_declared_uncertainty": false,
+            "reviewed_phase_observations_covered": {
+              "preparation": false,
+              "forward_swing": true,
+              "follow_through": false
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [
+          "white-fh-6"
+        ],
+        "unmatched_predictions": [
+          {
+            "candidate_id": "bf6b6a495140782d0140",
+            "episode_id": null,
+            "person_track_id": 1,
+            "start_ms": 28500,
+            "peak_ms": 28600,
+            "end_ms": 29067,
+            "family": "baseline"
+          }
+        ],
+        "negative_interval_predictions": [
+          {
+            "kind": "recovery_walking_ball_retrieval",
+            "window": [
+              23500,
+              27800
+            ],
+            "prediction_ids": []
+          }
+        ]
+      },
+      "scored_episodes": {
+        "reference_count": 2,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 1,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [
+          {
+            "manual_action_id": "white-fh-5",
+            "prediction_id": "0f11c1bb5000a653670a",
+            "window_ms": [
+              22166.667,
+              22600.0,
+              23433.333
+            ],
+            "anchor_error_ms": 0.0,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": false,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": "generic",
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [
+          "white-fh-6"
+        ],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "recovery_walking_ball_retrieval",
+            "window": [
+              23500,
+              27800
+            ],
+            "prediction_ids": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "raw_candidates": {
+        "reference_count": 3,
+        "prediction_count_in_reviewed_intervals": 3,
+        "localized_count": 3,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [
+          {
+            "manual_action_id": "night-fh-2",
+            "prediction_id": "8679cdb5df451de9bf43",
+            "window_ms": [
+              12167,
+              12467,
+              12733
+            ],
+            "anchor_error_ms": 267,
+            "anchor_within_declared_uncertainty": false,
+            "reviewed_phase_observations_covered": {
+              "preparation": false,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          },
+          {
+            "manual_action_id": "night-fh-3",
+            "prediction_id": "ed174f4c53c2a62f139e",
+            "window_ms": [
+              21833,
+              22333,
+              22433
+            ],
+            "anchor_error_ms": 466,
+            "anchor_within_declared_uncertainty": false,
+            "reviewed_phase_observations_covered": {
+              "preparation": false,
+              "forward_swing": false,
+              "follow_through": false
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          },
+          {
+            "manual_action_id": "night-unknown-4",
+            "prediction_id": "013dacec6f7bae26ebfa",
+            "window_ms": [
+              25200,
+              25800,
+              25900
+            ],
+            "anchor_error_ms": 400,
+            "anchor_within_declared_uncertainty": false,
+            "reviewed_phase_observations_covered": {
+              "preparation": false,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "unknown",
+            "predicted_family": "baseline",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              10833,
+              11500
+            ],
+            "prediction_ids": []
+          },
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              20200,
+              20933
+            ],
+            "prediction_ids": []
+          }
+        ]
+      },
+      "scored_episodes": {
+        "reference_count": 3,
+        "prediction_count_in_reviewed_intervals": 3,
+        "localized_count": 3,
+        "anchor_within_uncertainty_count": 3,
+        "all_three_phase_observations_covered_count": 1,
+        "matches": [
+          {
+            "manual_action_id": "night-fh-2",
+            "prediction_id": "8679cdb5df451de9bf43",
+            "window_ms": [
+              10966.667,
+              12200.0,
+              12500.0
+            ],
+            "anchor_error_ms": 0.0,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": true,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": "generic",
+            "localized_only_not_confirmed_contact": true
+          },
+          {
+            "manual_action_id": "night-fh-3",
+            "prediction_id": "ed174f4c53c2a62f139e",
+            "window_ms": [
+              20500.0,
+              21866.667,
+              22133.333
+            ],
+            "anchor_error_ms": -0.333,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": false
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": "generic",
+            "localized_only_not_confirmed_contact": true
+          },
+          {
+            "manual_action_id": "night-unknown-4",
+            "prediction_id": "013dacec6f7bae26ebfa",
+            "window_ms": [
+              24766.667,
+              25400.0,
+              25633.333
+            ],
+            "anchor_error_ms": 0.0,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": false
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "unknown",
+            "predicted_family": "baseline",
+            "predicted_profile": "generic",
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              10833,
+              11500
+            ],
+            "prediction_ids": []
+          },
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              20200,
+              20933
+            ],
+            "prediction_ids": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "source_video_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+      "raw_candidates": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 1,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [
+          {
+            "manual_action_id": "holdout-ordinary-user-existing-manual-1",
+            "prediction_id": "b14e469fbe247938b2f4",
+            "window_ms": [
+              0,
+              633,
+              767
+            ],
+            "anchor_error_ms": 0,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": false
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "serve",
+            "predicted_family": "serve",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": []
+      },
+      "scored_episodes": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 1,
+        "all_three_phase_observations_covered_count": 1,
+        "matches": [
+          {
+            "manual_action_id": "holdout-ordinary-user-existing-manual-1",
+            "prediction_id": "b14e469fbe247938b2f4",
+            "window_ms": [
+              0.0,
+              633.333,
+              1033.333
+            ],
+            "anchor_error_ms": 0.333,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": true,
+            "observed_technique": "serve",
+            "predicted_family": "serve",
+            "predicted_profile": "serve",
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": []
+      }
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "source_video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "raw_candidates": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 0,
+        "localized_count": 0,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [],
+        "unlocalized_actions": [
+          "davis05-serve-1"
+        ],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              100,
+              1235
+            ],
+            "prediction_ids": []
+          }
+        ]
+      },
+      "scored_episodes": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 0,
+        "localized_count": 0,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [],
+        "unlocalized_actions": [
+          "davis05-serve-1"
+        ],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "preparation_part_of_following_action",
+            "window": [
+              100,
+              1235
+            ],
+            "prediction_ids": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "source_video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "raw_candidates": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [
+          {
+            "manual_action_id": "mendeley-indoor-side-view-ICS01-manual-1",
+            "prediction_id": "09efd52b183d09ea1dec",
+            "window_ms": [
+              267,
+              350,
+              968
+            ],
+            "anchor_error_ms": -680,
+            "anchor_within_declared_uncertainty": false,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": false,
+              "follow_through": false
+            },
+            "all_reviewed_phase_observations_covered": false,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": null,
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": []
+      },
+      "scored_episodes": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 1,
+        "localized_count": 1,
+        "anchor_within_uncertainty_count": 1,
+        "all_three_phase_observations_covered_count": 1,
+        "matches": [
+          {
+            "manual_action_id": "mendeley-indoor-side-view-ICS01-manual-1",
+            "prediction_id": "09efd52b183d09ea1dec",
+            "window_ms": [
+              417.083,
+              1001.0,
+              1284.617
+            ],
+            "anchor_error_ms": -29.0,
+            "anchor_within_declared_uncertainty": true,
+            "reviewed_phase_observations_covered": {
+              "preparation": true,
+              "forward_swing": true,
+              "follow_through": true
+            },
+            "all_reviewed_phase_observations_covered": true,
+            "observed_technique": "baseline_forehand",
+            "predicted_family": "baseline",
+            "predicted_profile": "generic",
+            "localized_only_not_confirmed_contact": true
+          }
+        ],
+        "unlocalized_actions": [],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": []
+      }
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "raw_candidates": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 0,
+        "localized_count": 0,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [],
+        "unlocalized_actions": [
+          "dimitrov-near-return-fh-1"
+        ],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "return_ready_preparation",
+            "window": [
+              0,
+              7600
+            ],
+            "prediction_ids": []
+          }
+        ]
+      },
+      "scored_episodes": {
+        "reference_count": 1,
+        "prediction_count_in_reviewed_intervals": 0,
+        "localized_count": 0,
+        "anchor_within_uncertainty_count": 0,
+        "all_three_phase_observations_covered_count": 0,
+        "matches": [],
+        "unlocalized_actions": [
+          "dimitrov-near-return-fh-1"
+        ],
+        "unmatched_predictions": [],
+        "negative_interval_predictions": [
+          {
+            "kind": "return_ready_preparation",
+            "window": [
+              0,
+              7600
+            ],
+            "prediction_ids": []
+          }
+        ]
+      }
+    }
+  ]
+}

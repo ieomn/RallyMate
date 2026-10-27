@@ -1,0 +1,61 @@
+{
+  "version": "real-native-source-binding-proof-v1",
+  "semantics": "Read-only verification of immutable real GPU native observations. Later candidate/score CPU replays have separate code and artifact hashes; no source pose is relabeled or replaced.",
+  "runs": [
+    {
+      "source_video_sha256": "6919F4C50814602F5CF8496DDAEE2BA1514840956F50850C85E434E4EA043A7A",
+      "frame_count": 1795,
+      "selected_frames": 1138,
+      "native_ok": 1138,
+      "failures": [],
+      "all_selected_rows_bound_to_same_frame_pts_track_selection_and_camera_epochs": true,
+      "source_order_preserved": true,
+      "artifact_hashes_match_capture_validation": true,
+      "capture_code_changed_during_execution": false,
+      "native_capture_recognizer_version": "pose-racket-stroke-candidates-v2.2.0",
+      "artifact_sha256": {
+        "frames.jsonl": "33662FC5B46C81271DA03D919C91E23095FAAAEBC9084E8FB2FC5EA8E3A240CA",
+        "sam3d_frames.jsonl": "2C1F9CDEDB016CAF5095F296A18162CD7C2ADE62BA00D40AFBA7318E321D98B2",
+        "primary-player.jsonl": "890AD650F60F9FA708A382BBD6EDB253F66B4522897574A543BEF0A0D5FE5BE7",
+        "action-recognition.json": "1CF350E98A7F1D14439300C7EEB2D2FCAE31632EB1EB8386F71F409356075A6B"
+      }
+    },
+    {
+      "source_video_sha256": "099281827DC2CC37426D7D41026AB742B08CB198E846AED2FE1E8EEFC6042D66",
+      "frame_count": 74,
+      "selected_frames": 74,
+      "native_ok": 74,
+      "failures": [],
+      "all_selected_rows_bound_to_same_frame_pts_track_selection_and_camera_epochs": true,
+      "source_order_preserved": true,
+      "artifact_hashes_match_capture_validation": true,
+      "capture_code_changed_during_execution": false,
+      "native_capture_recognizer_version": "pose-racket-stroke-candidates-v2.2.0",
+      "artifact_sha256": {
+        "frames.jsonl": "C684E3B96135A1B2B2D0682B4B95967D95469642AE51E9341B5CBEA6F625973C",
+        "sam3d_frames.jsonl": "1A8AE3BB8E4680C791B8489982B50D0186AB8585FC3BFBF2FD4C589D49E86858",
+        "primary-player.jsonl": "743A006D86410ABD4599E66E9803DC8C4BEC19B9C008FC1C467C16196A3D90E8",
+        "action-recognition.json": "72171ABBF2394182860B56A990449FA3B8FB50367E8DDDA2657C484C6973582C"
+      }
+    },
+    {
+      "source_video_sha256": "284E951BCD1F1AC5F992C9960E2E61730E22E0B55EAE3C9A7F8678F952EBCD9B",
+      "frame_count": 73,
+      "selected_frames": 73,
+      "native_ok": 73,
+      "failures": [],
+      "all_selected_rows_bound_to_same_frame_pts_track_selection_and_camera_epochs": true,
+      "source_order_preserved": true,
+      "artifact_hashes_match_capture_validation": true,
+      "capture_code_changed_during_execution": false,
+      "native_capture_recognizer_version": "pose-racket-stroke-candidates-v2.2.0",
+      "artifact_sha256": {
+        "frames.jsonl": "4B7E99A1478B35D6B9002DFCAA2999C60D55878042C8C7C07F2CCC0D25E52BF0",
+        "sam3d_frames.jsonl": "5AF9010D372E64A0BD0FEF7C4347CB2948C1B53764323D49299AB759FF46EF0D",
+        "primary-player.jsonl": "78BC4C1948EA8BE38E51723223A68440DF55E00C88F2BD8680338273960EADAB",
+        "action-recognition.json": "673FD184A19197690A7BA861B19AA73FD6C36C64C655CD122B0BD49D3F6EDA96"
+      }
+    }
+  ],
+  "all_passed": true
+}

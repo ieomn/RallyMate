@@ -1,0 +1,76 @@
+{
+  "version": "manual-reference-consistency-check-v1",
+  "passed": true,
+  "sets": 9,
+  "actions": 12,
+  "source_sha_checks": 9,
+  "return_source_frame_checks": 5,
+  "scope": "structural/source binding consistency only; visual labels remain agent observations, not coach ground truth",
+  "reference_sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+  "return_evidence_sha256": "2893a06c1d29012148cacb058ce3a6b026eac8c8ff2f0db7cb068689336825c0",
+  "checks": [
+    {
+      "sample_id": "regression-ordinary-b",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 41233.333,
+      "actions": 1
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 12012.0,
+      "actions": 1
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 217433.333,
+      "actions": 3
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 79233.333,
+      "actions": 2
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 29916.667,
+      "actions": 1
+    },
+    {
+      "sample_id": "thetis-p1_fslice_s1",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 4111.111,
+      "actions": 1
+    },
+    {
+      "sample_id": "thetis-p32_fslice_s1",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 4055.556,
+      "actions": 1
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 26700.0,
+      "actions": 1
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "source_sha_match": true,
+      "ordered_phase_evidence_in_window": true,
+      "source_duration_ms": 1701.7,
+      "actions": 1
+    }
+  ]
+}

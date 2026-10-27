@@ -1,0 +1,1126 @@
+{
+  "version": "segmentation-release-v2-targeted-review-v1",
+  "semantics": "automatic CPU recognition replay on immutable recorded observations; manual source audit is validation only, not a segmentation input",
+  "code_sha256": {
+    "src/rallymate_scoring/stroke_candidates.py": "d31418dc68ed5dc7a2570740ccb2e1a2f2ea3ce526843660d39edb56c989ce4e",
+    "src/rallymate_scoring/stroke_analysis.py": "e22d983841855da6b29462fab4cfdd93524af690d47ad1ea9d370d49ddeb5041",
+    "src/rallymate_scoring/temporal_recognition.py": "403aada2a1e53484869bc15904421e033f4e64c714ea86239464c6acb11d0569"
+  },
+  "final_related_tests": {
+    "count": 185,
+    "status": "passed",
+    "log": "segmentation-release-v2-final-tests.log"
+  },
+  "source_audit": "release-newly-scored-audit.json",
+  "changes": [
+    {
+      "kind": "supporting_motion_grouping",
+      "cause": "raised preparation followed by a stronger reverse sweep did not satisfy the former low-terminal-hand rule",
+      "behavior": "retain raised preparation as supporting context only when held high into the later swing and no independent reset is observed; keep two real strokes with a lower reset separate"
+    },
+    {
+      "kind": "motion_peak_search",
+      "cause": "the candidate crossing can occur in recovery, clipping the earlier actual motion peak despite its presence in validated context",
+      "behavior": "search the existing continuous source context; a sustained 250 ms quiet reset prevents an earlier independent peak from stealing the next action"
+    },
+    {
+      "kind": "ambiguous_phase_rejection",
+      "cause": "without independent hitting-side racket support, one hand can pause while the other performs a strong independent sweep",
+      "behavior": "retain candidate but mark all phases unavailable with exact source-bound ambiguity reason; never use legacy stage fallback; two separated-frame votes at 3:1 dominance can retain the supported wrist chronology without changing the eight-vote stroke-classification gate"
+    }
+  ],
+  "limitations": [
+    "This is not an independent blind accuracy benchmark. Engineering sequence rules changed; scoring curves and weights did not.",
+    "Original white 5.8 s and ordinary B 34.5 s also become phase-ambiguous because the candidate wrist is unsupported or ownership votes conflict. These are real actions with unresolved model phase attribution, not eliminated false actions.",
+    "Existing minimum candidate peak spacing can still merge very fast repeated strokes. Fully off-axis movements may remain review-only.",
+    "Final assessment counts and source audit of all 33 records are delegated to the root release-v2 replay."
+  ],
+  "samples": [
+    {
+      "sample_id": "regression-ordinary-b",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "manifest_input_sha256": {
+        "video": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+        "frames": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+        "timeline": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+        "native": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759"
+      },
+      "frames_and_timeline_unchanged": true,
+      "before_recognition_sha256": "c5ab4052b44553224e2e8fd04fe4a77c9324c078ba88971b50a8dd5e3953a45b",
+      "after_recognition_sha256": "f21cae49dfd2ef092a218aebe771fce9136659fa4b38cb477034d13296da48c0",
+      "before": {
+        "candidate_count": 11,
+        "episodes": [
+          {
+            "episode_id": "cadc10bf0e9dea6869f5",
+            "start_ms": 2933,
+            "peak_ms": 3333,
+            "end_ms": 4267,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 2
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 2300,
+              "end_ms": 4400
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "7928e608c69a872a43b1",
+            "start_ms": 5533,
+            "peak_ms": 5833,
+            "end_ms": 6000,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 7
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 4667,
+              "end_ms": 6000
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "50b02abfcc7bdb381b73",
+            "start_ms": 10933,
+            "peak_ms": 11367,
+            "end_ms": 12000,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 2
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 10667,
+              "end_ms": 12000
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "72525fd4ecaac62b3e35",
+            "start_ms": 13433,
+            "peak_ms": 13933,
+            "end_ms": 14200,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": "right",
+              "separated_wrist_racket_votes": {
+                "right": 10
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 13200,
+              "end_ms": 15333
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "212c687b6a03dfb452f1",
+            "start_ms": 21367,
+            "peak_ms": 21733,
+            "end_ms": 22000,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 21000,
+              "end_ms": 22533
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "e913e3fc3292bf67a13d",
+            "start_ms": 26867,
+            "peak_ms": 27233,
+            "end_ms": 27300,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 26000,
+              "end_ms": 27300
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "a95e926561435004289b",
+            "start_ms": 31833,
+            "peak_ms": 32133,
+            "end_ms": 32400,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": "left",
+              "separated_wrist_racket_votes": {
+                "left": 8
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 30767,
+              "end_ms": 32733
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "446e15e5509f0908b236",
+            "start_ms": 32833,
+            "peak_ms": 33100,
+            "end_ms": 33333,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 12,
+                "right": 10
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 32400,
+              "end_ms": 34833
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "84e663cb96a5d8d2cca0",
+            "start_ms": 34233,
+            "peak_ms": 34533,
+            "end_ms": 34800,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 8,
+                "right": 10
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 33867,
+              "end_ms": 35800
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "0f97c14d2dcb47ccda47",
+            "start_ms": 36533,
+            "peak_ms": 37100,
+            "end_ms": 37467,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 36067,
+              "end_ms": 38100
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "ee75456d80b91d3a28d7",
+            "start_ms": 133,
+            "peak_ms": 1367,
+            "end_ms": 1767,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 5,
+                "left": 7
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 67,
+              "end_ms": 2400
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      },
+      "after": {
+        "candidate_count": 11,
+        "episodes": [
+          {
+            "episode_id": "ff3cf8fae05d867d7cc7",
+            "start_ms": 2933,
+            "peak_ms": 3333,
+            "end_ms": 4267,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 2
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 2300,
+              "end_ms": 4400
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "b5692a33c861be20716f",
+            "start_ms": 5533,
+            "peak_ms": 5833,
+            "end_ms": 6000,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 7
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 4667,
+              "end_ms": 6000
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "8523e7f483c957fd8042",
+            "start_ms": 10933,
+            "peak_ms": 11367,
+            "end_ms": 12000,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 2
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 10667,
+              "end_ms": 12000
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "3868f03ec1467d6239d9",
+            "start_ms": 13433,
+            "peak_ms": 13933,
+            "end_ms": 14200,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": "right",
+              "separated_wrist_racket_votes": {
+                "right": 10
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 13200,
+              "end_ms": 15333
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "14015dcbf0eb60edf733",
+            "start_ms": 21367,
+            "peak_ms": 21733,
+            "end_ms": 22000,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 21000,
+              "end_ms": 22533
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "023ac5cf544817feb1ea",
+            "start_ms": 26867,
+            "peak_ms": 27233,
+            "end_ms": 27300,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 26000,
+              "end_ms": 27300
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "fb69981d46e84700d16e",
+            "start_ms": 31833,
+            "peak_ms": 32133,
+            "end_ms": 32400,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": "left",
+              "separated_wrist_racket_votes": {
+                "left": 8
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 30767,
+              "end_ms": 32733
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "e174c52ab8b76c86aed7",
+            "start_ms": 32833,
+            "peak_ms": 33100,
+            "end_ms": 33333,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 12,
+                "right": 10
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 32400,
+              "end_ms": 34833
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "d98274f8922f626a6416",
+            "start_ms": 34233,
+            "peak_ms": 34533,
+            "end_ms": 34800,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 8,
+                "right": 10
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 33867,
+              "end_ms": 35800
+            },
+            "phase_ambiguity": {
+              "reason_code": "unresolved_racket_hand_with_competing_arm_sequence",
+              "candidate_wrist": "left",
+              "competing_wrist": "right",
+              "candidate_motion_peak_ms": 34533,
+              "competing_motion_peak_ms": 34733,
+              "reason_zh": "持拍手的独立球拍证据不足；两侧手腕先后出现较强运动，暂不能把其中一侧的停顿判作完整随挥。"
+            },
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "9435ca72f6e9291933d5",
+            "start_ms": 36533,
+            "peak_ms": 37100,
+            "end_ms": 37467,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 36067,
+              "end_ms": 38100
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "4adaa03d5f09e57268ed",
+            "start_ms": 133,
+            "peak_ms": 1367,
+            "end_ms": 1767,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 5,
+                "left": 7
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 67,
+              "end_ms": 2400
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "manifest_input_sha256": {
+        "video": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+        "frames": "0639c442aebe4df60e1516533d9f163504ec1c1c6916e3a2cde1dbf404d3f769",
+        "timeline": "1a0cc9ec0de9e29244acbcdcfc89f300ae4b587753132b282978c0d91ae6eee5",
+        "native": "c89a42ef44d03603b15016338eabe94f98302594fabe048861e9ad4c77f98d6b"
+      },
+      "frames_and_timeline_unchanged": true,
+      "before_recognition_sha256": "cf107bd639f687ee1c4de96d4f930accfc0be6ce2b877c29176499cf060fcfdf",
+      "after_recognition_sha256": "5e4f62a548b5cf6d326f0aae830d51e967a216a9ab28d15afd9877891405bf9d",
+      "before": {
+        "candidate_count": 6,
+        "episodes": [
+          {
+            "episode_id": "b63b437673c9b58402b7",
+            "start_ms": 633,
+            "peak_ms": 1167,
+            "end_ms": 1467,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": "right",
+              "separated_wrist_racket_votes": {
+                "right": 9
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 500,
+              "end_ms": 2267
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "85d2903027e4a5959ef2",
+            "start_ms": 5433,
+            "peak_ms": 5833,
+            "end_ms": 6067,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 7
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 5433,
+              "end_ms": 7933
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "f199e72db5d5e5aa7dde",
+            "start_ms": 12267,
+            "peak_ms": 12600,
+            "end_ms": 13133,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 2,
+                "right": 4
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 12033,
+              "end_ms": 14000
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "362fc1173e589fd0a6ae",
+            "start_ms": 17033,
+            "peak_ms": 17367,
+            "end_ms": 18167,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 6
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 16867,
+              "end_ms": 18800
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "06f6f059fbf481fe5e19",
+            "start_ms": 22167,
+            "peak_ms": 22600,
+            "end_ms": 23433,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 5
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 21567,
+              "end_ms": 23533
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": [
+              {
+                "candidate_id": "9a914b99d6626b645485",
+                "start_ms": 23567,
+                "peak_ms": 23667,
+                "end_ms": 24000,
+                "relation": "recovery",
+                "reason_code": "slower_low_arm_counter_sweep_in_same_sequence",
+                "wrist_side_compared": "right",
+                "main_motion_peak_ms": 22600,
+                "supporting_motion_peak_ms": 23800,
+                "speed_ratio": 0.35,
+                "rule_version": "observed-counter-sweep-association-v1",
+                "automatic_scoring_allowed": false
+              }
+            ]
+          },
+          {
+            "episode_id": "c2df62655a301866e59c",
+            "start_ms": 28567,
+            "peak_ms": 29400,
+            "end_ms": 29633,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": "right",
+              "separated_wrist_racket_votes": {
+                "right": 9,
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 27867,
+              "end_ms": 29967
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      },
+      "after": {
+        "candidate_count": 6,
+        "episodes": [
+          {
+            "episode_id": "54668ff8f2563e425041",
+            "start_ms": 633,
+            "peak_ms": 1167,
+            "end_ms": 1467,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": "right",
+              "separated_wrist_racket_votes": {
+                "right": 9
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 500,
+              "end_ms": 2267
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "e850d2c7c260cad37acb",
+            "start_ms": 5433,
+            "peak_ms": 5800,
+            "end_ms": 6067,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 7
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 5433,
+              "end_ms": 7933
+            },
+            "phase_ambiguity": {
+              "reason_code": "unresolved_racket_hand_with_competing_arm_sequence",
+              "candidate_wrist": "left",
+              "competing_wrist": "right",
+              "candidate_motion_peak_ms": 5800,
+              "competing_motion_peak_ms": 6067,
+              "reason_zh": "持拍手的独立球拍证据不足；两侧手腕先后出现较强运动，暂不能把其中一侧的停顿判作完整随挥。"
+            },
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "cadefd45fb4e117bc066",
+            "start_ms": 12267,
+            "peak_ms": 12600,
+            "end_ms": 13133,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 2,
+                "right": 4
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 12033,
+              "end_ms": 14000
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "edd09711a434e410a137",
+            "start_ms": 17033,
+            "peak_ms": 17367,
+            "end_ms": 18167,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 6
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 16867,
+              "end_ms": 18800
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "255a6ea3b79b5cbeaeb1",
+            "start_ms": 22167,
+            "peak_ms": 22600,
+            "end_ms": 23433,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 5
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 21567,
+              "end_ms": 23533
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": [
+              {
+                "candidate_id": "d76b2fd58b9a6ad19ad4",
+                "start_ms": 23567,
+                "peak_ms": 23667,
+                "end_ms": 24000,
+                "relation": "recovery",
+                "reason_code": "slower_low_arm_counter_sweep_in_same_sequence",
+                "wrist_side_compared": "right",
+                "main_motion_peak_ms": 22600,
+                "supporting_motion_peak_ms": 23800,
+                "speed_ratio": 0.35,
+                "rule_version": "observed-counter-sweep-association-v1.1",
+                "automatic_scoring_allowed": false
+              }
+            ]
+          },
+          {
+            "episode_id": "cd7ecb202a7886421741",
+            "start_ms": 28567,
+            "peak_ms": 29400,
+            "end_ms": 29633,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": "right",
+              "separated_wrist_racket_votes": {
+                "right": 9,
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 27867,
+              "end_ms": 29967
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "source_video_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+      "manifest_input_sha256": {
+        "video": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+        "frames": "4a0db18a610878929e20def705534b48a0927342e7d40cea7b7729dc52b2ce65",
+        "timeline": "a6cef072f0b61b45c6e74ab3305bf2ac7bba18dc3509d6063948955f92aa99a3",
+        "native": "f8f3325bc2b9e9a63f3117d438aab40129d8a89f4ea2db63064510b442a987b8"
+      },
+      "frames_and_timeline_unchanged": true,
+      "before_recognition_sha256": "b06f91eecf9d5a9c47562fb43861f125c3eeda4fd52cd1397f109974caf179bf",
+      "after_recognition_sha256": "8b9036a216a4d8ee15eab488c11eed42f09ca73c798910ba47e2eb4023b91aad",
+      "before": {
+        "candidate_count": 4,
+        "episodes": [
+          {
+            "episode_id": "af88e753c7fb62fd3e5b",
+            "start_ms": 667,
+            "peak_ms": 1033,
+            "end_ms": 1267,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 0,
+              "end_ms": 1600
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "73c91b798f592d9ea609",
+            "start_ms": 5533,
+            "peak_ms": 6467,
+            "end_ms": 6700,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 5533,
+              "end_ms": 8033
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "a96e5a7ea95116355a2b",
+            "start_ms": 12267,
+            "peak_ms": 12633,
+            "end_ms": 12867,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 11367,
+              "end_ms": 13533
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "b2036b7e454ba4d2a126",
+            "start_ms": 22133,
+            "peak_ms": 22433,
+            "end_ms": 22667,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 20867,
+              "end_ms": 23400
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      },
+      "after": {
+        "candidate_count": 4,
+        "episodes": [
+          {
+            "episode_id": "5af44422bf0355c0ef87",
+            "start_ms": 667,
+            "peak_ms": 1033,
+            "end_ms": 1267,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 0,
+              "end_ms": 1600
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "63d6392a9ec5e99ba41c",
+            "start_ms": 5533,
+            "peak_ms": 5800,
+            "end_ms": 6167,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 3
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 5533,
+              "end_ms": 8033
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "791a75612eca0dd39db5",
+            "start_ms": 12267,
+            "peak_ms": 12633,
+            "end_ms": 12867,
+            "analysis_status": "complete",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 11367,
+              "end_ms": 13533
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "d1eba5247c0e81aa0392",
+            "start_ms": 22133,
+            "peak_ms": 22433,
+            "end_ms": 22667,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 20867,
+              "end_ms": 23400
+            },
+            "phase_ambiguity": {
+              "reason_code": "unresolved_racket_hand_with_competing_arm_sequence",
+              "candidate_wrist": "left",
+              "competing_wrist": "right",
+              "candidate_motion_peak_ms": 22433,
+              "competing_motion_peak_ms": 22600,
+              "reason_zh": "持拍手的独立球拍证据不足；两侧手腕先后出现较强运动，暂不能把其中一侧的停顿判作完整随挥。"
+            },
+            "supporting_motion_candidates": []
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+      "manifest_input_sha256": {
+        "video": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+        "frames": "f491ea74eba8f76151b49e863dade423720afe45b4dac82cdd22946c8146dcf5",
+        "timeline": "64beee6ffad6ceed3daee253a24c1b32cea7fd67bfea18fb7c119481fb3793da",
+        "native": "8a3ac49ccce6dd20e33cc2a93d6397a3a8db69c9f8cf7f2bddd5e17a122ae488"
+      },
+      "frames_and_timeline_unchanged": true,
+      "before_recognition_sha256": "5798ed040364ecb4760366176fd0d0863bbb15adf6b66a86740d76184db8509f",
+      "after_recognition_sha256": "94b0714f5e7804912164fa5897c1b396425c255beaf6f3a158dd728c448956fa",
+      "before": {
+        "candidate_count": 4,
+        "episodes": [
+          {
+            "episode_id": "2e7fc97f7e997df14e3f",
+            "start_ms": 2469,
+            "peak_ms": 2769,
+            "end_ms": 2936,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 2436,
+              "end_ms": 2936
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "548f429825ed329af935",
+            "start_ms": 12679,
+            "peak_ms": 13080,
+            "end_ms": 13614,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 3,
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 12412,
+              "end_ms": 14248
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "6ece2914413a9b0bbd9e",
+            "start_ms": 13680,
+            "peak_ms": 14014,
+            "end_ms": 14348,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 3,
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 13347,
+              "end_ms": 15449
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "a4bb7a9a6135227d17f7",
+            "start_ms": 15315,
+            "peak_ms": 15782,
+            "end_ms": 15849,
+            "analysis_status": "partial",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 14414,
+              "end_ms": 15849
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      },
+      "after": {
+        "candidate_count": 3,
+        "episodes": [
+          {
+            "episode_id": "225f6240282432bdb99e",
+            "start_ms": 2469,
+            "peak_ms": 2769,
+            "end_ms": 2936,
+            "analysis_status": "partial",
+            "racket_hand": "left",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 2436,
+              "end_ms": 2936
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          },
+          {
+            "episode_id": "6fa95e7b00f756d2244a",
+            "start_ms": 12880,
+            "peak_ms": 14014,
+            "end_ms": 14348,
+            "analysis_status": "complete",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {
+                "right": 3,
+                "left": 1
+              },
+              "scope": "continuous_episode_context",
+              "start_ms": 12880,
+              "end_ms": 15449
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": [
+              {
+                "candidate_id": "8a98b03f4664aa9d47a6",
+                "start_ms": 12880,
+                "peak_ms": 13046,
+                "end_ms": 13380,
+                "relation": "preparation",
+                "reason_code": "raised_preparation_before_faster_counter_sweep",
+                "wrist_side_compared": "right",
+                "main_motion_peak_ms": 14014,
+                "supporting_motion_peak_ms": 13080,
+                "speed_ratio": 0.2339,
+                "rule_version": "observed-counter-sweep-association-v1.1",
+                "automatic_scoring_allowed": false
+              }
+            ]
+          },
+          {
+            "episode_id": "fa9dab69c6898048a41e",
+            "start_ms": 15315,
+            "peak_ms": 15782,
+            "end_ms": 15849,
+            "analysis_status": "partial",
+            "racket_hand": "right",
+            "hand_evidence": {
+              "hand": null,
+              "separated_wrist_racket_votes": {},
+              "scope": "continuous_episode_context",
+              "start_ms": 14414,
+              "end_ms": 15849
+            },
+            "phase_ambiguity": null,
+            "supporting_motion_candidates": []
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -21,9 +21,26 @@ from typing import Any
 from .temporal_recognition import TemporalRecognitionBackend, samples_are_continuous
 from .pose_observations import MODEL_ESTIMATE, measurement_provenance, sam_source_bound_points, sample_source_reference
 
-DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.1.0"
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.3.1"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_POSE_GAP_MS = 160
+SEQUENCE_RULE_VERSION = "observed-counter-sweep-association-v1.1"
+# Engineering action-proposal rules, not technique-score thresholds. The
+# comparisons use actual source time and one continuously observed wrist.
+SEQUENCE_RULES = {
+    "opposite_arm_lift_onset_fraction": .2,
+    "counter_sweep_peak_separation_ms": [400, 2000],
+    "maximum_supporting_to_main_speed_ratio": .75,
+    "minimum_main_upward_excursion_torso": .35,
+    "low_hand_y_torso": .35,
+    "terminal_low_hand_window_ms": 100,
+    "terminal_low_hand_fraction": .8,
+    "reset_body_side_margin_torso": .2,
+    "maximum_recovery_arm_extension_range_torso": .2,
+    "minimum_low_arm_range_for_context_only_racket_support_torso": .2,
+    "maximum_raised_preparation_terminal_y_torso": .05,
+    "minimum_raise_vertical_to_horizontal_ratio": .8,
+}
 LIMITATIONS = [
     "姿态与近手球拍时序规则只提出动作候选，未经专项标注集验证。",
     "候选次数不是击球次数；规则运动类型与真实触球分别处理，不输出确认击球次数。",
@@ -284,12 +301,24 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
                 and w[1] < -0.45 and points[i][1] > -0.35]
         if not toss or not after:
             continue
-        toss_index = toss[-1]
+        # The last lifted-arm frame is near racket acceleration, not the
+        # beginning of a serve. Preserve the observed lift from below shoulder
+        # level; otherwise a fast serve is rejected as too short and its early
+        # racket observations are discarded. Never extrapolate a missing lift.
+        toss_index = min(toss, key=lambda i: segment[i].points[f"{other}_wrist"][1])
         setup = [i for i in before if i <= toss_index and points[i][1] - points[peak][1] >= 0.9]
         follow = [i for i in after if points[i][1] > 0.05 and points[i][1] - points[peak][1] >= 0.9]
         if not setup or not follow:
             continue
-        start, end = setup[-1], follow[0]
+        lift_points = [(i, segment[i].points[f"{other}_wrist"][1]) for i in setup
+                       if f"{other}_wrist" in segment[i].points]
+        lift_bottom = max((y for _, y in lift_points), default=None)
+        lift_top = segment[toss_index].points[f"{other}_wrist"][1]
+        # The initial 20% of the observed lift defines its onset. Using the
+        # shoulder crossing would still crop most of a long arm raise.
+        lift_start = [i for i, y in lift_points if lift_bottom is not None
+                      and y >= lift_bottom - SEQUENCE_RULES["opposite_arm_lift_onset_fraction"] * (lift_bottom - lift_top)]
+        start, end = (lift_start[-1] if lift_start else setup[0]), follow[0]
         support = _racket_support(segment, side, start, end)
         duration = times[end] - times[start]
         if support < 2 or duration < 450 or duration > 3200:
@@ -297,6 +326,7 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
         result.append(_candidate(segment, side, start, peak, end, "serve", {
             "racket_associated_frames": support, "pose_samples": end - start + 1,
             "opposite_arm_lift_ms": times[toss_index],
+            "preparation_start_evidence": "observed_opposite_arm_lift_onset",
             "overhead_height_torso_units": round(-points[peak][1], 3),
             "racket_arm_upward_excursion_torso_units": round(points[start][1] - points[peak][1], 3),
             "follow_through_drop_torso_units": round(points[end][1] - points[peak][1], 3),
@@ -319,18 +349,42 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
                  and 200 <= times[end] - times[start] <= 1200]
         if not pairs:
             continue
-        start, end = min(pairs, key=lambda pair: times[pair[1]] - times[pair[0]])
-        window = points[start:end + 1]
-        horizontal = abs(points[end][0] - points[start][0])
-        vertical = max(point[1] for point in window) - min(point[1] for point in window)
-        if min(point[1] for point in window) < -0.5 or horizontal < vertical * 0.8:
+        # Choose the shortest window that satisfies *all* evidence gates. A
+        # minimal crossing can omit a real earlier racket observation (for
+        # example when the racket becomes blurred during the fast sweep).
+        # Rejecting that one pair must not reject every supported window of
+        # the same observed peak. Existing crossing, path and duration limits
+        # remain in force; low rigid-arm motion needs independent local support.
+        supported = None
+        ordered_pairs = sorted(pairs, key=lambda pair: times[pair[1]] - times[pair[0]])
+        shortest_support = _racket_support(segment, side, *ordered_pairs[0])
+        for start, end in ordered_pairs:
+            window = points[start:end + 1]
+            horizontal = abs(points[end][0] - points[start][0])
+            vertical = max(point[1] for point in window) - min(point[1] for point in window)
+            if min(point[1] for point in window) < -0.5 or horizontal < vertical * 0.8:
+                continue
+            path = sum(_distance(a, b) for a, b in zip(window, window[1:]))
+            if path > horizontal * 2.5:
+                continue
+            support = _racket_support(segment, side, start, end)
+            if support >= 2:
+                if shortest_support < 2 and min(point[1] for point in window) > SEQUENCE_RULES["low_hand_y_torso"]:
+                    # An earlier racket box does not distinguish a new stroke
+                    # from walking/turning while the arm hangs almost rigidly.
+                    # Such low-arm context stays in the separate review route;
+                    # we do not label it as retrieval or pretend no stroke took
+                    # place. A visibly articulated low stroke remains eligible.
+                    extension = [_distance(s.points[f"{side}_wrist"], s.points[f"{side}_shoulder"])
+                                 for s in segment[start:end + 1] if f"{side}_shoulder" in s.points]
+                    if (len(extension) != end - start + 1
+                            or max(extension) - min(extension) < SEQUENCE_RULES["minimum_low_arm_range_for_context_only_racket_support_torso"]):
+                        continue
+                supported = start, end, horizontal, support
+                break
+        if supported is None:
             continue
-        path = sum(_distance(a, b) for a, b in zip(window, window[1:]))
-        if path > horizontal * 2.5:
-            continue
-        support = _racket_support(segment, side, start, end)
-        if support < 2:
-            continue
+        start, end, horizontal, support = supported
         result.append(_candidate(segment, side, start, peak, end, "baseline", {
             "racket_associated_frames": support, "pose_samples": end - start + 1,
             "horizontal_excursion_torso_units": round(horizontal, 3),
@@ -374,8 +428,143 @@ def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]
                for other in accepted):
             continue
         accepted.append(candidate)
+    accepted = _group_supporting_sweeps(accepted, by_track)
     accepted.sort(key=lambda item: (item["start_ms"], item["person_track_id"]))
     return accepted
+
+
+def _group_supporting_sweeps(candidates: list[dict[str, Any]], by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]:
+    """Keep a slower, low-arm reversal as context for the main upward swing.
+
+    A body-side crossing alone also occurs during takeback and recovery. The
+    same observed wrist must reverse direction, move substantially faster in
+    the principal sweep, and finish that sweep higher. The weaker low-arm
+    motion is retained as evidence, never reported as an extra stroke. This is
+    a conservative sequence rule, not a learned action/contact classifier.
+    """
+    from .stroke_analysis import _episode_context
+    from .temporal_recognition import wrist_kinematics
+    from .vector_kinematics import WristKinematicsUnavailable
+
+    def feature(candidate, side):
+        context = _episode_context(candidate, by_track[candidate["person_track_id"]])
+        if not context or any(f"{side}_wrist" not in s.points for s in context):
+            return None
+        try:
+            points, speed = wrist_kinematics(context, side)
+        except WristKinematicsUnavailable:
+            return None
+        search = [i for i in range(2, len(context) - 2)
+                  if candidate["start_ms"] <= context[i].time <= candidate["end_ms"]]
+        if not search:
+            return None
+        peak = max(search, key=lambda i: speed[i])
+        before = min(search, key=lambda i: abs(context[i].time - (context[peak].time - 150)))
+        after = min(search, key=lambda i: abs(context[i].time - (context[peak].time + 150)))
+        sweep = [i for i in range(len(context)) if context[peak].time - 150 <= context[i].time <= context[peak].time + 650]
+        own = [i for i in range(len(context)) if candidate["start_ms"] <= context[i].time <= candidate["end_ms"]]
+        if before == after or not own or not sweep:
+            return None
+        terminal = [i for i in own if context[i].time >= candidate["end_ms"] - SEQUENCE_RULES["terminal_low_hand_window_ms"]]
+        extension = [_distance(context[i].points[f"{side}_wrist"], context[i].points[f"{side}_shoulder"])
+                     for i in own if f"{side}_shoulder" in context[i].points]
+        return {"context": context, "peak": context[peak].time, "speed": speed[peak],
+                "direction": points[after][0] - points[before][0],
+                "minimum_y": min(points[i][1] for i in sweep),
+                "upward_excursion": points[before][1] - min(points[i][1] for i in sweep),
+                "terminal_low_arm_fraction": sum(points[i][1] > SEQUENCE_RULES["low_hand_y_torso"] for i in terminal) / len(terminal),
+                "start_y": points[own[0]][1], "end_y": points[own[-1]][1],
+                "rise": points[own[0]][1] - points[own[-1]][1],
+                "horizontal_excursion": abs(points[own[-1]][0] - points[own[0]][0]),
+                "arm_extension_range": max(extension) - min(extension) if len(extension) == len(own) else None}
+
+    baseline = [c for c in candidates if c["family"] == "baseline"]
+    features = {(c["candidate_id"], side): feature(c, side) for c in baseline for side in ("left", "right")}
+    removed = set()
+    for main in sorted(baseline, key=lambda c: -(features[c["candidate_id"], c["racket_hand_candidate"]] or {}).get("speed", 0)):
+        if main["candidate_id"] in removed:
+            continue
+        side = main["racket_hand_candidate"]
+        strong = features[main["candidate_id"], side]
+        if not strong:
+            continue
+        upward_main = (strong["upward_excursion"] >= SEQUENCE_RULES["minimum_main_upward_excursion_torso"]
+                       and strong["minimum_y"] <= SEQUENCE_RULES["low_hand_y_torso"])
+        for other in baseline:
+            if other is main or other["candidate_id"] in removed or other["person_track_id"] != main["person_track_id"]:
+                continue
+            weak = features[other["candidate_id"], side]
+            gap_min, gap_max = SEQUENCE_RULES["counter_sweep_peak_separation_ms"]
+            if (not weak or not gap_min <= abs(weak["peak"] - strong["peak"]) <= gap_max
+                    or weak["speed"] > strong["speed"] * SEQUENCE_RULES["maximum_supporting_to_main_speed_ratio"]
+                    or weak["direction"] * strong["direction"] >= 0):
+                continue
+            relation = "preparation" if weak["peak"] < strong["peak"] else "recovery"
+            low_support = upward_main and weak["terminal_low_arm_fraction"] >= SEQUENCE_RULES["terminal_low_hand_fraction"]
+            raised_support = (relation == "preparation"
+                and weak["start_y"] > SEQUENCE_RULES["low_hand_y_torso"]
+                and weak["end_y"] <= SEQUENCE_RULES["maximum_raised_preparation_terminal_y_torso"]
+                and weak["rise"] >= SEQUENCE_RULES["minimum_main_upward_excursion_torso"]
+                and weak["rise"] >= weak["horizontal_excursion"] * SEQUENCE_RULES["minimum_raise_vertical_to_horizontal_ratio"])
+            if not low_support and not raised_support:
+                continue
+            # Distinct independently supported racket hands can describe two
+            # real strokes. Do not relabel that evidence as one-hand takeback.
+            other_hand = other["evidence"].get("hand_consistency_before_suppression", {}).get("hand_evidence", {}).get("hand")
+            if other_hand is not None and other_hand != side:
+                continue
+            # Candidate IDs and track numbers do not establish continuity.
+            # Recheck the entire intervening source interval, including wrists.
+            begin, end = sorted((weak["peak"], strong["peak"]))
+            interval = [s for s in by_track[main["person_track_id"]] if begin <= s.time <= end]
+            if (not interval or any(f"{side}_wrist" not in s.points for s in interval)
+                    or any(not samples_are_continuous(a, b) for a, b in zip(interval, interval[1:]))):
+                continue
+            try:
+                wrist_kinematics(interval, side)
+            except WristKinematicsUnavailable:
+                # Also reject a missing native source frame shorter than the
+                # absolute 160 ms cap (for example one hole at 60 fps).
+                continue
+            if raised_support:
+                # A raised setup is not an independent follow-through when
+                # the same wrist stays raised until the faster reverse sweep.
+                # A completed first stroke followed by a lower reset remains
+                # separate, even if the next stroke is faster.
+                hold = [s for s in interval if other["end_ms"] <= s.time <= strong["peak"] - 150]
+                if (len(hold) < 2 or hold[-1].time - hold[0].time < 100
+                        or any(s.points[f"{side}_wrist"][1] > SEQUENCE_RULES["low_hand_y_torso"] for s in hold)):
+                    continue
+            if relation == "preparation":
+                # A return across the torso and another takeback before the
+                # next acceleration is independent reset/new-preparation
+                # evidence, even if the first low stroke was slower.
+                middle = [s.points[f"{side}_wrist"][0] for s in interval
+                          if weak["peak"] + 150 <= s.time <= strong["peak"] - 150]
+                sign = 1 if weak["direction"] > 0 else -1
+                margin = SEQUENCE_RULES["reset_body_side_margin_torso"]
+                reset = next((i for i, x in enumerate(middle) if x * sign < -margin), None)
+                if reset is not None and any(x * sign > margin for x in middle[reset + 1:]):
+                    continue
+            elif (weak["arm_extension_range"] is None
+                  or weak["arm_extension_range"] >= SEQUENCE_RULES["maximum_recovery_arm_extension_range_torso"]):
+                # A low forward swing may still articulate the arm. Only a
+                # nearly fixed-length low-arm return is supporting recovery.
+                continue
+            evidence = {"candidate_id": other["candidate_id"], "start_ms": other["start_ms"],
+                        "peak_ms": other["peak_ms"], "end_ms": other["end_ms"], "relation": relation,
+                        "reason_code": ("raised_preparation_before_faster_counter_sweep" if raised_support
+                                        else "slower_low_arm_counter_sweep_in_same_sequence"),
+                        "wrist_side_compared": side, "main_motion_peak_ms": strong["peak"],
+                        "supporting_motion_peak_ms": weak["peak"],
+                        "speed_ratio": round(weak["speed"] / strong["speed"], 4),
+                        "rule_version": SEQUENCE_RULE_VERSION,
+                        "automatic_scoring_allowed": False}
+            main["evidence"].setdefault("supporting_motion_candidates", []).append(evidence)
+            if relation == "preparation":
+                main["evidence"]["linked_preparation_start_ms"] = min(other["start_ms"], main["evidence"].get("linked_preparation_start_ms", main["start_ms"]))
+            removed.add(other["candidate_id"])
+    return [c for c in candidates if c["candidate_id"] not in removed]
 
 
 def detect_stroke_candidates(
@@ -477,6 +666,9 @@ def detect_stroke_candidates(
         "status": "candidates_detected" if accepted else "no_candidates" if valid_samples >= 7 else "insufficient_pose",
         "scope": "primary_player_timeline" if selected is not None else "all_tracks_independently",
         "candidate_count": len(accepted), "by_family": {"baseline": counts["baseline"], "serve": counts["serve"]},
+        "supporting_motion_candidate_count": sum(len(c["evidence"].get("supporting_motion_candidates", [])) for c in accepted),
+        "sequence_rules": {"version": SEQUENCE_RULE_VERSION, "thresholds": SEQUENCE_RULES,
+                           "semantics": "engineering_motion_proposals_not_technique_score_thresholds"},
         "confirmed_contact_count": None, "candidates": accepted,
         "review_candidates": review_candidates, "review_candidate_count": len(review_candidates),
         "review_count_semantics": "secondary_motion_windows_for_review_not_confirmed_strokes_or_scores",

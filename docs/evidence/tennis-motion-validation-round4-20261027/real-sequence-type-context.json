@@ -1,0 +1,83 @@
+{
+  "version": "tennis-action-context-v1",
+  "video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+  "source_run_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+  "candidate_artifact_sha256": "a44c3062b52b815942d9830996e09c10935ec4ec584e43e101ce0cc14c309af9",
+  "candidate_artifact": "release-v3-regression/mendeley-indoor-side-view-ICS01-recognition.json",
+  "actions": [
+    {
+      "episode_id": "09efd52b183d09ea1dec",
+      "person_track_id": 1,
+      "start_ms": 417,
+      "peak_ms": 1001,
+      "end_ms": 1285,
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261027",
+      "technique": "baseline_forehand",
+      "racket_hand": "right",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "validity": {
+        "status": "valid",
+        "reason_codes": [],
+        "explanation": "同一红白衣目标右手正手；新窗口覆盖实际可见引拍、前挥与随挥，不将自动峰称作真实触球。"
+      },
+      "evidence": {
+        "contact_sheets": [
+          "review-frames/ics01-full.jpg",
+          "review-frames/ics01-forward-crop.jpg"
+        ],
+        "frames": [
+          {
+            "timestamp_ms": 751,
+            "observation": "右手持拍在身体侧后，左臂朝来球方向"
+          },
+          {
+            "timestamp_ms": 1001,
+            "observation": "球接近身前，持拍臂前挥"
+          },
+          {
+            "timestamp_ms": 1051,
+            "observation": "球拍进入身体前方"
+          },
+          {
+            "timestamp_ms": 1251,
+            "observation": "高位随挥"
+          }
+        ],
+        "reviewed_source_interval_ms": [
+          0,
+          1652
+        ],
+        "candidate_frame_scope_reviewed_ms": [
+          417,
+          1285
+        ],
+        "limitations": [
+          "single monocular view",
+          "not coach ground truth",
+          "exact ball contact not asserted"
+        ],
+        "contact_sheet_sha256": {
+          "review-frames/ics01-full.jpg": "686d94976f9e67c9fbfd84579b509db0991a2f18eb5c864c647a7ad0f60295b5",
+          "review-frames/ics01-forward-crop.jpg": "163af466923286ca719a4f994db2e08a6412c963dda93d990402dfa39bc40ada"
+        }
+      }
+    }
+  ],
+  "binding_status": "release_v3_fresh_episode_exact_binding",
+  "source_review_reference_sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+  "release_rebinding_provenance": {
+    "prior_context_artifact": "action-contexts-release-v2/d12255e0-22f1-475e-99ba-b0595b8184b6.json",
+    "prior_context_sha256": "3a09d74f25f0334fc3110435d98d0dd994a6cbc8543847564d8b53e3127b0088",
+    "prior_episode_id": "a91c7e353a81c215e7e6",
+    "release_episode_id": "09efd52b183d09ea1dec",
+    "same_source_sha_track_window_and_epochs_verified": true,
+    "visual_type_and_racket_hand_changed": false,
+    "source_annotation_changed": false,
+    "direction_added": false,
+    "source_epoch_semantics": "source_selection_epoch 0 is native/source epoch; process-continuity selection_epoch 1 is derived process epoch, not the native epoch"
+  }
+}

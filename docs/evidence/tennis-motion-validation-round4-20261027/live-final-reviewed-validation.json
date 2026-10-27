@@ -1,0 +1,207 @@
+{
+  "version": "tennis-live-reviewed-report-validation-v1",
+  "scope": "final local service with preserved reviewed contexts, separate from context-disabled automatic replay",
+  "checks": [
+    {
+      "sample_id": "development-sharapova",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "unavailable",
+      "scored_count": 0,
+      "coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 0,
+        "fraction": null,
+        "verified_technique_episodes": 0,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": []
+      },
+      "rejections": {
+        "reviewed_hand_conflicts_with_motion_phases": 2
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 6,
+      "coverage": {
+        "measured_requirements": 4,
+        "applicable_requirements": 17,
+        "fraction": 0.23529411764705882,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 5,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "generic",
+          "serve"
+        ]
+      },
+      "rejections": {
+        "reviewed_hand_conflicts_with_motion_phases": 1,
+        "phase_authority_source_unverified": 3,
+        "unresolved_racket_hand_with_competing_arm_sequence": 1
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 4,
+      "coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 13,
+        "fraction": 0.15384615384615385,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 3,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "generic"
+        ]
+      },
+      "rejections": {
+        "unresolved_racket_hand_with_competing_arm_sequence": 1,
+        "active_wrist_discontinuity_in_motion": 1
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 3,
+      "coverage": {
+        "measured_requirements": 1,
+        "applicable_requirements": 11,
+        "fraction": 0.09090909090909091,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 2,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "generic"
+        ]
+      },
+      "rejections": {
+        "external_peak_motion_geometry_unverified": 1
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 2,
+      "coverage": {
+        "measured_requirements": 4,
+        "applicable_requirements": 14,
+        "fraction": 0.2857142857142857,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "rejections": {
+        "phase_authority_source_unverified": 1
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 1,
+      "coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 7,
+        "fraction": 0.2857142857142857,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "rejections": {},
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 2,
+      "coverage": {
+        "measured_requirements": 0,
+        "applicable_requirements": 13,
+        "fraction": 0.0,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "backhand_slice",
+          "baseline_forehand"
+        ]
+      },
+      "rejections": {
+        "phase_authority_source_unverified": 3,
+        "reviewed_hand_conflicts_with_motion_phases": 3
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 3,
+      "coverage": {
+        "measured_requirements": 2,
+        "applicable_requirements": 17,
+        "fraction": 0.11764705882352941,
+        "verified_technique_episodes": 2,
+        "generic_episodes": 1,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand",
+          "baseline_one_hand_backhand",
+          "generic"
+        ]
+      },
+      "rejections": {
+        "phase_authority_source_unverified": 1
+      },
+      "projected_sequence": []
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "version": "tennis-action-assessment-v1.3.0",
+      "status": "scored",
+      "scored_count": 1,
+      "coverage": {
+        "measured_requirements": 3,
+        "applicable_requirements": 7,
+        "fraction": 0.42857142857142855,
+        "verified_technique_episodes": 1,
+        "generic_episodes": 0,
+        "full_source_technique_covered": false,
+        "profiles": [
+          "baseline_forehand"
+        ]
+      },
+      "rejections": {},
+      "projected_sequence": [
+        {
+          "value": 0.4,
+          "score": 60.0
+        }
+      ]
+    }
+  ],
+  "existing_conflicting_reviews_rejected_instead_of_generic_scoring": 6,
+  "ics_source_context_sha256": "f232ee05baf3cc61107ac4814f0643f9f3269b5faf75628643878c362cac1e28",
+  "ics_live_context_sha256": "d6d088780c5529c8fb29fa0d73ad48ec64d30abdecd9de5ea6eedaf43b8e1866"
+}

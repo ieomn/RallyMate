@@ -1,0 +1,610 @@
+{
+  "version": "tennis-source-manual-action-set-v1",
+  "reviewer": "codex_samples_independent_visual_review_20261027",
+  "selection_policy": "short reviewed intervals locked from source images, independent of scores; all identified target actions inside intervals included",
+  "prior_round_results_seen": true,
+  "not_blinded_holdout": true,
+  "sets": [
+    {
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "split": "regression",
+      "subject_description": "original near-side target A; ordinary user label unchanged",
+      "reviewed_intervals": [
+        [
+          0,
+          2400
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "ordinaryb-serve-1",
+          "start_ms": 0,
+          "anchor_ms": 1300,
+          "end_ms": 2400,
+          "technique": "serve",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "observation_zh": "近端原目标右手发球：抛球/屈膝，1.25–1.37秒头顶上伸，1.45秒随挥，2.1–2.35秒恢复。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 967,
+            "forward_swing": 1267,
+            "follow_through": 1467
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 0,
+          "end_ms": 1050,
+          "kind": "preparation_part_of_following_action",
+          "count_as_standalone_swing": false,
+          "observation_zh": "抛球及屈膝是同一次完整发球的前段，单独截出不算第二次发球。"
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/ordinaryb-0-3.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "method": "independent_source_frame_visual_review_dense_grid",
+      "exhaustive_within_reviewed_interval": true,
+      "exhaustiveness_limit": "All visible target swings in the declared short intervals are enumerated. Sparse 100–500ms source-frame grids plus closer prior reviewed frames; not expert or frame-perfect annotation. Opponent swings excluded from target denominator.",
+      "phase_contact_sheet": "review-frames/phases-regression-ordinary-b.jpg"
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "split": "regression",
+      "subject_description": "near-left white/green shirt server A, old track 2; later net player is a different subject",
+      "reviewed_intervals": [
+        [
+          0,
+          2100
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "davis05-serve-1",
+          "start_ms": 200,
+          "anchor_ms": 1800,
+          "end_ms": 2100,
+          "technique": "serve",
+          "person_track_id": 2,
+          "racket_hand": "right",
+          "observation_zh": "近端白绿衣发球者，0.8秒抛球，1.5秒屈膝举拍，1.7–1.9秒头顶挥出，2.0–2.1秒落地随挥；2.2秒后相机移开。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 1535,
+            "forward_swing": 1802,
+            "follow_through": 2002
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 100,
+          "end_ms": 1235,
+          "kind": "preparation_part_of_following_action",
+          "count_as_standalone_swing": false,
+          "observation_zh": "原候选仅抛球和举拍准备；尚未到1.7–1.9秒实际头顶挥出。"
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/davis05-0-3.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "method": "independent_source_frame_visual_review_dense_grid",
+      "exhaustive_within_reviewed_interval": true,
+      "exhaustiveness_limit": "All visible target swings in the declared short intervals are enumerated. Sparse 100–500ms source-frame grids plus closer prior reviewed frames; not expert or frame-perfect annotation. Opponent swings excluded from target denominator.",
+      "phase_contact_sheet": "review-frames/phases-davis-cup-2018-05.jpg"
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "split": "regression",
+      "subject_description": "same yellow-clothed original subject A; track 1 before camera pan, track 86 after return; white-clothed other player excluded",
+      "reviewed_intervals": [
+        [
+          10000,
+          13700
+        ],
+        [
+          20200,
+          26600
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "night-fh-2",
+          "start_ms": 10750,
+          "anchor_ms": 12200,
+          "end_ms": 13200,
+          "technique": "baseline_forehand",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "observation_zh": "10.75–11.5秒转体引拍，12.0–12.3秒前挥，12.5–13.2秒随挥恢复；仅一拍。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 11500,
+            "forward_swing": 12267,
+            "follow_through": 12500
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        },
+        {
+          "manual_action_id": "night-fh-3",
+          "start_ms": 20200,
+          "anchor_ms": 21867,
+          "end_ms": 23300,
+          "technique": "baseline_forehand",
+          "person_track_id": 86,
+          "racket_hand": "right",
+          "observation_zh": "相机返回原黄衣目标后，20.5–21.5秒准备，21.8–22.0秒前挥，22.5–23.3秒随挥恢复。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 21500,
+            "forward_swing": 21800,
+            "follow_through": 22500
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        },
+        {
+          "manual_action_id": "night-unknown-4",
+          "start_ms": 24150,
+          "anchor_ms": 25400,
+          "end_ms": 26300,
+          "technique": "unknown",
+          "person_track_id": 86,
+          "racket_hand": "right",
+          "observation_zh": "24.5–25.0秒侧身引拍，25.4秒前挥及25.8秒高随挥；低光不能可靠区分手数，保留unknown。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 25000,
+            "forward_swing": 25400,
+            "follow_through": 25800
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 10833,
+          "end_ms": 11500,
+          "kind": "preparation_part_of_following_action",
+          "count_as_standalone_swing": false,
+          "observation_zh": "10.833–11.5秒只有同一正手的准备与引拍。"
+        },
+        {
+          "start_ms": 20200,
+          "end_ms": 20933,
+          "kind": "preparation_part_of_following_action",
+          "count_as_standalone_swing": false,
+          "observation_zh": "20.2–20.933秒只有同一正手的准备，21.8秒才前挥。"
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/night-10-13.jpg",
+        "review-frames/night-20-27.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "method": "independent_source_frame_visual_review_dense_grid",
+      "exhaustive_within_reviewed_interval": true,
+      "exhaustiveness_limit": "All visible target swings in the declared short intervals are enumerated. Sparse 100–500ms source-frame grids plus closer prior reviewed frames; not expert or frame-perfect annotation. Opponent swings excluded from target denominator.",
+      "phase_contact_sheet": "review-frames/phases-holdout-ordinary-night.jpg"
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "split": "regression",
+      "subject_description": "white cap / white shirt original subject A, track 1 throughout",
+      "reviewed_intervals": [
+        [
+          21000,
+          29967
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "white-fh-5",
+          "start_ms": 21500,
+          "anchor_ms": 22600,
+          "end_ms": 23300,
+          "technique": "baseline_forehand",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "observation_zh": "21.5秒来球，22.0秒引拍，22.5–22.7秒前挥，23.0秒完成高随挥。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 22000,
+            "forward_swing": 22500,
+            "follow_through": 23000
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        },
+        {
+          "manual_action_id": "white-fh-6",
+          "start_ms": 28200,
+          "anchor_ms": 29400,
+          "end_ms": 29967,
+          "technique": "baseline_forehand",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "observation_zh": "28.2秒重新准备，29.0–29.5秒单手前挥随挥；29.9秒回到准备，片尾限制恢复观察。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 29000,
+            "forward_swing": 29400,
+            "follow_through": 29500
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 23500,
+          "end_ms": 27800,
+          "kind": "recovery_walking_ball_retrieval",
+          "count_as_standalone_swing": false,
+          "observation_zh": "前一拍之后转身走向球及重新站位，右手球拍下垂，没有第二次完整挥拍。"
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/white-21-30.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "method": "independent_source_frame_visual_review_dense_grid",
+      "exhaustive_within_reviewed_interval": true,
+      "exhaustiveness_limit": "All visible target swings in the declared short intervals are enumerated. Sparse 100–500ms source-frame grids plus closer prior reviewed frames; not expert or frame-perfect annotation. Opponent swings excluded from target denominator.",
+      "phase_contact_sheet": "review-frames/phases-holdout-ordinary-indoor-white.jpg"
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "split": "regression",
+      "subject_description": "near-side light shirt/purple shorts player; identity from position/clothing, no individual name inferred from title",
+      "reviewed_intervals": [
+        [
+          0,
+          9000
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "dimitrov-near-return-fh-1",
+          "start_ms": 7650,
+          "anchor_ms": 8220,
+          "end_ms": 8750,
+          "technique": "return_forehand",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "observation_zh": "远端7.3秒抛球、7.5–7.7秒发球挥出；7.85秒球已在近场，8.0–8.1秒球继续进入近端正手侧，近端浅衣紫裤右手8.2–8.3秒前挥，8.4–8.7秒随挥恢复。",
+          "complete_visible_swing": true,
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "return_context": {
+            "status": "visually_verified",
+            "server_is_other_person": true,
+            "opponent_serve_interval_ms": [
+              7000,
+              7850
+            ],
+            "incoming_ball_frames_ms": [
+              7850,
+              8000,
+              8100
+            ],
+            "evidence": "review-frames/dimitrov-return-dense.jpg",
+            "scope": "manual_source_bound_context_not_automatic_return_classification",
+            "remaining_uncertainty": "ball contact inferred within 8.15–8.30s; exact impact frame unverified"
+          },
+          "phase_evidence_ms": {
+            "preparation": 8000,
+            "forward_swing": 8200,
+            "follow_through": 8400
+          },
+          "phase_evidence_source": "actual independently viewed source frames; interval endpoints are not required phase samples"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 0,
+          "end_ms": 7600,
+          "kind": "return_ready_preparation",
+          "count_as_standalone_swing": false,
+          "observation_zh": "近端目标等待和垫步，远端对手发球不计入近端目标动作数。"
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/dimitrov-return-overview.jpg",
+        "review-frames/dimitrov-return-dense.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "method": "independent_source_frame_visual_review_dense_grid",
+      "exhaustive_within_reviewed_interval": true,
+      "exhaustiveness_limit": "All visible target swings in the declared short intervals are enumerated. Sparse 100–500ms source-frame grids plus closer prior reviewed frames; not expert or frame-perfect annotation. Opponent swings excluded from target denominator.",
+      "phase_contact_sheet": "review-frames/phases-dimitrov-tiafoe-usopen-2024.jpg"
+    },
+    {
+      "sample_id": "thetis-p1_fslice_s1",
+      "job_id": null,
+      "video_sha256": "099281827dc2cc37426d7d41026ab742b08cb198e846aed2fe1e8eefc6042d66",
+      "source_group": "thetis-2013-kinect",
+      "subject_group": "thetis-p1",
+      "split": "new_source_preselected_before_inference",
+      "evaluation_label": "unknown",
+      "subject_description": "single foreground demonstrator p1",
+      "reviewed_intervals": [
+        [
+          0,
+          4111
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "thetis-p1-fslice-1",
+          "start_ms": 900,
+          "anchor_ms": 2167,
+          "end_ms": 3100,
+          "technique": "unknown",
+          "person_track_id": null,
+          "racket_hand": "left",
+          "handedness_scope": "anatomical side in displayed image; original Kinect mirroring unknown, not a real-world handedness claim",
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "complete_visible_swing": true,
+          "phase_evidence_ms": {
+            "preparation": 1778,
+            "forward_swing": 2222,
+            "follow_through": 2667
+          },
+          "evidence": "review-frames/thetis-p1-forward.jpg",
+          "observation_zh": "更密集源帧复核：1.94–2.06秒拍在腰侧，2.17–2.28秒向胸前抬起，随后2.39–2.72秒下落；这次初学者演示不足以独立区分正手切削与普通正手。保留文件名fslice为数据集任务标签，不把它当作画面真值。",
+          "uncertainty": [
+            "18fps limits subframe timing",
+            "no real ball or contact",
+            "no independently verified target forward direction"
+          ],
+          "classification_confidence": "insufficient_for_independent_slice_confirmation",
+          "dataset_requested_class": "forehand_slice"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 0,
+          "end_ms": 850,
+          "kind": "static_ready_pose",
+          "count_as_standalone_swing": false
+        },
+        {
+          "start_ms": 3200,
+          "end_ms": 4000,
+          "kind": "recovery_ready_pose",
+          "count_as_standalone_swing": false
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/thetis-p1.jpg",
+        "review-frames/thetis-p1-forward.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_not_ball_contact",
+      "exhaustive_within_reviewed_interval": true,
+      "method": "independent_source_frame_visual_review_plus_dataset_class_crosscheck",
+      "limitations": [
+        "real human demonstration only",
+        "no actual ball evidence",
+        "18 fps",
+        "formal redistribution license not specified; local validation only"
+      ],
+      "independent_forehand_slice_confirmed": false,
+      "phase_contact_sheet": "review-frames/phases-thetis-p1_fslice_s1.jpg"
+    },
+    {
+      "sample_id": "thetis-p32_fslice_s1",
+      "job_id": null,
+      "video_sha256": "284e951bcd1f1ac5f992c9960e2e61730e22e0b55eae3c9a7f8678f952ebcd9b",
+      "source_group": "thetis-2013-kinect",
+      "subject_group": "thetis-p32",
+      "split": "new_source_preselected_before_inference",
+      "evaluation_label": "unknown",
+      "subject_description": "single foreground demonstrator p32",
+      "reviewed_intervals": [
+        [
+          0,
+          4056
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "thetis-p32-fslice-1",
+          "start_ms": 900,
+          "anchor_ms": 2167,
+          "end_ms": 3100,
+          "technique": "forehand_slice",
+          "person_track_id": null,
+          "racket_hand": "left",
+          "handedness_scope": "anatomical side in displayed image; original Kinect mirroring unknown, not a real-world handedness claim",
+          "status": "reviewed",
+          "not_automatic_candidate": true,
+          "complete_visible_swing": true,
+          "phase_evidence_ms": {
+            "preparation": 1778,
+            "forward_swing": 2167,
+            "follow_through": 2444
+          },
+          "evidence": "review-frames/thetis-p32.jpg",
+          "observation_zh": "真人单手正手侧空挥：持拍臂侧高位准备，球拍向前下经过身体前侧，随后跨身/前方随挥；没有真实来球或触球。动作类别同时获原始数据集fslice标注支持，但本标注经过实际画面复核。",
+          "uncertainty": [
+            "18fps limits subframe timing",
+            "no real ball or contact",
+            "no independently verified target forward direction"
+          ],
+          "classification_confidence": "high_for_shadow_swing_class_not_ball_effect"
+        }
+      ],
+      "non_action_or_partial_intervals": [
+        {
+          "start_ms": 0,
+          "end_ms": 850,
+          "kind": "static_ready_pose",
+          "count_as_standalone_swing": false
+        },
+        {
+          "start_ms": 3200,
+          "end_ms": 4000,
+          "kind": "recovery_ready_pose",
+          "count_as_standalone_swing": false
+        }
+      ],
+      "evidence_contact_sheets": [
+        "review-frames/thetis-p32.jpg"
+      ],
+      "boundary_uncertainty_ms": 150,
+      "anchor_uncertainty_ms": 100,
+      "anchor_is": "visual_forward_swing_not_ball_contact",
+      "exhaustive_within_reviewed_interval": true,
+      "method": "independent_source_frame_visual_review_plus_dataset_class_crosscheck",
+      "limitations": [
+        "real human demonstration only",
+        "no actual ball evidence",
+        "18 fps",
+        "formal redistribution license not specified; local validation only"
+      ],
+      "independent_forehand_slice_confirmed": true,
+      "phase_contact_sheet": "review-frames/phases-thetis-p32_fslice_s1.jpg"
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "job_id": "65408bed-fadd-4d1d-b93f-d522b5d9d23f",
+      "video_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+      "split": "regression",
+      "reviewed_intervals": [
+        [
+          0,
+          1100
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "holdout-ordinary-user-existing-manual-1",
+          "start_ms": 0,
+          "anchor_ms": 633,
+          "end_ms": 1100,
+          "technique": "serve",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "status": "reviewed",
+          "complete_visible_swing": true,
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 300,
+            "forward_swing": 633,
+            "follow_through": 900
+          },
+          "observation_zh": "真实发球；视频开头已在抛球/屈膝准备中，0.5–0.7秒头顶挥出，0.8–1.1秒随挥。开头准备截断，ordinary用户标签不变。",
+          "source_start_preparation_clipped": true
+        }
+      ],
+      "non_action_or_partial_intervals": [],
+      "evidence_contact_sheets": [
+        "review-frames/ordinary-existing-0-1.jpg"
+      ],
+      "boundary_uncertainty_ms": 100,
+      "anchor_uncertainty_ms": 100,
+      "exhaustive_within_reviewed_interval": true,
+      "method": "independent_source_frame_visual_review",
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "phase_contact_sheet": "review-frames/phases-holdout-ordinary-user-existing.jpg"
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "split": "regression",
+      "reviewed_intervals": [
+        [
+          0,
+          1652
+        ]
+      ],
+      "positive_actions": [
+        {
+          "manual_action_id": "mendeley-indoor-side-view-ICS01-manual-1",
+          "start_ms": 0,
+          "anchor_ms": 1030,
+          "end_ms": 1652,
+          "technique": "baseline_forehand",
+          "person_track_id": 1,
+          "racket_hand": "right",
+          "status": "reviewed",
+          "complete_visible_swing": true,
+          "not_automatic_candidate": true,
+          "phase_evidence_ms": {
+            "preparation": 751,
+            "forward_swing": 1051,
+            "follow_through": 1251
+          },
+          "observation_zh": "0.75–0.9秒拍在身侧后方；0.951秒开始前移，1.001秒球到身前附近，1.051秒拍已到前方，1.1–1.45秒随挥。准确触球在1.00–1.05秒间仍有采样不确定性。",
+          "source_start_preparation_clipped": false
+        }
+      ],
+      "non_action_or_partial_intervals": [],
+      "evidence_contact_sheets": [
+        "review-frames/ics01-forward-crop.jpg"
+      ],
+      "boundary_uncertainty_ms": 100,
+      "anchor_uncertainty_ms": 100,
+      "exhaustive_within_reviewed_interval": true,
+      "method": "independent_source_frame_visual_review",
+      "anchor_is": "visual_forward_swing_or_overhead_anchor_not_exact_ball_contact",
+      "phase_contact_sheet": "review-frames/phases-mendeley-indoor-side-view-ICS01.jpg"
+    }
+  ],
+  "corrections": [
+    {
+      "sample_id": "federer-cilic-practice",
+      "window_ms": [
+        2400,
+        3500
+      ],
+      "prior_reading": "serve preparation inferred from low-resolution overview",
+      "corrected_reading": "receiving ready stance and split-step; wrists remain below shoulders, no overhead serve",
+      "evidence": "review-frames/federer-dense-crop.jpg",
+      "old_frozen_evidence_changed": false
+    }
+  ],
+  "negative_evaluation_policy": "Count standalone candidates supported only by partial/preparation/retrieval intervals separately from positive action coverage; preparation intervals may be part of a later positive action, not a second action."
+}

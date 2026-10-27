@@ -769,8 +769,15 @@ def _run_pipeline(
         for batch in batches:
             publish_sam_records(batch.records, batch.mesh_records)
 
-    with frames_path.open("w", encoding="utf-8", newline="\n") as frames_file:
-        while source_frame_index < metadata.frame_count:
+    def prepared_frames():
+        # Detection/camera state advances during bounded initial lookahead;
+        # pose inference consumes the released source frames in original order.
+        nonlocal first_processed_source_frame, last_processed_timestamp_ms, last_processed_source_frame
+        nonlocal person_frame_count, camera_compensated_frames
+        from rallymate_tracking.initial_subject_buffer import InitialSubjectBuffer
+        initial_buffer = InitialSubjectBuffer() if sam_enabled else None
+        scan_index, scan_count = 0, 0
+        while scan_index < metadata.frame_count:
             check_cancelled()
             stage_started = time.perf_counter()
             ok, frame = capture.read()
@@ -779,20 +786,20 @@ def _run_pipeline(
             if not ok:
                 break
             timestamp_ms, timestamp_source = clock.resolve(
-                source_frame_index, float(capture.get(cv2.CAP_PROP_POS_MSEC))
+                scan_index, float(capture.get(cv2.CAP_PROP_POS_MSEC))
             )
             if request.processing.end_ms is not None and timestamp_ms >= request.processing.end_ms:
                 break
             if timestamp_ms < request.processing.start_ms:
-                source_frame_index += 1
+                scan_index += 1
                 continue
             if first_processed_source_frame is None:
-                first_processed_source_frame = source_frame_index
-            if (source_frame_index - first_processed_source_frame) % request.processing.frame_stride != 0:
-                source_frame_index += 1
+                first_processed_source_frame = scan_index
+            if (scan_index - first_processed_source_frame) % request.processing.frame_stride != 0:
+                scan_index += 1
                 continue
             last_processed_timestamp_ms = timestamp_ms
-            last_processed_source_frame = source_frame_index
+            last_processed_source_frame = scan_index
 
             stage_started = time.perf_counter()
             quality = analyze_frame(frame)
@@ -832,25 +839,48 @@ def _run_pipeline(
             camera_status_counts[camera_motion["status"]] += 1
             camera_compensated_frames += int(camera_motion["status"] == "moving"
                                              and camera_motion.get("compensation_valid") is True)
+            subject_identity = (subject_lock.update(
+                detections, timestamp_ms=timestamp_ms, width=metadata.width,
+                height=metadata.height, image=frame,
+                camera_epoch=camera_motion["reference_epoch"], camera_motion=camera_motion,
+            ) if sam_enabled else None)
+            observation = {"image": frame, "detections": detections, "players": players,
+                "quality": quality, "camera_motion": camera_motion,
+                "timestamp_ms": timestamp_ms, "timestamp_source": timestamp_source,
+                "source_frame_index": scan_index, "frame_stride": request.processing.frame_stride,
+                "decoded_binding": dict(capture.binding) if sam_enabled else {},
+                "subject_identity": subject_identity}
+            ready = initial_buffer.push(observation) if initial_buffer is not None else [observation]
+            scan_index += 1
+            scan_count += 1
+            yield from ready
+            if request.processing.max_frames is not None and scan_count >= request.processing.max_frames:
+                break
+        if initial_buffer is not None:
+            yield from initial_buffer.finish()
+
+    with frames_path.open("w", encoding="utf-8", newline="\n") as frames_file:
+        for observation in prepared_frames():
+            frame = observation["image"]
+            detections, players = observation["detections"], observation["players"]
+            quality, camera_motion = observation["quality"], observation["camera_motion"]
+            timestamp_ms, timestamp_source = observation["timestamp_ms"], observation["timestamp_source"]
+            source_frame_index = observation["source_frame_index"]
+            decoded_binding = observation["decoded_binding"]
             stage_started = time.perf_counter()
             check_cancelled()
             if sam_enabled:
-                subject_identity = subject_lock.update(
-                    detections, timestamp_ms=timestamp_ms, width=metadata.width,
-                    height=metadata.height, image=frame,
-                    camera_epoch=camera_motion["reference_epoch"],
-                    camera_motion=camera_motion,
-                )
+                subject_identity = observation["subject_identity"]
                 target_track = subject_identity.get("source_track_id")
                 target_players = [player for player in players if player["track_id"] == target_track]
                 if target_players and request.processing.max_players > 1:
                     others = sorted((player for player in players if player["track_id"] != target_track),
                                     key=lambda p: -(p["bbox_px"][2] - p["bbox_px"][0]) * (p["bbox_px"][3] - p["bbox_px"][1]))
                     target_players += others[:request.processing.max_players - 1]
-                source_timestamp_ms = (round(capture.binding["timestamp_ms"])
-                                       if capture.binding.get("timestamp_ms") is not None else None)
+                source_timestamp_ms = (round(decoded_binding["timestamp_ms"])
+                                       if decoded_binding.get("timestamp_ms") is not None else None)
                 source_binding = {
-                    **capture.binding, "video_sha256": input_video_sha256,
+                    **decoded_binding, "video_sha256": input_video_sha256,
                     "timestamp_ms": source_timestamp_ms,
                     "frame_index": source_frame_index, "processed_index": processed,
                     "camera_reference_epoch": camera_motion["reference_epoch"],
@@ -924,7 +954,7 @@ def _run_pipeline(
             }
             if sam_enabled:
                 record["subject_identity"] = subject_identity
-                record["frame"].update({**capture.binding, "timestamp_ms": timestamp_ms,
+                record["frame"].update({**decoded_binding, "timestamp_ms": timestamp_ms,
                                         "source_timestamp_ms": source_timestamp_ms,
                                         "video_sha256": input_video_sha256})
                 record["sam3d_requests"] = [

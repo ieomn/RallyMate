@@ -1,0 +1,500 @@
+{
+  "version": "tennis-release-v3-independent-source-audit-v1",
+  "generated_at_utc": "2026-10-27T05:58:27.500730+00:00",
+  "status": "targeted_changes_verified_with_real_action_coverage_limitations",
+  "scope": "All v2-to-v3 scored-window changes across 33 actual replay records; source observations reused from separately retained v2 independent audits. No new download, GT edits, score tuning, or claim of a blind benchmark.",
+  "prior_failure_audit": {
+    "path": "release-v2-independent-audit.json",
+    "sha256": "22891cff067be3f4206ba0677724463db2aaa4b74255efe28b8a4546e14f61fe",
+    "retained": true
+  },
+  "targeted_implementation_comparison": {
+    "path": "segmentation-release-v3-final-review/targeted-comparison.json",
+    "sha256": "07eb0fcfa975432186fb83293c6d65c0ac4e3e495eebf1d024ad9159471c33ef"
+  },
+  "frozen_manual_reference": {
+    "path": "manual-action-reference.json",
+    "sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+    "modified": false
+  },
+  "evaluations": [
+    {
+      "path": "release-v3-regression/evaluation.json",
+      "sha256": "fce20197af3fdccaae798acaa634be87d502f4cc5b7c045ded69e86e099c0070",
+      "records": 25,
+      "code_changed_during_execution": false,
+      "detector_version": "pose-racket-stroke-candidates-v2.3.1",
+      "assessment_version": "tennis-action-assessment-v1.3.0"
+    },
+    {
+      "path": "release-v3-gpu-regression/evaluation.json",
+      "sha256": "efaea777d3ad95fe16aeb06f835372f61eb59cc285c10c70ccc1f2e1ac066882",
+      "records": 4,
+      "code_changed_during_execution": false,
+      "detector_version": "pose-racket-stroke-candidates-v2.3.1",
+      "assessment_version": "tennis-action-assessment-v1.3.0"
+    },
+    {
+      "path": "release-v3-fresh-native/evaluation.json",
+      "sha256": "dcd6a6e6482f41e447fa52f6682b7a3f546665f300a47c341a71ab807a6d0f7e",
+      "records": 4,
+      "code_changed_during_execution": false,
+      "detector_version": "pose-racket-stroke-candidates-v2.3.1",
+      "assessment_version": "tennis-action-assessment-v1.3.0"
+    }
+  ],
+  "coverage": {
+    "records_compared": 33,
+    "records_with_changed_scored_windows": 2,
+    "records_with_unchanged_scored_windows": 31,
+    "new_scored_windows": 0,
+    "removed_scored_windows": 2,
+    "v2_scored_episodes": 97,
+    "v3_scored_episodes": 95,
+    "correctly_removed_preparation_false_positive": 1,
+    "real_stroke_newly_unscored": 1,
+    "all_changed_windows_have_prior_independent_source_frames": true,
+    "all_unchanged_windows_rewatched": false
+  },
+  "changes": [
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "group": "regression",
+      "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "v2_scored": 4,
+      "v3_scored": 3,
+      "removed_scored_windows_ms": [
+        [
+          27750,
+          28042,
+          28375
+        ]
+      ],
+      "added_scored_windows_ms": [],
+      "v3_candidate_accounting": {
+        "proposed_count": 4,
+        "accepted_count": 3,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "external_peak_motion_geometry_unverified": 1
+        }
+      },
+      "v3_rejected_episode": {
+        "episode_id": "2925f5f7b1ff1c543a3c",
+        "person_track_id": 2,
+        "start_ms": 27750,
+        "peak_ms": 28042,
+        "end_ms": 28375,
+        "analysis_status": "partial",
+        "phase_ambiguity": {
+          "reason_code": "external_peak_motion_geometry_unverified",
+          "candidate_wrist": "right",
+          "candidate_start_ms": 28375,
+          "candidate_end_ms": 29333,
+          "candidate_motion_peak_ms": 28042,
+          "motion_window_start_ms": 27750,
+          "motion_window_end_ms": 28375,
+          "local_sweep_geometry": {
+            "status": "not_supported",
+            "tested_window_count": 41,
+            "crosses_body_midline": false,
+            "horizontal_excursion_torso_units": 0.309814,
+            "vertical_range_torso_units": 0.502608,
+            "path_torso_units": 0.721306,
+            "minimum_wrist_y_torso_units": 0.243958
+          },
+          "reason_zh": "主运动峰落在原候选窗口之外；该峰附近的连续观测未独立支持跨身挥拍，暂不能把局部举手或准备动作判为完整挥拍。"
+        }
+      },
+      "causal_reason": "external_peak_motion_geometry_unverified",
+      "causal_scope": "new external-peak local-motion-geometry guard; not a newly introduced wrist jump mask rejection",
+      "before_assessment_sha256": "34f6ea5b23de7dd6bb05708000b812ceb3b59ee1507b3ecd543f1f854e75663e",
+      "after_assessment_sha256": "9f0930a21432b2e13c0f723d9e3a43c3588d971dbee9337a5a1447d949287e0c",
+      "after_recognition_sha256": "d245738ed0ccd8b6e291077078ccb2864209adc14b9fd4b757c34234ec8b0a3b",
+      "independent_visual_conclusion": "correct_rejection_of_preparation_only_complete_score",
+      "observation_zh": "27.75–28.375秒仅屈肘把垂下球拍提胸前，无完整前挥。v3保留candidate4并将该段partial，完整评分4→3，与真实源审计一致；原完整视频30.333–30.5秒的后续真实击球超出该run前30秒native，未据此补造测量。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-outdoor-28.jpg",
+          "image_sha256": "be2be6c9410fc5df875263bec2d1bd1e0b842d91bf8c0849e78a89161afecd90",
+          "metadata_path": "review-frames/release-v2-outdoor-28.json",
+          "metadata_sha256": "52ef9554894c64bbd3c6d30e2b5a7a2af8282c9872fdc60878ac41e91d825de1",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            27083.333333333336,
+            29708.333333333336
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-outdoor-dense.jpg",
+          "image_sha256": "c218f5b1f488dc0b64f7bc88ef2bc8d7f05d4f9300edd653bf87c3229e15a319",
+          "metadata_path": "review-frames/release-v2-outdoor-dense.json",
+          "metadata_sha256": "33b50c4b911faff4556f910e186af4d543a0398cc6d968acc86a71527004c1a5",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            27500.0,
+            29666.666666666668
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-outdoor-end.jpg",
+          "image_sha256": "e4fe13d865e6cc5cab2911a84dc96f1d4b0af6cb8c0f2c6cda08a70fce36103e",
+          "metadata_path": "review-frames/release-v2-outdoor-end.json",
+          "metadata_sha256": "4ba4d16d2a9c71c532f1389e64f974e8cc5fcce2b7d9fb39a1b432135fe37e4e",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            28000.000000000004,
+            29958.333333333336
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-outdoor-after-inference.jpg",
+          "image_sha256": "83abda95627914cd91d05881d29a1c4c3af616c236141aa7e1d093636f5e71ad",
+          "metadata_path": "review-frames/release-v2-outdoor-after-inference.json",
+          "metadata_sha256": "9e7a271cf3dee7426a26cc35c0e715d34f8f0b82be133d569557f9aa52f2d448",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            29666.666666666668,
+            31500.000000000004
+          ]
+        }
+      ],
+      "source_later_real_stroke_outside_native_ms": [
+        30333,
+        30500
+      ]
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "group": "fresh-native",
+      "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "v2_scored": 3,
+      "v3_scored": 2,
+      "removed_scored_windows_ms": [
+        [
+          13633,
+          13867,
+          14200
+        ]
+      ],
+      "added_scored_windows_ms": [],
+      "v3_candidate_accounting": {
+        "proposed_count": 3,
+        "accepted_count": 2,
+        "other_subject_count": 0,
+        "rejected_count": 1,
+        "rejection_counts": {
+          "external_peak_motion_geometry_unverified": 1
+        }
+      },
+      "v3_rejected_episode": {
+        "episode_id": "9733fce130b2117bde2e",
+        "person_track_id": 95,
+        "start_ms": 13633,
+        "peak_ms": 13867,
+        "end_ms": 14200,
+        "analysis_status": "partial",
+        "phase_ambiguity": {
+          "reason_code": "external_peak_motion_geometry_unverified",
+          "candidate_wrist": "left",
+          "candidate_start_ms": 14283,
+          "candidate_end_ms": 14867,
+          "candidate_motion_peak_ms": 13867,
+          "motion_window_start_ms": 13633,
+          "motion_window_end_ms": 14200,
+          "local_sweep_geometry": {
+            "status": "not_supported",
+            "tested_window_count": 157,
+            "crosses_body_midline": false,
+            "horizontal_excursion_torso_units": 0.024157,
+            "vertical_range_torso_units": 1.648522,
+            "path_torso_units": 4.182639,
+            "minimum_wrist_y_torso_units": -0.6417
+          },
+          "reason_zh": "主运动峰落在原候选窗口之外；该峰附近的连续观测未独立支持跨身挥拍，暂不能把局部举手或准备动作判为完整挥拍。"
+        }
+      },
+      "causal_reason": "external_peak_motion_geometry_unverified",
+      "causal_scope": "new external-peak local-motion-geometry guard; not a newly introduced wrist jump mask rejection",
+      "before_assessment_sha256": "4f8259f637bdc6383c5195356b6a7771ea766ce4bd0065fdc888a482a0e5dcb1",
+      "after_assessment_sha256": "ae3a6c9e146f3fb2cdb84bae5ca6785133f7516b764ed08886ac547210264c77",
+      "after_recognition_sha256": "b84620f237f521ffa59732c63cedb1ff0f14c178d2ce01cabc82d38d5df81f47",
+      "independent_visual_conclusion": "real_stroke_coverage_loss_due_to_geometry_guard",
+      "observation_zh": "源图13.633–13.8秒拍在侧后，13.867–13.933有真实双手前挥，14.0–14.2随挥。新guard因stage13633–14200完全早于原candidate14283–14867且局部未跨中线而拒绝；它是真动作覆盖损失，不能说是删除假挥拍。本拍是接发之后的底线回合动作，不是新增接发。保留partial及缺测原因，不放松规则或回填阶段。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-dimitrov-14.jpg",
+          "image_sha256": "d9d635323734a6c66bc89122cd864b6ec1a77536e9992db9caedbb2e506c5bae",
+          "metadata_path": "review-frames/release-v2-dimitrov-14.json",
+          "metadata_sha256": "30457f93d1c172935d2371daf24c74473348494990842d8023c3042d774d92a9",
+          "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+          "reviewed_source_timestamp_range_ms": [
+            13299.999999999998,
+            14500.0
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-dimitrov-crop.jpg",
+          "image_sha256": "38eee60d27008150e939a41aeb485b446e8722aae7e5eace096515d66a08df2c",
+          "metadata_path": "review-frames/release-v2-dimitrov-crop.json",
+          "metadata_sha256": "1e080477d5cf877ee71f4a716f3a65deeac44a30b556cc07d474854d699321c6",
+          "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+          "reviewed_source_timestamp_range_ms": [
+            13299.999999999998,
+            14266.666666666666
+          ]
+        }
+      ]
+    }
+  ],
+  "record_counts": [
+    {
+      "sample_id": "davis-cup-2018-04",
+      "group": "regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "group": "regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "development-ordinary-a",
+      "group": "regression",
+      "v2_scored": 15,
+      "v3_scored": 15,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "development-sharapova",
+      "group": "regression",
+      "v2_scored": 2,
+      "v3_scored": 2,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "group": "regression",
+      "v2_scored": 1,
+      "v3_scored": 1,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "group": "regression",
+      "v2_scored": 5,
+      "v3_scored": 5,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "group": "regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "group": "regression",
+      "v2_scored": 2,
+      "v3_scored": 2,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "group": "regression",
+      "v2_scored": 4,
+      "v3_scored": 4,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "group": "regression",
+      "v2_scored": 2,
+      "v3_scored": 2,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "group": "regression",
+      "v2_scored": 4,
+      "v3_scored": 4,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "group": "regression",
+      "v2_scored": 4,
+      "v3_scored": 3,
+      "scored_windows_unchanged": false
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "group": "regression",
+      "v2_scored": 6,
+      "v3_scored": 6,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "group": "regression",
+      "v2_scored": 1,
+      "v3_scored": 1,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "group": "regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "group": "regression",
+      "v2_scored": 1,
+      "v3_scored": 1,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "group": "regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "regression-nadal",
+      "group": "regression",
+      "v2_scored": 2,
+      "v3_scored": 2,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "group": "regression",
+      "v2_scored": 7,
+      "v3_scored": 7,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "group": "regression",
+      "v2_scored": 15,
+      "v3_scored": 15,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "group": "regression",
+      "v2_scored": 1,
+      "v3_scored": 1,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "group": "regression",
+      "v2_scored": 3,
+      "v3_scored": 3,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "group": "regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "group": "regression",
+      "v2_scored": 3,
+      "v3_scored": 3,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "white-mirror",
+      "group": "regression",
+      "v2_scored": 4,
+      "v3_scored": 4,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "gpu-federer",
+      "group": "gpu-regression",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "gpu-night",
+      "group": "gpu-regression",
+      "v2_scored": 4,
+      "v3_scored": 4,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "gpu-pink",
+      "group": "gpu-regression",
+      "v2_scored": 2,
+      "v3_scored": 2,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "gpu-white",
+      "group": "gpu-regression",
+      "v2_scored": 4,
+      "v3_scored": 4,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "davis05-fresh",
+      "group": "fresh-native",
+      "v2_scored": 0,
+      "v3_scored": 0,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "group": "fresh-native",
+      "v2_scored": 3,
+      "v3_scored": 2,
+      "scored_windows_unchanged": false
+    },
+    {
+      "sample_id": "thetis-p1_fslice_s1",
+      "group": "fresh-native",
+      "v2_scored": 1,
+      "v3_scored": 1,
+      "scored_windows_unchanged": true
+    },
+    {
+      "sample_id": "thetis-p32_fslice_s1",
+      "group": "fresh-native",
+      "v2_scored": 1,
+      "v3_scored": 1,
+      "scored_windows_unchanged": true
+    }
+  ],
+  "ics_source_bound_context": {
+    "path": "action-contexts-release-v3/d12255e0-22f1-475e-99ba-b0595b8184b6.json",
+    "sha256": "f232ee05baf3cc61107ac4814f0643f9f3269b5faf75628643878c362cac1e28",
+    "episode_id": "09efd52b183d09ea1dec",
+    "candidate_artifact": "release-v3-regression/mendeley-indoor-side-view-ICS01-recognition.json",
+    "candidate_artifact_sha256": "a44c3062b52b815942d9830996e09c10935ec4ec584e43e101ce0cc14c309af9",
+    "technique": "baseline_forehand",
+    "racket_hand": "right",
+    "manual_source_review_unchanged": true
+  },
+  "limitations_zh": [
+    "只核验全部v2→v3变化，不把31条未变记录说成重新逐帧审核通过；此前其他阶段/机位/姿态缺口仍保留。",
+    "外部峰几何保护修掉举拍假阳性的同时拒绝一段真实双手挥拍；这是自动识别覆盖损失，不是素材没有动作，也不是评分阈值修复。",
+    "Dimitrov实例源画面有完整动作，但投影几何没有满足自动跨身支持；保持该项未评分，人工图证不替代自动可测证据。",
+    "所有源身份、用户普通标签、原GT保持不变，同源重复/压缩/镜像/GPU回放不算新增独立来源。"
+  ]
+}

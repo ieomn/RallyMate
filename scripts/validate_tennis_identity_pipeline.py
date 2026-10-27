@@ -83,6 +83,12 @@ def main(argv: list[str] | None = None) -> int:
     selector_paths = [Path(__file__).resolve().parents[1] / "src/rallymate_tracking" / name
                       for name in ("subject_lock.py", "primary_player.py")]
     selector_hashes = {path.name: sha256_file(path) for path in selector_paths}
+    source_root = Path(__file__).resolve().parents[1] / "src"
+
+    def code_hashes():
+        return {path.relative_to(source_root).as_posix(): sha256_file(path)
+                for path in sorted(source_root.rglob("*.py"))}
+
     for original_path in requests:
         check_service_idle()
         config = json.loads(original_path.read_text(encoding="utf-8"))
@@ -108,6 +114,8 @@ def main(argv: list[str] | None = None) -> int:
         request_path = output / f"{original_path.stem}-request.json"
         request_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
         request = load_request(request_path)
+        source_sha_before = sha256_file(request.video_path)
+        code_before = code_hashes()
         started = time.perf_counter()
         last_report = -100
 
@@ -127,6 +135,9 @@ def main(argv: list[str] | None = None) -> int:
                 raise RuntimeError("Production pipeline did not reach the expected validation boundary")
         if selector_hashes != {path.name: sha256_file(path) for path in selector_paths}:
             raise RuntimeError("Selector source changed during GPU validation")
+        if source_sha_before != sha256_file(request.video_path):
+            raise RuntimeError("Source video changed during GPU validation")
+        code_after = code_hashes()
         read_rows = lambda name: [json.loads(line) for line in (run / name).open(encoding="utf-8")]
         timeline = read_rows("primary-player.jsonl")
         native = read_rows("sam3d_frames.jsonl")
@@ -143,6 +154,9 @@ def main(argv: list[str] | None = None) -> int:
             "candidate_count": recognized.get("candidate_count"), "candidates_by_family": recognized.get("by_family"),
             "native_inference_seconds": round(sum(r.get("inference_ms") or 0 for r in native) / 1000, 3),
             "selector_sha256": selector_hashes,
+            "code_hashes_at_start": code_before, "code_hashes_at_end": code_after,
+            "code_changed_during_execution": code_before != code_after,
+            "recognizer_version": recognized.get("detector_version"),
             "artifact_sha256": {name: sha256_file(run / name) for name in
                                 ("frames.jsonl", "sam3d_frames.jsonl", "primary-player.jsonl", "action-recognition.json")},
             "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",

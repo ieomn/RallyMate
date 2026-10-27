@@ -243,6 +243,44 @@ def _classification(samples: list[Any], side: str, hand_evidence: Mapping[str, A
 
 
 
+def _external_peak_sweep_support(samples, side, start, pivot, end):
+    """An expanded-context peak must own the original candidate's geometry.
+
+    Use the detector's same three-observation median and admissible windows.
+    This prevents a short preparatory lift from borrowing a later crossing,
+    while a real low sweep may retain racket support through blurred frames.
+    No ball contact or ideal body-joint sequence is inferred.
+    """
+    points = []
+    for i in range(len(samples)):
+        nearby = [s.points[f"{side}_wrist"] for s in samples[max(0, i - 1):i + 2]]
+        points.append(tuple(statistics.median(p[axis] for p in nearby) for axis in (0, 1)))
+    times = [s.time for s in samples]
+    before = [i for i in range(start, pivot) if 80 <= times[pivot] - times[i] <= 650]
+    after = [i for i in range(pivot + 1, end + 1) if 80 <= times[i] - times[pivot] <= 650]
+    tested = 0
+    for a in before:
+        for b in after:
+            if not 200 <= times[b] - times[a] <= 1200:
+                continue
+            tested += 1
+            window = points[a:b + 1]
+            horizontal = abs(points[b][0] - points[a][0])
+            vertical = max(p[1] for p in window) - min(p[1] for p in window)
+            path = sum(_distance(p, q) for p, q in zip(window, window[1:]))
+            if (points[a][0] * points[b][0] < 0 and horizontal >= .9
+                    and min(p[1] for p in window) >= -.5 and horizontal >= vertical * .8
+                    and path <= horizontal * 2.5):
+                return None
+    window = points[start:end + 1]
+    return {"status": "not_supported", "tested_window_count": tested,
+            "crosses_body_midline": points[start][0] * points[end][0] < 0,
+            "horizontal_excursion_torso_units": round(abs(points[end][0] - points[start][0]), 6),
+            "vertical_range_torso_units": round(max(p[1] for p in window) - min(p[1] for p in window), 6),
+            "path_torso_units": round(sum(_distance(p, q) for p, q in zip(window, window[1:])), 6),
+            "minimum_wrist_y_torso_units": round(min(p[1] for p in window), 6)}
+
+
 def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], hand_evidence: Mapping[str, Any]) -> dict[str, Any] | None:
     samples = list(window.samples)
     side = candidate["racket_hand_candidate"]
@@ -252,11 +290,34 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
         # fastest wrist motion and is visually validated for serve sequences.
         pivot = min(range(len(samples)), key=lambda i: abs(samples[i].time - candidate["peak_ms"]))
     else:
+        # A geometric crossing can occur late in recovery. Use the already
+        # validated local preparation context instead of clipping its first
+        # 400 ms and accidentally selecting a smaller recovery burst.
         search = [i for i in range(2, len(samples) - 2)
-                  if candidate["start_ms"] - 250 <= samples[i].time <= candidate["end_ms"] + 400]
+                  if samples[i].time <= candidate["end_ms"] + 400]
         if not search:
             return None
         pivot = max(search, key=lambda i: speed[i])
+        if samples[pivot].time < candidate["start_ms"] - 250:
+            # A sustained observed reset separates an earlier independent
+            # action. Do not let its larger peak take over the next candidate.
+            quiet = None
+            independent_reset = False
+            for i in range(pivot + 1, len(samples)):
+                if samples[i].time > candidate["start_ms"]:
+                    break
+                if speed[i] <= speed[pivot] * .35:
+                    quiet = i if quiet is None else quiet
+                    if samples[i].time - samples[quiet].time >= 250:
+                        independent_reset = True
+                        break
+                else:
+                    quiet = None
+            if independent_reset:
+                local = [i for i in search if samples[i].time >= candidate["start_ms"] - 250]
+                if not local:
+                    return None
+                pivot = max(local, key=lambda i: speed[i])
     if pivot < 2 or pivot >= len(samples) - 1:
         return None
     acceleration_window = [i for i in range(1, pivot + 1) if samples[pivot].time - samples[i].time <= 650]
@@ -266,6 +327,9 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
         acceleration_start -= 1
     acceleration_start = min(acceleration_start, pivot - 1)
     preparation_start = min(range(acceleration_start + 1), key=lambda i: abs(samples[i].time - (samples[acceleration_start].time - 250)))
+    linked_start = candidate.get("evidence", {}).get("linked_preparation_start_ms")
+    if linked_start is not None:
+        preparation_start = min(preparation_start, min(range(acceleration_start + 1), key=lambda i: abs(samples[i].time - linked_start)))
     if candidate["family"] == "serve":
         # Keep the earlier opposite-arm lift in the serve preparation instead
         # of cropping the episode to only its last acceleration burst.
@@ -288,6 +352,61 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
                 break
         else:
             quiet_start = None
+    phase_ambiguity = None
+    if (candidate["family"] == "baseline" and preparation_complete and follow_complete
+            and not candidate["start_ms"] <= samples[pivot].time <= candidate["end_ms"]
+            and (samples[follow_end].time <= candidate["start_ms"]
+                 or samples[preparation_start].time >= candidate["end_ms"])):
+        # A peak just beyond the candidate is still supported by overlapping
+        # observations. This guard concerns a separate earlier/later pulse
+        # whose entire reported stages borrow the other interval's evidence.
+        geometry = _external_peak_sweep_support(samples, side, preparation_start, pivot, follow_end)
+        if geometry is not None:
+            phase_ambiguity = {"reason_code": "external_peak_motion_geometry_unverified",
+                "candidate_wrist": side, "candidate_start_ms": candidate["start_ms"],
+                "candidate_end_ms": candidate["end_ms"], "candidate_motion_peak_ms": samples[pivot].time,
+                "motion_window_start_ms": samples[preparation_start].time,
+                "motion_window_end_ms": samples[follow_end].time, "local_sweep_geometry": geometry,
+                "reason_zh": "主运动峰落在原候选窗口之外；该峰附近的连续观测未独立支持跨身挥拍，暂不能把局部举手或准备动作判为完整挥拍。"}
+            preparation_complete = follow_complete = False
+    # Short local racket support can retain an already measured wrist sequence
+    # without meeting the stronger eight-vote requirement for stroke taxonomy.
+    # Reuse the detector's two-frame evidence floor and ownership dominance:
+    # a normal balancing-arm burst cannot erase a supported hitting-arm burst.
+    votes = hand_evidence.get("separated_wrist_racket_votes", {})
+    other_side = "left" if side == "right" else "right"
+    side_supported = (votes.get(side, 0) >= 2
+                      and votes.get(side, 0) >= max(1, votes.get(other_side, 0)) * 3)
+    if (candidate["family"] == "baseline" and hand_evidence.get("hand") is None
+            and not side_supported and follow_complete):
+        other = "left" if side == "right" else "right"
+        try:
+            other_wrists, other_speed = wrist_kinematics(samples, other)
+        except WristKinematicsUnavailable:
+            other_wrists, other_speed = [], []
+        for i in range(2, len(samples) - 2) if other_speed else ():
+            # Without independent racket-hand evidence, two separated hands
+            # making strong sequential sweeps do not identify which burst is
+            # the forward stroke. Do not call the first hand's pause a complete
+            # follow-through while the other starts its own strong excursion.
+            if (not 100 <= samples[i].time - samples[pivot].time
+                    or samples[i].time > samples[follow_end].time + 150
+                    or other_speed[i] < speed[pivot] * .8
+                    or speed[i] > speed[pivot] * .35
+                    or _distance(wrists[i], other_wrists[i]) <= .55
+                    or not (other_speed[i] >= other_speed[i - 1] and other_speed[i] > other_speed[i + 1])):
+                continue
+            a = min(range(i + 1), key=lambda j: abs(samples[j].time - (samples[i].time - 150)))
+            b = min(range(i, len(samples)), key=lambda j: abs(samples[j].time - (samples[i].time + 150)))
+            if _distance(other_wrists[a], other_wrists[b]) < .9:
+                continue
+            phase_ambiguity = {"reason_code": "unresolved_racket_hand_with_competing_arm_sequence",
+                "candidate_wrist": side, "competing_wrist": other,
+                "candidate_motion_peak_ms": samples[pivot].time,
+                "competing_motion_peak_ms": samples[i].time,
+                "reason_zh": "持拍手的独立球拍证据不足；两侧手腕先后出现较强运动，暂不能把其中一侧的停顿判作完整随挥。"}
+            preparation_complete = follow_complete = False
+            break
     phases = [
         {"phase": "preparation", "label_zh": "准备", "start_ms": samples[preparation_start].time if preparation_complete else None,
          "end_ms": samples[acceleration_start].time if preparation_complete else None, "status": "measured" if preparation_complete else "unavailable"},
@@ -297,13 +416,17 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
     ]
     motion_peak_ms = samples[pivot].time
     for item in phases:
+        if phase_ambiguity:
+            item.update(start_ms=None, end_ms=None, status="unavailable")
         item.update(boundary_semantics="estimated_motion_phase", anchor_is_contact=False,
-                    reason_code="observed_motion_sequence" if item["status"] == "measured" else "stage_not_fully_observed")
+                    reason_code=(phase_ambiguity["reason_code"] if phase_ambiguity else
+                                 "observed_motion_sequence" if item["status"] == "measured" else "stage_not_fully_observed"))
     candidate_samples = [sample for sample in samples if candidate["start_ms"] <= sample.time <= candidate["end_ms"]]
     return {"classification": _classification(candidate_samples, side, hand_evidence, candidate["family"]),
             "start_ms": samples[preparation_start].time, "peak_ms": motion_peak_ms, "end_ms": samples[follow_end].time,
             "phases": phases, "phase_timing_status": "estimated_from_2d_motion",
             "analysis_status": "complete" if preparation_complete and follow_complete else "partial",
+            "phase_ambiguity": phase_ambiguity,
             "phase_method": "smoothed_wrist_speed_with_observed_slowdown", "contact_confirmed": False}
 
 
@@ -311,7 +434,7 @@ class RuleTemporalBackend:
     """Honest runnable baseline until a tennis-trained adapter is validated."""
 
     def metadata(self) -> dict[str, Any]:
-        return {"backend_id": "pose-racket-temporal-rules", "version": "2.1.0", "kind": "deterministic_rules",
+        return {"backend_id": "pose-racket-temporal-rules", "version": "2.3.1", "kind": "deterministic_rules",
                 "trained_tennis_model": False, "weights": None, "accuracy_validation": "not_established",
                 "input_contract": CONTRACT_VERSION, "phase_comparison": "corresponding_observed_stage_only"}
 

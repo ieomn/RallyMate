@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "report_sha256": "a35866ace205ff1afa62aa50e255fec1283b4087bb4582e68593181ffa33e52e",
+  "parser_sha256": "5b8f2780159bf76e1d8dbdbd9249e146cd4376c343eb7adbde5eed212127f9b0",
+  "source_video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+  "source_video_hash_verified": true,
+  "episode_count": 1,
+  "score_unchanged": true,
+  "classification_provenance": {
+    "method": "agent_visual_review",
+    "reviewer": "codex_samples_independent_source_review_20261027"
+  }
+}

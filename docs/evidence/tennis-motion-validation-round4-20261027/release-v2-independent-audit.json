@@ -1,0 +1,854 @@
+{
+  "version": "tennis-release-v2-independent-source-audit-v1",
+  "generated_at_utc": "2026-10-27T05:50:25.768528+00:00",
+  "status": "intermediate_failure_preserved_outdoor_side_requires_fix",
+  "method": "Targeted agent visual review of real source frames after automatic release differences; no score optimization, no automatic labels used as visual truth. Not an independent blind benchmark.",
+  "targeted_review_artifact": {
+    "path": "segmentation-release-v2-final-review/targeted-review.json",
+    "sha256": "33ee1c1452f985d1a19a4a0041021a8d5c28767d18e190b47971a79dca529466"
+  },
+  "prior_independent_audit": {
+    "path": "release-newly-scored-audit.json",
+    "sha256": "32290ce9edacb777ccd53eea7e3b1d96b2875d83c847b9442569eaf437da8448"
+  },
+  "frozen_manual_reference": {
+    "path": "manual-action-reference.json",
+    "sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+    "modified": false
+  },
+  "evaluations": [
+    {
+      "path": "release-v2-regression/evaluation.json",
+      "sha256": "c92b3f3b80fe77a02c1d1e99af3527bd76bb20d62098b3b6d8436739f5574d38",
+      "records": 25,
+      "code_changed_during_execution": false,
+      "detector_version": "pose-racket-stroke-candidates-v2.3.0",
+      "assessment_version": "tennis-action-assessment-v1.3.0"
+    },
+    {
+      "path": "release-v2-gpu-regression/evaluation.json",
+      "sha256": "19e99578b3dca4ea3d162ff94fc583618eca426012dd4b5372b51c99b46b81c8",
+      "records": 4,
+      "code_changed_during_execution": false,
+      "detector_version": "pose-racket-stroke-candidates-v2.3.0",
+      "assessment_version": "tennis-action-assessment-v1.3.0"
+    },
+    {
+      "path": "release-v2-fresh-native/evaluation.json",
+      "sha256": "b2220c339cabd37f68cb417161fb9ceee83f48cadf5ac57a295c7919a3fc8404",
+      "records": 4,
+      "code_changed_during_execution": false,
+      "detector_version": "pose-racket-stroke-candidates-v2.3.0",
+      "assessment_version": "tennis-action-assessment-v1.3.0"
+    }
+  ],
+  "coverage": {
+    "automatic_records_compared": 33,
+    "records_with_scored_boundary_or_count_change": 12,
+    "all_changed_records_have_source_audit": true,
+    "unchanged_records_not_all_rewatched": true,
+    "old_total_scored_episodes": 105,
+    "v2_total_scored_episodes": 97,
+    "source_windows_newly_added_to_frozen_gt": 0
+  },
+  "limitations_zh": [
+    "本轮覆盖全部33记录的评分数量/边界差异，并用已有或新提源帧核验所有变化；没有逐动作重审所有未变化评分，不能宣称全量零误报。",
+    "outdoor-side仍把准备当完整动作，是算法分段失败；后续真实挥拍在本次native范围之外，不可借原视频后续冒充已测量。",
+    "真实自喂/正手动作因侧别歧义失评分必须保留为覆盖损失；安全拒绝不等于动作识别成功。",
+    "共享源重复、镜像、压缩与GPU重跑不增加独立来源数；用户提供的普通标签不改。"
+  ],
+  "ics_context": {
+    "path": "action-contexts-release-v2/d12255e0-22f1-475e-99ba-b0595b8184b6.json",
+    "sha256": "3a09d74f25f0334fc3110435d98d0dd994a6cbc8543847564d8b53e3127b0088",
+    "source_gt_unchanged": true
+  },
+  "changes": [
+    {
+      "sample_id": "development-ordinary-a",
+      "group": "regression",
+      "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "old_scored": 16,
+      "v2_scored": 15,
+      "removed_or_replaced_windows_ms": [
+        [
+          2367,
+          2800,
+          3133
+        ]
+      ],
+      "added_or_replaced_windows_ms": [],
+      "before_assessment_sha256": "a92fff4c396cd9dace3756753db45937957dd806727ccc078af020fb287c6402",
+      "after_assessment_sha256": "76570033b6c128b54e209cdc59d4ddc59fe7e064499e94340710977c7e859fd3",
+      "after_recognition_sha256": "b77929569686ca1f936ce4f8c991927308b9f4d7b49fbcd79c68247bc5d94c90",
+      "source_audit_findings": [
+        "real_strokes_newly_unscored"
+      ]
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "group": "regression",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "old_scored": 5,
+      "v2_scored": 4,
+      "removed_or_replaced_windows_ms": [
+        [
+          5433,
+          5833,
+          6067
+        ]
+      ],
+      "added_or_replaced_windows_ms": [],
+      "before_assessment_sha256": "09cb023902c5123ded0c8cbc0584a7f244dae36ecdd20b8f5d1d8e2b1a1a0f57",
+      "after_assessment_sha256": "881bd095914330b3f8a017ed45bd9bea01174e7fecae42d230486cb5225a7ec7",
+      "after_recognition_sha256": "0a440dc1006076bcceb2bf2e0ec1836a8f806d05cd7def4cf837a9c98d81b4c1",
+      "source_audit_findings": [
+        "real_strokes_newly_unscored"
+      ]
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "group": "regression",
+      "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "old_scored": 4,
+      "v2_scored": 4,
+      "removed_or_replaced_windows_ms": [
+        [
+          28208,
+          28792,
+          29333
+        ]
+      ],
+      "added_or_replaced_windows_ms": [
+        [
+          27750,
+          28042,
+          28375
+        ]
+      ],
+      "before_assessment_sha256": "ced188a151de3a7a09efeee97d48b7d2ae9d2e8502369c33d063a57404ba6069",
+      "after_assessment_sha256": "34f6ea5b23de7dd6bb05708000b812ceb3b59ee1507b3ecd543f1f854e75663e",
+      "after_recognition_sha256": "3505e1210f115fade992485e135afa0721419bf5cb3d7e8f606abc604f7654c1",
+      "source_audit_findings": [
+        "outdoor_side_tail_false_positive"
+      ]
+    },
+    {
+      "sample_id": "regression-nadal",
+      "group": "regression",
+      "source_video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+      "old_scored": 2,
+      "v2_scored": 2,
+      "removed_or_replaced_windows_ms": [
+        [
+          19880,
+          20600,
+          20840
+        ]
+      ],
+      "added_or_replaced_windows_ms": [
+        [
+          19880,
+          20160,
+          20840
+        ]
+      ],
+      "before_assessment_sha256": "f7addc3037f828722ad11e7ee818853555bcb007391deb6c860b1d1bb73ac620",
+      "after_assessment_sha256": "d55c9182fe2686f6eb5ac7c036c1a048da356971e4577b7456491e6fc63de472",
+      "after_recognition_sha256": "b2a170423467751ae26be46a265563de65f2c3fa69d4041f3d800c51cf1c587e",
+      "source_audit_findings": [
+        "nadal_anchor_shift"
+      ]
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "group": "regression",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "old_scored": 8,
+      "v2_scored": 7,
+      "removed_or_replaced_windows_ms": [
+        [
+          34233,
+          34533,
+          34800
+        ]
+      ],
+      "added_or_replaced_windows_ms": [],
+      "before_assessment_sha256": "06f3417cd44e09d5e3c74b8e62a112508bd33fefd36cf07424bc6abf6c892b68",
+      "after_assessment_sha256": "677bb6df16562487376cf6bf0398513d8a0321fa1f7343c7c73d8067c3994a66",
+      "after_recognition_sha256": "bd790a5b776bca94acbea8902390eddeb344a0e0cbec4f2006aa173aa4c3c8bd",
+      "source_audit_findings": [
+        "real_strokes_newly_unscored"
+      ]
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "group": "regression",
+      "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "old_scored": 16,
+      "v2_scored": 15,
+      "removed_or_replaced_windows_ms": [
+        [
+          2367,
+          2800,
+          3133
+        ]
+      ],
+      "added_or_replaced_windows_ms": [],
+      "before_assessment_sha256": "b49245acf92eaf1e5473c2cd6bb8aa78fd3edd8a8e7d290dc3b32a7eaf3cbbe5",
+      "after_assessment_sha256": "a15347376723172c1c60449613f16970d33354b66c6e832bb0881b9723a880b1",
+      "after_recognition_sha256": "ac9e2e122740772c89a6ef4ac61ff949651b1c0d9a4cb98bc013a31065fd4c2e",
+      "source_audit_findings": [
+        "real_strokes_newly_unscored"
+      ]
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "group": "regression",
+      "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+      "old_scored": 2,
+      "v2_scored": 1,
+      "removed_or_replaced_windows_ms": [
+        [
+          12679,
+          13080,
+          13614
+        ],
+        [
+          13680,
+          14014,
+          14348
+        ]
+      ],
+      "added_or_replaced_windows_ms": [
+        [
+          12880,
+          14014,
+          14348
+        ]
+      ],
+      "before_assessment_sha256": "347f8970b453256302da465d80facc32b4ca2c8bb0a4585fe40b613cb1981fe2",
+      "after_assessment_sha256": "318dee4328b1cac7d36c11584185875e00d46a6d58edc923f86e1d039c3b5b16",
+      "after_recognition_sha256": "55fe494a9755690606ba5bb162c248d5887a4fc575736e9048c3c916461291d3",
+      "source_audit_findings": [
+        "rola_preparation_duplicate"
+      ]
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "group": "regression",
+      "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+      "old_scored": 3,
+      "v2_scored": 3,
+      "removed_or_replaced_windows_ms": [
+        [
+          6757,
+          7007,
+          7549
+        ]
+      ],
+      "added_or_replaced_windows_ms": [
+        [
+          6757,
+          6965,
+          7549
+        ]
+      ],
+      "before_assessment_sha256": "56fb1e1f8d50c85eb086836a88eccff4637ccd2229e2fa8f946a66243ae9fce6",
+      "after_assessment_sha256": "2c090e8e8034eb336b90b0c3042cac002460cc33713fc042f174cbf6f7948a43",
+      "after_recognition_sha256": "75a71bca33025efb5cb839e9364d3ad8b2ef2b1d1e2e40ff1dbe93d232c277d6",
+      "source_audit_findings": [
+        "schiavone_one_frame_anchor_shift"
+      ]
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "group": "regression",
+      "source_video_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+      "old_scored": 4,
+      "v2_scored": 3,
+      "removed_or_replaced_windows_ms": [
+        [
+          5533,
+          6467,
+          6700
+        ],
+        [
+          22133,
+          22433,
+          22667
+        ]
+      ],
+      "added_or_replaced_windows_ms": [
+        [
+          5533,
+          5800,
+          6167
+        ]
+      ],
+      "before_assessment_sha256": "cd3e2c34f038b4e699071ac8bc1c5cf21a5d2e5aee15d3e8585cffabc9bbd29f",
+      "after_assessment_sha256": "e13860d57ca41b299bc5f3dc6da73536dd8a89fd7d6231ff4fec1e6e3a31b0c7",
+      "after_recognition_sha256": "96803c73981202ba09b8ca43ecf6ca7feb834a59bad258454f9aba38c34e10da",
+      "source_audit_findings": [
+        "white360_late_peak",
+        "white360_early_peak_incomplete"
+      ]
+    },
+    {
+      "sample_id": "white-mirror",
+      "group": "regression",
+      "source_video_sha256": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+      "old_scored": 5,
+      "v2_scored": 4,
+      "removed_or_replaced_windows_ms": [
+        [
+          5433,
+          5833,
+          6067
+        ]
+      ],
+      "added_or_replaced_windows_ms": [],
+      "before_assessment_sha256": "7aa08ac82a936a8337da6bddae1a114090367d73f569df5bb56188128b03a6bd",
+      "after_assessment_sha256": "78738363eafb712b800956b4637e27154717e90c413616afa56ae32134799fc5",
+      "after_recognition_sha256": "f5efaafee3afff4db386f95d10634f48ffa80a514fc96bf8c968346f0df91b3a",
+      "source_audit_findings": [
+        "real_strokes_newly_unscored"
+      ]
+    },
+    {
+      "sample_id": "gpu-white",
+      "group": "gpu-regression",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "old_scored": 5,
+      "v2_scored": 4,
+      "removed_or_replaced_windows_ms": [
+        [
+          5433,
+          5833,
+          6067
+        ]
+      ],
+      "added_or_replaced_windows_ms": [],
+      "before_assessment_sha256": "c05819216e961cf3b2816dee7708cb0c2d83e2726271f67f4957b7a1c3424a30",
+      "after_assessment_sha256": "4a56cd495c69279e4980fc29af1c81a5f15560d61495706d1fc8285d106bb88f",
+      "after_recognition_sha256": "546fca8bf5b5da4f88c3c5971576b9b8508c8457b89feafb968a7c2ee0149847",
+      "source_audit_findings": [
+        "real_strokes_newly_unscored"
+      ]
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "group": "fresh-native",
+      "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "old_scored": 3,
+      "v2_scored": 3,
+      "removed_or_replaced_windows_ms": [
+        [
+          13633,
+          14033,
+          14267
+        ]
+      ],
+      "added_or_replaced_windows_ms": [
+        [
+          13633,
+          13867,
+          14200
+        ]
+      ],
+      "before_assessment_sha256": "9d35da8beef8bb4fd10f5cd54a203e9c3f3940ca63d1fab4ff60966975e10534",
+      "after_assessment_sha256": "4f8259f637bdc6383c5195356b6a7771ea766ce4bd0065fdc888a482a0e5dcb1",
+      "after_recognition_sha256": "c4f301f8e86450fe5e25e5e569fdeeabe93b94d235e99148f544c55ae7a879c1",
+      "source_audit_findings": [
+        "dimitrov_other_baseline_anchor_shift"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "key": "rola_preparation_duplicate",
+      "samples": [
+        "rola-ncaa-2013"
+      ],
+      "status": "fixed_in_v2",
+      "observation_zh": "12.7–13.6秒只是就位/举拍，14.0–14.3秒才一次真正前挥。v2保留12880/14014/14348一个完整窗，早段仅supporting preparation且禁止单独评分，与独立源审计一致。",
+      "limitations_zh": "仅该已见回归片段；非独立盲测。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-rola-overview.jpg",
+          "image_sha256": "f2be14b155a5174635225c07a66ed0c7791dcbe175f73ca78356e9a1968c33e3",
+          "metadata_path": "review-frames/release-rola-overview.json",
+          "metadata_sha256": "99065d2910c5a41e6aa13597b404a21196b30197ed36a3c9ff2ea2e888bfd134",
+          "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+          "reviewed_source_timestamp_range_ms": [
+            11811.8,
+            15315.300000000001
+          ]
+        },
+        {
+          "image_path": "review-frames/release-rola-dense.jpg",
+          "image_sha256": "75c04df2628893305a9f3aedcd36b37d71ea194eb844f4d5100bb4bb52991fb6",
+          "metadata_path": "review-frames/release-rola-dense.json",
+          "metadata_sha256": "c5de4bed4d93f3333a3ccd8bd45d4893b9ae63c11d73e69cfa5a712315584953",
+          "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+          "reviewed_source_timestamp_range_ms": [
+            12812.800000000001,
+            14314.300000000001
+          ]
+        }
+      ]
+    },
+    {
+      "key": "white360_late_peak",
+      "samples": [
+        "white-360p-crf35"
+      ],
+      "status": "anchor_improved_in_v2",
+      "observation_zh": "真实前挥5.8–6.0秒。v2峰5800取代6467恢复峰，窗5533–6167包含引拍及初段随挥；6.167结束早于原审阅6.2固定支持点33ms，不借此改动原GT。",
+      "limitations_zh": "修正前挥锚点不代表持拍侧及3D姿态已验证；低清与原片模型持拍侧结果仍不一致。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-white-5-12-dense.jpg",
+          "image_sha256": "32b33c0dae44855036c344befed7748cf9d697e172102c286a17237f5fcbec9c",
+          "metadata_path": "review-frames/release-white-5-12-dense.json",
+          "metadata_sha256": "0eb7db07b0a20437ecdca2706afcf4d123a1a2aab42622cdc739363f72076325",
+          "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+          "reviewed_source_timestamp_range_ms": [
+            5200.0,
+            13000.0
+          ]
+        }
+      ]
+    },
+    {
+      "key": "white360_early_peak_incomplete",
+      "samples": [
+        "white-360p-crf35"
+      ],
+      "status": "conservatively_unscored_in_v2",
+      "observation_zh": "22.433秒仍引拍，22.6–22.733前挥，22.8–23.0随挥。v2保留candidate但partial且不完整评分，reason unresolved_racket_hand_with_competing_arm_sequence；并未恢复真实完整动作。",
+      "limitations_zh": "真实动作和随挥确实在原视频里；这是算法阶段/侧别不确定，不是原素材没有动作。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-white-last-anchor.jpg",
+          "image_sha256": "d55c5ea9f8dd22475cccf312a4c748f10334d10ab5ad6461920654b393f05d01",
+          "metadata_path": "review-frames/release-white-last-anchor.json",
+          "metadata_sha256": "1f99d3b29d4ce97821bbf42f7e5d2e5d6c07c85dcd3a30769119fd9aec53e62f",
+          "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+          "reviewed_source_timestamp_range_ms": [
+            22433.333333333332,
+            23000.0
+          ]
+        },
+        {
+          "image_path": "review-frames/release-white-22-dense.jpg",
+          "image_sha256": "50d160b54c92ec1f08e2fe5887d0bae1fde7a8ba422f6bf1d2ed79b9bf23a9bd",
+          "metadata_path": "review-frames/release-white-22-dense.json",
+          "metadata_sha256": "89e09186084f070874e76abfa0795282c5c6207e270d83e80bd6792cfc2c8dc5",
+          "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+          "reviewed_source_timestamp_range_ms": [
+            21900.000000000004,
+            24100.0
+          ]
+        }
+      ]
+    },
+    {
+      "key": "real_strokes_newly_unscored",
+      "samples": [
+        "development-ordinary-a",
+        "repeat-ordinary-a",
+        "regression-ordinary-b",
+        "holdout-ordinary-indoor-white",
+        "white-mirror",
+        "gpu-white"
+      ],
+      "status": "real_action_coverage_loss_disclosed",
+      "observation_zh": "A首拍2.3–3.2秒为低手自喂击球：2.5松球、2.9前挥接近球、3.0球已飞前、3.1随挥。B34.3引拍/34.5–34.7前挥/34.9随挥是真正手。白衣5.6放球、5.8–6.0前挥/6.2随挥也是真动作。v2将这些窗partial而失分，不能当作成功剔除假动作；repeat/mirror/GPU是同源回归而非更多独立真动作。",
+      "limitations_zh": "本审阅判动作是否存在，不为发生歧义的native补造可靠持拍手证据。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-a-first.jpg",
+          "image_sha256": "b74de5f499bfa7c4d37c37b2cc6c3e39f04ebb14fcb67c72869c9fd353884a18",
+          "metadata_path": "review-frames/release-v2-a-first.json",
+          "metadata_sha256": "528d85325d1e122fee44c891350fe9d0725cd2a1bddb63c0062f952c7d7c6473",
+          "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "reviewed_source_timestamp_range_ms": [
+            1900.0000000000002,
+            3600.0
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-b-34.jpg",
+          "image_sha256": "04619dc2647601aac0256b972cfebdf73eba8a21936354bbe57b29396b2a2e88",
+          "metadata_path": "review-frames/release-v2-b-34.json",
+          "metadata_sha256": "dd53bc467d839d3dbb6e538168ca672073b09ddee2f3a99b63557e3f593e470f",
+          "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+          "reviewed_source_timestamp_range_ms": [
+            33900.00000000001,
+            35300.00000000001
+          ]
+        },
+        {
+          "image_path": "review-frames/release-white-5-12-dense.jpg",
+          "image_sha256": "32b33c0dae44855036c344befed7748cf9d697e172102c286a17237f5fcbec9c",
+          "metadata_path": "review-frames/release-white-5-12-dense.json",
+          "metadata_sha256": "0eb7db07b0a20437ecdca2706afcf4d123a1a2aab42622cdc739363f72076325",
+          "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+          "reviewed_source_timestamp_range_ms": [
+            5200.0,
+            13000.0
+          ]
+        }
+      ]
+    },
+    {
+      "key": "outdoor_side_tail_false_positive",
+      "samples": [
+        "holdout-ordinary-outdoor-side"
+      ],
+      "status": "unresolved_release_blocker_found_in_v2",
+      "observation_zh": "v2完整窗27750/28042/28375仅慢走及屈肘把垂下球拍提到胸前，没有完整前挥/随挥。旧28208/28792/29333同样未覆盖真正击球。29.667–29.958仍准备；原视频30.333–30.5才前挥，30.667–31随挥，超出当前前30秒native。",
+      "source_duration_seconds": 479.8333333333333,
+      "inference_observation_end_ms": 29958.333,
+      "source_actual_later_forward_ms": [
+        30333,
+        30500
+      ],
+      "limitations_zh": "不能称原素材无动作，也不能将30秒之后的画面作为当前native已观察到的阶段。已通知root/coaching限定修复；v2是发现失败的中间版本。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-outdoor-28.jpg",
+          "image_sha256": "be2be6c9410fc5df875263bec2d1bd1e0b842d91bf8c0849e78a89161afecd90",
+          "metadata_path": "review-frames/release-v2-outdoor-28.json",
+          "metadata_sha256": "52ef9554894c64bbd3c6d30e2b5a7a2af8282c9872fdc60878ac41e91d825de1",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            27083.333333333336,
+            29708.333333333336
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-outdoor-dense.jpg",
+          "image_sha256": "c218f5b1f488dc0b64f7bc88ef2bc8d7f05d4f9300edd653bf87c3229e15a319",
+          "metadata_path": "review-frames/release-v2-outdoor-dense.json",
+          "metadata_sha256": "33b50c4b911faff4556f910e186af4d543a0398cc6d968acc86a71527004c1a5",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            27500.0,
+            29666.666666666668
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-outdoor-end.jpg",
+          "image_sha256": "e4fe13d865e6cc5cab2911a84dc96f1d4b0af6cb8c0f2c6cda08a70fce36103e",
+          "metadata_path": "review-frames/release-v2-outdoor-end.json",
+          "metadata_sha256": "4ba4d16d2a9c71c532f1389e64f974e8cc5fcce2b7d9fb39a1b432135fe37e4e",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            28000.000000000004,
+            29958.333333333336
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-outdoor-after-inference.jpg",
+          "image_sha256": "83abda95627914cd91d05881d29a1c4c3af616c236141aa7e1d093636f5e71ad",
+          "metadata_path": "review-frames/release-v2-outdoor-after-inference.json",
+          "metadata_sha256": "9e7a271cf3dee7426a26cc35c0e715d34f8f0b82be133d569557f9aa52f2d448",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "reviewed_source_timestamp_range_ms": [
+            29666.666666666668,
+            31500.000000000004
+          ]
+        }
+      ]
+    },
+    {
+      "key": "nadal_anchor_shift",
+      "samples": [
+        "regression-nadal"
+      ],
+      "status": "same_real_action_anchor_moved_earlier",
+      "observation_zh": "19.6–19.92引拍，20.0–20.16前挥上举，20.24–20.4随挥；新peak20160比旧20600恢复期更接近真实动作。仍只有同一次击球，不把运动峰称精确触球。",
+      "limitations_zh": "近端动作可见，25fps及画面投影不支持真实3D触球真值。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-nadal-20.jpg",
+          "image_sha256": "3370e743abdacc7040dc00be9440643fc83be2fc350a28a66da6212f81070035",
+          "metadata_path": "review-frames/release-v2-nadal-20.json",
+          "metadata_sha256": "e200b4004c79da9de34a435c1b021a953047c9c444aa3b87abef7dafa5d4d04f",
+          "source_video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+          "reviewed_source_timestamp_range_ms": [
+            19600.0,
+            21400.000000000004
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-nadal-crop.jpg",
+          "image_sha256": "b9c4879f402798c1199cf9f986e20b6dee9949193eedc777bf1ab5bbcd618c5b",
+          "metadata_path": "review-frames/release-v2-nadal-crop.json",
+          "metadata_sha256": "966084a781253e00103c65e6ff91bf89e07096b48ef97e8aeef4f55261f8465f",
+          "source_video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+          "reviewed_source_timestamp_range_ms": [
+            19600.0,
+            20600.0
+          ]
+        }
+      ]
+    },
+    {
+      "key": "schiavone_one_frame_anchor_shift",
+      "samples": [
+        "schiavone-usopen-2012"
+      ],
+      "status": "same_real_action",
+      "observation_zh": "6.675引拍，6.965–7.09前挥，7.216–7.341随挥；7007→6965约一个源帧，不改变真实动作归属。",
+      "limitations_zh": "不声称42ms差异达到更准确触球真值。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-schiavone-7.jpg",
+          "image_sha256": "fec18e982d1c2311211a1f384cabc80cff45190df6954bf01477890fe962f9fd",
+          "metadata_path": "review-frames/release-v2-schiavone-7.json",
+          "metadata_sha256": "335e396ea4a2387b5e2f1d9f2563d077a635329970a5fc294a7154c8887fa314",
+          "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+          "reviewed_source_timestamp_range_ms": [
+            6506.5,
+            7507.499999999999
+          ]
+        }
+      ]
+    },
+    {
+      "key": "dimitrov_other_baseline_anchor_shift",
+      "samples": [
+        "dimitrov-tiafoe-real-return"
+      ],
+      "status": "same_real_action_anchor_improved",
+      "observation_zh": "近端白紫衣主体13.633–13.8拍在侧后，13.867–13.933实际双手前挥，14.0–14.2高位随挥；v2峰13867较旧14033随挥峰提前合理。此为接发后的底线回合动作，不把它额外标成接发球。",
+      "limitations_zh": "此观察仅用于阶段审计，不新增生产manual type，也不从标题断言球员姓名。",
+      "source_evidence": [
+        {
+          "image_path": "review-frames/release-v2-dimitrov-14.jpg",
+          "image_sha256": "d9d635323734a6c66bc89122cd864b6ec1a77536e9992db9caedbb2e506c5bae",
+          "metadata_path": "review-frames/release-v2-dimitrov-14.json",
+          "metadata_sha256": "30457f93d1c172935d2371daf24c74473348494990842d8023c3042d774d92a9",
+          "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+          "reviewed_source_timestamp_range_ms": [
+            13299.999999999998,
+            14500.0
+          ]
+        },
+        {
+          "image_path": "review-frames/release-v2-dimitrov-crop.jpg",
+          "image_sha256": "38eee60d27008150e939a41aeb485b446e8722aae7e5eace096515d66a08df2c",
+          "metadata_path": "review-frames/release-v2-dimitrov-crop.json",
+          "metadata_sha256": "1e080477d5cf877ee71f4a716f3a65deeac44a30b556cc07d474854d699321c6",
+          "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+          "reviewed_source_timestamp_range_ms": [
+            13299.999999999998,
+            14266.666666666666
+          ]
+        }
+      ]
+    }
+  ],
+  "record_counts": [
+    {
+      "sample_id": "davis-cup-2018-04",
+      "group": "regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "davis-cup-2018-05",
+      "group": "regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "development-ordinary-a",
+      "group": "regression",
+      "old_scored": 16,
+      "v2_scored": 15
+    },
+    {
+      "sample_id": "development-sharapova",
+      "group": "regression",
+      "old_scored": 2,
+      "v2_scored": 2
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "group": "regression",
+      "old_scored": 1,
+      "v2_scored": 1
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "group": "regression",
+      "old_scored": 5,
+      "v2_scored": 5
+    },
+    {
+      "sample_id": "federer-cilic-usopen-2012",
+      "group": "regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "group": "regression",
+      "old_scored": 2,
+      "v2_scored": 2
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "group": "regression",
+      "old_scored": 5,
+      "v2_scored": 4
+    },
+    {
+      "sample_id": "holdout-ordinary-lowres-close",
+      "group": "regression",
+      "old_scored": 2,
+      "v2_scored": 2
+    },
+    {
+      "sample_id": "holdout-ordinary-night",
+      "group": "regression",
+      "old_scored": 4,
+      "v2_scored": 4
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "group": "regression",
+      "old_scored": 4,
+      "v2_scored": 4
+    },
+    {
+      "sample_id": "holdout-ordinary-user-existing",
+      "group": "regression",
+      "old_scored": 6,
+      "v2_scored": 6
+    },
+    {
+      "sample_id": "mendeley-indoor-side-view-ICS01",
+      "group": "regression",
+      "old_scored": 1,
+      "v2_scored": 1
+    },
+    {
+      "sample_id": "mendeley-indoor-top-view-ICT01",
+      "group": "regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "group": "regression",
+      "old_scored": 1,
+      "v2_scored": 1
+    },
+    {
+      "sample_id": "mendeley-outdoor-top-view-OCT01",
+      "group": "regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "regression-nadal",
+      "group": "regression",
+      "old_scored": 2,
+      "v2_scored": 2
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "group": "regression",
+      "old_scored": 8,
+      "v2_scored": 7
+    },
+    {
+      "sample_id": "repeat-ordinary-a",
+      "group": "regression",
+      "old_scored": 16,
+      "v2_scored": 15
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "group": "regression",
+      "old_scored": 2,
+      "v2_scored": 1
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "group": "regression",
+      "old_scored": 3,
+      "v2_scored": 3
+    },
+    {
+      "sample_id": "tsitsipas-alcaraz-2023",
+      "group": "regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "group": "regression",
+      "old_scored": 4,
+      "v2_scored": 3
+    },
+    {
+      "sample_id": "white-mirror",
+      "group": "regression",
+      "old_scored": 5,
+      "v2_scored": 4
+    },
+    {
+      "sample_id": "gpu-federer",
+      "group": "gpu-regression",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "gpu-night",
+      "group": "gpu-regression",
+      "old_scored": 4,
+      "v2_scored": 4
+    },
+    {
+      "sample_id": "gpu-pink",
+      "group": "gpu-regression",
+      "old_scored": 2,
+      "v2_scored": 2
+    },
+    {
+      "sample_id": "gpu-white",
+      "group": "gpu-regression",
+      "old_scored": 5,
+      "v2_scored": 4
+    },
+    {
+      "sample_id": "davis05-fresh",
+      "group": "fresh-native",
+      "old_scored": 0,
+      "v2_scored": 0
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "group": "fresh-native",
+      "old_scored": 3,
+      "v2_scored": 3
+    },
+    {
+      "sample_id": "thetis-p1_fslice_s1",
+      "group": "fresh-native",
+      "old_scored": 1,
+      "v2_scored": 1
+    },
+    {
+      "sample_id": "thetis-p32_fslice_s1",
+      "group": "fresh-native",
+      "old_scored": 1,
+      "v2_scored": 1
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "version": "tennis-live-exact-review-rebinding-v1",
+  "scope": "Local service maintenance only; frozen automatic replay has no reviewed context and is unchanged",
+  "total_appended": 15,
+  "all_live_source_artifacts_verified": true,
+  "all_live_reviewed_timelines_equal_frozen_inputs": true,
+  "matching_policy": "Exact baseline episode ID, video, track, start/peak/end and source/camera epochs; no nearest-time or changed-window migration",
+  "samples": [
+    {
+      "sample_id": "development-sharapova",
+      "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "old_entries_preserved": true,
+      "appended_count": 2,
+      "context_before_sha256": "80d1c27525d9a9bb7eff27aeaa2ee6cdcbecc572a36d154da59bcbe92a5a06c9",
+      "context_after_sha256": "7748c93a40402944ff3d2a851d5fd24b51428ed6666f59506abfac764700c2a4",
+      "bindings": [
+        {
+          "prior_episode_id": "a553b913e06021702061",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "21cec48e198d0714ad686020bccd404b31b32b5ecde8517abeb33f77e1dca029",
+          "final_recognition_sha256": "a93e55cfe87e75336b92f0468bb47e0288292d77be3e3cbc7d421bfb64face75",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "efb62ba4021a4f2c8480",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "21cec48e198d0714ad686020bccd404b31b32b5ecde8517abeb33f77e1dca029",
+          "final_recognition_sha256": "a93e55cfe87e75336b92f0468bb47e0288292d77be3e3cbc7d421bfb64face75",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": [
+        {
+          "episode_id": "6ba7c566df5726c2fd9d",
+          "old_and_new_candidate_hand": "left",
+          "existing_review_hand": "right",
+          "existing_review_hand_conflict_preserved": true
+        },
+        {
+          "episode_id": "55f5aaf96af4fea5effd",
+          "old_and_new_candidate_hand": "left",
+          "existing_review_hand": "right",
+          "existing_review_hand_conflict_preserved": true
+        }
+      ]
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "old_entries_preserved": true,
+      "appended_count": 1,
+      "context_before_sha256": "180dbef8d6f60a068c596a2661402b1db94b22c218b48af4a6fcd878309a76da",
+      "context_after_sha256": "c0f323c94095f7982c81e578fa5168d79d12e8522ecf750900bd66cdcad65eed",
+      "bindings": [
+        {
+          "prior_episode_id": "ec2da84b3d9d398e7e2d",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "3407367adbab8c27cc2441da9f73718461bcd5d2133efff87f55482dec955a66",
+          "final_recognition_sha256": "71344d01243050598f2f8988ee5f085ca8880da27fa23a4af2829f32d37bd925",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": [
+        {
+          "episode_id": "7efacd58c13a8083ed67",
+          "old_and_new_candidate_hand": "left",
+          "existing_review_hand": "right",
+          "existing_review_hand_conflict_preserved": true
+        }
+      ]
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "old_entries_preserved": true,
+      "appended_count": 1,
+      "context_before_sha256": "fd9759003ad12b7a01f1c31ce6f3f7e41899b88ee8eea77aa4f6d6e0f381dc12",
+      "context_after_sha256": "e9448b60e8989fe34bc2f173974f7da7eeb7f11dfc0458ab32a3e37f26b9335c",
+      "bindings": [
+        {
+          "prior_episode_id": "e67754f8fae9419d2ba7",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "7f128d867fef1051374c40b5ad2ce50a1ee4c3c7a35477095d1bbe47dfbace83",
+          "final_recognition_sha256": "0a7cc85f27fdbe436c7f309b7ca390ab5eed523dd62d2e0a53735cfb4b3e6f04",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": []
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "old_entries_preserved": true,
+      "appended_count": 1,
+      "context_before_sha256": "87186e365e75ad978ad5be74f9f4290ef36c02056fd8d86de162fb98c6decc36",
+      "context_after_sha256": "c97f4b4e2bba40997a22022177d1b69e71c5d6362c60d69385fb0ed0e981417a",
+      "bindings": [
+        {
+          "prior_episode_id": "fd7313ac258b9b64cff8",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "98ac35d3eba03a9bd1c083339b60293c4a169ba46cc2136b08a1d9661d29419d",
+          "final_recognition_sha256": "d245738ed0ccd8b6e291077078ccb2864209adc14b9fd4b757c34234ec8b0a3b",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": []
+    },
+    {
+      "sample_id": "holdout-ordinary-indoor-pink",
+      "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "old_entries_preserved": true,
+      "appended_count": 2,
+      "context_before_sha256": "e61e7aef219325ecbd7eaf10bcece14a931ec2839d23d39d837dad32fa8de182",
+      "context_after_sha256": "203a9fa7d029367740944842266a203a64032e15157f37c77cf6985da9015679",
+      "bindings": [
+        {
+          "prior_episode_id": "02bc2476e80edab352e5",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "16fcca0ea009822a2cc55321b1cad551b40e9a571bdab99a053bddca2c8fa96b",
+          "final_recognition_sha256": "e42ca1b4e4464a996cc0dd0212c9eb479f0a75cd57d0bc46d18dcde3631446a0",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "fefa868c764e18331698",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "16fcca0ea009822a2cc55321b1cad551b40e9a571bdab99a053bddca2c8fa96b",
+          "final_recognition_sha256": "e42ca1b4e4464a996cc0dd0212c9eb479f0a75cd57d0bc46d18dcde3631446a0",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": []
+    },
+    {
+      "sample_id": "mendeley-outdoor-side-view-OCS01",
+      "source_video_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+      "old_entries_preserved": true,
+      "appended_count": 1,
+      "context_before_sha256": "60b2f17db4c95894142ba0621e9397ae0fbccb1bbc2e20d1fc77ba40f816eae7",
+      "context_after_sha256": "56c4586f507beb7b7c5ea95905d7d198d30b24a0e97fc9df05f1d061e09423d7",
+      "bindings": [
+        {
+          "prior_episode_id": "9c5e87a2ea6513a72c7f",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "627e8d086dc401b8e0f26d66fcbc86825c3838f2f4dc3e6a83031e51e47c24ea",
+          "final_recognition_sha256": "cb6f643913d6757319c0e170938474db7aefc5dcdee142e3b48ecfed637f90db",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": []
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "old_entries_preserved": true,
+      "appended_count": 5,
+      "context_before_sha256": "028f16675c3248b3cb82f1eb1aed12af24e54e9caef3f890653167058fc72ecf",
+      "context_after_sha256": "714f6701fe2ed0fc4462c3b53b956ef2995b029b918160a512975a4dcc5bf06e",
+      "bindings": [
+        {
+          "prior_episode_id": "eea908aec21f9097f302",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "3670cf417c098ac8eae3ae27ad16d26fcc1cabd676e51e5444b1cd66f4e717cd",
+          "final_recognition_sha256": "3dfec4513e0e6a49f43bc5474b2cd2b727723db8ec78ee69a67ff0a70b6c016e",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "7549dec002f775d57c4c",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "3670cf417c098ac8eae3ae27ad16d26fcc1cabd676e51e5444b1cd66f4e717cd",
+          "final_recognition_sha256": "3dfec4513e0e6a49f43bc5474b2cd2b727723db8ec78ee69a67ff0a70b6c016e",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "2c3e2cf399f94cb8ffe4",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "3670cf417c098ac8eae3ae27ad16d26fcc1cabd676e51e5444b1cd66f4e717cd",
+          "final_recognition_sha256": "3dfec4513e0e6a49f43bc5474b2cd2b727723db8ec78ee69a67ff0a70b6c016e",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "08f8c3e0bd41f8f50cdd",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "3670cf417c098ac8eae3ae27ad16d26fcc1cabd676e51e5444b1cd66f4e717cd",
+          "final_recognition_sha256": "3dfec4513e0e6a49f43bc5474b2cd2b727723db8ec78ee69a67ff0a70b6c016e",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "ed54c83fdf4e8c5e51f7",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "3670cf417c098ac8eae3ae27ad16d26fcc1cabd676e51e5444b1cd66f4e717cd",
+          "final_recognition_sha256": "3dfec4513e0e6a49f43bc5474b2cd2b727723db8ec78ee69a67ff0a70b6c016e",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": [
+        {
+          "episode_id": "d23a29e5fbbfdd08ad7b",
+          "old_and_new_candidate_hand": "left",
+          "existing_review_hand": "right",
+          "existing_review_hand_conflict_preserved": true
+        },
+        {
+          "episode_id": "69984efbae626c0f8358",
+          "old_and_new_candidate_hand": "left",
+          "existing_review_hand": "right",
+          "existing_review_hand_conflict_preserved": true
+        },
+        {
+          "episode_id": "ba86bdae6dc081c68366",
+          "old_and_new_candidate_hand": "left",
+          "existing_review_hand": "right",
+          "existing_review_hand_conflict_preserved": true
+        }
+      ]
+    },
+    {
+      "sample_id": "schiavone-usopen-2012",
+      "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+      "old_entries_preserved": true,
+      "appended_count": 2,
+      "context_before_sha256": "1e25353eece3a05148add150c0bf5d5d37982eaac052e5e5ef967f9d11928a74",
+      "context_after_sha256": "764d9a34b35c5b4c2e5046ae3666b2896021d863ae6f45f809f34f27818635f9",
+      "bindings": [
+        {
+          "prior_episode_id": "34d5a0fd93f05ef3be25",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "4b584c872ce026e43aa07b76fe7345672ad5a3972e0d781f500d0c4cc240f938",
+          "final_recognition_sha256": "1c567a73ef946482a19f693cefb31a33f9643a95d8e056d871561b0662ccfb7a",
+          "no_visual_relabeling": true
+        },
+        {
+          "prior_episode_id": "a17248cad9bea5eb6088",
+          "source_window_track_and_epochs_unchanged": true,
+          "baseline_recognition_sha256": "4b584c872ce026e43aa07b76fe7345672ad5a3972e0d781f500d0c4cc240f938",
+          "final_recognition_sha256": "1c567a73ef946482a19f693cefb31a33f9643a95d8e056d871561b0662ccfb7a",
+          "no_visual_relabeling": true
+        }
+      ],
+      "existing_review_hand_conflicts": []
+    }
+  ],
+  "existing_hand_conflicts_preserved_count": 6
+}

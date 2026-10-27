@@ -1,0 +1,262 @@
+{
+  "schema_version": "tennis-manual-pattern-validation-v1",
+  "created_at_utc": "2026-10-27T05:53:56.422831+00:00",
+  "gpu_requested": false,
+  "automatic_assessments_modified": false,
+  "manual_windows_count": 1,
+  "code_sha256_at_start": {
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9",
+    "src/rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+  },
+  "code_sha256_at_end": {
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9",
+    "src/rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+  },
+  "code_changed_during_execution": false,
+  "input_sha256": {
+    "local-artifact:source-inventory.json": "637bd4c0df0809f873f5d47db77978bfeb13e4cf1f35ae6342971c2d16c4e081",
+    "local-artifact:manual-pattern-windows.json": "57387d60cce73172ebc7a21ad8786d834aeb1083646ce0d0a440837fa40870c6",
+    "local-artifact:frozen-runs/1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0/sam3d_frames.jsonl": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759",
+    "local-artifact:offline-published/regression-ordinary-b-primary-player.jsonl": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+    "local-artifact:1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0/frames.jsonl": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+    "local-artifact:frozen-runs/1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0/summary.json": "2d8fda7ae9543c6326bc8c0afaed89c9321236be30a0f87eb9446dbe028f07b4"
+  },
+  "input_unchanged": true,
+  "results": [
+    {
+      "window_id": "ordinary-b-serve-manual-0000-2400",
+      "sample_id": "regression-ordinary-b",
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "artifact_run_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "artifact_job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "source_video_sha256_verified": true,
+      "window_source": "manual-reviewed-window",
+      "included_in_automatic_assessment": false,
+      "automatic_segmentation_success": false,
+      "classification_method": "agent_visual_review",
+      "reviewer": "codex_samples_source_frame_audit_20261027",
+      "requested_window": {
+        "start_ms": 0,
+        "prep_end_ms": 1050,
+        "peak_ms": 1300,
+        "end_ms": 2400
+      },
+      "technique": "serve",
+      "technique_review_status": "reviewed",
+      "racket_hand": "right",
+      "subject_id": "subject-1",
+      "return_context_review": {
+        "status": "not_applicable"
+      },
+      "input_artifact_sha256": {
+        "local-artifact:frozen-runs/1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0/sam3d_frames.jsonl": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759",
+        "local-artifact:offline-published/regression-ordinary-b-primary-player.jsonl": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+        "local-artifact:1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0/frames.jsonl": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+        "local-artifact:frozen-runs/1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0/summary.json": "2d8fda7ae9543c6326bc8c0afaed89c9321236be30a0f87eb9446dbe028f07b4"
+      },
+      "source_segment_reasons": {
+        "primary_subject_unverified": 206
+      },
+      "limitations": [
+        "manual_phase_boundaries_are_visual_estimates",
+        "not_automatic_segmentation_success",
+        "not_expert_technique_ground_truth",
+        "exact_ball_contact_unverified"
+      ],
+      "status": "measured",
+      "reason": null,
+      "actual_window": {
+        "start_ms": 0.0,
+        "last_preparation_observation_ms": 1033.3333333333333,
+        "peak_ms": 1300.0,
+        "end_ms": 2400.0,
+        "timing_resolution_ms": 33.333333333333314
+      },
+      "source_track_id": 1,
+      "source_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "fixed_camera_observations": 72,
+      "unavailable_wrist_observations": {},
+      "direction_context": {
+        "forward_direction_2d": [
+          -0.19996001199600144,
+          -0.9798040587804069
+        ],
+        "forward_direction_2d_verified": true,
+        "up_direction_2d": [
+          0.0,
+          -1.0
+        ],
+        "up_direction_2d_verified": true
+      },
+      "direction_binding": {
+        "status": "bound",
+        "reason": null,
+        "method": "source_frame_vector_transformed_by_background_similarity",
+        "classification_method": "agent_visual_review",
+        "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+        "source_frame_index": 0,
+        "source_timestamp_ms": 0.0,
+        "camera_reference_epoch": 0,
+        "image_to_reference_linear": [
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "source_pts": 0,
+        "time_base_num": 1,
+        "time_base_den": 600,
+        "fields": {
+          "forward_direction_2d": {
+            "status": "bound",
+            "source_image_direction": [
+              -0.19996001199600144,
+              -0.9798040587804069
+            ],
+            "fixed_reference_direction": [
+              -0.19996001199600144,
+              -0.9798040587804069
+            ]
+          },
+          "up_direction_2d": {
+            "status": "bound",
+            "source_image_direction": [
+              0.0,
+              -1.0
+            ],
+            "fixed_reference_direction": [
+              0.0,
+              -1.0
+            ]
+          }
+        }
+      },
+      "fixed_camera_reference_verified": true,
+      "source_observation_count": 72,
+      "pattern": {
+        "version": "tennis-motion-patterns-v1.1.0",
+        "profile_id": "serve",
+        "classification_status": "verified",
+        "metrics": {
+          "pattern_phase_continuity": [
+            0.7386363636363636,
+            73.86363636363636
+          ],
+          "pattern_center_transfer": [
+            1.0,
+            100.0
+          ],
+          "pattern_serve_upward_path": [
+            0.8252693965771223,
+            82.52693965771223
+          ]
+        },
+        "requirements": [
+          {
+            "id": "phase_continuity",
+            "label": "挥出和随挥连续，不强制击后立即减速",
+            "status": "measured_proxy",
+            "metric_ids": [
+              "pattern_phase_continuity"
+            ],
+            "reason": null
+          },
+          {
+            "id": "center_transfer",
+            "label": "挥出时人体中心前移",
+            "status": "measured_proxy",
+            "metric_ids": [
+              "pattern_center_transfer"
+            ],
+            "reason": null
+          },
+          {
+            "id": "serve_upward_path",
+            "label": "发球向上挥出",
+            "status": "measured_proxy",
+            "metric_ids": [
+              "pattern_serve_upward_path"
+            ],
+            "reason": null
+          },
+          {
+            "id": "serve_arm_sequence",
+            "label": "发球上臂与前臂依次转动",
+            "status": "not_measured",
+            "metric_ids": [
+              "pattern_serve_arm_sequence"
+            ],
+            "reason": "arm_points_missing_or_projected_segments_unobservable"
+          },
+          {
+            "id": "physical_chain",
+            "label": "蹬地、真实重心和力的逐级传递",
+            "status": "not_measured",
+            "metric_ids": [],
+            "reason": "force_ground_contact_and_true_center_of_mass_unobserved"
+          },
+          {
+            "id": "racket_and_contact",
+            "label": "球拍轨迹、握拍与真实触球",
+            "status": "not_measured",
+            "metric_ids": [],
+            "reason": "racket_ball_contact_and_grip_unobserved"
+          },
+          {
+            "id": "serve_ball_toss",
+            "label": "抛球、触球和落地衔接",
+            "status": "not_measured",
+            "metric_ids": [],
+            "reason": "ball_release_contact_and_ground_contact_unobserved"
+          }
+        ],
+        "metric_evidence": {
+          "pattern_phase_continuity": {
+            "phases": {
+              "acceleration": {
+                "fraction": 0.7499999999999998,
+                "duration_ms": 266.66666666666674,
+                "active_ms": 200.0
+              },
+              "follow_through": {
+                "fraction": 0.7272727272727275,
+                "duration_ms": 1100.0,
+                "active_ms": 800.0000000000002
+              }
+            },
+            "deceleration_required": false
+          },
+          "pattern_center_transfer": {},
+          "pattern_serve_upward_path": {}
+        },
+        "limitations": [
+          "固定画面内的运动投影和身体相对轨迹，不能证明真实受力、世界三维速度或触球。"
+        ],
+        "coverage": {
+          "measured_requirements": 3,
+          "applicable_requirements": 7,
+          "fraction": 0.42857142857142855,
+          "full_source_technique_covered": false
+        }
+      }
+    }
+  ]
+}

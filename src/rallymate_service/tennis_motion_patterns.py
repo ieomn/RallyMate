@@ -13,7 +13,7 @@ import math
 
 import numpy as np
 
-VERSION = "tennis-motion-patterns-v1.0.0"
+VERSION = "tennis-motion-patterns-v1.1.0"
 PATTERN_METRICS = {
     "movement": (("pattern_center_transfer", "人体中心前移", "ratio", "观察髋中心沿已核验击球方向的连续前移"),),
     "preparation": (("pattern_preparation_coupling", "转体引拍进程配合", "ratio", "观察肩线转动与手腕引拍的进程配合"),),
@@ -77,6 +77,8 @@ RUBRIC = {
     "phase_continuity": "equal_phase_mean_of_elapsed_time_above_motion_floor_no_deceleration_requirement",
     "preparation_coupling": "100_times_one_minus_time_mean_absolute_difference_of_normalized_cumulative_paths",
     "projected_sequence": "100_times_one_minus_reverse_peak_delays_beyond_one_interval_divided_by_window_duration",
+    "axis_observation_scope": "metric_phase_plus_fixed_derivative_support_not_entire_episode",
+    "sequence_peak_support": "search_only_declared_phase_three_original_observations_each_side_for_derivative_and_peak_bracketing",
     "two_hand_coupling": "100_times_equal_mean_direction_agreement_and_normalized_progress_agreement",
     "directional_path": "100_times_positive_projected_travel_divided_by_absolute_projected_travel",
     "slice_path": "geometric_mean_forward_and_downward_progress_backhand_multiplied_by_min_1_forward_over_downward_travel",
@@ -131,13 +133,40 @@ def _axis(points, joint, scale):
     return np.degrees(np.unwrap(2 * np.arctan2(vector[:, 1], vector[:, 0])) / 2)
 
 
+def _observed_peak(speed, times, search=None):
+    """A phase peak needs both sides; support frames never choose a new peak.
+
+    A wrist-speed phase can end at its peak. Fixed neighboring observations
+    establish its falling side without moving the search boundary into recovery.
+    The existing 95% / two-interval plateau rule remains unchanged.
+    """
+    first, stop = search or (0, len(times))
+    detail = {"search_range_ms": [float(times[first]), float(times[stop - 1])],
+              "support_range_ms": [float(times[0]), float(times[-1])]}
+    def missing(reason):
+        return None, {**detail, "status": "not_measured", "reason": reason}
+    maximum = float(np.max(speed[first:stop]))
+    selected = np.flatnonzero(speed[first:stop] >= maximum * .95) + first
+    if maximum <= 1e-8 or not len(selected):
+        return missing("peak_motion_unobservable")
+    left, right = int(selected[0]), int(selected[-1])
+    while left > 0 and speed[left - 1] >= maximum * .95:
+        left -= 1
+    while right + 1 < len(times) and speed[right + 1] >= maximum * .95:
+        right += 1
+    detail["near_peak_range_ms"] = [float(times[left]), float(times[right])]
+    if np.any(speed[left:right + 1] > maximum + 1e-8):
+        return missing("peak_continues_outside_phase_search")
+    if left == 0 or right == len(times) - 1:
+        return missing("peak_two_sided_support_missing")
+    if times[right] - times[left] > 2 * np.median(np.diff(times[first:stop])) + 1e-7:
+        return missing("peak_plateau_or_multiple_maxima_unresolved")
+    peak = float(times[int(selected[np.argmax(speed[selected])])])
+    return peak, {**detail, "status": "measured", "reason": None, "peak_ms": peak}
+
+
 def _peak(speed, times):
-    """No peak order is claimed for an extended flat/ambiguous maximum."""
-    maximum = float(np.max(speed))
-    selected = np.flatnonzero(speed >= maximum * .95)
-    if maximum <= 1e-8 or not len(selected) or times[selected[-1]] - times[selected[0]] > 2 * np.median(np.diff(times)) + 1e-7:
-        return None
-    return float(times[int(selected[np.argmax(speed[selected])])])
+    return _observed_peak(speed, times)[0]
 
 
 def _sequence(peaks, times):
@@ -276,19 +305,27 @@ def analyze_motion_pattern(rows, *, prep_end, peak, side, technique=None, classi
     hand = _series(camera, side + "_wrist", "points", 2)
     hand = hand / scale - center if hand is not None and center is not None else None
     forward, up = _direction(context, "forward_direction_2d"), _direction(context, "up_direction_2d")
-    shoulder, hip = _axis(camera, "shoulder", scale), _axis(camera, "hip", scale)
     strike = slice(prep_end - 1, peak + 1)
+    preparation_shoulder = _axis(camera[:prep_end], "shoulder", scale)
+    # Three support observations are fixed: two for the centered five-point
+    # derivative, and one more for the neighboring derivative at a phase edge.
+    support_start, support_stop = max(0, prep_end - 4), min(len(rows), peak + 4)
+    sequence_camera = camera[support_start:support_stop]
+    shoulder, hip = _axis(sequence_camera, "shoulder", scale), _axis(sequence_camera, "hip", scale)
     for name in BASE_PROFILES[base]:
         if name != "serve_arm_sequence" and hand is None:
             reasons[name] = "body_relative_hand_or_hip_observations_missing"
-    if shoulder is None:
-        reasons.update(preparation_coupling="shoulder_axis_missing_or_foreshortened", projected_sequence="projected_axes_missing_or_foreshortened")
-    if hip is None:
-        reasons["projected_sequence"] = "projected_axes_missing_or_foreshortened"
+    if preparation_shoulder is None:
+        reasons["preparation_coupling"] = "preparation_shoulder_axis_missing_or_foreshortened"
+    if "projected_sequence" in names and (shoulder is None or hip is None):
+        reasons["projected_sequence"] = "acceleration_support_axes_missing_or_foreshortened"
+        evidence["pattern_projected_sequence"] = {"search_range_ms": [float(times[prep_end - 1]), float(times[peak])],
+            "support_range_ms": [float(times[support_start]), float(times[support_stop - 1])],
+            "unobservable_axes": [name for name, value in (("hip", hip), ("shoulder", shoulder)) if value is None]}
     if context.get("preparation_start_clipped") is True:
         reasons["preparation_coupling"] = "preparation_start_clipped_by_source_boundary"
-    elif "preparation_coupling" in names and hand is not None and shoulder is not None:
-        angles = shoulder[:prep_end]
+    elif "preparation_coupling" in names and hand is not None and preparation_shoulder is not None:
+        angles = preparation_shoulder
         angular_path = np.r_[0., np.cumsum(np.abs(np.diff(angles)))]
         arm_progress = _progress(hand[:prep_end])
         if angular_path[-1] >= 3 and arm_progress is not None:
@@ -297,17 +334,26 @@ def analyze_motion_pattern(rows, *, prep_end, peak, side, technique=None, classi
         else:
             reasons["preparation_coupling"] = "preparation_rotation_or_arm_travel_below_measurement_floor"
     if "projected_sequence" in names and all(x is not None for x in (hand, hip, shoulder)):
-        # Observe all three independent curves over the same acceleration window.
-        t, h, s, p = times[strike], hip[strike], shoulder[strike], hand[strike]
+        # Independent axes use the same fixed camera reference, without removing
+        # body rotation. Only acceleration is searched; halos support derivatives.
+        search = (prep_end - 1 - support_start, peak + 1 - support_start)
+        domain = slice(*search)
+        support_t = times[support_start:support_stop]
+        t, h, s, p = times[strike], hip[domain], shoulder[domain], hand[strike]
         if np.ptp(h) >= 3 and np.ptp(s) >= 3 and _progress(p) is not None:
-            peaks = [_peak(np.abs(_velocity(a[:, None], t)[:, 0]), t) for a in (h, s)]
-            peaks.append(_peak(np.linalg.norm(_velocity(p, t), axis=1), t))
+            speeds = [np.abs(_velocity(a[:, None], support_t)[:, 0]) for a in (hip, shoulder)]
+            speeds.append(np.linalg.norm(_velocity(hand[support_start:support_stop], support_t), axis=1))
+            observations = [_observed_peak(speed, support_t, search) for speed in speeds]
+            peaks = [observation[0] for observation in observations]
+            detail = {"peak_observations": dict(zip(("hip", "shoulder", "wrist"), (o[1] for o in observations))),
+                      "timing_resolution_ms": float(np.median(np.diff(t)))}
             sequence = _sequence(peaks, t) if all(v is not None for v in peaks) else None
             if sequence is not None:
                 value, score = sequence
-                put("projected_sequence", value, score, dict(zip(("hip_peak_ms", "shoulder_peak_ms", "wrist_peak_ms"), peaks)))
+                put("projected_sequence", value, score, {**detail, **dict(zip(("hip_peak_ms", "shoulder_peak_ms", "wrist_peak_ms"), peaks))})
             else:
-                reasons["projected_sequence"] = "motion_peak_order_unresolved"
+                reasons["projected_sequence"] = "motion_peak_order_unresolved" if all(v is not None for v in peaks) else "motion_peak_two_sided_evidence_unresolved"
+                evidence["pattern_projected_sequence"] = detail
         else:
             reasons["projected_sequence"] = "projected_motion_below_measurement_floor"
     for name, points in (("center_transfer", center), ("forward_swing", hand)):
@@ -322,9 +368,9 @@ def analyze_motion_pattern(rows, *, prep_end, peak, side, technique=None, classi
             else:
                 reasons[name] = "projected_forward_travel_below_measurement_floor"
     if "two_hand_coupling" in names and center is not None and hand is not None:
-        other = _series(camera, ("left" if side == "right" else "right") + "_wrist", "points", 2)
+        other = _series(camera[strike], ("left" if side == "right" else "right") + "_wrist", "points", 2)
         if other is not None:
-            first, second, t = hand[strike], (other / scale - center)[strike], times[strike]
+            first, second, t = hand[strike], other / scale - center[strike], times[strike]
             p, q = _progress(first), _progress(second)
             if p is not None and q is not None:
                 a, b = np.diff(first, axis=0), np.diff(second, axis=0)
@@ -365,24 +411,30 @@ def analyze_motion_pattern(rows, *, prep_end, peak, side, technique=None, classi
             if value is not None:
                 put("serve_upward_path", value, 100 * value)
     if "serve_arm_sequence" in names:
-        points = [_series(camera, side + "_" + joint, "points", 2) for joint in ("shoulder", "elbow", "wrist")]
+        support_start = max(0, peak - 3)
+        points = [_series(camera[support_start:], side + "_" + joint, "points", 2) for joint in ("shoulder", "elbow", "wrist")]
         reasons["serve_arm_sequence"] = "arm_points_missing_or_projected_segments_unobservable"
         if all(p is not None for p in points):
             upper, forearm = (points[1] - points[0]) / scale, (points[2] - points[1]) / scale
             if np.all(np.linalg.norm(upper, axis=1) >= .1) and np.all(np.linalg.norm(forearm, axis=1) >= .1):
                 upper_angle = np.unwrap(np.arctan2(upper[:, 1], upper[:, 0]))
                 elbow_angle = np.unwrap(np.arctan2(forearm[:, 1], forearm[:, 0]) - upper_angle)
-                t = times[peak:]
-                angles = [np.degrees(a[peak:]) for a in (upper_angle, elbow_angle)]
+                t, support_t = times[peak:], times[support_start:]
+                search = (peak - support_start, len(support_t))
+                angles = [np.degrees(a) for a in (upper_angle, elbow_angle)]
                 reasons["serve_arm_sequence"] = "arm_rotation_below_measurement_floor"
-                if all(np.ptp(a) >= 3 for a in angles):
-                    peaks = [_peak(np.abs(_velocity(a[:, None], t)[:, 0]), t) for a in angles]
+                if all(np.ptp(a[search[0]:]) >= 3 for a in angles):
+                    observations = [_observed_peak(np.abs(_velocity(a[:, None], support_t)[:, 0]), support_t, search) for a in angles]
+                    peaks = [observation[0] for observation in observations]
+                    detail = {"peak_observations": dict(zip(("upper_arm", "forearm_relative"), (o[1] for o in observations))),
+                              "timing_resolution_ms": float(np.median(np.diff(t)))}
                     sequence = _sequence(peaks, t) if all(p is not None for p in peaks) else None
                     if sequence is not None:
                         value, score = sequence
-                        put("serve_arm_sequence", value, score, dict(zip(("upper_arm_peak_ms", "forearm_relative_peak_ms"), peaks)))
+                        put("serve_arm_sequence", value, score, {**detail, **dict(zip(("upper_arm_peak_ms", "forearm_relative_peak_ms"), peaks))})
                     else:
                         reasons["serve_arm_sequence"] = "arm_rotation_peak_order_unresolved"
+                        evidence["pattern_serve_arm_sequence"] = detail
     if "one_hand_reversal" in names:
         if context.get("recovery_end_verified") is not True:
             reasons["one_hand_reversal"] = "complete_recovery_boundary_unverified"

@@ -11,7 +11,7 @@ export type TennisDimension = { id: TennisDimensionId; label: string; score: num
 export type TennisImprovement = { dimension_id: TennisDimensionId; title: string; observation: string; action: string; drill: string; retest: string; start_ms: number | null; end_ms: number | null };
 export type TennisPatternRequirement = { id: string; label: string; status: "measured_proxy" | "not_measured"; metric_ids: string[]; reason: string | null };
 export type TennisMotionPattern = {
-  version: "tennis-motion-patterns-v1.0.0"; profile_id: string; classification_status: "verified" | "technique_unverified";
+  version: "tennis-motion-patterns-v1.0.0" | "tennis-motion-patterns-v1.1.0"; profile_id: string; classification_status: "verified" | "technique_unverified";
   requirements: TennisPatternRequirement[]; coverage: { measured_requirements: number; applicable_requirements: number; fraction: number; full_source_technique_covered: false };
   classification_provenance: { method: string; reviewer?: string | null };
 };
@@ -23,17 +23,19 @@ export type TennisEpisodeValidity = { episode_id: string; status: "scored" | "ot
   subject_id?: string; person_track_id?: number; start_ms?: number; end_ms?: number };
 export type TennisPatternCoverage = { measured_requirements: number; applicable_requirements: number; fraction: number | null;
   verified_technique_episodes: number; generic_episodes: number; full_source_technique_covered: false; profiles: string[] };
+export type TennisReturnContext = { opponent_serve_id: string; server_track_id: number; ball_track_id: number; ball_observations: number;
+  incoming_start_ms: number; incoming_end_ms: number; receiver_peak_ms: number; verification_method: "source_bound_opponent_serve_and_incoming_ball" };
 export type TennisEpisode = { episode_id: string; family: "baseline" | "serve" | "return"; start_ms: number; peak_ms: number; end_ms: number;
-  subject_id?: string; person_track_id?: number; motion_pattern?: TennisMotionPattern; metrics?: Record<string, { value: number; score: number }> };
+  subject_id?: string; person_track_id?: number; motion_pattern?: TennisMotionPattern; metrics?: Record<string, { value: number; score: number }>; return_context?: TennisReturnContext; quality_reason_codes?: string[] };
 export type TennisAssessment = {
-  version: "tennis-action-assessment-v1.1.0" | "tennis-action-assessment-v1.2.0"; status: "scored" | "partial" | "unavailable";
+  version: "tennis-action-assessment-v1.1.0" | "tennis-action-assessment-v1.2.0" | "tennis-action-assessment-v1.3.0"; status: "scored" | "partial" | "unavailable";
   source_run_id: string; source_video_sha256: string; source_timestamp_semantics: "original_decoder_pts";
   overall_score: number | null; dimensions: TennisDimension[];
   reason_zh?: string;
   episodes?: TennisEpisode[];
   subject_scope?: TennisSubjectScope; episode_validity?: TennisEpisodeValidity[]; pattern_coverage?: TennisPatternCoverage;
   strengths: { title: string; observation: string }[]; improvements: TennisImprovement[];
-  rubric: { version: "tennis-action-rubric-v1.1.0" | "tennis-action-rubric-v1.2.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
+  rubric: { version: "tennis-action-rubric-v1.1.0" | "tennis-action-rubric-v1.2.0" | "tennis-action-rubric-v1.3.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
     identity_labels_used: false; confidence_used_in_score: false; aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" };
 };
 export type TennisAssessmentContext = { jobId: string; videoSha256: string; durationMs?: number | null };
@@ -51,9 +53,9 @@ export const TENNIS_PATTERN_NAMES: Record<string, string> = {
   return_one_hand_backhand: "单手反手接发", return_forehand_slice: "正手切削接发", return_backhand_slice: "反手切削接发",
 };
 
-function motionPattern(value: unknown, metrics: Record<string, { value: number; score: number }>): TennisMotionPattern | null {
+function motionPattern(value: unknown, metrics: Record<string, { value: number; score: number }>, expectedVersion: TennisMotionPattern["version"]): TennisMotionPattern | null {
   const item = record(value), coverage = record(item?.coverage), provenance = record(item?.classification_provenance);
-  if (!item || item.version !== "tennis-motion-patterns-v1.0.0" || typeof item.profile_id !== "string"
+  if (!item || item.version !== expectedVersion || typeof item.profile_id !== "string"
     || !Object.hasOwn(TENNIS_PATTERN_NAMES, item.profile_id) || !Array.isArray(item.requirements)
     || item.classification_status !== (item.profile_id === "generic" ? "technique_unverified" : "verified")
     || !coverage || !count(coverage.measured_requirements) || !count(coverage.applicable_requirements)
@@ -73,7 +75,7 @@ function motionPattern(value: unknown, metrics: Record<string, { value: number; 
   const measured = requirements.filter(req => req.status === "measured_proxy").length;
   if (!requirements.length || coverage.applicable_requirements !== requirements.length || coverage.measured_requirements !== measured
     || Math.abs(coverage.fraction - measured / requirements.length) > .000001) return null;
-  return { version: "tennis-motion-patterns-v1.0.0", profile_id: item.profile_id, classification_status: item.classification_status as TennisMotionPattern["classification_status"], requirements,
+  return { version: expectedVersion, profile_id: item.profile_id, classification_status: item.classification_status as TennisMotionPattern["classification_status"], requirements,
     coverage: { measured_requirements: measured, applicable_requirements: requirements.length, fraction: coverage.fraction, full_source_technique_covered: false },
     classification_provenance: { method: provenance.method, ...(provenance.reviewer === undefined ? {} : { reviewer: provenance.reviewer as string | null }) } };
 }
@@ -118,11 +120,40 @@ function scopedAssessment(report: Record<string, unknown>, duration: number | nu
       if (!identifier(key) || !metric || !finite(metric.value) || !finite(metric.score) || !score(metric.score)) return null;
       metrics[key] = { value: metric.value, score: metric.score };
     }
-    const pattern = motionPattern(item.motion_pattern, metrics);
+    const current = report.version === "tennis-action-assessment-v1.3.0";
+    const pattern = motionPattern(item.motion_pattern, metrics, current ? "tennis-motion-patterns-v1.1.0" : "tennis-motion-patterns-v1.0.0");
     if (!pattern) return null;
+    let returnContext: TennisReturnContext | undefined;
+    if (current) {
+      if (episodes.some(previous => Math.min(previous.end_ms, item.end_ms as number) - Math.max(previous.start_ms, item.start_ms as number) > 1.01)) return null;
+      if (pattern.profile_id !== "generic" && (pattern.profile_id === "serve" ? item.family !== "serve"
+        : pattern.profile_id.startsWith("return_") ? item.family !== "return" : item.family !== "baseline")) return null;
+      const provenance = pattern.classification_provenance;
+      if (!["unverified", "source_bound_rule_inferred", "source_bound_serve_phases", "human_visual_review", "agent_visual_review"].includes(provenance.method)
+        || pattern.profile_id === "generic" && provenance.method !== "unverified"
+        || pattern.profile_id !== "generic" && provenance.method === "unverified"
+        || ["human_visual_review", "agent_visual_review"].includes(provenance.method) && !provenance.reviewer
+        || provenance.method === "source_bound_serve_phases" && pattern.profile_id !== "serve") return null;
+      if (item.family === "return") {
+        const evidence = record(item.return_context);
+        if (!evidence || evidence.verification_method !== "source_bound_opponent_serve_and_incoming_ball"
+          || !identifier(evidence.opponent_serve_id) || !count(evidence.server_track_id) || evidence.server_track_id === item.person_track_id
+          || !count(evidence.ball_track_id) || !count(evidence.ball_observations) || evidence.ball_observations < 3
+          || !finite(evidence.incoming_start_ms) || !finite(evidence.incoming_end_ms) || !finite(evidence.receiver_peak_ms)
+          || evidence.incoming_start_ms < 0 || evidence.incoming_start_ms >= evidence.incoming_end_ms
+          || evidence.receiver_peak_ms < item.start_ms || evidence.receiver_peak_ms > item.end_ms
+          || evidence.incoming_end_ms < evidence.receiver_peak_ms - 350 || evidence.incoming_end_ms > evidence.receiver_peak_ms + 100) return null;
+        returnContext = { opponent_serve_id: evidence.opponent_serve_id, server_track_id: evidence.server_track_id,
+          ball_track_id: evidence.ball_track_id, ball_observations: evidence.ball_observations, incoming_start_ms: evidence.incoming_start_ms,
+          incoming_end_ms: evidence.incoming_end_ms, receiver_peak_ms: evidence.receiver_peak_ms, verification_method: evidence.verification_method };
+      } else if (item.return_context !== undefined) return null;
+    }
+    if (item.quality_reason_codes !== undefined && (!Array.isArray(item.quality_reason_codes) || !item.quality_reason_codes.every(identifier))) return null;
     episodeIds.add(item.episode_id);
     episodes.push({ episode_id: item.episode_id, family: item.family as TennisEpisode["family"], start_ms: item.start_ms, peak_ms: item.peak_ms, end_ms: item.end_ms,
-      subject_id: selected.subject_id, person_track_id: item.person_track_id, motion_pattern: pattern, metrics });
+      subject_id: selected.subject_id, person_track_id: item.person_track_id, motion_pattern: pattern, metrics,
+      ...(Array.isArray(item.quality_reason_codes) ? { quality_reason_codes: [...item.quality_reason_codes] } : {}),
+      ...(returnContext ? { return_context: returnContext } : {}) });
   }
   if (selected && selected.measured_episode_count !== episodes.length || report.status !== "unavailable" && !episodes.length) return null;
   const validity: TennisEpisodeValidity[] = [], scored = new Set<string>();
@@ -192,13 +223,14 @@ export function tennisAssessmentContext(result: DemoResultResponse | null): Tenn
 /** Validate before display, persistence, or export; missing measurements never become zero. */
 export function validatedTennisAssessment(value: unknown, context: TennisAssessmentContext): TennisAssessment | null {
   const report = record(value), rubric = record(report?.rubric);
-  const scoped = report?.version === "tennis-action-assessment-v1.2.0";
-  if (!report || !context.jobId || !hash(context.videoSha256) || !["tennis-action-assessment-v1.1.0", "tennis-action-assessment-v1.2.0"].includes(String(report.version))
+  const current = report?.version === "tennis-action-assessment-v1.3.0";
+  const scoped = current || report?.version === "tennis-action-assessment-v1.2.0";
+  if (!report || !context.jobId || !hash(context.videoSha256) || !["tennis-action-assessment-v1.1.0", "tennis-action-assessment-v1.2.0", "tennis-action-assessment-v1.3.0"].includes(String(report.version))
     || report.source_run_id !== context.jobId || !hash(report.source_video_sha256) || report.source_video_sha256.toLowerCase() !== context.videoSha256.toLowerCase()
     || report.source_timestamp_semantics !== "original_decoder_pts" || !["scored", "partial", "unavailable"].includes(String(report.status))
     || !score(report.overall_score) || !Array.isArray(report.dimensions) || report.dimensions.length !== 5
     || report.reason_zh !== undefined && !text(report.reason_zh)
-    || !rubric || rubric.version !== (scoped ? "tennis-action-rubric-v1.2.0" : "tennis-action-rubric-v1.1.0") || rubric.semantics !== "engineering_action_quality"
+    || !rubric || rubric.version !== (current ? "tennis-action-rubric-v1.3.0" : scoped ? "tennis-action-rubric-v1.2.0" : "tennis-action-rubric-v1.1.0") || rubric.semantics !== "engineering_action_quality"
     || rubric.coach_calibrated !== false || rubric.identity_labels_used !== false || rubric.confidence_used_in_score !== false
     || rubric.aggregation !== "mean_episode_dimension_scores_then_equal_dimension_mean"
     || context.durationMs !== undefined && context.durationMs !== null && (!finite(context.durationMs) || context.durationMs <= 0)) return null;

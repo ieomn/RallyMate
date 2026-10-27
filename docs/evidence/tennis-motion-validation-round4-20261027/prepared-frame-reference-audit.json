@@ -1,0 +1,28 @@
+{
+  "version": "prepared-frame-reference-readonly-audit-v1",
+  "current_implementation_status": "no_P1_or_P2_found",
+  "checks": {
+    "production_detector_reused_model_tensor_decodes_to_new_lists_dicts_boxes": true,
+    "tracker_reassigns_its_bbox_reference_without_mutating_past_bbox": true,
+    "players_alias_only_same_frame_detections": true,
+    "camera_returns_new_dict_and_matrix_tolist": true,
+    "subject_lock_returns_new_identity_dict_and_never_mutates_previous_result": true,
+    "decoder_binding_is_copied_before_next_decode": true,
+    "retained_five_frame_snapshots_unchanged_after_later_actual_helper_calls": true
+  },
+  "real_native_binding_evidence": {
+    "path": "gpu-davis-prefix-final/source-binding-proof.json",
+    "selected_rows": 172,
+    "prefix_rows": 7,
+    "same_source_frame_track_selection_camera": true,
+    "source_order": true
+  },
+  "phase_selection_review": {
+    "assessment_score_or_expected_player_level_used": false,
+    "ideal_kinetic_joint_order_used": false,
+    "baseline_anchor": "maximum observed smoothed image-plane wrist speed in continuous local context, with independent quiet reset exclusion",
+    "serve_anchor": "observed opposite-arm lift followed by overhead extension pivot; semantic proposal rule, not technique grading",
+    "ambiguity_rule": "uses measured hand separation, speed/excursion and independently associated racket boxes only; does not choose a preferred technical sequence"
+  },
+  "limitation": "InitialSubjectBuffer intentionally retains references. A future replacement detector that mutates its returned dictionaries would require copying or an explicit immutable-output contract; the current production decoder builds fresh outputs."
+}

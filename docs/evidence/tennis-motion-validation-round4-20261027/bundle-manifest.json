@@ -1,0 +1,322 @@
+{
+  "version": "tennis-motion-metadata-evidence-bundle-v1",
+  "status": "final_v3_metadata_with_known_measurement_limits",
+  "media_and_pose_distribution": false,
+  "private_absolute_paths_included": false,
+  "source_gt_original_sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+  "projection_policy": "Omit local storage paths and repeated metric definitions. Input/code hashes and all measured/unmeasured requirements remain. local-artifact references are metadata, not distributed files.",
+  "files": [
+    {
+      "file": "source-manifest.json",
+      "sha256": "c903d51024e01598e2d806a1a465b2d99b9defc0e3b74e427ed0e4648669efc0",
+      "source_evidence_sha256": "667e914ed191b57c1f1e6e0dc69a2f886a0753a49c16aef1999cb1d96b50af74",
+      "source_evidence_name": "source-manifest.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "manual-action-reference.json",
+      "sha256": "a0edfe9efa325ffce4003239dbaa378d54c247136d59e2289499b69c410511b5",
+      "source_evidence_sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+      "source_evidence_name": "manual-action-reference.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "manual-reference-errata.json",
+      "sha256": "879a4c4a7e2bc437113bbb46d237e2de08fecd46d5c8545f0fa5c6141364525b",
+      "source_evidence_sha256": "931c4a7f21a26c6bdd355ae4880fa2ad7e5409ece73d1cf0920d5c8330a8954f",
+      "source_evidence_name": "manual-reference-errata.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "manual-reference-consistency.json",
+      "sha256": "9f4055b7c9e5a9429fc570980c6a4f436b727c03ddfa4f2b6dcf2b872bc714dd",
+      "source_evidence_sha256": "5b527ffc3482013980c0c2cbfd75b3e5837cdd4c6b09b5659076de2ccfb7f278",
+      "source_evidence_name": "manual-reference-consistency.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "rubric-stability.json",
+      "sha256": "0f62dcb2f7bb4f050efd6b94519927b0754f413014d3e446c77913acaa322e4d",
+      "source_evidence_sha256": "887fba528ad3012b1934108b597cf3747977eae6750658cef4e5654156637f86",
+      "source_evidence_name": "rubric-stability.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "scoring-observability-freeze.json",
+      "sha256": "b622e7d4aca2b796127922199926044e767838ac793baf67c2043d75f31ac002",
+      "source_evidence_sha256": "c6c4279b6394aebeafc3bfcc92c89044e3cf466f4588a45437ef184b46cfb986",
+      "source_evidence_name": "scoring-observability-freeze.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "manual-pattern-results.json",
+      "sha256": "58590eaa57f175f4ee655602a3fc2a5271368198434625ff370eaa4ba0f0ed4a",
+      "source_evidence_sha256": "f210ff6f3aa1ac7c0f19e8a3e2e1ef91fa0dc4b6f4e32d8526f0ab3fce0588e4",
+      "source_evidence_name": "manual-pattern-results-release-v3.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "manual-fullserve-fixed-window.json",
+      "sha256": "f42b990c001341bf8b28d9a2630ebb0e002cbf1c21343152e66d18233afef4e0",
+      "source_evidence_sha256": "04a7b18f8709fdf87908a96acf62f593938bfe3110134fd860be0c68c7f5de62",
+      "source_evidence_name": "manual-fullserve-fixed-window-release-v3.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "real-sequence-validation.json",
+      "sha256": "7b27b4325fb2f3400d468f39d96388f0d44a6f04a1b490764c18392df8282638",
+      "source_evidence_sha256": "efa96b0ca96bfb1f019289dd33d695aa1332ed6a335354a64ebcecc918edc1d7",
+      "source_evidence_name": "real-sequence-validation-v3.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "real-sequence-type-context.json",
+      "sha256": "5ffe56b2f5037106a2eaa05153dea3047518fad3f65692ac32351f97bf567ad2",
+      "source_evidence_sha256": "f232ee05baf3cc61107ac4814f0643f9f3269b5faf75628643878c362cac1e28",
+      "source_evidence_name": "d12255e0-22f1-475e-99ba-b0595b8184b6.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "gpu-davis-source-binding-proof.json",
+      "sha256": "f470d867c8f6f5d71306e57f63357f793a7935d545c5e73d2916cb6a332de931",
+      "source_evidence_sha256": "5dc53eeeac1a531b279092830a4070470abbda94ac6d7a1a0b1e63d05fc07778",
+      "source_evidence_name": "source-binding-proof.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "gpu-new-source-binding-proof.json",
+      "sha256": "9b123601979919c0550aa9c89332952f0eb7939e11ad0169f2e7ef3941062a27",
+      "source_evidence_sha256": "4efc0a7a8d0bfe61c0ad47c2a4c119fc7c85165a79371d9a111947f3b69677d3",
+      "source_evidence_name": "source-binding-proof.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "gpu-capture-summaries.json",
+      "sha256": "fedf9faeb774baa3963789a094d077da23613ef9132cd185174c303d35f85b8e",
+      "sources": [
+        {
+          "source_evidence_name": "gpu-davis-prefix-final/manifest.json",
+          "sha256": "767b58cf6e7e0ce052d897f3a1a3d30c7da3a7e711da672dbc2eaf5700054960"
+        },
+        {
+          "source_evidence_name": "gpu-new-final/manifest.json",
+          "sha256": "a5eb6d6eab3b9677463b9a2169b786b82121cbd0a62102a24ae8506676f7c6f1"
+        }
+      ],
+      "metadata_projection": true
+    },
+    {
+      "file": "cpu-replay-comparison.json",
+      "sha256": "43a1ca3603570258f08127b06f46db1225619b2359f1525950d6f206c460a831",
+      "source_evidence_sha256": "0efc23726eeaa44a15ac251bd49683f6cda03bd2cc1ccd4d647baf568e8b1ce6",
+      "source_evidence_name": "cpu-replay-comparison-v3.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "segmentation-targeted-review.json",
+      "sha256": "fcc5bb4b54cfac23edca4e20caedb6f3d4538632678dc98303fcedbe2be77998",
+      "source_evidence_sha256": "07eb0fcfa975432186fb83293c6d65c0ac4e3e495eebf1d024ad9159471c33ef",
+      "source_evidence_name": "targeted-comparison.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "backend-test-summary.json",
+      "sha256": "6cee7defb104df5aa8f121a818eebe6ebfd533a1a31f766557f7dbaa9af64eb4",
+      "source_evidence_sha256": "deceba11643d333e7cc284321fbc615509e598b4cb51bbf83cc04efaae5ca39f",
+      "source_evidence_name": "release-v3-backend-tests.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "prepared-frame-reference-audit.json",
+      "sha256": "a792724da7d5518661b41560ae9f0b670766266f4a3925eaab3ea2dd11a30dfe",
+      "source_evidence_sha256": "74c5cd5f72c613f3509b152883777a075378b19d56548c21a3c51192564516bb",
+      "source_evidence_name": "prepared-frame-reference-audit.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "real-sequence-parser-validation.json",
+      "sha256": "4fe42bd497b107c3e6d2f1a4259314f477b66bccb676a45ff9f5c7d006e3416f",
+      "source_evidence_sha256": "4fe42bd497b107c3e6d2f1a4259314f477b66bccb676a45ff9f5c7d006e3416f",
+      "source_evidence_name": "real-sequence-frontend-parser-validation-v3.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-independent-audit.json",
+      "sha256": "a22c0bebc975c5496dca1d85d16544b71738ebcc6ded9efb7fbb66d962c5e46e",
+      "source_evidence_sha256": "22891cff067be3f4206ba0677724463db2aaa4b74255efe28b8a4546e14f61fe",
+      "source_evidence_name": "release-v2-independent-audit.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-independent-audit.json",
+      "sha256": "b742b53fc4e969a175ba11e6a1cb842d2cb22e4a734f5c9b4df6e418706c8039",
+      "source_evidence_sha256": "c65e3a8f9408b985152d3c94d911f07e95ceece957cca669442e6ea8e43aa4e6",
+      "source_evidence_name": "release-v3-independent-audit.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-regression-parser-validation.json",
+      "sha256": "4c054fa1d30efe1d7a50ae637770a2672f4ec35eb5c645b286da98fd4d3b66f7",
+      "source_evidence_sha256": "4c054fa1d30efe1d7a50ae637770a2672f4ec35eb5c645b286da98fd4d3b66f7",
+      "source_evidence_name": "release-v3-regression-frontend-parser-validation.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-regression-window-comparison.json",
+      "sha256": "77126fffbaf4ee52c99a9c45e29f463d2a911a4732f06348d65ba2bcd5b534a7",
+      "source_evidence_sha256": "451bc67273c169ac476be63c49ed007510fba6cb3b7323ef052404d8014a0afe",
+      "source_evidence_name": "bundle-window-comparison-release-v3-regression.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "baseline-regression-window-comparison.json",
+      "sha256": "6d71e3c9cd7e02b36e11917d123c40165ecac7dac854609b7462abc8c4196d83",
+      "source_evidence_sha256": "d0957650fcd0f92a75e0c317edf41ee2cf80a65dfabde240d4ae26012be28623",
+      "source_evidence_name": "bundle-window-comparison-baseline-regression.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-gpu-regression-parser-validation.json",
+      "sha256": "e3fe880c91e5105a5aed77f73bf665462a60c5ccc39f645d0cc88c15da1a2c9b",
+      "source_evidence_sha256": "e3fe880c91e5105a5aed77f73bf665462a60c5ccc39f645d0cc88c15da1a2c9b",
+      "source_evidence_name": "release-v3-gpu-regression-frontend-parser-validation.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-gpu-regression-window-comparison.json",
+      "sha256": "583e2710a9f50e8772d309eabb0b741e3b53f2703c0272fd490e49cb9ded4770",
+      "source_evidence_sha256": "26e5ee71e5e9788c08e0fc56fc017438ce09bdf81f7d992704255d8388c03c8f",
+      "source_evidence_name": "bundle-window-comparison-release-v3-gpu-regression.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "baseline-gpu-window-comparison.json",
+      "sha256": "3faf8dce04f0ff16233dd44f7742e82acc43dd9277baf4e83a99b9e75928f6ad",
+      "source_evidence_sha256": "b32e810024baef901349c6e843bf82deae82c578ac44913f677115eed6d6072b",
+      "source_evidence_name": "bundle-window-comparison-baseline-gpu.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-fresh-native-parser-validation.json",
+      "sha256": "38462b687e0bd26803b17c442267c6f7b6ebaee64e4421cb4bca040ca2535134",
+      "source_evidence_sha256": "38462b687e0bd26803b17c442267c6f7b6ebaee64e4421cb4bca040ca2535134",
+      "source_evidence_name": "release-v3-fresh-native-frontend-parser-validation.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v3-fresh-native-window-comparison.json",
+      "sha256": "37335ef6c4f6861a9b1b21d7691fb7b5f037282329f6f7762c436e53bdb21608",
+      "source_evidence_sha256": "66ae5f17cd0353204ad0f406cb08b1962381c49411221b88986fe71db43c496a",
+      "source_evidence_name": "bundle-window-comparison-release-v3-fresh-native.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "baseline-fresh-native-window-comparison.json",
+      "sha256": "07fe7f38671e7f8101ab17848e68c458b385b6b2d0053b1225a9c44b68d9c8a9",
+      "source_evidence_sha256": "2a1d783b61df5846c03c71eb4b5a49e7e181eb391b2ccbcecd1a80669a73ceb4",
+      "source_evidence_name": "bundle-window-comparison-baseline-fresh-native.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-regression-parser-validation.json",
+      "sha256": "ff32467a7cd64191c0359aa8af1a26eb777350137e8481ec60ed61747d437686",
+      "source_evidence_sha256": "ff32467a7cd64191c0359aa8af1a26eb777350137e8481ec60ed61747d437686",
+      "source_evidence_name": "release-v2-regression-frontend-parser-validation.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-regression-window-comparison.json",
+      "sha256": "a25727a3c93bec487abe75a6a879afbe57ab01f1c9d2de052b8e5bfa721eacca",
+      "source_evidence_sha256": "2d301c69ac85cda8bb46925c64f2e2a301d7b0e020da709734dfa70652172ab5",
+      "source_evidence_name": "bundle-window-comparison-release-v2-regression.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-gpu-regression-parser-validation.json",
+      "sha256": "68626585e5d4236b8356a4141a41d292fd1fc6213dca1e8fa3de459687bf7467",
+      "source_evidence_sha256": "68626585e5d4236b8356a4141a41d292fd1fc6213dca1e8fa3de459687bf7467",
+      "source_evidence_name": "release-v2-gpu-regression-frontend-parser-validation.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-gpu-regression-window-comparison.json",
+      "sha256": "33bae5044a1a727023b953d36b98ca17202302b312806c2c60ffb6905e3ea149",
+      "source_evidence_sha256": "c760949d080ca2628e52a93d3976725ef73214024e54489e7b7bd7244a08b14f",
+      "source_evidence_name": "bundle-window-comparison-release-v2-gpu-regression.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-fresh-native-parser-validation.json",
+      "sha256": "d56a0bae00d427cd841890e5bcaac5c92382c935e00bfdeba0744bc3280093ab",
+      "source_evidence_sha256": "d56a0bae00d427cd841890e5bcaac5c92382c935e00bfdeba0744bc3280093ab",
+      "source_evidence_name": "release-v2-fresh-native-frontend-parser-validation.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "release-v2-fresh-native-window-comparison.json",
+      "sha256": "89f077f4c885763ddf7173cfe8b29ebe51d0f8f0141b0d42f6cbdb6540b01dd4",
+      "source_evidence_sha256": "576c19e8f421c46fa63608b5408f8b93ed8b62d625e9fa150e1b68280d582861",
+      "source_evidence_name": "bundle-window-comparison-release-v2-fresh-native.json",
+      "metadata_projection": true
+    },
+    {
+      "file": "cpu-replay-comparison-v2.json",
+      "sha256": "daeaf570c59ad73ae868cd4526912ed1e0d343bf6a871d76b738927a914d5fc4",
+      "source_evidence_sha256": "a97c9dc969e7d4bad174544ebfcc7f5c218fee25c9f1bea6fbd8195f762a227e",
+      "source_evidence_name": "final-cpu-replay-comparison.json",
+      "metadata_projection": true,
+      "intermediate_version": "v2"
+    },
+    {
+      "file": "segmentation-targeted-review-v2.json",
+      "sha256": "07ef93f6558a57bd085de2db3ea8431c88a43dc97b3ac25646a7977053abeab0",
+      "source_evidence_sha256": "33ee1c1452f985d1a19a4a0041021a8d5c28767d18e190b47971a79dca529466",
+      "source_evidence_name": "targeted-review.json",
+      "metadata_projection": true,
+      "intermediate_version": "v2"
+    },
+    {
+      "file": "backend-test-summary-v2.json",
+      "sha256": "cbed636814d28f69429deda104ca4bae4a5a02522629c80cb0d9e8a59f6bca6d",
+      "source_evidence_sha256": "03e756a86e9b6db2f1a0d10d1f15bb0ad0d85c293d0ae04c26fe7ddd548a9a6c",
+      "source_evidence_name": "release-v2-backend-tests.json",
+      "metadata_projection": true,
+      "intermediate_version": "v2"
+    },
+    {
+      "file": "live-exact-review-rebinding-v3.json",
+      "sha256": "1cc6dbe3f08462787a909200fac9257275b75c544b91917b035887abb909870d",
+      "source_evidence_sha256": "617b06dec2a9895ffcd3be91f64a930e7eaed50b6a6bfbfb2ce4b85b1a699023",
+      "source_evidence_name": "live-exact-review-rebinding-v3.json",
+      "metadata_projection": true,
+      "scope": "local_service_with_existing_reviewed_contexts_separate_from_automatic_replay",
+      "projection_detail": "JSON content unchanged; published line endings normalized to repository LF"
+    },
+    {
+      "file": "live-final-reviewed-validation.json",
+      "sha256": "faaf31d647512b4c398436b46ff8abebdd49363b5ca1bc578e75b9151b2ec192",
+      "source_evidence_sha256": "b6565e0e952930a137e85a7188995bedddd9e697743da1524d5d0aeff0aeb84e",
+      "source_evidence_name": "live-final-reviewed-validation.json",
+      "metadata_projection": true,
+      "scope": "local_service_with_existing_reviewed_contexts_separate_from_automatic_replay",
+      "projection_detail": "JSON content unchanged; published line endings normalized to repository LF"
+    }
+  ],
+  "cpu_record_count": 33,
+  "unique_content_sha_count": 26,
+  "independent_sample_count_not_claimed": true,
+  "score_increase_not_an_accuracy_metric": true,
+  "final_replay_version": "v3",
+  "intermediate_v2_failure_preserved": true,
+  "all_final_parser_checks_passed": true,
+  "known_limits": [
+    "Independent source review is targeted agent review, not a blind or expert benchmark.",
+    "v3 removes an outdoor walking/raised-racket false positive and also rejects one real Dimitrov swing whose local phase geometry is unresolved; both are retained in the independent audit.",
+    "Manual complete-window and typed-context validation remain separate from context-disabled automatic replay statistics.",
+    "Window localization and phase coverage are separate measurements; neither confirms ball contact or real forces."
+  ],
+  "live_reviewed_reports_checked": 9,
+  "original_review_entries_preserved": true,
+  "published_line_endings": "LF",
+  "source_raw_hashes_preserved": true
+}

@@ -1,0 +1,33 @@
+{
+  "frozen_at_utc": "2026-10-27T05:54:20.559820+00:00",
+  "purpose": "phase_observability_and_same_source_candidate_fixes_no_weight_or_cutpoint_tuning",
+  "code_sha256": {
+    "src/rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+    "src/rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "scoring-demo-web/app/lib/tennis-assessment.ts": "5b8f2780159bf76e1d8dbdbd9249e146cd4376c343eb7adbde5eed212127f9b0",
+    "scoring-demo-web/app/TennisAssessmentSummary.tsx": "f500fdedeae9bfcb5452923167b09b062a2b549f4d785d5e60f2c707fd32c6f0",
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9"
+  },
+  "thresholds_unchanged": true,
+  "weights_unchanged": true,
+  "assessment_version": "tennis-action-assessment-v1.3.0",
+  "pattern_version": "tennis-motion-patterns-v1.1.0",
+  "reviewed_real_regression": "17 old source windows held fixed; ICS fresh automatic complete phase plus independently reviewed type; ordinary B unchanged manual full-serve window",
+  "counterfactuals": "phase-external foreshortening; missing halo; censored peak; common rotation; camera compensation; return alias; sidecar wrong source; invalid phase authority; wrong manual return frames",
+  "tests": {
+    "backend_related_passed": 106,
+    "frontend_node_passed": 918,
+    "frontend_node_skipped": 1,
+    "frontend_node_failed": 0,
+    "build": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "frontend_targeted_passed": 18,
+    "frontend_node_total": 919
+  },
+  "manual_validation_revision": "original_reviewed_windows_preserved; explicit_unknown_generic; separate_artifact_job_and_directory_bindings; original_source_and_artifact_hashes_verified",
+  "joint_scope_revision": "unchanged_1.5_torso_wrist_jump_threshold; active_wrist_any_known_pair_endpoint_rejects_entire_window; non_active_wrist_masks_both_endpoints_only; torso_source_epoch_still_global_breaks; known_invalid_neighbor_excluded_before_median_smoothing_without_filling_invalid_center",
+  "manual_results": "manual-pattern-results-release-v3.json",
+  "rejection_reason_revision": "structured_source_bound_hand_ambiguity_and_external_peak_geometry_reasons_only; no_duplicate_scoring_of_detector_geometry"
+}

@@ -1,0 +1,34 @@
+{
+  "version": "tennis-scoring-scale-stability-v1",
+  "baseline_commit": "b2b7f121ae2bda1be8305050ca9e6e225a7675dc",
+  "checks": {
+    "dimensions": true,
+    "metrics": true,
+    "pattern_metrics": true,
+    "profiles": true,
+    "return_profiles": true,
+    "serve_rubric": true,
+    "serve_metrics": true,
+    "assessment_numeric_rules": true,
+    "aggregation": true,
+    "metric_weight_semantics": true
+  },
+  "all_declared_scoring_scales_and_weights_unchanged": true,
+  "pattern_observability_metadata_changes": {
+    "version": {
+      "before": "tennis-motion-patterns-v1.0.0",
+      "after": "tennis-motion-patterns-v1.1.0"
+    },
+    "sequence_peak_support": {
+      "before": null,
+      "after": "search_only_declared_phase_three_original_observations_each_side_for_derivative_and_peak_bracketing"
+    },
+    "axis_observation_scope": {
+      "before": null,
+      "after": "metric_phase_plus_fixed_derivative_support_not_entire_episode"
+    }
+  },
+  "scope": "Scoring scale declarations, not a claim that recognition rules or evaluated phase windows are unchanged.",
+  "recognition_rules_changed": true,
+  "review": "source diff separately inspected; no professional/ordinary identity label enters calculation"
+}

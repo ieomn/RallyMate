@@ -24,9 +24,10 @@ from rallymate_service.tennis_subjects import subject_reference, select_report_s
 from rallymate_service.tennis_source_motion import source_motion_by_frame, window_source_motion, verified_action_context, bind_reviewed_directions
 from rallymate_service.tennis_motion_patterns import analyze_motion_pattern, PATTERN_METRICS, TECHNIQUES, RUBRIC as PATTERN_RUBRIC
 from rallymate_vision.sam3d_evaluation import COORDINATES_3D, _binding_error, _time
+from rallymate_scoring.stroke_candidates import detect_stroke_candidates
 
-VERSION = "tennis-action-assessment-v1.2.0"
-RUBRIC_VERSION = "tennis-action-rubric-v1.2.0"
+VERSION = "tennis-action-assessment-v1.3.0"
+RUBRIC_VERSION = "tennis-action-rubric-v1.3.0"
 DIMENSIONS = (("movement", "移动支撑"), ("preparation", "准备引拍"),
               ("coordination", "动作协调"), ("striking", "击球姿态"),
               ("follow_through", "随挥恢复"))
@@ -184,24 +185,61 @@ def _segments(timeline, records, sha):
             current = []
             continue
         g.update(time=float(_time(record) * 1000) - origin, frame=frame, track=track, person=row["primary_player_id"],
-                 reference=(record["selection_epoch"], record["camera_reference_epoch"]), **subject)
+                 reference=(record["selection_epoch"], record["camera_reference_epoch"]), wrist_discontinuities=(), wrist_unavailable=(), **subject)
         if current:
             previous = current[-1]
             connected = (g["frame"] == previous["frame"] + 1 and 0 < g["time"] - previous["time"] <= 160
                          and (g["track"], g["person"], g["reference"], g["subject_id"]) == (previous["track"], previous["person"], previous["reference"], previous["subject_id"]))
-            # Discontinuous model geometry is a measurement break, not bad form.
+            # Torso/source breaks affect every measurement. A wrist jump only
+            # invalidates that joint; the chosen active wrist is checked later.
             jump = not .65 <= g["torso"] / previous["torso"] <= 1.55
-            for side in ("left", "right"):
-                a, b = g["local"][f"{side}_wrist"], previous["local"][f"{side}_wrist"]
-                jump |= a is not None and b is not None and np.linalg.norm(a - b) > 1.5
             if not connected or jump:
                 segments.append(current)
                 current = []
                 reasons["geometry_discontinuity" if jump else "source_continuity_break"] += 1
+            else:
+                affected = []
+                for side in ("left", "right"):
+                    a, b = g["local"][f"{side}_wrist"], previous["local"][f"{side}_wrist"]
+                    if a is not None and b is not None and np.linalg.norm(a - b) > 1.5:
+                        affected.append(side)
+                g["wrist_discontinuities"] = tuple(affected)
+                if affected:
+                    g["wrist_unavailable"] = tuple(affected)
+                    previous["wrist_unavailable"] = tuple(sorted(set(previous["wrist_unavailable"]) | set(affected)))
+                    reasons["wrist_geometry_discontinuity"] += 1
         current.append(g)
     if current:
         segments.append(current)
     return segments, reasons
+
+
+def _joint_scoped_window(rows, observations):
+    """Omit both endpoints of an uncertain wrist pair, without filling gaps.
+
+    Selection must already reject an active-wrist discontinuity. Other joints
+    retain their observations, and the original source artifacts stay intact.
+    """
+    missing = {}
+    for index, row in enumerate(rows):
+        for side in row.get("wrist_unavailable", ()):
+            missing.setdefault(row["frame"], set()).add(side + "_wrist")
+        for side in row.get("wrist_discontinuities", ()):
+            for endpoint in (index - 1, index) if index else (index,):
+                missing.setdefault(rows[endpoint]["frame"], set()).add(side + "_wrist")
+    if not missing:
+        return rows, observations, {}
+    scoped_rows = []
+    for row in rows:
+        names = missing.get(row["frame"], set())
+        if names:
+            local = {**row["local"], **{name: None for name in names}}
+            row = {**row, "local": local, **{name.replace("_wrist", "_reach"): None for name in names}}
+        scoped_rows.append(row)
+    scoped_observations = [{**row, "points": {name: point for name, point in row["points"].items()
+                                               if name not in missing.get(row["frame"], set())}}
+                           for row in observations]
+    return scoped_rows, scoped_observations, {frame: sorted(names) for frame, names in missing.items()}
 
 
 def _smooth(values):
@@ -216,7 +254,11 @@ def _smooth(values):
 
 
 def _wrist_series(segment, side):
-    return _smooth([row["local"][f"{side}_wrist"] if row["local"][f"{side}_wrist"] is not None else [np.nan] * 3 for row in segment])
+    # A known bad neighbor outside a later subwindow must not influence its
+    # first/last valid observation through the three-observation median.
+    return _smooth([row["local"][f"{side}_wrist"] if row["local"][f"{side}_wrist"] is not None
+                    and side not in (*row.get("wrist_unavailable", ()), *row.get("wrist_discontinuities", ()))
+                    else [np.nan] * 3 for row in segment])
 
 
 def _local_velocity(points, times_ms):
@@ -271,12 +313,112 @@ def _summary_episodes(summary):
             reduced = {key: row.get(key) for key in ("episode_id", "start_ms", "peak_ms", "end_ms", "person_track_id", "phases", "racket_hand", "classification")}
             reduced["continuity"] = _map(_map(row.get("evidence")).get("process_continuity"))
             reduced["stroke_classification"] = _map(_map(row.get("evidence")).get("stroke_classification"))
+            reduced["return_context"] = _map(_map(row.get("evidence")).get("return_context"))
+            reduced["phase_authority"] = row.get("phase_authority")
+            reduced["phase_ambiguity"] = _map(row.get("phase_ambiguity"))
+            reduced["measurement_provenance"] = _map(row.get("measurement_provenance"))
             reduced["family"] = family
             identifier = row["episode_id"]
             if identifier in by_id and by_id[identifier] != reduced:
                 conflicts.add(identifier)
             by_id[identifier] = reduced
     return [e for key, e in by_id.items() if key not in conflicts]
+
+
+def _has_return_context(episode):
+    """A family/label or reviewed technique alone never establishes a return."""
+    context = _map(episode.get("return_context"))
+    start, end = context.get("incoming_start_ms"), context.get("incoming_end_ms")
+    peak = episode.get("peak_ms")
+    return (episode.get("family") == "return" and isinstance(context.get("opponent_serve_id"), str)
+            and bool(context["opponent_serve_id"]) and type(context.get("server_track_id")) is int
+            and context["server_track_id"] >= 0 and context["server_track_id"] != episode.get("person_track_id")
+            and type(context.get("ball_track_id")) is int and context["ball_track_id"] >= 0 and type(context.get("ball_observations")) is int
+            and context["ball_observations"] >= 3 and all(_finite(v) for v in (start, end, peak))
+            and 0 <= start < end and peak - 350 <= end <= peak + 100)
+
+
+def _verified_return_aliases(episodes):
+    by_id = {e.get("episode_id"): e for e in episodes}
+    aliases = {}
+    for episode in episodes:
+        identifier = episode.get("episode_id")
+        if not _has_return_context(episode) or not isinstance(identifier, str) or not identifier.endswith("-return"):
+            continue
+        original = by_id.get(identifier[:-7])
+        if (original and original.get("family") == "baseline"
+                and all(original.get(k) == episode.get(k) for k in
+                        ("start_ms", "peak_ms", "end_ms", "person_track_id", "phases", "continuity"))):
+            aliases[original["episode_id"]] = identifier
+    return aliases
+
+
+def _source_phase_authority(episode):
+    """This authorizes phase timing only, never model confidence or real contact."""
+    proof = _map(episode.get("measurement_provenance"))
+    phases = {p.get("phase"): p for p in episode.get("phases", []) if isinstance(p, Mapping)}
+    prep, acceleration, follow = (_map(phases.get(name)) for name in ("preparation", "acceleration", "follow_through"))
+    return (episode.get("phase_authority") == "source_bound_primary_motion"
+            and proof.get("pose_source") == "sam3d" and proof.get("observation_semantics") == "monocular_model_estimate"
+            and proof.get("assessment_status") == "measurement_only" and proof.get("scoring_allowed") is False
+            and type(proof.get("model_estimate_sample_count")) is int and proof["model_estimate_sample_count"] >= 7
+            and episode.get("racket_hand") in {"left", "right"}
+            and all(p.get("status") == "measured" for p in (prep, acceleration, follow))
+            and prep.get("start_ms") == episode.get("start_ms") and prep.get("end_ms") == acceleration.get("start_ms")
+            and acceleration.get("end_ms") == episode.get("peak_ms") == follow.get("start_ms")
+            and follow.get("end_ms") == episode.get("end_ms"))
+
+
+def _bound_phase_ambiguity(episode, segments, sha):
+    """Describe an upstream unscorable sequence only with its bound evidence."""
+    ambiguity, proof = _map(episode.get("phase_ambiguity")), _map(episode.get("measurement_provenance"))
+    reason = ambiguity.get("reason_code")
+    continuity = _map(episode.get("continuity"))
+    peak = ambiguity.get("candidate_motion_peak_ms")
+    phases = {p.get("phase"): p for p in episode.get("phases", []) if isinstance(p, Mapping)}
+    if (reason not in ("unresolved_racket_hand_with_competing_arm_sequence", "external_peak_motion_geometry_unverified")
+            or episode.get("phase_authority") != "source_bound_primary_motion"
+            or episode.get("family") != "baseline" or proof.get("pose_source") != "sam3d"
+            or proof.get("observation_semantics") != "monocular_model_estimate" or proof.get("assessment_status") != "measurement_only"
+            or proof.get("scoring_allowed") is not False or type(proof.get("model_estimate_sample_count")) is not int
+            or proof["model_estimate_sample_count"] < 7 or continuity.get("pose_source") != "sam3d"
+            or str(continuity.get("video_sha256", "")).lower() != sha
+            or ambiguity.get("candidate_wrist") not in ("left", "right")
+            or ambiguity.get("candidate_wrist") != episode.get("racket_hand")
+            or not _finite(peak) or peak != episode.get("peak_ms")
+            or set(phases) != {"preparation", "acceleration", "follow_through"}
+            or any(p.get("status") != "unavailable" or p.get("reason_code") != reason
+                   or p.get("start_ms") is not None or p.get("end_ms") is not None for p in phases.values())):
+        return None
+    observed_times = [peak]
+    if reason == "unresolved_racket_hand_with_competing_arm_sequence":
+        competing = ambiguity.get("competing_motion_peak_ms")
+        if (ambiguity.get("competing_wrist") not in ("left", "right")
+                or ambiguity.get("competing_wrist") == ambiguity.get("candidate_wrist")
+                or not _finite(competing) or competing <= peak):
+            return None
+        observed_times.append(competing)
+    else:
+        start, end = ambiguity.get("candidate_start_ms"), ambiguity.get("candidate_end_ms")
+        window_start, window_end = ambiguity.get("motion_window_start_ms"), ambiguity.get("motion_window_end_ms")
+        geometry = _map(ambiguity.get("local_sweep_geometry"))
+        count = geometry.get("tested_window_count")
+        nonnegative = [geometry.get(key) for key in ("horizontal_excursion_torso_units", "vertical_range_torso_units", "path_torso_units")]
+        if (not all(_finite(v) for v in (start, end)) or not 0 <= start < end or start <= peak <= end
+                or not all(_finite(v) for v in (window_start, window_end)) or not window_start < peak < window_end
+                or window_start != episode.get("start_ms") or window_end != episode.get("end_ms")
+                or geometry.get("status") != "not_supported" or type(count) is not int or count < 0
+                or type(geometry.get("crosses_body_midline")) is not bool
+                or not all(_finite(v) and v >= 0 for v in nonnegative)
+                or not _finite(geometry.get("minimum_wrist_y_torso_units"))):
+            return None
+        # These are diagnostics of the full reported window. The detector tests
+        # its original local subwindows; do not re-grade summary geometry here.
+        observed_times.extend([start, end, window_start, window_end])
+    bound = any(segment and segment[0]["track"] == episode.get("person_track_id")
+               and segment[0]["reference"] == (continuity.get("source_selection_epoch"), continuity.get("camera_reference_epoch"))
+               and all(any(abs(row["time"] - time) <= 1.01 for row in segment) for time in observed_times) for segment in segments)
+    return reason if bound else None
 
 
 def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_outcomes=None):
@@ -294,8 +436,26 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                          "end_ms": candidate.get("end_ms"), "person_track_id": candidate.get("person_track_id"),
                          "status": "rejected", "reason_codes": [code]})
     ordered = []
+    return_aliases = _verified_return_aliases(episodes)
     for candidate in sorted(episodes, key=lambda e: (e.get("start_ms", 0), e.get("episode_id", ""))):
+        if candidate.get("episode_id") in return_aliases:
+            reject(candidate, "same_action_represented_by_verified_return")
+            continue
+        if candidate.get("family") == "return" and not _has_return_context(candidate):
+            reject(candidate, "return_context_unverified")
+            continue
+        phase_ambiguity = _bound_phase_ambiguity(candidate, segments, sha)
+        if phase_ambiguity:
+            reject(candidate, phase_ambiguity)
+            continue
+        if candidate.get("phase_authority") == "source_bound_primary_motion" and not _source_phase_authority(candidate):
+            reject(candidate, "phase_authority_source_unverified")
+            continue
         reviewed = _map(candidate.get("verified_action_context"))
+        if (_source_phase_authority(candidate) and reviewed.get("racket_hand") in {"left", "right"}
+                and reviewed["racket_hand"] != candidate.get("racket_hand")):
+            reject(candidate, "reviewed_hand_conflicts_with_motion_phases")
+            continue
         if _map(reviewed.get("validity")).get("status") == "invalid":
             reject(candidate, "reviewed_action_incomplete_or_invalid")
             outcomes[-1]["review_reason_codes"] = _map(reviewed.get("validity")).get("reason_codes", [])
@@ -334,11 +494,13 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
         if not all(k in phases for k in ("preparation", "acceleration", "follow_through")):
             continue
         prep_end = phases["preparation"].get("end_ms")
+        source_phases = _source_phase_authority(episode)
         if not _finite(prep_end) or not start < prep_end < peak_time:
             continue
         if any(max(start, a) < min(end, b) for a, b in seen_intervals):
             continue
         choices = []
+        active_jump_seen = False
         for segment in segments:
             if not segment or (segment[0]["track"], segment[0]["reference"]) != (
                 episode.get("person_track_id"), (continuity.get("source_selection_epoch"), continuity.get("camera_reference_epoch"))):
@@ -349,10 +511,13 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
             # no samples are synthesized and neighboring actions cannot overlap.
             previous_peak = ordered[candidate_index - 1].get("peak_ms") if candidate_index else None
             next_peak = ordered[candidate_index + 1].get("peak_ms") if candidate_index + 1 < len(ordered) else None
-            context_start = max(start - 350, (previous_peak + peak_time) / 2 if _finite(previous_peak) else start - 350)
-            context_end = min(end + 550, (next_peak + peak_time) / 2 if _finite(next_peak) else end + 550)
+            context_start = start if source_phases else max(start - 350, (previous_peak + peak_time) / 2 if _finite(previous_peak) else start - 350)
+            context_end = end if source_phases else min(end + 550, (next_peak + peak_time) / 2 if _finite(next_peak) else end + 550)
             a, b = int(np.searchsorted(t, context_start - .51)), int(np.searchsorted(t, context_end + .51, side="right"))
             if b - a < 13 or t[b - 1] - t[a] < 450 or not t[a] <= prep_end < peak_time <= t[b - 1]:
+                continue
+            if source_phases and (abs(t[a] - start) > 1.01 or abs(t[b - 1] - end) > 1.01
+                                  or min(abs(t[a:b] - peak_time)) > 1.01 or min(abs(t[a:b] - prep_end)) > 1.01):
                 continue
             wrists = {side: _wrist_series(segment, side)[a:b] for side in ("left", "right")}
             # Pick the more active arm inside the independently identified swing,
@@ -361,10 +526,13 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
             reviewed_hand = _map(episode.get("verified_action_context")).get("racket_hand")
             classification = _map(episode.get("classification"))
             side = reviewed_hand if reviewed_hand in {"left", "right"} else (
-                episode.get("racket_hand") if episode["family"] == "serve" or classification.get("status") == "rule_inferred" else None)
+                episode.get("racket_hand") if source_phases or episode["family"] == "serve" or classification.get("status") == "rule_inferred" else None)
             if side not in {"left", "right"}:
                 side = max(paths, key=paths.get)
             if side not in {"left", "right"}:
+                continue
+            if any(side in (*row.get("wrist_discontinuities", ()), *row.get("wrist_unavailable", ())) for row in segment[a:b]):
+                active_jump_seen = True
                 continue
             wrist = wrists[side]
             if paths[side] < .45 or not np.isfinite(wrist).all() or np.linalg.norm(np.ptp(wrist, axis=0)) < .25:
@@ -379,11 +547,11 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                                and t[b - 1] - t[a + i] >= 160]
             if not peak_candidates:
                 continue
-            if episode["family"] == "serve":
+            if source_phases or episode["family"] == "serve":
                 # A fast downward follow-through must not replace the detector's
                 # source-bound ordered overhead-extension pivot.
                 peak = int(np.argmin(abs(t - peak_time)))
-                native_prep_end = prep_end
+                native_prep_end = float(t[int(np.argmin(abs(t - prep_end)))]) if source_phases else prep_end
             else:
                 local_peak = max(peak_candidates, key=lambda i: (speed[i], -i))
                 peak = a + local_peak
@@ -399,6 +567,8 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                     "family": episode["family"], "candidate_start_ms": start, "candidate_peak_ms": peak_time, "candidate_end_ms": end,
                     "classification": episode.get("classification"), "phases": episode.get("phases", []),
                     "stroke_classification": episode.get("stroke_classification"),
+                    "return_context": episode.get("return_context"),
+                    "source_phase_authority": source_phases,
                     "verified_action_context": episode.get("verified_action_context"),
                     "preparation_start_clipped": context_start < t[0] - .51 and a == 0}
             choices.append((segment, (a, b, peak, side, wrist, meta)))
@@ -412,7 +582,7 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                              "person_track_id": episode.get("person_track_id"),
                              "subject_id": rows[window[0]]["subject_id"], "status": "measured", "reason_codes": []})
         else:
-            reject(episode, "candidate_lacks_continuous_complete_motion")
+            reject(episode, "active_wrist_discontinuity_in_motion" if active_jump_seen else "candidate_lacks_continuous_complete_motion")
     return out
 
 
@@ -534,6 +704,10 @@ def _follow_active_fraction(steps, times, peak):
 def _score_window(segment, window, *, source_observations=None, video_sha256=None):
     a, b, anchor, side, wrist, meta = window
     rows = segment[a:b]
+    observations, context = window_source_motion(rows, source_observations or {}, video_sha256)
+    rows, observations, missing_wrists = _joint_scoped_window(rows, observations)
+    if missing_wrists:
+        context["unavailable_wrist_observations"] = missing_wrists
     t = np.array([row["time"] for row in rows])
     peak = anchor - a
     prep_end = min(peak, max(3, int(np.searchsorted(t, meta["prep_end_ms"], side="right"))))
@@ -542,6 +716,8 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
     core, post = rows[core_a:core_b], rows[peak:]
     values = {}
     quality_codes = ["preparation_start_clipped_by_source_boundary"] if meta.get("preparation_start_clipped") else []
+    if missing_wrists:
+        quality_codes.append("non_active_wrist_discontinuity_unmeasured")
     def put(key, value, score):
         if _finite(float(value)) and _finite(float(score)):
             values[key] = (float(value), float(np.clip(score, 0, 100)))
@@ -646,7 +822,6 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
     if meta["family"] == "serve":
         values = apply_serve_profile(rows, prep_end=prep_end, peak=peak, side=side, wrist=wrist, values=values,
                                      recovery_continuity=continuity)
-    observations, context = window_source_motion(rows, source_observations or {}, video_sha256)
     reviewed = _map(meta.get("verified_action_context"))
     technique = reviewed.get("technique")
     verified = technique in TECHNIQUES
@@ -684,9 +859,12 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
             "camera_reference_epoch": rows[0]["reference"][1], "active_arm": side,
             "candidate_window": {key: meta[key] for key in ("candidate_start_ms", "candidate_peak_ms", "candidate_end_ms")},
             "quality_reason_codes": quality_codes,
-            "phase_refinement": "source_bound_serve_overhead_pivot" if meta["family"] == "serve" else "native_3d_active_arm_in_bounded_candidate_context",
-            "anchor_semantics": "source_bound_overhead_extension_not_ball_contact" if meta["family"] == "serve" else "body_relative_arm_motion_peak_not_ball_contact",
-            "frame_count": len(rows), "metrics": values, "motion_pattern": pattern_public}
+            "phase_refinement": "source_bound_primary_motion_phases" if meta.get("source_phase_authority") else "source_bound_serve_overhead_pivot" if meta["family"] == "serve" else "native_3d_active_arm_in_bounded_candidate_context",
+            "anchor_semantics": "source_bound_overhead_extension_not_ball_contact" if meta["family"] == "serve" else "source_bound_image_plane_wrist_motion_peak_not_ball_contact" if meta.get("source_phase_authority") else "body_relative_arm_motion_peak_not_ball_contact",
+            "frame_count": len(rows), "metrics": values, "motion_pattern": pattern_public,
+            **({"return_context": {**dict(meta["return_context"]), "receiver_peak_ms": meta["candidate_peak_ms"],
+                                   "verification_method": "source_bound_opponent_serve_and_incoming_ball"}}
+               if meta["family"] == "return" else {})}
 
 
 def _empty(job_id, sha):
@@ -712,11 +890,12 @@ def _empty(job_id, sha):
                        "coordinate_reference": "per_frame_hip_torso_body_basis", "ball_contact_assumed": False,
                        "score_range": [0, 100], "minimum_metric_coverage": .7,
                        "numeric_rule_origin": "versioned_engineering_initial_rules",
+                       "revision_scope": "phase_specific_observability_and_same_subject_candidate_binding_no_weight_or_numeric_cutpoint_change",
                        "static_metric_integration": "trapezoidal_actual_pts_mean_of_per_observation_rules_no_missing_interpolation",
                        "integrated_metric_ids": ["knee_load", "support_control", "coil", "arm_space"],
                        "missing_metrics_renormalized": True,
                        "scope": "visible_body_motion_not_competitive_level_or_ball_outcome",
-                       "action_window_semantics": "continuous_body_relative_arm_motion_not_verified_ball_strike",
+                       "action_window_semantics": "source_bound_primary_motion_phases_when_verified_otherwise_legacy_bounded_body_relative_context_not_ball_contact",
                        "phase_velocity_estimator": "centered_five_observation_linear_fit_actual_decoder_pts",
                        "profiles": ["groundstroke_general", "serve"],
                        "serve_profile": {key: value for key, value in SERVE_RUBRIC.items() if key != "internal_sources"},
@@ -835,10 +1014,15 @@ def _cached(directory, signatures, sha, job_id, episodes_json):
     keys = {(r.get("source_frame_index"), r.get("source_track_id")) for r in timeline}
     records = [r for r in _read_rows(directory / "sam3d_frames.jsonl") if (r.get("frame_index"), r.get("person_track_id")) in keys]
     frames = list(_read_rows(directory / "frames.jsonl")) if (directory / "frames.jsonl").is_file() else []
+    # A sidecar chooses a different source-bound target timeline. Its motion
+    # proposals must use that same timeline instead of the historical summary.
+    # The original primary timeline and formal report remain untouched.
+    candidate_episodes = (_summary_episodes({"action_recognition": detect_stroke_candidates(frames, primary_timeline=timeline)})
+                          if reviewed_selection.is_file() else json.loads(episodes_json))
     context_path = directory / "action-context.json"
     context = json.loads(context_path.read_text(encoding="utf-8")) if context_path.is_file() else None
     result = analyze_tennis_assessment(timeline, records, video_sha256=sha, source_run_id=job_id,
-                                      motion_episodes=json.loads(episodes_json), source_frames=frames, action_context=context)
+                                      motion_episodes=candidate_episodes, source_frames=frames, action_context=context)
     if signatures != _input_signatures(directory):
         raise ValueError("assessment_inputs_changed_during_read")
     return result

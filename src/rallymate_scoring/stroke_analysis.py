@@ -20,7 +20,7 @@ from .temporal_recognition import (LABELS, RuleTemporalBackend, TemporalRecognit
                                    _classification, build_temporal_window, samples_are_continuous,
                                    validate_recognition, wrist_kinematics)
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v2.5.1"
+ANALYSIS_VERSION = "stroke-motion-analysis-v2.7.1"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
     "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
@@ -62,7 +62,8 @@ def _episode_context(candidate: Mapping[str, Any], all_samples: list[Any]) -> li
     side = candidate["racket_hand_candidate"]
     # Context expands preparation/follow-through, but never crosses a missing
     # wrist, identity break, implausible pose jump, or >160 ms observation gap.
-    samples = [sample for sample in all_samples if candidate["start_ms"] - 650 <= sample.time <= candidate["end_ms"] + 900]
+    context_start = min(candidate["start_ms"] - 650, candidate.get("evidence", {}).get("linked_preparation_start_ms", candidate["start_ms"]))
+    samples = [sample for sample in all_samples if context_start <= sample.time <= candidate["end_ms"] + 900]
     positive_time_steps = [b.time - a.time for a, b in zip(samples, samples[1:]) if b.time > a.time]
     positive_frame_steps = [b.frame_index - a.frame_index for a, b in zip(samples, samples[1:]) if b.frame_index > a.frame_index]
     max_time_gap = min(160, statistics.median(positive_time_steps) * 1.8) if positive_time_steps else 160
@@ -173,6 +174,8 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         rotation_analysis["quality"]["keypoint_confidence_min"] = None
         rotation_analysis["score_status"] = "model_estimate_measurement_only"
     metric_notes = []
+    if prediction.get("phase_ambiguity"):
+        metric_notes.append(prediction["phase_ambiguity"]["reason_zh"])
     elbow_range = round(max(filtered_elbows) - min(filtered_elbows), 1) if len(valid_elbows) >= len(samples) * 0.8 else None
     if elbow_range is None:
         metric_notes.append("肘部存在明显投影缩短或遮挡，未输出肘角变化。")
@@ -182,6 +185,8 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "episode_id": candidate["candidate_id"], "family": candidate["family"], "person_track_id": candidate["person_track_id"],
         "start_ms": samples[0].time, "peak_ms": motion_peak_ms, "end_ms": samples[-1].time,
         "candidate_peak_ms": candidate["peak_ms"], "phase_timing_status": prediction["phase_timing_status"],
+        "phase_authority": "source_bound_primary_motion" if provenance else "legacy_image_motion",
+        "phase_ambiguity": prediction.get("phase_ambiguity"),
         "analysis_status": "complete" if preparation_complete and follow_complete else "partial",
         "classification": prediction["classification"],
         "temporal_recognition": {"schema_version": "1.0.0", "backend": dict(backend.metadata()),
@@ -203,6 +208,7 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "metric_notes_zh": metric_notes + ([] if preparation_complete and follow_complete else ["连续画面尚未覆盖完整准备或随挥，缺失阶段不作补全。"]),
         "evidence": {"pose_samples": len(samples), "racket_associated_frames": candidate["evidence"]["racket_associated_frames"],
                      "hand_evidence": dict(hand_evidence), "phase_method": prediction["phase_method"],
+                     "supporting_motion_candidates": candidate.get("evidence", {}).get("supporting_motion_candidates", []),
                      "process_continuity": {"selection_epoch": samples[0].selection_epoch,
                                             "camera_reference_epoch": getattr(samples[0], "camera_reference_epoch", None),
                                             "camera_compensated": getattr(samples[0], "camera_compensated", False),

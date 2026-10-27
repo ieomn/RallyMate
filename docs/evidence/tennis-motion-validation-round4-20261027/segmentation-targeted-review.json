@@ -1,0 +1,80 @@
+{
+  "code_sha256": {
+    "src/rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+    "src/rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+    "src/rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa"
+  },
+  "code_unchanged_during_replay": true,
+  "records": [
+    {
+      "sample": "development-ordinary-a",
+      "candidate_count": 28,
+      "before_episodes": 24,
+      "after_episodes": 24,
+      "changes": []
+    },
+    {
+      "sample": "holdout-ordinary-outdoor-side",
+      "candidate_count": 4,
+      "before_episodes": 4,
+      "after_episodes": 4,
+      "changes": [
+        {
+          "before": {
+            "bounds": [
+              27750,
+              28042,
+              28375
+            ],
+            "status": "complete",
+            "reason": null
+          },
+          "after": {
+            "bounds": [
+              27750,
+              28042,
+              28375
+            ],
+            "status": "partial",
+            "reason": "external_peak_motion_geometry_unverified"
+          }
+        }
+      ]
+    },
+    {
+      "sample": "white-360p-crf35",
+      "candidate_count": 4,
+      "before_episodes": 4,
+      "after_episodes": 4,
+      "changes": []
+    },
+    {
+      "sample": "rola-ncaa-2013",
+      "candidate_count": 3,
+      "before_episodes": 3,
+      "after_episodes": 3,
+      "changes": []
+    },
+    {
+      "sample": "mendeley-indoor-side-view-ICS01",
+      "candidate_count": 1,
+      "before_episodes": 1,
+      "after_episodes": 1,
+      "changes": []
+    },
+    {
+      "sample": "thetis-p1_fslice_s1",
+      "candidate_count": 1,
+      "before_episodes": 1,
+      "after_episodes": 1,
+      "changes": []
+    },
+    {
+      "sample": "thetis-p32_fslice_s1",
+      "candidate_count": 1,
+      "before_episodes": 1,
+      "after_episodes": 1,
+      "changes": []
+    }
+  ]
+}

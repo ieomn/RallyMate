@@ -1,0 +1,170 @@
+{
+  "schema_version": "tennis-round4-source-provenance-v1",
+  "raw_media_not_for_git_distribution": true,
+  "sources": [
+    {
+      "source_id": "File:0SLICE.ogv",
+      "source_url": "https://commons.wikimedia.org/wiki/File:0SLICE.ogv",
+      "author": "Dardo 86 7",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "status": "download_failed_http_429_after_backoff_retry",
+      "action_class": "unreviewed",
+      "video_observed": false,
+      "raw_media_downloaded": false,
+      "evidence": [
+        "commons-slice-metadata.json",
+        "acquisition-downloads.json",
+        "acquisition-commons-retry.json"
+      ]
+    },
+    {
+      "source_id": "File:Slice con pelota.ogv",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Slice_con_pelota.ogv",
+      "author": "Dardo 86 7",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "status": "download_failed_http_429_after_backoff_retry",
+      "action_class": "unreviewed",
+      "video_observed": false,
+      "raw_media_downloaded": false,
+      "evidence": [
+        "commons-slice-metadata.json",
+        "acquisition-downloads.json",
+        "acquisition-commons-retry.json"
+      ]
+    },
+    {
+      "source_id": "bern-return-experiment",
+      "source_url": "https://zenodo.org/records/18683813",
+      "author": [
+        "Damian Beck",
+        "Ernst Hossner",
+        "Stephan Zahno"
+      ],
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "video_sha256": "675c3855da274b1f064f858f4e59b78a3f50ff58b21d0ce5488407ce9f201988",
+      "status": "downloaded_reviewed_not_eligible_for_actual_return",
+      "reason_zh": "真人置于投影/虚拟球场；没有真实发球/来球，且宣传视频切换镜头和局部身体特写，不能据论文标题声明实际接发验证。",
+      "review_contact_sheet": "review-frames/bern-overview.jpg",
+      "gpu_requested": false
+    },
+    {
+      "source_id": "sikana-forehand-slice",
+      "source_url": "https://www.sikana.tv/en/sport/tennis/forehand-slice",
+      "terms_url": "https://www.sikana.tv/en/terms-conditions",
+      "status": "not_downloaded_terms_restrict_extraction_modification",
+      "license": "Sikana Attribution / Non-Commercial / Non-Derivative terms; no automated extraction without permission",
+      "reason": "Official terms limit downloads to caching, require embedded playback, prohibit automated data extraction and cutting/overlay; not used as GPU material.",
+      "video_observed": false
+    },
+    {
+      "sample_id": "thetis-p1_fslice_s1",
+      "url": "https://raw.githubusercontent.com/THETIS-dataset/dataset/main/VIDEO_RGB/forehand_slice/p1_fslice_s1.avi",
+      "status_code": 200,
+      "selection_policy": "preselected subject p1 beginner and p32 expert, first repeat; no pose or score inspected before selection",
+      "github_blob_sha": "102c169af60e9ec3422b045a8fd5aa8a5452e8d9",
+      "sha256": "099281827dc2cc37426d7d41026ab742b08cb198e846aed2fe1e8eefc6042d66",
+      "bytes": 1773978,
+      "fps": 18.0,
+      "frame_count": 74.0,
+      "width": 640.0,
+      "height": 480.0,
+      "source_url": "https://github.com/THETIS-dataset/dataset/blob/main/VIDEO_RGB/forehand_slice/p1_fslice_s1.avi",
+      "author": [
+        "S. Gourgari",
+        "G. Goudelis",
+        "K. Karpouzis",
+        "S. Kollias"
+      ],
+      "license": "Formal license unspecified in official repository; dataset publicly supplied for research with requested citation; local evaluation only, no media redistribution",
+      "license_source": "https://github.com/THETIS-dataset/dataset/blob/main/README.md",
+      "citation_url": "https://openaccess.thecvf.com/content_cvpr_workshops_2013/W08/papers/Gourgari_THETIS_Three_Dimensional_2013_CVPR_paper.pdf",
+      "source_group": "thetis-2013-kinect",
+      "status": "downloaded_and_visually_reviewed",
+      "content_type": "real_human_shadow_swing_demonstration",
+      "evaluation_label": "unknown",
+      "class_label": "unknown",
+      "actual_ball_or_contact": false,
+      "gpu_requested": true,
+      "source_metadata_not_visual_truth": true,
+      "dataset_requested_class": "forehand_slice",
+      "independent_slice_confirmation": false,
+      "review_reason": "Dense source frames do not reliably distinguish low-quality slice demonstration from ordinary forehand; no title-only label."
+    },
+    {
+      "sample_id": "thetis-p32_fslice_s1",
+      "url": "https://raw.githubusercontent.com/THETIS-dataset/dataset/main/VIDEO_RGB/forehand_slice/p32_fslice_s1.avi",
+      "status_code": 200,
+      "selection_policy": "preselected subject p1 beginner and p32 expert, first repeat; no pose or score inspected before selection",
+      "github_blob_sha": "638b5e6e22730188ceb74e4ca081409678c10782",
+      "sha256": "284e951bcd1f1ac5f992c9960e2e61730e22e0b55eae3c9a7f8678f952ebcd9b",
+      "bytes": 1861312,
+      "fps": 18.0,
+      "frame_count": 73.0,
+      "width": 640.0,
+      "height": 480.0,
+      "source_url": "https://github.com/THETIS-dataset/dataset/blob/main/VIDEO_RGB/forehand_slice/p32_fslice_s1.avi",
+      "author": [
+        "S. Gourgari",
+        "G. Goudelis",
+        "K. Karpouzis",
+        "S. Kollias"
+      ],
+      "license": "Formal license unspecified in official repository; dataset publicly supplied for research with requested citation; local evaluation only, no media redistribution",
+      "license_source": "https://github.com/THETIS-dataset/dataset/blob/main/README.md",
+      "citation_url": "https://openaccess.thecvf.com/content_cvpr_workshops_2013/W08/papers/Gourgari_THETIS_Three_Dimensional_2013_CVPR_paper.pdf",
+      "source_group": "thetis-2013-kinect",
+      "status": "downloaded_and_visually_reviewed",
+      "content_type": "real_human_shadow_swing_demonstration",
+      "evaluation_label": "unknown",
+      "class_label": "forehand_slice",
+      "actual_ball_or_contact": false,
+      "gpu_requested": true,
+      "source_metadata_not_visual_truth": true,
+      "independent_slice_confirmation": true
+    },
+    {
+      "source_id": "dimitrov-tiafoe-usopen-2024",
+      "source_url": "https://commons.wikimedia.org/wiki/File:2024_US_Open._Grigor_Dimitrov_vs._Frances_Tiafoe.webm",
+      "author": "Oleg Yunakov",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution": "Oleg Yunakov / CC BY-SA 4.0",
+      "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "original_job_id": "8fc81362-5475-4677-a176-7239aa6bdc40",
+      "split": "regression_new_target_native",
+      "source_group": "commons-oleg-yunakov-usopen-2024",
+      "evaluation_label": "professional",
+      "subject_description": "near-side light shirt/purple shorts player; no named individual attribution inferred from file title",
+      "status": "existing_downloaded_source_visually_verified_actual_forehand_return",
+      "reviewed_interval_ms": [
+        0,
+        9000
+      ],
+      "return_evidence": "dimitrov-manual-return-evidence.json",
+      "gpu_requested": true,
+      "derivation": "existing webm-to-mp4 conversion from round2; no new clipping/crop for inference"
+    }
+  ],
+  "local_sources": "new-gpu-requests.json and manual-action-reference.json bind existing sources by SHA; preserve existing professional/ordinary labels",
+  "coverage_before_gpu": {
+    "new_forehand_slice_demonstration_subjects": 1,
+    "new_slice_source_groups": 1,
+    "actual_forehand_return_local_source_groups": 1,
+    "actual_return_two_hand_backhand": 0,
+    "actual_return_one_hand_backhand": 0,
+    "actual_return_forehand_slice": 0,
+    "actual_return_backhand_slice": 0,
+    "timing_sequence_real_success_claimed": false,
+    "attempted_forehand_slice_demonstration_subjects": 2
+  },
+  "limitations": [
+    "THETIS18fps does not guarantee resolvable timing order",
+    "THETIS has no real ball/contact and no verified target forward direction",
+    "Dimitrov needs fresh native target pose, old target poses are invalid for this player",
+    "all prior25 videos are regression, not independent holdout",
+    "agent visual review is not coach or contact ground truth"
+  ]
+}

@@ -30,6 +30,25 @@ def fixture():
 
 
 class SourceDirectionTests(unittest.TestCase):
+    def test_background_compensation_preserves_independent_joint_paths_under_camera_rotation(self):
+        _, native = inputs()
+        frames = source_frames(native)
+        original = source_motion_by_frame(native, frames, SHA)
+        changed = deepcopy(native)
+        for index, (record, frame) in enumerate(zip(changed, frames)):
+            angle = .12 * np.sin(index / 10.)
+            rotation = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+            translation = np.array([12., 16.])
+            for name, point in record['keypoints_2d'].items():
+                record['keypoints_2d'][name] = (rotation @ point + translation).tolist()
+            inverse = rotation.T
+            frame['camera_motion']['matrix_to_reference'] = np.column_stack((inverse, -inverse @ translation)).tolist()
+        restored = source_motion_by_frame(changed, frames, SHA)
+        self.assertEqual(original.keys(), restored.keys())
+        for key in original:
+            for joint in ('left_hip', 'right_hip', 'left_shoulder', 'right_shoulder', 'right_wrist'):
+                np.testing.assert_allclose(original[key]['points'][joint], restored[key]['points'][joint], atol=1e-10)
+
     def test_vectors_are_rotated_and_normalized_without_translation(self):
         review, observations, context = fixture()
         result = bind_reviewed_directions(review, observations, context)

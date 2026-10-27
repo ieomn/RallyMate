@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from rallymate_service.tennis_motion_patterns import (
-    analyze_motion_pattern, PATTERN_METRICS, SOURCE_REQUIREMENTS, TECHNIQUES,
+    analyze_motion_pattern, PATTERN_METRICS, SOURCE_REQUIREMENTS, TECHNIQUES, _observed_peak,
 )
 
 
@@ -52,6 +52,12 @@ class TennisMotionPatternTests(unittest.TestCase):
         self.assertEqual(result["profile_id"], "generic")
         self.assertEqual(set(result["metrics"]), {"pattern_phase_continuity"})
         self.assertIn("technique_classification", [r["id"] for r in result["requirements"]])
+
+    def test_reviewed_unknown_type_remains_generic_instead_of_inheriting_a_dataset_label(self):
+        result = calculate(technique='unknown')
+        self.assertEqual(result['profile_id'], 'generic')
+        self.assertEqual(result['classification_status'], 'technique_unverified')
+        self.assertEqual(set(result['metrics']), {'pattern_phase_continuity'})
 
     def test_specific_profiles_have_explicit_source_requirements(self):
         self.assertEqual(len(TECHNIQUES), 11)
@@ -156,6 +162,56 @@ class TennisMotionPatternTests(unittest.TestCase):
             center = (points["left_hip"] + points["right_hip"]) / 2
             points.update(left_hip=center - [.3, 0.], right_hip=center + [.3, 0.])
         self.assertNotIn("pattern_projected_sequence", calculate(data)["metrics"])
+
+    def test_foreshortening_outside_measured_phase_and_fixed_support_does_not_erase_sequence(self):
+        expected = calculate()
+        for index in (4, 70):
+            data = fixture()
+            points = data[1][index]['points']
+            for joint in ('hip', 'shoulder'):
+                center = (points['left_' + joint] + points['right_' + joint]) / 2
+                points['left_' + joint], points['right_' + joint] = center - [.01, 0], center + [.01, 0]
+            result = calculate(data)
+            self.assertEqual(result['metrics']['pattern_projected_sequence'], expected['metrics']['pattern_projected_sequence'])
+            if index == 70:
+                self.assertEqual(result['metrics']['pattern_preparation_coupling'], expected['metrics']['pattern_preparation_coupling'])
+            else:
+                self.assertNotIn('pattern_preparation_coupling', result['metrics'])
+
+    def test_foreshortening_in_derivative_support_remains_missing(self):
+        data = fixture()
+        points = data[1][52]['points']
+        center = (points['left_hip'] + points['right_hip']) / 2
+        points['left_hip'], points['right_hip'] = center - [.01, 0], center + [.01, 0]
+        result = calculate(data)
+        self.assertNotIn('pattern_projected_sequence', result['metrics'])
+        self.assertEqual(result['metric_evidence']['pattern_projected_sequence']['unobservable_axes'], ['hip'])
+
+    def test_phase_boundary_peak_uses_fixed_neighbor_support_without_searching_recovery(self):
+        times = np.arange(9.) * 20
+        speed = np.array([1., 2., 4., 7., 10., 8., 4., 11., 3.])
+        value, detail = _observed_peak(speed, times, (1, 5))
+        self.assertEqual(value, 80.)
+        self.assertEqual(detail['search_range_ms'], [20., 80.])
+        # Later recovery motion is not selected as this phase's peak.
+        self.assertNotEqual(value, times[7])
+        for truncated in (speed[:5], np.arange(9.)):
+            value, detail = _observed_peak(truncated, times[:len(truncated)], (1, 5))
+            self.assertIsNone(value)
+            self.assertIn(detail['reason'], ('peak_two_sided_support_missing', 'peak_continues_outside_phase_search'))
+
+    def test_common_camera_plane_rotation_cannot_fabricate_independent_order(self):
+        data = fixture()
+        for observation in data[1]:
+            t, points = observation['time'], observation['points']
+            center = (points['left_hip'] + points['right_hip']) / 2
+            angle = .7 * np.arctan((t - 760) / 65)
+            for joint, offset, width in (('hip', np.array([0., 0.]), .3), ('shoulder', np.array([0., 1.]), .45)):
+                axis = width * np.array([np.cos(angle), np.sin(angle)])
+                points['left_' + joint], points['right_' + joint] = center + offset - axis, center + offset + axis
+        result = calculate(data)
+        self.assertNotIn('pattern_projected_sequence', result['metrics'])
+        self.assertEqual(next(r['reason'] for r in result['requirements'] if r['id'] == 'projected_sequence'), 'motion_peak_order_unresolved')
 
     def test_simultaneous_peaks_do_not_claim_a_resolved_order(self):
         data = fixture()

@@ -1,0 +1,110 @@
+{
+  "schema_version": "tennis-real-projected-sequence-validation-v1",
+  "automatic_segmentation": true,
+  "technique_classification_method": "agent_visual_review",
+  "manual_window_used": false,
+  "source_sha256_verified": true,
+  "input_sha256": {
+    "local-artifact:regression-inputs.json": "179f5ac2e3503579f3fc69a63f8fd391556f0f35058fdd1348de3acb7da7d356",
+    "local-artifact:release-v3-regression/mendeley-indoor-side-view-ICS01-recognition.json": "a44c3062b52b815942d9830996e09c10935ec4ec584e43e101ce0cc14c309af9",
+    "local-artifact:action-contexts-release-v3/d12255e0-22f1-475e-99ba-b0595b8184b6.json": "f232ee05baf3cc61107ac4814f0643f9f3269b5faf75628643878c362cac1e28",
+    "local-artifact:d12255e0-22f1-475e-99ba-b0595b8184b6.mp4": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+    "local-artifact:d12255e0-22f1-475e-99ba-b0595b8184b6/frames.jsonl": "0e0780814153be2d5e2c602873942cb3ccc992c7720cd197464178ae0304b8df",
+    "local-artifact:offline-final/mendeley-indoor-side-view-ICS01-primary-player.jsonl": "17cba3570893a063177ecadcfa616ebd5bebc6ef227b9bc4777c841a2ce0dbca",
+    "local-artifact:frozen-runs/d12255e0-22f1-475e-99ba-b0595b8184b6/sam3d_frames.jsonl": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d"
+  },
+  "code_sha256": {
+    "src/rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "local-artifact:validate-release-ics.py": "37c99a853747c586af56d53beaa81f4a764658e158b6fb53cc08e272a1819207"
+  },
+  "code_changed": false,
+  "inputs_unchanged": true,
+  "limitations": [
+    "projected_motion_not_force_or_world_3d",
+    "reviewed_type_not_automatic_classification",
+    "measured_order_does_not_imply_ideal_order"
+  ],
+  "episodes": [
+    {
+      "episode_id": "09efd52b183d09ea1dec",
+      "start_ms": 417.083,
+      "peak_ms": 1001.0,
+      "end_ms": 1284.617,
+      "metric": {
+        "value": 0.4,
+        "score": 60.0
+      },
+      "evidence": {
+        "peak_observations": {
+          "hip": {
+            "search_range_ms": [
+              667.3333333333334,
+              1001.0
+            ],
+            "support_range_ms": [
+              617.2833333333333,
+              1051.05
+            ],
+            "near_peak_range_ms": [
+              967.6333333333333,
+              984.3166666666667
+            ],
+            "status": "measured",
+            "reason": null,
+            "peak_ms": 984.3166666666667
+          },
+          "shoulder": {
+            "search_range_ms": [
+              667.3333333333334,
+              1001.0
+            ],
+            "support_range_ms": [
+              617.2833333333333,
+              1051.05
+            ],
+            "near_peak_range_ms": [
+              834.1666666666666,
+              850.85
+            ],
+            "status": "measured",
+            "reason": null,
+            "peak_ms": 834.1666666666666
+          },
+          "wrist": {
+            "search_range_ms": [
+              667.3333333333334,
+              1001.0
+            ],
+            "support_range_ms": [
+              617.2833333333333,
+              1051.05
+            ],
+            "near_peak_range_ms": [
+              967.6333333333333,
+              1001.0
+            ],
+            "status": "measured",
+            "reason": null,
+            "peak_ms": 984.3166666666667
+          }
+        },
+        "timing_resolution_ms": 16.68333333333328,
+        "hip_peak_ms": 984.3166666666667,
+        "shoulder_peak_ms": 834.1666666666666,
+        "wrist_peak_ms": 984.3166666666667
+      },
+      "profile_id": "baseline_forehand",
+      "coverage": {
+        "measured_requirements": 3,
+        "applicable_requirements": 7,
+        "fraction": 0.42857142857142855,
+        "full_source_technique_covered": false
+      }
+    }
+  ]
+}

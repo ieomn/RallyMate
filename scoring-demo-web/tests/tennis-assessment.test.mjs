@@ -25,6 +25,13 @@ const { default: LiveResults } = await import(compiledUrl(new URL("../app/LiveRe
 const context = { jobId: "tennis-test", videoSha256: tennisHash, durationMs: 9000 };
 const parse = report => validatedTennisAssessment(report, context);
 const render = (report, extra = {}) => renderToStaticMarkup(createElement(Summary, { report, ...extra }));
+function currentFixture() {
+  const report = tennisScopedFixture();
+  report.version = "tennis-action-assessment-v1.3.0";
+  report.rubric.version = "tennis-action-rubric-v1.3.0";
+  report.episodes.forEach(e => { e.motion_pattern.version = "tennis-motion-patterns-v1.1.0"; });
+  return report;
+}
 
 test("new action scores bind to the current job, video hash and original source time", () => {
   const fixture = tennisFixture(), original = structuredClone(fixture);
@@ -213,4 +220,62 @@ test("v1.2 empty measurement retains a subject scope without manufacturing episo
   report.pattern_coverage = { measured_requirements: 0, applicable_requirements: 0, fraction: null, verified_technique_episodes: 0, generic_episodes: 0, full_source_technique_covered: false, profiles: [] };
   assert.ok(parse(report)); assert.match(render(parse(report)), /汇总 0 段动作/);
   assert.doesNotMatch(render(parse(report)), /tennis-radar|tennis-score-number/);
+});
+
+test("v1.3 requires its matching observation contract and preserves v1.1/v1.2 history", () => {
+  const report = currentFixture(), parsed = parse(report);
+  assert.ok(parsed); assert.deepEqual(parse(parsed), parsed);
+  assert.ok(parse(tennisScopedFixture())); assert.ok(parse(tennisFixture()));
+  for (const mutate of [r => { r.rubric.version = "tennis-action-rubric-v1.2.0"; },
+    r => { r.episodes[0].motion_pattern.version = "tennis-motion-patterns-v1.0.0"; },
+    r => { r.episodes[1].start_ms = 1800; }, r => { r.dimensions[0].observation_count = 3; },
+    r => { r.pattern_coverage.measured_requirements += 1; },
+    r => { r.episodes[0].motion_pattern.classification_provenance.method = "agent_visual_review"; }]) {
+    const invalid = currentFixture(); mutate(invalid); assert.equal(parse(invalid), null);
+  }
+});
+
+test("pose discontinuity is explained separately from subject identity without exposing internal codes", () => {
+  const raw = currentFixture();
+  raw.episode_validity.push({ episode_id: "active-gap", status: "rejected", reason_codes: ["active_wrist_discontinuity_in_motion"] });
+  raw.episode_validity.push({ episode_id: "hand-ambiguous", status: "rejected", reason_codes: ["unresolved_racket_hand_with_competing_arm_sequence"] });
+  raw.episode_validity.push({ episode_id: "outside-peak", status: "rejected", reason_codes: ["external_peak_motion_geometry_unverified"] });
+  raw.episodes[0].quality_reason_codes = ["non_active_wrist_discontinuity_unmeasured"];
+  const parsed = parse(raw); assert.ok(parsed);
+  assert.deepEqual(parse(parsed), parsed);
+  const html = render(parsed) + renderToStaticMarkup(createElement(TennisAssessmentDetails, { report: parsed }));
+  assert.match(html, /持拍手姿态不连续，暂无法评分/);
+  assert.match(html, /持拍手尚未可靠确认，两侧手腕先后运动/);
+  assert.match(html, /运动峰落在候选挥拍区间外，选中片段自身缺少完整前挥证据/);
+  assert.match(html, /另一只手的姿态不连续，依赖该手的项目按实际缺测处理/);
+  assert.doesNotMatch(html, /active_wrist|non_active_wrist|归属失败/);
+  raw.episodes[0].quality_reason_codes = ["<script>untrusted</script>"];
+  assert.equal(parse(raw), null);
+});
+
+test("v1.3 return type requires incoming-ball context and cannot duplicate its baseline alias", () => {
+  function returned() {
+    const report = currentFixture(), episode = report.episodes[0];
+    episode.family = "return";
+    episode.return_context = { opponent_serve_id: "opponent-serve", server_track_id: 9, ball_track_id: 20,
+      ball_observations: 8, incoming_start_ms: 800, incoming_end_ms: 1400, receiver_peak_ms: 1500,
+      verification_method: "source_bound_opponent_serve_and_incoming_ball" };
+    episode.motion_pattern.profile_id = "return_forehand"; episode.motion_pattern.classification_status = "verified";
+    episode.motion_pattern.classification_provenance = { method: "agent_visual_review", reviewer: "source-frame-review" };
+    report.pattern_coverage.verified_technique_episodes = 1; report.pattern_coverage.generic_episodes = 1;
+    report.pattern_coverage.profiles = ["generic", "return_forehand"];
+    return report;
+  }
+  const report = returned(), parsed = parse(report);
+  assert.ok(parsed); assert.deepEqual(parsed.episodes[0].return_context, report.episodes[0].return_context);
+  assert.deepEqual(parse(parsed), parsed);
+  for (const mutate of [r => { delete r.episodes[0].return_context; },
+    r => { r.episodes[0].return_context.ball_observations = 2; },
+    r => { r.episodes[0].return_context.server_track_id = 1; },
+    r => { r.episodes[0].return_context.incoming_end_ms = 5000; },
+    r => { r.episodes[0].family = "baseline"; },
+    r => { r.episodes[1].start_ms = 1000; r.episodes[1].peak_ms = 1500; r.episodes[1].end_ms = 2200; },
+    r => { r.episodes[0].motion_pattern.classification_provenance.reviewer = ""; }]) {
+    const invalid = returned(); mutate(invalid); assert.equal(parse(invalid), null);
+  }
 });

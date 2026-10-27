@@ -1,0 +1,2763 @@
+{
+  "version": "tennis-immutable-input-cpu-replay-comparison-v1",
+  "pairing_verified": true,
+  "semantics": "same recorded frames, subject timeline and native poses in each before/after pair; no manual context in automatic predictions",
+  "independent_sample_count_not_claimed": true,
+  "score_increase_not_an_accuracy_metric": true,
+  "groups": [
+    {
+      "group": "regression",
+      "before": {
+        "version": "tennis-segmentation-replay-v1",
+        "semantics": "automatic_candidates_and_scores_on_existing_real_observations_not_fresh_GPU_or_blind_holdout",
+        "reviewed_context_enabled": false,
+        "manifest_sha256": "179f5ac2e3503579f3fc69a63f8fd391556f0f35058fdd1348de3acb7da7d356",
+        "runner_sha256": "b2026860afd7bee5d6a507897eea7db273b2fb241b5cd100adb0f4cdc12771a2",
+        "detector_version": "pose-racket-stroke-candidates-v2.1.0",
+        "assessment_version": "tennis-action-assessment-v1.2.0",
+        "completed_at_utc": "2026-10-27T04:47:16.650406+00:00",
+        "code_changed_during_execution": false,
+        "evaluation_sha256": "9c79287ceba197782226b7c78c4915e630d51f630a165924e4e109b857848f60",
+        "sample_count": 25,
+        "full_code_manifest_sha256_at_start": "33e1f7c48a4315aa22ee3f632862b94cb2f909e33984c1e214cbc00a501f9dce",
+        "relevant_code_sha256_at_start": {
+          "rallymate_scoring/stroke_analysis.py": "b547b32c1a6188de44bad3fa44871e406c1bbe10e8d9026ed80755939978dc78",
+          "rallymate_scoring/stroke_candidates.py": "925335aae44c6bc49400057684d059a7bf5e0d751f6e66fa6b1130cb7d79066b",
+          "rallymate_scoring/temporal_recognition.py": "2960ff9374554335230bd14607b853e6a388ffed7602a0ef294a780c6fa4f9ac",
+          "rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "10315404286c1d766384d47fe277277f99a4112f4e151e95d7eb2d0cc7c72989",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        },
+        "full_code_manifest_sha256_at_end": "33e1f7c48a4315aa22ee3f632862b94cb2f909e33984c1e214cbc00a501f9dce",
+        "relevant_code_sha256_at_end": {
+          "rallymate_scoring/stroke_analysis.py": "b547b32c1a6188de44bad3fa44871e406c1bbe10e8d9026ed80755939978dc78",
+          "rallymate_scoring/stroke_candidates.py": "925335aae44c6bc49400057684d059a7bf5e0d751f6e66fa6b1130cb7d79066b",
+          "rallymate_scoring/temporal_recognition.py": "2960ff9374554335230bd14607b853e6a388ffed7602a0ef294a780c6fa4f9ac",
+          "rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "10315404286c1d766384d47fe277277f99a4112f4e151e95d7eb2d0cc7c72989",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        }
+      },
+      "after": {
+        "version": "tennis-segmentation-replay-v1",
+        "semantics": "automatic_candidates_and_scores_on_existing_real_observations_not_fresh_GPU_or_blind_holdout",
+        "reviewed_context_enabled": false,
+        "manifest_sha256": "179f5ac2e3503579f3fc69a63f8fd391556f0f35058fdd1348de3acb7da7d356",
+        "runner_sha256": "b2026860afd7bee5d6a507897eea7db273b2fb241b5cd100adb0f4cdc12771a2",
+        "detector_version": "pose-racket-stroke-candidates-v2.3.1",
+        "assessment_version": "tennis-action-assessment-v1.3.0",
+        "completed_at_utc": "2026-10-27T05:56:13.843050+00:00",
+        "code_changed_during_execution": false,
+        "evaluation_sha256": "fce20197af3fdccaae798acaa634be87d502f4cc5b7c045ded69e86e099c0070",
+        "sample_count": 25,
+        "full_code_manifest_sha256_at_start": "df0ad376fccc3564906eb512b6d2f29945568394e5c61f7eb6c7f0f4aba08a31",
+        "relevant_code_sha256_at_start": {
+          "rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+          "rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+          "rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa",
+          "rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "7e2e0896cc11b24278cd21a1cd9d8646efc09f9b7fb2008c894d804b1c5abf85",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        },
+        "full_code_manifest_sha256_at_end": "df0ad376fccc3564906eb512b6d2f29945568394e5c61f7eb6c7f0f4aba08a31",
+        "relevant_code_sha256_at_end": {
+          "rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+          "rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+          "rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa",
+          "rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "7e2e0896cc11b24278cd21a1cd9d8646efc09f9b7fb2008c894d804b1c5abf85",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        }
+      },
+      "samples": [
+        {
+          "sample_id": "development-ordinary-a",
+          "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "input_sha256": {
+            "video": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+            "frames": "db77e85af24a36548205424f1d53e0798a6963d43becf9c086b6082242aecf78",
+            "timeline": "0da365b245ea041e89143a542c91b9c8b13075a6c648630030a4c25d9e7e7860",
+            "native": "341aab8eb9dabfc2a17072645b5fce6e35c61b06cbf288cbc2c985f3679ddbea"
+          },
+          "before": {
+            "candidate_count": 30,
+            "phase_episode_count": 24,
+            "scored_count": 14,
+            "score": 87.43,
+            "candidate_accounting": {
+              "proposed_count": 24,
+              "accepted_count": 14,
+              "other_subject_count": 0,
+              "rejected_count": 10,
+              "rejection_counts": {
+                "candidate_overlap_duplicate": 1,
+                "candidate_source_or_complete_phase_unverified": 9
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 14
+            },
+            "coverage": {
+              "measured_requirements": 14,
+              "applicable_requirements": 28,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 14,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "af4838e6e7effe9d875c3025dfece8bfd65fed9f53e7e4828f5f5c0f75604190",
+            "assessment_sha256": "65a0ff75322b433f34aade7548716c816e4105fd06ac1c187b28c1074b0ded82",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 28,
+            "phase_episode_count": 24,
+            "scored_count": 15,
+            "score": 85.3,
+            "candidate_accounting": {
+              "proposed_count": 24,
+              "accepted_count": 15,
+              "other_subject_count": 0,
+              "rejected_count": 9,
+              "rejection_counts": {
+                "unresolved_racket_hand_with_competing_arm_sequence": 1,
+                "candidate_overlap_duplicate": 1,
+                "phase_authority_source_unverified": 7
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 11
+            },
+            "coverage": {
+              "measured_requirements": 11,
+              "applicable_requirements": 35,
+              "fraction": 0.3142857142857143,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 14,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "baseline_forehand",
+                "generic"
+              ]
+            },
+            "recognition_sha256": "4d8cb74290142b073cb77aef8e7d6c8b716126e19ae08cc1b74c53dd4b9cf2e9",
+            "assessment_sha256": "f4420f844d37965cf7a50da13499f56caa03bbbbb11cf9313330f955b7c525b3",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "development-sharapova",
+          "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+          "input_sha256": {
+            "video": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+            "frames": "507b90dd16df22637754719f0b9b4f6fdd8c718e4e20a3b9970b253c7b03ccfd",
+            "timeline": "07bd506191647d4e84d20a79214c057fa6bcc6ef445c8510487894dc084418b9",
+            "native": "cc71056080f701ffd82d92c8e7fa784d3b49531660e308951dc2813033acc397"
+          },
+          "before": {
+            "candidate_count": 3,
+            "phase_episode_count": 2,
+            "scored_count": 2,
+            "score": 95.4,
+            "candidate_accounting": {
+              "proposed_count": 2,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "21cec48e198d0714ad686020bccd404b31b32b5ecde8517abeb33f77e1dca029",
+            "assessment_sha256": "675f120e93dce80ffa926a9936e8fe8e8fa5315b41434769ffd53f3b6f319c9f",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 3,
+            "phase_episode_count": 2,
+            "scored_count": 2,
+            "score": 86.52,
+            "candidate_accounting": {
+              "proposed_count": 2,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 4,
+              "fraction": 0.25,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "a93e55cfe87e75336b92f0468bb47e0288292d77be3e3cbc7d421bfb64face75",
+            "assessment_sha256": "fb0c17cb819dec7895ff470f7b0f2a584efcdb5a22abbfb583426aec797918c8",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "regression-ordinary-b",
+          "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+          "input_sha256": {
+            "video": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+            "frames": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+            "timeline": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+            "native": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759"
+          },
+          "before": {
+            "candidate_count": 11,
+            "phase_episode_count": 11,
+            "scored_count": 8,
+            "score": 86.82,
+            "candidate_accounting": {
+              "proposed_count": 11,
+              "accepted_count": 8,
+              "other_subject_count": 0,
+              "rejected_count": 3,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 3
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 8
+            },
+            "coverage": {
+              "measured_requirements": 8,
+              "applicable_requirements": 16,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 8,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "3407367adbab8c27cc2441da9f73718461bcd5d2133efff87f55482dec955a66",
+            "assessment_sha256": "4f9dc2a3ad3232184837fdeaf1d5f217988b76b00f443bf16e38a59de1777b80",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 11,
+            "phase_episode_count": 11,
+            "scored_count": 7,
+            "score": 91.17,
+            "candidate_accounting": {
+              "proposed_count": 11,
+              "accepted_count": 7,
+              "other_subject_count": 0,
+              "rejected_count": 4,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 3,
+                "unresolved_racket_hand_with_competing_arm_sequence": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 5
+            },
+            "coverage": {
+              "measured_requirements": 5,
+              "applicable_requirements": 19,
+              "fraction": 0.2631578947368421,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 6,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic",
+                "serve"
+              ]
+            },
+            "recognition_sha256": "71344d01243050598f2f8988ee5f085ca8880da27fa23a4af2829f32d37bd925",
+            "assessment_sha256": "2f57420706275775a808db19f10668d82f6c69e167b9f18b0091acafe9f53eaf",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "regression-nadal",
+          "source_video_sha256": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+          "input_sha256": {
+            "video": "40c86a99ffa88d2b891eda5b16aa55cbf51ee4c5e8d625fe9aaab997c1ceef85",
+            "frames": "8c22c227144adc496f1d43159c5ff6895aa96aaba8b250ab36ee77c6b8b88e86",
+            "timeline": "7bbb1285089fa94c25b5ab61cddeff6ce3f4773fb9dee9affed5c9b44a78a2ac",
+            "native": "57f979030ef30aad94177846f93157a9f1e89a8e343212bbd2fce26634fb0a2d"
+          },
+          "before": {
+            "candidate_count": 2,
+            "phase_episode_count": 2,
+            "scored_count": 2,
+            "score": 92.44,
+            "candidate_accounting": {
+              "proposed_count": 2,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "0f719ca7a06dd6cfd72f5c3801af4ec43869fe4c6d16d5abff849f7959cf286f",
+            "assessment_sha256": "86332f0712bc2adefa1cdfa7d689517e71078637aa3f47d6f43957ca22722db7",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 2,
+            "score": 95.59,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 2
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "5771cf51b9d29c5f61b158c5ab836b66cec6d0468b567480eb7a8ad58cf363e3",
+            "assessment_sha256": "7ff0870eb481680147a85f749c78fffe0cb1bd594cf85a1850169058715eaa56",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "repeat-ordinary-a",
+          "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+          "input_sha256": {
+            "video": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+            "frames": "0329d8b932692415645668379ccce9a1692320343dbc15b848c2d0dcf30fd9df",
+            "timeline": "0da365b245ea041e89143a542c91b9c8b13075a6c648630030a4c25d9e7e7860",
+            "native": "b9b8f0a09f4c834499ef664b6948fa2480075a1aa4d4efcd2c06c4ec6359a4ef"
+          },
+          "before": {
+            "candidate_count": 30,
+            "phase_episode_count": 24,
+            "scored_count": 14,
+            "score": 87.43,
+            "candidate_accounting": {
+              "proposed_count": 24,
+              "accepted_count": 14,
+              "other_subject_count": 0,
+              "rejected_count": 10,
+              "rejection_counts": {
+                "candidate_overlap_duplicate": 1,
+                "candidate_source_or_complete_phase_unverified": 9
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 14
+            },
+            "coverage": {
+              "measured_requirements": 14,
+              "applicable_requirements": 28,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 14,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "46f86708a469ffcb240c9c4da2cfadd239f652ac2823d4667de37b4e8f639ed7",
+            "assessment_sha256": "1e9d1f6f5a14849d87d8314e19879f192595da44f035d8d14e547e424af2bba0",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 28,
+            "phase_episode_count": 24,
+            "scored_count": 15,
+            "score": 85.3,
+            "candidate_accounting": {
+              "proposed_count": 24,
+              "accepted_count": 15,
+              "other_subject_count": 0,
+              "rejected_count": 9,
+              "rejection_counts": {
+                "unresolved_racket_hand_with_competing_arm_sequence": 1,
+                "candidate_overlap_duplicate": 1,
+                "phase_authority_source_unverified": 7
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 11
+            },
+            "coverage": {
+              "measured_requirements": 11,
+              "applicable_requirements": 35,
+              "fraction": 0.3142857142857143,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 14,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "baseline_forehand",
+                "generic"
+              ]
+            },
+            "recognition_sha256": "0c8483eda3bbb0da68d11fcc2252879d6a03d365a32498f0beabb3b550125975",
+            "assessment_sha256": "49205c8cde79863e6605bc3a826c5e80f00e65debaf8dd2416f8c0d4e55cc9ae",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "holdout-ordinary-indoor-white",
+          "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+          "input_sha256": {
+            "video": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+            "frames": "0639c442aebe4df60e1516533d9f163504ec1c1c6916e3a2cde1dbf404d3f769",
+            "timeline": "1a0cc9ec0de9e29244acbcdcfc89f300ae4b587753132b282978c0d91ae6eee5",
+            "native": "c89a42ef44d03603b15016338eabe94f98302594fabe048861e9ad4c77f98d6b"
+          },
+          "before": {
+            "candidate_count": 7,
+            "phase_episode_count": 7,
+            "scored_count": 5,
+            "score": 75.12,
+            "candidate_accounting": {
+              "proposed_count": 7,
+              "accepted_count": 5,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1,
+                "candidate_lacks_continuous_complete_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 5
+            },
+            "coverage": {
+              "measured_requirements": 5,
+              "applicable_requirements": 15,
+              "fraction": 0.3333333333333333,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "baseline_forehand",
+                "generic"
+              ]
+            },
+            "recognition_sha256": "7f128d867fef1051374c40b5ad2ce50a1ee4c3c7a35477095d1bbe47dfbace83",
+            "assessment_sha256": "1bfabf85991c92768d431d9564844f41dcc1690da6556bba8f16d6bcb960519f",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 4,
+            "score": 79.17,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "unresolved_racket_hand_with_competing_arm_sequence": 1,
+                "active_wrist_discontinuity_in_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 13,
+              "fraction": 0.15384615384615385,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "baseline_forehand",
+                "generic"
+              ]
+            },
+            "recognition_sha256": "0a7cc85f27fdbe436c7f309b7ca390ab5eed523dd62d2e0a53735cfb4b3e6f04",
+            "assessment_sha256": "bcdc0473390435dcf73ad33c97e76653851066a14ef8ca96db3e8e90cbab14ab",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "holdout-ordinary-lowres-close",
+          "source_video_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+          "input_sha256": {
+            "video": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+            "frames": "82fe182e3596ca928f903552462b2a85d9742c441a4916dbb5df987af9057f74",
+            "timeline": "86c44354add546609ff235e2be30567d3635375283d6bc65e473e8035dc3fd3a",
+            "native": "e9c80f2dffe2e9e2abfa52285e77868dccfd339ee517ed0787dadd7514159ad5"
+          },
+          "before": {
+            "candidate_count": 3,
+            "phase_episode_count": 2,
+            "scored_count": 2,
+            "score": 91.25,
+            "candidate_accounting": {
+              "proposed_count": 2,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "b9647ed8bc4775b68648b8ccb2f5d8a40cb4674bc3b9f1f95f36277a1008064b",
+            "assessment_sha256": "b6a26df274c5836daa4d0cc4882c64102a6d268369fbc0d137139dea877a56a8",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 3,
+            "phase_episode_count": 2,
+            "scored_count": 2,
+            "score": 95.94,
+            "candidate_accounting": {
+              "proposed_count": 2,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 4,
+              "fraction": 0.25,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "7e5a2eb5fe2fee9444106a4bf3720f22ce354e2c42a0d599fea7bd4f99a22f91",
+            "assessment_sha256": "b7f44a176058fd947ace79fa1b7d60ae843e461aa145080ee400c2d289533bc1",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "holdout-ordinary-outdoor-side",
+          "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+          "input_sha256": {
+            "video": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+            "frames": "02d99a68ad9968f9d4abe5f425b3dd3fce5f4e74362a289f1c3bdee3ad2beaa3",
+            "timeline": "90ae83f2d8b55b4fb27a41f192b4da188d1eb408151f1349c90417ba0538dda4",
+            "native": "31d953b0f3a399f056b664e76d7e8924d94cfcf35c2b286f456bb1265f000545"
+          },
+          "before": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 4,
+            "score": 88.05,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 4
+            },
+            "coverage": {
+              "measured_requirements": 4,
+              "applicable_requirements": 8,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "98ac35d3eba03a9bd1c083339b60293c4a169ba46cc2136b08a1d9661d29419d",
+            "assessment_sha256": "5794f3d38cd69fd8fd040214d63c86961cefc356a27b21b017b5ae18e6534577",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 3,
+            "score": 84.04,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 3,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "external_peak_motion_geometry_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 6,
+              "fraction": 0.16666666666666666,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "d245738ed0ccd8b6e291077078ccb2864209adc14b9fd4b757c34234ec8b0a3b",
+            "assessment_sha256": "9f0930a21432b2e13c0f723d9e3a43c3588d971dbee9337a5a1447d949287e0c",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "holdout-ordinary-night",
+          "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+          "input_sha256": {
+            "video": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+            "frames": "0e99aad20db2154a9583cc118ea76f8b012390d4278e813449ac589c28d6a213",
+            "timeline": "9dcac6229556e685600c258b975f2eb49c75e8721a8da2dc263a7fc58852ba72",
+            "native": "099d73ef3b3d409ef45857109eafe18e65b77d0fe998e7deb144102c64ca0722"
+          },
+          "before": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 4,
+            "score": 84.1,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1,
+                "candidate_lacks_continuous_complete_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 4
+            },
+            "coverage": {
+              "measured_requirements": 4,
+              "applicable_requirements": 8,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "a61ad19e5f8b532de182c33e01127d5c860370ff355cd958890aa7ecc531827a",
+            "assessment_sha256": "1109322cb86117f1e89c0a704497db884bfef13f72eae2fb1f7f2dd90bcd5b86",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 4,
+            "score": 88.78,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 8,
+              "fraction": 0.25,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "f2c23a186e36a32146e5bfdcf1a94e5e671bdcae2e2ef2873584ae83aa4b803b",
+            "assessment_sha256": "5e2cc158c19af5e323f51b08172cd5c7bea9ad1ab519d5a35817ee2973da2b80",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "holdout-ordinary-indoor-pink",
+          "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+          "input_sha256": {
+            "video": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+            "frames": "353eed638d15bea5465bcb9435108898f0d260b22f55ea1845826acc5665ce4d",
+            "timeline": "245949f0f3ad89cbd85622d4f0d7be334c7fd457d5dd6385adda41dbf763e489",
+            "native": "c682455a280bbfc8d06d919607acccaba8830f57f6903989b7093a93b4b82cb3"
+          },
+          "before": {
+            "candidate_count": 3,
+            "phase_episode_count": 3,
+            "scored_count": 2,
+            "score": 85.63,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "16fcca0ea009822a2cc55321b1cad551b40e9a571bdab99a053bddca2c8fa96b",
+            "assessment_sha256": "30c58cf0e031839bb45c2c7b88cc08c751eb0d4788c2661b3e68a8a786c02c76",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 3,
+            "phase_episode_count": 3,
+            "scored_count": 2,
+            "score": 81.83,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "e42ca1b4e4464a996cc0dd0212c9eb479f0a75cd57d0bc46d18dcde3631446a0",
+            "assessment_sha256": "270679fef02fbbac4390d39d0f26fddce2fb1c11f242412b393f43bd580d47be",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "holdout-ordinary-user-existing",
+          "source_video_sha256": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+          "input_sha256": {
+            "video": "0399205f23f838f2785718ae93ba8a1f853bdb8a8b95164b526c8974e1dd15e7",
+            "frames": "8f331d4f71477e07f072430130c573874eea79bcf9ec5fe47574eefa8b2f2e66",
+            "timeline": "c384fe86ab364db2c637f9b46d180c424dc316e2a10dbc9f0c935ae2e3bad367",
+            "native": "b5745755c515c29f210905a6927940e8d65733584114799349189eb5391fbacf"
+          },
+          "before": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 3,
+            "score": 93.97,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 3,
+              "other_subject_count": 0,
+              "rejected_count": 3,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 3
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 3
+            },
+            "coverage": {
+              "measured_requirements": 3,
+              "applicable_requirements": 6,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "fb41d49297c6bca48653092810e62f4e12ff4cbcf87d18dd958fbeeeeb7aed95",
+            "assessment_sha256": "e0f0240dba1ad63a44ce2b4a2a8aedee6fe9781d9f768ca78bb5ede6791c4e85",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 9,
+            "phase_episode_count": 9,
+            "scored_count": 6,
+            "score": 95.24,
+            "candidate_accounting": {
+              "proposed_count": 9,
+              "accepted_count": 6,
+              "other_subject_count": 0,
+              "rejected_count": 3,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 3
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 3,
+              "pattern_serve_arm_sequence": 1
+            },
+            "coverage": {
+              "measured_requirements": 4,
+              "applicable_requirements": 17,
+              "fraction": 0.23529411764705882,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 5,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic",
+                "serve"
+              ]
+            },
+            "recognition_sha256": "5f0251194abd781c7748394617a6b86f3f71bc2bdd0bd192564092a5323440c9",
+            "assessment_sha256": "e42f8cf15b7a80d5ea99d5589de50dfc35fef13414df57ce03de9c4126b9ccbb",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "white-360p-crf35",
+          "source_video_sha256": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+          "input_sha256": {
+            "video": "89d9c60d9c2290ebd1ece6e26028d9676520065c0acf650f0055c2119aec54da",
+            "frames": "4a0db18a610878929e20def705534b48a0927342e7d40cea7b7729dc52b2ce65",
+            "timeline": "a6cef072f0b61b45c6e74ab3305bf2ac7bba18dc3509d6063948955f92aa99a3",
+            "native": "f8f3325bc2b9e9a63f3117d438aab40129d8a89f4ea2db63064510b442a987b8"
+          },
+          "before": {
+            "candidate_count": 2,
+            "phase_episode_count": 2,
+            "scored_count": 1,
+            "score": 80.89,
+            "candidate_accounting": {
+              "proposed_count": 2,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "candidate_lacks_continuous_complete_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "ded4a7e367e97efba2f7f64188927f2e48eabf2493a32f452279d9cc7609ec21",
+            "assessment_sha256": "610e152cdf8affb556cee58fae36f7da84bf854b76065e9993ee463ed5cc53c5",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 3,
+            "score": 73.69,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 3,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "unresolved_racket_hand_with_competing_arm_sequence": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 3
+            },
+            "coverage": {
+              "measured_requirements": 3,
+              "applicable_requirements": 6,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "a69a1ab66f6baf7865837fc123319e69ce9b69ddef6c9bccf7a2dfa192a34570",
+            "assessment_sha256": "d5fd2922a2d55f4465086a5c035efbe39c7081c229020612b5758de735ddf87e",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "white-mirror",
+          "source_video_sha256": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+          "input_sha256": {
+            "video": "e7dd1f13849fafbfdd74e73b49b66eff008b7248b520a9dc2b01774419508e93",
+            "frames": "2f40b99c5210dbd19a6947da29c3a1b04d0e9d08b451d4d5aedf1ebff3bb4f1c",
+            "timeline": "d126677ea5ae0977b9820555fbc2c04e858de848e4fe4808b6f242b8a540c959",
+            "native": "e1730e3fd8faaf4b9b117f7a0e57740099cf75be92a921da66a99712af05c051"
+          },
+          "before": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 6,
+            "score": 74.99,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 6,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 6
+            },
+            "coverage": {
+              "measured_requirements": 6,
+              "applicable_requirements": 12,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 6,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "aa463fc373b958ed0ac2677e46f8357d3706fef4a019c3a79298fef84f4d986f",
+            "assessment_sha256": "28395673a1d33590261123bf5f4cea4f4d613900b40c93649df47fe2bbdb242c",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 4,
+            "score": 80.62,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "unresolved_racket_hand_with_competing_arm_sequence": 1,
+                "active_wrist_discontinuity_in_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 3
+            },
+            "coverage": {
+              "measured_requirements": 3,
+              "applicable_requirements": 8,
+              "fraction": 0.375,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "d198507047a478c07a55722f2c8d83f9d8a47b895b80bdf2edae27e2a17fd6fa",
+            "assessment_sha256": "53c7ad5253a0a018972bd982296cbc7a02bd0600569462ac761ee55b8b4b3b24",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "rola-ncaa-2013",
+          "source_video_sha256": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+          "input_sha256": {
+            "video": "f73be59ff8d86c998df7aac4cedaf6d912133b27390ab66211b8b204d5e60154",
+            "frames": "f491ea74eba8f76151b49e863dade423720afe45b4dac82cdd22946c8146dcf5",
+            "timeline": "64beee6ffad6ceed3daee253a24c1b32cea7fd67bfea18fb7c119481fb3793da",
+            "native": "8a3ac49ccce6dd20e33cc2a93d6397a3a8db69c9f8cf7f2bddd5e17a122ae488"
+          },
+          "before": {
+            "candidate_count": 3,
+            "phase_episode_count": 3,
+            "scored_count": 1,
+            "score": 83.16,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 2
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "8623543b6994040dc6e62e863310ea9a39e7353f254474c5683ca8726bcae8e3",
+            "assessment_sha256": "910c4c7579f52155732427f65047cdc60033f7c24577ba0772211d9005e91239",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 3,
+            "phase_episode_count": 3,
+            "scored_count": 1,
+            "score": 96.19,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 2
+              }
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 2,
+              "fraction": 0.0,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "e53fd1c7c9e172b7f032e805755ae10c8413b80b506c85a32fa367441fd451e9",
+            "assessment_sha256": "b03655f3faff5abd1e459845cfde03be6b0552afc63f42cf522a921783b24bec",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "tsitsipas-alcaraz-2023",
+          "source_video_sha256": "03e5c94cead59642f851a5899453d1bba6ec8afab36439d005e2345b082e9c5b",
+          "input_sha256": {
+            "video": "03e5c94cead59642f851a5899453d1bba6ec8afab36439d005e2345b082e9c5b",
+            "frames": "93a3f8e54b0a2bf20d12c21073946b16538c71d02571933a0df25ad0f3dbd1dd",
+            "timeline": "55225ab73117cc3e57d523ec89b71ef52968560b6c5673258f3f7f84d76c4696",
+            "native": "5545b8e287c59a033d35e27ec3ec7322feb4bc72d87c1e6edc90d09e0d70ceea"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "c0700cccccbdb53631e98f390751893058ae14af5b8d5285588df46ad43874bd",
+            "assessment_sha256": "7fe9b215c92212eeecf626f311ac4094e9a6a5da1077e93e4736d897bee8e126",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "82c4fc942cd30062c219d9351718f212be7e109328718a6fff17ec60959fb36e",
+            "assessment_sha256": "84d4d2657c3f3ac1e3d82be305b9121a60efd501f6355c51abcf7c13ee32dd91",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "davis-cup-2018-04",
+          "source_video_sha256": "a2b0d27fcdcdab2652a2b92c2bb22ad19ddcab06b32501a636622ce90f0da31a",
+          "input_sha256": {
+            "video": "a2b0d27fcdcdab2652a2b92c2bb22ad19ddcab06b32501a636622ce90f0da31a",
+            "frames": "782136b904d0321bf2b53829dca3628978e376fc32e69ba5398696fde4657f24",
+            "timeline": "d7c1233b6864e8557f7748ca6ab658c6967ecfbb66841d10c50ecf6b412b32c4",
+            "native": "e59c548c6478c5381a806cd8105430774739f3aeb2294e8b248b6ca73ebeaf6c"
+          },
+          "before": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "ff64a5936f6c7e067c12a3db4d29f889551b66c1fced2988cabf19b378a50e57",
+            "assessment_sha256": "e1efd129621ee5b70b8542e58078c3f95285c2ae9070daf96f99fa46c9aa0020",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "58e412b63686b20dc45853963dcdd0058b219196b416cf21a45938611afa37ee",
+            "assessment_sha256": "e8e66bc86bfe0305656409154c4223dc05857e2601ab9432bc8defd1b4ac5674",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "davis-cup-2018-05",
+          "source_video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+          "input_sha256": {
+            "video": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+            "frames": "53264f8345baedce2a9640dfc4ab3bb5171aaacb22772aedf374afe20f1ac0d1",
+            "timeline": "7289ff8311188288a9f6f5e30bab97f62b9dabdadf6ee2b1e6ab63e3bc107b46",
+            "native": "978996d9f520cae77fe887e1778a119831e3b7612b376d9eea154c8d385cdd27"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "be77449e9100ca3b74c3a1e5d8f2567e9d4cabb725f949a3fca83e3b3517532c",
+            "assessment_sha256": "0edee0f3f45fd29321e1aa079149f7f4691c49ced9b5a7f44ee82d1c820ec9ed",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "e89acdba750dacc776c5cbe482df81b0c16303188a39b5481227847b192fc795",
+            "assessment_sha256": "e2822434805bfc3fbd9ee460b0a93f89849ea84e77fdf871853c6376c992eb84",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "mendeley-outdoor-side-view-OCS01",
+          "source_video_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+          "input_sha256": {
+            "video": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+            "frames": "7c453f17ab7eb2ebfd15a77696647a3615e4ad776ad9f13dce26ec105cc4cdc5",
+            "timeline": "45c70e68b9e27e52429de576f06f938d82bad86b3d55585430d0060c458a1ef9",
+            "native": "61bacb55cdc72d90a93f25b3264362e534e2cc7767ebf6a019496806552720c5"
+          },
+          "before": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 73.07,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "627e8d086dc401b8e0f26d66fcbc86825c3838f2f4dc3e6a83031e51e47c24ea",
+            "assessment_sha256": "8f3cda16808b9a8b7e49af9cac485cb6e79b8ec88bbfafeae8374d1ffb7c4553",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 90.0,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "cb6f643913d6757319c0e170938474db7aefc5dcdee142e3b48ecfed637f90db",
+            "assessment_sha256": "c6e96da2a347fe9a0531e2f42f93fba1d9f447e3dc19cd10ed647055fc6b3245",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "mendeley-outdoor-top-view-OCT01",
+          "source_video_sha256": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+          "input_sha256": {
+            "video": "82337e2c228455da4e431c8dd07672c3452018ab781603d9e0fe5d1b8c8e403b",
+            "frames": "7f123116e4624255e74ee540692c4f04fe377770dbae8a02964d5c3dbaaa3a2e",
+            "timeline": "089ac6d6e8018bef2e1504ac962b38b71ee496ba72a33997a5c7ee2cb9fe8e75",
+            "native": "3a8287cc364c0713918474b29c3f86c4af319410e360bc7e40f011ea41d46723"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "b2913f39a1cf9c20775a33b48699014d1e9a686091f144e9e4f41fabf2115934",
+            "assessment_sha256": "beccffb81d1cf567d5dedc88e5224020a02de0def61750b06a84181450f0ded0",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "72bb03ee3852ac5f3b62d9cccf39d93dde59155f77ac3ab7794866282938408a",
+            "assessment_sha256": "876c3ef039a95517fc8fc9932ab7f3d30e139cf1271a43c68d72e2ef3e78565e",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "mendeley-indoor-side-view-ICS01",
+          "source_video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+          "input_sha256": {
+            "video": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+            "frames": "0e0780814153be2d5e2c602873942cb3ccc992c7720cd197464178ae0304b8df",
+            "timeline": "17cba3570893a063177ecadcfa616ebd5bebc6ef227b9bc4777c841a2ce0dbca",
+            "native": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d"
+          },
+          "before": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 81.32,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "490b7de3514c6874d9a52a4dda0237ea14db6a8a6b615113fe1aa47a5ad69edb",
+            "assessment_sha256": "bf02bd869f72b666bfe4588e91a4e02ceac6da0bb0fc203ff0e7bf4f8a0e0f33",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 88.09,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "a44c3062b52b815942d9830996e09c10935ec4ec584e43e101ce0cc14c309af9",
+            "assessment_sha256": "8c199a8e208a689524473c86cf24a641933ef43c41ea37857353ec0604c8bac1",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "mendeley-indoor-top-view-ICT01",
+          "source_video_sha256": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+          "input_sha256": {
+            "video": "0ee64e2754efdecbe77cd6eeb67da45122c79001b6e9e90e657a114c9ef2e3a0",
+            "frames": "c0a366752dfacd5a315053e12516735e69f5137ab4ea5f5b182ae84a3e981a2c",
+            "timeline": "e9464fc01de1869b0aad02d338f743a3c2c55830326018725e0ea23c4fcdfcf7",
+            "native": "e2fdd175a67e8e55c341d1395fb596eddd8f4a47978876882d3ae2d05df6f914"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "e50d2b95901c99a2472f9fc57e8b93afd1d012806a1c366127d438d9eb2f1a3c",
+            "assessment_sha256": "153af9c7d9ee21fc34792688e7568e524c80cc83e5a6c6360aedfde9cb600ce9",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "b6d23132a48cc6f4a05f1d66757ca511d779f69b98313e07eae57f0df7a087ba",
+            "assessment_sha256": "5254946ac707c3786adf8d0f4f08800f478276a3e19d6a996bb43ddeff9020c6",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "djokovic-usopen-2012",
+          "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+          "input_sha256": {
+            "video": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+            "frames": "34b9c0d21cd0f5ae156b8cb8ad6b0eeacaf95a544b7cbc3d402d3ec2d01ca783",
+            "timeline": "2dcbd9e2889244282d7ed0888c1887b452d5cab0ffd2acb558c1bc24d7cb6c8b",
+            "native": "03722efc5465311765420d922e02caf2370bc93d6b31adb1f3932b6ff35f7062"
+          },
+          "before": {
+            "candidate_count": 9,
+            "phase_episode_count": 8,
+            "scored_count": 5,
+            "score": 85.84,
+            "candidate_accounting": {
+              "proposed_count": 8,
+              "accepted_count": 5,
+              "other_subject_count": 0,
+              "rejected_count": 3,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 3
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 5
+            },
+            "coverage": {
+              "measured_requirements": 5,
+              "applicable_requirements": 10,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 5,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "3670cf417c098ac8eae3ae27ad16d26fcc1cabd676e51e5444b1cd66f4e717cd",
+            "assessment_sha256": "f8b2f6964a10b950116830f0a0e7a2025a1117a41cda215bfdcc6a479ac2635c",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 9,
+            "phase_episode_count": 8,
+            "scored_count": 5,
+            "score": 85.61,
+            "candidate_accounting": {
+              "proposed_count": 8,
+              "accepted_count": 5,
+              "other_subject_count": 0,
+              "rejected_count": 3,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 3
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 10,
+              "fraction": 0.2,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 5,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "3dfec4513e0e6a49f43bc5474b2cd2b727723db8ec78ee69a67ff0a70b6c016e",
+            "assessment_sha256": "6e737a57317f8843825d213d59c3e684e756f829413dbfd0331f31c57d5a75a5",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "schiavone-usopen-2012",
+          "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+          "input_sha256": {
+            "video": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+            "frames": "9743e765c380a15d2ee46db06b96070cead5e1694e87dd03c1179f32fef84a7b",
+            "timeline": "e98fb1b7d850868448f8a47eb72915eaebfae0335160cc6eb03e00f88cf0e396",
+            "native": "a72d1257fc3eae64a922edfd68f93ca99556a580fc5920078b4ce72d0319803f"
+          },
+          "before": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 3,
+            "score": 87.22,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 3,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 3
+            },
+            "coverage": {
+              "measured_requirements": 3,
+              "applicable_requirements": 6,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "4b584c872ce026e43aa07b76fe7345672ad5a3972e0d781f500d0c4cc240f938",
+            "assessment_sha256": "ada95a02a960b0ece14b2abd91c66928fc6ca3e9db360bb796d1578f6e7d3937",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 3,
+            "score": 93.7,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 3,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 6,
+              "fraction": 0.16666666666666666,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "1c567a73ef946482a19f693cefb31a33f9643a95d8e056d871561b0662ccfb7a",
+            "assessment_sha256": "a6f77d553ea645c642b9a7b636f43ec80af1cf73a515fbe541ceec157cb236f7",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "federer-cilic-usopen-2012",
+          "source_video_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+          "input_sha256": {
+            "video": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+            "frames": "5d5204d1f6b25abf80373b102077a0fc542af561006010fb7bc8ba0d27c0acb9",
+            "timeline": "ba5f1d6bec48d8dd8ff91f9ad3eb98cfac160e4daa95e5244ef8625ce31e5782",
+            "native": "5ccdd54db43182ac82c9c40df07cfbd9031eaddc89a48f72a4f1191fcac0fc28"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "3a9eed8baf5d9d23aabef12aa340fbcad2f3e1a80cda2c98911ecd0d331d61b4",
+            "assessment_sha256": "11eb297e2b8c06dbcd668d2162937199c277484820adfed5bb1cac397898462c",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "9629a8d9f2af245f25e8e4129708debcc1625290383c29258f32dcccfb4369ea",
+            "assessment_sha256": "778dbb9bbe161c6b4957e970f9e113a26ea5ccfb5f50a0337223908db7d09e0a",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "dimitrov-tiafoe-usopen-2024",
+          "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+          "input_sha256": {
+            "video": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+            "frames": "c17fb06f87e993f9d1e4d7def2b858b7438380db309ff872977b9f0dbab16c35",
+            "timeline": "4708500cc71b2ad5875576de552facd32bc630035a77799426543bfdd38bf021",
+            "native": "e92f458bd0700a85c39a68a2e0c044d8bd5856da282fb8fc9ed30b58e5ec71a4"
+          },
+          "before": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 73.02,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "eb28886c62e087322c3a961b697ecfa3407110e0b8105c06ab2e7179e7ad844a",
+            "assessment_sha256": "1204f650ed652ec21a0624fd59ef4a79944b28a4e14a695cf8389dc4c722d4de",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 70.44,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "5943cdbc66ce63fe093a4f5cca379ed4575b8927a81f77e36cd9007a185e1997",
+            "assessment_sha256": "3fe88e3af770c3f2fef6ecfccc77cbe764e651fa016361781fcdd1ee37909a86",
+            "inputs_unchanged": true
+          }
+        }
+      ],
+      "unique_content_sha_count": 24,
+      "totals": {
+        "before": {
+          "candidate_count": 133,
+          "scored_count": 79,
+          "records_with_scores": 19
+        },
+        "after": {
+          "candidate_count": 133,
+          "scored_count": 81,
+          "records_with_scores": 19
+        }
+      }
+    },
+    {
+      "group": "prior_gpu",
+      "before": {
+        "version": "tennis-segmentation-replay-v1",
+        "semantics": "automatic_candidates_and_scores_on_existing_real_observations_not_fresh_GPU_or_blind_holdout",
+        "reviewed_context_enabled": false,
+        "manifest_sha256": "c54fb6cc91adcabdd7caf3de595ed3b23a419117656503a7e60432358e8731e0",
+        "runner_sha256": "b2026860afd7bee5d6a507897eea7db273b2fb241b5cd100adb0f4cdc12771a2",
+        "detector_version": "pose-racket-stroke-candidates-v2.1.0",
+        "assessment_version": "tennis-action-assessment-v1.2.0",
+        "completed_at_utc": "2026-10-27T04:46:20.140364+00:00",
+        "code_changed_during_execution": false,
+        "evaluation_sha256": "8f6572b8395536bf6d60102f9af60c20d193a5d5c0a8fcbaa0205aa0e14c19bd",
+        "sample_count": 4,
+        "full_code_manifest_sha256_at_start": "33e1f7c48a4315aa22ee3f632862b94cb2f909e33984c1e214cbc00a501f9dce",
+        "relevant_code_sha256_at_start": {
+          "rallymate_scoring/stroke_analysis.py": "b547b32c1a6188de44bad3fa44871e406c1bbe10e8d9026ed80755939978dc78",
+          "rallymate_scoring/stroke_candidates.py": "925335aae44c6bc49400057684d059a7bf5e0d751f6e66fa6b1130cb7d79066b",
+          "rallymate_scoring/temporal_recognition.py": "2960ff9374554335230bd14607b853e6a388ffed7602a0ef294a780c6fa4f9ac",
+          "rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "10315404286c1d766384d47fe277277f99a4112f4e151e95d7eb2d0cc7c72989",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        },
+        "full_code_manifest_sha256_at_end": "33e1f7c48a4315aa22ee3f632862b94cb2f909e33984c1e214cbc00a501f9dce",
+        "relevant_code_sha256_at_end": {
+          "rallymate_scoring/stroke_analysis.py": "b547b32c1a6188de44bad3fa44871e406c1bbe10e8d9026ed80755939978dc78",
+          "rallymate_scoring/stroke_candidates.py": "925335aae44c6bc49400057684d059a7bf5e0d751f6e66fa6b1130cb7d79066b",
+          "rallymate_scoring/temporal_recognition.py": "2960ff9374554335230bd14607b853e6a388ffed7602a0ef294a780c6fa4f9ac",
+          "rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "10315404286c1d766384d47fe277277f99a4112f4e151e95d7eb2d0cc7c72989",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        }
+      },
+      "after": {
+        "version": "tennis-segmentation-replay-v1",
+        "semantics": "automatic_candidates_and_scores_on_existing_real_observations_not_fresh_GPU_or_blind_holdout",
+        "reviewed_context_enabled": false,
+        "manifest_sha256": "c54fb6cc91adcabdd7caf3de595ed3b23a419117656503a7e60432358e8731e0",
+        "runner_sha256": "b2026860afd7bee5d6a507897eea7db273b2fb241b5cd100adb0f4cdc12771a2",
+        "detector_version": "pose-racket-stroke-candidates-v2.3.1",
+        "assessment_version": "tennis-action-assessment-v1.3.0",
+        "completed_at_utc": "2026-10-27T05:55:17.172128+00:00",
+        "code_changed_during_execution": false,
+        "evaluation_sha256": "efaea777d3ad95fe16aeb06f835372f61eb59cc285c10c70ccc1f2e1ac066882",
+        "sample_count": 4,
+        "full_code_manifest_sha256_at_start": "df0ad376fccc3564906eb512b6d2f29945568394e5c61f7eb6c7f0f4aba08a31",
+        "relevant_code_sha256_at_start": {
+          "rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+          "rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+          "rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa",
+          "rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "7e2e0896cc11b24278cd21a1cd9d8646efc09f9b7fb2008c894d804b1c5abf85",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        },
+        "full_code_manifest_sha256_at_end": "df0ad376fccc3564906eb512b6d2f29945568394e5c61f7eb6c7f0f4aba08a31",
+        "relevant_code_sha256_at_end": {
+          "rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+          "rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+          "rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa",
+          "rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "7e2e0896cc11b24278cd21a1cd9d8646efc09f9b7fb2008c894d804b1c5abf85",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        }
+      },
+      "samples": [
+        {
+          "sample_id": "gpu-pink",
+          "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+          "input_sha256": {
+            "video": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+            "frames": "dd47ee4b2c09ab3fa238c3449d386e1bdfaf22fc12a5d46f9fdc5c471e875a18",
+            "timeline": "396ab253d781ef8205add834bd94d48dc787ccb0a09e85909ac475376b30d96e",
+            "native": "482f11620ed571038b334af2f8d4953403f99e5d80877a318a6b5df5b74332af"
+          },
+          "before": {
+            "candidate_count": 3,
+            "phase_episode_count": 3,
+            "scored_count": 2,
+            "score": 85.63,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "5de9ed68b13ecaa85300aee32009f80ee6babbb1dae41218fddf5f173b6c8a9e",
+            "assessment_sha256": "fb1783ed1ac8e9269c454ed90e517837fa9351fec270491386ea7559dbb8b08e",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 3,
+            "phase_episode_count": 3,
+            "scored_count": 2,
+            "score": 81.83,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "71056aed7c751844a342c7c345fef7cf2dc42e96a478eccfc94a4ca12349146d",
+            "assessment_sha256": "a24b07c736e347c9dcb39b2c799cab60d0085428754436de82d216dd20d3d030",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "gpu-night",
+          "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+          "input_sha256": {
+            "video": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+            "frames": "68919ddc3eb9b3dd2c577492f5223ca2bd2a8987aa8ecd8fb3493b99b09f6826",
+            "timeline": "b7c86596912cbaad8423cc371e6f3c7d88d1645acf82eb4c98bee5b8abe4e774",
+            "native": "2c91f15d8a3c79efc3dd33a67e204d48e7565100d86bc634af144e19e5cf7fc9"
+          },
+          "before": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 4,
+            "score": 84.1,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1,
+                "candidate_lacks_continuous_complete_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 4
+            },
+            "coverage": {
+              "measured_requirements": 4,
+              "applicable_requirements": 8,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "72e7ce2b8d16a05be771133efb4198a9df4707e884f36afc5b33a2fda1eeec2e",
+            "assessment_sha256": "d00e030de15ae9af19e4d6f74c9ac6b1b5bf716ec2590d192f8c3759d12a89b0",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 4,
+            "phase_episode_count": 4,
+            "scored_count": 4,
+            "score": 88.78,
+            "candidate_accounting": {
+              "proposed_count": 4,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 8,
+              "fraction": 0.25,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "573c7db99843a2b0155f4d4660cf7a7ffd69658ddb6e27098b113e446a7cd9d0",
+            "assessment_sha256": "51bac2011de86d342d8bd354d3e6974b08fb39c2d32de1c63f2b466f539935ec",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "gpu-federer",
+          "source_video_sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+          "input_sha256": {
+            "video": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+            "frames": "625e3f0ebcad312d62edb1d652cd0b8e930ebec445b5de80eee51267838722fa",
+            "timeline": "f2f062c3b6746a4556b81e233f69f08d88f656b1992cdb16a52125a570c1fdfc",
+            "native": "5f64ae63628b718e62937adb593566ddde9e3632f9a4be0cf45f02b4a4fb74d7"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "09af653f11f298bcc69eb76dda8ca5c2c1df40a009e187e3027e3f7c7b25fc30",
+            "assessment_sha256": "c057f3269639a6ea2251065c137acf45908d43cfa5591bb0f273abf8a1c16aba",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "48f78cdbd80d52e652ae328dfb7b9988b5da5b5ad2565f86fd7ae457638bce4f",
+            "assessment_sha256": "170476c43dde47d0a8aa07ca63aa1b653cbfb068618965af387430adf6b968bf",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "gpu-white",
+          "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+          "input_sha256": {
+            "video": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+            "frames": "5bc95ff2e836ca0670775ae11d2ebf7fe36f951b1c00039382421d80f376a50f",
+            "timeline": "41543311267c6955a557904a3e64ab792355dfc9927fbf927b4c0b944cf29a08",
+            "native": "19737d6aadfd47287795898c859a46da6ad9aeca5ab92ed755b471c4f178d36e"
+          },
+          "before": {
+            "candidate_count": 7,
+            "phase_episode_count": 7,
+            "scored_count": 5,
+            "score": 75.12,
+            "candidate_accounting": {
+              "proposed_count": 7,
+              "accepted_count": 5,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "candidate_source_or_complete_phase_unverified": 1,
+                "candidate_lacks_continuous_complete_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 5
+            },
+            "coverage": {
+              "measured_requirements": 5,
+              "applicable_requirements": 15,
+              "fraction": 0.3333333333333333,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 4,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "baseline_forehand",
+                "generic"
+              ]
+            },
+            "recognition_sha256": "346189d9a98f0e3a38f52704960785175574f3120607f26e09a5a2a2b61e99a9",
+            "assessment_sha256": "c85c9804e24434032a9b6495be569769bf8cb49884809cf7859a0bd59db057ae",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 6,
+            "phase_episode_count": 6,
+            "scored_count": 4,
+            "score": 79.17,
+            "candidate_accounting": {
+              "proposed_count": 6,
+              "accepted_count": 4,
+              "other_subject_count": 0,
+              "rejected_count": 2,
+              "rejection_counts": {
+                "unresolved_racket_hand_with_competing_arm_sequence": 1,
+                "active_wrist_discontinuity_in_motion": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 13,
+              "fraction": 0.15384615384615385,
+              "verified_technique_episodes": 1,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "baseline_forehand",
+                "generic"
+              ]
+            },
+            "recognition_sha256": "6e8738de7e1ffcb07f66ee3533f573d5820939a9b6a1190fbe61a08523a218fe",
+            "assessment_sha256": "7527f4ca52fb331131ed2a17e92bcf56768af9f6f4bf8b21d225399e069d25af",
+            "inputs_unchanged": true
+          }
+        }
+      ],
+      "unique_content_sha_count": 4,
+      "totals": {
+        "before": {
+          "candidate_count": 16,
+          "scored_count": 11,
+          "records_with_scores": 3
+        },
+        "after": {
+          "candidate_count": 13,
+          "scored_count": 10,
+          "records_with_scores": 3
+        }
+      }
+    },
+    {
+      "group": "fresh_native",
+      "before": {
+        "version": "tennis-segmentation-replay-v1",
+        "semantics": "automatic_candidates_and_scores_on_existing_real_observations_not_fresh_GPU_or_blind_holdout",
+        "reviewed_context_enabled": false,
+        "manifest_sha256": "a0d855af41413d0c481b96da1ef20c8236d0f8326693a734dfd2bcd344d4fb7b",
+        "runner_sha256": "b2026860afd7bee5d6a507897eea7db273b2fb241b5cd100adb0f4cdc12771a2",
+        "detector_version": "pose-racket-stroke-candidates-v2.1.0",
+        "assessment_version": "tennis-action-assessment-v1.2.0",
+        "completed_at_utc": "2026-10-27T05:15:18.776041+00:00",
+        "code_changed_during_execution": false,
+        "evaluation_sha256": "e476262ba56758b365200608866b07ea4c1d8d9833a654db752004140ba37e42",
+        "sample_count": 4,
+        "full_code_manifest_sha256_at_start": "33e1f7c48a4315aa22ee3f632862b94cb2f909e33984c1e214cbc00a501f9dce",
+        "relevant_code_sha256_at_start": {
+          "rallymate_scoring/stroke_analysis.py": "b547b32c1a6188de44bad3fa44871e406c1bbe10e8d9026ed80755939978dc78",
+          "rallymate_scoring/stroke_candidates.py": "925335aae44c6bc49400057684d059a7bf5e0d751f6e66fa6b1130cb7d79066b",
+          "rallymate_scoring/temporal_recognition.py": "2960ff9374554335230bd14607b853e6a388ffed7602a0ef294a780c6fa4f9ac",
+          "rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "10315404286c1d766384d47fe277277f99a4112f4e151e95d7eb2d0cc7c72989",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        },
+        "full_code_manifest_sha256_at_end": "33e1f7c48a4315aa22ee3f632862b94cb2f909e33984c1e214cbc00a501f9dce",
+        "relevant_code_sha256_at_end": {
+          "rallymate_scoring/stroke_analysis.py": "b547b32c1a6188de44bad3fa44871e406c1bbe10e8d9026ed80755939978dc78",
+          "rallymate_scoring/stroke_candidates.py": "925335aae44c6bc49400057684d059a7bf5e0d751f6e66fa6b1130cb7d79066b",
+          "rallymate_scoring/temporal_recognition.py": "2960ff9374554335230bd14607b853e6a388ffed7602a0ef294a780c6fa4f9ac",
+          "rallymate_service/tennis_assessment.py": "a163993e23f64093249101c105cbb7dfacff22bd1b998b926ecca711717c9993",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "c98148aae7c600e9f0e8f6ef9b5e6ae49879f0958d148abe4ea54214e42e4648",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "10315404286c1d766384d47fe277277f99a4112f4e151e95d7eb2d0cc7c72989",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        }
+      },
+      "after": {
+        "version": "tennis-segmentation-replay-v1",
+        "semantics": "automatic_candidates_and_scores_on_existing_real_observations_not_fresh_GPU_or_blind_holdout",
+        "reviewed_context_enabled": false,
+        "manifest_sha256": "a0d855af41413d0c481b96da1ef20c8236d0f8326693a734dfd2bcd344d4fb7b",
+        "runner_sha256": "b2026860afd7bee5d6a507897eea7db273b2fb241b5cd100adb0f4cdc12771a2",
+        "detector_version": "pose-racket-stroke-candidates-v2.3.1",
+        "assessment_version": "tennis-action-assessment-v1.3.0",
+        "completed_at_utc": "2026-10-27T05:55:17.406079+00:00",
+        "code_changed_during_execution": false,
+        "evaluation_sha256": "dcd6a6e6482f41e447fa52f6682b7a3f546665f300a47c341a71ab807a6d0f7e",
+        "sample_count": 4,
+        "full_code_manifest_sha256_at_start": "df0ad376fccc3564906eb512b6d2f29945568394e5c61f7eb6c7f0f4aba08a31",
+        "relevant_code_sha256_at_start": {
+          "rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+          "rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+          "rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa",
+          "rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "7e2e0896cc11b24278cd21a1cd9d8646efc09f9b7fb2008c894d804b1c5abf85",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        },
+        "full_code_manifest_sha256_at_end": "df0ad376fccc3564906eb512b6d2f29945568394e5c61f7eb6c7f0f4aba08a31",
+        "relevant_code_sha256_at_end": {
+          "rallymate_scoring/stroke_analysis.py": "2c97bbd67db7cca7ea624afb24137738126b3a8a9ca4f71f6b0b33714cf502b1",
+          "rallymate_scoring/stroke_candidates.py": "0252d7214f79b848e5333f53935f26eaa53869afc4ebce51594852c7861d66c9",
+          "rallymate_scoring/temporal_recognition.py": "9b3cf4e5533bc3945cb40494e0bf7e56e1081e3b9e42420e6641930ddd7033aa",
+          "rallymate_service/tennis_assessment.py": "ebf0c1b4b08e3b4e990b3db64cd43e98af5bb06b86495c87eaaba6cd5f9dcbdd",
+          "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+          "rallymate_service/tennis_motion_patterns.py": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+          "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+          "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+          "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+          "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+          "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+          "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+          "rallymate_vision/pipeline.py": "7e2e0896cc11b24278cd21a1cd9d8646efc09f9b7fb2008c894d804b1c5abf85",
+          "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+        }
+      },
+      "samples": [
+        {
+          "sample_id": "dimitrov-tiafoe-real-return",
+          "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+          "input_sha256": {
+            "video": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+            "frames": "33662fc5b46c81271da03d919c91e23095faaaebc9084e8fb2fc5ea8e3a240ca",
+            "timeline": "890ad650f60f9fa708a382bbd6edb253f66b4522897574a543bef0a0d5fe5be7",
+            "native": "2c1f9cdedb016caf5095f296a18162cd7c2ade62ba00d40afba7318e321d98b2"
+          },
+          "before": {
+            "candidate_count": 5,
+            "phase_episode_count": 3,
+            "scored_count": 3,
+            "score": 79.73,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 3,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 3
+            },
+            "coverage": {
+              "measured_requirements": 3,
+              "applicable_requirements": 6,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 3,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "bc3cc0c168a37e49bcc13c2640699fd888f311628988c674f1b7f737cdd0201a",
+            "assessment_sha256": "e193041a5f9ca9cf935165a9d1fdd1a614184058b4a56687fa83af0c5cb1deb5",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 5,
+            "phase_episode_count": 3,
+            "scored_count": 2,
+            "score": 83.21,
+            "candidate_accounting": {
+              "proposed_count": 3,
+              "accepted_count": 2,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "external_peak_motion_geometry_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 2
+            },
+            "coverage": {
+              "measured_requirements": 2,
+              "applicable_requirements": 4,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 2,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "b84620f237f521ffa59732c63cedb1ff0f14c178d2ce01cabc82d38d5df81f47",
+            "assessment_sha256": "ae3a6c9e146f3fb2cdb84bae5ca6785133f7516b764ed08886ac547210264c77",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "thetis-p1_fslice_s1",
+          "source_video_sha256": "099281827dc2cc37426d7d41026ab742b08cb198e846aed2fe1e8eefc6042d66",
+          "input_sha256": {
+            "video": "099281827dc2cc37426d7d41026ab742b08cb198e846aed2fe1e8eefc6042d66",
+            "frames": "c684e3b96135a1b2b2d0682b4b95967d95469642ae51e9341b5cbea6f625973c",
+            "timeline": "743a006d86410abd4599e66e9803dc8c4bec19b9c008fc1c467c16196a3d90e8",
+            "native": "1a8ae3bb8e4680c791b8489982b50d0186ab8585fc3bfbf2fd4c589d49e86858"
+          },
+          "before": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 74.32,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "768289a4259f575ac886eda4c4832448c31897ddc1636eaf6d128b51af132496",
+            "assessment_sha256": "b85f9ce21466383c308f8fb29e3a6617d9cfbc87ce9e06535e35cca45952e5c3",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 61.13,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "dc3da95b612899e7d918840330cafc4de766621582223c6b0687666de11a421b",
+            "assessment_sha256": "019f7c708fc061070e639bad29e7af204ceea6eee2c24bc076983c15bf131463",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "thetis-p32_fslice_s1",
+          "source_video_sha256": "284e951bcd1f1ac5f992c9960e2e61730e22e0b55eae3c9a7f8678f952ebcd9b",
+          "input_sha256": {
+            "video": "284e951bcd1f1ac5f992c9960e2e61730e22e0b55eae3c9a7f8678f952ebcd9b",
+            "frames": "4b7e99a1478b35d6b9002dfcaa2999c60d55878042c8c7c07f2ccc0d25e52bf0",
+            "timeline": "78bc4c1948ea8be38e51723223a68440df55e00c88f2bd8680338273960eadab",
+            "native": "5af9010d372e64a0bd0fef7c4347cb2948c1b53764323d49299ab759ff46ef0d"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "ff16b5b62c3a878e8e4c88ecea027311e2a0e583c69d48aa86e618eb3d2dae38",
+            "assessment_sha256": "aafe48fae89c22c6de22be9e6f4bf7b2f5bf1be3661a6f897662bc00494b42a4",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 1,
+            "score": 81.58,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 1,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {
+              "pattern_phase_continuity": 1
+            },
+            "coverage": {
+              "measured_requirements": 1,
+              "applicable_requirements": 2,
+              "fraction": 0.5,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 1,
+              "full_source_technique_covered": false,
+              "profiles": [
+                "generic"
+              ]
+            },
+            "recognition_sha256": "f6c7af32440c2f7857422ac0ff781bf9619ee877bc5716049c2c9f17993b9496",
+            "assessment_sha256": "740dda3586728bb413f25d1374c58203732188170e44980cf7a623e829829ab3",
+            "inputs_unchanged": true
+          }
+        },
+        {
+          "sample_id": "davis05-fresh",
+          "source_video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+          "input_sha256": {
+            "video": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+            "frames": "4d3e44c1d254bb17ec6830ffeae8754e817bdf0a4ff8902ad35c2aeba8e0519d",
+            "timeline": "ed2f6b3cc7a22a62bbb8744d68f12b7b459aaf1cc9fae547c03e84b265d448d5",
+            "native": "96bc4c7c4d008a6c0233ec4a58e8a39492c46870bcfe27fdbb12308c8c2ac9a1"
+          },
+          "before": {
+            "candidate_count": 0,
+            "phase_episode_count": 0,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 0,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 0,
+              "rejection_counts": {}
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "7227f3d9b241af4833bdc55d37fcfec1cbe4af47135f5b229f6b3330e1ea01c1",
+            "assessment_sha256": "5bb7d393a81513a460992e2837c3df5a0da7f4bb4409f73e76343ee80d83db56",
+            "inputs_unchanged": true
+          },
+          "after": {
+            "candidate_count": 1,
+            "phase_episode_count": 1,
+            "scored_count": 0,
+            "score": null,
+            "candidate_accounting": {
+              "proposed_count": 1,
+              "accepted_count": 0,
+              "other_subject_count": 0,
+              "rejected_count": 1,
+              "rejection_counts": {
+                "phase_authority_source_unverified": 1
+              }
+            },
+            "pattern_metric_counts": {},
+            "coverage": {
+              "measured_requirements": 0,
+              "applicable_requirements": 0,
+              "fraction": null,
+              "verified_technique_episodes": 0,
+              "generic_episodes": 0,
+              "full_source_technique_covered": false,
+              "profiles": []
+            },
+            "recognition_sha256": "27c73a38b4254e259d3c5c8b9419ac07ff0ce43693153d5415edec5c33af4cfe",
+            "assessment_sha256": "616d58fcd7d5b843bf160bd2782ccbf6c928c4aec1d4b7cf805fda2ab671ad7d",
+            "inputs_unchanged": true
+          }
+        }
+      ],
+      "unique_content_sha_count": 4,
+      "totals": {
+        "before": {
+          "candidate_count": 6,
+          "scored_count": 4,
+          "records_with_scores": 2
+        },
+        "after": {
+          "candidate_count": 8,
+          "scored_count": 4,
+          "records_with_scores": 3
+        }
+      }
+    }
+  ],
+  "record_count": 33,
+  "unique_content_sha_count": 26,
+  "repeated_content_shas": [
+    {
+      "sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "development-ordinary-a"
+        },
+        {
+          "group": "regression",
+          "sample_id": "repeat-ordinary-a"
+        }
+      ]
+    },
+    {
+      "sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "holdout-ordinary-indoor-white"
+        },
+        {
+          "group": "prior_gpu",
+          "sample_id": "gpu-white"
+        }
+      ]
+    },
+    {
+      "sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "holdout-ordinary-night"
+        },
+        {
+          "group": "prior_gpu",
+          "sample_id": "gpu-night"
+        }
+      ]
+    },
+    {
+      "sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "holdout-ordinary-indoor-pink"
+        },
+        {
+          "group": "prior_gpu",
+          "sample_id": "gpu-pink"
+        }
+      ]
+    },
+    {
+      "sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "davis-cup-2018-05"
+        },
+        {
+          "group": "fresh_native",
+          "sample_id": "davis05-fresh"
+        }
+      ]
+    },
+    {
+      "sha256": "97569f24772d7a1dc0dd4e3226c526c400e7dea5af873fe44c790a49c305129c",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "federer-cilic-usopen-2012"
+        },
+        {
+          "group": "prior_gpu",
+          "sample_id": "gpu-federer"
+        }
+      ]
+    },
+    {
+      "sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "records": [
+        {
+          "group": "regression",
+          "sample_id": "dimitrov-tiafoe-usopen-2024"
+        },
+        {
+          "group": "fresh_native",
+          "sample_id": "dimitrov-tiafoe-real-return"
+        }
+      ]
+    }
+  ]
+}

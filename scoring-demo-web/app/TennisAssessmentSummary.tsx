@@ -10,6 +10,21 @@ import "./tennis-assessment.css";
 
 const scoreText = (value: number) => value.toFixed(1);
 const seconds = (value: number) => (value / 1000).toFixed(1);
+const observationReason = (reason: string) => {
+  if (reason === "external_peak_motion_geometry_unverified") return "运动峰落在候选挥拍区间外，选中片段自身缺少完整前挥证据，暂不将举拍或移动计为完整挥拍";
+  if (reason === "unresolved_racket_hand_with_competing_arm_sequence") return "持拍手尚未可靠确认，两侧手腕先后运动，暂无法确认完整挥拍阶段";
+  if (reason === "active_wrist_discontinuity_in_motion") return "持拍手姿态不连续，暂无法评分";
+  if (reason === "non_active_wrist_discontinuity_unmeasured") return "另一只手的姿态不连续，依赖该手的项目按实际缺测处理";
+  if (reason === "preparation_start_clipped_by_source_boundary") return "准备阶段起点超出连续观测范围，相关配合项目未测量";
+  if (reason === "same_action_represented_by_verified_return" || reason === "candidate_overlap_duplicate") return "与另一候选属于同一动作，只计一次";
+  if (reason === "return_context_unverified") return "缺少可核验的对方发球与来球证据，暂不能按接发动作计分";
+  if (reason === "candidate_lacks_continuous_complete_motion" || reason === "candidate_source_or_complete_phase_unverified") return "未获得覆盖准备、挥出和随挥的连续有效姿态";
+  if (reason === "phase_authority_source_unverified") return "动作阶段与原始姿态的对应关系尚未核验";
+  if (reason === "reviewed_hand_conflicts_with_motion_phases" || reason === "reviewed_technique_conflicts_with_detected_phases") return "复核的技术或持拍手与检测阶段不一致，暂未计分";
+  if (reason.includes("subject") || reason.includes("identity")) return "动作所属球员尚未可靠确认";
+  if (reason.includes("source") || reason.includes("binding")) return "动作与原始视频的对应关系尚未可靠确认";
+  return "缺少该动作所需的可靠连续观测";
+};
 const patternReason = (reason: string | null) => {
   if (!reason) return "";
   if (reason.includes("camera") || reason.includes("source_identity") || reason.includes("source_video")) return "缺少同一主体、同一相机参考下的连续画面观测";
@@ -22,6 +37,9 @@ const patternReason = (reason: string | null) => {
   if (reason.includes("incoming_ball")) return "缺少来球压力或同类动作参考，不能判断引拍是否足够简短";
   if (reason.includes("ball_release")) return "抛球、触球和落地接触尚未完整测量";
   if (reason.includes("peak_order")) return "运动峰不够清晰，或先后差小于当前时间分辨率";
+  if (reason.includes("peak_two_sided")) return "运动峰两侧的观测不足，无法确认先后；未把阶段边界当成峰值";
+  if (reason.includes("acceleration_support_axes")) return "加速阶段及其相邻观测中的肩线或髋线短缩、缺测，无法可靠比较时序";
+  if (reason.includes("preparation_shoulder_axis")) return "准备阶段肩线短缩或缺测，无法可靠测量转体引拍配合";
   if (reason.includes("measurement_floor")) return "可见运动变化不足以稳定测量这一项";
   if (reason.includes("no_technique_specific")) return "具体技术类型未确认，仅使用通用动作指标";
   if (reason.includes("window_incomplete") || reason.includes("time_discontinuous")) return "动作阶段或时间观测不完整";
@@ -34,10 +52,15 @@ function SubjectAndPatternScope({ report }: { report: TennisAssessment }) {
   const selected = scope.subjects.find(subject => subject.subject_id === scope.selected_subject_id);
   const excluded = report.episode_validity?.filter(episode => episode.status === "other_subject").length ?? 0;
   const rejected = report.episode_validity?.filter(episode => episode.status === "rejected").length ?? 0;
+  const rejectionReasons = new Map<string, number>();
+  for (const episode of report.episode_validity ?? []) if (episode.status === "rejected") {
+    for (const label of new Set(episode.reason_codes.map(observationReason))) rejectionReasons.set(label, (rejectionReasons.get(label) ?? 0) + 1);
+  }
   return <section className="tennis-evidence-scope" aria-label="评分对象与动作覆盖">
     <p><strong>评分对象</strong> {selected ? `${selected.identity_basis === "target_lock" ? "本次锁定目标" : "首个独立轨迹"}，汇总 ${selected.measured_episode_count} 段动作。` : "尚无可确认的评分对象。"}
       {excluded > 0 && `另有 ${excluded} 段属于其他轨迹，未混入评分。`}{rejected > 0 && ` ${rejected} 个候选因观测不足或来源不符未评分。`}</p>
     {selected?.identity_basis === "unlinked_source_track" && <p>旧姿态记录不能确认不同轨迹属于同一人，因此本次分开处理。</p>}
+    {rejectionReasons.size > 0 && <ul aria-label="未评分原因">{Array.from(rejectionReasons, ([label, count]) => <li key={label}>{label}（{count} 段）</li>)}</ul>}
     <p><strong>动作要求覆盖</strong> {coverage.measured_requirements} / {coverage.applicable_requirements} 项次有可测依据，
       {coverage.verified_technique_episodes} 段已确认具体技术，{coverage.generic_episodes} 段使用通用指标。</p>
     <small>覆盖表示测到了哪些要求，不是动作合格率。缺测不填零分，也不表示整套发力模式已被验证。</small>
@@ -119,6 +142,7 @@ export function TennisAssessmentDetails({ report }: { report: TennisAssessment |
         <summary>{seconds(episode.start_ms)}–{seconds(episode.end_ms)} 秒 · {TENNIS_PATTERN_NAMES[episode.motion_pattern.profile_id]} · 已测 {episode.motion_pattern.coverage.measured_requirements}/{episode.motion_pattern.coverage.applicable_requirements} 项</summary>
         {episode.motion_pattern.classification_provenance.method === "agent_visual_review" || episode.motion_pattern.classification_provenance.method === "agent_review"
           ? <p>技术类别来自辅助画面复核，尚未经过专家标注确认。</p> : null}
+        {!!episode.quality_reason_codes?.length && <p>{Array.from(new Set(episode.quality_reason_codes.map(observationReason))).join("；")}。</p>}
         <ul>{episode.motion_pattern.requirements.map(requirement => <li key={requirement.id}>
           <strong>{productText(requirement.label)}</strong><span>{requirement.status === "measured_proxy" ? "已计入可见动作评分" : "未测量"}</span>
           {requirement.status === "not_measured" && <span>{patternReason(requirement.reason)}</span>}

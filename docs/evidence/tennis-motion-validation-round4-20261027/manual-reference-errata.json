@@ -1,0 +1,28 @@
+{
+  "version": "manual-source-reference-errata-v1",
+  "original_reference_sha256": "f6db76ba2ee118e0040bb3bab136544836ab1010913eb7438aad717a6bee5b04",
+  "original_reference_preserved": true,
+  "reason": "Additional dense source review during mirror rejection audit revealed prior sparse-frame phase annotation was late; no source annotation silently overwritten.",
+  "corrections": [
+    {
+      "sample_id": "holdout-ordinary-indoor-white",
+      "manual_action_id": "white-fh-6",
+      "old_anchor_ms": 29400,
+      "source_review_corrected_anchor_ms": 29100,
+      "anchor_uncertainty_ms": 100,
+      "old_phase_evidence_ms": {
+        "preparation": 29000,
+        "forward_swing": 29400,
+        "follow_through": 29500
+      },
+      "source_review_corrected_phase_evidence_ms": {
+        "preparation": 29000,
+        "forward_swing": 29100,
+        "follow_through": 29400
+      },
+      "observation_zh": "28.9秒左手放球，29.0秒拍低位，29.1秒右手前挥，29.2秒球拍已前伸，29.4秒高随挥。为自喂球正手，不是来球接发。",
+      "evidence": "review-frames/white-last-swing-dense.jpg",
+      "selection_bias_disclosure": "review triggered by regression rejection; source timestamps corrected from actual dense frames, not tuned to new candidate peak28900; report frozen and corrected sensitivities separately if using this correction"
+    }
+  ]
+}
