@@ -1,23 +1,23 @@
 {
   "schema_version": "1.0.0",
   "artifact_scope": "registry_lifecycle_authority",
-  "authority_version": "registry-lifecycle-2026-10-01.2",
+  "authority_version": "registry-lifecycle-2026-10-28.1",
   "roles": {
     "runtime_feasibility": {
       "kind": "metric_feasibility_registry",
       "lifecycle": "current",
-      "relative_path": "metric-feasibility-pose-wave-v2.json",
-      "file_sha256": "dc5f3622d70f22ad5da8e933dcd38e7d8c4c57fd5255941fa521704984feac0e",
-      "embedded_version": "pose-wave-2026-10-01.2",
+      "relative_path": "metric-feasibility-pose-wave-v3.json",
+      "file_sha256": "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076",
+      "embedded_version": "pose-wave-2026-10-28.1",
       "source_registry_version": "minimum-scoring-loop-2026-08-13.1"
     },
     "current_scoring_requirements": {
       "kind": "indicator_scoring_requirements",
       "lifecycle": "derived_current",
-      "relative_path": "indicator-scoring-requirements-pose-wave-v1.json",
-      "file_sha256": "d76216d543abc147be4451aa915eb43e0cae61d710277b717d1944716c8bbf04",
-      "embedded_version": "pose-wave-indicator-requirements-2026-10-01.2",
-      "source_registry_version": "pose-wave-2026-10-01.2"
+      "relative_path": "indicator-scoring-requirements-pose-wave-v2.json",
+      "file_sha256": "dc5c9e46933e70cc09c24a2abc337a641a24d2986ecc03f5a2ebb44a9e81285b",
+      "embedded_version": "pose-wave-indicator-requirements-2026-10-28.1",
+      "source_registry_version": "pose-wave-2026-10-28.1"
     }
   },
   "non_runtime_artifacts": {

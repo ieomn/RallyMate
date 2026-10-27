@@ -1,0 +1,141 @@
+{
+  "version": "round5-independent-lost-window-source-audit-v1",
+  "reviewed_at_utc": "2026-10-27T17:31:47.465794+00:00",
+  "method": "agent_visual_review",
+  "reviewer": "codex_samples_independent_source_review_20261028",
+  "source_relative_path": "service_data/uploads/87d280dc-3e83-47c4-83e1-e2ae899ffef1.mp4",
+  "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+  "evaluation_label": "ordinary",
+  "same_source_gpu_repeat_not_independent": true,
+  "new_algorithm_phase_or_score_not_viewed": true,
+  "actions": [
+    {
+      "manual_action_id": "white-source-first-full-fh",
+      "reviewed_interval_ms": [
+        0,
+        2400
+      ],
+      "complete_swing_visible": true,
+      "technique": "baseline_forehand",
+      "racket_hand": "right",
+      "phase_evidence_ms": {
+        "preparation": 733.3333333333334,
+        "forward_swing": 1133.3333333333333,
+        "follow_through": 1400
+      },
+      "boundary_uncertainty_ms": 100,
+      "evidence": [
+        {
+          "timestamp_ms": 733.3333333333334,
+          "source_frame_index": 22,
+          "image": "white-first-dense/frame-000022.png",
+          "raw_png_sha256": "94db6ed0c0da6f6ae6955deba6170bd76d49b4c1bfb3769adfe0500b15ca779c",
+          "observation_zh": "右手引拍，来球从画面左前方进入，左臂独立引导/平衡。"
+        },
+        {
+          "timestamp_ms": 1000.0,
+          "source_frame_index": 30,
+          "image": "white-first-dense/frame-000030.png",
+          "raw_png_sha256": "2b36f17146331f0603017bda7bfc43f71ee3fdfab51a83943b178d30c9efbda9",
+          "observation_zh": "右手拍在身体后侧，准备结束。"
+        },
+        {
+          "timestamp_ms": 1133.3333333333333,
+          "source_frame_index": 34,
+          "image": "white-first-dense/frame-000034.png",
+          "raw_png_sha256": "53985d2c7f9d71b1f1b866c1502a244d67eda6caf9918a1b7a38b51951ebda1d",
+          "observation_zh": "持拍右臂前挥，身体向前旋转。"
+        },
+        {
+          "timestamp_ms": 1200.0000000000002,
+          "source_frame_index": 36,
+          "image": "white-first-dense/frame-000036.png",
+          "raw_png_sha256": "b574da361a89dcb488bb95c0e31ff46040802a3bc9215a6ce443cf5d61355e7d",
+          "observation_zh": "球拍通过身体前方。"
+        },
+        {
+          "timestamp_ms": 1400.0000000000002,
+          "source_frame_index": 42,
+          "image": "white-first-dense/frame-000042.png",
+          "raw_png_sha256": "a0d278fab88ef626cb2f6a9cc67bf869b0c7c71c8f9504512f0e19152d672330",
+          "observation_zh": "右手拍已转至左前上方随挥，完整动作后回正。"
+        }
+      ],
+      "old_scored_window_ms": [
+        633,
+        1167,
+        1467
+      ],
+      "semantic_conclusion": "real complete forehand stroke; no-scored outcome is coverage/observability loss unless separately justified, not removal of a fake action"
+    },
+    {
+      "manual_action_id": "white-source-22s-full-fh-attempt",
+      "reviewed_interval_ms": [
+        21600,
+        24400
+      ],
+      "complete_swing_visible": true,
+      "technique": "baseline_forehand",
+      "racket_hand": "right",
+      "phase_evidence_ms": {
+        "preparation": 22400,
+        "forward_swing": 22666.666666666668,
+        "follow_through": 23000
+      },
+      "boundary_uncertainty_ms": 100,
+      "contact_success_verified": false,
+      "evidence": [
+        {
+          "timestamp_ms": 22400.000000000004,
+          "source_frame_index": 672,
+          "image": "white-22s-dense/frame-000672.png",
+          "raw_png_sha256": "0fae5b3486befe415c882671d096d3dba8c2dcf5dc10d7ebf84c11aeef88383f",
+          "observation_zh": "右手引拍在身后，左臂前伸，来球下落中。"
+        },
+        {
+          "timestamp_ms": 22600.0,
+          "source_frame_index": 678,
+          "image": "white-22s-dense/frame-000678.png",
+          "raw_png_sha256": "af420c9a73e0a3bd3077b5727e316d5ebf364e0be42d387e01c4c689c2d1c02d",
+          "observation_zh": "右手前挥启动，另一臂向后平衡。"
+        },
+        {
+          "timestamp_ms": 22666.666666666668,
+          "source_frame_index": 680,
+          "image": "white-22s-dense/frame-000680.png",
+          "raw_png_sha256": "06a7e17a763b8a59f7fe03d2f36ccb2c8976d86f7569538fb78172d124695ca6",
+          "observation_zh": "右臂/球拍向前上方挥出，真实人体击球尝试。"
+        },
+        {
+          "timestamp_ms": 22866.666666666668,
+          "source_frame_index": 686,
+          "image": "white-22s-dense/frame-000686.png",
+          "raw_png_sha256": "ba84045020b3d499679e255cc4752368b533d8154d7231678848c1816cd8ca48",
+          "observation_zh": "拍向头肩方向随挥，球仍可在身体低前方看到，不能宣称击球成功。"
+        },
+        {
+          "timestamp_ms": 23000.0,
+          "source_frame_index": 690,
+          "image": "white-22s-dense/frame-000690.png",
+          "raw_png_sha256": "c1b1ec36b885239fcee90780420bd440d26000720a6aca17f0e955cc5e8724bf",
+          "observation_zh": "完成跨身随挥。"
+        },
+        {
+          "timestamp_ms": 23600.0,
+          "source_frame_index": 708,
+          "image": "white-22s-dense/frame-000708.png",
+          "raw_png_sha256": "a6c7c021b770ef49f418257467a7f81e62b8a266896965c1b76f3f9d7f56bcf2",
+          "observation_zh": "动作后行走，进入捡球/恢复阶段，不应混作第二挥拍。"
+        }
+      ],
+      "old_scored_window_ms": [
+        22167,
+        22600,
+        23433
+      ],
+      "semantic_conclusion": "real complete forehand attempt, not preparation-only or pickup; ball contact quality remains unverified"
+    }
+  ],
+  "no_old_frozen_gt_changed": true,
+  "no_manual_phase_used_as_detector_input": true
+}

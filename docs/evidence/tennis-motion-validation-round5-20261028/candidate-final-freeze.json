@@ -1,0 +1,37 @@
+{
+  "version": "round5-candidate-freeze-v1",
+  "code_sha256": {
+    "src/rallymate_scoring/stroke_candidates.py": "8f99df7c1acf90546b7585e13d4c1a201d7c28b33691a7bbf0439cb1a240a7d0",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "ab33ebe68ba6eabe1f73652852826eb6319fe4f60f4df8365d3af443d896a5b9",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "test_modules": [
+    "tests.test_shared_racket_preparation",
+    "tests.test_paired_motion",
+    "tests.test_stroke_candidates",
+    "tests.test_stroke_analysis",
+    "tests.test_stroke_sequence_segmentation",
+    "tests.test_temporal_recognition",
+    "tests.test_camera_compensated_strokes",
+    "tests.test_stroke_gap_isolation",
+    "tests.test_temporal_duration",
+    "tests.test_initial_subject_buffer",
+    "tests.test_pipeline_mesh_archive",
+    "tests.test_pipeline_scoring_registry",
+    "tests.test_pipeline_progress",
+    "tests.test_sam3d_frame_validation",
+    "tests.test_identity_validation_runner",
+    "tests.test_primary_player",
+    "tests.test_subject_lock"
+  ],
+  "tests_passed": 211,
+  "test_log": ".codex_tmp\\tennis-score-round5-20261028\\final-candidate-tests.log",
+  "git_diff_check": "passed",
+  "targeted_replay": ".codex_tmp\\tennis-score-round5-20261028\\candidate-final-targeted\\summary.json",
+  "remaining_limitations": [
+    "Sharapova single-hand forehand remains left-motion candidate; ambiguous racket-box proximity no longer casts independent hand votes; service explicit single-hand conflict must still reject. No faster-wrist override.",
+    "Rola 14.014 real-stroke window now remains phase-unavailable after near-tie hand votes removed; competing-arm source ambiguity is preserved, not counted as false-positive removal.",
+    "Dimitrov new max5 capture has far serve pose but observed ball track does not establish server-to-receiver relation. Generic forehand motion candidate is not automatic return confirmation."
+  ]
+}

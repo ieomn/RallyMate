@@ -1,0 +1,392 @@
+{
+  "version": "dimitrov-fresh-episode-comparison-v1",
+  "scope": "same fresh Round4 GPU source; not old 25-source live service native",
+  "native_hash_from_input_manifest": "2c1f9cdedb016caf5095f296a18162cd7c2ade62ba00d40afba7318e321d98b2",
+  "groups": {
+    "baseline-fresh-native": {
+      "files": {
+        ".codex_tmp\\tennis-score-round5-20261028\\baseline-fresh-native\\dimitrov-tiafoe-real-return-recognition.json": "b84620f237f521ffa59732c63cedb1ff0f14c178d2ce01cabc82d38d5df81f47",
+        ".codex_tmp\\tennis-score-round5-20261028\\baseline-fresh-native\\dimitrov-tiafoe-real-return-assessment.json": "ae3a6c9e146f3fb2cdb84bae5ca6785133f7516b764ed08886ac547210264c77"
+      },
+      "candidate_count": 5,
+      "scored_episode_count": 2,
+      "episodes": [
+        {
+          "id": "9733fce130b2117bde2e",
+          "bounds": [
+            13633,
+            13867,
+            14200
+          ],
+          "motion_wrist": "left",
+          "scored": false,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": null,
+              "end_ms": null,
+              "status": "unavailable",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "external_peak_motion_geometry_unverified"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": null,
+              "end_ms": null,
+              "status": "unavailable",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "external_peak_motion_geometry_unverified"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": null,
+              "end_ms": null,
+              "status": "unavailable",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "external_peak_motion_geometry_unverified"
+            }
+          ]
+        },
+        {
+          "id": "9ffb23cf4691fbb12c50",
+          "bounds": [
+            19033,
+            19567,
+            19883
+          ],
+          "motion_wrist": "right",
+          "scored": true,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": 19033,
+              "end_ms": 19283,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": 19283,
+              "end_ms": 19567,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": 19567,
+              "end_ms": 19883,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            }
+          ]
+        },
+        {
+          "id": "17675929191c7b11e7de",
+          "bounds": [
+            20950,
+            21383,
+            21650
+          ],
+          "motion_wrist": "left",
+          "scored": true,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": 20950,
+              "end_ms": 21133,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": 21133,
+              "end_ms": 21383,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": 21383,
+              "end_ms": 21650,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            }
+          ]
+        }
+      ]
+    },
+    "release-v1-fresh-native": {
+      "files": {
+        ".codex_tmp\\tennis-score-round5-20261028\\release-v1-fresh-native\\dimitrov-tiafoe-real-return-recognition.json": "740b9d78cd3595f631e413e51fdb853690e78c0e01cdb7ca9322a130caa70420",
+        ".codex_tmp\\tennis-score-round5-20261028\\release-v1-fresh-native\\dimitrov-tiafoe-real-return-assessment.json": "d2a5ab5b9fcf14ea7abf2c5f5560d7ad9b741ccd58f1e87c0886b3a3102e54ce"
+      },
+      "candidate_count": 6,
+      "scored_episode_count": 3,
+      "episodes": [
+        {
+          "id": "54329c162346215f1352",
+          "bounds": [
+            7833,
+            8167,
+            8733
+          ],
+          "motion_wrist": "right",
+          "scored": true,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": 7833,
+              "end_ms": 8083,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": 8083,
+              "end_ms": 8167,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": 8167,
+              "end_ms": 8733,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            }
+          ]
+        },
+        {
+          "id": "dbeed01149b44ce66ce0",
+          "bounds": [
+            13633,
+            13867,
+            14200
+          ],
+          "motion_wrist": "left",
+          "scored": true,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": 13633,
+              "end_ms": 13767,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": 13767,
+              "end_ms": 13867,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": 13867,
+              "end_ms": 14200,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            }
+          ]
+        },
+        {
+          "id": "baf0342c7e64f0cfe0e2",
+          "bounds": [
+            20000,
+            20333,
+            20517
+          ],
+          "motion_wrist": "right",
+          "scored": false,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": 20000,
+              "end_ms": 20250,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": 20250,
+              "end_ms": 20333,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": null,
+              "end_ms": null,
+              "status": "unavailable",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "stage_not_fully_observed"
+            }
+          ]
+        },
+        {
+          "id": "187ae8d1e5621b379a54",
+          "bounds": [
+            20950,
+            21383,
+            21650
+          ],
+          "motion_wrist": "left",
+          "scored": true,
+          "phases": [
+            {
+              "phase": "preparation",
+              "label_zh": "准备",
+              "start_ms": 20950,
+              "end_ms": 21133,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "acceleration",
+              "label_zh": "加速挥拍",
+              "start_ms": 21133,
+              "end_ms": 21383,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            },
+            {
+              "phase": "follow_through",
+              "label_zh": "随挥",
+              "start_ms": 21383,
+              "end_ms": 21650,
+              "status": "measured",
+              "boundary_semantics": "estimated_motion_phase",
+              "anchor_is_contact": false,
+              "reason_code": "observed_motion_sequence"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "mapping": [
+    {
+      "baseline_peak_ms": null,
+      "v1_peak_ms": 8167,
+      "change": "new candidate, scored"
+    },
+    {
+      "baseline_peak_ms": 13867,
+      "v1_peak_ms": 13867,
+      "change": "previous external geometry unavailable becomes measured and scored via independent paired arc evidence"
+    },
+    {
+      "baseline_peak_ms": 19567,
+      "v1_peak_ms": 20333,
+      "change": "old19567 scored and new20333 unscored are both source-audited non-stroke movements; no true stroke was lost"
+    },
+    {
+      "baseline_peak_ms": 21383,
+      "v1_peak_ms": 21383,
+      "change": "retained scored in v1/v2 but independently source-audited walking false positive; v3 phases unavailable via own-window sweep evidence rule"
+    }
+  ],
+  "scored_count_arithmetic": "2 + 1 new + 1 recovered - 1 lost = 3",
+  "cause_diagnostic": ".codex_tmp\\tennis-score-round5-20261028\\dimitrov-19s-recentering-diagnostic.json",
+  "v3_recognition": {
+    "sample_id": "dimitrov-tiafoe-real-return",
+    "candidate_count": 6,
+    "episodes": [
+      {
+        "bounds": [
+          7833,
+          8167,
+          8733
+        ],
+        "status": "complete",
+        "reason": null
+      },
+      {
+        "bounds": [
+          13633,
+          13867,
+          14200
+        ],
+        "status": "complete",
+        "reason": null
+      },
+      {
+        "bounds": [
+          20000,
+          20333,
+          20517
+        ],
+        "status": "partial",
+        "reason": null
+      },
+      {
+        "bounds": [
+          20950,
+          21383,
+          21650
+        ],
+        "status": "partial",
+        "reason": "external_peak_motion_geometry_unverified"
+      }
+    ]
+  },
+  "source_audits": {
+    ".codex_tmp\\tennis-score-round5-20261028\\source-audit\\dimitrov-late-motion-source-audit.json": "fce0ae8e4ede4ef9bd99b485e8d08848c81cc3542ecd8d876d68cca2e044eaba",
+    ".codex_tmp\\tennis-score-round5-20261028\\source-audit\\dimitrov-21383-negative-audit.json": "ffd943cfc6387e1f92eb7c0c32fa559c0ea7f215e989fecc3f66c9d05ec0c759",
+    ".codex_tmp\\tennis-score-round5-20261028\\source-audit\\white-lost-window-source-audit.json": "225c6c4dfb247e55778ede567af4774165705e1bd46957eff20f391473b83f8c"
+  }
+}

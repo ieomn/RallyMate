@@ -1,0 +1,16 @@
+{
+  "version": "tennis-source-inventory-v1",
+  "sources": [
+    {
+      "sample_id": "rick-forehand-slice",
+      "job_id": "round5-rick-forehand-slice",
+      "source_relative_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "source_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "artifact_run_id": "rick-forehand-slice",
+      "source_run_id": "round5-rick-rick-forehand-slice",
+      "native_run_root": ".codex_tmp/tennis-score-round5-20261028/gpu-new",
+      "source_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+      "not_service_job_uuid": true
+    }
+  ]
+}

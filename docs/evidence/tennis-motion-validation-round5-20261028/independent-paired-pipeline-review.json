@@ -1,0 +1,52 @@
+{
+  "version": "round5-independent-code-review-v1",
+  "reviewed_at_utc": "2026-10-27T17:20:29.760955+00:00",
+  "scope": "paired/shared-racket/temporal-source-bound-review-and-manual-target-runner",
+  "source_edits_by_reviewer": false,
+  "reviewed_code_sha256": {
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c",
+    "src/rallymate_scoring/stroke_candidates.py": "8f99df7c1acf90546b7585e13d4c1a201d7c28b33691a7bbf0439cb1a240a7d0",
+    "src/rallymate_scoring/temporal_recognition.py": "ab33ebe68ba6eabe1f73652852826eb6319fe4f60f4df8365d3af443d896a5b9",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "scripts/validate_tennis_identity_pipeline.py": "486113c4fe1581c89740fc003eab192a0262f90f794f8274d313a56d001d430b"
+  },
+  "findings": [
+    {
+      "component": "manual_reviewed_subject_runner",
+      "issue": "nonfinite actual detection bbox bypassed abs-difference comparison",
+      "status": "parent_fixed_and_negative_tests_passed",
+      "real_completed_run_affected": false
+    }
+  ],
+  "other_material_findings": [],
+  "tests": {
+    "modules": [
+      "test_paired_motion",
+      "test_shared_racket_preparation",
+      "test_stroke_gap_isolation",
+      "test_temporal_recognition",
+      "test_identity_validation_runner"
+    ],
+    "tests_run": 47,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds": 0.277
+  },
+  "wta_actual_detection_check": {
+    "input": ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/frames.jsonl",
+    "sha256": "d01ef347e884c80c9ed1d0f1e78edc48e1709c46232766b079ae861ef773c29a",
+    "frames": 68,
+    "detections_checked": 1104,
+    "invalid_boxes": [],
+    "field": "bbox_px"
+  },
+  "manual_outputs": {
+    "wta-reviewed-manual-pattern-results-v1.2.json": "45ec458a9e166ed1cd8b14ac571f5d14194863b9a87250e5b91032d9086b129a",
+    "dimitrov-return-new-native-manual-results-v1.2.json": "298843eb8a994fbc172391364c9c2fa11abd157af3f116b5df3605d7e5712d8f"
+  },
+  "limitations": [
+    "Code review and synthetic counterexamples do not establish actual grip order or true ball contact.",
+    "Shared racket proximity supplies object evidence only, not independent handedness.",
+    "Manual target selection and fixed manual action windows are not automatic recognition success."
+  ]
+}

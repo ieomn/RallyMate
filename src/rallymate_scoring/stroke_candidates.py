@@ -21,7 +21,7 @@ from typing import Any
 from .temporal_recognition import TemporalRecognitionBackend, samples_are_continuous
 from .pose_observations import MODEL_ESTIMATE, measurement_provenance, sam_source_bound_points, sample_source_reference
 
-DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.3.1"
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.4.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_POSE_GAP_MS = 160
 SEQUENCE_RULE_VERSION = "observed-counter-sweep-association-v1.1"
@@ -69,6 +69,9 @@ class Sample:
     pose_source: str | None = None
     observation_semantics: str | None = None
     source_binding: dict[str, Any] = field(default_factory=dict)
+    # Model box proximity can be shared by a close pair of wrists without casting
+    # an independent handedness vote. Every observation retains its own box.
+    racket_observations: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _number(value: Any) -> float | None:
@@ -228,6 +231,18 @@ def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, 
         competitor = next((value for value in choices[1:] if value[1].track != owner.track), None)
         if competitor is not None and competitor[0] - distance < 0.15:
             continue
+        owner_choices = {value[2]: value[0] for value in choices if value[1] is owner}
+        pair_points = [owner.points.get(k+"_wrist") for k in ("left", "right")]
+        coupled = (all(p is not None for p in pair_points) and _distance(*pair_points) < .45)
+        both_near = all(owner_choices.get(k, math.inf) <= .35 for k in ("left", "right"))
+        shared = coupled and both_near
+        owner.racket_observations.append({
+            "source_frame_index": owner.frame_index, "timestamp_ms": owner.time,
+            "racket_track_id": detection.get("track_id"), "bbox_px": list(box), "confidence": confidence,
+            "association": "paired_wrist_racket_proximity" if shared else "single_wrist_proximity",
+            "wrist_sides": ["left", "right"] if shared else [side],
+            "wrist_box_distance_torso": owner_choices,
+            "source_binding": dict(owner.source_binding)})
         # A box covering both wrists has no evidence for choosing one hand.
         # Stable sort order must not turn this geometric tie into a left vote.
         if any(value[1].track == owner.track and value[2] != side
@@ -283,6 +298,55 @@ def _candidate(segment: list[Sample], side: str, start: int, peak: int, end: int
 
 def _racket_support(segment: list[Sample], side: str, start: int, end: int) -> int:
     return sum(side in sample.racket_sides for sample in segment[start:end + 1])
+
+
+def _racket_support_with_shared_preparation(segment, side, start, peak, end):
+    """Bind modeled paired-wrist proximity to later separated racket-side evidence.
+
+    The preparation can precede the geometric crossing but must lie within the
+    detector's existing 650 ms pre-peak horizon. It never votes for handedness.
+    A distinct, separated same-side observation in this candidate is required;
+    neither an ambiguous pair alone nor another person's racket can supply it.
+    """
+    direct = _racket_support(segment, side, start, end)
+    if direct >= 2:
+        return direct, None
+    opposite = "left" if side == "right" else "right"
+    def separated(sample):
+        a,b = (sample.points.get(k+"_wrist") for k in (side,opposite))
+        return a is not None and b is not None and _distance(a,b) > .55
+    later = [(i,obs) for i in range(peak,end+1) if separated(segment[i])
+             for obs in segment[i].racket_observations
+             if obs["association"] == "single_wrist_proximity" and obs["wrist_sides"] == [side]
+             and len(segment[i].racket_observations) == 1]
+    if not later:
+        return direct, None
+    anchor, independent = later[0]
+    shared=[]
+    for i in range(peak):
+        sample=segment[i]
+        if not 0 < segment[peak].time-sample.time <= 650 or len(sample.racket_observations) != 1:
+            continue
+        obs=sample.racket_observations[0]
+        if obs["association"] != "paired_wrist_racket_proximity" or side not in obs["wrist_sides"]:
+            continue
+        transition=segment[i:anchor+1]
+        if (any(not all(k+"_wrist" in s.points for k in (side,opposite)) for s in transition)
+                or any(not samples_are_continuous(a,b) for a,b in zip(transition,transition[1:]))
+                or any(separated(s) and opposite in s.racket_sides and side not in s.racket_sides for s in transition)):
+            continue
+        shared.append(obs)
+    direct_times={s.time for s in segment[start:end+1] if side in s.racket_sides}
+    all_times=direct_times | {obs["timestamp_ms"] for obs in shared}
+    if not shared or len(all_times)<2:
+        return direct,None
+    return len(all_times), {"version":"shared-racket-preparation-v1",
+        "method":"same_target_paired_proximity_to_separated_motion_wrist",
+        "semantics":"object_support_not_independent_handedness_or_contact",
+        "motion_wrist":side,"preparation_horizon_start_ms":segment[peak].time-650,
+        "candidate_geometry_start_ms":segment[start].time,"candidate_peak_ms":segment[peak].time,
+        "shared_preparation_observations":shared,"separated_motion_observation":independent,
+        "distinct_supported_frame_count":len(all_times)}
 
 
 def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
@@ -367,7 +431,7 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
             path = sum(_distance(a, b) for a, b in zip(window, window[1:]))
             if path > horizontal * 2.5:
                 continue
-            support = _racket_support(segment, side, start, end)
+            support, transfer = _racket_support_with_shared_preparation(segment, side, start, peak, end)
             if support >= 2:
                 if shortest_support < 2 and min(point[1] for point in window) > SEQUENCE_RULES["low_hand_y_torso"]:
                     # An earlier racket box does not distinguish a new stroke
@@ -380,13 +444,14 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
                     if (len(extension) != end - start + 1
                             or max(extension) - min(extension) < SEQUENCE_RULES["minimum_low_arm_range_for_context_only_racket_support_torso"]):
                         continue
-                supported = start, end, horizontal, support
+                supported = start, end, horizontal, support, transfer
                 break
         if supported is None:
             continue
-        start, end, horizontal, support = supported
+        start, end, horizontal, support, transfer = supported
         result.append(_candidate(segment, side, start, peak, end, "baseline", {
             "racket_associated_frames": support, "pose_samples": end - start + 1,
+            "racket_support_transfer": transfer,
             "horizontal_excursion_torso_units": round(horizontal, 3),
             "peak_wrist_speed_torso_units_per_second": round(speed[peak], 3),
             "court_location_confirmed": False, "forehand_backhand_classification": "unavailable",
@@ -417,6 +482,10 @@ def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]
     # Serve wins an overlapping generic swing; identities never suppress each other.
     candidates.sort(key=lambda item: (item["family"] != "serve",
                     0 if item["family"] == "serve" else ranks[item["evidence"]["hand_consistency_before_suppression"]["status"]],
+                    # Shared preparation is a fallback for missing local racket
+                    # observations. Its extra frames must not outvote directly
+                    # observed support and shift that action's context window.
+                    bool(item["evidence"].get("racket_support_transfer")),
                     -item["evidence"]["racket_associated_frames"]))
     accepted: list[dict[str, Any]] = []
     for candidate in candidates:

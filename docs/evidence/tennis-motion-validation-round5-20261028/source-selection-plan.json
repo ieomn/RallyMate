@@ -1,0 +1,51 @@
+{
+  "version": "round5-independent-source-selection-v1",
+  "created_at_utc": "2026-10-27T16:50:24.282201+00:00",
+  "constraints": [
+    "No new scoring or GPU results used to choose sources or windows",
+    "Existing sources are previously observed regression/challenge, never independent holdout",
+    "Do not infer anatomical hand from player name",
+    "Distinguish racket-grip role from both wrists moving",
+    "Require actual opponent serve and incoming ball context for return",
+    "Do not infer forward target direction from wrist/hip trajectory",
+    "Do not change old frozen GT or old raw video"
+  ],
+  "mandatory_audits": {
+    "dimitrov_existing_source": [
+      "7.3–8.75 actual return context",
+      "13.3–14.3 two-hand stroke and grip roles"
+    ],
+    "conflicts_manifest": ".codex_tmp/tennis-score-round4-20261027/live-exact-review-rebinding-v3.json"
+  },
+  "forehand_slice_screening_order": [
+    {
+      "source": "existing Rick Macci forehand slice video",
+      "intervals_ms": [
+        [
+          45000,
+          52000
+        ],
+        [
+          60000,
+          63000
+        ]
+      ],
+      "basis": "five pre-existing visual windows from 2026-10-22; inspect earliest fully visible self-fed demonstration first; keep outcomes for all five"
+    },
+    {
+      "source": "existing THETIS p32 first repeat",
+      "basis": "known full-human shadow slice; no independent target direction, retain as limited reference"
+    },
+    {
+      "source": "existing USTA slice-backhand video",
+      "basis": "different technique; may be backhand comparison only, never relabel as forehand"
+    }
+  ],
+  "eligibility": [
+    "racket hand visually trackable",
+    "full preparation/forward/follow observable",
+    "fixed camera or clear source epoch",
+    "independent target/net/court direction visible for directional metrics; otherwise mark direction missing"
+  ],
+  "download_policy": "Only if local eligible source absent; official/public license clear. No raw source redistribution and no new download yet."
+}

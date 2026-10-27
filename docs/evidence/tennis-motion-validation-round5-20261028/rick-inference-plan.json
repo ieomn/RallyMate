@@ -1,0 +1,9 @@
+{
+  "created_at_utc": "2026-10-27T17:00:33.544397+00:00",
+  "source_video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+  "request_sha256": "75271452f18ba135eef6945fbac058415a7baa3abce9d34352cf83e0f329178e",
+  "review_reference_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+  "capture_code_commit": "a003456ccf2d2441ca646a5f5c440835eab7b9be",
+  "selection": "44–64 seconds chosen from source visual review before new inference; 3 self-fed + 2 shadow actions and standing explanation negatives; no direction inferred from wrist",
+  "recognition_replay": "current code will replay immutable native separately"
+}

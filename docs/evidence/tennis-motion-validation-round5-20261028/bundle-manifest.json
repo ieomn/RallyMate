@@ -1,0 +1,351 @@
+{
+  "version": "round5-public-evidence-bundle-v1",
+  "status": "final_v3_with_explicit_measurement_limits",
+  "record_count": 37,
+  "unique_content_sha_count": 28,
+  "independent_player_or_holdout_count_not_claimed": true,
+  "source_media_redistributed": false,
+  "encoding": "UTF-8 LF JSON; source evidence hashes refer to original local files, published hashes to normalized scrubbed metadata",
+  "score_count_not_accuracy": true,
+  "intermediate_failures_preserved": true,
+  "files": [
+    {
+      "file": "cpu-replay-comparison.json",
+      "sha256": "58de946bf66c5d95629ca194f8d0caf9ccda8ce89373e9b4e4e1706e0ba9b9e6"
+    },
+    {
+      "file": "fresh-inference-summary.json",
+      "sha256": "61c5a32a31e82ca1ae1f40d01f2e8fa42eeffaa80ec9bef104731508609c3922"
+    },
+    {
+      "file": "source-acquisition.json",
+      "sha256": "d941b0f7c9be1325e01254df97f10c859394d97c02a48458361fbd3a15b98168",
+      "source_evidence_sha256": "d941b0f7c9be1325e01254df97f10c859394d97c02a48458361fbd3a15b98168",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-acquisition.json"
+    },
+    {
+      "file": "registry-finalization-fix.json",
+      "sha256": "b5cbc8b30c61ef9624cf207ae807e951e84b3314c8a1db0e03d59d8c73dd6c89",
+      "source_evidence_sha256": "450646c1a10ce58fdcca4b9ec6302fedb2c2c648ed94fb98725265b95583b2c3",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/registry-finalization-fix.json"
+    },
+    {
+      "file": "runtime-registry-independent-review.json",
+      "sha256": "d54bd63becca1af9fcd0df9461f5b2a79bb8393436012e0dfa194b3030433671",
+      "source_evidence_sha256": "273a36f57c18775f00bfb2ff2c0f6008eda68ba30fa5c7120db258e92a513502",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/runtime-registry-independent-review.json"
+    },
+    {
+      "file": "final-frontend-lint-receipt.json",
+      "sha256": "a38bad6b9907eaa6123a45d615cc57c6c45a1ae28e95501397114c35d0bcc177",
+      "source_evidence_sha256": "a38bad6b9907eaa6123a45d615cc57c6c45a1ae28e95501397114c35d0bcc177",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/final-frontend-lint-receipt.json"
+    },
+    {
+      "file": "paired-motion-rule-freeze.json",
+      "sha256": "becf013a2fe851f6831464e2f7e40b840ad67560c20b86bac2d533a3012ed67f",
+      "source_evidence_sha256": "d2966770177c3d642e9087f32e18b3808251daf52336a3eca2750b65e86d8ebe",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/paired-motion-rule-freeze.json"
+    },
+    {
+      "file": "paired-motion-rule-freeze-v2.json",
+      "sha256": "344d998fa49678d083dae38b04c02c3f2fba24f9079000f7e5dbb3254e4dabf0",
+      "source_evidence_sha256": "c57a7ba83434b01a3d56e3caaa6cc903e233ab73ff209cb4df865b2713d2f1d3",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/paired-motion-rule-freeze-v2.json"
+    },
+    {
+      "file": "slice-direction-observability-rule.json",
+      "sha256": "3a82874246649f03678f28129187f856017b684075609a72e84bc46f33a31796",
+      "source_evidence_sha256": "8f093c3731cacda6850e70f6ab9e6d5943dbdd0d97293ca7f8fe395ba8fccfa2",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/slice-direction-observability-rule.json"
+    },
+    {
+      "file": "scoring-hand-role-freeze-final.json",
+      "sha256": "fbe27d6ec2c86711ec6b872b60aac3c1a662b9e8530e97d523fa172b0a083200",
+      "source_evidence_sha256": "b4e4435c66296feebc1dca51cfa2b5b030f10af09279e38927864a553aad5d10",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/scoring-hand-role-freeze-final.json"
+    },
+    {
+      "file": "candidate-final-freeze.json",
+      "sha256": "7c9f861d8b3353f4ca885138b4ad29a3d3c269e321b9bd93ede26172fd528e52",
+      "source_evidence_sha256": "6fbec585067a7a9b3d3236d3743d5bafee13febec6e53b5ef7d29644ae8768d5",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/candidate-final-freeze.json"
+    },
+    {
+      "file": "candidate-final-freeze-v2.json",
+      "sha256": "1b32f5515cc46d7652a614d16f0d90db3c78e5184d3ad153f94a0621f184a538",
+      "source_evidence_sha256": "c4780a788eef1afb92e561e2c1dc2a5192a2103f04a62f9b63823003f99e3aa0",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/candidate-final-freeze-v2.json"
+    },
+    {
+      "file": "candidate-final-freeze-v3.json",
+      "sha256": "0081cbd878d2f75019ba7f8d18268c37fee7b2e3187cc01cab7dd47099dfdc69",
+      "source_evidence_sha256": "459e9768a47821dc09b93eceb481e8529296c2708dbd43f4f2fbf0dc93db5f12",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/candidate-final-freeze-v3.json"
+    },
+    {
+      "file": "grade-rule-stability-final.json",
+      "sha256": "b7fd0fdd8108b6c5158f9d3f1b393ede37a6415c755243525e9dc22f8f89c167",
+      "source_evidence_sha256": "b7fd0fdd8108b6c5158f9d3f1b393ede37a6415c755243525e9dc22f8f89c167",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/grade-rule-stability-final.json"
+    },
+    {
+      "file": "baseline-score-shift-source-audit-v3.json",
+      "sha256": "4b12d708c0e1ad4b9d641321350307e1cbaa685ed9c5fd9e341b9e43d2a040d8",
+      "source_evidence_sha256": "480afab072ac80736b111c945541f68d763afd1db99aea2c4739d54878495f87",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/baseline-score-shift-source-audit-v3.json"
+    },
+    {
+      "file": "dimitrov-fresh-episode-comparison-v3.json",
+      "sha256": "301a814799a99c5d03125c6f3f025451860864b4ea01fcd69f2606ea4eeb6c30",
+      "source_evidence_sha256": "ef15f4532275b0de16484ee1335578bd9d3518c582453f50b6af7ab6da79ec08",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/dimitrov-fresh-episode-comparison-v3.json"
+    },
+    {
+      "file": "dimitrov-new-context-return-gates.json",
+      "sha256": "0aaab66e23bd20130f47aeb8b2dfd551283bce146983c8207b1c72642b57f561",
+      "source_evidence_sha256": "0dd7d6073e5605bd85fcc422972f74cfdd34261b656064ef6b6ed0aad36dee18",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/dimitrov-new-context-return-gates.json"
+    },
+    {
+      "file": "rick-manual-pattern-results-v1.2.json",
+      "sha256": "5dd87c88d0f9b6b6d77d5c0caaaa055ce6aee938ba6cfef3215a5a915f525c1a",
+      "source_evidence_sha256": "ed2845eaa23daeedab72ee98c86e3eda43a9c70e576e9ecdb70f4439b877864b",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/rick-manual-pattern-results-v1.2.json"
+    },
+    {
+      "file": "wta-reviewed-manual-pattern-results-v1.2.json",
+      "sha256": "44ab0cfa66123e83aa5cc62ae1c6d83eda43b2f2ee7b0499cec728ef2997ba05",
+      "source_evidence_sha256": "45ec458a9e166ed1cd8b14ac571f5d14194863b9a87250e5b91032d9086b129a",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/wta-reviewed-manual-pattern-results-v1.2.json"
+    },
+    {
+      "file": "dimitrov-return-new-native-manual-results-v1.2.json",
+      "sha256": "ad3d37cefd7d1757aa3f871911bfc4fd9e274c1ff6e01ed6889b10c1f1b1a8a2",
+      "source_evidence_sha256": "298843eb8a994fbc172391364c9c2fa11abd157af3f116b5df3605d7e5712d8f",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/dimitrov-return-new-native-manual-results-v1.2.json"
+    },
+    {
+      "file": "independent-paired-pipeline-review.json",
+      "sha256": "f4719e6ee5fced3e3e68342c85ba1cb8649817c8915bfa5f7b97f23ac1136344",
+      "source_evidence_sha256": "384c8af914acc5f0566279a7bcbd5434931b23044f531f53f308762ee251f973",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/independent-paired-pipeline-review.json"
+    },
+    {
+      "file": "release-v3-frontend-validation.json",
+      "sha256": "f6d71ea354893d5ff425e65fb6078b199a28b9e0d919956311702b17ccb9df4e",
+      "source_evidence_sha256": "f6d71ea354893d5ff425e65fb6078b199a28b9e0d919956311702b17ccb9df4e",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/release-v3-frontend-validation.json"
+    },
+    {
+      "file": "live-exact-review-rebinding-v3.json",
+      "sha256": "385052d143fc1751392e452f8118d78b06c9d410de8b5e8f6fd26e47b02025b3",
+      "source_evidence_sha256": "385052d143fc1751392e452f8118d78b06c9d410de8b5e8f6fd26e47b02025b3",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/live-exact-review-rebinding-v3.json"
+    },
+    {
+      "file": "dimitrov-context-inference-plan.json",
+      "sha256": "616296be07ca75b5dea59f43975a16f683784c4d5e051e68d34c785d2a85869b",
+      "source_evidence_sha256": "616296be07ca75b5dea59f43975a16f683784c4d5e051e68d34c785d2a85869b",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/dimitrov-context-inference-plan.json"
+    },
+    {
+      "file": "rick-inference-plan.json",
+      "sha256": "5426eebb27828167527026111353461d390db74d2e90ddc35db81ac00a8f1185",
+      "source_evidence_sha256": "5426eebb27828167527026111353461d390db74d2e90ddc35db81ac00a8f1185",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/rick-inference-plan.json"
+    },
+    {
+      "file": "wta-inference-plan.json",
+      "sha256": "b9cc0bd43d21ac47574fa99b46d6abb60243e708b0e40d7b54b7caeb657c3269",
+      "source_evidence_sha256": "b9cc0bd43d21ac47574fa99b46d6abb60243e708b0e40d7b54b7caeb657c3269",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/wta-inference-plan.json"
+    },
+    {
+      "file": "wta-reviewed-inference-plan.json",
+      "sha256": "f92e46588b61e694365e2c021b22fe389e9bcf0204a678f388d618a4613200ed",
+      "source_evidence_sha256": "f92e46588b61e694365e2c021b22fe389e9bcf0204a678f388d618a4613200ed",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/wta-reviewed-inference-plan.json"
+    },
+    {
+      "file": "source-dimitrov-21383-negative-audit.json",
+      "sha256": "ffd943cfc6387e1f92eb7c0c32fa559c0ea7f215e989fecc3f66c9d05ec0c759",
+      "source_evidence_sha256": "ffd943cfc6387e1f92eb7c0c32fa559c0ea7f215e989fecc3f66c9d05ec0c759",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-21383-negative-audit.json"
+    },
+    {
+      "file": "source-dimitrov-late-motion-source-audit.json",
+      "sha256": "fce0ae8e4ede4ef9bd99b485e8d08848c81cc3542ecd8d876d68cca2e044eaba",
+      "source_evidence_sha256": "fce0ae8e4ede4ef9bd99b485e8d08848c81cc3542ecd8d876d68cca2e044eaba",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-late-motion-source-audit.json"
+    },
+    {
+      "file": "source-dimitrov-return-new-native-binding-receipt.json",
+      "sha256": "735e36f978c98581110d4c6fabbef16e1d8a18aef3634c82e3587511deb7a61b",
+      "source_evidence_sha256": "735e36f978c98581110d4c6fabbef16e1d8a18aef3634c82e3587511deb7a61b",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-return-new-native-binding-receipt.json"
+    },
+    {
+      "file": "source-dimitrov-return-new-native-inventory.json",
+      "sha256": "9f1c848ec4dd47cc3c7a0c274cc6f4931e7a5d74610cd165eaf3a95ad071b70f",
+      "source_evidence_sha256": "9f1c848ec4dd47cc3c7a0c274cc6f4931e7a5d74610cd165eaf3a95ad071b70f",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-return-new-native-inventory.json"
+    },
+    {
+      "file": "source-dimitrov-return-new-native-manual-windows.json",
+      "sha256": "c025dc62e79e320f8ff7f502c012ce4eed8470a4ba9acd89a775b81ae2788183",
+      "source_evidence_sha256": "c025dc62e79e320f8ff7f502c012ce4eed8470a4ba9acd89a775b81ae2788183",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-return-new-native-manual-windows.json"
+    },
+    {
+      "file": "source-dimitrov-source-role-audit.json",
+      "sha256": "5d00fc56de428ddc4884628a04038c4e3446a56754bc719c08ca3aa7d04dc12f",
+      "source_evidence_sha256": "5d00fc56de428ddc4884628a04038c4e3446a56754bc719c08ca3aa7d04dc12f",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-source-role-audit.json"
+    },
+    {
+      "file": "source-djokovic-full-stroke-source-reference.json",
+      "sha256": "bdb4f4a704cb300771be5d81b77966ea8908900db6a8093f10de44453d0b99d9",
+      "source_evidence_sha256": "bdb4f4a704cb300771be5d81b77966ea8908900db6a8093f10de44453d0b99d9",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/djokovic-full-stroke-source-reference.json"
+    },
+    {
+      "file": "source-hand-conflict-source-audit.json",
+      "sha256": "e14d35e5428bf96563d6eea5f079fd6762906f141745d6b0c0da82f5ee93101d",
+      "source_evidence_sha256": "1c4d876649d1575f7f01bdb39f779e3854264838d0690b7366715b2fcfe53a94",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/hand-conflict-source-audit.json"
+    },
+    {
+      "file": "source-independent-audit-index.json",
+      "sha256": "216f398015e57a80d9fd0b25ba4054115798e8821edc3bd1522140910430ea69",
+      "source_evidence_sha256": "216f398015e57a80d9fd0b25ba4054115798e8821edc3bd1522140910430ea69",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/independent-audit-index.json"
+    },
+    {
+      "file": "source-ordinary-a-dedup-source-audit.json",
+      "sha256": "c725396e82c86a303b162f322ec877a6896f4322454e9209b318eacc7859c3ef",
+      "source_evidence_sha256": "c725396e82c86a303b162f322ec877a6896f4322454e9209b318eacc7859c3ef",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/ordinary-a-dedup-source-audit.json"
+    },
+    {
+      "file": "source-rick-manual-pattern-windows-bound.json",
+      "sha256": "54915765eaa7e15ed0c691245fad111c2b939f6c573e175e533bcad4f0cf2c89",
+      "source_evidence_sha256": "54915765eaa7e15ed0c691245fad111c2b939f6c573e175e533bcad4f0cf2c89",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/rick-manual-pattern-windows-bound.json"
+    },
+    {
+      "file": "source-rick-manual-source-reference.json",
+      "sha256": "77fd1192d4ff4551f49bca0d3efbb170ac1a9b738a3a067c52a5b6ab8c71e09e",
+      "source_evidence_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/rick-manual-source-reference.json"
+    },
+    {
+      "file": "source-rick-source-inventory.json",
+      "sha256": "139c0a2d11adaa14da01595834b4184cb8d193f5fdcd4efc8dbf6418b6f0d036",
+      "source_evidence_sha256": "139c0a2d11adaa14da01595834b4184cb8d193f5fdcd4efc8dbf6418b6f0d036",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/rick-source-inventory.json"
+    },
+    {
+      "file": "source-selection-plan.json",
+      "sha256": "d5cab619d2a1f81aa48beb41f7b9bf44ace4eaecc6ba75da365774b4879fc9c3",
+      "source_evidence_sha256": "4593e22e5991863c945503c4a5564dcbd365674babc6da245a818c7022ee24d0",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/selection-plan.json"
+    },
+    {
+      "file": "source-single-hand-native-conflict-addendum.json",
+      "sha256": "bdd0efb1e0a67da723b9351c7bca44b1348bd144cdba2b800e36be911ffc88fb",
+      "source_evidence_sha256": "bdd0efb1e0a67da723b9351c7bca44b1348bd144cdba2b800e36be911ffc88fb",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/single-hand-native-conflict-addendum.json"
+    },
+    {
+      "file": "source-white-lost-window-source-audit.json",
+      "sha256": "225c6c4dfb247e55778ede567af4774165705e1bd46957eff20f391473b83f8c",
+      "source_evidence_sha256": "225c6c4dfb247e55778ede567af4774165705e1bd46957eff20f391473b83f8c",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/white-lost-window-source-audit.json"
+    },
+    {
+      "file": "source-wta-gpu-preplan.json",
+      "sha256": "9aa6763417eec3c3de303d00ca54be746be2f997ca3a113400eedfb8da415759",
+      "source_evidence_sha256": "9aa6763417eec3c3de303d00ca54be746be2f997ca3a113400eedfb8da415759",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-gpu-preplan.json"
+    },
+    {
+      "file": "source-wta-manual-pattern-windows-bound.json",
+      "sha256": "be4318448e6d9a0a2205c3ba5497223cae1a89f484a93d799bdb46f2fc1516da",
+      "source_evidence_sha256": "be4318448e6d9a0a2205c3ba5497223cae1a89f484a93d799bdb46f2fc1516da",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-manual-pattern-windows-bound.json"
+    },
+    {
+      "file": "source-wta-manual-source-reference.json",
+      "sha256": "123f7618709e08a6caa9f2db8307d1f1f67c37e42fca96271a626a1b10533640",
+      "source_evidence_sha256": "123f7618709e08a6caa9f2db8307d1f1f67c37e42fca96271a626a1b10533640",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-manual-source-reference.json"
+    },
+    {
+      "file": "source-wta-reviewed-inference-subject.json",
+      "sha256": "6c9185aca7b5a4c0b851d7e44e1fa10b7689d1965c46df2a1f2096c36f243da3",
+      "source_evidence_sha256": "6c9185aca7b5a4c0b851d7e44e1fa10b7689d1965c46df2a1f2096c36f243da3",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-reviewed-inference-subject.json"
+    },
+    {
+      "file": "source-wta-source-inventory.json",
+      "sha256": "8a91a274e4c4c457892dfd7417f101a2295883594654a490aebdfa7c8778aaee",
+      "source_evidence_sha256": "8a91a274e4c4c457892dfd7417f101a2295883594654a490aebdfa7c8778aaee",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-source-inventory.json"
+    },
+    {
+      "file": "backend-test-summary.json",
+      "sha256": "6b0d4fb0fa6436696e48290007a981c15b3e6f48bd79e93e4c0cf145d04acd82",
+      "source_evidence_sha256": "c41507ef6d55b6fb478011e0030e105ac5642185f4a722a5bd8a80a39786a5d8",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/release-combined-backend-tests.json"
+    },
+    {
+      "file": "live-api-parser-validation.json",
+      "sha256": "d327dfb5ccee1531d01482f58e8bfd468a1707b4abc4d3a2bef83219bd0db95a",
+      "source_evidence_sha256": "d327dfb5ccee1531d01482f58e8bfd468a1707b4abc4d3a2bef83219bd0db95a",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/live-api-checks/frontend-validation.json"
+    },
+    {
+      "file": "live-reviewed-parser-validation.json",
+      "sha256": "861b7936670a8c4dc0325dc4acb3a173ff2e87429773f1a564280caf07cce10c",
+      "source_evidence_sha256": "861b7936670a8c4dc0325dc4acb3a173ff2e87429773f1a564280caf07cce10c",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/release-v3-live-reviewed/frontend-validation.json"
+    },
+    {
+      "file": "intermediate-regression-isolation.json",
+      "sha256": "bfebd04b78ae1a847dccbb1e63f63c80452c3a2a9eb244471bb3c5ca0aa77ba8",
+      "source_evidence_sha256": "68876d087cc58e8dd55b5556f5d8af5c6869b6bbf7832ea716e0ba3b3815870e",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/nearbox-rule-isolation/summary.json"
+    },
+    {
+      "file": "final-targeted-source-replay.json",
+      "sha256": "019579ba19b3474be235480b648da786162e1b6e8383fd4ba9e4fb0d38bb0566",
+      "source_evidence_sha256": "8c41aad304aa7a15ededecc3459265b68f4840157c9a5105fca3492ea616a1ed",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/candidate-v3-targeted/summary.json"
+    },
+    {
+      "file": "postinference-cpu-diagnostic.json",
+      "sha256": "68be8a7cd92669e44083a592ee85128752af224eb10c38bd9e0f34378f92f2cd",
+      "source_evidence_sha256": "b4c9dad458ea0d326febdb9f9be38ff13a067490debb872426d14f2007f4adb4",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/service-postinference-cpu-probe/receipt.json"
+    },
+    {
+      "file": "live-dimitrov-service-validation.json",
+      "sha256": "f5ad1b0866288643eff7049fca62cb1d5d398e3af57662cba3c3c0fa2e901837",
+      "source_evidence_sha256": "f5ad1b0866288643eff7049fca62cb1d5d398e3af57662cba3c3c0fa2e901837",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/live-dimitrov-service-validation.json"
+    },
+    {
+      "file": "live-api-review-validation.json",
+      "sha256": "40d7f597bac546acdba3260a8b366e79a8e6b97a6f14b69a4e7318e0e340a78f",
+      "source_evidence_sha256": "40d7f597bac546acdba3260a8b366e79a8e6b97a6f14b69a4e7318e0e340a78f",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/live-api-review-validation.json"
+    },
+    {
+      "file": "live-final-service-parser-validation.json",
+      "sha256": "e8acafce7466b3131979ca68345532030d197881c2d10804990e64986d7c88f3",
+      "source_evidence_sha256": "e8acafce7466b3131979ca68345532030d197881c2d10804990e64986d7c88f3",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/live-final-service/frontend-validation.json"
+    }
+  ]
+}

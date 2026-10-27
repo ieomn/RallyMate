@@ -1,0 +1,16 @@
+{
+  "version": "round5-wta-gpu-preplan-v1",
+  "frozen_at_utc": "2026-10-27T17:05:19.919446+00:00",
+  "source_reference": "wta-manual-source-reference.json",
+  "source_reference_sha256": "123f7618709e08a6caa9f2db8307d1f1f67c37e42fca96271a626a1b10533640",
+  "interval_ms": [
+    19800,
+    22500
+  ],
+  "max_players": 5,
+  "production_default_timeline": "retain_unchanged_even_if_near_player_selected",
+  "independent_manual_target_timeline": "separate_artifact_for_far_court_preselected_player_after_actual_native_identity_check",
+  "claim_boundary": "manual_target_pattern_validation_not_automatic_subject_selection_success",
+  "projection_limit": "forward is nearly image-down; up opposite. Any computable slice forward/down value is image projection evidence, not independent spatial decomposition.",
+  "no_inference_result_seen": true
+}

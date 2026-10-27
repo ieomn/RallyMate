@@ -1,0 +1,21 @@
+{
+  "version": "round5-source-dedup-audit-v1",
+  "method": "agent_visual_review",
+  "source_video_sha256": "71d3f59b7a8b966ef7645cac412cb03679376f70a2f080d270391a32697d7fa9",
+  "reviewed_interval_ms": [
+    4800,
+    7200
+  ],
+  "visible_complete_action_count": 1,
+  "observations_zh": [
+    "4.8–5.4秒等待和转身",
+    "5.6–6.2秒举拍引拍",
+    "6.4秒来球仍在正手侧",
+    "6.6秒前挥",
+    "6.8–7.0秒随挥"
+  ],
+  "old_candidate_peak_5733": "same actual action preparation, not second complete swing",
+  "deduplication_source_supported": true,
+  "evidence": "ordinary-a-5to7/evidence.json",
+  "no_change_to_existing_ground_truth": true
+}

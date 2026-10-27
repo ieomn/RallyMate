@@ -13,7 +13,7 @@ import math
 
 import numpy as np
 
-VERSION = "tennis-motion-patterns-v1.1.0"
+VERSION = "tennis-motion-patterns-v1.2.0"
 PATTERN_METRICS = {
     "movement": (("pattern_center_transfer", "人体中心前移", "ratio", "观察髋中心沿已核验击球方向的连续前移"),),
     "preparation": (("pattern_preparation_coupling", "转体引拍进程配合", "ratio", "观察肩线转动与手腕引拍的进程配合"),),
@@ -82,6 +82,9 @@ RUBRIC = {
     "two_hand_coupling": "100_times_equal_mean_direction_agreement_and_normalized_progress_agreement",
     "directional_path": "100_times_positive_projected_travel_divided_by_absolute_projected_travel",
     "slice_path": "geometric_mean_forward_and_downward_progress_backhand_multiplied_by_min_1_forward_over_downward_travel",
+    "slice_direction_observability": {"maximum_unit_basis_condition_number": 4.,
+                                      "numerical_boundary_relative_tolerance": 1e-12,
+                                      "semantics": "fixed_2d_projected_direction_error_amplification_bound_not_world_components"},
     "one_hand_reversal": "100_times_correct_signed_travel_before_and_after_observed_forward_apex_divided_by_total_signed_travel",
     "missing_policy": "no_score_for_missing_required_evidence_keep_requirement_in_coverage_denominator",
 }
@@ -395,14 +398,27 @@ def analyze_motion_pattern(rows, *, prep_end, peak, side, technique=None, classi
         elif hand is not None:
             points = hand[strike]
             f, d = _direction_share(points, forward), _direction_share(points, -up)
-            if f is not None and d is not None:
+            singular = np.linalg.svd(np.column_stack((forward, -up)), compute_uv=False)
+            condition = float(singular[0] / singular[-1]) if singular[-1] > 0 else None
+            if condition is not None and not math.isfinite(condition):
+                condition = None
+            detail = {"forward_fraction": f, "downward_fraction": d, "racket_path_measured": False,
+                      "direction_basis_condition_number": condition, "maximum_direction_basis_condition_number": 4.,
+                      "direction_semantics": "fixed_image_plane_projections_not_world_components"}
+            # A single projected direction cannot count twice as independently
+            # observed forward and downward travel. Four is a predeclared
+            # engineering error-amplification limit, not a coaching grade.
+            evidence["pattern_slice_path"] = detail
+            if condition is None or condition > 4. and not math.isclose(condition, 4., rel_tol=1e-12, abs_tol=0.):
+                reasons["slice_path"] = "slice_joint_directions_ill_conditioned"
+            elif f is not None and d is not None:
                 delta = np.diff(points, axis=0)
                 forward_travel = float(np.maximum(delta @ forward, 0).sum())
                 down_travel = float(np.maximum(delta @ (-up), 0).sum())
                 value = math.sqrt(f * d)
                 if base == "backhand_slice":
                     value *= min(1., forward_travel / max(down_travel, .03))
-                put("slice_path", value, 100 * value, {"forward_fraction": f, "downward_fraction": d, "racket_path_measured": False})
+                put("slice_path", value, 100 * value, detail)
     if "serve_upward_path" in names:
         if up is None:
             reasons["serve_upward_path"] = "independent_up_direction_unverified"

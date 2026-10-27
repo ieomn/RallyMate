@@ -105,7 +105,7 @@ Docker 镜像会把生命周期清单、当前 `runtime_feasibility` 注册表�
 
 ```text
 RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST=/app/registry-lifecycle.json
-RALLYMATE_SCORING_FEASIBILITY_REGISTRY=/app/metric-feasibility-pose-wave-v2.json
+RALLYMATE_SCORING_FEASIBILITY_REGISTRY=/app/metric-feasibility-pose-wave-v3.json
 ```
 
 如果改用独立 wheel/源码安装而不是本 Dockerfile，必须把这两份运维权威文件以只读

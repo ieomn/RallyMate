@@ -1,0 +1,11 @@
+{
+  "created_at_utc": "2026-10-27T17:05:48.339832+00:00",
+  "source_video_sha256": "2e9513fdcd0781840b7e0e39a53512efc0f48c1ee2592cb29028ace3483c7aa6",
+  "request_sha256": "987a602519c08531d687e2f1d9bd698cdda75db9dd95728ff4f710de6be0f931",
+  "review_reference_sha256": {
+    "wta-manual-source-reference.json": "123f7618709e08a6caa9f2db8307d1f1f67c37e42fca96271a626a1b10533640",
+    "wta-gpu-preplan.json": "9aa6763417eec3c3de303d00ca54be746be2f997ca3a113400eedfb8da415759"
+  },
+  "capture_code_commit": "a003456ccf2d2441ca646a5f5c440835eab7b9be",
+  "selection": "19.8–22.5 seconds original real time; far player independently reviewed before inference. Default selection retained; reviewed far-player timeline is separate manual-subject validation, not automatic selection success."
+}

@@ -1,0 +1,76 @@
+{
+  "version": "round5-independent-complete-stroke-source-reference-v1",
+  "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+  "source_relative_path": "service_data/uploads/0a6ba301-acd4-46a9-829f-7afc832a552c.mp4",
+  "method": "agent_visual_review",
+  "reviewer": "codex_samples_independent_source_review_20261028",
+  "previous_episode_error": {
+    "episode_id": "d23a29e5fbbfdd08ad7b",
+    "start_ms": 3420,
+    "peak_ms": 4004,
+    "end_ms": 4379,
+    "status": "preparation_only_not_complete_stroke",
+    "preserve_original_audit_and_results": true
+  },
+  "full_action": {
+    "manual_action_id": "djokovic-source-first-full-twohand",
+    "start_ms": 4295.958,
+    "anchor_ms": 4713.042,
+    "end_ms": 4879.875,
+    "anchor_uncertainty_ms": 83.417,
+    "boundary_uncertainty_ms": 83.417,
+    "phase_evidence_ms": {
+      "preparation": 4504.5,
+      "forward_swing": 4713.042,
+      "follow_through": 4879.875
+    },
+    "technique": "baseline_two_hand_backhand",
+    "participating_hands": [
+      "left",
+      "right"
+    ],
+    "racket_hand": null,
+    "dominant_handle_end_hand_verified": false,
+    "evidence": [
+      {
+        "timestamp_ms": 4379.375,
+        "source_frame_index": 105,
+        "image": "djokovic-first-dense/frame-000105.png",
+        "raw_png_sha256": "749945f1f7c0a7440e7d9d54dd0f58483bfa82fcdde8368ac22663f02d512f51",
+        "observation_zh": "旧候选已结束但球员还在引拍，没有完成前挥。"
+      },
+      {
+        "timestamp_ms": 4504.5,
+        "source_frame_index": 108,
+        "image": "djokovic-first-dense/frame-000108.png",
+        "raw_png_sha256": "a3d6b95da29fa8f0f917b07419ce0b0179bdbf68435933a231e10b21f79ff0e5",
+        "observation_zh": "拍仍在身体左后，来球仍在右前远侧。"
+      },
+      {
+        "timestamp_ms": 4587.916666666667,
+        "source_frame_index": 110,
+        "image": "djokovic-first-dense/frame-000110.png",
+        "raw_png_sha256": "d2d29f5fd3288e5aad7eee0b4c2e58d319176aebfe8381b16624b593f0a87d2f",
+        "observation_zh": "双手向前挥拍启动。"
+      },
+      {
+        "timestamp_ms": 4713.041666666666,
+        "source_frame_index": 113,
+        "image": "djokovic-first-dense/frame-000113.png",
+        "raw_png_sha256": "1e2303365dc5956b5dfa180d0193857ff95a321c2098b531da7b4ad2a89a6b8d",
+        "observation_zh": "双手共同前挥。"
+      },
+      {
+        "timestamp_ms": 4879.875,
+        "source_frame_index": 117,
+        "image": "djokovic-first-dense/frame-000117.png",
+        "raw_png_sha256": "42d2228a62515fff38fa6ef44cfb27755b09d63984765002abe39c420d16b732",
+        "observation_zh": "双手共同高位随挥。"
+      }
+    ],
+    "scope": "new source-bound complete action reference, not moving prior reviewed label by temporal nearest match; no score read used",
+    "end_semantics": "last independently viewed frame already shows follow-through; not a recovery endpoint or detector proposal boundary",
+    "source_review_predates_detector_rebinding": true
+  },
+  "score_not_used": true
+}

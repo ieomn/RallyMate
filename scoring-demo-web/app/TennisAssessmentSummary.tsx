@@ -13,20 +13,24 @@ const seconds = (value: number) => (value / 1000).toFixed(1);
 const observationReason = (reason: string) => {
   if (reason === "external_peak_motion_geometry_unverified") return "运动峰落在候选挥拍区间外，选中片段自身缺少完整前挥证据，暂不将举拍或移动计为完整挥拍";
   if (reason === "unresolved_racket_hand_with_competing_arm_sequence") return "持拍手尚未可靠确认，两侧手腕先后运动，暂无法确认完整挥拍阶段";
-  if (reason === "active_wrist_discontinuity_in_motion") return "持拍手姿态不连续，暂无法评分";
+  if (reason === "active_wrist_discontinuity_in_motion") return "测量手腕姿态不连续，暂无法评分";
   if (reason === "non_active_wrist_discontinuity_unmeasured") return "另一只手的姿态不连续，依赖该手的项目按实际缺测处理";
   if (reason === "preparation_start_clipped_by_source_boundary") return "准备阶段起点超出连续观测范围，相关配合项目未测量";
   if (reason === "same_action_represented_by_verified_return" || reason === "candidate_overlap_duplicate") return "与另一候选属于同一动作，只计一次";
   if (reason === "return_context_unverified") return "缺少可核验的对方发球与来球证据，暂不能按接发动作计分";
   if (reason === "candidate_lacks_continuous_complete_motion" || reason === "candidate_source_or_complete_phase_unverified") return "未获得覆盖准备、挥出和随挥的连续有效姿态";
   if (reason === "phase_authority_source_unverified") return "动作阶段与原始姿态的对应关系尚未核验";
-  if (reason === "reviewed_hand_conflicts_with_motion_phases" || reason === "reviewed_technique_conflicts_with_detected_phases") return "复核的技术或持拍手与检测阶段不一致，暂未计分";
+  if (reason === "reviewed_hand_conflicts_with_motion_phases") return "复核的持拍手与阶段参考手腕不同，尚无足够依据将它们视为同次挥拍，暂未计分";
+  if (reason === "racket_association_conflicts_with_motion_wrist") return "球拍关联的手与阶段参考手腕不同，暂未计分";
+  if (reason.startsWith("two_hand_phase_") || reason.startsWith("paired_")) return "双手动作的阶段对应尚未核验，或双腕连续观测不足，暂未计分";
+  if (reason === "reviewed_technique_conflicts_with_detected_phases") return "复核的技术与检测阶段不一致，暂未计分";
   if (reason.includes("subject") || reason.includes("identity")) return "动作所属球员尚未可靠确认";
   if (reason.includes("source") || reason.includes("binding")) return "动作与原始视频的对应关系尚未可靠确认";
   return "缺少该动作所需的可靠连续观测";
 };
 const patternReason = (reason: string | null) => {
   if (!reason) return "";
+  if (reason === "slice_joint_directions_ill_conditioned") return "此机位中的向前与向下方向过于接近，无法分别确认前下延展";
   if (reason.includes("camera") || reason.includes("source_identity") || reason.includes("source_video")) return "缺少同一主体、同一相机参考下的连续画面观测";
   if (reason.includes("forward_or_up")) return "向前和向上的方向尚未独立核验";
   if (reason.includes("forward_direction")) return "击球方向尚未独立核验";
@@ -142,6 +146,11 @@ export function TennisAssessmentDetails({ report }: { report: TennisAssessment |
         <summary>{seconds(episode.start_ms)}–{seconds(episode.end_ms)} 秒 · {TENNIS_PATTERN_NAMES[episode.motion_pattern.profile_id]} · 已测 {episode.motion_pattern.coverage.measured_requirements}/{episode.motion_pattern.coverage.applicable_requirements} 项</summary>
         {episode.motion_pattern.classification_provenance.method === "agent_visual_review" || episode.motion_pattern.classification_provenance.method === "agent_review"
           ? <p>技术类别来自辅助画面复核，尚未经过专家标注确认。</p> : null}
+        {episode.hand_roles && <p>阶段参考：{episode.hand_roles.motion_wrist === "left" ? "左腕" : "右腕"}；
+          {episode.hand_roles.primary_racket_hand === null ? "持拍手尚未独立确认，手腕运动不代表球拍归属。"
+            : `${["agent_visual_review", "human_visual_review"].includes(episode.hand_roles.primary_hand_provenance.method) ? "画面复核" : "球拍关联"}：${episode.hand_roles.primary_racket_hand === "left" ? "左手" : "右手"}持拍。`}
+          {episode.hand_roles.relationship === "verified_two_hand" && `原始画面投影支持这两腕在同一加速阶段共同运动；手臂与轨迹项目使用${episode.hand_roles.measurement_hand === "left" ? "左手" : "右手"}测量。双腕协同本身不确认握柄上下次序或真实触球。`}
+        </p>}
         {!!episode.quality_reason_codes?.length && <p>{Array.from(new Set(episode.quality_reason_codes.map(observationReason))).join("；")}。</p>}
         <ul>{episode.motion_pattern.requirements.map(requirement => <li key={requirement.id}>
           <strong>{productText(requirement.label)}</strong><span>{requirement.status === "measured_proxy" ? "已计入可见动作评分" : "未测量"}</span>

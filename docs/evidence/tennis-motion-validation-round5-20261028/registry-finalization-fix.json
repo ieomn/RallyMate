@@ -1,0 +1,201 @@
+{
+  "version": "registry-finalization-fix-v1",
+  "failure_job_id": "46fcd84f-a324-4a55-864b-94a525831a89",
+  "failure": "default producer primary-player-v0.4.0 incompatible with old runtime registry primary-player-v0.3.0 after GPU inference",
+  "fix": "new explicitly versioned runtime registry and derived requirements bound through lifecycle; pipeline rejects incompatible producer registry before decoder/model/run creation",
+  "runtime_registry_version": "pose-wave-2026-10-28.1",
+  "code_and_artifact_sha256": {
+    "src/rallymate_vision/pipeline.py": "461738e56f5b29da53e62ba724a892cd61e2263dfbb11898cab8b89c37ea8247",
+    "tests/test_registry_lifecycle.py": "24a81cecd6f43109270c2932d5ee0a3f5a4c77af26c890f519453218deb71483",
+    "tests/test_registry_lifecycle_integration.py": "bf2e331bbf91c79fccaf63713201fea95faea3488d6a736c7ba621e4f91ff88e",
+    "tests/test_runtime_primary_contract.py": "13a01d8c46a8487905162faeb657e1ae0d5e8b66091fb24825f927893c9a56e9",
+    "registry-lifecycle.json": "fa2fc82ec031f873c6393a67795a51520471475f4185716efeb488619c37ef9e",
+    "metric-feasibility-pose-wave-v3.json": "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076",
+    "indicator-scoring-requirements-pose-wave-v2.json": "dc5c9e46933e70cc09c24a2abc337a641a24d2986ecc03f5a2ebb44a9e81285b",
+    "deploy/Dockerfile": "78b734910288b09c5331e71d2a325730f8817761f1728ffdeae4932e5a2776ff"
+  },
+  "hashes_unchanged_during_tests": true,
+  "new_json_bytes": "UTF-8 LF; .gitattributes eol=lf, manifest hashes raw file bytes; no staging performed",
+  "old_artifact_sha256_unchanged": {
+    "metric-feasibility-pose-wave-v2.json": "dc5f3622d70f22ad5da8e933dcd38e7d8c4c57fd5255941fa521704984feac0e",
+    "indicator-scoring-requirements-pose-wave-v1.json": "d76216d543abc147be4451aa915eb43e0cae61d710277b717d1944716c8bbf04"
+  },
+  "registry_semantic_difference_only": [
+    "registry_version",
+    "updated_at",
+    "each indicators[].versions.primary_player"
+  ],
+  "maturity_threshold_formula_and_promotion_authorization_changed": false,
+  "frozen_candidate_scoring_files_changed_by_this_fix": false,
+  "failure_job_or_request_changed": false,
+  "tests": [
+    {
+      "label": "key",
+      "command": [
+        "runtime\\rtmpose\\.venv\\Scripts\\python.exe",
+        "-m",
+        "unittest",
+        "tests.test_runtime_primary_contract",
+        "tests.test_registry_lifecycle",
+        "tests.test_registry_lifecycle_integration",
+        "tests.test_pipeline_scoring_registry",
+        "tests.test_runtime_registry_binding",
+        "tests.test_vision_cli_registry_lifecycle",
+        "tests.test_scoring_loop",
+        "-q"
+      ],
+      "environment": {
+        "PYTHONPATH": "src;tests"
+      },
+      "test_modules": [
+        "tests.test_runtime_primary_contract",
+        "tests.test_registry_lifecycle",
+        "tests.test_registry_lifecycle_integration",
+        "tests.test_pipeline_scoring_registry",
+        "tests.test_runtime_registry_binding",
+        "tests.test_vision_cli_registry_lifecycle",
+        "tests.test_scoring_loop"
+      ],
+      "exit_code": 0,
+      "test_count": 44,
+      "log": ".codex_tmp\\tennis-score-round5-20261028\\registry-finalization-key-tests.log",
+      "log_sha256": "5a872966c097d47aeb861bc0b7d3d85c82677148e1dd8dbdb441153b2ab186a2"
+    },
+    {
+      "label": "compatibility",
+      "command": [
+        "runtime\\rtmpose\\.venv\\Scripts\\python.exe",
+        "-m",
+        "unittest",
+        "tests.test_pipeline_mesh_archive",
+        "tests.test_pipeline_progress",
+        "tests.test_registry_lifecycle_integration",
+        "tests.test_feasibility",
+        "tests.test_feasibility_v2",
+        "tests.test_native_primary_extraction",
+        "tests.test_manual_event_features",
+        "tests.test_runtime_profile_binding",
+        "-q"
+      ],
+      "environment": {
+        "PYTHONPATH": "src;tests"
+      },
+      "test_modules": [
+        "tests.test_pipeline_mesh_archive",
+        "tests.test_pipeline_progress",
+        "tests.test_registry_lifecycle_integration",
+        "tests.test_feasibility",
+        "tests.test_feasibility_v2",
+        "tests.test_native_primary_extraction",
+        "tests.test_manual_event_features",
+        "tests.test_runtime_profile_binding"
+      ],
+      "exit_code": 0,
+      "test_count": 54,
+      "log": ".codex_tmp\\tennis-score-round5-20261028\\registry-finalization-compatibility-tests.log",
+      "log_sha256": "c0f99cc4acb2e328b878fad106e87d4daff108e8a48e8f6ee73c1cd8b386ee01"
+    }
+  ],
+  "new_tests": [
+    "test_current_registry_changes_only_selector_identity_not_scoring_or_maturity",
+    "test_all_registered_runtime_versions_match_actual_implementations",
+    "test_actual_current_selector_artifacts_finish_default_scoring_loop",
+    "test_explicit_old_registry_is_rejected_before_gpu_or_run_creation"
+  ],
+  "unique_test_modules": [
+    "tests.test_feasibility",
+    "tests.test_feasibility_v2",
+    "tests.test_manual_event_features",
+    "tests.test_native_primary_extraction",
+    "tests.test_pipeline_mesh_archive",
+    "tests.test_pipeline_progress",
+    "tests.test_pipeline_scoring_registry",
+    "tests.test_registry_lifecycle",
+    "tests.test_registry_lifecycle_integration",
+    "tests.test_runtime_primary_contract",
+    "tests.test_runtime_profile_binding",
+    "tests.test_runtime_registry_binding",
+    "tests.test_scoring_loop",
+    "tests.test_vision_cli_registry_lifecycle"
+  ],
+  "deployment_new_artifacts_included": true,
+  "service_environment_observation": {
+    "listening_pid_at_audit": 65980,
+    "RALLYMATE_SCORING_FEASIBILITY_REGISTRY": null,
+    "RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST": null,
+    "behavior": "new requests resolve current lifecycle; previously failed request remains pinned to archived old registry"
+  },
+  "independent_real_native_cpu_probe": ".codex_tmp\\tennis-score-round5-20261028\\service-postinference-cpu-probe\\receipt.json",
+  "scope_limit": "CPU probe completed minimum scoring loop and its derived outputs; full service finalize/new upload is separately run by root; no service restart by this agent",
+  "deployment_pin_followup": {
+    "version": "deployment-runtime-pin-followup-v1",
+    "cause": "compose/env/readme and current RTMPose smoke launcher plus its three explicit request fixtures still pinned old runtime v2",
+    "file_sha256": {
+      "deploy/docker-compose.yml": "866991c4aba731b45fba209c868312b1c4954fb8b4fcb84feca94ac00d2c4522",
+      "deploy/.env.example": "a6f1417b6220881992faea6989795a9acaae9ae9db0bd0d8559ce50498c98abf",
+      "deploy/README.md": "e3eb83ba9f9026b56c9792aa0623575825d6f9d89bb010cf219861585895236c",
+      "scripts/run_pose_deployment_smoke.ps1": "a978df9f7341973057e28d2b1520367af0b9997ca9b96bfaa66623077e8b2970",
+      "examples/request-rtmpose-online-smoke.json": "9d6558a38611eb93ca0a8efbeb46a4576a2bb1768e0cb9dbe7f633f27fd58694",
+      "examples/request-rtmpose-analysis-smoke.json": "b34cd13c3ea5e97a423e9e514c46ee8cac62cca5a121854d71f78c0c91741e51",
+      "examples/request-rtmpose-wholebody133-analysis-smoke.json": "0ea23d12f932f3c43006b8410a9e9e859fcb836a2ed8233ace1cb3c6f30c3631",
+      "tests/test_registry_lifecycle_integration.py": "15202ca72fb16137cf5597eadbe6e054341ae4f54469cb5080baf9511a335836"
+    },
+    "test_command": [
+      "runtime\\rtmpose\\.venv\\Scripts\\python.exe",
+      "-m",
+      "unittest",
+      "tests.test_registry_lifecycle_integration",
+      "tests.test_runtime_primary_contract",
+      "tests.test_pipeline_scoring_registry",
+      "-q"
+    ],
+    "test_modules": [
+      "tests.test_registry_lifecycle_integration",
+      "tests.test_runtime_primary_contract",
+      "tests.test_pipeline_scoring_registry"
+    ],
+    "test_count": 15,
+    "exit_code": 0,
+    "log": ".codex_tmp\\tennis-score-round5-20261028\\registry-deployment-pin-tests.log",
+    "log_sha256": "a227c03473dd600181b779a18c2db38df0e2055b4b15610eefe36bdcd6d03403",
+    "regression_assertion": "current lifecycle relative_path must match Docker COPY, compose default, env example, deployment readme, smoke launcher, and all 3 smoke requests",
+    "source_and_runtime_registry_hashes_unchanged": {
+      "src/rallymate_vision/pipeline.py": "461738e56f5b29da53e62ba724a892cd61e2263dfbb11898cab8b89c37ea8247",
+      "registry-lifecycle.json": "fa2fc82ec031f873c6393a67795a51520471475f4185716efeb488619c37ef9e",
+      "metric-feasibility-pose-wave-v3.json": "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076",
+      "indicator-scoring-requirements-pose-wave-v2.json": "dc5c9e46933e70cc09c24a2abc337a641a24d2986ecc03f5a2ebb44a9e81285b"
+    },
+    "audit_scope": [
+      "root README.md",
+      "deploy docs/env/compose/Dockerfile",
+      "PowerShell/shell/cmd/bat scripts",
+      "three RTMPose deployment smoke request examples"
+    ],
+    "other_active_pins_found": [],
+    "historical_script_pins_preserved": [
+      "scripts/run_fs09_pose_wave_v2.py",
+      "scripts/build_pose_scoring_ab_report.py",
+      "scripts/build_scoring_visual_observer_m81.py",
+      "scripts/evaluate_scoring_truth.py"
+    ],
+    "service_restarted": false,
+    "git_staged_or_committed": false
+  },
+  "effective_final_file_sha256": {
+    "src/rallymate_vision/pipeline.py": "461738e56f5b29da53e62ba724a892cd61e2263dfbb11898cab8b89c37ea8247",
+    "tests/test_registry_lifecycle.py": "24a81cecd6f43109270c2932d5ee0a3f5a4c77af26c890f519453218deb71483",
+    "tests/test_registry_lifecycle_integration.py": "15202ca72fb16137cf5597eadbe6e054341ae4f54469cb5080baf9511a335836",
+    "tests/test_runtime_primary_contract.py": "13a01d8c46a8487905162faeb657e1ae0d5e8b66091fb24825f927893c9a56e9",
+    "registry-lifecycle.json": "fa2fc82ec031f873c6393a67795a51520471475f4185716efeb488619c37ef9e",
+    "metric-feasibility-pose-wave-v3.json": "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076",
+    "indicator-scoring-requirements-pose-wave-v2.json": "dc5c9e46933e70cc09c24a2abc337a641a24d2986ecc03f5a2ebb44a9e81285b",
+    "deploy/Dockerfile": "78b734910288b09c5331e71d2a325730f8817761f1728ffdeae4932e5a2776ff",
+    "deploy/docker-compose.yml": "866991c4aba731b45fba209c868312b1c4954fb8b4fcb84feca94ac00d2c4522",
+    "deploy/.env.example": "a6f1417b6220881992faea6989795a9acaae9ae9db0bd0d8559ce50498c98abf",
+    "deploy/README.md": "e3eb83ba9f9026b56c9792aa0623575825d6f9d89bb010cf219861585895236c",
+    "scripts/run_pose_deployment_smoke.ps1": "a978df9f7341973057e28d2b1520367af0b9997ca9b96bfaa66623077e8b2970",
+    "examples/request-rtmpose-online-smoke.json": "9d6558a38611eb93ca0a8efbeb46a4576a2bb1768e0cb9dbe7f633f27fd58694",
+    "examples/request-rtmpose-analysis-smoke.json": "b34cd13c3ea5e97a423e9e514c46ee8cac62cca5a121854d71f78c0c91741e51",
+    "examples/request-rtmpose-wholebody133-analysis-smoke.json": "0ea23d12f932f3c43006b8410a9e9e859fcb836a2ed8233ace1cb3c6f30c3631"
+  }
+}

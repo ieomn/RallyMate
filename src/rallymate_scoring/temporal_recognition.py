@@ -281,6 +281,23 @@ def _external_peak_sweep_support(samples, side, start, pivot, end):
             "minimum_wrist_y_torso_units": round(min(p[1] for p in window), 6)}
 
 
+def _low_rigid_arm_phase(samples, side, start, end):
+    """A low fixed-length arm needs its own sweep evidence after re-centering.
+
+    This is not a walking classifier or a ban on straight-arm strokes. The
+    existing low-arm/extension limits only trigger a check of the reported
+    phase's own geometry; a sufficiently wide low straight-arm sweep passes.
+    """
+    from .stroke_candidates import SEQUENCE_RULES
+    phase = samples[start:end + 1]
+    if not phase or any(f"{side}_shoulder" not in s.points for s in phase):
+        return False
+    extension = [_distance(s.points[f"{side}_wrist"], s.points[f"{side}_shoulder"]) for s in phase]
+    return (all(s.points[f"{side}_wrist"][1] > SEQUENCE_RULES["low_hand_y_torso"] for s in phase)
+            and max(extension) - min(extension)
+            < SEQUENCE_RULES["minimum_low_arm_range_for_context_only_racket_support_torso"])
+
+
 def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], hand_evidence: Mapping[str, Any]) -> dict[str, Any] | None:
     samples = list(window.samples)
     side = candidate["racket_hand_candidate"]
@@ -293,8 +310,7 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
         # A geometric crossing can occur late in recovery. Use the already
         # validated local preparation context instead of clipping its first
         # 400 ms and accidentally selecting a smaller recovery burst.
-        search = [i for i in range(2, len(samples) - 2)
-                  if samples[i].time <= candidate["end_ms"] + 400]
+        search = list(range(2, len(samples) - 2))
         if not search:
             return None
         pivot = max(search, key=lambda i: speed[i])
@@ -318,6 +334,23 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
                 if not local:
                     return None
                 pivot = max(local, key=lambda i: speed[i])
+        if samples[pivot].time > candidate["end_ms"] + 400:
+            # Symmetric to the earlier-context guard above: a genuinely new
+            # action after a 250 ms observed reset cannot replace this one.
+            # Otherwise a late forward sweep remains in the same already
+            # validated context, rather than being cut off at end + 400 ms.
+            local = [i for i in search if candidate["start_ms"] - 250 <= samples[i].time <= candidate["end_ms"] + 400]
+            if local:
+                local_peak = max(local, key=lambda i: speed[i])
+                quiet = None
+                for i in range(local_peak + 1, pivot):
+                    if speed[i] <= speed[local_peak] * .35:
+                        quiet = i if quiet is None else quiet
+                        if samples[i].time - samples[quiet].time >= 250:
+                            pivot = local_peak
+                            break
+                    else:
+                        quiet = None
     if pivot < 2 or pivot >= len(samples) - 1:
         return None
     acceleration_window = [i for i in range(1, pivot + 1) if samples[pivot].time - samples[i].time <= 650]
@@ -352,16 +385,27 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
                 break
         else:
             quiet_start = None
+    from .paired_motion import paired_wrist_phase_evidence, paired_arc_sweep_evidence
+    paired_acceleration = paired_wrist_phase_evidence(samples, start_ms=samples[acceleration_start].time,
+                                                     end_ms=samples[pivot].time, motion_wrist=side)
+    motion_sequence_evidence = None
     phase_ambiguity = None
     if (candidate["family"] == "baseline" and preparation_complete and follow_complete
             and not candidate["start_ms"] <= samples[pivot].time <= candidate["end_ms"]
             and (samples[follow_end].time <= candidate["start_ms"]
-                 or samples[preparation_start].time >= candidate["end_ms"])):
+                 or samples[preparation_start].time >= candidate["end_ms"]
+                 or _low_rigid_arm_phase(samples, side, preparation_start, follow_end))):
         # A peak just beyond the candidate is still supported by overlapping
         # observations. This guard concerns a separate earlier/later pulse
-        # whose entire reported stages borrow the other interval's evidence.
+        # whose reported stages borrow the other interval's evidence. A low,
+        # nearly fixed-length arm also requires its own sweep: a few overlapping
+        # endpoint frames cannot lend a later arm excursion to an earlier pulse.
         geometry = _external_peak_sweep_support(samples, side, preparation_start, pivot, follow_end)
         if geometry is not None:
+            motion_sequence_evidence = paired_arc_sweep_evidence(samples,
+                start_ms=samples[preparation_start].time, acceleration_start_ms=samples[acceleration_start].time,
+                peak_ms=samples[pivot].time, end_ms=samples[follow_end].time, motion_wrist=side)
+        if geometry is not None and motion_sequence_evidence["status"] != "supported":
             phase_ambiguity = {"reason_code": "external_peak_motion_geometry_unverified",
                 "candidate_wrist": side, "candidate_start_ms": candidate["start_ms"],
                 "candidate_end_ms": candidate["end_ms"], "candidate_motion_peak_ms": samples[pivot].time,
@@ -427,6 +471,8 @@ def _rule_recognition(window: TemporalPoseWindow, candidate: Mapping[str, Any], 
             "phases": phases, "phase_timing_status": "estimated_from_2d_motion",
             "analysis_status": "complete" if preparation_complete and follow_complete else "partial",
             "phase_ambiguity": phase_ambiguity,
+            "paired_wrist_acceleration": paired_acceleration,
+            "motion_sequence_evidence": motion_sequence_evidence,
             "phase_method": "smoothed_wrist_speed_with_observed_slowdown", "contact_confirmed": False}
 
 
@@ -434,7 +480,7 @@ class RuleTemporalBackend:
     """Honest runnable baseline until a tennis-trained adapter is validated."""
 
     def metadata(self) -> dict[str, Any]:
-        return {"backend_id": "pose-racket-temporal-rules", "version": "2.3.1", "kind": "deterministic_rules",
+        return {"backend_id": "pose-racket-temporal-rules", "version": "2.4.0", "kind": "deterministic_rules",
                 "trained_tennis_model": False, "weights": None, "accuracy_validation": "not_established",
                 "input_contract": CONTRACT_VERSION, "phase_comparison": "corresponding_observed_stage_only"}
 

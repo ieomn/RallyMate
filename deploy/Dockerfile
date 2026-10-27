@@ -21,6 +21,8 @@ COPY registry-lifecycle.json \
      metric-measurement-plans.json \
      metric-feasibility-pose-wave-v2.json \
      indicator-scoring-requirements-pose-wave-v1.json \
+     metric-feasibility-pose-wave-v3.json \
+     indicator-scoring-requirements-pose-wave-v2.json \
      /app/
 
 RUN python3.10 -m pip install --upgrade pip \

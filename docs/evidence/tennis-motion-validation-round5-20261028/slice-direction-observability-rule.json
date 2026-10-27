@@ -1,0 +1,35 @@
+{
+  "version": "slice-direction-observability-rule-v1",
+  "frozen_before_implementation_at_utc": "2026-10-27T17:07:34.971645+00:00",
+  "source_before_sha256": "7bf927d25e6c2fff0f62fad1ce40ff889b9f16783c0636060fe9c0a9f7f5e003",
+  "scope": "joint_forward_downward_slice_requirement_only",
+  "pattern_version_after": "tennis-motion-patterns-v1.2.0",
+  "unit_direction_basis_columns": [
+    "verified_forward_direction_2d",
+    "negative_verified_up_direction_2d"
+  ],
+  "condition_number": "sigma_max(B)/sigma_min(B); equivalently sqrt((1+abs(dot(f,-u)))/(1-abs(dot(f,-u))))",
+  "maximum_condition_number": 4.0,
+  "singular_or_nonfinite_condition": "not_measured",
+  "failure_reason": "slice_joint_directions_ill_conditioned",
+  "rationale": "Predeclared engineering relative-error amplification bound of four for separating the two projected directions. No expert calibration, source-derived numeric coaching threshold, player identity, or desired score ordering is claimed. Nearly collinear directions cannot independently support a joint forward-and-down conclusion.",
+  "minimum_separation_from_parallel_or_antiparallel_degrees": 28.07248693585296,
+  "score_curves_and_weights_changed": false,
+  "well_conditioned_formula_changed": false,
+  "diagnostics_retained": [
+    "forward_fraction",
+    "downward_fraction",
+    "direction_basis_condition_number"
+  ],
+  "remaining_limitation": "These remain fixed-camera 2D dot-product direction proxies, not orthogonalized components, world 3D travel, racket path, or force. General oblique-basis decomposition is not introduced in this change.",
+  "test_plan": [
+    "parallel",
+    "antiparallel",
+    "near_collinear",
+    "well_separated",
+    "rotation",
+    "reflection",
+    "condition_bound_exact_boundary"
+  ],
+  "source_or_score_specific_tuning": false
+}

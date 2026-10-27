@@ -1,0 +1,27 @@
+{
+  "version": "round5-grade-rule-stability-v1",
+  "baseline_commit": "a003456",
+  "assessment_score_window_AST_equal_excluding_new_output_metadata": true,
+  "assessment_constants_unchanged": {
+    "RUBRIC_VERSION": true,
+    "DIMENSIONS": true,
+    "METRICS": true,
+    "DRILLS": true
+  },
+  "pattern_metric_score_put_calls_AST_equal": false,
+  "unchanged_files": {
+    "rallymate_service/tennis_profiles.py": {
+      "equal": true,
+      "sha256": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab"
+    },
+    "rallymate_service/tennis_source_motion.py": {
+      "equal": true,
+      "sha256": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9"
+    }
+  },
+  "semantics": "Grade curves and weights unchanged. Recognition geometry and a stricter direction observability gate intentionally changed; no claim all detection thresholds unchanged.",
+  "pattern_metric_name_value_score_arguments_AST_equal": true,
+  "pattern_put_metadata_changed": "fourth diagnostic argument now includes basis condition number; original value and score expressions unchanged",
+  "assessment_source_sha256": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+  "pattern_source_sha256": "2748c48d8f88b4c797f5ad0ff27c63daaa61266d21fb164d12c5d1ae01b509ed"
+}

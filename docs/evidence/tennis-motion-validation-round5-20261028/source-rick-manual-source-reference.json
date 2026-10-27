@@ -1,0 +1,388 @@
+{
+  "version": "round5-rick-manual-source-reference-v1",
+  "frozen_at_utc": "2026-10-27T16:58:49.879960+00:00",
+  "source_relative_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+  "source_video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+  "source_url": "https://www.youtube.com/watch?v=hSH7_FlCoI0",
+  "media_width": 854,
+  "media_height": 476,
+  "source_nominal_fps": 25,
+  "time_semantics": "raw video actual decoder PTS; no slow motion or frame interpolation observed; contact not asserted",
+  "preselected_inference_interval_ms": [
+    44000,
+    64000
+  ],
+  "manual_review_before_new_score_access": true,
+  "new_GPU_scores_or_poses_viewed": false,
+  "split": "previously_observed_regression_challenge",
+  "actions": [
+    {
+      "manual_action_id": "rick-source-fhslice-1",
+      "method": "agent_visual_review",
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "racket_hand_basis": "Single right arm holds and sweeps racket; left arm releases/holds spare balls or gestures independently; body-side continuity, not player name.",
+      "start_ms": 45400,
+      "anchor_ms": 46120,
+      "end_ms": 46800,
+      "anchor_uncertainty_ms": 80,
+      "boundary_uncertainty_ms": 160,
+      "phase_evidence_ms": {
+        "preparation": 45840,
+        "forward_swing": 46080,
+        "follow_through": 46320
+      },
+      "context": "self_fed_ball",
+      "actual_incoming_opponent_ball": false,
+      "source_reference": {
+        "id": "forehand-slice-1",
+        "action_type": "forehand_slice",
+        "start_ms": 46050,
+        "end_ms": 46650,
+        "anchor_ms": 46320,
+        "anchor_uncertainty_ms": 160,
+        "boundary_uncertainty_ms": 160,
+        "eligible_wrist_sides": [
+          "right"
+        ],
+        "anchor_is_contact": false,
+        "context": "self-fed slice demonstration"
+      },
+      "new_review_is_not_silent_old_gt_replacement": true,
+      "forward_direction_2d_verified": false,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ]
+      },
+      "evidence_images": [
+        "rick-five-demo-overview/contact.jpg",
+        "rick-first-dense/contact.jpg",
+        "rick-all-phase-detail/contact.jpg"
+      ],
+      "native_binding_status": "pending_actual_GPU_source_identity_epochs_no_fabricated_track"
+    },
+    {
+      "manual_action_id": "rick-source-fhslice-2",
+      "method": "agent_visual_review",
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "racket_hand_basis": "Single right arm holds and sweeps racket; left arm releases/holds spare balls or gestures independently; body-side continuity, not player name.",
+      "start_ms": 47800,
+      "anchor_ms": 48560,
+      "end_ms": 49200,
+      "anchor_uncertainty_ms": 80,
+      "boundary_uncertainty_ms": 160,
+      "phase_evidence_ms": {
+        "preparation": 48200,
+        "forward_swing": 48560,
+        "follow_through": 48800
+      },
+      "context": "self_fed_ball",
+      "actual_incoming_opponent_ball": false,
+      "source_reference": {
+        "id": "forehand-slice-2",
+        "action_type": "forehand_slice",
+        "start_ms": 48350,
+        "end_ms": 48900,
+        "anchor_ms": 48600,
+        "anchor_uncertainty_ms": 160,
+        "boundary_uncertainty_ms": 160,
+        "eligible_wrist_sides": [
+          "right"
+        ],
+        "anchor_is_contact": false,
+        "context": "self-fed slice demonstration"
+      },
+      "new_review_is_not_silent_old_gt_replacement": true,
+      "forward_direction_2d_verified": false,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ]
+      },
+      "evidence_images": [
+        "rick-five-demo-overview/contact.jpg",
+        "rick-first-dense/contact.jpg",
+        "rick-all-phase-detail/contact.jpg"
+      ],
+      "native_binding_status": "pending_actual_GPU_source_identity_epochs_no_fabricated_track"
+    },
+    {
+      "manual_action_id": "rick-source-fhslice-3",
+      "method": "agent_visual_review",
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "racket_hand_basis": "Single right arm holds and sweeps racket; left arm releases/holds spare balls or gestures independently; body-side continuity, not player name.",
+      "start_ms": 50200,
+      "anchor_ms": 50720,
+      "end_ms": 51480,
+      "anchor_uncertainty_ms": 80,
+      "boundary_uncertainty_ms": 160,
+      "phase_evidence_ms": {
+        "preparation": 50400,
+        "forward_swing": 50760,
+        "follow_through": 51080
+      },
+      "context": "self_fed_ball",
+      "actual_incoming_opponent_ball": false,
+      "source_reference": {
+        "id": "forehand-slice-3",
+        "action_type": "forehand_slice",
+        "start_ms": 50550,
+        "end_ms": 51150,
+        "anchor_ms": 50800,
+        "anchor_uncertainty_ms": 160,
+        "boundary_uncertainty_ms": 160,
+        "eligible_wrist_sides": [
+          "right"
+        ],
+        "anchor_is_contact": false,
+        "context": "self-fed slice demonstration"
+      },
+      "new_review_is_not_silent_old_gt_replacement": true,
+      "forward_direction_2d_verified": false,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ]
+      },
+      "evidence_images": [
+        "rick-five-demo-overview/contact.jpg",
+        "rick-first-dense/contact.jpg",
+        "rick-all-phase-detail/contact.jpg"
+      ],
+      "native_binding_status": "pending_actual_GPU_source_identity_epochs_no_fabricated_track"
+    },
+    {
+      "manual_action_id": "rick-source-fhslice-4",
+      "method": "agent_visual_review",
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "racket_hand_basis": "Single right arm holds and sweeps racket; left arm releases/holds spare balls or gestures independently; body-side continuity, not player name.",
+      "start_ms": 60400,
+      "anchor_ms": 61000,
+      "end_ms": 61400,
+      "anchor_uncertainty_ms": 160,
+      "boundary_uncertainty_ms": 160,
+      "phase_evidence_ms": {
+        "preparation": 60600,
+        "forward_swing": 61000,
+        "follow_through": 61200
+      },
+      "context": "shadow_demonstration",
+      "actual_incoming_opponent_ball": false,
+      "source_reference": {
+        "id": "forehand-slice-4",
+        "action_type": "forehand_slice",
+        "start_ms": 60850,
+        "end_ms": 61300,
+        "anchor_ms": 61040,
+        "anchor_uncertainty_ms": 160,
+        "boundary_uncertainty_ms": 160,
+        "eligible_wrist_sides": [
+          "right"
+        ],
+        "anchor_is_contact": false,
+        "context": "slow shadow slice demonstration; no ball contact"
+      },
+      "new_review_is_not_silent_old_gt_replacement": true,
+      "forward_direction_2d_verified": false,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ]
+      },
+      "evidence_images": [
+        "rick-five-demo-overview/contact.jpg",
+        "rick-first-dense/contact.jpg",
+        "rick-all-phase-detail/contact.jpg"
+      ],
+      "native_binding_status": "pending_actual_GPU_source_identity_epochs_no_fabricated_track"
+    },
+    {
+      "manual_action_id": "rick-source-fhslice-5",
+      "method": "agent_visual_review",
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "racket_hand_basis": "Single right arm holds and sweeps racket; left arm releases/holds spare balls or gestures independently; body-side continuity, not player name.",
+      "start_ms": 61800,
+      "anchor_ms": 62320,
+      "end_ms": 62680,
+      "anchor_uncertainty_ms": 160,
+      "boundary_uncertainty_ms": 160,
+      "phase_evidence_ms": {
+        "preparation": 62000,
+        "forward_swing": 62320,
+        "follow_through": 62480
+      },
+      "context": "shadow_demonstration",
+      "actual_incoming_opponent_ball": false,
+      "source_reference": {
+        "id": "forehand-slice-5",
+        "action_type": "forehand_slice",
+        "start_ms": 62050,
+        "end_ms": 62600,
+        "anchor_ms": 62320,
+        "anchor_uncertainty_ms": 160,
+        "boundary_uncertainty_ms": 160,
+        "eligible_wrist_sides": [
+          "right"
+        ],
+        "anchor_is_contact": false,
+        "context": "slow shadow slice demonstration; no ball contact"
+      },
+      "new_review_is_not_silent_old_gt_replacement": true,
+      "forward_direction_2d_verified": false,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ]
+      },
+      "evidence_images": [
+        "rick-five-demo-overview/contact.jpg",
+        "rick-first-dense/contact.jpg",
+        "rick-all-phase-detail/contact.jpg"
+      ],
+      "native_binding_status": "pending_actual_GPU_source_identity_epochs_no_fabricated_track"
+    }
+  ],
+  "negative_intervals": [
+    {
+      "start_ms": 51700,
+      "end_ms": 59500,
+      "behavior": "explanation_and_racket_position_demonstration_without_independent_complete_forward_swing",
+      "scope": "sampled source observations at52,54,56,58 seconds plus prior frozen negative review; not exhaustive all-frame negative truth"
+    }
+  ],
+  "direction_audit": {
+    "all_source_context_sampled_seconds": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80
+    ],
+    "same_camera_view": true,
+    "net_of_target_court_visible": false,
+    "longitudinal_target_court_axis_visible": false,
+    "court_inside_region_visible": true,
+    "forward_vector_claimed": false,
+    "reason_zh": "全片抽查均相同机位；仅近端白界线与右下场内区域可见，不能把屏幕垂线当物理前向。首拍46.12–46.16只有少量清楚出球帧，随即出画，尚不足分离球高度与地面前向投影，不牵强造forward。"
+  },
+  "evidence_artifacts": [
+    {
+      "path": "rick-five-demo-overview\\evidence.json",
+      "sha256": "dba965dd210b365160936f3c9559a1e504037fea1980c7f476de88e7e5e44c72"
+    },
+    {
+      "path": "rick-five-demo-overview\\contact.jpg",
+      "sha256": "5b56b2ec9ad4a121cc1160f89fa3a2bfce87591a6c1caf0a144bd748c40b998e"
+    },
+    {
+      "path": "rick-first-dense\\evidence.json",
+      "sha256": "8c20dc948b685692aea7c71c8e6651bbe8f7b9c6384d8055960de9517f56bb6c"
+    },
+    {
+      "path": "rick-first-dense\\contact.jpg",
+      "sha256": "b168193229901f1a52a1e91dcdc526e7ed3ea3c65ea7ab54f1d11079c131e81b"
+    },
+    {
+      "path": "rick-all-phase-detail\\evidence.json",
+      "sha256": "e78ec34f29085700853990744c01c532136f245b5f181d86181ffd237a2114ff"
+    },
+    {
+      "path": "rick-all-phase-detail\\contact.jpg",
+      "sha256": "5479328b1c3a7ed077aa36f1543c31ca8f22fe15330ac73373634f154426713c"
+    },
+    {
+      "path": "rick-court-context\\evidence.json",
+      "sha256": "a856c76aca89fb154263839c0465ae710babec029ba585fbdf81be10b6b28db7"
+    },
+    {
+      "path": "rick-court-context\\contact.jpg",
+      "sha256": "1d51bff781fce3bb67bb8c75b3572f09e48fc35d42e860e3f1283764d04d9b26"
+    }
+  ]
+}

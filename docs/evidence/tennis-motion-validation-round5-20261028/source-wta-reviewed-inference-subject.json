@@ -1,0 +1,1386 @@
+{
+  "version": "reviewed-inference-subject-v1",
+  "frozen_at_utc": "2026-10-27T17:10:38.122809+00:00",
+  "source_video_sha256": "2e9513fdcd0781840b7e0e39a53512efc0f48c1ee2592cb29028ace3483c7aa6",
+  "method": "agent_visual_review",
+  "reviewer": "codex_samples_independent_source_review_20261028",
+  "automatic_subject_selection": false,
+  "subject_description_zh": "远端深色服配白胸横条球员，同预注册bbox中的真实切削者；不是近端对手或其后方蓝衣场边人员。",
+  "original_production_run": "gpu-wta/wta-forehand-slice",
+  "original_frames_sha256": "771ccc6ba63aea9a3a5b13397040fc2756c6a1a6c4650efcd536f3a8f8353d86",
+  "preinference_source_reference_sha256": "123f7618709e08a6caa9f2db8307d1f1f67c37e42fca96271a626a1b10533640",
+  "preinference_gpu_preplan_sha256": "9aa6763417eec3c3de303d00ca54be746be2f997ca3a113400eedfb8da415759",
+  "visual_audit": "all68 source frames including missing frame reviewed via five detector-box contact sheets; 67 detected boxes same preselected far athlete; no track replacement/interpolation",
+  "review_images": [
+    "wta-manual-target-review-complete/contact-1.jpg",
+    "wta-manual-target-review-complete/contact-2.jpg",
+    "wta-manual-target-review-complete/contact-3.jpg",
+    "wta-manual-target-review-complete/contact-4.jpg",
+    "wta-manual-target-review-complete/contact-5.jpg"
+  ],
+  "review_evidence_sha256": "4082bc8fab1567fdd1b36655e5a0530c51c406172f037d4c3a15f02fbe692675",
+  "detected_target_frames": 67,
+  "missing_target_frames": 1,
+  "limits": [
+    "source target approx55px tall; some detector boxes do not fully enclose extended racket arm",
+    "frame532 at21280ms target clearly visible in source but detector missing; leave unknown, no manufactured native pose",
+    "this manual target experiment does not repair automatic subject selection success"
+  ],
+  "frames": [
+    {
+      "timestamp_ms": 19800,
+      "source_frame_index": 495,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 495,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        667.842,
+        124.114,
+        693.548,
+        188.476
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000495.png",
+      "source_evidence_sha256": "48fa7158eaa365ca58f5a8d363e6d6f207931c86a1da38c8a143078b3913c2a5"
+    },
+    {
+      "timestamp_ms": 19840,
+      "source_frame_index": 496,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 496,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        667.848,
+        124.169,
+        693.558,
+        188.496
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000496.png",
+      "source_evidence_sha256": "293dacac0072c3137bcf33043b575672471cf3e8dc6330b4b73feef87f55c1b3"
+    },
+    {
+      "timestamp_ms": 19880,
+      "source_frame_index": 497,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 497,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        667.127,
+        126.061,
+        700.253,
+        190.076
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000497.png",
+      "source_evidence_sha256": "7aaf65e1cb252506f453d8ec5cbc4825108e34a868fc82dbd479f7567404ff75"
+    },
+    {
+      "timestamp_ms": 19920,
+      "source_frame_index": 498,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 498,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        666.144,
+        128.76,
+        704.686,
+        191.646
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000498.png",
+      "source_evidence_sha256": "f25e912dfe7dd9921cfe18eb7ecdeae49450c5191d09cbe65d5cd80e86417225"
+    },
+    {
+      "timestamp_ms": 19960,
+      "source_frame_index": 499,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 499,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        666.124,
+        130.237,
+        705.273,
+        191.539
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000499.png",
+      "source_evidence_sha256": "23f6122de95201d9880657352d83e8fc1171c40c5605ef641bd2b0fde91dd4f3"
+    },
+    {
+      "timestamp_ms": 20000,
+      "source_frame_index": 500,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 500,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        665.838,
+        130.225,
+        705.097,
+        191.188
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000500.png",
+      "source_evidence_sha256": "af9018c811e0d6a3606e16e8d5b0c60cb1fc93384c2c03e2f8429c5c868de108"
+    },
+    {
+      "timestamp_ms": 20040,
+      "source_frame_index": 501,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 501,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        665.832,
+        130.273,
+        705.328,
+        191.17
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000501.png",
+      "source_evidence_sha256": "5f53ee5f0dae0ed478da42272e97f9a47867b235f3df1e14dfebc9ad36d41c26"
+    },
+    {
+      "timestamp_ms": 20080,
+      "source_frame_index": 502,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 502,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        665.717,
+        129.368,
+        704.291,
+        191.698
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000502.png",
+      "source_evidence_sha256": "e6105475991fe9dca6ad1774a3428b2bdd021d462425e4715b0b83b2f0dd287a"
+    },
+    {
+      "timestamp_ms": 20120,
+      "source_frame_index": 503,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 503,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        671.854,
+        127.171,
+        704.024,
+        191.443
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000503.png",
+      "source_evidence_sha256": "da17d3a9d7df74bbea46a58d52c36fa509968ad8995a9cb718e8178f9a953cb4"
+    },
+    {
+      "timestamp_ms": 20160,
+      "source_frame_index": 504,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 504,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        675.91,
+        127.725,
+        704.345,
+        191.526
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000504.png",
+      "source_evidence_sha256": "067d454652493bcf0101e0f490acd94c2b89fb81b475a086b1bbe5fb7877f4bc"
+    },
+    {
+      "timestamp_ms": 20200,
+      "source_frame_index": 505,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 505,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        678.344,
+        128.094,
+        705.218,
+        190.696
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000505.png",
+      "source_evidence_sha256": "32f23b3cb7590e5765b8b2119575cea08e258c18551e9627afe25eb83af442b8"
+    },
+    {
+      "timestamp_ms": 20240,
+      "source_frame_index": 506,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 506,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        678.343,
+        128.01,
+        705.193,
+        190.683
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000506.png",
+      "source_evidence_sha256": "cc408b12cd0942a1551eb24c1d7d8a7e7d2520624ceeac73d763d00acc330bed"
+    },
+    {
+      "timestamp_ms": 20280,
+      "source_frame_index": 507,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 507,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        680.343,
+        128.841,
+        709.289,
+        188.851
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000507.png",
+      "source_evidence_sha256": "e675886f93bd24803a09eae3db8d56019ca6cd4662536bdf217217c3ed88eda7"
+    },
+    {
+      "timestamp_ms": 20320,
+      "source_frame_index": 508,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 508,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        685.221,
+        131.476,
+        718.3,
+        188.667
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000508.png",
+      "source_evidence_sha256": "d000dd18439fc2b069fb49f750f24eda5782a7979419a06f14fef292aff4df63"
+    },
+    {
+      "timestamp_ms": 20360,
+      "source_frame_index": 509,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 509,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        686.225,
+        131.644,
+        720.12,
+        188.566
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000509.png",
+      "source_evidence_sha256": "ec5c8b80a46dabe007b5a3449d7da4fb319e69a845e6cbcb6dd4a884737d07ba"
+    },
+    {
+      "timestamp_ms": 20400,
+      "source_frame_index": 510,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 510,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        688.211,
+        133.418,
+        724.341,
+        188.594
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000510.png",
+      "source_evidence_sha256": "bd0a62b2a2df658fc92327088b5129056ed3cfe85571c000da792b0b31194b8a"
+    },
+    {
+      "timestamp_ms": 20440,
+      "source_frame_index": 511,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 511,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        688.39,
+        133.394,
+        724.212,
+        188.443
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000511.png",
+      "source_evidence_sha256": "2d3cb4a1058bb36b6b1deac5a78c7c1b4e9af5796da8f765525d4f3fb53b4964"
+    },
+    {
+      "timestamp_ms": 20480,
+      "source_frame_index": 512,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 512,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        691.287,
+        134.897,
+        728.72,
+        191.462
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000512.png",
+      "source_evidence_sha256": "abdba5e01fed14038787b6fcd27b6b071b59e8647c29553a491a7d215bc71d51"
+    },
+    {
+      "timestamp_ms": 20520,
+      "source_frame_index": 513,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 513,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        692.636,
+        134.466,
+        731.366,
+        190.69
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000513.png",
+      "source_evidence_sha256": "12adfb0038da5e3e22b706ba336833589ce791425f1add10e9001c95c56d1ecf"
+    },
+    {
+      "timestamp_ms": 20560,
+      "source_frame_index": 514,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 514,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        694.471,
+        134.325,
+        731.15,
+        190.678
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000514.png",
+      "source_evidence_sha256": "df66f7f851c3ce77520cd2c0bff6f610cd84aa9ee93592df130365bfb241c7d2"
+    },
+    {
+      "timestamp_ms": 20600,
+      "source_frame_index": 515,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 515,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.033,
+        134.409,
+        731.631,
+        191.159
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000515.png",
+      "source_evidence_sha256": "6c00b52cdd532845515b742155d2ede9d93a553d7dea232318c5eaf5c90c6430"
+    },
+    {
+      "timestamp_ms": 20640,
+      "source_frame_index": 516,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 516,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.063,
+        134.43,
+        731.612,
+        191.166
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000516.png",
+      "source_evidence_sha256": "37fba3ec77550d168863993f700ba154ee51950bcca5e7df5b25378b8346f52f"
+    },
+    {
+      "timestamp_ms": 20680,
+      "source_frame_index": 517,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 517,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.347,
+        133.95,
+        730.51,
+        193.061
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000517.png",
+      "source_evidence_sha256": "61b420d96903299fc1672659146412a12ddaecb1b72363c7510afc54f80bd5e8"
+    },
+    {
+      "timestamp_ms": 20720,
+      "source_frame_index": 518,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 518,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.163,
+        133.727,
+        731.5,
+        193.719
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000518.png",
+      "source_evidence_sha256": "f30e6314490f670c1cd515be7bdf518e3147c927cf0d3fe271165d93f2afcafb"
+    },
+    {
+      "timestamp_ms": 20760,
+      "source_frame_index": 519,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 519,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.456,
+        133.656,
+        734.228,
+        193.691
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000519.png",
+      "source_evidence_sha256": "31eb3dfeb76f941d2a6135e51e3d64aaa585cfb502ec33abdc336b1847be6192"
+    },
+    {
+      "timestamp_ms": 20800,
+      "source_frame_index": 520,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 520,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.422,
+        134.586,
+        735.987,
+        194.59
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000520.png",
+      "source_evidence_sha256": "96526f943fa61876b21fed2f623b0eb847c81813fe220eca82909dc289e959a2"
+    },
+    {
+      "timestamp_ms": 20840,
+      "source_frame_index": 521,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 521,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        695.556,
+        134.547,
+        736.033,
+        194.586
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000521.png",
+      "source_evidence_sha256": "1a00a94cbeebddb790cc916d0ba396eb994f185ea3aab8c1f641da2d4cc610e5"
+    },
+    {
+      "timestamp_ms": 20880,
+      "source_frame_index": 522,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 522,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        699.311,
+        134.725,
+        741.62,
+        196.983
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000522.png",
+      "source_evidence_sha256": "0e26ffa9789b6d9712b22352920b85dc7d47a1321b025660868c5dcf74e7abcd"
+    },
+    {
+      "timestamp_ms": 20920,
+      "source_frame_index": 523,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 523,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        697.055,
+        136.668,
+        747.766,
+        197.157
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000523.png",
+      "source_evidence_sha256": "ce9084b803b15354bbc411c3458529d8f5c60d74295c5cb825ff434dd595313f"
+    },
+    {
+      "timestamp_ms": 20960,
+      "source_frame_index": 524,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 524,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        719.395,
+        142.429,
+        742.34,
+        197.668
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000524.png",
+      "source_evidence_sha256": "85f3ef0c15fde3a958c27c318bff848d967923a3280591a69e68cde2982b3b18"
+    },
+    {
+      "timestamp_ms": 21000,
+      "source_frame_index": 525,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 525,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        718.524,
+        140.13,
+        751.052,
+        199.459
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000525.png",
+      "source_evidence_sha256": "123e05c5831569ec476fe363f5726259227e6a8867717dcb02981d07eb51a6b7"
+    },
+    {
+      "timestamp_ms": 21040,
+      "source_frame_index": 526,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 526,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        718.503,
+        140.099,
+        751.069,
+        199.468
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000526.png",
+      "source_evidence_sha256": "2c77fd3a9ae5b68d929e56ec1ca53d92193189827dfcae34922be8fbdcc70a78"
+    },
+    {
+      "timestamp_ms": 21080,
+      "source_frame_index": 527,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 527,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        717.696,
+        143.348,
+        751.938,
+        200.572
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000527.png",
+      "source_evidence_sha256": "d8de2b3eb2c55c588e03e67bc5e4d994c86ffae47bc201fda48c8a8127bf402f"
+    },
+    {
+      "timestamp_ms": 21120,
+      "source_frame_index": 528,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 528,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        719.372,
+        147.157,
+        752.769,
+        204.98
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000528.png",
+      "source_evidence_sha256": "d76e6243c2e62f61e77008f52e7dd9edd8d822271491cd2b14080664f55c82ef"
+    },
+    {
+      "timestamp_ms": 21160,
+      "source_frame_index": 529,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 529,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        721.305,
+        148.461,
+        753.734,
+        205.352
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000529.png",
+      "source_evidence_sha256": "add39e2cf8eae1b3f7843d7063ad61f3c41869bf00154579736a0591e8538084"
+    },
+    {
+      "timestamp_ms": 21200,
+      "source_frame_index": 530,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 530,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        715.543,
+        151.031,
+        758.489,
+        204.416
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000530.png",
+      "source_evidence_sha256": "0fc02a17ca9c6243e32660a62d904bd380739e21160036bf791f649db6d433e4"
+    },
+    {
+      "timestamp_ms": 21240,
+      "source_frame_index": 531,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 531,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        714.867,
+        150.935,
+        758.636,
+        204.316
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000531.png",
+      "source_evidence_sha256": "92a393fe53f6d8cd4f7829c5f543ae225a5dc216cf115d49334e1a5cacc94938"
+    },
+    {
+      "timestamp_ms": 21280,
+      "source_frame_index": 532,
+      "source_track_id": null,
+      "camera_reference_epoch": 0,
+      "pts": 532,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": null,
+      "reason_code": "reviewed_target_not_detected",
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000532.png",
+      "source_evidence_sha256": "c27ee8c3d0c730b5e277da376c411c93f456c3bcf082139a5cc0687ca5f07bea"
+    },
+    {
+      "timestamp_ms": 21320,
+      "source_frame_index": 533,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 533,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        724.447,
+        154.102,
+        757.616,
+        205.582
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000533.png",
+      "source_evidence_sha256": "443d06a60e797449107211b980c07051f60cdcdf5f713252800ec4a896d68190"
+    },
+    {
+      "timestamp_ms": 21360,
+      "source_frame_index": 534,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 534,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        723.362,
+        152.911,
+        756.426,
+        204.504
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000534.png",
+      "source_evidence_sha256": "a42058f62113945bba28d1889ddc1bd9eccf1cbcc51da79767f597dc7954466d"
+    },
+    {
+      "timestamp_ms": 21400,
+      "source_frame_index": 535,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 535,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        725.928,
+        152.444,
+        756.562,
+        205.181
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000535.png",
+      "source_evidence_sha256": "d11f4a5a47301502f54064dbc802bedfc7ca4f48191112b9a8c7160d59e25ba0"
+    },
+    {
+      "timestamp_ms": 21440,
+      "source_frame_index": 536,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 536,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        726.003,
+        152.449,
+        756.434,
+        205.203
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000536.png",
+      "source_evidence_sha256": "c71f430d14cc293f70a04bb4646c3f0cb49328399ab6d6d98a04a72e920cfd66"
+    },
+    {
+      "timestamp_ms": 21480,
+      "source_frame_index": 537,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 537,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        727.752,
+        151.581,
+        756.551,
+        204.929
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000537.png",
+      "source_evidence_sha256": "17f1b5d6d04475ee8589b276c245427983f1c4c7b4553cf77ce192c0456d5952"
+    },
+    {
+      "timestamp_ms": 21520,
+      "source_frame_index": 538,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 538,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        728.202,
+        149.176,
+        755.247,
+        205.749
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000538.png",
+      "source_evidence_sha256": "91e74ed9f1f811d30bc87989975d7489adb254222d1926d76fb98e9efe88b7f8"
+    },
+    {
+      "timestamp_ms": 21560,
+      "source_frame_index": 539,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 539,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        728.244,
+        148.068,
+        757.718,
+        206.107
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000539.png",
+      "source_evidence_sha256": "f42f118600515cc4dabf5450f3be797ec07dc99cfc543f802846971b52b5bd64"
+    },
+    {
+      "timestamp_ms": 21600,
+      "source_frame_index": 540,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 540,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        727.904,
+        146.792,
+        758.315,
+        205.608
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000540.png",
+      "source_evidence_sha256": "ef2124cad6dd422aefd2422462d5573d1c170000c2ea0b68451b4810da47ff45"
+    },
+    {
+      "timestamp_ms": 21640,
+      "source_frame_index": 541,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 541,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        727.906,
+        146.787,
+        758.3,
+        205.626
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000541.png",
+      "source_evidence_sha256": "e8c6393d39215bc1df5e245583ea95f7ff958f8c3377c3b31d6647a5abfb6d3a"
+    },
+    {
+      "timestamp_ms": 21680,
+      "source_frame_index": 542,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 542,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        726.051,
+        145.078,
+        757.758,
+        204.964
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000542.png",
+      "source_evidence_sha256": "9d64d08526300542f23f3dcdba4345a021e57c59f96b753f7caef70dd4e51bb3"
+    },
+    {
+      "timestamp_ms": 21720,
+      "source_frame_index": 543,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 543,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        722.167,
+        143.896,
+        754.746,
+        204.619
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000543.png",
+      "source_evidence_sha256": "e24baa7278cf98e998a7712e66b013a2f9a323a4b9829d2023011bf2f06d3e35"
+    },
+    {
+      "timestamp_ms": 21760,
+      "source_frame_index": 544,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 544,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        719.584,
+        143.632,
+        753.177,
+        205.343
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000544.png",
+      "source_evidence_sha256": "c534df35600ce1fe341af8d7e592fa6836c14c370f912ca4f03868cafb07047b"
+    },
+    {
+      "timestamp_ms": 21800,
+      "source_frame_index": 545,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 545,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        716.259,
+        142.986,
+        752.004,
+        205.472
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000545.png",
+      "source_evidence_sha256": "16a4a2425470906d6e34b32a6c8d66960c7b2ef11a34bc95fe0a51d03bb47e45"
+    },
+    {
+      "timestamp_ms": 21840,
+      "source_frame_index": 546,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 546,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        716.261,
+        142.943,
+        752.003,
+        205.466
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000546.png",
+      "source_evidence_sha256": "b5d76cd5e08772de63ed5fb4997464bcfe09f358578deb6fc59f8e0a702d7936"
+    },
+    {
+      "timestamp_ms": 21880,
+      "source_frame_index": 547,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 547,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        712.958,
+        143.103,
+        751.63,
+        205.532
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000547.png",
+      "source_evidence_sha256": "b97bd59160c66c755a69f3827a9f7b282ae4e57ee79ce1023bc5ab6faff19129"
+    },
+    {
+      "timestamp_ms": 21920,
+      "source_frame_index": 548,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 548,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        713.182,
+        142.751,
+        751.121,
+        205.194
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000548.png",
+      "source_evidence_sha256": "0d29396e4ac75e17da10d712ce9f4da5bfa7a7c7066cce998ddca15abc5f76d9"
+    },
+    {
+      "timestamp_ms": 21960,
+      "source_frame_index": 549,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 549,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        712.883,
+        141.999,
+        750.303,
+        205.435
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000549.png",
+      "source_evidence_sha256": "0a8ab3768a2e0572e9f5a736f3b17f01307db27fd03bf5f39eed2f743ab7c54a"
+    },
+    {
+      "timestamp_ms": 22000,
+      "source_frame_index": 550,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 550,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        712.281,
+        141.743,
+        748.116,
+        205.595
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000550.png",
+      "source_evidence_sha256": "670772a586052ab94a9b9378ad3862190061b6bd8826572d293e989f313a06e7"
+    },
+    {
+      "timestamp_ms": 22040,
+      "source_frame_index": 551,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 551,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        712.306,
+        141.762,
+        748.071,
+        205.598
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000551.png",
+      "source_evidence_sha256": "2a11822d85d7b1271a816a7f2b3adde84a1613521bc0d5fcc9454c4980c08441"
+    },
+    {
+      "timestamp_ms": 22080,
+      "source_frame_index": 552,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 552,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        711.057,
+        140.065,
+        742.037,
+        203.978
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000552.png",
+      "source_evidence_sha256": "c80c5057026fb1d8ad5ad5810e78ee98bca4e9ac002fb5c0adb3da0677edd680"
+    },
+    {
+      "timestamp_ms": 22120,
+      "source_frame_index": 553,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 553,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        709.559,
+        136.773,
+        733.279,
+        203.642
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000553.png",
+      "source_evidence_sha256": "789dbad8b24c96bb49e97246c7e9194e43b5aac92510c2223a0216b288d788fb"
+    },
+    {
+      "timestamp_ms": 22160,
+      "source_frame_index": 554,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 554,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        708.778,
+        136.5,
+        731.156,
+        203.762
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000554.png",
+      "source_evidence_sha256": "0449411562b1d20aecb61a028c1cf6a4a51de0af03df8e1becbc70156a2020b5"
+    },
+    {
+      "timestamp_ms": 22200,
+      "source_frame_index": 555,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 555,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        707.795,
+        135.844,
+        729.279,
+        202.752
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000555.png",
+      "source_evidence_sha256": "769273128caa718cb0697ad4feef83004b342cde3f832d44bce50ddcdab7e7bd"
+    },
+    {
+      "timestamp_ms": 22240,
+      "source_frame_index": 556,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 556,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        707.839,
+        135.847,
+        729.285,
+        202.678
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000556.png",
+      "source_evidence_sha256": "52426e911aca0a9be8323a58b1da46b117d1c075d4540d08bde45cde733417b6"
+    },
+    {
+      "timestamp_ms": 22280,
+      "source_frame_index": 557,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 557,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        706.273,
+        136.51,
+        728.22,
+        202.128
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000557.png",
+      "source_evidence_sha256": "5b65fc0a554aa927c2848f44d3c96d3018bec322f9afb366ea7f711b1b542bf2"
+    },
+    {
+      "timestamp_ms": 22320,
+      "source_frame_index": 558,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 558,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        701.904,
+        136.615,
+        727.008,
+        200.537
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000558.png",
+      "source_evidence_sha256": "b1366f719255253b58ff1f09b2bedd4b33ca38c978bcdfd8bcbe0a7683cd52f0"
+    },
+    {
+      "timestamp_ms": 22360,
+      "source_frame_index": 559,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 559,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        698.02,
+        137.207,
+        725.55,
+        200.781
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000559.png",
+      "source_evidence_sha256": "82d95f3a88ba786b6eb13ae60f7d35b62ceea7037ec83beedb5172997a70ae86"
+    },
+    {
+      "timestamp_ms": 22400,
+      "source_frame_index": 560,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 560,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        693.798,
+        137.027,
+        723.986,
+        200.4
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000560.png",
+      "source_evidence_sha256": "49c0dd3bc42732dca3d2c60194f0b52678fe14f7b778e6bb4e0c3c161c2f72e9"
+    },
+    {
+      "timestamp_ms": 22440,
+      "source_frame_index": 561,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 561,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        693.835,
+        137.059,
+        723.96,
+        200.391
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000561.png",
+      "source_evidence_sha256": "bd7a4a51e7fae2d87eac108378123d4a0a4b708db6de8f4421a69b86ccb6210d"
+    },
+    {
+      "timestamp_ms": 22480,
+      "source_frame_index": 562,
+      "source_track_id": 7,
+      "camera_reference_epoch": 0,
+      "pts": 562,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "width": 1280,
+      "height": 720,
+      "bbox_px": [
+        689.087,
+        136.565,
+        722.153,
+        200.754
+      ],
+      "reason_code": null,
+      "source_evidence_image": "wta-manual-target-review-complete/frame-000562.png",
+      "source_evidence_sha256": "57d4bb26a536671b0b9f4f091462e4a1e2001cdfe939477c970f5a37d571c032"
+    }
+  ]
+}

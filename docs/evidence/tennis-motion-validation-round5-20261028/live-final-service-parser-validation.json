@@ -1,0 +1,14 @@
+{
+  "version": "tennis-hand-role-frontend-validation-v1",
+  "parser_sha256": "5fdd9bcb8e19071d7a3bf1ba726a32aa061ccd6bc4d114d5438f5e9b995969af",
+  "results": [
+    {
+      "file": "d48cb785-8dbd-4c0b-bf34-16e3ff9e454e-assessment.json",
+      "sha256": "e140487a4a73d1233ce46ece026fc95db0a7ed38a97976fcb98a66abe2bc3f1c",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "paired": 0
+    }
+  ]
+}

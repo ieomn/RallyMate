@@ -32,6 +32,91 @@ function currentFixture() {
   report.episodes.forEach(e => { e.motion_pattern.version = "tennis-motion-patterns-v1.1.0"; });
   return report;
 }
+function roleFixture(paired = false) {
+  const report = currentFixture(); report.version = "tennis-action-assessment-v1.4.0";
+  for (const episode of report.episodes) {
+    episode.motion_pattern.version = "tennis-motion-patterns-v1.2.0";
+    episode.source_selection_epoch = 0; episode.camera_reference_epoch = 0;
+    episode.hand_roles = { version: "tennis-hand-roles-v1", motion_wrist: "right", measurement_hand: "right", primary_racket_hand: null,
+      primary_hand_provenance: { method: "unverified" }, relationship: "motion_only", paired_wrist_evidence: null };
+  }
+  if (paired) {
+    const e = report.episodes[0];
+    e.motion_pattern.profile_id = "baseline_two_hand_backhand"; e.motion_pattern.classification_status = "verified";
+    e.motion_pattern.classification_provenance = { method: "agent_visual_review", reviewer: "source-audit" };
+    report.pattern_coverage.verified_technique_episodes = 1; report.pattern_coverage.generic_episodes = 1;
+    report.pattern_coverage.profiles = ["baseline_two_hand_backhand", "generic"];
+    e.hand_roles = { version: "tennis-hand-roles-v1", motion_wrist: "left", measurement_hand: "right", primary_racket_hand: "right",
+      primary_hand_provenance: { method: "agent_visual_review", reviewer: "source-audit" }, relationship: "verified_two_hand",
+      paired_wrist_evidence: { version: "paired-wrist-phase-v1", status: "supported", motion_wrist: "left", paired_wrist: "right",
+        verification_method: "recomputed_from_source_bound_native_image_observations", start_ms: 1300, end_ms: 1500,
+        declared_phase_start_ms: 1300, declared_phase_end_ms: 1500,
+        source: { person_track_id: 1, selection_epoch: 0, source_selection_epoch: 0, camera_reference_epoch: 0,
+          pose_source: "sam3d", observation_semantics: "monocular_model_estimate", normalization_basis: "full_torso", video_sha256: tennisHash },
+        stats: { coupled_fraction: 1, max_wrist_gap: .2, displacement_ratio: .8, net_displacement_cosine: .95,
+          left_peak_speed_torso_per_s: 3, right_peak_speed_torso_per_s: 2.8, left_displacement_torso: .8, right_displacement_torso: .7 },
+        sample_binding: [1300, 1400, 1500].map((t, i) => ({ frame_index: i, timestamp_ms: t,
+          source_binding: { video_sha256: tennisHash, frame_index: i, person_track_id: 1, selection_epoch: 0, camera_reference_epoch: 0,
+            pts: t, time_base_num: 1, time_base_den: 1000, timestamp_ms: t } })),
+      } };
+  }
+  return report;
+}
+
+test("v1.4 separates measured motion wrist from reviewed primary grip and keeps earlier history", () => {
+  for (const raw of [roleFixture(), roleFixture(true)]) {
+    const parsed = parse(raw); assert.ok(parsed); assert.deepEqual(parse(parsed), parsed);
+  }
+  assert.ok(parse(currentFixture())); assert.ok(parse(tennisScopedFixture())); assert.ok(parse(tennisFixture()));
+  const shifted = roleFixture(true);
+  for (const sample of shifted.episodes[0].hand_roles.paired_wrist_evidence.sample_binding) {
+    sample.source_binding.pts += 4000; sample.source_binding.timestamp_ms += 4000;
+  }
+  assert.ok(parse(shifted), "source decoder PTS may have a constant nonzero origin");
+  const detail = renderToStaticMarkup(createElement(TennisAssessmentDetails, { report: parse(roleFixture(true)) }));
+  assert.match(detail, /阶段参考：左腕/); assert.match(detail, /画面复核：右手持拍/);
+  assert.match(detail, /同一加速阶段共同运动/); assert.match(detail, /不确认握柄上下次序或真实触球/);
+  assert.match(detail, /持拍手尚未独立确认/);
+  assert.doesNotMatch(detail, /paired_wrist|source_binding|phase_role/);
+});
+
+test("v1.4 cannot authorize another hand using a label, flag, wrong source, or borrowed phase", () => {
+  for (const mutate of [r => { delete r.episodes[0].hand_roles; },
+    r => { r.episodes[0].hand_roles.primary_hand_provenance = { method: "source_bound_racket_association" }; },
+    r => { r.episodes[0].hand_roles.measurement_hand = "left"; },
+    r => { r.episodes[0].hand_roles.motion_wrist = "right"; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence = null; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.source.video_sha256 = "b".repeat(64); },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.source.camera_reference_epoch = 3; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.end_ms = 1600; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.sample_binding[1].source_binding.pts = 500; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.sample_binding[1].timestamp_ms = 1700; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.sample_binding[1].timestamp_ms = 1410; },
+    r => { r.episodes[0].hand_roles.paired_wrist_evidence.stats.net_displacement_cosine = NaN; },
+    r => { r.episodes[0].motion_pattern.profile_id = "baseline_forehand"; r.pattern_coverage.profiles = ["baseline_forehand", "generic"]; }]) {
+    const raw = roleFixture(true); mutate(raw); assert.equal(parse(raw), null);
+  }
+  const unclear = roleFixture(); unclear.episodes[0].hand_roles.primary_racket_hand = "right";
+  assert.equal(parse(unclear), null);
+});
+
+test("hand role conflicts explain missing phase evidence without inventing a player identity failure", () => {
+  const raw = roleFixture(); raw.episode_validity.push({ episode_id: "wrong-hand", status: "rejected", reason_codes: ["reviewed_hand_conflicts_with_motion_phases"] },
+    { episode_id: "unpaired", status: "rejected", reason_codes: ["two_hand_phase_source_binding_unverified"] });
+  const html = render(parse(raw));
+  assert.match(html, /持拍手与阶段参考手腕不同/); assert.match(html, /双手动作的阶段对应尚未核验/);
+  assert.doesNotMatch(html, /归属失败|two_hand|reviewed_hand/);
+});
+
+test("v1.4 uses pattern1.2 and explains inseparable slice directions as missing observations", () => {
+  const raw=roleFixture();
+  raw.episodes[0].motion_pattern.requirements.find(r=>r.status==='not_measured').reason='slice_joint_directions_ill_conditioned';
+  const parsed=parse(raw); assert.ok(parsed);
+  const detail=renderToStaticMarkup(createElement(TennisAssessmentDetails,{report:parsed}));
+  assert.match(detail,/向前与向下方向过于接近/); assert.doesNotMatch(detail,/ill_conditioned/);
+  raw.episodes[0].motion_pattern.version='tennis-motion-patterns-v1.1.0';
+  assert.equal(parse(raw),null);
+});
 
 test("new action scores bind to the current job, video hash and original source time", () => {
   const fixture = tennisFixture(), original = structuredClone(fixture);
@@ -244,7 +329,7 @@ test("pose discontinuity is explained separately from subject identity without e
   const parsed = parse(raw); assert.ok(parsed);
   assert.deepEqual(parse(parsed), parsed);
   const html = render(parsed) + renderToStaticMarkup(createElement(TennisAssessmentDetails, { report: parsed }));
-  assert.match(html, /持拍手姿态不连续，暂无法评分/);
+  assert.match(html, /测量手腕姿态不连续，暂无法评分/);
   assert.match(html, /持拍手尚未可靠确认，两侧手腕先后运动/);
   assert.match(html, /运动峰落在候选挥拍区间外，选中片段自身缺少完整前挥证据/);
   assert.match(html, /另一只手的姿态不连续，依赖该手的项目按实际缺测处理/);

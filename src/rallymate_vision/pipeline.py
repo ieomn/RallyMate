@@ -32,7 +32,11 @@ from rallymate_scoring.scoring_context import load_scoring_reference_context
 from rallymate_scoring.report import write_analysis_report
 from rallymate_scoring.scoring_loop_report import write_scoring_loop_report
 from rallymate_scoring.stroke_candidates import recognize_strokes_from_artifacts
-from rallymate_tracking import build_primary_player_artifacts
+from rallymate_tracking import (
+    PRIMARY_PLAYER_ALGORITHM_VERSION,
+    build_primary_player_artifacts,
+    registry_required_primary_player_version,
+)
 from rallymate_vision.contracts import FRAME_SCHEMA_VERSION, SCHEMA_VERSION, PipelineRequest
 from rallymate_vision.inference import Yolo26Perception
 from rallymate_vision.pose.metadata import keypoint_schema, sha256_file
@@ -56,7 +60,7 @@ from rallymate_vision.validation import (
 )
 
 
-DEFAULT_SCORING_FEASIBILITY_REGISTRY = "metric-feasibility-pose-wave-v2.json"
+DEFAULT_SCORING_FEASIBILITY_REGISTRY = "metric-feasibility-pose-wave-v3.json"
 DEFAULT_REGISTRY_LIFECYCLE_MANIFEST = "registry-lifecycle.json"
 DEFAULT_TRUSTED_PROMOTION_LEDGER = (
     "calibration/trusted-calibration-promotion-ledger.json"
@@ -229,6 +233,20 @@ def _verify_scoring_registry_authority_unchanged(
     if sha256_file(authority.path).lower() != authority.file_sha256:
         raise RuntimeError(
             "scoring feasibility registry changed after production preflight"
+        )
+
+
+def validate_pipeline_primary_player_contract(registry: dict) -> None:
+    """Reject incompatible runtime inputs before creating a run or using GPU.
+
+    Historical registries remain available for replay with their original
+    timelines. New inference always emits the current selector contract.
+    """
+    required = registry_required_primary_player_version(registry["indicators"])
+    if required is not None and required != PRIMARY_PLAYER_ALGORITHM_VERSION:
+        raise ValueError(
+            "pipeline primary-player producer does not match feasibility registry: "
+            f"required {required}, producer {PRIMARY_PLAYER_ALGORITHM_VERSION}"
         )
 
 
@@ -523,6 +541,7 @@ def _run_pipeline(
     # feature-record assertion. Load and validate it before creating a run
     # directory, loading GPU models, or writing inference artifacts.
     feasibility_registry = registry_authority.payload
+    validate_pipeline_primary_player_contract(feasibility_registry)
     # Fail before expensive GPU work if explicit scoring mathematics are
     # malformed or duplicated. Validation also
     # precedes output-directory creation so a rejected request leaves no run shell.

@@ -1,0 +1,16 @@
+{
+  "version": "tennis-source-inventory-v1",
+  "sources": [
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "job_id": "round5-dimitrov-return-context",
+      "source_relative_path": "service_data/uploads/8fc81362-5475-4677-a176-7239aa6bdc40.mp4",
+      "source_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "artifact_run_id": "dimitrov-return-context",
+      "source_run_id": "round5-context-dimitrov-return-context",
+      "native_run_root": ".codex_tmp/tennis-score-round5-20261028/gpu-dimitrov-context",
+      "not_service_job_uuid": true,
+      "original_service_source_job_id": "8fc81362-5475-4677-a176-7239aa6bdc40"
+    }
+  ]
+}

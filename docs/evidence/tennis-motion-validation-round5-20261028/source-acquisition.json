@@ -1,0 +1,24 @@
+{
+  "version": "round5-source-acquisition-v1",
+  "created_at_utc": "2026-10-27T17:05:26.709492+00:00",
+  "sources": [
+    {
+      "source_id": "feel-tennis-fhslice-lead",
+      "url": "https://www.youtube.com/watch?v=WXyzSxUhExo",
+      "status": "not_acquired",
+      "reason": "public yt-dlp request required bot/login verification; stopped without credentials or alternate restricted access",
+      "selected_by_score": false
+    },
+    {
+      "source_id": "wta-stephens-forehand-slice",
+      "url": "https://www.wtatennis.com/videos/1374603/2019-acapulco-shot-of-the-day-stephens-wicked-forehand-slice",
+      "public_player": "https://players.brightcove.net/6041795521001/te01Hqw71_default/index.html?videoId=6062758768001",
+      "status": "acquired",
+      "source_video_sha256": "2e9513fdcd0781840b7e0e39a53512efc0f48c1ee2592cb29028ace3483c7aa6",
+      "public_metadata_sha256": "45ac403efbbb75f7774fe1199ae32b84591a35778511415935c8ed181a14d5f3",
+      "manual_source_review_before_inference": true,
+      "selected_by_score": false,
+      "media_redistributed": false
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "serve": {
+      "person_track_id": 2,
+      "start_ms": 6350,
+      "peak_ms": 7517,
+      "end_ms": 7650
+    },
+    "receiver_episode": {
+      "person_track_id": 1,
+      "start_ms": 7833,
+      "peak_ms": 8150,
+      "end_ms": 8750
+    },
+    "ball_track": 64,
+    "ball_times": [
+      8000,
+      8033,
+      8067,
+      8083,
+      8217,
+      8233
+    ],
+    "serve_to_first_ball_ms": 483,
+    "first_ball_server_distance": 904.1081854613396,
+    "server_proximity_limit": 81.67137303412288,
+    "last_ball_receiver_distance": 112.09318124440533,
+    "receiver_proximity_limit": 128.36904177374993,
+    "ball_observed_displacement": 107.38727249200696,
+    "displacement_limit": 379.09646503594564,
+    "gates": {
+      "first_observation_within_450ms_of_serve": false,
+      "first_point_near_server": false,
+      "last_point_near_receiver": true,
+      "observed_path_spans_35pct_player_separation": false
+    }
+  }
+]

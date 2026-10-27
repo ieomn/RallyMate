@@ -20,7 +20,7 @@ from .temporal_recognition import (LABELS, RuleTemporalBackend, TemporalRecognit
                                    _classification, build_temporal_window, samples_are_continuous,
                                    validate_recognition, wrist_kinematics)
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v2.7.1"
+ANALYSIS_VERSION = "stroke-motion-analysis-v2.8.0"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
     "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
@@ -196,6 +196,9 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
                                  "phase_timing_status": prediction["phase_timing_status"]},
         "method": "rule_based" if backend.metadata().get("kind") == "deterministic_rules" else "temporal_backend",
         "contact_confirmed": False, "racket_hand": side,
+        "motion_wrist": side, "racket_hand_semantics": "motion_wrist_legacy_alias",
+        "racket_hand_evidence": {**hand_evidence, "status": "supported" if hand_evidence.get("hand") else "unavailable",
+                                 "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"},
         "measurement_provenance": measurement_provenance(samples),
         "wrist_kinematics": measurement_contract(),
         "phases": phases,
@@ -208,7 +211,10 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "metric_notes_zh": metric_notes + ([] if preparation_complete and follow_complete else ["连续画面尚未覆盖完整准备或随挥，缺失阶段不作补全。"]),
         "evidence": {"pose_samples": len(samples), "racket_associated_frames": candidate["evidence"]["racket_associated_frames"],
                      "hand_evidence": dict(hand_evidence), "phase_method": prediction["phase_method"],
+                     "paired_wrist_acceleration": prediction.get("paired_wrist_acceleration"),
+                     "motion_sequence_evidence": prediction.get("motion_sequence_evidence"),
                      "supporting_motion_candidates": candidate.get("evidence", {}).get("supporting_motion_candidates", []),
+                     "racket_support_transfer": candidate.get("evidence", {}).get("racket_support_transfer"),
                      "process_continuity": {"selection_epoch": samples[0].selection_epoch,
                                             "camera_reference_epoch": getattr(samples[0], "camera_reference_epoch", None),
                                             "camera_compensated": getattr(samples[0], "camera_compensated", False),

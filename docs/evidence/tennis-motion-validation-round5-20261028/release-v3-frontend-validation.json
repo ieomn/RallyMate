@@ -1,0 +1,456 @@
+{
+  "version": "round5-release-v3-frontend-validation-v1",
+  "parser_sha256": "5fdd9bcb8e19071d7a3bf1ba726a32aa061ccd6bc4d114d5438f5e9b995969af",
+  "all_evaluations_completed": true,
+  "code_changed_during_execution": false,
+  "report_count": 37,
+  "results": [
+    {
+      "directory": "release-v3-regression",
+      "evaluation_sha256": "d8eca5e8c925b552beb711fa796b3627bc325dd34569f4e29adbbcf2d5dbed02",
+      "completed_at_utc": "2026-10-27T17:36:12.866068+00:00",
+      "code_changed_during_execution": false,
+      "results": [
+        {
+          "file": "development-ordinary-a-assessment.json",
+          "sha256": "7bab1cfd5e4cba6e43d80044a1bc48a2b1fab236b958682555a5507152156078",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 85.71,
+          "episodes": 15,
+          "paired": 0
+        },
+        {
+          "file": "development-sharapova-assessment.json",
+          "sha256": "491b54157111620d7bbbfb6a4c389751ab8ebdd24a56884f76ea5fa5ebf1837f",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 86.52,
+          "episodes": 2,
+          "paired": 0
+        },
+        {
+          "file": "regression-ordinary-b-assessment.json",
+          "sha256": "4baa17d9bf632e8da45829c481c15d9269d08eb0d30b8b548f2ec4ea60529f1f",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 91.17,
+          "episodes": 7,
+          "paired": 0
+        },
+        {
+          "file": "regression-nadal-assessment.json",
+          "sha256": "74f9618def12855ceb9701f5680c879a4c499893c2cba94c6575064bfbf178f9",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 95.59,
+          "episodes": 2,
+          "paired": 0
+        },
+        {
+          "file": "repeat-ordinary-a-assessment.json",
+          "sha256": "a51f1edede61152a65f3e07d60f58e5d4c8b91535ac1cc86f827a0b51eab5f2e",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 85.71,
+          "episodes": 15,
+          "paired": 0
+        },
+        {
+          "file": "holdout-ordinary-indoor-white-assessment.json",
+          "sha256": "786e2ab4138556f7538b138c9d5ed6a7109489146fa3871f48136a9b88caf2a0",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 79.17,
+          "episodes": 4,
+          "paired": 0
+        },
+        {
+          "file": "holdout-ordinary-lowres-close-assessment.json",
+          "sha256": "634eb8a29216706ba0d6f0a0c16a564adfa981ec83718f5f9f29907e75a21315",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 95.94,
+          "episodes": 2,
+          "paired": 0
+        },
+        {
+          "file": "holdout-ordinary-outdoor-side-assessment.json",
+          "sha256": "65037af13b93f1552f9b386b41d12fd581f3e8d7874d39bafa0f3b47e2f33403",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 84.04,
+          "episodes": 3,
+          "paired": 0
+        },
+        {
+          "file": "holdout-ordinary-night-assessment.json",
+          "sha256": "d6d2505024f49e8b5b2f970a2a884e733e7782e3ada4bec6987647fe8c15cf02",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 88.78,
+          "episodes": 4,
+          "paired": 0
+        },
+        {
+          "file": "holdout-ordinary-indoor-pink-assessment.json",
+          "sha256": "e15987fdb552ae6a9c473253175a48b88a35dc9d9521e092a9e33b3b38d8ee8c",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 81.83,
+          "episodes": 2,
+          "paired": 0
+        },
+        {
+          "file": "holdout-ordinary-user-existing-assessment.json",
+          "sha256": "645f21d3932eb3d08574f638d5a9448bbfe72df5748de5197f117ea6a5ce79f5",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 95.24,
+          "episodes": 6,
+          "paired": 0
+        },
+        {
+          "file": "white-360p-crf35-assessment.json",
+          "sha256": "f5ef8b61df44b23aeb4d06fbc0daa486cb4cd6ce84ebecf3cd1d3101cc4190af",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 73.69,
+          "episodes": 3,
+          "paired": 0
+        },
+        {
+          "file": "white-mirror-assessment.json",
+          "sha256": "05304015a219c104533cc04a4dfcb8180019faa64c6300038f64d294976d5afc",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 80.62,
+          "episodes": 4,
+          "paired": 0
+        },
+        {
+          "file": "rola-ncaa-2013-assessment.json",
+          "sha256": "c573e52eed9790b6eb7cbcb8d9147b19d60d33c108f8c3492bc93e2a04abfb0b",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 96.19,
+          "episodes": 1,
+          "paired": 0
+        },
+        {
+          "file": "tsitsipas-alcaraz-2023-assessment.json",
+          "sha256": "07c10868754b51c2bfad705cf4f8fdc0e085027554d0689567497d8587a69403",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "davis-cup-2018-04-assessment.json",
+          "sha256": "d3806a7c942b67322bb44fa83bfa6cb75ba2bc29e09c11745acaf3aa44e2b953",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "davis-cup-2018-05-assessment.json",
+          "sha256": "410eec31e2005daccbbddfc8d0d09f3e7cbe783027ea202bd95ba8e65142bdab",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "mendeley-outdoor-side-view-OCS01-assessment.json",
+          "sha256": "0abaf934f9cfc2bb95f03ade1830525594db05844a0abe53065e3affd9acfb7d",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 90,
+          "episodes": 1,
+          "paired": 0
+        },
+        {
+          "file": "mendeley-outdoor-top-view-OCT01-assessment.json",
+          "sha256": "3f5463c3b9e2b3d7d0afbcec035003816369848b1aef920d470e17cdfcd9c6bf",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "mendeley-indoor-side-view-ICS01-assessment.json",
+          "sha256": "35692a6151dec1c60e0a091638d17e70d7cf5f5b1b4678b923eb682841929478",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 88.09,
+          "episodes": 1,
+          "paired": 0
+        },
+        {
+          "file": "mendeley-indoor-top-view-ICT01-assessment.json",
+          "sha256": "12a74e83907e5daf34126a4a927c029b3d58208a5e9db09f9b3ed7b39062189f",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "djokovic-usopen-2012-assessment.json",
+          "sha256": "1aa21f3e1a1de5d8f232ebec176dd0c9a63bf9afb4c0b4b6b4149cff819ef880",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 92.05,
+          "episodes": 5,
+          "paired": 0
+        },
+        {
+          "file": "schiavone-usopen-2012-assessment.json",
+          "sha256": "4500a85867c6e60acd80b829b76cdad3f44ceb953b6423f01ab833ecec7f6e65",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 93.7,
+          "episodes": 3,
+          "paired": 0
+        },
+        {
+          "file": "federer-cilic-usopen-2012-assessment.json",
+          "sha256": "f73369f4246e91f6153c83433c585c8f345bd568e12263d66538f74577c6ce92",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "dimitrov-tiafoe-usopen-2024-assessment.json",
+          "sha256": "1a497fc6df462ed92c371e13c4b2285a3373c19be63045880c6b8c2dd5be2f72",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        }
+      ]
+    },
+    {
+      "directory": "release-v3-gpu-regression",
+      "evaluation_sha256": "a11722ee234ba33991f647a522c159b2aead310d6d95df1015834f9a9d699c3a",
+      "completed_at_utc": "2026-10-27T17:35:16.284440+00:00",
+      "code_changed_during_execution": false,
+      "results": [
+        {
+          "file": "gpu-pink-assessment.json",
+          "sha256": "0ad158fc8c78c32bbf59ee74f3f532dd36ef4765249434b1711e6ac8c64da7cb",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 81.83,
+          "episodes": 2,
+          "paired": 0
+        },
+        {
+          "file": "gpu-night-assessment.json",
+          "sha256": "356375858e83ee0bc46e1974225588a43163a8abfe06c3c6c9a78d941922ba5c",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 88.78,
+          "episodes": 4,
+          "paired": 0
+        },
+        {
+          "file": "gpu-federer-assessment.json",
+          "sha256": "39ba1fe0d49f6b5bcc639bd6df396ece3b36ea187ed97d2cbbe6932bdf093e7a",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "gpu-white-assessment.json",
+          "sha256": "3f22811fd96000b41f685bd13a6a2762740c8d540493d0d6b4d0c8fb2d4cadac",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 79.17,
+          "episodes": 4,
+          "paired": 0
+        }
+      ]
+    },
+    {
+      "directory": "release-v3-fresh-native",
+      "evaluation_sha256": "b076086d020fec3f21032e7cae0e3166ad78559bebd0a8ede27ba27674c09d5e",
+      "completed_at_utc": "2026-10-27T17:35:16.501341+00:00",
+      "code_changed_during_execution": false,
+      "results": [
+        {
+          "file": "dimitrov-tiafoe-real-return-assessment.json",
+          "sha256": "5482d0946060fd0a963aac2538bdcf14e52e384f5f89911fc50618f71c0c6366",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 90.78,
+          "episodes": 2,
+          "paired": 0
+        },
+        {
+          "file": "thetis-p1_fslice_s1-assessment.json",
+          "sha256": "8e3a70fe84d51c2962bddc662dadc8352a0fe6143811efc057ead2650a6cce0f",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 61.13,
+          "episodes": 1,
+          "paired": 0
+        },
+        {
+          "file": "thetis-p32_fslice_s1-assessment.json",
+          "sha256": "05003e7830bfb8c6e316a3a9e453f37d54e850a391d583efebb59b7100cae199",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 81.58,
+          "episodes": 1,
+          "paired": 0
+        },
+        {
+          "file": "davis05-fresh-assessment.json",
+          "sha256": "e707ceab82f8cb771776c7e26401cc996b4739298f1380201e892fceffb5bb40",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        }
+      ]
+    },
+    {
+      "directory": "release-v3-new-native-first2",
+      "evaluation_sha256": "031611d12c7c1997ee20667c29c2ed93a8f3d42e2a271128b5c0d90fd09cd36e",
+      "completed_at_utc": "2026-10-27T17:35:15.407055+00:00",
+      "code_changed_during_execution": false,
+      "results": [
+        {
+          "file": "dimitrov-return-context-assessment.json",
+          "sha256": "8fa78842b67b910d9679a26c1ea13722db19324a79f97afff76a044b07ae5b11",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 84.07,
+          "episodes": 1,
+          "paired": 0
+        },
+        {
+          "file": "rick-forehand-slice-assessment.json",
+          "sha256": "97e00eb74482062139c1a559fe6577b70f89b0da70fa9564672f7f5ce0718344",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "scored",
+          "score": 89.25,
+          "episodes": 5,
+          "paired": 0
+        }
+      ]
+    },
+    {
+      "directory": "release-v3-wta-native",
+      "evaluation_sha256": "cb1d605f0b66645161f6e2c15096144c4fa6b983a158bdd53073f9f7e3e1ff92",
+      "completed_at_utc": "2026-10-27T17:35:11.438428+00:00",
+      "code_changed_during_execution": false,
+      "results": [
+        {
+          "file": "wta-default-selection-assessment.json",
+          "sha256": "939e7d7d7fd3ce6e5f8bf661668a12f8687f0dff7dbdee812bc2aed4ef7ecff1",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        },
+        {
+          "file": "wta-reviewed-selection-assessment.json",
+          "sha256": "ca805858f514521fe9933e426113fb7497ae92a731c1d3ddec36d7cd4b0a5196",
+          "parsed": true,
+          "roundtrip": true,
+          "roundtrip_data_equal": true,
+          "status": "unavailable",
+          "score": null,
+          "episodes": 0,
+          "paired": 0
+        }
+      ]
+    }
+  ]
+}

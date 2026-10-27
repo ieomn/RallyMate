@@ -1,0 +1,47 @@
+{
+  "version": "tennis-score-hand-role-freeze-v1",
+  "created_at_utc": "2026-10-27T17:12:09.869163+00:00",
+  "assessment_version": "tennis-action-assessment-v1.4.0",
+  "rubric_version": "tennis-action-rubric-v1.3.0",
+  "pattern_version": "tennis-motion-patterns-v1.2.0",
+  "grade_curves_and_weights_unchanged": true,
+  "hand_role_semantics": "source phase motion wrist and independently reviewed primary grip hand are separate; opposite wrist is authorized only for exact-reviewed two-hand technique plus original-source recomputed same-acceleration paired motion",
+  "slice_observability_rule_sha256": "8f093c3731cacda6850e70f6ab9e6d5943dbdd0d97293ca7f8fe395ba8fccfa2",
+  "slice_numerical_boundary_relative_tolerance": 1e-12,
+  "code_sha256": {
+    "src/rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+    "src/rallymate_service/tennis_motion_patterns.py": "2748c48d8f88b4c797f5ad0ff27c63daaa61266d21fb164d12c5d1ae01b509ed",
+    "scoring-demo-web/app/lib/tennis-assessment.ts": "5fdd9bcb8e19071d7a3bf1ba726a32aa061ccd6bc4d114d5438f5e9b995969af",
+    "scoring-demo-web/app/TennisAssessmentSummary.tsx": "47a826c87d30f30f2f8219afb7a3c4eb5859d68d92c44670de18469d98a61fb6",
+    "tests/test_tennis_hand_roles.py": "6a7e6f27c0792ee3df903aadcbb9da72c02d6712af40de32b2185b1ab7ca7584",
+    "tests/test_tennis_motion_patterns.py": "a85b76bca0f9d84ea5466d1eb18856cff624a05b8ddf46218aa022b96ce8a149",
+    "scoring-demo-web/tests/tennis-assessment.test.mjs": "0b7ad939b524a8591d5240451212267c28908ac425da89b602eb287a0566bb0e"
+  },
+  "service_restarted": false,
+  "native_or_old_evidence_modified": false,
+  "prior_freeze_sha256": "0b67f7261c2392bc3ab4870b2ddc743861e84aace649b66c4d3a4836ae261698",
+  "validation": {
+    "backend_related_before_slice_guard": {
+      "modules": 7,
+      "passed": 115
+    },
+    "backend_hand_and_pattern_after_guard": {
+      "passed": 44
+    },
+    "frontend_full": {
+      "total": 923,
+      "passed": 922,
+      "skipped": 1,
+      "failed": 0
+    },
+    "frontend_final_wording_related": {
+      "passed": 22
+    },
+    "build": "passed_after_final_wording",
+    "lint": "passed_before_wording_only_change",
+    "typecheck": "passed",
+    "real_source_parser_roundtrip_reports": 3,
+    "real_source_parser_evidence": "hand-role-pattern12-diagnostic/frontend-validation.json",
+    "rick_manual_evidence": "rick-manual-pattern-results-v1.2.json"
+  }
+}

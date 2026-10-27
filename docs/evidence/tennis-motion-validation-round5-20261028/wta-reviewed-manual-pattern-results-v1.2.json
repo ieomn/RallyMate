@@ -1,0 +1,84 @@
+{
+  "schema_version": "tennis-manual-pattern-validation-v1",
+  "created_at_utc": "2026-10-27T17:19:47.087695+00:00",
+  "gpu_requested": false,
+  "automatic_assessments_modified": false,
+  "manual_windows_count": 1,
+  "code_sha256_at_start": {
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9",
+    "src/rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "2748c48d8f88b4c797f5ad0ff27c63daaa61266d21fb164d12c5d1ae01b509ed",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+  },
+  "code_sha256_at_end": {
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9",
+    "src/rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "2748c48d8f88b4c797f5ad0ff27c63daaa61266d21fb164d12c5d1ae01b509ed",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+  },
+  "code_changed_during_execution": false,
+  "input_sha256": {
+    ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-source-inventory.json": "8a91a274e4c4c457892dfd7417f101a2295883594654a490aebdfa7c8778aaee",
+    ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-manual-pattern-windows-bound.json": "be4318448e6d9a0a2205c3ba5497223cae1a89f484a93d799bdb46f2fc1516da",
+    ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/sam3d_frames.jsonl": "09809597b0c07e1daede209727fd8972d8848a07780424df38f28be16d79c0ea",
+    ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/primary-player.jsonl": "3d7bd37170338d6eccbde41e31fe5fb72b80189ae7afe008877ec9e8e3697276",
+    ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/frames.jsonl": "d01ef347e884c80c9ed1d0f1e78edc48e1709c46232766b079ae861ef773c29a",
+    ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/validation-summary.json": "33715eaf1eea5c51e9efcea5283f4b84bac143b43011db0d4fd46c8c25de953f"
+  },
+  "input_unchanged": true,
+  "results": [
+    {
+      "window_id": "wta-far-forehand-slice-1-pattern",
+      "sample_id": "wta-forehand-slice",
+      "job_id": "round5-wta-reviewed-far-subject",
+      "artifact_run_id": "wta-reviewed-far-subject",
+      "artifact_job_id": "round5-wta-reviewed-wta-reviewed-far-subject",
+      "source_video_sha256": "2e9513fdcd0781840b7e0e39a53512efc0f48c1ee2592cb29028ace3483c7aa6",
+      "source_video_sha256_verified": true,
+      "source_video_relative_path": ".codex_tmp/tennis-score-round5-20261028/sources/wta-stephens-forehand-slice.mp4",
+      "window_source": "manual-reviewed-window",
+      "included_in_automatic_assessment": false,
+      "automatic_segmentation_success": false,
+      "classification_method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261028",
+      "requested_window": {
+        "start_ms": 20800,
+        "prep_end_ms": 21080,
+        "peak_ms": 21320,
+        "end_ms": 21760
+      },
+      "technique": "forehand_slice",
+      "technique_review_status": "reviewed",
+      "racket_hand": "right",
+      "subject_id": "subject-1",
+      "return_context_review": {
+        "status": "not_applicable"
+      },
+      "input_artifact_sha256": {
+        ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/sam3d_frames.jsonl": "09809597b0c07e1daede209727fd8972d8848a07780424df38f28be16d79c0ea",
+        ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/primary-player.jsonl": "3d7bd37170338d6eccbde41e31fe5fb72b80189ae7afe008877ec9e8e3697276",
+        ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/frames.jsonl": "d01ef347e884c80c9ed1d0f1e78edc48e1709c46232766b079ae861ef773c29a",
+        ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed/wta-reviewed-far-subject/validation-summary.json": "33715eaf1eea5c51e9efcea5283f4b84bac143b43011db0d4fd46c8c25de953f"
+      },
+      "source_segment_reasons": {
+        "primary_subject_unverified": 1
+      },
+      "limitations": [
+        "manual_phase_boundaries_are_visual_estimates",
+        "not_automatic_segmentation_success",
+        "not_expert_technique_ground_truth",
+        "exact_ball_contact_unverified"
+      ],
+      "status": "unavailable",
+      "reason": "manual_window_not_covered_by_one_bound_subject_segment"
+    }
+  ]
+}

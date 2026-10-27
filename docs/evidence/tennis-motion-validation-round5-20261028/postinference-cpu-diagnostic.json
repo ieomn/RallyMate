@@ -1,0 +1,32 @@
+{
+  "scope": "private registry copy only primary version changed; diagnostic not production publication",
+  "registry_original_sha256": "dc5f3622d70f22ad5da8e933dcd38e7d8c4c57fd5255941fa521704984feac0e",
+  "registry_original_unchanged": true,
+  "inputs_sha256": {
+    "frames.jsonl": "a0049e2572e9ac3ab9a0fabc08c21175cf6fe6e1b7d37d84c70d38b639fbff72",
+    "primary-player.jsonl": "890ad650f60f9fa708a382bbd6edb253f66b4522897574a543bef0a0d5fe5be7",
+    "sam3d_frames.jsonl": "857aa3516cd5810948737455c9904df578195b35e85f81631554050641f59c9e",
+    "46fcd84f-a324-4a55-864b-94a525831a89.mp4": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a"
+  },
+  "inputs_unchanged": true,
+  "loop_completed": true,
+  "events": 33,
+  "indicators": 143,
+  "reports": {
+    "calculation-readiness": {
+      "status": "all_registry_indicators_have_measured_candidate",
+      "sha256": "30c80962514eeade5ea0d25729c3e822eda60600b3b46b8e1546392459fe7c06"
+    },
+    "indicator-measurement-portfolio": {
+      "status": "all_registry_indicators_measured",
+      "sha256": "c7a727cf695fe60c5fd107d75db8fca71df4200e883f854d36fbba46c72529cf"
+    },
+    "scoring-cycle-measurement": {
+      "status": "complete_cycle_available",
+      "sha256": "6724f030f4e26a64e308b5fe0c4fcdb0d2ac99b88751aab8546f4365bd71d088"
+    }
+  },
+  "html_bytes": 1718033,
+  "elapsed_seconds": 34.68224989999726,
+  "unverified_finalization": "normal summary assembly, validate_run_artifacts, analyze_scoring_readiness and final HTML not invoked; no production artifacts changed"
+}

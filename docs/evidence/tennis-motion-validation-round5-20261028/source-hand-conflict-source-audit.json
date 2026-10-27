@@ -1,0 +1,431 @@
+{
+  "version": "round5-six-hand-conflict-source-audit-v1",
+  "created_at_utc": "2026-10-27T17:00:17.158684+00:00",
+  "input_conflict_receipt": ".codex_tmp/tennis-score-round4-20261027/live-exact-review-rebinding-v3.json",
+  "input_receipt_sha256": "617b06dec2a9895ffcd3be91f64a930e7eaed50b6a6bfbfb2ce4b85b1a699023",
+  "source_only_no_new_model_scores_or_poses_viewed": true,
+  "manual_gt_modified": false,
+  "labels_ordinary_professional_unchanged": true,
+  "counts": {
+    "conflicts": 6,
+    "single_hand_right_source_clear": 2,
+    "two_hand_actions": 4,
+    "two_hand_automatic_window_preparation_only": 1,
+    "native_joint_side_swap_proven_from_source_alone": 0
+  },
+  "interpretation_zh": "两条单手动作确有足够画面辨认右手持拍，左腕不是其唯一击球手；四条双反需要区分惯用/柄手、共同手与计算运动腕，不可统一忽略。第一条Djoko还存在独立分段错误，旧窗只有准备。识别具体native左右错标或选错平衡臂须与真实逐帧关节叠图比对，不从源图虚构模型因果。",
+  "actions": [
+    {
+      "sample_id": "development-sharapova",
+      "old_v3_episode_id": "6ba7c566df5726c2fd9d",
+      "candidate_window_ms": {
+        "start": 13647,
+        "peak": 13981,
+        "end": 14314
+      },
+      "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "source_relative_path": "service_data/uploads/5b0b659e-7049-4749-8312-97e72e73a287.mp4",
+      "existing_manual_racket_hand": "right",
+      "model_candidate_motion_wrist": "left",
+      "visual_technique": "baseline_two_hand_backhand",
+      "decision": "two_hand_role_requires_separate_semantics",
+      "observation": "Both arms stay coupled at the racket through the forward action. Left moving wrist is not automatically incompatible with a right-hand racket role; grip ordering is not resolved from this resolution.",
+      "review_method": "agent_visual_review",
+      "native_left_right_swap_determined": false,
+      "native_overlay_needed_to_distinguish_joint_swap_from_wrong_motion_wrist": false,
+      "subject_identity": "same target player across the reviewed source window; automated track assignment is separately audited",
+      "mirroring": {
+        "new_processing_horizontal_flip": false,
+        "readable_source_text_not_reversed": true,
+        "historical_remote_mirroring_fully_excluded": false,
+        "anatomical_side_basis": "body/arm continuity and independent free-arm separation, not name or career handedness"
+      },
+      "hand_grip_order_upper_lower": "unresolved_in_two_hand_overlap",
+      "source_frame_observations": [
+        {
+          "requested_timestamp_ms": 13600.0,
+          "source_frame_index": 408,
+          "source_timestamp_ms": 13613.6,
+          "raw_png": "sharapova-two-conflicts/frame-000408.png",
+          "raw_png_sha256": "4a8aff48346ca7866baeefa7d794b315aca92832586f51ed954b1960e1d47684",
+          "observation_zh": "双手在身体侧前共同准备"
+        },
+        {
+          "requested_timestamp_ms": 13800.0,
+          "source_frame_index": 414,
+          "source_timestamp_ms": 13813.800000000001,
+          "raw_png": "sharapova-two-conflicts/frame-000414.png",
+          "raw_png_sha256": "ceacd15c640d8c48773c2671c3e2a040e8c037aa7888bae29f3f7f63ff08220d",
+          "observation_zh": "双手共同持拍，手臂向身体左侧来球准备"
+        },
+        {
+          "requested_timestamp_ms": 13980.0,
+          "source_frame_index": 419,
+          "source_timestamp_ms": 13980.633333333333,
+          "raw_png": "sharapova-two-conflicts/frame-000419.png",
+          "raw_png_sha256": "ddb87679e7e77cdf92fa52c5c192c3db859b4ad5b05f53b94fe6953c481efe7f",
+          "observation_zh": "双手共同前挥"
+        },
+        {
+          "requested_timestamp_ms": 14100.0,
+          "source_frame_index": 423,
+          "source_timestamp_ms": 14114.1,
+          "raw_png": "sharapova-two-conflicts/frame-000423.png",
+          "raw_png_sha256": "40e8f6eb3186c8a060c213a223f80d5f28b9bf56d8bc956b14dc7696607504d0",
+          "observation_zh": "双手共同高位随挥"
+        }
+      ],
+      "contact_sheet": {
+        "path": "sharapova-two-conflicts/contact.jpg",
+        "sha256": "2632211823d50d9ae7c337192a54626b984d31ea8d1f6da8098ab937a13d519f"
+      },
+      "source_metadata_sha256": "e6e1444c6c825258fe18dc697c679bc2ff025a78bbf51926c759097d31f57024"
+    },
+    {
+      "sample_id": "development-sharapova",
+      "old_v3_episode_id": "55f5aaf96af4fea5effd",
+      "candidate_window_ms": {
+        "start": 15849,
+        "peak": 16116,
+        "end": 16550
+      },
+      "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "source_relative_path": "service_data/uploads/5b0b659e-7049-4749-8312-97e72e73a287.mp4",
+      "existing_manual_racket_hand": "right",
+      "model_candidate_motion_wrist": "left",
+      "visual_technique": "baseline_forehand",
+      "decision": "single_hand_source_right_candidate_left_not_supported_as_grip",
+      "observation": "Source clearly shows right arm holding racket and left arm extended separately for balance. This is not a two-handed-role exception. Candidate motion wrist may be balance arm or native mislabeled; source alone cannot distinguish these implementation causes. The 16.116 peak is early preparation; follow-through is clearly visible later near16.683.",
+      "review_method": "agent_visual_review",
+      "native_left_right_swap_determined": false,
+      "native_overlay_needed_to_distinguish_joint_swap_from_wrong_motion_wrist": true,
+      "subject_identity": "same target player across the reviewed source window; automated track assignment is separately audited",
+      "mirroring": {
+        "new_processing_horizontal_flip": false,
+        "readable_source_text_not_reversed": true,
+        "historical_remote_mirroring_fully_excluded": false,
+        "anatomical_side_basis": "body/arm continuity and independent free-arm separation, not name or career handedness"
+      },
+      "hand_grip_order_upper_lower": "single_striking_grip_right",
+      "source_frame_observations": [
+        {
+          "requested_timestamp_ms": 16120.000000000002,
+          "source_frame_index": 483,
+          "source_timestamp_ms": 16116.099999999999,
+          "raw_png": "sharapova-two-conflicts/frame-000483.png",
+          "raw_png_sha256": "e0bd338bcb59a6c84d7f623a9d6d39b7ccd2a539cfa5c2e79c5db3b9f9f1af89",
+          "observation_zh": "背后视角右臂持拍向右后举起，左臂在身体前左侧"
+        },
+        {
+          "requested_timestamp_ms": 16300.0,
+          "source_frame_index": 489,
+          "source_timestamp_ms": 16316.300000000001,
+          "raw_png": "sharapova-two-conflicts/frame-000489.png",
+          "raw_png_sha256": "8023073af5d52791857c3088418fd1cdccf990eb05b29325ef18dba3b287f3e7",
+          "observation_zh": "右臂仍持拍，左臂独立伸向来球"
+        },
+        {
+          "requested_timestamp_ms": 16500.0,
+          "source_frame_index": 495,
+          "source_timestamp_ms": 16516.5,
+          "raw_png": "sharapova-two-conflicts/frame-000495.png",
+          "raw_png_sha256": "f412ede3fb58f56534f9c3a3d45ed66360070eedf065164ed9aff7202f65426f",
+          "observation_zh": "右手单拍前挥"
+        },
+        {
+          "requested_timestamp_ms": 16700.0,
+          "source_frame_index": 500,
+          "source_timestamp_ms": 16683.333333333332,
+          "raw_png": "sharapova-two-conflicts/frame-000500.png",
+          "raw_png_sha256": "3451eabcc3c3cd96578db83878cddb6f0fe003944eec01b2ae7a9f88636619b0",
+          "observation_zh": "右手随挥；此帧晚于原窗end16550"
+        }
+      ],
+      "contact_sheet": {
+        "path": "sharapova-two-conflicts/contact.jpg",
+        "sha256": "2632211823d50d9ae7c337192a54626b984d31ea8d1f6da8098ab937a13d519f"
+      },
+      "source_metadata_sha256": "e6e1444c6c825258fe18dc697c679bc2ff025a78bbf51926c759097d31f57024"
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "old_v3_episode_id": "7efacd58c13a8083ed67",
+      "candidate_window_ms": {
+        "start": 2933,
+        "peak": 3333,
+        "end": 4267
+      },
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "source_relative_path": "service_data/uploads/1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0.mp4",
+      "existing_manual_racket_hand": "right",
+      "model_candidate_motion_wrist": "left",
+      "visual_technique": "backhand_slice",
+      "decision": "single_hand_source_right_candidate_left_not_supported_as_grip",
+      "observation": "Both hands assist preparation, but forward/down slice is executed with right hand; left arm separates behind for balance. Left is not the striking grip during the reviewed forward phase.",
+      "review_method": "agent_visual_review",
+      "native_left_right_swap_determined": false,
+      "native_overlay_needed_to_distinguish_joint_swap_from_wrong_motion_wrist": true,
+      "subject_identity": "same target player across the reviewed source window; automated track assignment is separately audited",
+      "mirroring": {
+        "new_processing_horizontal_flip": false,
+        "readable_source_text_not_reversed": true,
+        "historical_remote_mirroring_fully_excluded": false,
+        "anatomical_side_basis": "body/arm continuity and independent free-arm separation, not name or career handedness"
+      },
+      "hand_grip_order_upper_lower": "single_striking_grip_right",
+      "source_frame_observations": [
+        {
+          "requested_timestamp_ms": 3000.0,
+          "source_frame_index": 89,
+          "source_timestamp_ms": 3000.0,
+          "raw_png": "ordinary-b-hand-crop/frame-000089.png",
+          "raw_png_sha256": "119f569e5eb5f80ecddf426c4506d1e7e1aa512c9a27260c0687223c32631b2a",
+          "observation_zh": "双手靠近拍，准备"
+        },
+        {
+          "requested_timestamp_ms": 3200.0,
+          "source_frame_index": 95,
+          "source_timestamp_ms": 3200.0,
+          "raw_png": "ordinary-b-hand-crop/frame-000095.png",
+          "raw_png_sha256": "9c533e9b5aafce77b3f8848a6fed0c7dc7a845f73ce1f9b1f234937dc05c9d43",
+          "observation_zh": "球拍仍高于来球，开始向下前挥"
+        },
+        {
+          "requested_timestamp_ms": 3300.0,
+          "source_frame_index": 98,
+          "source_timestamp_ms": 3300.0000000000005,
+          "raw_png": "ordinary-b-hand-crop/frame-000098.png",
+          "raw_png_sha256": "796afad27695ccea7e0dc86c520adc72ecdfd60f2fccad2f8c16bffe5266df62",
+          "observation_zh": "右臂单手持拍向来球，左臂开始独立展开"
+        },
+        {
+          "requested_timestamp_ms": 3400.0,
+          "source_frame_index": 101,
+          "source_timestamp_ms": 3400.0000000000005,
+          "raw_png": "ordinary-b-hand-crop/frame-000101.png",
+          "raw_png_sha256": "2326fb567191dc5cf43ec1767fd5aa5535c491df2c40df8afc4cc19f18bc175c",
+          "observation_zh": "右手拍低位越身，左臂向后平衡"
+        }
+      ],
+      "contact_sheet": {
+        "path": "ordinary-b-hand-crop/contact.jpg",
+        "sha256": "1401f24efd319d5f81b883a28ef5dddc1f33e9713c9964121991b78cf9586312"
+      },
+      "source_metadata_sha256": "a24a9051861d5ec4dbf86093aa9363d2a0b75af4a0c0f7d915dd378c3f4ab138"
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "old_v3_episode_id": "d23a29e5fbbfdd08ad7b",
+      "candidate_window_ms": {
+        "start": 3420,
+        "peak": 4004,
+        "end": 4379
+      },
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "source_relative_path": "service_data/uploads/0a6ba301-acd4-46a9-829f-7afc832a552c.mp4",
+      "existing_manual_racket_hand": "right",
+      "model_candidate_motion_wrist": "left",
+      "visual_technique": "baseline_two_hand_backhand",
+      "decision": "wrong_stage_preparation_only_plus_two_hand_roles",
+      "observation": "The referenced automatic window is preparation for the later real two-handed backhand. At4.379 racket remains left/back;4.505 incoming ball is still away. Actual forward movement4.588–4.713 and follow-through4.796–4.88 lie outside the original window. Do not fix only hand compatibility and call the old window complete.",
+      "review_method": "agent_visual_review",
+      "native_left_right_swap_determined": false,
+      "native_overlay_needed_to_distinguish_joint_swap_from_wrong_motion_wrist": false,
+      "subject_identity": "same target player across the reviewed source window; automated track assignment is separately audited",
+      "mirroring": {
+        "new_processing_horizontal_flip": false,
+        "readable_source_text_not_reversed": true,
+        "historical_remote_mirroring_fully_excluded": false,
+        "anatomical_side_basis": "body/arm continuity and independent free-arm separation, not name or career handedness"
+      },
+      "hand_grip_order_upper_lower": "unresolved_in_two_hand_overlap",
+      "source_frame_observations": [
+        {
+          "requested_timestamp_ms": 4000.0,
+          "source_frame_index": 96,
+          "source_timestamp_ms": 4003.9999999999995,
+          "raw_png": "djokovic-first-dense/frame-000096.png",
+          "raw_png_sha256": "a21b8ffea08940a1c9e48781a1cdeafb0c03c6315d74b60930cdcc74cb247728",
+          "observation_zh": "双手持拍在左后，就位准备"
+        },
+        {
+          "requested_timestamp_ms": 4400.0,
+          "source_frame_index": 105,
+          "source_timestamp_ms": 4379.375,
+          "raw_png": "djokovic-first-dense/frame-000105.png",
+          "raw_png_sha256": "749945f1f7c0a7440e7d9d54dd0f58483bfa82fcdde8368ac22663f02d512f51",
+          "observation_zh": "仍在左后引拍，没有前挥"
+        },
+        {
+          "requested_timestamp_ms": 4500.0,
+          "source_frame_index": 108,
+          "source_timestamp_ms": 4504.5,
+          "raw_png": "djokovic-first-dense/frame-000108.png",
+          "raw_png_sha256": "a3d6b95da29fa8f0f917b07419ce0b0179bdbf68435933a231e10b21f79ff0e5",
+          "observation_zh": "来球仍在右侧远处，双手拍在左后"
+        },
+        {
+          "requested_timestamp_ms": 4600.0,
+          "source_frame_index": 110,
+          "source_timestamp_ms": 4587.916666666667,
+          "raw_png": "djokovic-first-dense/frame-000110.png",
+          "raw_png_sha256": "d2d29f5fd3288e5aad7eee0b4c2e58d319176aebfe8381b16624b593f0a87d2f",
+          "observation_zh": "开始向前挥拍"
+        },
+        {
+          "requested_timestamp_ms": 4700.0,
+          "source_frame_index": 113,
+          "source_timestamp_ms": 4713.041666666666,
+          "raw_png": "djokovic-first-dense/frame-000113.png",
+          "raw_png_sha256": "1e2303365dc5956b5dfa180d0193857ff95a321c2098b531da7b4ad2a89a6b8d",
+          "observation_zh": "拍已向身体前方移动"
+        },
+        {
+          "requested_timestamp_ms": 4800.0,
+          "source_frame_index": 115,
+          "source_timestamp_ms": 4796.458333333333,
+          "raw_png": "djokovic-first-dense/frame-000115.png",
+          "raw_png_sha256": "34a429b4ed153271daf501bdd2551c17a4dfaac51a7ad231a11e03b2b79cb33d",
+          "observation_zh": "双手高位随挥"
+        }
+      ],
+      "contact_sheet": {
+        "path": "djokovic-first-dense/contact.jpg",
+        "sha256": "f9342386934d3efc60c3a0527d71db8cb187b7fff1331cc37c35395c0c45cc3e"
+      },
+      "source_metadata_sha256": "579aa0cdbcb4021109f555daabf3e4cddefa6174f4edb30c935729a1af9f6a54"
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "old_v3_episode_id": "69984efbae626c0f8358",
+      "candidate_window_ms": {
+        "start": 12429,
+        "peak": 12763,
+        "end": 13222
+      },
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "source_relative_path": "service_data/uploads/0a6ba301-acd4-46a9-829f-7afc832a552c.mp4",
+      "existing_manual_racket_hand": "right",
+      "model_candidate_motion_wrist": "left",
+      "visual_technique": "baseline_two_hand_backhand",
+      "decision": "two_hand_role_requires_separate_semantics",
+      "observation": "Both wrists act together near the racket handle through the forehand-opposite-side stroke; exact handle upper/lower hand order is partly occluded. Left wrist motion alone does not establish wrong right-hand review; dominant/grip hand and measurement wrist require separate roles.",
+      "review_method": "agent_visual_review",
+      "native_left_right_swap_determined": false,
+      "native_overlay_needed_to_distinguish_joint_swap_from_wrong_motion_wrist": false,
+      "subject_identity": "same target player across the reviewed source window; automated track assignment is separately audited",
+      "mirroring": {
+        "new_processing_horizontal_flip": false,
+        "readable_source_text_not_reversed": true,
+        "historical_remote_mirroring_fully_excluded": false,
+        "anatomical_side_basis": "body/arm continuity and independent free-arm separation, not name or career handedness"
+      },
+      "hand_grip_order_upper_lower": "unresolved_in_two_hand_overlap",
+      "source_frame_observations": [
+        {
+          "requested_timestamp_ms": 12600.0,
+          "source_frame_index": 302,
+          "source_timestamp_ms": 12595.916666666666,
+          "raw_png": "djokovic-conflicts/frame-000302.png",
+          "raw_png_sha256": "c06eed280d89cac42be9f39c1737eec10a6d7c8adcc8a17f8ab1892112febe13",
+          "observation_zh": "双手在拍柄处共同引拍"
+        },
+        {
+          "requested_timestamp_ms": 12800.0,
+          "source_frame_index": 307,
+          "source_timestamp_ms": 12804.458333333332,
+          "raw_png": "djokovic-conflicts/frame-000307.png",
+          "raw_png_sha256": "aa3a0325efbc849dd38d43563d5a9a61a07ff7e58a9a7df8b0e39cc76c99ec78",
+          "observation_zh": "双手共同前挥"
+        },
+        {
+          "requested_timestamp_ms": 13000.0,
+          "source_frame_index": 312,
+          "source_timestamp_ms": 13013.0,
+          "raw_png": "djokovic-conflicts/frame-000312.png",
+          "raw_png_sha256": "2376596838b2633adf1c458e7b65a2432135a7bc4c06186dbacd4b683daf9498",
+          "observation_zh": "双手共同随挥"
+        }
+      ],
+      "contact_sheet": {
+        "path": "djokovic-conflicts/contact.jpg",
+        "sha256": "70ea414e5378f8ae2ce5b44499be683ae517276c8c6df34df1aaeb19031ddd74"
+      },
+      "source_metadata_sha256": "026c7eeed8fe6b0009d7033998088cc024cdc1be87095512704170687b358311"
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "old_v3_episode_id": "ba86bdae6dc081c68366",
+      "candidate_window_ms": {
+        "start": 17476,
+        "peak": 17851,
+        "end": 18185
+      },
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "source_relative_path": "service_data/uploads/0a6ba301-acd4-46a9-829f-7afc832a552c.mp4",
+      "existing_manual_racket_hand": "right",
+      "model_candidate_motion_wrist": "left",
+      "visual_technique": "baseline_two_hand_backhand",
+      "decision": "two_hand_role_requires_separate_semantics",
+      "observation": "Both arms remain coupled in forward stroke and follow-through; separate recovery later visibly leaves racket in right hand while left arm is free. Anatomical grip ordering during overlap is not fully resolved; do not silently relabel dominant right as left.",
+      "review_method": "agent_visual_review",
+      "native_left_right_swap_determined": false,
+      "native_overlay_needed_to_distinguish_joint_swap_from_wrong_motion_wrist": false,
+      "subject_identity": "same target player across the reviewed source window; automated track assignment is separately audited",
+      "mirroring": {
+        "new_processing_horizontal_flip": false,
+        "readable_source_text_not_reversed": true,
+        "historical_remote_mirroring_fully_excluded": false,
+        "anatomical_side_basis": "body/arm continuity and independent free-arm separation, not name or career handedness"
+      },
+      "hand_grip_order_upper_lower": "unresolved_in_two_hand_overlap",
+      "source_frame_observations": [
+        {
+          "requested_timestamp_ms": 17500.0,
+          "source_frame_index": 420,
+          "source_timestamp_ms": 17517.5,
+          "raw_png": "djokovic-hand-crop/frame-000420.png",
+          "raw_png_sha256": "3e917ed7004635f614ccb39bb13deeebfcf1c92f79a47a21b21ee744a7baf317",
+          "observation_zh": "两只手在柄附近共同引拍"
+        },
+        {
+          "requested_timestamp_ms": 17700.0,
+          "source_frame_index": 424,
+          "source_timestamp_ms": 17684.333333333332,
+          "raw_png": "djokovic-hand-crop/frame-000424.png",
+          "raw_png_sha256": "c24db23f5da740928036f37784b844be2aa26e5384ea06c0e9f1a6a4f31a8a9b",
+          "observation_zh": "双手仍共同连接球拍"
+        },
+        {
+          "requested_timestamp_ms": 17900.0,
+          "source_frame_index": 429,
+          "source_timestamp_ms": 17892.875,
+          "raw_png": "djokovic-hand-crop/frame-000429.png",
+          "raw_png_sha256": "52c54cfd97ef510c5f4155d82eea5d0e7056f106c775859127b9ae490a6a94a8",
+          "observation_zh": "双手共同前挥/上举"
+        },
+        {
+          "requested_timestamp_ms": 18100.0,
+          "source_frame_index": 434,
+          "source_timestamp_ms": 18101.416666666664,
+          "raw_png": "djokovic-hand-crop/frame-000434.png",
+          "raw_png_sha256": "df0bc5fba1659727078e8aae81e930b8b790e3f9948e9bcc2d84c19621e9380c",
+          "observation_zh": "双手高位随挥"
+        },
+        {
+          "requested_timestamp_ms": 18500.0,
+          "source_frame_index": 444,
+          "source_timestamp_ms": 18518.5,
+          "raw_png": "djokovic-hand-crop/frame-000444.png",
+          "raw_png_sha256": "5976161c045c966608fce69468a42d8e0cd097e8f181778387b6e2a26506b5a9",
+          "observation_zh": "恢复后右手单持拍、左臂分离"
+        }
+      ],
+      "contact_sheet": {
+        "path": "djokovic-hand-crop/contact.jpg",
+        "sha256": "04adb114d3db66f3937e0c0a78d169c729239622edc71ccc0b68c2c25e42ee13"
+      },
+      "source_metadata_sha256": "c7012efb3da9e7be60baffa8524ec94b842323da022a3445641c0c79f45edfb3"
+    }
+  ]
+}

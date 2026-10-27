@@ -1,0 +1,435 @@
+[
+  {
+    "group": "regression",
+    "sample_id": "development-ordinary-a",
+    "old_bounds": [
+      4967,
+      5733,
+      6633
+    ],
+    "old_side": "left",
+    "raw_candidate": [
+      5367,
+      5567,
+      5800
+    ],
+    "same_candidate_remains": true,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        5933.333,
+        6466.667,
+        6933.333
+      ]
+    ],
+    "audit_conclusion": "old preparation duplication of the retained 6467ms true swing; independent source audit"
+  },
+  {
+    "group": "regression",
+    "sample_id": "development-ordinary-a",
+    "old_bounds": [
+      14633,
+      14967,
+      15533
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      14833,
+      14933,
+      15067
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        14633.333,
+        14966.667,
+        15533.333
+      ]
+    ],
+    "audit_conclusion": "same measured bounds remain scored under another candidate id; not coverage loss"
+  },
+  {
+    "group": "regression",
+    "sample_id": "development-ordinary-a",
+    "old_bounds": [
+      31367,
+      31700,
+      32200
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      31733,
+      31833,
+      32267
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        31366.667,
+        31700.0,
+        32200.0
+      ]
+    ],
+    "audit_conclusion": "same measured bounds remain scored under another candidate id; not coverage loss"
+  },
+  {
+    "group": "regression",
+    "sample_id": "dimitrov-tiafoe-usopen-2024",
+    "old_bounds": [
+      19033,
+      19567,
+      19883
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      19050,
+      19133,
+      19617
+    ],
+    "same_candidate_remains": true,
+    "new_bounds": [
+      19983,
+      20283,
+      20317
+    ],
+    "new_scored": false,
+    "new_phases": [
+      {
+        "phase": "preparation",
+        "label_zh": "准备",
+        "start_ms": 19983,
+        "end_ms": 20233,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      },
+      {
+        "phase": "acceleration",
+        "label_zh": "加速挥拍",
+        "start_ms": 20233,
+        "end_ms": 20283,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      },
+      {
+        "phase": "follow_through",
+        "label_zh": "随挥",
+        "start_ms": null,
+        "end_ms": null,
+        "status": "unavailable",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "stage_not_fully_observed"
+      }
+    ],
+    "new_ambiguity": null,
+    "nearby_scored": [],
+    "audit_conclusion": "source audit confirms no complete swing at old19567 or new20333; not a true action coverage loss; retained21383 is also source-confirmed walking and becomes unavailable in v3"
+  },
+  {
+    "group": "regression",
+    "sample_id": "djokovic-usopen-2012",
+    "old_bounds": [
+      3420,
+      4004,
+      4379
+    ],
+    "old_side": "left",
+    "raw_candidate": [
+      3670,
+      3795,
+      4171
+    ],
+    "same_candidate_remains": true,
+    "new_bounds": [
+      4379,
+      4713,
+      4963
+    ],
+    "new_scored": true,
+    "new_phases": [
+      {
+        "phase": "preparation",
+        "label_zh": "准备",
+        "start_ms": 4379,
+        "end_ms": 4630,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      },
+      {
+        "phase": "acceleration",
+        "label_zh": "加速挥拍",
+        "start_ms": 4630,
+        "end_ms": 4713,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      },
+      {
+        "phase": "follow_through",
+        "label_zh": "随挥",
+        "start_ms": 4713,
+        "end_ms": 4963,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      }
+    ],
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        4379.375,
+        4713.042,
+        4963.292
+      ]
+    ],
+    "audit_conclusion": "old4004 is preparation; new4713 is actual forward sweep, independently source-reviewed"
+  },
+  {
+    "group": "regression",
+    "sample_id": "holdout-ordinary-indoor-white",
+    "old_bounds": [
+      633,
+      1167,
+      1467
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      1133,
+      1267,
+      1367
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [],
+    "audit_conclusion": "real action coverage regression caused by shared-preparation frame-count priority shifting candidate context; v3 direct-evidence priority restores original full bounds"
+  },
+  {
+    "group": "regression",
+    "sample_id": "holdout-ordinary-indoor-white",
+    "old_bounds": [
+      22167,
+      22600,
+      23433
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      22200,
+      22300,
+      22633
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [],
+    "audit_conclusion": "real action coverage regression caused by shared-preparation frame-count priority shifting candidate context; v3 direct-evidence priority restores original full bounds"
+  },
+  {
+    "group": "regression",
+    "sample_id": "repeat-ordinary-a",
+    "old_bounds": [
+      4967,
+      5733,
+      6633
+    ],
+    "old_side": "left",
+    "raw_candidate": [
+      5367,
+      5567,
+      5800
+    ],
+    "same_candidate_remains": true,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        5933.333,
+        6466.667,
+        6933.333
+      ]
+    ],
+    "audit_conclusion": "old preparation duplication of the retained 6467ms true swing; independent source audit"
+  },
+  {
+    "group": "regression",
+    "sample_id": "repeat-ordinary-a",
+    "old_bounds": [
+      14633,
+      14967,
+      15533
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      14833,
+      14933,
+      15067
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        14633.333,
+        14966.667,
+        15533.333
+      ]
+    ],
+    "audit_conclusion": "same measured bounds remain scored under another candidate id; not coverage loss"
+  },
+  {
+    "group": "regression",
+    "sample_id": "repeat-ordinary-a",
+    "old_bounds": [
+      31367,
+      31700,
+      32200
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      31733,
+      31833,
+      32267
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [
+      [
+        31366.667,
+        31700.0,
+        32200.0
+      ]
+    ],
+    "audit_conclusion": "same measured bounds remain scored under another candidate id; not coverage loss"
+  },
+  {
+    "group": "gpu-regression",
+    "sample_id": "gpu-white",
+    "old_bounds": [
+      633,
+      1167,
+      1467
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      1133,
+      1267,
+      1367
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [],
+    "audit_conclusion": "real action coverage regression caused by shared-preparation frame-count priority shifting candidate context; v3 direct-evidence priority restores original full bounds"
+  },
+  {
+    "group": "gpu-regression",
+    "sample_id": "gpu-white",
+    "old_bounds": [
+      22167,
+      22600,
+      23433
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      22200,
+      22300,
+      22633
+    ],
+    "same_candidate_remains": false,
+    "new_bounds": null,
+    "new_scored": false,
+    "new_phases": null,
+    "new_ambiguity": null,
+    "nearby_scored": [],
+    "audit_conclusion": "real action coverage regression caused by shared-preparation frame-count priority shifting candidate context; v3 direct-evidence priority restores original full bounds"
+  },
+  {
+    "group": "fresh-native",
+    "sample_id": "dimitrov-tiafoe-real-return",
+    "old_bounds": [
+      19033,
+      19567,
+      19883
+    ],
+    "old_side": "right",
+    "raw_candidate": [
+      19050,
+      19133,
+      19617
+    ],
+    "same_candidate_remains": true,
+    "new_bounds": [
+      20000,
+      20333,
+      20517
+    ],
+    "new_scored": false,
+    "new_phases": [
+      {
+        "phase": "preparation",
+        "label_zh": "准备",
+        "start_ms": 20000,
+        "end_ms": 20250,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      },
+      {
+        "phase": "acceleration",
+        "label_zh": "加速挥拍",
+        "start_ms": 20250,
+        "end_ms": 20333,
+        "status": "measured",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "observed_motion_sequence"
+      },
+      {
+        "phase": "follow_through",
+        "label_zh": "随挥",
+        "start_ms": null,
+        "end_ms": null,
+        "status": "unavailable",
+        "boundary_semantics": "estimated_motion_phase",
+        "anchor_is_contact": false,
+        "reason_code": "stage_not_fully_observed"
+      }
+    ],
+    "new_ambiguity": null,
+    "nearby_scored": [],
+    "audit_conclusion": "source audit confirms no complete swing at old19567 or new20333; not a true action coverage loss; retained21383 is also source-confirmed walking and becomes unavailable in v3"
+  }
+]

@@ -1,0 +1,85 @@
+{
+  "version": "round5-native-role-comparison-v1",
+  "method": "source_image_review_plus_independent_scoring_agent_native_point_report",
+  "source_only_prior_audit_sha256": "1c4d876649d1575f7f01bdb39f779e3854264838d0690b7366715b2fcfe53a94",
+  "source_does_not_prove_all_window_swap": true,
+  "cases": [
+    {
+      "sample": "development-sharapova",
+      "source_window_ms": [
+        15849,
+        16116,
+        16550
+      ],
+      "conclusion": "real right single forehand, candidate chose left balance wrist; reported native left/right keypoints themselves align anatomical sides",
+      "native_report_examples": [
+        {
+          "timestamp_ms": 16116,
+          "left_wrist": [
+            133.88,
+            120.71
+          ],
+          "right_wrist": [
+            210.17,
+            110.35
+          ]
+        }
+      ],
+      "source_evidence": "sharapova-two-conflicts/evidence.json",
+      "not_twohand_exception": true
+    },
+    {
+      "sample": "regression-ordinary-b",
+      "source_window_ms": [
+        2933,
+        3333,
+        4267
+      ],
+      "conclusion": "real right single backhand slice; reported native left point lies on actual right racket wrist and right point on actual left free wrist at sampled3333/3500ms; local native left/right assignment issue, not justification to swap entire window",
+      "native_report_examples": [
+        {
+          "timestamp_ms": 3500,
+          "left_wrist": [
+            493.08,
+            760.44
+          ],
+          "right_wrist": [
+            529.92,
+            717.87
+          ]
+        }
+      ],
+      "source_evidence": [
+        {
+          "timestamp_ms": 700.0000000000001,
+          "source_frame_index": 20,
+          "image": "ordinary-b-anatomy-reference/frame-000020.png",
+          "raw_png_sha256": "7553feff30981417de0bb976b8a534e5e66d5db6084a5d69dc3587c4a5100245",
+          "observation_zh": "发球同一右持拍臂与白腕带解剖连续参考。"
+        },
+        {
+          "timestamp_ms": 3100.0,
+          "source_frame_index": 92,
+          "image": "ordinary-b-anatomy-reference/frame-000092.png",
+          "raw_png_sha256": "5f7c8d39e06f5bd0913befd86a1c819c9effed110947ddf3428fa2032be30648",
+          "observation_zh": "两手辅助反拍准备。"
+        },
+        {
+          "timestamp_ms": 3333.3333333333335,
+          "source_frame_index": 99,
+          "image": "ordinary-b-anatomy-reference/frame-000099.png",
+          "raw_png_sha256": "eb53bac84918740c4210daff3d324cc2a7b1dd517a5765164ac41159d1743f45",
+          "observation_zh": "白腕带右手独立低位切击。"
+        },
+        {
+          "timestamp_ms": 3500.0000000000005,
+          "source_frame_index": 104,
+          "image": "ordinary-b-anatomy-reference/frame-000104.png",
+          "raw_png_sha256": "4e0cfdb752920b674c059eacffe68922b7816683710b7d9c16216889d713a0a7",
+          "observation_zh": "白腕带右手低位持拍，深色腕带左手后方平衡，native报告左右点与解剖侧相反。"
+        }
+      ],
+      "not_twohand_exception": true
+    }
+  ]
+}

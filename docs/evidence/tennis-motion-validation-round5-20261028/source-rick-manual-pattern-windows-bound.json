@@ -1,0 +1,367 @@
+{
+  "version": "manual-reviewed-window-v1",
+  "bound_at_utc": "2026-10-27T17:06:00.863639+00:00",
+  "scope": "manual source phases frozen before GPU; actual native subject binding only; no automatic classification or segmentation success claim",
+  "windows": [
+    {
+      "window_id": "rick-source-fhslice-1-pattern",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "rick-forehand-slice",
+      "source_video_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "job_id": "round5-rick-forehand-slice",
+      "artifact_run_id": "rick-forehand-slice",
+      "artifact_job_id": "round5-rick-rick-forehand-slice",
+      "source_run_id": "round5-rick-rick-forehand-slice",
+      "person_track_id": 1,
+      "subject_id": "subject-1",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "start_ms": 45400,
+      "prep_end_ms": 45840,
+      "peak_ms": 46120,
+      "end_ms": 46800,
+      "phase_evidence_ms": {
+        "preparation": 45840,
+        "forward_swing": 46080,
+        "follow_through": 46320
+      },
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261028",
+      "evidence": {
+        "source_reference": "source-audit/rick-manual-source-reference.json",
+        "source_reference_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+        "images": [
+          "rick-five-demo-overview/contact.jpg",
+          "rick-first-dense/contact.jpg",
+          "rick-all-phase-detail/contact.jpg"
+        ],
+        "observation_zh": "原图已独立核验单手右正手切削，完整准备/前挥/随挥见冻结源参考；推理只绑定实际同一紫衣戴帽主体，未按分数选窗。"
+      },
+      "no_automatic_segmentation_success_claim": true,
+      "native_binding_status": "verified_source_sha_track_epochs_and_sampled_visual_subject",
+      "native_binding": {
+        "native_rows_in_window": 36,
+        "primary_rows_in_window": 36,
+        "summary_sha256": "15e694f66ee5f944bc299dcaaf1b5e03830b728b992e20be11d8eebfb0e5e8d0",
+        "native_sha256": "2ca051d179fa46c3a96e6e5d084ae9f7d6a76dd9055221ace7235ae2a6896e6b",
+        "timeline_sha256": "76d29ac7bea16a4744e91a1b5403820792fb3ed1b68149a31268dd360c8f3e9a"
+      },
+      "manual_prep_end_semantics": "frozen visually observed preparation evidence timestamp, conservative phase endpoint, not fitted to model peaks",
+      "anchor_uncertainty_ms": 80,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "forward_direction_2d_verified": false,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ],
+        "camera_reference_epoch": 0
+      }
+    },
+    {
+      "window_id": "rick-source-fhslice-2-pattern",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "rick-forehand-slice",
+      "source_video_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "job_id": "round5-rick-forehand-slice",
+      "artifact_run_id": "rick-forehand-slice",
+      "artifact_job_id": "round5-rick-rick-forehand-slice",
+      "source_run_id": "round5-rick-rick-forehand-slice",
+      "person_track_id": 1,
+      "subject_id": "subject-1",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "start_ms": 47800,
+      "prep_end_ms": 48200,
+      "peak_ms": 48560,
+      "end_ms": 49200,
+      "phase_evidence_ms": {
+        "preparation": 48200,
+        "forward_swing": 48560,
+        "follow_through": 48800
+      },
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261028",
+      "evidence": {
+        "source_reference": "source-audit/rick-manual-source-reference.json",
+        "source_reference_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+        "images": [
+          "rick-five-demo-overview/contact.jpg",
+          "rick-first-dense/contact.jpg",
+          "rick-all-phase-detail/contact.jpg"
+        ],
+        "observation_zh": "原图已独立核验单手右正手切削，完整准备/前挥/随挥见冻结源参考；推理只绑定实际同一紫衣戴帽主体，未按分数选窗。"
+      },
+      "no_automatic_segmentation_success_claim": true,
+      "native_binding_status": "verified_source_sha_track_epochs_and_sampled_visual_subject",
+      "native_binding": {
+        "native_rows_in_window": 36,
+        "primary_rows_in_window": 36,
+        "summary_sha256": "15e694f66ee5f944bc299dcaaf1b5e03830b728b992e20be11d8eebfb0e5e8d0",
+        "native_sha256": "2ca051d179fa46c3a96e6e5d084ae9f7d6a76dd9055221ace7235ae2a6896e6b",
+        "timeline_sha256": "76d29ac7bea16a4744e91a1b5403820792fb3ed1b68149a31268dd360c8f3e9a"
+      },
+      "manual_prep_end_semantics": "frozen visually observed preparation evidence timestamp, conservative phase endpoint, not fitted to model peaks",
+      "anchor_uncertainty_ms": 80,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "forward_direction_2d_verified": false,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ],
+        "camera_reference_epoch": 0
+      }
+    },
+    {
+      "window_id": "rick-source-fhslice-3-pattern",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "rick-forehand-slice",
+      "source_video_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "job_id": "round5-rick-forehand-slice",
+      "artifact_run_id": "rick-forehand-slice",
+      "artifact_job_id": "round5-rick-rick-forehand-slice",
+      "source_run_id": "round5-rick-rick-forehand-slice",
+      "person_track_id": 1,
+      "subject_id": "subject-1",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "start_ms": 50200,
+      "prep_end_ms": 50400,
+      "peak_ms": 50720,
+      "end_ms": 51480,
+      "phase_evidence_ms": {
+        "preparation": 50400,
+        "forward_swing": 50760,
+        "follow_through": 51080
+      },
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261028",
+      "evidence": {
+        "source_reference": "source-audit/rick-manual-source-reference.json",
+        "source_reference_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+        "images": [
+          "rick-five-demo-overview/contact.jpg",
+          "rick-first-dense/contact.jpg",
+          "rick-all-phase-detail/contact.jpg"
+        ],
+        "observation_zh": "原图已独立核验单手右正手切削，完整准备/前挥/随挥见冻结源参考；推理只绑定实际同一紫衣戴帽主体，未按分数选窗。"
+      },
+      "no_automatic_segmentation_success_claim": true,
+      "native_binding_status": "verified_source_sha_track_epochs_and_sampled_visual_subject",
+      "native_binding": {
+        "native_rows_in_window": 33,
+        "primary_rows_in_window": 33,
+        "summary_sha256": "15e694f66ee5f944bc299dcaaf1b5e03830b728b992e20be11d8eebfb0e5e8d0",
+        "native_sha256": "2ca051d179fa46c3a96e6e5d084ae9f7d6a76dd9055221ace7235ae2a6896e6b",
+        "timeline_sha256": "76d29ac7bea16a4744e91a1b5403820792fb3ed1b68149a31268dd360c8f3e9a"
+      },
+      "manual_prep_end_semantics": "frozen visually observed preparation evidence timestamp, conservative phase endpoint, not fitted to model peaks",
+      "anchor_uncertainty_ms": 80,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "forward_direction_2d_verified": false,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ],
+        "camera_reference_epoch": 0
+      }
+    },
+    {
+      "window_id": "rick-source-fhslice-4-pattern",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "rick-forehand-slice",
+      "source_video_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "job_id": "round5-rick-forehand-slice",
+      "artifact_run_id": "rick-forehand-slice",
+      "artifact_job_id": "round5-rick-rick-forehand-slice",
+      "source_run_id": "round5-rick-rick-forehand-slice",
+      "person_track_id": 1,
+      "subject_id": "subject-1",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "start_ms": 60400,
+      "prep_end_ms": 60600,
+      "peak_ms": 61000,
+      "end_ms": 61400,
+      "phase_evidence_ms": {
+        "preparation": 60600,
+        "forward_swing": 61000,
+        "follow_through": 61200
+      },
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261028",
+      "evidence": {
+        "source_reference": "source-audit/rick-manual-source-reference.json",
+        "source_reference_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+        "images": [
+          "rick-five-demo-overview/contact.jpg",
+          "rick-first-dense/contact.jpg",
+          "rick-all-phase-detail/contact.jpg"
+        ],
+        "observation_zh": "原图已独立核验单手右正手切削，完整准备/前挥/随挥见冻结源参考；推理只绑定实际同一紫衣戴帽主体，未按分数选窗。"
+      },
+      "no_automatic_segmentation_success_claim": true,
+      "native_binding_status": "verified_source_sha_track_epochs_and_sampled_visual_subject",
+      "native_binding": {
+        "native_rows_in_window": 26,
+        "primary_rows_in_window": 26,
+        "summary_sha256": "15e694f66ee5f944bc299dcaaf1b5e03830b728b992e20be11d8eebfb0e5e8d0",
+        "native_sha256": "2ca051d179fa46c3a96e6e5d084ae9f7d6a76dd9055221ace7235ae2a6896e6b",
+        "timeline_sha256": "76d29ac7bea16a4744e91a1b5403820792fb3ed1b68149a31268dd360c8f3e9a"
+      },
+      "manual_prep_end_semantics": "frozen visually observed preparation evidence timestamp, conservative phase endpoint, not fitted to model peaks",
+      "anchor_uncertainty_ms": 160,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "forward_direction_2d_verified": false,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ],
+        "camera_reference_epoch": 0
+      }
+    },
+    {
+      "window_id": "rick-source-fhslice-5-pattern",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "rick-forehand-slice",
+      "source_video_path": ".codex_tmp/card-video-extension-20261022/media/rick-macci-forehand-slice.mp4",
+      "video_sha256": "76689c308b0a03adf247c33b2e7dfcc295ce80e28e8c9aab1dfe94767e8d8fec",
+      "job_id": "round5-rick-forehand-slice",
+      "artifact_run_id": "rick-forehand-slice",
+      "artifact_job_id": "round5-rick-rick-forehand-slice",
+      "source_run_id": "round5-rick-rick-forehand-slice",
+      "person_track_id": 1,
+      "subject_id": "subject-1",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "start_ms": 61800,
+      "prep_end_ms": 62000,
+      "peak_ms": 62320,
+      "end_ms": 62680,
+      "phase_evidence_ms": {
+        "preparation": 62000,
+        "forward_swing": 62320,
+        "follow_through": 62480
+      },
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261028",
+      "evidence": {
+        "source_reference": "source-audit/rick-manual-source-reference.json",
+        "source_reference_sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd",
+        "images": [
+          "rick-five-demo-overview/contact.jpg",
+          "rick-first-dense/contact.jpg",
+          "rick-all-phase-detail/contact.jpg"
+        ],
+        "observation_zh": "原图已独立核验单手右正手切削，完整准备/前挥/随挥见冻结源参考；推理只绑定实际同一紫衣戴帽主体，未按分数选窗。"
+      },
+      "no_automatic_segmentation_success_claim": true,
+      "native_binding_status": "verified_source_sha_track_epochs_and_sampled_visual_subject",
+      "native_binding": {
+        "native_rows_in_window": 23,
+        "primary_rows_in_window": 23,
+        "summary_sha256": "15e694f66ee5f944bc299dcaaf1b5e03830b728b992e20be11d8eebfb0e5e8d0",
+        "native_sha256": "2ca051d179fa46c3a96e6e5d084ae9f7d6a76dd9055221ace7235ae2a6896e6b",
+        "timeline_sha256": "76d29ac7bea16a4744e91a1b5403820792fb3ed1b68149a31268dd360c8f3e9a"
+      },
+      "manual_prep_end_semantics": "frozen visually observed preparation evidence timestamp, conservative phase endpoint, not fitted to model peaks",
+      "anchor_uncertainty_ms": 160,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "forward_direction_2d_verified": false,
+      "direction_reference_timestamp_ms": 45600,
+      "direction_basis": {
+        "basis": "upright_fence_post_reference_only",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 45600,
+            "source_frame_index": 1140,
+            "image_path": "rick-first-dense/frame-001140.png",
+            "raw_png_sha256": "41e0c46ccad3a6115d70ed5b16305a0c0134f031f930ce95a1fa9c76efcde884",
+            "observation_zh": "固定相机，无明显滚转；画面后方近竖直围栏柱提供向上参考。主场球网及前后纵线缺失，不能从腕方向补forward。"
+          }
+        ],
+        "camera_reference_epoch": 0
+      }
+    }
+  ]
+}

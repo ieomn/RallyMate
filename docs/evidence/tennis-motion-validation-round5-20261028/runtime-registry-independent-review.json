@@ -1,0 +1,45 @@
+{
+  "version": "runtime-registry-independent-review-v1",
+  "material_findings": [],
+  "compatibility_conclusions": [
+    "Runtime registry diff is metadata dates/version plus 13 primary-player v0.3 to v0.4 declarations only.",
+    "Maturity, feature contracts, score mathematics and calibration requirements unchanged.",
+    "Historical v2 registry and v1 requirements hashes preserved.",
+    "Producer contract is checked before model/decoder initialization and run directory creation.",
+    "Actual v0.4 selected rows carry source and camera epochs; legacy native adapter intentionally leaves them unchanged."
+  ],
+  "cpu_tests": {
+    "modules": [
+      "test_runtime_primary_contract",
+      "test_registry_lifecycle",
+      "test_pipeline_scoring_registry"
+    ],
+    "passed": 26,
+    "failed": 0,
+    "elapsed_seconds": 0.703
+  },
+  "code_sha256": {
+    "registry-lifecycle.json": "fa2fc82ec031f873c6393a67795a51520471475f4185716efeb488619c37ef9e",
+    "metric-feasibility-pose-wave-v3.json": "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076",
+    "indicator-scoring-requirements-pose-wave-v2.json": "dc5c9e46933e70cc09c24a2abc337a641a24d2986ecc03f5a2ebb44a9e81285b",
+    "src/rallymate_vision/pipeline.py": "461738e56f5b29da53e62ba724a892cd61e2263dfbb11898cab8b89c37ea8247",
+    "tests/test_runtime_primary_contract.py": "13a01d8c46a8487905162faeb657e1ae0d5e8b66091fb24825f927893c9a56e9",
+    "tests/test_registry_lifecycle.py": "24a81cecd6f43109270c2932d5ee0a3f5a4c77af26c890f519453218deb71483"
+  },
+  "actual_native_replay": {
+    "receipt": "service-full-native-cpu-replay/evaluation.json",
+    "sha256": "f1ccd0ef510aedfa8ebe3ffdf44ebb07321d2456bae7c4a43b1c823a857609fb",
+    "candidate_count": 6,
+    "scored_count": 2
+  },
+  "actual_postinference_cpu_probe": {
+    "receipt": "service-postinference-cpu-probe/receipt.json",
+    "sha256": "b4c9dad458ea0d326febdb9f9be38ff13a067490debb872426d14f2007f4adb4",
+    "private_registry_copy": true,
+    "original_service_artifacts_changed": false
+  },
+  "limitations": [
+    "Full production summary assembly and validate_run_artifacts finalization were not invoked.",
+    "Existing recover_failed_finalization requires summary and scoring-loop-summary which this earlier-stage failure never wrote; it cannot directly recover this job."
+  ]
+}

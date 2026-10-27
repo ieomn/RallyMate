@@ -1,0 +1,15 @@
+{
+  "version": "round5-inference-plan-v1",
+  "chosen_before_new_pose_or_scoring": true,
+  "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+  "source_interval_ms": [
+    0,
+    9500
+  ],
+  "max_players": 5,
+  "reason": "same video additional opponent pose context; original raw detector ranks far server at 2 through 5 because nearby people occupy larger boxes",
+  "score_thresholds_or_model_confidence_changed": false,
+  "pipeline_commit": "a003456ccf2d2441ca646a5f5c440835eab7b9be",
+  "primary_target_unchanged_by_request": true,
+  "request_sha256": "d62e84db59697f1832c6edf9bfeafc53d750c7e6a10bf091ad5bd3ad6669a3af"
+}

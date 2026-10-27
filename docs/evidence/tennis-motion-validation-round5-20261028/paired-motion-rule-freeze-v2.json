@@ -1,0 +1,43 @@
+{
+  "version": "paired-motion-development-rules-v2",
+  "frozen_at": "2026-10-27T16:57:34.145768+00:00",
+  "phase_rules": {
+    "distance_torso": 0.45,
+    "coupled_fraction": 0.7,
+    "net_displacement_cosine": 0.7,
+    "minimum_smaller_to_larger_displacement": 0.5,
+    "each_wrist_peak_speed_torso_per_s": 1.5
+  },
+  "arc_rules": {
+    "minimum_arc_radians": 3.141592653589793,
+    "minimum_radius_torso": 0.3,
+    "minimum_diameter_torso": 0.9,
+    "maximum_angle_variation_to_net": 2.5,
+    "maximum_single_step_radians": 1.5707963267948966,
+    "duration_ms": [
+      200,
+      1200
+    ],
+    "minimum_racket_observations": 2,
+    "minimum_shoulder_wrist_range_torso": 0.2
+  },
+  "interpretation": "new sufficient image-plane action-proposal evidence only; no contact, grip ownership, 3D force, skill or score input",
+  "development_source": "Dimitrov footage has been inspected before this rule; not an independent holdout accuracy result",
+  "negative_controls": [
+    "outdoor-side preparatory lift",
+    "Rola raised preparation",
+    "synthetic straight paired raise",
+    "synthetic ball toss",
+    "synthetic pickup",
+    "one moving wrist plus stationary balance arm",
+    "source/identity/camera discontinuity"
+  ],
+  "invariances": [
+    "image-plane rotation",
+    "left-right mirror",
+    "joint translation with shoulder center",
+    "uniform normalized coordinate scale at raw pixel normalization"
+  ],
+  "helper_sha256_at_condition_freeze": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c",
+  "revision_reason": "Complete the predeclared rigid-body-rotation negative: reuse existing 0.2 torso independent-arm range for both shoulder-to-wrist distances before the real-source regression. Not a score-dependent change."
+}

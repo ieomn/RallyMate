@@ -1,0 +1,134 @@
+{
+  "version": "round5-full-service-dimitrov-verification-v1",
+  "job_id": "d48cb785-8dbd-4c0b-bf34-16e3ff9e454e",
+  "status": "passed",
+  "full_upload_inference_and_report_pipeline": true,
+  "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+  "failed_prior_job": {
+    "id": "46fcd84f-a324-4a55-864b-94a525831a89",
+    "reason": "primary-player registry contract mismatch",
+    "preserved_unchanged": true
+  },
+  "started_at_utc": "2026-10-27T17:54:26.024922+00:00",
+  "completed_at_utc": "2026-10-27T17:59:34.692308+00:00",
+  "source_code_unchanged_during_job": true,
+  "source_code_manifest_sha256": "5d6aca5805e9a748594109c107c4e495e75a4e401731411ff11cda85e326d053",
+  "processing": {
+    "processed_frames": 1795,
+    "source_start_frame": 0,
+    "source_end_frame_exclusive": 1795,
+    "frame_stride": 1,
+    "source_timing": {
+      "method": "decoder_presentation_timestamps",
+      "decoder_timestamp_frames": 1795,
+      "fallback_timestamp_frames": 0,
+      "source_origin_ms": 0.0,
+      "timing_verified": true,
+      "fallback_semantics": "average_fps_approximation_not_verified_motion_timing"
+    }
+  },
+  "validation": {
+    "status": "passed",
+    "validated_frames": 1795,
+    "validated_detections": 13254,
+    "validated_poses": 1138,
+    "scoring_artifacts_status": "passed",
+    "validated_primary_player_records": 1795,
+    "validated_events": 33,
+    "validated_features": 660,
+    "validated_indicator_records": 143,
+    "validated_scores": 143,
+    "calculation_readiness_status": "all_registry_indicators_have_measured_candidate",
+    "measurement_portfolio_status": "all_registry_indicators_measured",
+    "scoring_cycle_measurement_status": "complete_cycle_available"
+  },
+  "native_record_count": 1795,
+  "native_ok": 1138,
+  "native_tracks": {
+    "1": 458,
+    "95": 680
+  },
+  "primary_algorithm_versions": [
+    "primary-player-v0.4.0"
+  ],
+  "runtime_registry": {
+    "file": "metric-feasibility-pose-wave-v3.json",
+    "sha256": "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076",
+    "version": "pose-wave-2026-10-28.1"
+  },
+  "candidate_count": 6,
+  "assessment_version": "tennis-action-assessment-v1.4.0",
+  "overall_score": 90.78,
+  "automatic_generic_scored_windows": 2,
+  "scored_windows": [
+    {
+      "episode_id": "54329c162346215f1352",
+      "start_ms": 7833.333,
+      "peak_ms": 8166.667,
+      "end_ms": 8733.333,
+      "hand_roles": {
+        "version": "tennis-hand-roles-v1",
+        "motion_wrist": "right",
+        "measurement_hand": "right",
+        "primary_racket_hand": null,
+        "primary_hand_provenance": {
+          "method": "unverified"
+        },
+        "relationship": "motion_only",
+        "paired_wrist_evidence": null
+      }
+    },
+    {
+      "episode_id": "dbeed01149b44ce66ce0",
+      "start_ms": 13633.333,
+      "peak_ms": 13866.667,
+      "end_ms": 14200.0,
+      "hand_roles": {
+        "version": "tennis-hand-roles-v1",
+        "motion_wrist": "left",
+        "measurement_hand": "left",
+        "primary_racket_hand": null,
+        "primary_hand_provenance": {
+          "method": "unverified"
+        },
+        "relationship": "motion_only",
+        "paired_wrist_evidence": null
+      }
+    }
+  ],
+  "candidate_accounting": {
+    "proposed_count": 4,
+    "accepted_count": 2,
+    "other_subject_count": 0,
+    "rejected_count": 2,
+    "rejection_counts": {
+      "phase_authority_source_unverified": 1,
+      "external_peak_motion_geometry_unverified": 1
+    }
+  },
+  "pattern_coverage": {
+    "measured_requirements": 2,
+    "applicable_requirements": 4,
+    "fraction": 0.5,
+    "verified_technique_episodes": 0,
+    "generic_episodes": 2,
+    "full_source_technique_covered": false,
+    "profiles": [
+      "generic"
+    ]
+  },
+  "manual_review_or_type_applied": false,
+  "true_return_type_not_automatically_verified": true,
+  "late_walking_windows_not_scored": true,
+  "grip_primary_hand_not_independently_confirmed": true,
+  "frontend_parse_and_serialized_roundtrip_passed": true,
+  "artifact_sha256": {
+    "frames.jsonl": "17f219c08b322f26803e4d3aa25e395c26ef59874cf2f476b9704aee82129d18",
+    "primary-player.jsonl": "890ad650f60f9fa708a382bbd6edb253f66b4522897574a543bef0a0d5fe5be7",
+    "sam3d_frames.jsonl": "7472ef0b5b426a54f91b597f6fc6e3e2b00f6bf49e6d3464f73132e5b68e4cf9",
+    "summary.json": "3206f376acb61a02595afc5c39642506d93a2cf9af430a5359fbbaaad10d3955",
+    "scoring-loop-summary.json": "e6ad759faaa4ac639abf424a591abde75ad81c7d62b21a5302e2651590f2be47"
+  },
+  "assessment_sha256": "e140487a4a73d1233ce46ece026fc95db0a7ed38a97976fcb98a66abe2bc3f1c",
+  "semantics": "same source service verification, not an additional independent video or blind benchmark"
+}

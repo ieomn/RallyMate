@@ -1,0 +1,77 @@
+{
+  "version": "round5-independent-negative-motion-source-audit-v1",
+  "reviewed_at_utc": "2026-10-27T17:31:47.485043+00:00",
+  "method": "agent_visual_review",
+  "reviewer": "codex_samples_independent_source_review_20261028",
+  "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+  "source_relative_path": "service_data/uploads/8fc81362-5475-4677-a176-7239aa6bdc40.mp4",
+  "subject_description": "near-side white/purple player; named identity not inferred from clip title",
+  "requested_comparison_old_peak_ms": 19567,
+  "requested_comparison_new_peak_ms": 20333,
+  "actual_source_interpretation": {
+    "19000_to_19633": "small steps / low racket reposition, no visually complete forward stroke and follow-through",
+    "20000_to_20700": "walking with racket brought in front of torso; not a new strike",
+    "20800_to_21600": "walking with low racket; sampled source does not support previously unchanged21383ms candidate as a true stroke"
+  },
+  "complete_strokes_verified_in_19000_to_21600": 0,
+  "prep_forward_follow_truth": null,
+  "no_three_phase_evidence_fabricated": true,
+  "evidence": [
+    {
+      "timestamp_ms": 18600.0,
+      "source_frame_index": 1116,
+      "image": "dimitrov-18to21-context/frame-001116.png",
+      "raw_png_sha256": "bcc0c3ba2ff2b4061a6108e5d58f7a8d53adf6c1c440d6133df82ccdbb25b8c5",
+      "observation_zh": "近场目标向右追球。"
+    },
+    {
+      "timestamp_ms": 18800.0,
+      "source_frame_index": 1128,
+      "image": "dimitrov-18to21-context/frame-001128.png",
+      "raw_png_sha256": "e4581a4554a809237900c1d90ae14c7ee5bd9bcb17824c65ed195f7538bbcdef",
+      "observation_zh": "黄色球在目标前上方，继续往画面右外侧运动。"
+    },
+    {
+      "timestamp_ms": 19000.0,
+      "source_frame_index": 1140,
+      "image": "dimitrov-18to21-context/frame-001140.png",
+      "raw_png_sha256": "7b9707e980ab6eefbf435fcf48623181970625165c5fb27745aeb775e5238603",
+      "observation_zh": "球已经向右越过目标前方，未见完成回击。"
+    },
+    {
+      "timestamp_ms": 19400.0,
+      "source_frame_index": 1164,
+      "image": "dimitrov-18to21-context/frame-001164.png",
+      "raw_png_sha256": "cd737a5908b9cf77fb57eee693f738c3b0e3d50391d349360e7a51e1250623df",
+      "observation_zh": "右侧低拍小幅摆动，双腿走动。"
+    },
+    {
+      "timestamp_ms": 19566.666666666668,
+      "source_frame_index": 1174,
+      "image": "dimitrov-18to21-context/frame-001174.png",
+      "raw_png_sha256": "102d8903bb49d12ad0d28a83b455618e8862e2a768b7670c26474baca5b915b8",
+      "observation_zh": "拍由低位收至身前，缺少完整前挥和随挥。"
+    },
+    {
+      "timestamp_ms": 20333.333333333332,
+      "source_frame_index": 1220,
+      "image": "dimitrov-19to206-dense/frame-001220.png",
+      "raw_png_sha256": "fafeca7da5ef12b295fa31b12eb0177f7f12b9a0dc69da0c4e648c5d02c2435e",
+      "observation_zh": "胸前持拍走动，不是另一完整击球动作。"
+    },
+    {
+      "timestamp_ms": 21400.0,
+      "source_frame_index": 1284,
+      "image": "dimitrov-18to21-context/frame-001284.png",
+      "raw_png_sha256": "9294ee25a9e1367c6ce1106b9203c179fe4d60d6c5b7d8ede10c8f1a5d1ab08b",
+      "observation_zh": "仍在低拍走路；不能因为算法unchanged就当真击球。"
+    }
+  ],
+  "limits": [
+    "dense33ms review around19.3–19.633;100ms sampling19–20.7;200ms context sampling20.8–21.6",
+    "exact preceding ball contact/point legal result not asserted",
+    "source conclusion independent of reported numeric scores"
+  ],
+  "new_finding": "unchanged21383ms model event still requires source validity audit; not confirmed true",
+  "old_frozen_gt_not_rewritten": true
+}

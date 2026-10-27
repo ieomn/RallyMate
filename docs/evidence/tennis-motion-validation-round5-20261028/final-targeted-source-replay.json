@@ -1,0 +1,752 @@
+{
+  "source_sha256_start": {
+    "src/rallymate_scoring/stroke_candidates.py": "8f832b183185758722eebf0efefad703099b069a8663dde5794d0135b14f669d",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "d0681a07dcb56a4da589cedb84ad45609e8c18c3b6884cdaff15ad4a8fdb34db",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "source_sha256_end": {
+    "src/rallymate_scoring/stroke_candidates.py": "8f832b183185758722eebf0efefad703099b069a8663dde5794d0135b14f669d",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "d0681a07dcb56a4da589cedb84ad45609e8c18c3b6884cdaff15ad4a8fdb34db",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "code_changed_during_execution": false,
+  "results": [
+    {
+      "sample_id": "development-ordinary-a",
+      "candidate_count": 28,
+      "episodes": [
+        {
+          "bounds": [
+            2367,
+            2800,
+            3133
+          ],
+          "status": "partial",
+          "reason": "unresolved_racket_hand_with_competing_arm_sequence"
+        },
+        {
+          "bounds": [
+            5933,
+            6467,
+            6933
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            10167,
+            10833,
+            11167
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            14633,
+            14967,
+            15533
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            20433,
+            20800,
+            20967
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            24133,
+            24633,
+            25067
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            26333,
+            26833,
+            27067
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            31367,
+            31700,
+            32200
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            33567,
+            35067,
+            35400
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            38233,
+            38567,
+            38833
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            40967,
+            41500,
+            42167
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            44067,
+            44400,
+            44633
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            46933,
+            47500,
+            47733
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            49533,
+            50233,
+            51233
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            54433,
+            54767,
+            55133
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            57533,
+            58100,
+            58400
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            59733,
+            60067,
+            60433
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            63233,
+            64033,
+            64100
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            69533,
+            69933,
+            70300
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            73033,
+            74333,
+            74900
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            76567,
+            77000,
+            77133
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            89533,
+            89933,
+            90367
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            94000,
+            94100,
+            94467
+          ],
+          "status": "partial",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "development-sharapova",
+      "candidate_count": 3,
+      "episodes": [
+        {
+          "bounds": [
+            13647,
+            13981,
+            14314
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            15849,
+            16116,
+            16550
+          ],
+          "status": "complete",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "regression-ordinary-b",
+      "candidate_count": 11,
+      "episodes": [
+        {
+          "bounds": [
+            2933,
+            3333,
+            4267
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            5533,
+            5833,
+            6000
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            10933,
+            11367,
+            12000
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            13433,
+            13933,
+            14200
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            21367,
+            21733,
+            22000
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            26867,
+            27233,
+            27300
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            31833,
+            32133,
+            32400
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            32833,
+            33100,
+            33333
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            34233,
+            34533,
+            34800
+          ],
+          "status": "partial",
+          "reason": "unresolved_racket_hand_with_competing_arm_sequence"
+        },
+        {
+          "bounds": [
+            36533,
+            37100,
+            37467
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            133,
+            1367,
+            1767
+          ],
+          "status": "complete",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "candidate_count": 4,
+      "episodes": [
+        {
+          "bounds": [
+            7333,
+            7625,
+            7917
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            14083,
+            14583,
+            14833
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            23750,
+            24083,
+            24417
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            27750,
+            28042,
+            28375
+          ],
+          "status": "partial",
+          "reason": "external_peak_motion_geometry_unverified"
+        }
+      ]
+    },
+    {
+      "sample_id": "white-360p-crf35",
+      "candidate_count": 4,
+      "episodes": [
+        {
+          "bounds": [
+            667,
+            1033,
+            1267
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            5533,
+            5800,
+            6167
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            12267,
+            12633,
+            12867
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            22133,
+            22433,
+            22667
+          ],
+          "status": "partial",
+          "reason": "unresolved_racket_hand_with_competing_arm_sequence"
+        }
+      ]
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "candidate_count": 3,
+      "episodes": [
+        {
+          "bounds": [
+            2469,
+            2769,
+            2936
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            12880,
+            14014,
+            14348
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            15315,
+            15782,
+            15849
+          ],
+          "status": "partial",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "candidate_count": 9,
+      "episodes": [
+        {
+          "bounds": [
+            1793,
+            2085,
+            2544
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            4379,
+            4713,
+            4963
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            7090,
+            7424,
+            7799
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            9551,
+            9885,
+            10219
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            12429,
+            12763,
+            13222
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            13430,
+            13680,
+            15224
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            17476,
+            17851,
+            18185
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            18352,
+            19102,
+            19436
+          ],
+          "status": "partial",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "candidate_count": 2,
+      "episodes": [
+        {
+          "bounds": [
+            7833,
+            8150,
+            8400
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            19983,
+            20283,
+            20317
+          ],
+          "status": "partial",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "candidate_count": 6,
+      "episodes": [
+        {
+          "bounds": [
+            7833,
+            8167,
+            8733
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            13633,
+            13867,
+            14200
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            20000,
+            20333,
+            20517
+          ],
+          "status": "partial",
+          "reason": null
+        },
+        {
+          "bounds": [
+            20950,
+            21383,
+            21650
+          ],
+          "status": "partial",
+          "reason": "external_peak_motion_geometry_unverified"
+        }
+      ]
+    },
+    {
+      "sample_id": "thetis-p32_fslice_s1",
+      "candidate_count": 1,
+      "episodes": [
+        {
+          "bounds": [
+            1667,
+            2222,
+            2611
+          ],
+          "status": "complete",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "gpu-night",
+      "candidate_count": 4,
+      "episodes": [
+        {
+          "bounds": [
+            2300,
+            3700,
+            3933
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            10967,
+            12200,
+            12500
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            20500,
+            21867,
+            22133
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            24767,
+            25400,
+            25633
+          ],
+          "status": "complete",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "gpu-white",
+      "candidate_count": 6,
+      "episodes": [
+        {
+          "bounds": [
+            633,
+            1167,
+            1467
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            5433,
+            5800,
+            6067
+          ],
+          "status": "partial",
+          "reason": "unresolved_racket_hand_with_competing_arm_sequence"
+        },
+        {
+          "bounds": [
+            12267,
+            12600,
+            13133
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            17033,
+            17367,
+            18167
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            22167,
+            22600,
+            23433
+          ],
+          "status": "complete",
+          "reason": null
+        },
+        {
+          "bounds": [
+            28567,
+            29400,
+            29633
+          ],
+          "status": "complete",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "dimitrov-return-context",
+      "candidate_count": 1,
+      "episodes": [
+        {
+          "bounds": [
+            7833,
+            8150,
+            8750
+          ],
+          "status": "complete",
+          "reason": null
+        }
+      ]
+    }
+  ]
+}

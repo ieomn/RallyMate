@@ -1,0 +1,108 @@
+{
+  "version": "round5-independent-source-role-audit-v1",
+  "reviewed_at_utc": "2026-10-27T17:12:19.608959+00:00",
+  "method": "agent_visual_review",
+  "reviewer": "codex_samples_independent_source_review_20261028",
+  "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+  "source_relative_path": "service_data/uploads/8fc81362-5475-4677-a176-7239aa6bdc40.mp4",
+  "target_description_zh": "片中近场白色无袖上衣/紫粉色下装/头带球员；不按Dimitrov文件名推断此人的职业姓名。",
+  "identity_same_subject_across_both_windows": true,
+  "mirror_status": "original court/advertisement text has no visible reversed text; historical mirror cannot absolutely exclude; no image mirror operation performed",
+  "actions": [
+    {
+      "id": "near-white-purple-real-return",
+      "interval_ms": [
+        7400,
+        8750
+      ],
+      "technique": "return_forehand",
+      "racket_hand": "right",
+      "return_context_reference": "../tennis-score-round4-20261027/dimitrov-manual-return-evidence.json",
+      "evidence": [
+        {
+          "timestamp_ms": 7466.666666666667,
+          "source_frame_index": 448,
+          "image": "dimitrov-prep-grip/frame-000448.png",
+          "raw_png_sha256": "71406dd51925d21763bd8898249a182caca4f50ff321d146fa921fe1647b8593",
+          "observation_zh": "背向机位，两手位于胸前，拍头处于左前，右手/柄部分遮挡；不能逐帧证明左右手具体握点。"
+        },
+        {
+          "timestamp_ms": 7733.333333333333,
+          "source_frame_index": 464,
+          "image": "dimitrov-prep-grip/frame-000464.png",
+          "raw_png_sha256": "2592dc7c4f477c68c8b802bfef2c6826768e583c1a35fc9bb2f46eabd1095c98",
+          "observation_zh": "仍是接球准备，两手/柄遮挡。左腕接近拍框不证明该腕将完成前挥。"
+        },
+        {
+          "timestamp_ms": 7899.999999999999,
+          "source_frame_index": 474,
+          "image": "dimitrov-prep-grip/frame-000474.png",
+          "raw_png_sha256": "d69911d87fb395826791e57639a05fc1ff672dfa0e7b924fe2fed2599241a4df",
+          "observation_zh": "右肩-肘-腕连续至拍柄，左臂独立展开；开始明确单右手准备。"
+        },
+        {
+          "timestamp_ms": 8000.0,
+          "source_frame_index": 480,
+          "image": "dimitrov-prep-grip/frame-000480.png",
+          "raw_png_sha256": "a8a200cbfa3a4f29dba4d3df1353db8e082197404e01202878ed223800b79613",
+          "observation_zh": "右手单独持拍在身后侧，左臂向前平衡，和双手共同击打不同。"
+        },
+        {
+          "timestamp_ms": 8166.666666666666,
+          "source_frame_index": 490,
+          "image": "dimitrov-prep-grip/frame-000490.png",
+          "raw_png_sha256": "e0f229392d84970be80c2c53ec89969ce237355428d48bc4ba6e7e7d0c7cc8c1",
+          "observation_zh": "右臂已挥拍通过前方，左臂继续独立；真右手正手接发。"
+        }
+      ],
+      "early_hand_contact_uncertainty_zh": "7.467–7.733像素/躯干遮挡不足以判定精确柄端与拍头接触，既不能断言右手每帧持续握柄，也不能以几何最近左腕作挥拍手truth。"
+    },
+    {
+      "id": "near-white-purple-twohand-backhand",
+      "interval_ms": [
+        13500,
+        14333
+      ],
+      "technique": "baseline_two_hand_backhand",
+      "racket_hand": null,
+      "participating_hands": [
+        "left",
+        "right"
+      ],
+      "handle_end_dominant_hand_verified": false,
+      "evidence": [
+        {
+          "timestamp_ms": 13633.333333333332,
+          "source_frame_index": 818,
+          "image": "dimitrov-twohand/frame-000818.png",
+          "raw_png_sha256": "7eac68206422b9ae73875420b27ae2e308cf7dba19b1b6d0dba19d2c0f988086",
+          "observation_zh": "两臂/两手靠拍柄侧共同准备。"
+        },
+        {
+          "timestamp_ms": 13866.666666666668,
+          "source_frame_index": 832,
+          "image": "dimitrov-twohand/frame-000832.png",
+          "raw_png_sha256": "5e95c50516377afdce4baeb2a634a5c68488a6cb2193f77895c68e0fee5aeb93",
+          "observation_zh": "两臂共同向前，真实挥拍。"
+        },
+        {
+          "timestamp_ms": 13933.333333333334,
+          "source_frame_index": 836,
+          "image": "dimitrov-twohand/frame-000836.png",
+          "raw_png_sha256": "9eed258b40557197fd6623778208a734a3332c7036fb881df045b68531dcc2e5",
+          "observation_zh": "两手共同完成跨身前挥，不能把运动较强左腕自动认作主体错误。"
+        },
+        {
+          "timestamp_ms": 14133.333333333332,
+          "source_frame_index": 848,
+          "image": "dimitrov-twohand/frame-000848.png",
+          "raw_png_sha256": "0901bca0ac2f474d8d790198abad1d93f8560b27fa40ed7191f00b2508d8c4a4",
+          "observation_zh": "双手抬到高处随挥；柄上下手顺序因遮挡/分辨率仍未独立证实。"
+        }
+      ],
+      "conclusion_zh": "这是真实完整双手反拍；前轮拒绝属于动作覆盖损失。应分开运动腕与握拍角色，不能人工宣布右为唯一运动腕。"
+    }
+  ],
+  "native_keypoint_swap_claimed": false,
+  "no_frozen_source_reference_changed": true
+}

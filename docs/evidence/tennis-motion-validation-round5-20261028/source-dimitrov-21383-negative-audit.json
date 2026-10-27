@@ -1,0 +1,24 @@
+{
+  "version": "round5-independent-negative-motion-addendum-v1",
+  "reviewed_at_utc": "2026-10-27T17:33:04.761799+00:00",
+  "parent_audit": "dimitrov-late-motion-source-audit.json",
+  "parent_sha256": "fce0ae8e4ede4ef9bd99b485e8d08848c81cc3542ecd8d876d68cca2e044eaba",
+  "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+  "reviewed_interval_ms": [
+    21000,
+    21700
+  ],
+  "dense_sampling_ms": {
+    "generally": 50,
+    "near_reported_peak": 16.667
+  },
+  "actual_source_peak_frame": 1283,
+  "actual_source_peak_timestamp_ms": 21383.333333333332,
+  "method": "agent_visual_review",
+  "conclusion_zh": "21.0–21.7连续原图均为低位单手持拍走路、短暂停步再前进，拍与手保持在髋前低位，没有准备-前挥-随挥。21.383不是可评分完整击球。",
+  "complete_strokes_visible": 0,
+  "raw_frame_evidence": "dimitrov-21383-dense/evidence.json",
+  "raw_frame_evidence_sha256": "67a316db3047171b14460ae2a249f7f0ffee81417c2196e61e826832d4e8a307",
+  "contact_sheet": "dimitrov-21383-dense/contact.jpg",
+  "no_source_gt_overwrite": true
+}

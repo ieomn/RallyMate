@@ -1,0 +1,341 @@
+{
+  "experiment": "In-memory ablation only; no source files changed",
+  "isolated_change": "Set ambiguous_hand False for separated same-target wrists; shared proximity and exact-tie behavior unchanged",
+  "source_sha256_start": {
+    "src/rallymate_scoring/stroke_candidates.py": "8f99df7c1acf90546b7585e13d4c1a201d7c28b33691a7bbf0439cb1a240a7d0",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "ab33ebe68ba6eabe1f73652852826eb6319fe4f60f4df8365d3af443d896a5b9",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "source_sha256_end": {
+    "src/rallymate_scoring/stroke_candidates.py": "8f99df7c1acf90546b7585e13d4c1a201d7c28b33691a7bbf0439cb1a240a7d0",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "ab33ebe68ba6eabe1f73652852826eb6319fe4f60f4df8365d3af443d896a5b9",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "code_changed_during_execution": false,
+  "results": [
+    {
+      "sample_id": "development-sharapova",
+      "candidate_count": 3,
+      "episodes": [
+        {
+          "bounds": [
+            13647,
+            13981,
+            14314
+          ],
+          "motion_wrist": "left",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {},
+            "scope": "continuous_episode_context",
+            "start_ms": 13213,
+            "end_ms": 14915,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            15849,
+            16116,
+            16550
+          ],
+          "motion_wrist": "left",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "left": 2
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 15716,
+            "end_ms": 17918,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        }
+      ]
+    },
+    {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "candidate_count": 4,
+      "episodes": [
+        {
+          "bounds": [
+            7333,
+            7625,
+            7917
+          ],
+          "motion_wrist": "right",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": "right",
+            "separated_wrist_racket_votes": {
+              "right": 13
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 6375,
+            "end_ms": 8500,
+            "status": "supported",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            14083,
+            14583,
+            14833
+          ],
+          "motion_wrist": "right",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": "right",
+            "separated_wrist_racket_votes": {
+              "right": 15
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 13625,
+            "end_ms": 15375,
+            "status": "supported",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            23750,
+            24083,
+            24417
+          ],
+          "motion_wrist": "left",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "left": 1
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 23292,
+            "end_ms": 25208,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            27750,
+            28042,
+            28375
+          ],
+          "motion_wrist": "right",
+          "complete": false,
+          "reason": "external_peak_motion_geometry_unverified",
+          "hand_evidence": {
+            "hand": "right",
+            "separated_wrist_racket_votes": {
+              "right": 8
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 27750,
+            "end_ms": 29958,
+            "status": "supported",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        }
+      ]
+    },
+    {
+      "sample_id": "rola-ncaa-2013",
+      "candidate_count": 3,
+      "episodes": [
+        {
+          "bounds": [
+            2469,
+            2769,
+            2936
+          ],
+          "motion_wrist": "left",
+          "complete": false,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "left": 1
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 2436,
+            "end_ms": 2936,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            12880,
+            14014,
+            14348
+          ],
+          "motion_wrist": "right",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "right": 3,
+              "left": 1
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 12880,
+            "end_ms": 15449,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            15315,
+            15782,
+            15849
+          ],
+          "motion_wrist": "right",
+          "complete": false,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {},
+            "scope": "continuous_episode_context",
+            "start_ms": 14414,
+            "end_ms": 15849,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        }
+      ]
+    },
+    {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "candidate_count": 6,
+      "episodes": [
+        {
+          "bounds": [
+            7833,
+            8167,
+            8733
+          ],
+          "motion_wrist": "right",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "right": 1
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 7300,
+            "end_ms": 9167,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            13633,
+            13867,
+            14200
+          ],
+          "motion_wrist": "left",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "left": 3
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 13633,
+            "end_ms": 15767,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            20000,
+            20333,
+            20517
+          ],
+          "motion_wrist": "right",
+          "complete": false,
+          "reason": null,
+          "hand_evidence": {
+            "hand": "left",
+            "separated_wrist_racket_votes": {
+              "right": 2,
+              "left": 10
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 18400,
+            "end_ms": 20517,
+            "status": "supported",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        },
+        {
+          "bounds": [
+            20950,
+            21383,
+            21650
+          ],
+          "motion_wrist": "left",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "left": 7
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 20950,
+            "end_ms": 22983,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        }
+      ]
+    },
+    {
+      "sample_id": "dimitrov-return-context",
+      "candidate_count": 1,
+      "episodes": [
+        {
+          "bounds": [
+            7833,
+            8150,
+            8750
+          ],
+          "motion_wrist": "right",
+          "complete": true,
+          "reason": null,
+          "hand_evidence": {
+            "hand": null,
+            "separated_wrist_racket_votes": {
+              "right": 1
+            },
+            "scope": "continuous_episode_context",
+            "start_ms": 7417,
+            "end_ms": 9167,
+            "status": "unavailable",
+            "semantics": "independent_separated_wrist_racket_association_not_primary_grip_order"
+          }
+        }
+      ]
+    }
+  ]
+}

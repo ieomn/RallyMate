@@ -1,0 +1,143 @@
+{
+  "version": "round5-live-api-review-validation-v1",
+  "all_passed": true,
+  "samples": [
+    {
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 5,
+      "paired_role_windows": 2,
+      "rejections": {
+        "phase_authority_source_unverified": 3
+      },
+      "api_report_sha256": "854a169bb0174b72a6660889f6ae08870123511abf4bef87e23b0b696a2b8241"
+    },
+    {
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 6,
+      "paired_role_windows": 0,
+      "rejections": {
+        "reviewed_hand_conflicts_with_motion_phases": 1,
+        "phase_authority_source_unverified": 3,
+        "unresolved_racket_hand_with_competing_arm_sequence": 1
+      },
+      "api_report_sha256": "d3cfc4f421136fe4e60468748de3ab8d2988d2a33b7dee0f4a31d4b627dad397"
+    },
+    {
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 1,
+      "paired_role_windows": 0,
+      "rejections": {},
+      "api_report_sha256": "7b1f0b3a72ba285ce2016f0eaccbf69129514aebddd14cdf9334c94852178fd2"
+    },
+    {
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 1,
+      "paired_role_windows": 1,
+      "rejections": {
+        "reviewed_hand_conflicts_with_motion_phases": 1
+      },
+      "api_report_sha256": "ac98547eed9c0148269aa698909d84909e42acbf8e32b3e595b9e1b8af9dba10"
+    },
+    {
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 2,
+      "paired_role_windows": 0,
+      "rejections": {
+        "phase_authority_source_unverified": 1
+      },
+      "api_report_sha256": "61a8cdf6587b10cd91a58f9c743885002a58810d8feda7cb1d8acaf3f68557a0"
+    },
+    {
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 3,
+      "paired_role_windows": 0,
+      "rejections": {
+        "external_peak_motion_geometry_unverified": 1
+      },
+      "api_report_sha256": "4b476bfb569f4a0733a9f07095388499aff407dd2e782dccd73f1681b57da6a5"
+    },
+    {
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 2,
+      "paired_role_windows": 0,
+      "rejections": {},
+      "api_report_sha256": "7f14396da421cedbdc1048a2b0f3ac49e1d802392a65d09bd158d428a08dacab"
+    },
+    {
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 4,
+      "paired_role_windows": 0,
+      "rejections": {
+        "unresolved_racket_hand_with_competing_arm_sequence": 1,
+        "active_wrist_discontinuity_in_motion": 1
+      },
+      "api_report_sha256": "ca17d7809f1f9c7f99a58854c9dff497a5f55182c70885874cd8ad3342273d4e"
+    },
+    {
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 1,
+      "paired_role_windows": 0,
+      "rejections": {},
+      "api_report_sha256": "89375d9dce9eab9550c853e29ef5a96bc1f4086ee7f6f2668abb6c2fdcda0306"
+    },
+    {
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 3,
+      "paired_role_windows": 0,
+      "rejections": {
+        "phase_authority_source_unverified": 1
+      },
+      "api_report_sha256": "8dd0b459a00dcc82ee127ac79a46b97c97092958c205683c15635be6f3658787"
+    },
+    {
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 0,
+      "paired_role_windows": 0,
+      "rejections": {},
+      "api_report_sha256": "14b70af855d76e257b97f2229ef24eb072ad51f0cd984c4bc1d0d07e50c318dd"
+    },
+    {
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "http_status": 200,
+      "version": "tennis-action-assessment-v1.4.0",
+      "score_and_all_episode_fields_match_frozen_replay": true,
+      "scored_windows": 4,
+      "paired_role_windows": 0,
+      "rejections": {},
+      "api_report_sha256": "95168849b459349b90eaf4ef2656b768cbd45c324f91fbeb99794f010c98695c"
+    }
+  ]
+}

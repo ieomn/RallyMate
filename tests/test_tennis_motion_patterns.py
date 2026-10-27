@@ -262,6 +262,57 @@ class TennisMotionPatternTests(unittest.TestCase):
         self.assertAlmostEqual(calculate(sliced(1., -2.), technique="backhand_slice")["metrics"]["pattern_slice_path"][1], 50.)
         self.assertEqual(calculate(sliced(1., -2.), technique="forehand_slice")["metrics"]["pattern_slice_path"][1], 100.)
 
+    def slice_direction_fixture(self, forward):
+        data=fixture(); data[2]['forward_direction_2d']=forward
+        for observation in data[1]:
+            points=observation['points']; center=(points['left_hip']+points['right_hip'])/2
+            points['right_wrist']=center+np.array([0.,-1.])*observation['time']/1000
+        return data
+
+    def test_collinear_slice_directions_are_missing_not_two_copies_of_one_axis(self):
+        for technique in ('forehand_slice','backhand_slice','return_forehand_slice','return_backhand_slice'):
+            for forward in ([0.,-1.],[0.,1.],[.02,-1.],[.02,1.]):
+                result=calculate(self.slice_direction_fixture(forward), technique=technique)
+                self.assertNotIn('pattern_slice_path',result['metrics'])
+                requirement=next(r for r in result['requirements'] if r['id']=='slice_path')
+                self.assertEqual(requirement['status'],'not_measured')
+                self.assertEqual(requirement['reason'],'slice_joint_directions_ill_conditioned')
+                detail=result['metric_evidence']['pattern_slice_path']
+                self.assertEqual(detail['downward_fraction'],1.)
+                self.assertIn(detail['forward_fraction'],(0.,1.))
+                self.assertEqual(detail['maximum_direction_basis_condition_number'],4.)
+                json.dumps(result,allow_nan=False)
+
+    def test_fixed_condition_four_boundary_changes_observability_not_the_grade_curve(self):
+        for condition in (1.,2.,4.,4.001,8.):
+            cosine=(condition*condition-1)/(condition*condition+1)
+            direction=[np.sqrt(1-cosine*cosine),-cosine]
+            result=calculate(self.slice_direction_fixture(direction), technique='forehand_slice')
+            detail=result['metric_evidence']['pattern_slice_path']
+            self.assertAlmostEqual(detail['direction_basis_condition_number'],condition,places=10)
+            if condition<=4 and condition>1:
+                self.assertEqual(result['metrics']['pattern_slice_path'],(1.,100.))
+            elif condition>4:
+                self.assertNotIn('pattern_slice_path',result['metrics'])
+        # Existing well-separated forward/down formula is unchanged.
+        result=calculate(self.slice_direction_fixture([1.,-1.]), technique='forehand_slice')
+        self.assertEqual(result['metrics']['pattern_slice_path'],(1.,100.))
+
+    def test_slice_direction_observability_is_rotation_and_mirror_invariant(self):
+        for forward in ([1.,-1.],[.02,-1.],[0.,-1.]):
+            original=calculate(self.slice_direction_fixture(forward),technique='forehand_slice')
+            for matrix in (np.array([[0.,-1.],[1.,0.]]),np.array([[-1.,0.],[0.,1.]])):
+                data=self.slice_direction_fixture(forward)
+                for observation in data[1]:
+                    observation['points']={k:23*(matrix@v)+[40.,-17.] for k,v in observation['points'].items()}
+                data[2]['scale']*=23
+                for field in ('forward_direction_2d','up_direction_2d'):
+                    data[2][field]=matrix@data[2][field]
+                result=calculate(data,technique='forehand_slice')
+                self.assertEqual(original['metrics'].get('pattern_slice_path'),result['metrics'].get('pattern_slice_path'))
+                self.assertEqual(next(r for r in original['requirements'] if r['id']=='slice_path')['status'],
+                                 next(r for r in result['requirements'] if r['id']=='slice_path')['status'])
+
     def test_serve_upward_path_requires_direction_and_uses_path_not_height(self):
         data = fixture()
         for observation in data[1]:

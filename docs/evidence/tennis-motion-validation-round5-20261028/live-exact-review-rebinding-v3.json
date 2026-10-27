@@ -1,0 +1,263 @@
+{
+  "version": "round5-exact-live-context-rebinding-v1",
+  "applied": true,
+  "original_entries_preserved": true,
+  "matching_policy": "same source, exact track/start/peak/end/family/source-camera epochs; changed windows never inherit reviews",
+  "samples": [
+    {
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "source_video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "appended_exact_count": 4,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "b645a376db92ce545d09",
+          "new_episode_id": "d52458bf26a6a26dd4a5",
+          "source_window_track_epochs_unchanged": true
+        },
+        {
+          "prior_episode_id": "e41d27b94259a0afebbc",
+          "new_episode_id": "f3a3817042c3ee8403b2",
+          "source_window_track_epochs_unchanged": true
+        },
+        {
+          "prior_episode_id": "69984efbae626c0f8358",
+          "new_episode_id": "91f523bb274beea984eb",
+          "source_window_track_epochs_unchanged": true
+        },
+        {
+          "prior_episode_id": "ba86bdae6dc081c68366",
+          "new_episode_id": "0f6e129a2ddb4985349e",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [
+        {
+          "prior_episode_id": "d23a29e5fbbfdd08ad7b",
+          "window": [
+            3420,
+            4004,
+            4379
+          ],
+          "reason": "exact_source_window_not_preserved"
+        }
+      ],
+      "independent_new_type_reviews": [
+        "9c6727ff72753b25e081"
+      ],
+      "context_before_sha256": "714f6701fe2ed0fc4462c3b53b956ef2995b029b918160a512975a4dcc5bf06e",
+      "context_after_sha256": "16fa0b67312a0da464a7affe1c39dd9ef6bb3d7e918b5b5fdd8030280a1873da",
+      "live_context_after_sha256": "16fa0b67312a0da464a7affe1c39dd9ef6bb3d7e918b5b5fdd8030280a1873da",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+      "appended_exact_count": 1,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "7efacd58c13a8083ed67",
+          "new_episode_id": "a4028ca39a57447b22e6",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "c0f323c94095f7982c81e578fa5168d79d12e8522ecf750900bd66cdcad65eed",
+      "context_after_sha256": "6927b7c1ae1a6bded65b45220999820d6cd7c213aa0f41e3b5799979c1866787",
+      "live_context_after_sha256": "6927b7c1ae1a6bded65b45220999820d6cd7c213aa0f41e3b5799979c1866787",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "source_video_sha256": "1e3876016515703773c4ff37cf91306976d3d8c23b7f585b81f8cf3d797d51ba",
+      "appended_exact_count": 1,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "b343e33054a1ff21ed53",
+          "new_episode_id": "d1d0bbe44afc681e39ad",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "56c4586f507beb7b7c5ea95905d7d198d30b24a0e97fc9df05f1d061e09423d7",
+      "context_after_sha256": "f2a1a5c0e0685cd0b64b932e044a058fc040882975efbfdcb2ac4f4d64b4a362",
+      "live_context_after_sha256": "f2a1a5c0e0685cd0b64b932e044a058fc040882975efbfdcb2ac4f4d64b4a362",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+      "appended_exact_count": 2,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "6ba7c566df5726c2fd9d",
+          "new_episode_id": "93fb0f6dfd6ba1bbe125",
+          "source_window_track_epochs_unchanged": true
+        },
+        {
+          "prior_episode_id": "55f5aaf96af4fea5effd",
+          "new_episode_id": "b852a2ae4ff05f422630",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "7748c93a40402944ff3d2a851d5fd24b51428ed6666f59506abfac764700c2a4",
+      "context_after_sha256": "1eecae7cd6d886511d371810cbde0faae851bea0a6c9e2692ee3371b57ec28bf",
+      "live_context_after_sha256": "1eecae7cd6d886511d371810cbde0faae851bea0a6c9e2692ee3371b57ec28bf",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "source_video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "appended_exact_count": 2,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "fd26f93631da359ed843",
+          "new_episode_id": "b31bed2dc8050d73a00b",
+          "source_window_track_epochs_unchanged": true
+        },
+        {
+          "prior_episode_id": "28f93fcb8edb7e646b6d",
+          "new_episode_id": "0a7a483886b81d0aed23",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "203a9fa7d029367740944842266a203a64032e15157f37c77cf6985da9015679",
+      "context_after_sha256": "38fd2cf0822be91e69ada3c319d96b7ba1db911413eb874eb1ef705e2ad626f2",
+      "live_context_after_sha256": "38fd2cf0822be91e69ada3c319d96b7ba1db911413eb874eb1ef705e2ad626f2",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "source_video_sha256": "a77b8ff8052a1eb98bece24728804998600035b9d9eff14be048ab67be075043",
+      "appended_exact_count": 1,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "f60278569e87b0e4bd8f",
+          "new_episode_id": "79ea6fe9c70a34f30909",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "c97f4b4e2bba40997a22022177d1b69e71c5d6362c60d69385fb0ed0e981417a",
+      "context_after_sha256": "e32c4f07149d161a35aa7de176918f5019c82ef3af20bd1a13b514236eb02467",
+      "live_context_after_sha256": "e32c4f07149d161a35aa7de176918f5019c82ef3af20bd1a13b514236eb02467",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "source_video_sha256": "d5194df6070da253def5db599e4f81847f4bef3e146ab0a5d39f7f077f9cb5d9",
+      "appended_exact_count": 0,
+      "exact_bindings": [],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "bf4f877e68a99b7f3eeb99550aabc8521b35bd0eaf365fc9f6af6cc465a0f8d5",
+      "context_after_sha256": "6cb5da8956fb4ae1144eb7f762347bf5ed5a9d498404aecbf7904363e998e470",
+      "live_context_after_sha256": "bf4f877e68a99b7f3eeb99550aabc8521b35bd0eaf365fc9f6af6cc465a0f8d5",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "source_video_sha256": "6d14b259e12c5677738134daeba6bf40f4a943dbf973d4cddc784588b8a030a8",
+      "appended_exact_count": 1,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "ac24cae7c56b4a750206",
+          "new_episode_id": "8f40fd888549fda2c39f",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "e9448b60e8989fe34bc2f173974f7da7eeb7f11dfc0458ab32a3e37f26b9335c",
+      "context_after_sha256": "45c9d1a7199555934ee4d6aba33bfc23a1a506d98e1ffc6584feeedfd040c4d6",
+      "live_context_after_sha256": "45c9d1a7199555934ee4d6aba33bfc23a1a506d98e1ffc6584feeedfd040c4d6",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "source_video_sha256": "109c2a048f61d85f707255413efac3728cbff228e783bef825bac1c0d41799ff",
+      "appended_exact_count": 1,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "09efd52b183d09ea1dec",
+          "new_episode_id": "5facbbb03c4cb5d2664e",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "d6d088780c5529c8fb29fa0d73ad48ec64d30abdecd9de5ea6eedaf43b8e1866",
+      "context_after_sha256": "c30d5814f9133795a2415f4e9885ad1f244490ac02949c1b90dba3c76b0b5ada",
+      "live_context_after_sha256": "c30d5814f9133795a2415f4e9885ad1f244490ac02949c1b90dba3c76b0b5ada",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "source_video_sha256": "f9f712c4c9c92a7aba942bab7c33c8a38fba48d3877fded3660d17db36215ac8",
+      "appended_exact_count": 2,
+      "exact_bindings": [
+        {
+          "prior_episode_id": "1e22ebf50ecb208953e6",
+          "new_episode_id": "aa3db17d801cf7e7b40a",
+          "source_window_track_epochs_unchanged": true
+        },
+        {
+          "prior_episode_id": "871435eada5922c0e6de",
+          "new_episode_id": "089b4f1a80fa4a2fcc43",
+          "source_window_track_epochs_unchanged": true
+        }
+      ],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "764d9a34b35c5b4c2e5046ae3666b2896021d863ae6f45f809f34f27818635f9",
+      "context_after_sha256": "3d284f2d14b8a5f9c788d454ad645e580837533a4c706c3580e1e4d14ca45364",
+      "live_context_after_sha256": "3d284f2d14b8a5f9c788d454ad645e580837533a4c706c3580e1e4d14ca45364",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "source_video_sha256": "741364df8f7295e25cfddf97a03d28d1ba43b1ac07e571a32de76a8157beeacf",
+      "appended_exact_count": 0,
+      "exact_bindings": [],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "d95495ca365d277875baa8ee533d284416361d8b9c6fdce57f6ce10562c1cea0",
+      "context_after_sha256": "7886d7e2520c2973b9b8347f3642f12477cc02a0dd5814317aa406cec643c39e",
+      "live_context_after_sha256": "d95495ca365d277875baa8ee533d284416361d8b9c6fdce57f6ce10562c1cea0",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    },
+    {
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "source_video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "appended_exact_count": 0,
+      "exact_bindings": [],
+      "skipped_changed_windows": [],
+      "independent_new_type_reviews": [],
+      "context_before_sha256": "1413514c7bd873794cb565e1ab395e369be294bae18d3caa3ea2e227063d2493",
+      "context_after_sha256": "f4f69d8d7b2c29f41ef29aeadebf832c8a1f5eeaf6631a16530263578971e241",
+      "live_context_after_sha256": "1413514c7bd873794cb565e1ab395e369be294bae18d3caa3ea2e227063d2493",
+      "live_context_semantically_equal_staged": true,
+      "old_entries_preserved": true
+    }
+  ],
+  "applied_at_utc": "2026-10-27T17:37:21.187990+00:00",
+  "changed_files": 9,
+  "all_live_input_sources_verified": true
+}

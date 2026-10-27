@@ -1,0 +1,37 @@
+{
+  "version": "round5-candidate-freeze-v2",
+  "code_sha256": {
+    "src/rallymate_scoring/stroke_candidates.py": "743602b7e2415d71c9573d134eab5047aec1d27cce2183699fb6a29ba22e04e1",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "ab33ebe68ba6eabe1f73652852826eb6319fe4f60f4df8365d3af443d896a5b9",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "test_modules": [
+    "tests.test_shared_racket_preparation",
+    "tests.test_paired_motion",
+    "tests.test_stroke_candidates",
+    "tests.test_stroke_analysis",
+    "tests.test_stroke_sequence_segmentation",
+    "tests.test_temporal_recognition",
+    "tests.test_camera_compensated_strokes",
+    "tests.test_stroke_gap_isolation",
+    "tests.test_temporal_duration",
+    "tests.test_initial_subject_buffer",
+    "tests.test_pipeline_mesh_archive",
+    "tests.test_pipeline_scoring_registry",
+    "tests.test_pipeline_progress",
+    "tests.test_sam3d_frame_validation",
+    "tests.test_identity_validation_runner",
+    "tests.test_primary_player",
+    "tests.test_subject_lock"
+  ],
+  "tests_passed": 211,
+  "test_log": ".codex_tmp\\tennis-score-round5-20261028\\final-candidate-v2-tests.log",
+  "git_diff_check": "passed",
+  "targeted_replay": ".codex_tmp\\tennis-score-round5-20261028\\candidate-v2-targeted\\summary.json",
+  "remaining_limitations": [
+    "Sharapova single-hand forehand remains left-motion candidate; baseline nearest-box association yields 2 left votes but hand=null. Service explicit single-hand conflict must still reject. No faster-wrist override.",
+    "Dimitrov new max5 capture has far serve pose but observed ball track does not establish server-to-receiver relation. Generic forehand motion candidate is not automatic return confirmation."
+  ],
+  "change_from_v1": "Removed only added 0.15 same-person separated-wrist near-box margin; restored baseline closest-wrist/exact-tie behavior. Shared close-wrist object support remains unchanged."
+}

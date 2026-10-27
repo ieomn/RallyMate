@@ -1,0 +1,102 @@
+{
+  "version": "tennis-hand-role-frontend-validation-v1",
+  "parser_sha256": "5fdd9bcb8e19071d7a3bf1ba726a32aa061ccd6bc4d114d5438f5e9b995969af",
+  "results": [
+    {
+      "file": "0a6ba301-acd4-46a9-829f-7afc832a552c-assessment.json",
+      "sha256": "3641deb034c23d9e803d2684168e24f410b78b9a011e8f744de6b6d7e1d8f986",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 5,
+      "paired": 2
+    },
+    {
+      "file": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0-assessment.json",
+      "sha256": "f839ab0e3efc3d386aa66a331f9e3be2edfd5cd583bd910e5d2c42deb2e8e4d2",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 6,
+      "paired": 0
+    },
+    {
+      "file": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3-assessment.json",
+      "sha256": "c31c09ef0b7be6e401fb1e06018e2d46726e2662aee85bc17bdafc95dd7bae4d",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "paired": 0
+    },
+    {
+      "file": "5b0b659e-7049-4749-8312-97e72e73a287-assessment.json",
+      "sha256": "8cd5890b3ea24ee7a2d20b6003fc7107fe47de1a2bc28f4e10bddd7c0dec5651",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "paired": 1
+    },
+    {
+      "file": "5ff1c511-add9-461f-865b-04bd17c69d2f-assessment.json",
+      "sha256": "f4adacde7e70af233fee551206a7d5052d5992d5151998a95acf7702dc69d886",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "paired": 0
+    },
+    {
+      "file": "60f60a85-9772-46f9-852f-700404f456d4-assessment.json",
+      "sha256": "2009cd544dd90bdaae937f15ba22aec1aa8c9dc0707b3421b045f65ce1c217ff",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "paired": 0
+    },
+    {
+      "file": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654-assessment.json",
+      "sha256": "634eb8a29216706ba0d6f0a0c16a564adfa981ec83718f5f9f29907e75a21315",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "paired": 0
+    },
+    {
+      "file": "87d280dc-3e83-47c4-83e1-e2ae899ffef1-assessment.json",
+      "sha256": "09fca18941e80677a8cd90d12f6c75f1207bbee0ad3da8dc4494dbb52be9cad3",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "paired": 0
+    },
+    {
+      "file": "d12255e0-22f1-475e-99ba-b0595b8184b6-assessment.json",
+      "sha256": "a16dfc705805bffe473d08f1bd0b414ba2c2ee506785e6dcadf4ff00caf80b05",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "paired": 0
+    },
+    {
+      "file": "d60c8b04-c2f8-47f4-9778-28cdac0110d1-assessment.json",
+      "sha256": "6dc37bc12b258a2470e0082e7719efb92a36bc49c626ef784e9b0fb9603e56cf",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "paired": 0
+    },
+    {
+      "file": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c-assessment.json",
+      "sha256": "410eec31e2005daccbbddfc8d0d09f3e7cbe783027ea202bd95ba8e65142bdab",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "paired": 0
+    },
+    {
+      "file": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468-assessment.json",
+      "sha256": "d6d2505024f49e8b5b2f970a2a884e733e7782e3ada4bec6987647fe8c15cf02",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "paired": 0
+    }
+  ]
+}

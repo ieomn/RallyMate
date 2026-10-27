@@ -1,0 +1,15 @@
+{
+  "version": "tennis-source-inventory-v1",
+  "sources": [
+    {
+      "sample_id": "wta-forehand-slice",
+      "job_id": "round5-wta-reviewed-far-subject",
+      "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/sources/wta-stephens-forehand-slice.mp4",
+      "source_sha256": "2e9513fdcd0781840b7e0e39a53512efc0f48c1ee2592cb29028ace3483c7aa6",
+      "artifact_run_id": "wta-reviewed-far-subject",
+      "source_run_id": "round5-wta-reviewed-wta-reviewed-far-subject",
+      "native_run_root": ".codex_tmp/tennis-score-round5-20261028/gpu-wta-reviewed",
+      "not_service_job_uuid": true
+    }
+  ]
+}

@@ -31,10 +31,10 @@ SCHEMA_PATH = ROOT / "contracts" / "registry-lifecycle.schema.json"
 
 KNOWN_RAW_SHA256 = {
     "roles.runtime_feasibility": (
-        "dc5f3622d70f22ad5da8e933dcd38e7d8c4c57fd5255941fa521704984feac0e"
+        "b5e0d4cc284e52d2e2805a238b14262c37af1690c06841dbc92ce505ad9f9076"
     ),
     "roles.current_scoring_requirements": (
-        "d76216d543abc147be4451aa915eb43e0cae61d710277b717d1944716c8bbf04"
+        "dc5c9e46933e70cc09c24a2abc337a641a24d2986ecc03f5a2ebb44a9e81285b"
     ),
     "non_runtime_artifacts.historical_feasibility": (
         "5f7952c6d9514856ad979e27a556cfa2d80b188eaeffd8333a25f32aacf5dfcc"
@@ -178,7 +178,7 @@ class RegistryLifecycleTests(unittest.TestCase):
         ]
         planning = resolved["non_runtime_artifacts.measurement_plans"]
         self.assertEqual(runtime.lifecycle, "current")
-        self.assertEqual(runtime.embedded_version, "pose-wave-2026-10-01.2")
+        self.assertEqual(runtime.embedded_version, "pose-wave-2026-10-28.1")
         self.assertEqual(
             runtime.source_registry_version,
             historical.embedded_version,
@@ -191,7 +191,7 @@ class RegistryLifecycleTests(unittest.TestCase):
         self.assertEqual(historical.lifecycle, "historical")
         self.assertEqual(planning.lifecycle, "planning_only")
         self.assertEqual(
-            planning.source_registry_version, runtime.embedded_version
+            planning.source_registry_version, "pose-wave-2026-10-01.2"
         )
 
     def test_runtime_role_returns_same_validated_payload_as_low_level_loader(
@@ -202,7 +202,7 @@ class RegistryLifecycleTests(unittest.TestCase):
         self.assertEqual(
             resolved.payload,
             load_feasibility_registry(
-                ROOT / "metric-feasibility-pose-wave-v2.json"
+                ROOT / "metric-feasibility-pose-wave-v3.json"
             ),
         )
         requirements = resolve_current_scoring_requirements(MANIFEST_PATH)

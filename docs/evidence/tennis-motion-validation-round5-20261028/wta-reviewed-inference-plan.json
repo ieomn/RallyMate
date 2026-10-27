@@ -1,0 +1,9 @@
+{
+  "created_at_utc": "2026-10-27T17:11:45.092136+00:00",
+  "capture_source_commit": "a003456",
+  "manual_selection_runner_sha256": "1d665fd0f36f69057eee741f6f81a83313d8cc6b735a055e77acbb85bb867e3f",
+  "request_sha256": "d2bc08ffdd7429444b09611d86dc2e21b491755c7746312d69069f86a18eb4d5",
+  "reviewed_subject_manifest_sha256": "6c9185aca7b5a4c0b851d7e44e1fa10b7689d1965c46df2a1f2096c36f243da3",
+  "automatic_subject_selection": false,
+  "semantics": "Independent manual target selection after production automatic selector failed. Same production decoder/detector/SAM; review replaces only subject selection with exact source detections. Missing target stays missing; no bbox enlargement or pose edits."
+}

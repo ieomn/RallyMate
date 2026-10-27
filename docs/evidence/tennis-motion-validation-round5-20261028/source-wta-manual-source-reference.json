@@ -1,0 +1,159 @@
+{
+  "version": "round5-wta-manual-source-reference-v1",
+  "frozen_at_utc": "2026-10-27T17:05:08.185067+00:00",
+  "source_relative_path": ".codex_tmp/tennis-score-round5-20261028/sources/wta-stephens-forehand-slice.mp4",
+  "source_video_sha256": "2e9513fdcd0781840b7e0e39a53512efc0f48c1ee2592cb29028ace3483c7aa6",
+  "source_url": "https://www.wtatennis.com/videos/1374603/2019-acapulco-shot-of-the-day-stephens-wicked-forehand-slice",
+  "source_access": "official public Brightcove player; supplied by root; no login/DRM bypass; local validation only, no raw redistribution",
+  "source_nominal_fps": 25,
+  "media_size": [
+    1280,
+    720
+  ],
+  "new_GPU_scores_or_poses_viewed": false,
+  "manual_review_before_new_score_access": true,
+  "selection_basis": "First realtime visually verified forehand slice in the officially supplied shot clip; classification from source arm/racket motion, not title; one action with replay is one action.",
+  "preselected_inference_interval_ms": [
+    19800,
+    22500
+  ],
+  "target": {
+    "description_zh": "远端深色肤色、深色服配胸前白横条球员；不是近端黑衣浅发对手；未凭片名核验个人姓名。",
+    "reference_timestamp_ms": 21080,
+    "reference_bbox_px": [
+      701,
+      140,
+      753,
+      202
+    ],
+    "native_binding_status": "pending_actual_source_target_and_epochs"
+  },
+  "actions": [
+    {
+      "manual_action_id": "wta-far-forehand-slice-1",
+      "method": "agent_visual_review",
+      "technique": "forehand_slice",
+      "racket_hand": "right",
+      "racket_hand_basis_zh": "目标面向近场，画面左侧连到其身体右肩的单臂持拍；21.08–21.32秒右臂从举拍到向前下切击，另一臂独立向画面右后方展开。",
+      "start_ms": 20800,
+      "prep_end_ms": 21080,
+      "anchor_ms": 21320,
+      "end_ms": 21760,
+      "anchor_uncertainty_ms": 80,
+      "boundary_uncertainty_ms": 120,
+      "phase_evidence_ms": {
+        "preparation": 21080,
+        "forward_swing": 21240,
+        "follow_through": 21560
+      },
+      "contact_verified": false,
+      "real_opponent_ball_context": true,
+      "observations": [
+        {
+          "timestamp_ms": 20800.0,
+          "source_frame_index": 520,
+          "image_path": "wta-realtime-slice/frame-000520.png",
+          "raw_png_sha256": "96526f943fa61876b21fed2f623b0eb847c81813fe220eca82909dc289e959a2",
+          "observation_zh": "原速连续回合中远端目标完成调整，右手拍举在身前侧。"
+        },
+        {
+          "timestamp_ms": 21080.000000000004,
+          "source_frame_index": 527,
+          "image_path": "wta-realtime-slice/frame-000527.png",
+          "raw_png_sha256": "d8de2b3eb2c55c588e03e67bc5e4d994c86ffae47bc201fda48c8a8127bf402f",
+          "observation_zh": "原速完整准备：右手拍头高于握拍手，来球已进入远端底线附近；另一手离拍。"
+        },
+        {
+          "timestamp_ms": 21240.000000000004,
+          "source_frame_index": 531,
+          "image_path": "wta-realtime-slice/frame-000531.png",
+          "raw_png_sha256": "92a393fe53f6d8cd4f7829c5f543ae225a5dc216cf115d49334e1a5cacc94938",
+          "observation_zh": "右手单臂向前下移拍，左臂独立向后平衡，属于正手切削挥拍而非双手反拍。"
+        },
+        {
+          "timestamp_ms": 21320.0,
+          "source_frame_index": 533,
+          "image_path": "wta-realtime-slice/frame-000533.png",
+          "raw_png_sha256": "443d06a60e797449107211b980c07051f60cdcdf5f713252800ec4a896d68190",
+          "observation_zh": "拍已到膝附近，球在拍前左，进入实际挥击阶段；不能以25fps精确宣称接触帧。"
+        },
+        {
+          "timestamp_ms": 21560.0,
+          "source_frame_index": 539,
+          "image_path": "wta-realtime-slice/frame-000539.png",
+          "raw_png_sha256": "f42f118600515cc4dabf5450f3be797ec07dc99cfc543f802846971b52b5bd64",
+          "observation_zh": "球离开远端向网前行，右臂收向左胸前，随挥可见。"
+        },
+        {
+          "timestamp_ms": 21760.0,
+          "source_frame_index": 544,
+          "image_path": "wta-realtime-slice/frame-000544.png",
+          "raw_png_sha256": "c534df35600ce1fe341af8d7e592fa6836c14c370f912ca4f03868cafb07047b",
+          "observation_zh": "随挥结束并回正准备。"
+        }
+      ],
+      "forward_direction_2d": [
+        0.18528,
+        0.98269
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 21080,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 21080.000000000004,
+            "source_frame_index": 527,
+            "image_path": "wta-realtime-slice/frame-000527.png",
+            "raw_png_sha256": "d8de2b3eb2c55c588e03e67bc5e4d994c86ffae47bc201fda48c8a8127bf402f",
+            "observation_zh": "远端底线和球场纵向边线连续到球网位置，网柱近竖直；由场地独立估计向网投影，未使用腕、髋轨迹。"
+          }
+        ],
+        "court_reference_points_px": {
+          "far_baseline_player_lateral_projection": [
+            735,
+            193
+          ],
+          "same_lateral_fraction_at_net_ground_approx": [
+            758,
+            315
+          ]
+        },
+        "up_reference": "near-vertical net posts; no material roll in this continuous fixed fullcourt shot",
+        "direction_angle_uncertainty_deg": 8,
+        "perspective_limit_zh": "这是二维近似。远端向网方向与画面向下几乎一致，上下与前后投影近共线，不能当三维独立轴或承诺前下比例可测。"
+      },
+      "mirror_status": "Readable court and sponsor lettering; no observed mirroring, historical edit provenance does not prove absolute absence.",
+      "limitations": [
+        "far target height about 55 pixels in realtime original, possible pose/hand observability limits",
+        "25fps source limits timing to40ms before model/phase uncertainty",
+        "forward and down projections nearly collinear",
+        "not a serve return; ordinary rally forehand slice"
+      ]
+    }
+  ],
+  "replay": {
+    "source_interval_ms": [
+      35000,
+      36800
+    ],
+    "same_action_as": "wta-far-forehand-slice-1",
+    "use": "supplementary visual hand/type inspection only",
+    "excluded_from_real_timing_and_independent_count": true,
+    "reason": "edited slow replay/pan/zoom, not realtime rate",
+    "evidence": "wta-replay-slice/evidence.json"
+  },
+  "reviewed_interval_ms": [
+    19800,
+    22500
+  ],
+  "visible_complete_target_action_count": 1,
+  "no_other_complete_target_action_in_interval": true,
+  "source_bindings_pending": true
+}

@@ -36,7 +36,7 @@
     "refresh_policy": "until_usable"
   },
   "scoring": {
-    "feasibility_registry": "../metric-feasibility-pose-wave-v2.json"
+    "feasibility_registry": "../metric-feasibility-pose-wave-v3.json"
   },
   "upstream_metadata": {
     "purpose": "persistent_worker_online_pose_deployment_smoke",

@@ -14,6 +14,7 @@ from functools import lru_cache
 import json
 import math
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -24,9 +25,9 @@ from rallymate_service.tennis_subjects import subject_reference, select_report_s
 from rallymate_service.tennis_source_motion import source_motion_by_frame, window_source_motion, verified_action_context, bind_reviewed_directions
 from rallymate_service.tennis_motion_patterns import analyze_motion_pattern, PATTERN_METRICS, TECHNIQUES, RUBRIC as PATTERN_RUBRIC
 from rallymate_vision.sam3d_evaluation import COORDINATES_3D, _binding_error, _time
-from rallymate_scoring.stroke_candidates import detect_stroke_candidates
+from rallymate_scoring.stroke_candidates import detect_stroke_candidates, _normalization
 
-VERSION = "tennis-action-assessment-v1.3.0"
+VERSION = "tennis-action-assessment-v1.4.0"
 RUBRIC_VERSION = "tennis-action-rubric-v1.3.0"
 DIMENSIONS = (("movement", "移动支撑"), ("preparation", "准备引拍"),
               ("coordination", "动作协调"), ("striking", "击球姿态"),
@@ -310,7 +311,10 @@ def _summary_episodes(summary):
         for row in _map(data).get("episodes", []):
             if not isinstance(row, Mapping) or not isinstance(row.get("episode_id"), str):
                 continue
-            reduced = {key: row.get(key) for key in ("episode_id", "start_ms", "peak_ms", "end_ms", "person_track_id", "phases", "racket_hand", "classification")}
+            reduced = {key: row.get(key) for key in ("episode_id", "start_ms", "peak_ms", "end_ms", "person_track_id", "phases", "racket_hand", "motion_wrist", "racket_hand_semantics", "classification")}
+            reduced["hand_evidence"] = _map(_map(row.get("evidence")).get("hand_evidence"))
+            reduced["racket_hand_evidence"] = _map(row.get("racket_hand_evidence"))
+            reduced["paired_wrist_acceleration"] = _map(_map(row.get("evidence")).get("paired_wrist_acceleration"))
             reduced["continuity"] = _map(_map(row.get("evidence")).get("process_continuity"))
             reduced["stroke_classification"] = _map(_map(row.get("evidence")).get("stroke_classification"))
             reduced["return_context"] = _map(_map(row.get("evidence")).get("return_context"))
@@ -353,6 +357,19 @@ def _verified_return_aliases(episodes):
     return aliases
 
 
+def _motion_wrist(episode):
+    """The legacy racket_hand field names the measured wrist, not grip ownership."""
+    side = episode.get("motion_wrist", episode.get("racket_hand"))
+    # Reduced historical rows may contain a null field added by the adapter.
+    if side is None and episode.get("racket_hand_semantics") is None:
+        side = episode.get("racket_hand")
+    if (side not in ("left", "right") or episode.get("racket_hand") != side
+            or episode.get("motion_wrist") is not None
+            and episode.get("racket_hand_semantics") != "motion_wrist_legacy_alias"):
+        return None
+    return side
+
+
 def _source_phase_authority(episode):
     """This authorizes phase timing only, never model confidence or real contact."""
     proof = _map(episode.get("measurement_provenance"))
@@ -362,7 +379,7 @@ def _source_phase_authority(episode):
             and proof.get("pose_source") == "sam3d" and proof.get("observation_semantics") == "monocular_model_estimate"
             and proof.get("assessment_status") == "measurement_only" and proof.get("scoring_allowed") is False
             and type(proof.get("model_estimate_sample_count")) is int and proof["model_estimate_sample_count"] >= 7
-            and episode.get("racket_hand") in {"left", "right"}
+            and _motion_wrist(episode) in {"left", "right"}
             and all(p.get("status") == "measured" for p in (prep, acceleration, follow))
             and prep.get("start_ms") == episode.get("start_ms") and prep.get("end_ms") == acceleration.get("start_ms")
             and acceleration.get("end_ms") == episode.get("peak_ms") == follow.get("start_ms")
@@ -384,7 +401,7 @@ def _bound_phase_ambiguity(episode, segments, sha):
             or proof["model_estimate_sample_count"] < 7 or continuity.get("pose_source") != "sam3d"
             or str(continuity.get("video_sha256", "")).lower() != sha
             or ambiguity.get("candidate_wrist") not in ("left", "right")
-            or ambiguity.get("candidate_wrist") != episode.get("racket_hand")
+            or ambiguity.get("candidate_wrist") != _motion_wrist(episode)
             or not _finite(peak) or peak != episode.get("peak_ms")
             or set(phases) != {"preparation", "acceleration", "follow_through"}
             or any(p.get("status") != "unavailable" or p.get("reason_code") != reason
@@ -421,7 +438,112 @@ def _bound_phase_ambiguity(episode, segments, sha):
     return reason if bound else None
 
 
-def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_outcomes=None):
+def _paired_hand_support(episode, rows, observations, sha):
+    """Recompute bilateral phase support from the bound original 2D observations.
+
+    A technique label or a serialized 'supported' flag is not sufficient. The
+    motion wrist remains the phase reference; this only permits the reviewed
+    grip hand to supply hand-specific measurements of the same two-hand action.
+    """
+    from rallymate_scoring.paired_motion import paired_wrist_phase_evidence
+
+    proof = _map(episode.get("paired_wrist_acceleration"))
+    continuity = _map(episode.get("continuity"))
+    reviewed = _map(episode.get("verified_action_context"))
+    phases = {p.get("phase"): p for p in episode.get("phases", []) if isinstance(p, Mapping)}
+    acceleration = _map(phases.get("acceleration"))
+    motion, primary = _motion_wrist(episode), reviewed.get("racket_hand")
+    start, end = acceleration.get("start_ms"), acceleration.get("end_ms")
+    def missing(reason):
+        return {"version": "paired-wrist-phase-v1", "status": "unavailable", "reason_code": reason}
+    if (episode.get("motion_wrist") != motion or not _source_phase_authority(episode)
+            or motion == primary or primary not in ("left", "right")
+            or reviewed.get("technique") not in
+               ("baseline_two_hand_backhand", "return_two_hand_backhand")
+            or reviewed.get("source_selection_epoch") != continuity.get("source_selection_epoch")
+            or reviewed.get("camera_reference_epoch") != continuity.get("camera_reference_epoch")
+            or proof.get("version") != "paired-wrist-phase-v1" or proof.get("status") != "supported"
+            or proof.get("motion_wrist") != motion or proof.get("paired_wrist") != primary
+            or proof.get("start_ms") != start or proof.get("end_ms") != end):
+        return missing("two_hand_phase_role_contract_unverified")
+    source = _map(proof.get("source"))
+    expected = {"person_track_id": episode.get("person_track_id"),
+                "selection_epoch": continuity.get("selection_epoch"),
+                "source_selection_epoch": continuity.get("source_selection_epoch"),
+                "camera_reference_epoch": continuity.get("camera_reference_epoch"),
+                "normalization_basis": continuity.get("normalization_basis"),
+                "pose_source": "sam3d", "observation_semantics": "monocular_model_estimate"}
+    if (any(source.get(key) != value for key, value in expected.items())
+            or str(source.get("video_sha256", "")).lower() != sha):
+        return missing("two_hand_phase_source_binding_unverified")
+    basis = expected["normalization_basis"]
+    normalized_side = {"full_torso": None, "left_shoulder_left_torso": "left", "right_shoulder_right_torso": "right"}
+    if basis not in normalized_side or not rows:
+        return missing("two_hand_phase_normalization_unverified")
+    endpoints = [min(range(len(rows)), key=lambda i: abs(rows[i]["time"] - timestamp)) for timestamp in (start, end)]
+    if any(abs(rows[i]["time"] - timestamp) > 1.01 for i, timestamp in zip(endpoints, (start, end))):
+        return missing("two_hand_phase_endpoints_unobserved")
+    selected = rows[endpoints[0]:endpoints[1] + 1]
+    camera, context = window_source_motion(selected, observations or {}, sha)
+    if not context.get("source_binding_verified"):
+        return missing("two_hand_phase_source_observations_missing")
+    samples = []
+    for row, observed in zip(selected, camera):
+        if row.get("wrist_unavailable") or row.get("wrist_discontinuities"):
+            return missing("two_hand_phase_wrist_discontinuity")
+        norm = _normalization(observed["points"], normalized_side[basis])
+        if norm is None or norm[2] != basis:
+            return missing("two_hand_phase_normalization_unverified")
+        center, scale, _ = norm
+        binding = {"video_sha256": sha, "frame_index": row["frame"], "person_track_id": row["track"],
+                   "selection_epoch": row["reference"][0], "camera_reference_epoch": row["reference"][1],
+                   "pts": observed["source_pts"], "time_base_num": observed["time_base_num"],
+                   "time_base_den": observed["time_base_den"]}
+        binding["timestamp_ms"] = binding["pts"] * binding["time_base_num"] / binding["time_base_den"] * 1000
+        samples.append(SimpleNamespace(time=row["time"], frame_index=row["frame"], track=row["track"],
+                       selection_epoch=expected["selection_epoch"], camera_reference_epoch=row["reference"][1],
+                       center=center, scale=scale, normalization_basis=basis, pose_source="sam3d",
+                       observation_semantics="monocular_model_estimate", source_binding=binding,
+                       points={name: ((point[0] - center[0]) / scale, (point[1] - center[1]) / scale)
+                               for name, point in observed["points"].items()}))
+    bindings = proof.get("sample_binding")
+    if not isinstance(bindings, list) or len(bindings) != len(samples):
+        return missing("two_hand_phase_sample_binding_mismatch")
+    for supplied, sample in zip(bindings, samples):
+        if not isinstance(supplied, Mapping):
+            return missing("two_hand_phase_sample_binding_mismatch")
+        binding = _map(supplied.get("source_binding"))
+        timestamp = supplied.get("timestamp_ms")
+        source_time = binding.get("timestamp_ms")
+        if (supplied.get("frame_index") != sample.frame_index or not _finite(timestamp)
+                or abs(timestamp - sample.time) > 1.01
+                or not _finite(source_time) or abs(source_time - sample.source_binding["timestamp_ms"]) > 1.01
+                or str(binding.get("video_sha256", "")).lower() != sha
+                or any(binding.get(k) != sample.source_binding[k] for k in
+                       ("frame_index", "person_track_id", "selection_epoch", "camera_reference_epoch", "pts", "time_base_num", "time_base_den"))):
+            return missing("two_hand_phase_sample_binding_mismatch")
+    recomputed = paired_wrist_phase_evidence(samples, start_ms=samples[0].time, end_ms=samples[-1].time, motion_wrist=motion)
+    return {**recomputed, "verification_method": "recomputed_from_source_bound_native_image_observations",
+            "declared_phase_start_ms": start, "declared_phase_end_ms": end}
+
+
+def _hand_roles(episode, side, paired=None):
+    reviewed = _map(episode.get("verified_action_context"))
+    primary = reviewed.get("racket_hand")
+    provenance = {"method": reviewed.get("method"), "reviewer": reviewed.get("reviewer")}
+    if primary not in ("left", "right"):
+        primary = _map(episode.get("hand_evidence")).get("hand")
+        provenance = {"method": "source_bound_racket_association"} if primary in ("left", "right") else {"method": "unverified"}
+    if primary not in ("left", "right"):
+        primary = None
+    motion = _motion_wrist(episode) if _source_phase_authority(episode) else side
+    return {"version": "tennis-hand-roles-v1", "motion_wrist": motion, "measurement_hand": side,
+            "primary_racket_hand": primary, "primary_hand_provenance": provenance,
+            "relationship": "verified_two_hand" if paired else "same_side" if primary == motion else "motion_only",
+            "paired_wrist_evidence": paired}
+
+
+def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_outcomes=None, *, source_observations=None):
     """An independent phase candidate bounds scoring; any-arm peaks alone do not.
 
     A single detected action is counted once, never once per arm/peak/fragment.
@@ -452,8 +574,14 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
             reject(candidate, "phase_authority_source_unverified")
             continue
         reviewed = _map(candidate.get("verified_action_context"))
+        associated_hand = _map(candidate.get("hand_evidence")).get("hand")
+        if (_source_phase_authority(candidate) and reviewed.get("racket_hand") not in ("left", "right")
+                and associated_hand in ("left", "right") and associated_hand != _motion_wrist(candidate)):
+            reject(candidate, "racket_association_conflicts_with_motion_wrist")
+            continue
         if (_source_phase_authority(candidate) and reviewed.get("racket_hand") in {"left", "right"}
-                and reviewed["racket_hand"] != candidate.get("racket_hand")):
+                and reviewed["racket_hand"] != _motion_wrist(candidate)
+                and reviewed.get("technique") not in ("baseline_two_hand_backhand", "return_two_hand_backhand")):
             reject(candidate, "reviewed_hand_conflicts_with_motion_phases")
             continue
         if _map(reviewed.get("validity")).get("status") == "invalid":
@@ -501,6 +629,7 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
             continue
         choices = []
         active_jump_seen = False
+        paired_failure = None
         for segment in segments:
             if not segment or (segment[0]["track"], segment[0]["reference"]) != (
                 episode.get("person_track_id"), (continuity.get("source_selection_epoch"), continuity.get("camera_reference_epoch"))):
@@ -526,14 +655,28 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
             reviewed_hand = _map(episode.get("verified_action_context")).get("racket_hand")
             classification = _map(episode.get("classification"))
             side = reviewed_hand if reviewed_hand in {"left", "right"} else (
-                episode.get("racket_hand") if source_phases or episode["family"] == "serve" or classification.get("status") == "rule_inferred" else None)
+                _motion_wrist(episode) if source_phases else episode.get("racket_hand") if episode["family"] == "serve" or classification.get("status") == "rule_inferred" else None)
             if side not in {"left", "right"}:
                 side = max(paths, key=paths.get)
             if side not in {"left", "right"}:
                 continue
+            associated_hand = _map(episode.get("hand_evidence")).get("hand")
+            if reviewed_hand not in ("left", "right") and associated_hand in ("left", "right") and associated_hand != side:
+                paired_failure = "racket_association_conflicts_with_motion_wrist"
+                continue
             if any(side in (*row.get("wrist_discontinuities", ()), *row.get("wrist_unavailable", ())) for row in segment[a:b]):
                 active_jump_seen = True
                 continue
+            paired = None
+            if source_phases and side != _motion_wrist(episode):
+                motion_side = _motion_wrist(episode)
+                if any(motion_side in (*row.get("wrist_discontinuities", ()), *row.get("wrist_unavailable", ())) for row in segment[a:b]):
+                    paired_failure = "two_hand_phase_wrist_discontinuity"
+                    continue
+                paired = _paired_hand_support(episode, segment[a:b], source_observations, sha)
+                if paired.get("status") != "supported":
+                    paired_failure = paired.get("reason_code", "two_hand_phase_support_unverified")
+                    continue
             wrist = wrists[side]
             if paths[side] < .45 or not np.isfinite(wrist).all() or np.linalg.norm(np.ptp(wrist, axis=0)) < .25:
                 continue
@@ -569,6 +712,7 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                     "stroke_classification": episode.get("stroke_classification"),
                     "return_context": episode.get("return_context"),
                     "source_phase_authority": source_phases,
+                    "hand_roles": _hand_roles(episode, side, paired),
                     "verified_action_context": episode.get("verified_action_context"),
                     "preparation_start_clipped": context_start < t[0] - .51 and a == 0}
             choices.append((segment, (a, b, peak, side, wrist, meta)))
@@ -582,7 +726,7 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                              "person_track_id": episode.get("person_track_id"),
                              "subject_id": rows[window[0]]["subject_id"], "status": "measured", "reason_codes": []})
         else:
-            reject(episode, "active_wrist_discontinuity_in_motion" if active_jump_seen else "candidate_lacks_continuous_complete_motion")
+            reject(episode, "active_wrist_discontinuity_in_motion" if active_jump_seen else paired_failure or "candidate_lacks_continuous_complete_motion")
     return out
 
 
@@ -857,6 +1001,7 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
             "subject_id": rows[0]["subject_id"], "identity_basis": rows[0]["identity_basis"],
             "source_track_id": rows[0]["track"], "source_selection_epoch": rows[0]["reference"][0],
             "camera_reference_epoch": rows[0]["reference"][1], "active_arm": side,
+            "hand_roles": meta.get("hand_roles"),
             "candidate_window": {key: meta[key] for key in ("candidate_start_ms", "candidate_peak_ms", "candidate_end_ms")},
             "quality_reason_codes": quality_codes,
             "phase_refinement": "source_bound_primary_motion_phases" if meta.get("source_phase_authority") else "source_bound_serve_overhead_pivot" if meta["family"] == "serve" else "native_3d_active_arm_in_bounded_candidate_context",
@@ -928,7 +1073,7 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
     rejected = Counter()
     outcomes = []
     all_episodes = [_score_window(segment, window, source_observations=observations, video_sha256=sha)
-                    for segment, window in _bound_windows(segments, motion_episodes, sha, rejected, outcomes)]
+                    for segment, window in _bound_windows(segments, motion_episodes, sha, rejected, outcomes, source_observations=observations)]
     scope = select_report_subject(segments)
     episodes = [e for e in all_episodes if e["subject_id"] == scope["selected_subject_id"]]
     for subject in scope["subjects"]:

@@ -1,0 +1,185 @@
+{
+  "version": "manual-reviewed-window-v1",
+  "scope": "same round4 independently reviewed complete serve-return window, new actual round5 native binding only; no automatic return success claim",
+  "windows": [
+    {
+      "window_id": "dimitrov-near-return-fh-1-pattern",
+      "window_source": "manual-reviewed-window",
+      "sample_id": "dimitrov-tiafoe-usopen-2024",
+      "source_video_path": "service_data/uploads/8fc81362-5475-4677-a176-7239aa6bdc40.mp4",
+      "video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+      "person_track_id": 1,
+      "native_binding_status": "verified_same_source_complete_frozen_window_actual_new_native_source_identity_epochs_pts",
+      "start_ms": 7650,
+      "peak_ms": 8220,
+      "end_ms": 8750,
+      "technique": "return_forehand",
+      "racket_hand": "right",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "codex_samples_independent_source_review_20261027",
+      "phase_evidence_ms": {
+        "preparation": 8000,
+        "forward_swing": 8200,
+        "follow_through": 8400
+      },
+      "evidence": {
+        "contact_sheets": [
+          "review-frames/dimitrov-return-overview.jpg",
+          "review-frames/dimitrov-return-dense.jpg"
+        ],
+        "observation_zh": "远端7.3秒抛球、7.5–7.7秒发球挥出；7.85秒球已在近场，8.0–8.1秒球继续进入近端正手侧，近端浅衣紫裤右手8.2–8.3秒前挥，8.4–8.7秒随挥恢复。",
+        "gpu_contact_sheet": "review-frames/gpu-new-dimitrov-tiafoe-real-return.jpg"
+      },
+      "no_automatic_segmentation_success_claim": true,
+      "prep_end_ms": 8100,
+      "return_evidence_file": "dimitrov-manual-return-evidence.json",
+      "return_evidence": {
+        "version": "manual-return-context-v1",
+        "method": "agent_visual_review",
+        "reviewer": "codex_samples_independent_source_review_20261027",
+        "source_video_sha256": "6919f4c50814602f5cf8496ddaee2ba1514840956f50850c85e434e4ea043a7a",
+        "source_image_size_px": [
+          1920,
+          1080
+        ],
+        "receiver_subject_id": "subject-1",
+        "receiver_source_track_id": 1,
+        "receiver_racket_hand": "right",
+        "source_track_id_status": "verified_against_new_native_and_timeline",
+        "server_subject_description": "different far-side player wearing light clothing and cap",
+        "relationship_zh": "连续同一完整全场回合：远端球员抛球并头顶发球，球随后进入近场并向近端浅衣紫裤球员的正手侧移动，近端球员随即右手前挥回击。原画面没有镜头切换，轻微手持平移不改变两人角色。",
+        "opponent_serve_frames": [
+          {
+            "source_frame_index": 438,
+            "timestamp_ms": 7300,
+            "image": "review-frames/dimitrov-source-438.png",
+            "image_sha256": "32be43b812c14ffb46a847bdc3f30c8c483b672935c490ff1630dd7f433f02f8",
+            "stage": "preparation",
+            "server_bbox_px": [
+              376,
+              146,
+              426,
+              295
+            ]
+          },
+          {
+            "source_frame_index": 450,
+            "timestamp_ms": 7500,
+            "image": "review-frames/dimitrov-source-450.png",
+            "image_sha256": "3aa799889bb823d5f8925e85c200c8011e18c5a1e3f014f6924d9ce030f32224",
+            "stage": "overhead_swing",
+            "server_bbox_px": [
+              372,
+              120,
+              445,
+              292
+            ]
+          }
+        ],
+        "incoming_ball_frames": [
+          {
+            "source_frame_index": 471,
+            "timestamp_ms": 7850,
+            "image": "review-frames/dimitrov-source-471.png",
+            "image_sha256": "a9693ed57c91bea1ad2037f52343cea6d85b0601a167bfa824ad38b08be29d19",
+            "point_px": [
+              994,
+              574
+            ]
+          },
+          {
+            "source_frame_index": 480,
+            "timestamp_ms": 8000,
+            "image": "review-frames/dimitrov-source-480.png",
+            "image_sha256": "a8a200cbfa3a4f29dba4d3df1353db8e082197404e01202878ed223800b79613",
+            "point_px": [
+              1256,
+              714
+            ]
+          },
+          {
+            "source_frame_index": 486,
+            "timestamp_ms": 8100,
+            "image": "review-frames/dimitrov-source-486.png",
+            "image_sha256": "e69833698845406b51ed5ea18a4bbcc35e66723fe82055ffe0f3c7954969577d",
+            "point_px": [
+              1424,
+              768
+            ]
+          }
+        ],
+        "pixel_annotation_uncertainty_px": 8,
+        "pixel_annotation_method": "manual center of visible motion-blurred yellow ball after viewing original 1920x1080 frames; not an automatic detector or fitted trajectory",
+        "receiver_action_interval_ms": [
+          7650,
+          8750
+        ],
+        "receiver_forward_swing_anchor_ms": 8220,
+        "exact_ball_contact_verified": false,
+        "not_automatic_return_recognition": true,
+        "receiver_subject_description": "near_side_light_shirt_purple_shorts"
+      },
+      "forward_direction_2d": [
+        -0.901284,
+        -0.433229
+      ],
+      "forward_direction_2d_verified": true,
+      "up_direction_2d": [
+        0,
+        -1
+      ],
+      "up_direction_2d_verified": true,
+      "direction_reference_timestamp_ms": 8000,
+      "direction_basis": {
+        "basis": "court_net_and_upright_reference",
+        "coordinate_system": "image_pixels_x_right_y_down",
+        "frames": [
+          {
+            "timestamp_ms": 8000,
+            "source_frame_index": 480,
+            "image": "review-frames/dimitrov-source-480.png"
+          }
+        ],
+        "court_reference_points_px": {
+          "near_baseline_midpoint_approx": [
+            1450,
+            842
+          ],
+          "net_midpoint_approx": [
+            803,
+            531
+          ]
+        },
+        "up_reference": "net posts / stadium rail upright, no material camera roll",
+        "observation_zh": "向网方向由近端底线中点至球网中点在原画面的投影估计，和持拍手/髋运动无关；透视近似并非三维标定。向上按竖直网柱参考。",
+        "direction_angle_uncertainty_deg": 8,
+        "camera_reference_epoch": 0
+      },
+      "job_id": "round5-dimitrov-return-context",
+      "source_run_id": "round5-context-dimitrov-return-context",
+      "artifact_run_id": "dimitrov-return-context",
+      "subject_id": "subject-1",
+      "source_selection_epoch": 0,
+      "native_selection_epoch": 0,
+      "camera_reference_epoch": 0,
+      "native_binding": {
+        "native_rows_in_window": 67,
+        "primary_rows_in_window": 67,
+        "summary_sha256": "f3bd211dc6ef21965aa4be29a3ff182693ebd0c43d34d6910cabbb3f0836af28",
+        "native_sha256": "60f07fde2f6fa5f2a04d444bb7d046a4c986d15b5a0658c130d44398fcec1e09",
+        "timeline_sha256": "2fda7d03255eb7a111e21a5509584be627d239b569275c4874a53aef9f0f768e",
+        "frames_sha256": "47cff33efbb5e6c8168608eca185b846ed35839aa2594a6990c20736ad3451e2"
+      },
+      "artifact_job_id": "round5-context-dimitrov-return-context",
+      "round5_binding_evidence": {
+        "method": "exact_source_frame_pts_track_epoch_join_plus_sampled_original_pixel_identity_review",
+        "visual_contact": "source-audit/dimitrov-new-context-binding/actual-selected-bbox-contact.jpg",
+        "visual_contact_sha256": "1f966fef68c6a40b0ba05c75e764b662579824d652ab704efc36e55387d8dc4d",
+        "old_source_annotation_base": ".codex_tmp/tennis-score-round4-20261027",
+        "new_timing_or_technique_annotations_added": false,
+        "not_automatic_return_classification": true
+      }
+    }
+  ]
+}

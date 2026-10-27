@@ -1,0 +1,46 @@
+{
+  "version": "round5-candidate-freeze-v3",
+  "code_sha256": {
+    "src/rallymate_scoring/stroke_candidates.py": "8f832b183185758722eebf0efefad703099b069a8663dde5794d0135b14f669d",
+    "src/rallymate_scoring/stroke_analysis.py": "2a34891e515473ea2627501688a0483548ac2212a9c00b13134152af90522688",
+    "src/rallymate_scoring/temporal_recognition.py": "d0681a07dcb56a4da589cedb84ad45609e8c18c3b6884cdaff15ad4a8fdb34db",
+    "src/rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c"
+  },
+  "test_modules": [
+    "tests.test_shared_racket_preparation",
+    "tests.test_paired_motion",
+    "tests.test_stroke_candidates",
+    "tests.test_stroke_analysis",
+    "tests.test_stroke_sequence_segmentation",
+    "tests.test_temporal_recognition",
+    "tests.test_camera_compensated_strokes",
+    "tests.test_stroke_gap_isolation",
+    "tests.test_temporal_duration",
+    "tests.test_initial_subject_buffer",
+    "tests.test_pipeline_mesh_archive",
+    "tests.test_pipeline_scoring_registry",
+    "tests.test_pipeline_progress",
+    "tests.test_sam3d_frame_validation",
+    "tests.test_identity_validation_runner",
+    "tests.test_primary_player",
+    "tests.test_subject_lock"
+  ],
+  "tests_passed": 213,
+  "test_log": ".codex_tmp\\tennis-score-round5-20261028\\final-candidate-v3-tests.log",
+  "git_diff_check": "passed",
+  "targeted_replay": ".codex_tmp\\tennis-score-round5-20261028\\candidate-v3-targeted\\summary.json",
+  "remaining_limitations": [
+    "Sharapova single-hand forehand remains left-motion candidate; baseline nearest-box association yields 2 left votes but hand=null. Service explicit single-hand conflict must still reject. No faster-wrist override.",
+    "Dimitrov new max5 capture has far serve pose but observed ball track does not establish server-to-receiver relation. Generic forehand motion candidate is not automatic return confirmation."
+  ],
+  "change_from_v1": "Removed only added 0.15 same-person separated-wrist near-box margin; restored baseline closest-wrist/exact-tie behavior. Shared close-wrist object support remains unchanged.",
+  "change_from_v2": [
+    "Within the unchanged ownership rank, prefer candidate-local direct racket observations over shared-preparation support before counting evidence frames.",
+    "An external peak with an entirely low and near-fixed-length shoulder-to-wrist phase must independently satisfy the same sweep geometry even when its reported phase slightly overlaps the original candidate. Existing .35/.2 geometric scales retained; wide rigid-arm low sweep passes."
+  ],
+  "source_audits": {
+    ".codex_tmp\\tennis-score-round5-20261028\\source-audit\\dimitrov-late-motion-source-audit.json": "fce0ae8e4ede4ef9bd99b485e8d08848c81cc3542ecd8d876d68cca2e044eaba",
+    ".codex_tmp\\tennis-score-round5-20261028\\source-audit\\dimitrov-21383-negative-audit.json": "ffd943cfc6387e1f92eb7c0c32fa559c0ea7f215e989fecc3f66c9d05ec0c759",
+    ".codex_tmp\\tennis-score-round5-20261028\\source-audit\\white-lost-window-source-audit.json": "225c6c4dfb247e55778ede567af4774165705e1bd46957eff20f391473b83f8c"
+  }
+}

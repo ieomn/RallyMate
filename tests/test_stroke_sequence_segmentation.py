@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import math
 import unittest
 
 from rallymate_scoring.stroke_candidates import detect_stroke_candidates
@@ -99,6 +100,72 @@ class StrokeSequenceSegmentationTests(unittest.TestCase):
         self.assertLess(result["peak_ms"], candidate["start_ms"])
         self.assertEqual(result["analysis_status"], "complete")
         self.assertIsNone(result["phase_ambiguity"])
+
+    def test_overlapping_candidate_cannot_lend_motion_to_a_small_low_rigid_arm_pulse(self):
+        # A fixed-length low arm can sway through the torso midline while a
+        # person walks. A later candidate's few overlapping frames do not make
+        # that short pulse an independently supported sweep.
+        def arc_frames(angle):
+            rows=[]
+            for i in range(35):
+                fraction=min(1,max(0,(i*50-300)/300))
+                theta=angle*(1-2*fraction)
+                rows.append(frame(i,right=(.3+1.2*math.sin(theta),1.2*math.cos(theta))))
+            return rows
+        candidate={"family":"baseline","racket_hand_candidate":"right",
+                   "start_ms":650,"peak_ms":950,"end_ms":1250,"evidence":{}}
+        result=self._prediction(arc_frames(.3),candidate,hand="right")
+        self.assertLess(result["peak_ms"],candidate["start_ms"])
+        self.assertGreater(result["end_ms"],candidate["start_ms"])
+        self.assertEqual(result["analysis_status"],"partial")
+        self.assertEqual(result["phase_ambiguity"]["reason_code"],"external_peak_motion_geometry_unverified")
+        self.assertTrue(all(p["status"]=="unavailable" for p in result["phases"]))
+
+        # The same low, fixed-length arm with a sufficiently wide independent
+        # sweep is retained, as in a straight-arm low cut. No elbow unfolding
+        # or ideal body-joint sequence is required.
+        wide=self._prediction(arc_frames(.8),candidate,hand="right")
+        self.assertLess(wide["peak_ms"],candidate["start_ms"])
+        self.assertGreater(wide["end_ms"],candidate["start_ms"])
+        self.assertEqual(wide["analysis_status"],"complete")
+        self.assertIsNone(wide["phase_ambiguity"])
+
+    def test_late_forward_sweep_is_not_cropped_at_candidate_end_plus_400(self):
+        anchors=[(0,(.7,.7)),(300,(.7,.7)),(700,(-.7,.7)),(900,(-.7,.7)),
+                 (1050,(-.4,.55)),(1150,(.9,-.1)),(1700,(.9,-.1))]
+        frames=[frame(i,right=interpolate(i*50,anchors)) for i in range(35)]
+        candidate={"family":"baseline","racket_hand_candidate":"right","start_ms":300,
+                   "peak_ms":500,"end_ms":650,"evidence":{}}
+        result=self._prediction(frames,candidate,hand="right")
+        self.assertGreater(result["peak_ms"],candidate["end_ms"]+400)
+        self.assertEqual(result["analysis_status"],"complete")
+
+    def test_quiet_reset_preserves_first_of_two_independent_sweeps(self):
+        anchors=[(0,(.9,.5)),(300,(.9,.5)),(650,(-.9,.5)),(1100,(-.9,.5)),
+                 (1300,(.9,.5)),(1900,(.9,.5))]
+        frames=[frame(i,right=interpolate(i*50,anchors)) for i in range(39)]
+        candidate={"family":"baseline","racket_hand_candidate":"right","start_ms":300,
+                   "peak_ms":500,"end_ms":650,"evidence":{}}
+        result=self._prediction(frames,candidate,hand="right")
+        self.assertLess(result["peak_ms"],700)
+        self.assertEqual(result["analysis_status"],"complete")
+
+    def test_late_context_search_cannot_cross_identity_boundary(self):
+        from rallymate_scoring.stroke_candidates import _sample
+        from rallymate_scoring.stroke_analysis import _episode_context
+        from rallymate_scoring.temporal_recognition import RuleTemporalBackend,build_temporal_window
+        anchors=[(0,(.9,.5)),(300,(.9,.5)),(650,(-.9,.5)),(1100,(-.9,.5)),
+                 (1300,(.9,.5)),(1900,(.9,.5))]
+        raw=[frame(i,right=interpolate(i*50,anchors)) for i in range(39)]
+        observed=[_sample(f["poses"][0],f["frame"]) for f in raw]
+        for item in observed:
+            if item.time>=1000:item.selection_epoch=1
+        candidate={"family":"baseline","person_track_id":1,"racket_hand_candidate":"right",
+                   "start_ms":300,"peak_ms":500,"end_ms":650,"evidence":{}}
+        context=_episode_context(candidate,observed)
+        self.assertLess(context[-1].time,1000)
+        result=RuleTemporalBackend().recognize(build_temporal_window(context),candidate,{"hand":"right"})
+        self.assertLess(result["peak_ms"],1000)
 
     def test_observed_reset_keeps_a_larger_previous_peak_out_of_the_next_action(self):
         anchors = [(0, (.9, .5)), (550, (.9, .5)), (650, (-.9, .5)),

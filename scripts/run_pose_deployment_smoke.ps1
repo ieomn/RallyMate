@@ -28,7 +28,7 @@ switch ($Profile) {
 $env:PYTHONPATH = Join-Path $Root "src"
 $env:RALLYMATE_POSE_PRESET = $Preset
 $env:RALLYMATE_MODEL_LICENSE_ACK = "alternative-backend"
-$Registry = Join-Path $Root "metric-feasibility-pose-wave-v2.json"
+$Registry = Join-Path $Root "metric-feasibility-pose-wave-v3.json"
 $env:RALLYMATE_SCORING_FEASIBILITY_REGISTRY = $Registry
 & $Python (Join-Path $Root "scripts\smoke_pose_deployment_profile.py") `
     --request $Request `

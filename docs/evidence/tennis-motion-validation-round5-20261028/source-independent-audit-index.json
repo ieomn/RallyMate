@@ -1,0 +1,133 @@
+{
+  "version": "round5-independent-source-audit-index-v1",
+  "created_at_utc": "2026-10-27T17:16:00.732632+00:00",
+  "scope": "source visual evidence, independent classification/phase references and actual inference binding; not scoring truth or automatic model success",
+  "original_round4_gt_unchanged": true,
+  "raw_media_for_local_validation_only": true,
+  "source_acquisition_record": {
+    "path": ".codex_tmp/tennis-score-round5-20261028/source-acquisition.json",
+    "sha256": "d941b0f7c9be1325e01254df97f10c859394d97c02a48458361fbd3a15b98168"
+  },
+  "artifacts": [
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/selection-plan.json",
+      "sha256": "4593e22e5991863c945503c4a5564dcbd365674babc6da245a818c7022ee24d0"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/hand-conflict-source-audit.json",
+      "sha256": "1c4d876649d1575f7f01bdb39f779e3854264838d0690b7366715b2fcfe53a94"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/single-hand-native-conflict-addendum.json",
+      "sha256": "bdd0efb1e0a67da723b9351c7bca44b1348bd144cdba2b800e36be911ffc88fb"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/dimitrov-source-role-audit.json",
+      "sha256": "5d00fc56de428ddc4884628a04038c4e3446a56754bc719c08ca3aa7d04dc12f"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/djokovic-full-stroke-source-reference.json",
+      "sha256": "bdb4f4a704cb300771be5d81b77966ea8908900db6a8093f10de44453d0b99d9"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/ordinary-a-dedup-source-audit.json",
+      "sha256": "c725396e82c86a303b162f322ec877a6896f4322454e9209b318eacc7859c3ef"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/rick-manual-source-reference.json",
+      "sha256": "25a706320556d9762b26e10ae8f0c6cd63de7b6e996bab9c141810960046f5bd"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/rick-manual-pattern-windows-bound.json",
+      "sha256": "54915765eaa7e15ed0c691245fad111c2b939f6c573e175e533bcad4f0cf2c89"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/rick-source-inventory.json",
+      "sha256": "139c0a2d11adaa14da01595834b4184cb8d193f5fdcd4efc8dbf6418b6f0d036"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-manual-source-reference.json",
+      "sha256": "123f7618709e08a6caa9f2db8307d1f1f67c37e42fca96271a626a1b10533640"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-gpu-preplan.json",
+      "sha256": "9aa6763417eec3c3de303d00ca54be746be2f997ca3a113400eedfb8da415759"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-reviewed-inference-subject.json",
+      "sha256": "6c9185aca7b5a4c0b851d7e44e1fa10b7689d1965c46df2a1f2096c36f243da3"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-manual-pattern-windows-bound.json",
+      "sha256": "be4318448e6d9a0a2205c3ba5497223cae1a89f484a93d799bdb46f2fc1516da"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round5-20261028/source-audit/wta-source-inventory.json",
+      "sha256": "8a91a274e4c4c457892dfd7417f101a2295883594654a490aebdfa7c8778aaee"
+    }
+  ],
+  "role_audit_counts": {
+    "historical_conflicts_reviewed": 6,
+    "visually_two_hand_strokes": 4,
+    "of_two_hand_old_window_preparation_only": 1,
+    "visually_single_right_hand_strokes": 2,
+    "single_hand_native_wrong_role": 1,
+    "single_hand_sampled_native_left_right_assignment_issue": 1,
+    "native_entire_window_swap_proven_safe": 0
+  },
+  "source_capabilities": [
+    {
+      "source": "Rick existing official teaching",
+      "actions": 5,
+      "self_fed": 3,
+      "shadow_slow_demonstrations": 2,
+      "right_hand_verified": true,
+      "independent_up": true,
+      "independent_forward": false,
+      "source_previously_observed": true,
+      "visible_distinct_people": 1,
+      "new_independent_holdout_groups": 0
+    },
+    {
+      "source": "WTA official realtime match",
+      "actions": 1,
+      "racket_hand": "right",
+      "forehand_slice_visual_verified": true,
+      "has_actual_opponent_ball": true,
+      "not_serve_return": true,
+      "real_time_fps": 25,
+      "replay_counted_independent": false,
+      "independent_court_forward_and_up": true,
+      "direction_axes_nearly_collinear": true,
+      "production_auto_target_native": 0,
+      "manual_target_native": 67,
+      "source_frames": 68,
+      "missing_frame_index": 532,
+      "missing_timestamp_ms": 21280,
+      "full_frozen_window_spans_selection_epochs": [
+        0,
+        1
+      ]
+    },
+    {
+      "source": "existing near-white-purple return in Dimitrov/Tiafoe clip",
+      "technique": "return_forehand",
+      "actual_server_and_incoming_ball_source_proof": true,
+      "source_bound_reference": ".codex_tmp/tennis-score-round4-20261027/dimitrov-manual-return-evidence.json",
+      "individual_named_identity_not_assumed": true,
+      "source_previously_observed": true
+    }
+  ],
+  "remaining_gaps": [
+    "No new real left forehand slice/return subtypes; no claim all return subclasses covered",
+    "Rick lacks independent court forward direction",
+    "WTA forward/down projection cannot independently separate spatial components; target small and one missing detection splits actual native epochs",
+    "Doublehand lower-handle dominant hand cannot be resolved from all historical source windows",
+    "Visual truth can establish action existence despite native observability failure; no artificial relabeling or trajectory interpolation"
+  ],
+  "path_resolution_note": {
+    "dimitrov-source-role-audit.json:actions[0].return_context_reference": "resolve to repository-relative .codex_tmp/tennis-score-round4-20261027/dimitrov-manual-return-evidence.json; textual shortened reference in audit not a file loader"
+  },
+  "no_new_gpu_process_started_by_samples_agent": true,
+  "no_core_or_old_gt_modified": true
+}
