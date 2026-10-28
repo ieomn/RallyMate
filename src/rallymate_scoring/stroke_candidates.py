@@ -21,7 +21,7 @@ from typing import Any
 from .temporal_recognition import TemporalRecognitionBackend, samples_are_continuous
 from .pose_observations import MODEL_ESTIMATE, measurement_provenance, sam_source_bound_points, sample_source_reference
 
-DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.4.0"
+DETECTOR_VERSION = "pose-racket-stroke-candidates-v2.5.0"
 MIN_KEYPOINT_CONFIDENCE = 0.35
 MAX_POSE_GAP_MS = 160
 SEQUENCE_RULE_VERSION = "observed-counter-sweep-association-v1.1"
@@ -72,6 +72,7 @@ class Sample:
     # Model box proximity can be shared by a close pair of wrists without casting
     # an independent handedness vote. Every observation retains its own box.
     racket_observations: list[dict[str, Any]] = field(default_factory=list)
+    raw_points_px: dict[str, tuple[float, float]] = field(default_factory=dict)
 
 
 def _number(value: Any) -> float | None:
@@ -137,6 +138,7 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
         return None
     center, scale, basis = normalization
     raw_wrists = {side: raw[f"{side}_wrist"] for side in ("left", "right") if f"{side}_wrist" in raw}
+    raw_points = dict(raw)
     raw_scale = scale
     camera = frame.get("camera_motion")
     if isinstance(camera, Mapping) and camera.get("compensation_valid") is True:
@@ -161,7 +163,8 @@ def _sample(pose: Mapping[str, Any], frame: Mapping[str, Any]) -> Sample | None:
                                      if isinstance(item, Mapping) and item.get("name") in raw},
                   timestamp_source=frame.get("timestamp_source"), normalization_basis=basis,
                   reference_points=raw, pose_source="sam3d" if is_sam else pose.get("source"),
-                  observation_semantics=MODEL_ESTIMATE if is_sam else None, source_binding=binding)
+                  observation_semantics=MODEL_ESTIMATE if is_sam else None, source_binding=binding,
+                  raw_points_px=raw_points)
 
 
 def _stabilize_partial_torso_windows(by_track: Mapping[int, list[Sample]]) -> None:
@@ -232,17 +235,31 @@ def _associate_rackets(samples: list[Sample], detections: Iterable[Mapping[str, 
         if competitor is not None and competitor[0] - distance < 0.15:
             continue
         owner_choices = {value[2]: value[0] for value in choices if value[1] is owner}
+        from .racket_geometry import box_limb_evidence
+        raw_points = owner.raw_points_px or ({name: (p[0] * owner.scale + owner.center[0],
+                                                    p[1] * owner.scale + owner.center[1])
+                                               for name, p in owner.points.items()}
+                                              if not owner.camera_compensated else {})
+        geometry = box_limb_evidence(raw_points, box,
+                                    [k for k, value in owner_choices.items() if value <= .35])
+        geometric_sides = geometry["supported_motion_wrists"]
         pair_points = [owner.points.get(k+"_wrist") for k in ("left", "right")]
         coupled = (all(p is not None for p in pair_points) and _distance(*pair_points) < .45)
         both_near = all(owner_choices.get(k, math.inf) <= .35 for k in ("left", "right"))
         shared = coupled and both_near
+        association = "paired_wrist_racket_proximity" if shared else "single_wrist_proximity"
+        observation_sides = ["left", "right"] if shared else [side]
         owner.racket_observations.append({
             "source_frame_index": owner.frame_index, "timestamp_ms": owner.time,
             "racket_track_id": detection.get("track_id"), "bbox_px": list(box), "confidence": confidence,
-            "association": "paired_wrist_racket_proximity" if shared else "single_wrist_proximity",
-            "wrist_sides": ["left", "right"] if shared else [side],
-            "wrist_box_distance_torso": owner_choices,
-            "source_binding": dict(owner.source_binding)})
+            "association": association,
+            "wrist_sides": observation_sides,
+            "semantic_status": "head_box_ambiguous" if geometry["head_cluster_overlap_without_wrist"] else "box_proximity_only",
+            "wrist_box_distance_torso": owner_choices, "proximity_wrist": side,
+            "source_binding": dict(owner.source_binding), "limb_geometry": geometry})
+        # Keep legacy proximity as a weak motion proposal. A head-overlap box
+        # cannot vote for primary grip ownership, but ambiguity alone does not
+        # prove absence of a racket (for example on a high follow-through).
         # A box covering both wrists has no evidence for choosing one hand.
         # Stable sort order must not turn this geometric tie into a left vote.
         if any(value[1].track == owner.track and value[2] != side
@@ -300,6 +317,56 @@ def _racket_support(segment: list[Sample], side: str, start: int, end: int) -> i
     return sum(side in sample.racket_sides for sample in segment[start:end + 1])
 
 
+def _head_conflict_directional_support(segment, side, start, peak, end, conflict_observations=None):
+    """Resolve a head/box ambiguity with an independently supported alternative.
+
+    Forearm rays do not replace ordinary nearest-box association: wrist flexion
+    makes that unsafe. This route only applies after a local head-overlapping
+    box casts doubt on the *other* wrist's apparent support. The alternative
+    already satisfies every normal sweep-geometry gate and needs two distinct
+    source frames within its own geometry window. No later frames or inferred
+    handle positions are added, and close wrists do not establish grip order.
+    """
+    opposite = "left" if side == "right" else "right"
+    if conflict_observations is None:
+        conflict_observations = [(i, obs) for i, s in enumerate(segment) for obs in s.racket_observations
+                                 if obs.get("limb_geometry", {}).get("head_cluster_overlap_without_wrist")]
+    conflicts = [(i, obs) for i, obs in conflict_observations
+                 if 0 <= segment[peak].time - segment[i].time <= 650
+                 and obs.get("proximity_wrist") == opposite]
+    if not conflicts:
+        return None
+    observations = []
+    latest_conflict_time = max(segment[i].time for i, _ in conflicts)
+    for sample in segment[start:end + 1]:
+        if sample.time <= latest_conflict_time:
+            continue
+        valid = [obs for obs in sample.racket_observations
+                 if obs.get("limb_geometry", {}).get("supported_motion_wrists") == [side]]
+        opposed = any(obs.get("limb_geometry", {}).get("supported_motion_wrists") == [opposite]
+                      for obs in sample.racket_observations)
+        if valid and not opposed:
+            observations.extend(valid)
+    supported_times = {obs["timestamp_ms"] for obs in observations}
+    if len(supported_times) < 2:
+        return None
+    first = min(start, min(i for i, _ in conflicts))
+    last = max(end, max(i for i, _ in conflicts))
+    if any(not samples_are_continuous(a, b) for a, b in zip(segment[first:last], segment[first + 1:last + 1])):
+        return None
+    return {"version": "head-box-ambiguity-alternative-motion-v1", "status": "supported",
+            "semantics": "alternative_motion_wrist_not_handle_primary_grip_or_contact",
+            "motion_wrist": side, "ambiguous_proximity_wrist": opposite,
+            "geometry_window_ms": [segment[start].time, segment[end].time],
+            "candidate_peak_ms": segment[peak].time, "head_conflict_horizon_ms": 650,
+            "distinct_directional_support_frames": len(supported_times),
+            "head_ambiguity_observations": [obs for _, obs in conflicts],
+            "directional_support_observations": observations,
+            "continuous_source_frames": [s.frame_index for s in segment[first:last + 1]],
+            "source_binding_start": dict(segment[first].source_binding),
+            "source_binding_end": dict(segment[last].source_binding)}
+
+
 def _racket_support_with_shared_preparation(segment, side, start, peak, end):
     """Bind modeled paired-wrist proximity to later separated racket-side evidence.
 
@@ -354,6 +421,8 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
     times = [sample.time for sample in segment]
     result = []
     other = "right" if side == "left" else "left"
+    head_conflicts = [(i, obs) for i, s in enumerate(segment) for obs in s.racket_observations
+                      if obs.get("limb_geometry", {}).get("head_cluster_overlap_without_wrist")]
     # A serve candidate needs a sequential opposite-arm lift, racket-arm
     # overhead extension and follow-through. A lone raised arm is insufficient.
     for peak in range(2, len(segment) - 2):
@@ -420,6 +489,7 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
         # the same observed peak. Existing crossing, path and duration limits
         # remain in force; low rigid-arm motion needs independent local support.
         supported = None
+        alternative_supported = None
         ordered_pairs = sorted(pairs, key=lambda pair: times[pair[1]] - times[pair[0]])
         shortest_support = _racket_support(segment, side, *ordered_pairs[0])
         for start, end in ordered_pairs:
@@ -432,7 +502,12 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
             if path > horizontal * 2.5:
                 continue
             support, transfer = _racket_support_with_shared_preparation(segment, side, start, peak, end)
-            if support >= 2:
+            geometry_alternative = _head_conflict_directional_support(segment, side, start, peak, end, head_conflicts)
+            if geometry_alternative is not None and alternative_supported is None:
+                alternative_supported = (start, end, horizontal,
+                                         geometry_alternative["distinct_directional_support_frames"],
+                                         None, geometry_alternative)
+            if support >= 2 and supported is None:
                 if shortest_support < 2 and min(point[1] for point in window) > SEQUENCE_RULES["low_hand_y_torso"]:
                     # An earlier racket box does not distinguish a new stroke
                     # from walking/turning while the arm hangs almost rigidly.
@@ -444,23 +519,30 @@ def _detect_segment(segment: list[Sample], side: str) -> list[dict[str, Any]]:
                     if (len(extension) != end - start + 1
                             or max(extension) - min(extension) < SEQUENCE_RULES["minimum_low_arm_range_for_context_only_racket_support_torso"]):
                         continue
-                supported = start, end, horizontal, support, transfer
+                supported = start, end, horizontal, support, transfer, None
+            if supported is not None and (alternative_supported is not None or not head_conflicts):
                 break
-        if supported is None:
+        if supported is None and alternative_supported is None:
             continue
-        start, end, horizontal, support, transfer = supported
-        result.append(_candidate(segment, side, start, peak, end, "baseline", {
-            "racket_associated_frames": support, "pose_samples": end - start + 1,
-            "racket_support_transfer": transfer,
-            "horizontal_excursion_torso_units": round(horizontal, 3),
-            "peak_wrist_speed_torso_units_per_second": round(speed[peak], 3),
-            "court_location_confirmed": False, "forehand_backhand_classification": "unavailable",
-        }))
+        for proposal in (supported, alternative_supported):
+            if proposal is None:
+                continue
+            start, end, horizontal, support, transfer, geometry_alternative = proposal
+            result.append(_candidate(segment, side, start, peak, end, "baseline", {
+                "racket_associated_frames": support, "pose_samples": end - start + 1,
+                "racket_geometry_alternative": geometry_alternative,
+                "racket_support_transfer": transfer,
+                "horizontal_excursion_torso_units": round(horizontal, 3),
+                "peak_wrist_speed_torso_units_per_second": round(speed[peak], 3),
+                "court_location_confirmed": False, "forehand_backhand_classification": "unavailable",
+            }))
     return result
 
 
 def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]:
-    from .stroke_analysis import candidate_hand_evidence
+    from .stroke_analysis import candidate_hand_evidence, _episode_context
+    from .temporal_recognition import RuleTemporalBackend, build_temporal_window
+    from .vector_kinematics import WristKinematicsUnavailable
 
     candidates = []
     for samples in by_track.values():
@@ -478,10 +560,37 @@ def _detect_tracks(by_track: Mapping[int, list[Sample]]) -> list[dict[str, Any]]
     for candidate in candidates:
         candidate["evidence"]["hand_consistency_before_suppression"] = candidate_hand_evidence(
             candidate, by_track[candidate["person_track_id"]])
+        alternative = candidate["evidence"].get("racket_geometry_alternative")
+        if alternative is not None:
+            # Geometry cannot make an incomplete second-arm pulse override an
+            # existing proposal. Require the very same source-bound phase
+            # rules used by the final report, before choosing this alternative.
+            context = _episode_context(candidate, by_track[candidate["person_track_id"]])
+            try:
+                phase = (RuleTemporalBackend().recognize(build_temporal_window(context), candidate,
+                         candidate["evidence"]["hand_consistency_before_suppression"]["hand_evidence"])
+                         if context else None)
+            except WristKinematicsUnavailable:
+                phase = None
+            eligible = (phase is not None and all(p["status"] == "measured" for p in phase["phases"])
+                        and candidate["start_ms"] <= phase["peak_ms"] <= candidate["end_ms"])
+            alternative["replacement_phase_supported"] = eligible
+            alternative["replacement_phase_window_ms"] = ([phase["start_ms"], phase["peak_ms"], phase["end_ms"]]
+                                                          if phase else None)
+    # An incomplete alternative is never allowed to shorten/replace the
+    # original valid geometry window; ordinary proposals were built separately.
+    candidates = [candidate for candidate in candidates
+                  if not candidate["evidence"].get("racket_geometry_alternative")
+                  or candidate["evidence"]["racket_geometry_alternative"]["replacement_phase_supported"]]
     # Suppress duplicate peaks and both-hand detections of the same motion.
     # Serve wins an overlapping generic swing; identities never suppress each other.
     candidates.sort(key=lambda item: (item["family"] != "serve",
-                    0 if item["family"] == "serve" else ranks[item["evidence"]["hand_consistency_before_suppression"]["status"]],
+                    0 if item["family"] == "serve" else ranks[item["evidence"]["hand_consistency_before_suppression"].get(
+                        "ordering_status", item["evidence"]["hand_consistency_before_suppression"]["status"])],
+                    # A head/box semantic conflict can retain an alternative
+                    # wrist with two independent local geometry observations.
+                    # Ordinary motions retain their previous NMS priorities.
+                    not bool((item["evidence"].get("racket_geometry_alternative") or {}).get("replacement_phase_supported")),
                     # Shared preparation is a fallback for missing local racket
                     # observations. Its extra frames must not outvote directly
                     # observed support and shift that action's context window.

@@ -1,0 +1,1131 @@
+{
+  "version": "round6-new-return-baseline-gate-audit-v1",
+  "baseline": "0a97871",
+  "samples": [
+    {
+      "sample_id": "adelaide-return",
+      "source_video_sha256": "96E80FCFBE444EDC0EC0597B0FC613076ECFEC8D0038074B3785F1E839FB852D",
+      "input_sha256": {
+        "frames.jsonl": "fc26666d56512ccfeb2ea2c427da13156471cd55a95725b9567e09f006ea24c6",
+        "primary-player.jsonl": "7e52ebc0fd8dfb35d70f9ef7e1acdbc1cf4ef59c90de84c9d48340501574da9b",
+        "sam3d_frames.jsonl": "7f3c62120ed88f76c23cb0c737febea61906ff9aef9fb35ddf3239b80b90c531"
+      },
+      "source_fine_reference_sha256": "4c230d3c65629695111de3d965f4721572ca4ac8632fa380db6a93b7234580a4",
+      "primary_tracks": [
+        1
+      ],
+      "automatic_candidate_count": 0,
+      "context_serve_candidates": [],
+      "tracks": [
+        {
+          "track": 1,
+          "sample_count": 100,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  0,
+                  3960
+                ],
+                "samples": 100,
+                "racket_side_support_times_ms": [
+                  2040,
+                  2080,
+                  2120,
+                  2880,
+                  2920,
+                  2960,
+                  3480,
+                  3520,
+                  3560,
+                  3600,
+                  3640,
+                  3680,
+                  3720,
+                  3760,
+                  3800,
+                  3840
+                ],
+                "speed_max_torso_s": [
+                  5.92347,
+                  2480
+                ],
+                "wrist_x_range": [
+                  -0.6111565452977638,
+                  0.2316743987284632
+                ],
+                "wrist_y_range": [
+                  -0.12263047910888701,
+                  0.9363721383029799
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  0,
+                  3960
+                ],
+                "samples": 100,
+                "racket_side_support_times_ms": [
+                  2160,
+                  3920,
+                  3960
+                ],
+                "speed_max_torso_s": [
+                  4.91834,
+                  2480
+                ],
+                "wrist_x_range": [
+                  -0.4921102312083199,
+                  0.3535768199120495
+                ],
+                "wrist_y_range": [
+                  0.09865012187693932,
+                  0.9646476556498037
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 5,
+          "sample_count": 100,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  0,
+                  3960
+                ],
+                "samples": 100,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.39032,
+                  2000
+                ],
+                "wrist_x_range": [
+                  0.7695565046147586,
+                  0.8495543089453366
+                ],
+                "wrist_y_range": [
+                  0.606221016567495,
+                  0.6448326186511772
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  0,
+                  3960
+                ],
+                "samples": 100,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.1914,
+                  2880
+                ],
+                "wrist_x_range": [
+                  0.6087542749882316,
+                  0.637632341863357
+                ],
+                "wrist_y_range": [
+                  0.727251835445856,
+                  0.755945473604674
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 3,
+          "sample_count": 100,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  0,
+                  3960
+                ],
+                "samples": 100,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.31201,
+                  2000
+                ],
+                "wrist_x_range": [
+                  0.438056922147477,
+                  0.49041376616456606
+                ],
+                "wrist_y_range": [
+                  1.1149749481903803,
+                  1.156529056012962
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  0,
+                  3960
+                ],
+                "samples": 100,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.36806,
+                  2000
+                ],
+                "wrist_x_range": [
+                  0.22546924107564634,
+                  0.296061717028257
+                ],
+                "wrist_y_range": [
+                  1.3093576811650771,
+                  1.357478763366313
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 2,
+          "sample_count": 96,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  0,
+                  3800
+                ],
+                "samples": 96,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  11.19836,
+                  1320
+                ],
+                "wrist_x_range": [
+                  -0.8899905512762074,
+                  1.0178906143433726
+                ],
+                "wrist_y_range": [
+                  -0.956575202537382,
+                  1.0681713789429559
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  0,
+                  3800
+                ],
+                "samples": 96,
+                "racket_side_support_times_ms": [
+                  1640
+                ],
+                "speed_max_torso_s": [
+                  17.25005,
+                  1560
+                ],
+                "wrist_x_range": [
+                  -0.9808452693988723,
+                  0.4827660810020927
+                ],
+                "wrist_y_range": [
+                  -1.346981018580631,
+                  1.5532572925125423
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 6,
+          "sample_count": 97,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  0,
+                  3280
+                ],
+                "samples": 83,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.3882,
+                  3240
+                ],
+                "wrist_x_range": [
+                  0.09168727466589296,
+                  0.12636829866430463
+                ],
+                "wrist_y_range": [
+                  0.9251888814258001,
+                  0.9769445588688901
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  3520,
+                  3960
+                ],
+                "samples": 12,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.12217,
+                  3880
+                ],
+                "wrist_x_range": [
+                  0.08686791963232089,
+                  0.09499170836543339
+                ],
+                "wrist_y_range": [
+                  0.9219052794839027,
+                  0.9348775834469858
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  0,
+                  3280
+                ],
+                "samples": 83,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.53193,
+                  3240
+                ],
+                "wrist_x_range": [
+                  -0.08149375790025176,
+                  -0.028450597629993263
+                ],
+                "wrist_y_range": [
+                  1.102364497522752,
+                  1.1762495516282727
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  3520,
+                  3960
+                ],
+                "samples": 12,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.38523,
+                  3800
+                ],
+                "wrist_x_range": [
+                  -0.1015994197872501,
+                  -0.07458484441537991
+                ],
+                "wrist_y_range": [
+                  1.1094259169861682,
+                  1.1441936120593794
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 12,
+          "sample_count": 3,
+          "sides": {
+            "left": [],
+            "right": []
+          }
+        },
+        {
+          "track": 10,
+          "sample_count": 1,
+          "sides": {
+            "left": [],
+            "right": []
+          }
+        }
+      ],
+      "qualified_ball_tracks": {
+        "16": [
+          {
+            "track": 16,
+            "time": 480,
+            "point": [
+              497.0528829342006,
+              95.27221869977069
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 16,
+            "time": 520,
+            "point": [
+              496.9984883172515,
+              84.81147892927848
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 16,
+            "time": 560,
+            "point": [
+              497.46400656818315,
+              76.37502646294762
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 16,
+            "time": 600,
+            "point": [
+              497.9366741791759,
+              68.51443999547645
+            ],
+            "camera_reference_epoch": 0
+          }
+        ],
+        "17": [
+          {
+            "track": 17,
+            "time": 1520,
+            "point": [
+              512.3237206534295,
+              75.62633770209656
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 17,
+            "time": 1560,
+            "point": [
+              516.5731597819879,
+              85.2095236918453
+            ],
+            "camera_reference_epoch": 0
+          }
+        ],
+        "21": [
+          {
+            "track": 21,
+            "time": 2080,
+            "point": [
+              650.5045448842994,
+              376.81296026370654
+            ],
+            "camera_reference_epoch": 0
+          }
+        ],
+        "22": [
+          {
+            "track": 22,
+            "time": 2120,
+            "point": [
+              661.8023571041778,
+              373.060275095322
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2160,
+            "point": [
+              673.2531441860717,
+              370.0345996196431
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2200,
+            "point": [
+              685.5169275899397,
+              368.62465822229416
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2240,
+            "point": [
+              698.3665282647383,
+              368.2334669734328
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2280,
+            "point": [
+              712.5487327433142,
+              369.2107882392012
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2320,
+            "point": [
+              727.31405467872,
+              372.3614592816805
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2360,
+            "point": [
+              743.0507872777144,
+              377.01903703340577
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2400,
+            "point": [
+              758.7477383225408,
+              383.98813832485115
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2480,
+            "point": [
+              753.7662628212295,
+              332.29503078505985
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2520,
+            "point": [
+              746.6748265015185,
+              303.342812299347
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2600,
+            "point": [
+              733.3276600077311,
+              260.65030131328797
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2720,
+            "point": [
+              720.6283933947132,
+              218.05678263146183
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2760,
+            "point": [
+              716.7462402804996,
+              209.0839835807466
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2800,
+            "point": [
+              712.8209071892746,
+              202.2631512516938
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 22,
+            "time": 2840,
+            "point": [
+              709.7375077705036,
+              197.22952829145535
+            ],
+            "camera_reference_epoch": 0
+          }
+        ]
+      },
+      "missing_candidate_is_not_absence_of_source_stroke": true,
+      "thresholds_changed": false,
+      "interpolation_used": false
+    },
+    {
+      "sample_id": "toronto-return",
+      "source_video_sha256": "04BE4D1F22BF604133900A86F75772666C7B067C62A39BD63A3A1339A5D93B7F",
+      "input_sha256": {
+        "frames.jsonl": "a117b0ad9038898da64584607d7da0b31130596ba45999134248170e66814010",
+        "primary-player.jsonl": "c9eefe506db046bda4d6636edcf9a821888e097f1d8c73e460ce91008856c0ee",
+        "sam3d_frames.jsonl": "e6df667fe24f5887c617eee886c3c9a13b7e949bd401088a6c5df0f0d3d86000"
+      },
+      "source_fine_reference_sha256": "74e027c8fd73848da4d034adc5c10e6c10739d3422d0c6f3ad1acbce1e160460",
+      "primary_tracks": [
+        1
+      ],
+      "automatic_candidate_count": 0,
+      "context_serve_candidates": [],
+      "tracks": [
+        {
+          "track": 1,
+          "sample_count": 90,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  23000,
+                  26560
+                ],
+                "samples": 90,
+                "racket_side_support_times_ms": [
+                  25360,
+                  25400,
+                  25480
+                ],
+                "speed_max_torso_s": [
+                  9.10753,
+                  24920
+                ],
+                "wrist_x_range": [
+                  -0.6771850947024112,
+                  0.39563826764609084
+                ],
+                "wrist_y_range": [
+                  -0.07848490467096253,
+                  0.7090804818309981
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  23000,
+                  26560
+                ],
+                "samples": 90,
+                "racket_side_support_times_ms": [
+                  26120,
+                  26200,
+                  26280
+                ],
+                "speed_max_torso_s": [
+                  6.47069,
+                  24880
+                ],
+                "wrist_x_range": [
+                  -0.5638385382753882,
+                  0.5003841813873164
+                ],
+                "wrist_y_range": [
+                  0.14717148305549527,
+                  1.0170319632297269
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 11,
+          "sample_count": 90,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  23000,
+                  26560
+                ],
+                "samples": 90,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  1.0278,
+                  24000
+                ],
+                "wrist_x_range": [
+                  0.8088999357911542,
+                  0.87340072216849
+                ],
+                "wrist_y_range": [
+                  -0.09041645190072314,
+                  0.0032438797537457887
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  23000,
+                  26560
+                ],
+                "samples": 90,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.56912,
+                  24000
+                ],
+                "wrist_x_range": [
+                  0.5468193653870838,
+                  0.6454246132355006
+                ],
+                "wrist_y_range": [
+                  0.11440042128904697,
+                  0.17930389653649528
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 16,
+          "sample_count": 89,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  23000,
+                  26280
+                ],
+                "samples": 83,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  1.8753,
+                  25480
+                ],
+                "wrist_x_range": [
+                  -0.04297638764219467,
+                  0.3052262727077118
+                ],
+                "wrist_y_range": [
+                  0.9996228502291855,
+                  1.0948265141292104
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  23000,
+                  26280
+                ],
+                "samples": 83,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  7.90769,
+                  25800
+                ],
+                "wrist_x_range": [
+                  0.03540942020944513,
+                  0.24516731960307464
+                ],
+                "wrist_y_range": [
+                  0.42811834500591694,
+                  1.3788180373759995
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 3,
+          "sample_count": 90,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  23000,
+                  26560
+                ],
+                "samples": 90,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.22502,
+                  25960
+                ],
+                "wrist_x_range": [
+                  -0.2484131691797044,
+                  -0.2093862759393997
+                ],
+                "wrist_y_range": [
+                  1.26962042608898,
+                  1.300904706316895
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  23000,
+                  26560
+                ],
+                "samples": 90,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  0.20478,
+                  24000
+                ],
+                "wrist_x_range": [
+                  -0.43469763860815763,
+                  -0.4020706606826663
+                ],
+                "wrist_y_range": [
+                  1.008719239060616,
+                  1.0346020884957392
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 2,
+          "sample_count": 74,
+          "sides": {
+            "left": [
+              {
+                "window_ms": [
+                  23000,
+                  24240
+                ],
+                "samples": 32,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  14.83946,
+                  23960
+                ],
+                "wrist_x_range": [
+                  -0.8033437296134336,
+                  0.24569087733421013
+                ],
+                "wrist_y_range": [
+                  -1.135032089409993,
+                  0.9545119065328928
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  24680,
+                  25200
+                ],
+                "samples": 14,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  3.93223,
+                  24760
+                ],
+                "wrist_x_range": [
+                  0.029157694670236205,
+                  0.2758951006961052
+                ],
+                "wrist_y_range": [
+                  0.9289427591724119,
+                  1.4124179896651996
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  25480,
+                  25880
+                ],
+                "samples": 11,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  2.44701,
+                  25600
+                ],
+                "wrist_x_range": [
+                  -0.4666684375067758,
+                  0.027968002493030886
+                ],
+                "wrist_y_range": [
+                  0.8680019082095403,
+                  1.0318113164008371
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  26320,
+                  26560
+                ],
+                "samples": 7,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  1.35765,
+                  26360
+                ],
+                "wrist_x_range": [
+                  0.6587793300202316,
+                  0.7919989267442181
+                ],
+                "wrist_y_range": [
+                  0.9360429085559525,
+                  0.9837207373476702
+                ],
+                "raw_geometric_candidates": []
+              }
+            ],
+            "right": [
+              {
+                "window_ms": [
+                  23000,
+                  24240
+                ],
+                "samples": 32,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  15.95722,
+                  24200
+                ],
+                "wrist_x_range": [
+                  -0.9257437124344492,
+                  0.32663713303731523
+                ],
+                "wrist_y_range": [
+                  -1.503883354820154,
+                  0.5280786211528444
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  24680,
+                  25200
+                ],
+                "samples": 14,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  4.63778,
+                  24720
+                ],
+                "wrist_x_range": [
+                  -0.5790316961935693,
+                  -0.2091818023778983
+                ],
+                "wrist_y_range": [
+                  0.9278679710598502,
+                  1.3596589047504506
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  25480,
+                  25880
+                ],
+                "samples": 11,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  1.72978,
+                  25600
+                ],
+                "wrist_x_range": [
+                  -0.6097152275494343,
+                  -0.2611976357887699
+                ],
+                "wrist_y_range": [
+                  0.8769920443858643,
+                  1.0301407453166245
+                ],
+                "raw_geometric_candidates": []
+              },
+              {
+                "window_ms": [
+                  26320,
+                  26560
+                ],
+                "samples": 7,
+                "racket_side_support_times_ms": [],
+                "speed_max_torso_s": [
+                  1.30058,
+                  26480
+                ],
+                "wrist_x_range": [
+                  -0.5682760780257198,
+                  -0.34531575894181077
+                ],
+                "wrist_y_range": [
+                  1.0133458463891152,
+                  1.0527527361445261
+                ],
+                "raw_geometric_candidates": []
+              }
+            ]
+          }
+        },
+        {
+          "track": 17,
+          "sample_count": 8,
+          "sides": {
+            "left": [],
+            "right": []
+          }
+        }
+      ],
+      "qualified_ball_tracks": {
+        "29": [
+          {
+            "track": 29,
+            "time": 24960,
+            "point": [
+              245.80324053511285,
+              404.04588691605335
+            ],
+            "camera_reference_epoch": 0
+          }
+        ],
+        "33": [
+          {
+            "track": 33,
+            "time": 25880,
+            "point": [
+              473.7553348433954,
+              174.84723298936595
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 25920,
+            "point": [
+              477.36537547993476,
+              168.79559517698007
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 25960,
+            "point": [
+              481.535068873295,
+              162.86056823394088
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 26000,
+            "point": [
+              484.90465022524796,
+              159.6440382280437
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 26040,
+            "point": [
+              488.1066205085237,
+              155.59828333848154
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 26080,
+            "point": [
+              491.74386517299484,
+              154.04304064251716
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 26120,
+            "point": [
+              494.73720857533317,
+              151.06466824238626
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 33,
+            "time": 26160,
+            "point": [
+              498.2829420215169,
+              150.83326179813918
+            ],
+            "camera_reference_epoch": 0
+          }
+        ],
+        "35": [
+          {
+            "track": 35,
+            "time": 26240,
+            "point": [
+              503.7845896368503,
+              152.061838650027
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 35,
+            "time": 26280,
+            "point": [
+              507.0481798045834,
+              154.485321967897
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 35,
+            "time": 26320,
+            "point": [
+              509.82637146276886,
+              154.8393872313033
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 35,
+            "time": 26360,
+            "point": [
+              512.3183708013479,
+              146.49171931572351
+            ],
+            "camera_reference_epoch": 0
+          },
+          {
+            "track": 35,
+            "time": 26400,
+            "point": [
+              515.1556727853464,
+              138.55360555114711
+            ],
+            "camera_reference_epoch": 0
+          }
+        ]
+      },
+      "missing_candidate_is_not_absence_of_source_stroke": true,
+      "thresholds_changed": false,
+      "interpolation_used": false
+    }
+  ]
+}

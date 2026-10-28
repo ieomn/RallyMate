@@ -1,0 +1,131 @@
+{
+  "version": "source-visual-false-positive-audit-v1",
+  "sample_id": "wuhan-forehand-slice",
+  "source_video_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+  "episode_id": "bc720393472b6775812a",
+  "reviewed_interval_ms": [
+    5680,
+    6480
+  ],
+  "automatic_motion_wrist": "left",
+  "automatic_generic_score": 93.28,
+  "valid_complete_tennis_stroke": false,
+  "reason_code": "running_balance_arm_and_preparation_not_complete_stroke",
+  "source_findings": [
+    "5.68–6.36目标向画面右侧连续跑动，持拍右腕在身前或身侧移动；未见完整前挥和击后随挥。",
+    "6.00附近快速移动的左臂为空手平衡/跑步摆臂，不能当持拍侧前挥。",
+    "6.48时才将实际球拍从身前提向头侧准备后续切削；独立源参考中的真实右手前挥约6.72–6.84，随挥6.88–7.08，超出当前报告的完整窗。"
+  ],
+  "automatic_rule_diagnostic": {
+    "candidate": [
+      6320,
+      6400,
+      6680
+    ],
+    "reported_phase": [
+      5680,
+      6000,
+      6480
+    ],
+    "candidate_reported_overlap_ms": 160,
+    "independent_cross_body_geometry_passes": true,
+    "low_rigid_arm_guard": false,
+    "competing_arm_peak_ms": 6680,
+    "competing_arm_guard_search_end_ms": 6630,
+    "racket_hand_evidence": "unavailable; separated left1/right1",
+    "why_no_safe_existing_automatic_rejection": "Free-arm running motion satisfies existing sweep geometry. The true right sweep has only one independent >=.25 racket frame; existing supporting-sweep grouper has no eligible right candidate. Rejecting this automatically requires stronger racket/arm action evidence, not a lower score or revised numeric threshold."
+  },
+  "review_semantics": "Post-output source-only audit of an identified false positive; not a blind test and not a replacement for the original pre-inference positive reference. Preserve raw generic score as failure evidence; exclude this invalid episode from displayed training/validation aggregates.",
+  "source_frames": [
+    {
+      "frame_index": 142,
+      "pts": 142,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 5680.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000142.png",
+      "raw_sha256": "d913102d5892f58dd9936ec50a8dd35bae2d5319e40db4cada0362a24e5202fb"
+    },
+    {
+      "frame_index": 146,
+      "pts": 146,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 5840.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000146.png",
+      "raw_sha256": "43196904d021472ce6ffb8a12c29086e1ea17542b4e153b8621080edea1c4166"
+    },
+    {
+      "frame_index": 150,
+      "pts": 150,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 6000.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000150.png",
+      "raw_sha256": "89fdbc3af4c6ac2ae94f2f036eccce58d243340246212662300ac1803039c801"
+    },
+    {
+      "frame_index": 154,
+      "pts": 154,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 6160.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000154.png",
+      "raw_sha256": "753ef1d6b00031a195aa35e965df84192fd238fe0346e31db7212e913d4102b4"
+    },
+    {
+      "frame_index": 158,
+      "pts": 158,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 6320.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000158.png",
+      "raw_sha256": "50c944f03a0f5ce6e4a015cb6d8992d256a84f38e1928e3f09aee520d182fe9f"
+    },
+    {
+      "frame_index": 159,
+      "pts": 159,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 6360.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000159.png",
+      "raw_sha256": "3ed7308b7efc106ba75986b45443411d570c2ac78d8211eb4ee4f0d1d9b27424"
+    },
+    {
+      "frame_index": 162,
+      "pts": 162,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 6480.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000162.png",
+      "raw_sha256": "f89948a6e77b9ba2f6212051086e80380626848a90713f5a04b6b24e44953694"
+    },
+    {
+      "frame_index": 165,
+      "pts": 165,
+      "time_base": [
+        1,
+        25
+      ],
+      "source_timestamp_ms": 6600.0,
+      "raw_png": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\frame-000165.png",
+      "raw_sha256": "f7077bd0cccb6b3cb102b83b023dfef413080a195ff79bd0573b7d427f92cf3c"
+    }
+  ],
+  "source_contact_sheet": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-source\\contact.png",
+  "diagnostic_file": ".codex_tmp\\tennis-score-round6-20261028\\wuhan-wrong-phase-audit.json"
+}

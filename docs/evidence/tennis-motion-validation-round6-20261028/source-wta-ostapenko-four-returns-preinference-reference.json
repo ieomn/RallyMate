@@ -1,0 +1,71 @@
+{
+  "version": "source-only-preinference-reference-v1",
+  "frozen_at_utc": "2026-10-28T07:45:59.476881+00:00",
+  "source_id": "wta-ostapenko-four-returns",
+  "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-four-returns.mp4",
+  "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+  "source_media": {
+    "width": 1280.0,
+    "height": 720.0,
+    "nominal_fps": 25.0,
+    "frame_count": 1109.0
+  },
+  "public_source_url": "https://www.wtatennis.com/videos/4195008/watch-this-jelena-ostapenko-closes-match-with-four-straight-return-winners",
+  "publisher": "WTA",
+  "public_player_url": "https://players.brightcove.net/6041795521001/te01Hqw71_default/index.html?videoId=6366763983112",
+  "access": "Normal public player, no login/cookies/DRM bypass",
+  "rights": "Copyright retained, local validation only; no public media redistribution license asserted",
+  "selection_rule": "First source-visible complete serve followed by near-end receiver in each newly acquired source; no scores/poses inspected",
+  "inference_interval_ms": [
+    0,
+    4000
+  ],
+  "reviewed_subject": {
+    "description_zh": "近端黑衣黑裙白鞋运动员；远端白上衣绿裙服务器",
+    "initial_bbox_approx_px": [
+      850,
+      387,
+      967,
+      535
+    ],
+    "racket_hand": "unresolved_pending_handle_detail",
+    "automatic_subject_selection": null
+  },
+  "positive_actions": [
+    {
+      "reference_id": "wta-ostapenko-four-returns-return-1",
+      "technique": "return_two_hand_backhand",
+      "status": "reviewed_source_context_with_fine_boundary_pending",
+      "method": "agent_visual_review",
+      "reviewer": "samples",
+      "start_ms": 1920,
+      "anchor_ms": 2400,
+      "end_ms": 2760,
+      "anchor_uncertainty_ms": 80,
+      "phase_evidence_ms": {
+        "preparation": 2160,
+        "forward_swing": 2400,
+        "follow_through": 2560
+      },
+      "observations_zh": "同一连续原速比赛镜头：远端球员抛球/头顶发出，球进入近场，近端球员转体以双手在身体左侧接发后随挥。类型依据原画面，姓名/片名未作真值。具体握柄主手与逐帧球点待密集原图记录，不从模型/分数反推。",
+      "actual_server_visible": true,
+      "actual_incoming_ball_visible": true,
+      "return_context_status": "visual_continuity_reviewed_explicit_pixel_point_manifest_pending",
+      "direction_status": "not_yet_independently_verified"
+    }
+  ],
+  "negative_intervals": [
+    {
+      "start_ms": 2880,
+      "end_ms": 4000,
+      "label": "post_return_recovery_no_new_receiver_stroke"
+    }
+  ],
+  "limitations": [
+    "25 fps and motion blur limit exact contact time.",
+    "Broadcast end-court projection may make forward/up poorly separable.",
+    "Explicit ball point and anatomical hand evidence not yet asserted; no automatic return claim."
+  ],
+  "evidence": "source-audit/ostapenko-return-first-dense/evidence.json",
+  "inference_may_proceed": true
+}

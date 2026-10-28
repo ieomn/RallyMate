@@ -1,0 +1,493 @@
+{
+  "version": "round6-real-report-parser-validation-v1",
+  "parser_sha256": "05f23631820141f996d80f230fa82c2bf3eb503da0551850fa33ea257ece94d0",
+  "report_count": 54,
+  "results": [
+    {
+      "group": "release-regression",
+      "file": "davis-cup-2018-04-assessment.json",
+      "sha256": "949bc11d154850f3aba938d1c5ea31489c4489ad28c39a2b17022642c28895a8",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "davis-cup-2018-05-assessment.json",
+      "sha256": "ddcd6aef008c896263843d0df814ca74074a8d954d3947d1bf030188619a0607",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "davis05-fresh-assessment.json",
+      "sha256": "aa2a4aa77bcb1cbd3789de47f03cfe469556307dbc858a2ca103d72dd204e5bb",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "development-ordinary-a-assessment.json",
+      "sha256": "54e4ca6bfe2359355aba4d4a010e0597ec10af5c879c42eca6823b9719255a80",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 15,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "development-sharapova-assessment.json",
+      "sha256": "4edf89129d531956479ce46bb6607fdd9e8f4cce11166806d864085c4f3c8660",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "dimitrov-return-context-assessment.json",
+      "sha256": "f6c58e85cc2268a057e5ea8852e643085360a01a64b58ee7efe171122739967b",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "dimitrov-tiafoe-real-return-assessment.json",
+      "sha256": "c24364924ab762ffc0c030fbf7600d344f8de49c7d202be37048de7ba8254aa8",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "dimitrov-tiafoe-usopen-2024-assessment.json",
+      "sha256": "20519b60a4d504ca686bb8962a1609d0e818f37cbf150952a24cabf9051a8794",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "djokovic-usopen-2012-assessment.json",
+      "sha256": "21b5497b8eec524a73b1e240476e497978796ee908b164c68bbff9e384ad202e",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 5,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "federer-cilic-usopen-2012-assessment.json",
+      "sha256": "dcc21d0c17ed70eaca13feb76b3e047215eb5afa6bfaf538b655898f8b274651",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "gpu-federer-assessment.json",
+      "sha256": "a4091a10fcb84cfbdf2ecc1343eb311bc84f0c740bee721d6262d1df6fdef0a3",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "gpu-night-assessment.json",
+      "sha256": "1e5fd4e00bf894e6e66859aa6583c9a7c21c8b98f7df659b624f1fe6c9619fee",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "gpu-pink-assessment.json",
+      "sha256": "f557c06c884e01c44bc537e05ff94e084bee0cd411054c5165557caff0ffe566",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "gpu-white-assessment.json",
+      "sha256": "3a40083a48ab8226449839e2160a689937883351ff2b9849bce2000cd58226d3",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "holdout-ordinary-indoor-pink-assessment.json",
+      "sha256": "2475064dd9c72cb95ba74c7a875628a865c1bb26cf9ff3e3445c47947ff54bbd",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "holdout-ordinary-indoor-white-assessment.json",
+      "sha256": "13e9ac0b823cdfe1b8a1dfda89c0ea7b32ed523f1db89c890f3e3b3aa501dc93",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "holdout-ordinary-lowres-close-assessment.json",
+      "sha256": "940b1ff4b1f9d6137e0de1d6fb72ca96603aa5c61f75a75ae7b1e26259f26f9d",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "holdout-ordinary-night-assessment.json",
+      "sha256": "7b7fe9156da485397676e277ce1f444d517f0bfc6dbada1b9ebe8d9fb6a091f4",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "holdout-ordinary-outdoor-side-assessment.json",
+      "sha256": "8bbfe468dfb68424a09327ca15a4ada7c0acfa717424484fade7db63f022e0b9",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "holdout-ordinary-user-existing-assessment.json",
+      "sha256": "cf385a6e52a0312c4ba6a15cfc5b4c6ffe4b6efcc25cdf93569bb42d64bdd2d0",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 6,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "mendeley-indoor-side-view-ICS01-assessment.json",
+      "sha256": "407e126f914a92083a56fa0da7def5e0d016daded16eb0de8b55a4743684057d",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "mendeley-indoor-top-view-ICT01-assessment.json",
+      "sha256": "4474627d3d79d38a712c73ca9b2e8beb75964673e53e175e3d5192c1ca2fe0aa",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "mendeley-outdoor-side-view-OCS01-assessment.json",
+      "sha256": "bd96ea0301cadf348b5f109cf679f90183091575302367ae1ac5c963bead6f55",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "mendeley-outdoor-top-view-OCT01-assessment.json",
+      "sha256": "323d9a5bde09464676e5e3e82fd166a1fd5e1a6ea9c7b376c5357f081ad16453",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "regression-nadal-assessment.json",
+      "sha256": "434ba6b637145da22839c0919df2521eefb75506ff51f2bf8a6c0c246ec78b59",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "regression-ordinary-b-assessment.json",
+      "sha256": "3763ad567a675fc2b156d6c0f80bc7ccd568581a35a4c77878bbba780553f017",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 7,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "repeat-ordinary-a-assessment.json",
+      "sha256": "a0826d19b6cf4193026fee93fe805a7be8a9eda69116e3b5a3f56f190cf5b00a",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 15,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "rick-forehand-slice-assessment.json",
+      "sha256": "4652e354f3a6b3875f44d80ef01fbcf39c53d85756a2b86cc86b29aa4d7bfd01",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 5,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "rola-ncaa-2013-assessment.json",
+      "sha256": "b6a407ec566f3a799cb43bb3f02611f9d85a616219ccc92f9cd0d1ef9a8e663a",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "round5-service-dimitrov-assessment.json",
+      "sha256": "09325f45641c1f4cc1475fffaea876c631274c7ecb729b99bdce97eaa9dd542d",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "schiavone-usopen-2012-assessment.json",
+      "sha256": "365e12e57f34fa042117746c7f60405495e2832266f2d2e6d62ca578c41dd3e5",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "thetis-p1_fslice_s1-assessment.json",
+      "sha256": "4e9dfd5b45d60e2e4aafc4728d7ffe1e9149d24aec8bcba5d2a05683307c73ad",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "thetis-p32_fslice_s1-assessment.json",
+      "sha256": "c1c37bb2e131fa3d37ef2ef4127e6dc1581e0db84eab6b7dac2a130989ab43b0",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "tsitsipas-alcaraz-2023-assessment.json",
+      "sha256": "e0b36539ea14a4b062de0bbc7122cb881f53e0ddffbbd6669b2f568cd043f76a",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "white-360p-crf35-assessment.json",
+      "sha256": "cc7e143558f27d21fbb69a9a7343d1875e4090a2d0ed114234e5acb67f389214",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "white-mirror-assessment.json",
+      "sha256": "77054d24ce714100e85f2b727c72316f54e3be9196d3cb8852822dba4cb0a9bb",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    },
+    {
+      "group": "release-regression",
+      "file": "wta-default-selection-assessment.json",
+      "sha256": "df3b819292dc1912d066533da982e098374e51330f9c9ecb5f753963585d5c2f",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-regression",
+      "file": "wta-reviewed-selection-assessment.json",
+      "sha256": "1140655162562a3e08c2536b9e2ab00940f01972c9e367eb5b6ae9d8ca00117c",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native",
+      "file": "adelaide-return-assessment.json",
+      "sha256": "57a8548a1e2fc45b5265b35770bfb25bebe4c386c48e3ebf1971f4a7a274e9cd",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native",
+      "file": "newcombe-space-assessment.json",
+      "sha256": "23f3b464fbc6f5b9c057773822f2e61a313fb14f98429cbdb46d074e0cf93a51",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native",
+      "file": "toronto-return-assessment.json",
+      "sha256": "1db8ebdada5dfafceb48678ecd375b50083fa0155baf292fd7ff34149cda45c2",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native",
+      "file": "wuhan-forehand-slice-assessment.json",
+      "sha256": "bc205bcaddaad58b7f0b385757c5e1934017799f392620d83e0218213b38a388",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "0a6ba301-acd4-46a9-829f-7afc832a552c-assessment.json",
+      "sha256": "4483a9ec6ea6b8f9413d8370223d4e3469727a141658ef840c5235e88f374e79",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 5,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0-assessment.json",
+      "sha256": "5b09bc83bba46e7610b942b78d256367b19a3f373f5f00b200693402002859e8",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 6,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3-assessment.json",
+      "sha256": "76d65de166023959a9cb89a4d0fbf850417e8d2d1063f438497ed96caa8a4615",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "5b0b659e-7049-4749-8312-97e72e73a287-assessment.json",
+      "sha256": "687a6c662c1d7b5da35e71ab0c0df675aa767f30673c20d19075b2e908dea29e",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "5ff1c511-add9-461f-865b-04bd17c69d2f-assessment.json",
+      "sha256": "494b986d9a9a64a481609b41492ab6f021e4f82574346d134d5150cd324d4021",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "60f60a85-9772-46f9-852f-700404f456d4-assessment.json",
+      "sha256": "1ecf192b96c4b7692caf6b7368f0f6d7a845d29be0b31342270261a9f3db8047",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654-assessment.json",
+      "sha256": "940b1ff4b1f9d6137e0de1d6fb72ca96603aa5c61f75a75ae7b1e26259f26f9d",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "87d280dc-3e83-47c4-83e1-e2ae899ffef1-assessment.json",
+      "sha256": "31ca768e82e846464f5fd4e7da23a16b1ac695ddb7d2af8e79d5412d7593b803",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "d12255e0-22f1-475e-99ba-b0595b8184b6-assessment.json",
+      "sha256": "925ee08ef76ca62457a5c38fcb0244d38d704905708f8a400b749f8678c8582d",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 1,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "d60c8b04-c2f8-47f4-9778-28cdac0110d1-assessment.json",
+      "sha256": "62a33ba61a5be7e9455c488bd293c7d4b9e379f20c1eb0ebc4acd3d7ad6c0a42",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 3,
+      "status": "scored"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c-assessment.json",
+      "sha256": "ddcd6aef008c896263843d0df814ca74074a8d954d3947d1bf030188619a0607",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-live-reviewed",
+      "file": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468-assessment.json",
+      "sha256": "7b7fe9156da485397676e277ce1f444d517f0bfc6dbada1b9ebe8d9fb6a091f4",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 4,
+      "status": "scored"
+    }
+  ]
+}

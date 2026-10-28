@@ -1,0 +1,1030 @@
+[
+  {
+    "sample_id": "development-ordinary-a",
+    "baseline": {
+      "sample_id": "development-ordinary-a",
+      "candidate_count": 28,
+      "episodes": [
+        [
+          2367,
+          2800,
+          3133,
+          "left",
+          "partial"
+        ],
+        [
+          5933,
+          6467,
+          6933,
+          "right",
+          "complete"
+        ],
+        [
+          10167,
+          10833,
+          11167,
+          "right",
+          "complete"
+        ],
+        [
+          14633,
+          14967,
+          15533,
+          "right",
+          "complete"
+        ],
+        [
+          20433,
+          20800,
+          20967,
+          "left",
+          "partial"
+        ],
+        [
+          24133,
+          24633,
+          25067,
+          "left",
+          "complete"
+        ],
+        [
+          26333,
+          26833,
+          27067,
+          "left",
+          "partial"
+        ],
+        [
+          31367,
+          31700,
+          32200,
+          "right",
+          "complete"
+        ],
+        [
+          33567,
+          35067,
+          35400,
+          "right",
+          "complete"
+        ],
+        [
+          38233,
+          38567,
+          38833,
+          "right",
+          "complete"
+        ],
+        [
+          40967,
+          41500,
+          42167,
+          "right",
+          "partial"
+        ],
+        [
+          44067,
+          44400,
+          44633,
+          "left",
+          "complete"
+        ],
+        [
+          46933,
+          47500,
+          47733,
+          "left",
+          "complete"
+        ],
+        [
+          49533,
+          50233,
+          51233,
+          "left",
+          "partial"
+        ],
+        [
+          54433,
+          54767,
+          55133,
+          "right",
+          "complete"
+        ],
+        [
+          57533,
+          58100,
+          58400,
+          "right",
+          "complete"
+        ],
+        [
+          59733,
+          60067,
+          60433,
+          "left",
+          "complete"
+        ],
+        [
+          63233,
+          64033,
+          64100,
+          "left",
+          "partial"
+        ],
+        [
+          69533,
+          69933,
+          70300,
+          "left",
+          "complete"
+        ],
+        [
+          73033,
+          74333,
+          74900,
+          "right",
+          "complete"
+        ],
+        [
+          76567,
+          77000,
+          77133,
+          "left",
+          "partial"
+        ],
+        [
+          89533,
+          89933,
+          90367,
+          "left",
+          "complete"
+        ],
+        [
+          94000,
+          94100,
+          94467,
+          "right",
+          "partial"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "development-ordinary-a",
+      "candidate_count": 28,
+      "episodes": [
+        [
+          2367,
+          2800,
+          3133,
+          "left",
+          "partial"
+        ],
+        [
+          5933,
+          6467,
+          6933,
+          "right",
+          "complete"
+        ],
+        [
+          10167,
+          10833,
+          11167,
+          "right",
+          "complete"
+        ],
+        [
+          14633,
+          14967,
+          15533,
+          "right",
+          "complete"
+        ],
+        [
+          20433,
+          20800,
+          20967,
+          "left",
+          "partial"
+        ],
+        [
+          24133,
+          24633,
+          25067,
+          "left",
+          "complete"
+        ],
+        [
+          26333,
+          26833,
+          27067,
+          "left",
+          "partial"
+        ],
+        [
+          31367,
+          31700,
+          32200,
+          "right",
+          "complete"
+        ],
+        [
+          33567,
+          35067,
+          35400,
+          "right",
+          "complete"
+        ],
+        [
+          38233,
+          38567,
+          38833,
+          "right",
+          "complete"
+        ],
+        [
+          40967,
+          41500,
+          42167,
+          "right",
+          "partial"
+        ],
+        [
+          44067,
+          44400,
+          44633,
+          "left",
+          "complete"
+        ],
+        [
+          46933,
+          47500,
+          47733,
+          "left",
+          "complete"
+        ],
+        [
+          49533,
+          50233,
+          51233,
+          "left",
+          "partial"
+        ],
+        [
+          54433,
+          54767,
+          55133,
+          "right",
+          "complete"
+        ],
+        [
+          57533,
+          58100,
+          58400,
+          "right",
+          "complete"
+        ],
+        [
+          59733,
+          60067,
+          60433,
+          "left",
+          "complete"
+        ],
+        [
+          63233,
+          64033,
+          64100,
+          "left",
+          "partial"
+        ],
+        [
+          69533,
+          69933,
+          70300,
+          "left",
+          "complete"
+        ],
+        [
+          73033,
+          74333,
+          74900,
+          "right",
+          "complete"
+        ],
+        [
+          76567,
+          77000,
+          77133,
+          "left",
+          "partial"
+        ],
+        [
+          89533,
+          89933,
+          90367,
+          "left",
+          "complete"
+        ],
+        [
+          94000,
+          94100,
+          94467,
+          "right",
+          "partial"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "development-sharapova",
+    "baseline": {
+      "sample_id": "development-sharapova",
+      "candidate_count": 3,
+      "episodes": [
+        [
+          13647,
+          13981,
+          14314,
+          "left",
+          "complete"
+        ],
+        [
+          15849,
+          16116,
+          16550,
+          "left",
+          "complete"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "development-sharapova",
+      "candidate_count": 2,
+      "episodes": [
+        [
+          13647,
+          13981,
+          14314,
+          "left",
+          "complete"
+        ],
+        [
+          16149,
+          16483,
+          16717,
+          "right",
+          "complete"
+        ]
+      ]
+    },
+    "same": false
+  },
+  {
+    "sample_id": "regression-ordinary-b",
+    "baseline": {
+      "sample_id": "regression-ordinary-b",
+      "candidate_count": 11,
+      "episodes": [
+        [
+          2933,
+          3333,
+          4267,
+          "left",
+          "complete"
+        ],
+        [
+          5533,
+          5833,
+          6000,
+          "left",
+          "partial"
+        ],
+        [
+          10933,
+          11367,
+          12000,
+          "left",
+          "partial"
+        ],
+        [
+          13433,
+          13933,
+          14200,
+          "right",
+          "complete"
+        ],
+        [
+          21367,
+          21733,
+          22000,
+          "left",
+          "complete"
+        ],
+        [
+          26867,
+          27233,
+          27300,
+          "left",
+          "partial"
+        ],
+        [
+          31833,
+          32133,
+          32400,
+          "left",
+          "complete"
+        ],
+        [
+          32833,
+          33100,
+          33333,
+          "left",
+          "complete"
+        ],
+        [
+          34233,
+          34533,
+          34800,
+          "left",
+          "partial"
+        ],
+        [
+          36533,
+          37100,
+          37467,
+          "right",
+          "complete"
+        ],
+        [
+          133,
+          1367,
+          1767,
+          "right",
+          "complete"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "regression-ordinary-b",
+      "candidate_count": 11,
+      "episodes": [
+        [
+          2933,
+          3333,
+          4267,
+          "left",
+          "complete"
+        ],
+        [
+          5533,
+          5833,
+          6000,
+          "left",
+          "partial"
+        ],
+        [
+          10933,
+          11367,
+          12000,
+          "left",
+          "partial"
+        ],
+        [
+          13433,
+          13933,
+          14200,
+          "right",
+          "complete"
+        ],
+        [
+          21367,
+          21733,
+          22000,
+          "left",
+          "complete"
+        ],
+        [
+          26867,
+          27233,
+          27300,
+          "left",
+          "partial"
+        ],
+        [
+          31833,
+          32133,
+          32400,
+          "left",
+          "complete"
+        ],
+        [
+          32833,
+          33100,
+          33333,
+          "left",
+          "complete"
+        ],
+        [
+          34233,
+          34533,
+          34800,
+          "left",
+          "partial"
+        ],
+        [
+          36533,
+          37100,
+          37467,
+          "right",
+          "complete"
+        ],
+        [
+          133,
+          1367,
+          1767,
+          "right",
+          "complete"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "holdout-ordinary-outdoor-side",
+    "baseline": {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "candidate_count": 4,
+      "episodes": [
+        [
+          7333,
+          7625,
+          7917,
+          "right",
+          "complete"
+        ],
+        [
+          14083,
+          14583,
+          14833,
+          "right",
+          "complete"
+        ],
+        [
+          23750,
+          24083,
+          24417,
+          "left",
+          "complete"
+        ],
+        [
+          27750,
+          28042,
+          28375,
+          "right",
+          "partial"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "holdout-ordinary-outdoor-side",
+      "candidate_count": 4,
+      "episodes": [
+        [
+          7333,
+          7625,
+          7917,
+          "right",
+          "complete"
+        ],
+        [
+          14083,
+          14583,
+          14833,
+          "right",
+          "complete"
+        ],
+        [
+          23750,
+          24083,
+          24417,
+          "left",
+          "complete"
+        ],
+        [
+          27750,
+          28042,
+          28375,
+          "right",
+          "partial"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "white-360p-crf35",
+    "baseline": {
+      "sample_id": "white-360p-crf35",
+      "candidate_count": 4,
+      "episodes": [
+        [
+          667,
+          1033,
+          1267,
+          "left",
+          "complete"
+        ],
+        [
+          5533,
+          5800,
+          6167,
+          "left",
+          "complete"
+        ],
+        [
+          12267,
+          12633,
+          12867,
+          "left",
+          "complete"
+        ],
+        [
+          22133,
+          22433,
+          22667,
+          "left",
+          "partial"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "white-360p-crf35",
+      "candidate_count": 4,
+      "episodes": [
+        [
+          667,
+          1033,
+          1267,
+          "left",
+          "complete"
+        ],
+        [
+          5533,
+          5800,
+          6167,
+          "left",
+          "complete"
+        ],
+        [
+          12267,
+          12633,
+          12867,
+          "left",
+          "complete"
+        ],
+        [
+          22133,
+          22433,
+          22667,
+          "left",
+          "partial"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "rola-ncaa-2013",
+    "baseline": {
+      "sample_id": "rola-ncaa-2013",
+      "candidate_count": 3,
+      "episodes": [
+        [
+          2469,
+          2769,
+          2936,
+          "left",
+          "partial"
+        ],
+        [
+          12880,
+          14014,
+          14348,
+          "right",
+          "complete"
+        ],
+        [
+          15315,
+          15782,
+          15849,
+          "right",
+          "partial"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "rola-ncaa-2013",
+      "candidate_count": 3,
+      "episodes": [
+        [
+          2469,
+          2769,
+          2936,
+          "left",
+          "partial"
+        ],
+        [
+          12880,
+          14014,
+          14348,
+          "right",
+          "complete"
+        ],
+        [
+          15315,
+          15782,
+          15849,
+          "right",
+          "partial"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "gpu-night",
+    "baseline": {
+      "sample_id": "gpu-night",
+      "candidate_count": 4,
+      "episodes": [
+        [
+          2300,
+          3700,
+          3933,
+          "right",
+          "complete"
+        ],
+        [
+          10967,
+          12200,
+          12500,
+          "right",
+          "complete"
+        ],
+        [
+          20500,
+          21867,
+          22133,
+          "right",
+          "complete"
+        ],
+        [
+          24767,
+          25400,
+          25633,
+          "left",
+          "complete"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "gpu-night",
+      "candidate_count": 4,
+      "episodes": [
+        [
+          2300,
+          3700,
+          3933,
+          "right",
+          "complete"
+        ],
+        [
+          10967,
+          12200,
+          12500,
+          "right",
+          "complete"
+        ],
+        [
+          20500,
+          21867,
+          22133,
+          "right",
+          "complete"
+        ],
+        [
+          24767,
+          25400,
+          25633,
+          "left",
+          "complete"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "gpu-white",
+    "baseline": {
+      "sample_id": "gpu-white",
+      "candidate_count": 6,
+      "episodes": [
+        [
+          633,
+          1167,
+          1467,
+          "right",
+          "complete"
+        ],
+        [
+          5433,
+          5800,
+          6067,
+          "left",
+          "partial"
+        ],
+        [
+          12267,
+          12600,
+          13133,
+          "right",
+          "complete"
+        ],
+        [
+          17033,
+          17367,
+          18167,
+          "right",
+          "complete"
+        ],
+        [
+          22167,
+          22600,
+          23433,
+          "right",
+          "complete"
+        ],
+        [
+          28567,
+          29400,
+          29633,
+          "right",
+          "complete"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "gpu-white",
+      "candidate_count": 6,
+      "episodes": [
+        [
+          633,
+          1167,
+          1467,
+          "right",
+          "complete"
+        ],
+        [
+          5433,
+          5800,
+          6067,
+          "left",
+          "partial"
+        ],
+        [
+          12267,
+          12600,
+          13133,
+          "right",
+          "complete"
+        ],
+        [
+          17033,
+          17367,
+          18167,
+          "right",
+          "complete"
+        ],
+        [
+          22167,
+          22600,
+          23433,
+          "right",
+          "complete"
+        ],
+        [
+          28567,
+          29400,
+          29633,
+          "right",
+          "complete"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "dimitrov-tiafoe-real-return",
+    "baseline": {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "candidate_count": 6,
+      "episodes": [
+        [
+          7833,
+          8167,
+          8733,
+          "right",
+          "complete"
+        ],
+        [
+          13633,
+          13867,
+          14200,
+          "left",
+          "complete"
+        ],
+        [
+          20000,
+          20333,
+          20517,
+          "right",
+          "partial"
+        ],
+        [
+          20950,
+          21383,
+          21650,
+          "left",
+          "partial"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "dimitrov-tiafoe-real-return",
+      "candidate_count": 6,
+      "episodes": [
+        [
+          7833,
+          8167,
+          8733,
+          "right",
+          "complete"
+        ],
+        [
+          13633,
+          13867,
+          14200,
+          "left",
+          "complete"
+        ],
+        [
+          20000,
+          20333,
+          20517,
+          "right",
+          "partial"
+        ],
+        [
+          20950,
+          21383,
+          21650,
+          "left",
+          "partial"
+        ]
+      ]
+    },
+    "same": true
+  },
+  {
+    "sample_id": "thetis-p32_fslice_s1",
+    "baseline": {
+      "sample_id": "thetis-p32_fslice_s1",
+      "candidate_count": 1,
+      "episodes": [
+        [
+          1667,
+          2222,
+          2611,
+          "left",
+          "complete"
+        ]
+      ]
+    },
+    "current": {
+      "sample_id": "thetis-p32_fslice_s1",
+      "candidate_count": 1,
+      "episodes": [
+        [
+          1667,
+          2222,
+          2611,
+          "left",
+          "complete"
+        ]
+      ]
+    },
+    "same": true
+  }
+]

@@ -1,0 +1,117 @@
+{
+  "version": "source-only-spatial-experiment-v1",
+  "frozen_at_utc": "2026-10-28T07:57:47.992892+00:00",
+  "source_id": "tenniscom-newcombe-side-slice",
+  "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/tenniscom-newcombe-fhslice.mp4",
+  "source_video_sha256": "c5c2bbc96f0242f363d2900041f60094fc530baed44e8d78601b21339474549e",
+  "source_url": "https://www.tennis.com/news/articles/the-forehand-slice-moonball-body-serve-5-underrated-tennis-tactics",
+  "public_player_url": "https://cdn.jwplayer.com/players/g9mGdL1P-JBa1XMZp.html",
+  "publisher": "Tennis Channel / Tennis.com",
+  "rights": "Publisher copyright; normal public player access for local validation only, no media redistribution claimed",
+  "selection_basis": "First inspected side-view fully visible moving source segment after removal of editorial freeze and arrows; no inference read",
+  "inference_interval_ms": [
+    60400,
+    65000
+  ],
+  "time_mode": "explicit_slow_motion_with_editorial_freeze_outside_selected_interval",
+  "not_real_time": true,
+  "scope": [
+    "spatial_path_only"
+  ],
+  "prohibited_claims": [
+    "No physical millisecond kinematic timing or hip/shoulder/wrist peak order",
+    "No complete preparation detection or overall stroke score",
+    "No independent new action count for repeated later replays"
+  ],
+  "reviewed_subject": {
+    "description_zh": "侧视白帽蓝灰T恤黑短裤年轻运动员，向画面左侧击球",
+    "initial_bbox_approx_px": [
+      671,
+      334,
+      834,
+      542
+    ],
+    "racket_hand": "right",
+    "racket_hand_basis_zh": "连续侧前视至正面随挥，右臂在身体右前侧握拍向画面左侧击球，左臂留在后侧平衡；不按姓名推定。"
+  },
+  "source_action": {
+    "technique": "forehand_slice",
+    "method": "agent_visual_review",
+    "reviewer": "samples",
+    "forward_path_observation_ms": [
+      60400,
+      61300
+    ],
+    "contact_bracket_ms": [
+      61200,
+      61300
+    ],
+    "follow_through_visible_ms": [
+      61400,
+      62200
+    ],
+    "preparation_complete": false,
+    "observations_zh": "60.4箭头已消失且逐帧持续前迈；右手球拍从身体前侧向左下伸至来球，约61.2–61.3球拍与球相接，之后球明显向画面左上方离开。61.4以后球拍继续低位向前随挥并恢复。58.4–60.2击前冻结和箭头均不作为阶段输入。",
+    "actual_ball_visible": true
+  },
+  "excluded_intervals": [
+    {
+      "start_ms": 58400,
+      "end_ms": 60300,
+      "reason": "editorial_freeze_and_arrow_overlay"
+    },
+    {
+      "start_ms": 125600,
+      "end_ms": 130200,
+      "reason": "coach_shadow_demonstration_ball_remains_in_free_hand_not_ball_contact"
+    },
+    {
+      "start_ms": 132600,
+      "end_ms": 134200,
+      "reason": "editorial_freeze_and_leg_annotation"
+    }
+  ],
+  "direction_review": {
+    "status": "pending_independent_court_line_identity_review",
+    "candidate_forward_ground_line_points_px": [
+      [
+        520,
+        520
+      ],
+      [
+        0,
+        630
+      ]
+    ],
+    "candidate_parallel_ground_line_points_px": [
+      [
+        360,
+        520
+      ],
+      [
+        0,
+        579
+      ]
+    ],
+    "up_upright_points_px": [
+      [
+        727,
+        494
+      ],
+      [
+        727,
+        255
+      ]
+    ],
+    "note_zh": "候选forward来自左侧两条平行球场纵线，up来自围栏立柱；本画面无球网，纵线身份需独立确认，当前不写verified。不从手腕或球的击出路径反推forward。"
+  },
+  "source_evidence": "source-audit/newcombe-space-dense/evidence.json",
+  "source_evidence_sha256": "ea846ad63df7da76cbb0f10f3b7dc783bd54d46f6219e21df5cc833c71d6da73",
+  "duplicate_detection": "source-audit/newcombe-duplicate-frame-review.json",
+  "duplicate_detection_sha256": "7383e0f1554d182b253c128eabc5a0ba88ffea13853de7a08d72f5d8afc37168",
+  "limitations": [
+    "Unknown slowdown factor; displayed PTS is not physical capture time.",
+    "Full source contains editorial freezes and replays; no global real-time assertion.",
+    "No direct net in selected camera view; court-line identification must be confirmed for independent direction."
+  ]
+}

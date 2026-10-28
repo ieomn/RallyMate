@@ -35,7 +35,7 @@ function currentFixture() {
 function roleFixture(paired = false) {
   const report = currentFixture(); report.version = "tennis-action-assessment-v1.4.0";
   for (const episode of report.episodes) {
-    episode.motion_pattern.version = "tennis-motion-patterns-v1.2.0";
+    episode.motion_pattern.version = "tennis-motion-patterns-v1.2.1";
     episode.source_selection_epoch = 0; episode.camera_reference_epoch = 0;
     episode.hand_roles = { version: "tennis-hand-roles-v1", motion_wrist: "right", measurement_hand: "right", primary_racket_hand: null,
       primary_hand_provenance: { method: "unverified" }, relationship: "motion_only", paired_wrist_evidence: null };
@@ -116,6 +116,17 @@ test("v1.4 uses pattern1.2 and explains inseparable slice directions as missing 
   assert.match(detail,/向前与向下方向过于接近/); assert.doesNotMatch(detail,/ill_conditioned/);
   raw.episodes[0].motion_pattern.version='tennis-motion-patterns-v1.1.0';
   assert.equal(parse(raw),null);
+});
+
+test("v1.4 retains both the numeric-boundary patch and historical pattern version on roundtrip", () => {
+  for (const version of ["tennis-motion-patterns-v1.2.0", "tennis-motion-patterns-v1.2.1"]) {
+    const raw = roleFixture(); raw.episodes.forEach(e => { e.motion_pattern.version = version; });
+    const parsed = parse(raw); assert.ok(parsed);
+    assert.ok(parsed.episodes.every(e => e.motion_pattern.version === version));
+    assert.deepEqual(parse(JSON.parse(JSON.stringify(parsed))), parsed);
+  }
+  const future = roleFixture(); future.episodes[0].motion_pattern.version = "tennis-motion-patterns-v1.2.2";
+  assert.equal(parse(future), null);
 });
 
 test("new action scores bind to the current job, video hash and original source time", () => {

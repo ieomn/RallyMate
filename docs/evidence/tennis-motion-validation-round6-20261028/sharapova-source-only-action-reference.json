@@ -1,0 +1,164 @@
+{
+  "version": "source-only-action-reference-v1",
+  "sample_id": "development-sharapova",
+  "source_video": "service_data\\uploads\\5b0b659e-7049-4749-8312-97e72e73a287.mp4",
+  "source_video_sha256": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6",
+  "review_method": "Original video pixels, original decoder PTS, anatomical arm continuity; no native joint labels, candidate boundaries, score, athlete name, or prior reviewed hand used to determine the visible arm action. This is development-case review, not blinded accuracy evaluation.",
+  "prior_source_observation": "frames 481,482,483,489,494,495,500,504 were inspected and saved in round6/sharapova-association before implementation; this source-only sheet re-decodes them and adds 493,498,503 for phase/follow-through visibility.",
+  "action_count_in_review_interval": 1,
+  "source_interval_ms": [
+    16049.366666666667,
+    16816.8
+  ],
+  "type": "forehand",
+  "hand_use": "single_handed_forward_sweep",
+  "primary_racket_hand": "right",
+  "side_evidence": [
+    {
+      "frames": [
+        483,
+        489
+      ],
+      "fact": "Back-facing torso and continuous shoulder/arm chain show the image-right/anatomical-right hand connected to the racket. The image-left/anatomical-left arm extends independently without the racket."
+    },
+    {
+      "frames": [
+        493,
+        494,
+        495
+      ],
+      "fact": "The same right arm brings the racket from its rear/right position through the lower forward sweep; the opposite hand remains visibly separate. The video does not establish exact ball-contact time."
+    },
+    {
+      "frames": [
+        498,
+        500,
+        503,
+        504
+      ],
+      "fact": "The same racket/arm rises across the front into a high follow-through and remains near the right hand; proximity of both wrists in the image at the end is not proof of a two-handed forward stroke."
+    }
+  ],
+  "phase_evidence_ms": {
+    "preparation": [
+      16049.366666666667,
+      16316.3
+    ],
+    "forward_sweep": [
+      16449.766666666666,
+      16516.5
+    ],
+    "follow_through": [
+      16616.6,
+      16816.8
+    ]
+  },
+  "manual_phase_semantics": "Visible phase ranges; not exact contact timing, not automatic algorithm boundaries, and not an instruction to replace a model window.",
+  "source_frames": [
+    {
+      "decoded_frame_index": 481,
+      "pts": 481481,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16049.366666666667,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000481.png",
+      "sha256": "0c51e5d8358615545397f75877f54c70ab0d4e316eca304798f89a021a4fa258"
+    },
+    {
+      "decoded_frame_index": 482,
+      "pts": 482482,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16082.733333333334,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000482.png",
+      "sha256": "84050288aa799859d96f1df61db73e1cabc9dbdf22a96bd7c7addcc216367900"
+    },
+    {
+      "decoded_frame_index": 483,
+      "pts": 483483,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16116.1,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000483.png",
+      "sha256": "4b41624e0fd8016dc48a3ab57353174aed30ecd283703abf165d5ef829c19bbd"
+    },
+    {
+      "decoded_frame_index": 489,
+      "pts": 489489,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16316.3,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000489.png",
+      "sha256": "03a88b17d1c2e1b52eba46206896d8c21133a52d55878651209eab7808a198c6"
+    },
+    {
+      "decoded_frame_index": 493,
+      "pts": 493493,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16449.766666666666,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000493.png",
+      "sha256": "5a242302257194b5b523cda90262c4eb2f827c33e83cac4f28cac11f75024104"
+    },
+    {
+      "decoded_frame_index": 494,
+      "pts": 494494,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16483.133333333335,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000494.png",
+      "sha256": "27695dc1f40a1ceac9f76e3b4e2bfba81b856523d353c2b35de8176af99796e2"
+    },
+    {
+      "decoded_frame_index": 495,
+      "pts": 495495,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16516.5,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000495.png",
+      "sha256": "652169808a4433887202cfb1b03e8a457f94771c8cf7c840488f9b1e25fba7d6"
+    },
+    {
+      "decoded_frame_index": 498,
+      "pts": 498498,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16616.6,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000498.png",
+      "sha256": "13a3361cc0b90f632f856a6bb4d7ae194dcfe8ce077ee15b1a80c6ca685b4a5c"
+    },
+    {
+      "decoded_frame_index": 500,
+      "pts": 500500,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16683.333333333332,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000500.png",
+      "sha256": "e68204a059661d6ac1796e59d873747df463991ae532e09de8fb8aac05e857c2"
+    },
+    {
+      "decoded_frame_index": 503,
+      "pts": 503503,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16783.433333333334,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000503.png",
+      "sha256": "2183db5a145d651366eb4aff66538b3f49941fcbc220989e6f2d3add9cb65d5a"
+    },
+    {
+      "decoded_frame_index": 504,
+      "pts": 504504,
+      "time_base_num": 1,
+      "time_base_den": 30000,
+      "actual_timestamp_ms": 16816.8,
+      "file": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\frame-000504.png",
+      "sha256": "839c89725dcf42672d0ea855c2f0235dc4e425ca9942d23f2ae1ad22c22cbd68"
+    }
+  ],
+  "contact_sheet": ".codex_tmp\\tennis-score-round6-20261028\\sharapova-source-only\\contact.png",
+  "limitations": [
+    "Small original 500x376 image and motion blur prevent precise handle grip-order and exact contact timing.",
+    "This audit does not establish true force, spin, ball landing, or competitive skill.",
+    "Old round5 15849/16116/16550 reviewed context is not migrated or rewritten; a new exact episode binding must independently match this source and continuous action."
+  ]
+}

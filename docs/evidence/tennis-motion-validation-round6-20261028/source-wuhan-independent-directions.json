@@ -1,0 +1,453 @@
+{
+  "version": "source-only-direction-observability-v1",
+  "review_method": "agent_source_pixel_review_not_coach_ground_truth",
+  "pose_or_scores_read_for_direction_choice": false,
+  "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-fhslice-2026.mp4",
+  "source_video_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+  "source_audit_sha256": "48bd8a1c8f0d497643147a989f9dc4d0a7c5ba79d0bc42bf1a0d1c5a8d8d0382",
+  "reference_frame_index": 170,
+  "direction_reference_timestamp_ms": 6800.0,
+  "reference_raw_png_sha256": "507daa72a571a8e52b4088ae7c12f9fd50a64cb1b8b72752ce7837420b3b1e59",
+  "coordinate_system": "image_pixels_x_right_y_down",
+  "court_longitudinal_lines_px": {
+    "left_doubles": [
+      [
+        245.0,
+        556.0
+      ],
+      [
+        428.0,
+        178.0
+      ]
+    ],
+    "right_doubles": [
+      [
+        1030.0,
+        555.0
+      ],
+      [
+        846.0,
+        178.0
+      ]
+    ],
+    "left_singles": [
+      [
+        346.0,
+        555.0
+      ],
+      [
+        481.0,
+        178.0
+      ]
+    ],
+    "right_singles": [
+      [
+        931.0,
+        555.0
+      ],
+      [
+        794.0,
+        178.0
+      ]
+    ]
+  },
+  "court_longitudinal_vanishing_point_px": [
+    636.2575991287309,
+    -253.4121852578735
+  ],
+  "player_ground_reference_px": [
+    900.0,
+    625.0
+  ],
+  "up_reference": {
+    "object": "same-frame right net post",
+    "base_px": [
+      956.0,
+      309.0
+    ],
+    "top_px": [
+      959.0,
+      257.0
+    ]
+  },
+  "forward_direction_2d": [
+    -0.2875666899211406,
+    -0.9577606166719315
+  ],
+  "up_direction_2d": [
+    0.05759653509666974,
+    -0.9983399416756088
+  ],
+  "direction_definition": "Local projected court longitudinal direction toward the opponent, derived from independent court lines; up from the net post. Neither direction is estimated from arm, racket or running trajectory.",
+  "direction_limitations": [
+    "Local court forward is a scene-based approximation, not measured three-dimensional ball-target direction.",
+    "A constant local image-plane basis is used; this is not a calibrated world-space decomposition.",
+    "The net post is short in pixels, so the vertical direction has annotation uncertainty."
+  ],
+  "direction_basis_condition_number": 5.667175459513705,
+  "frozen_maximum_condition_number": 4.0,
+  "joint_forward_down_observability": "ill_conditioned",
+  "expected_existing_rule_reason": "slice_joint_directions_ill_conditioned",
+  "sensitivity": {
+    "semantics": "annotation-perturbation sensitivity, not a statistical confidence interval",
+    "seed": 20261028,
+    "trials": 4096,
+    "court_endpoint_jitter_px": 2,
+    "net_post_endpoint_jitter_px": 1,
+    "ground_reference_jitter_xy_px": [
+      30,
+      20
+    ],
+    "condition_range": [
+      4.6872872299452615,
+      6.995459464262651
+    ],
+    "conditions_over_existing_limit": 4096
+  },
+  "source_timing": {
+    "width": 1280,
+    "height": 720,
+    "average_rate": "25",
+    "time_base": "1/25",
+    "method": "PyAV original decoder PTS, no fps-generated timestamps",
+    "dense_window_ms": [
+      6200,
+      7600
+    ],
+    "decoded_frames": 36,
+    "minimum_interval_ms": 40.0,
+    "maximum_interval_ms": 40.0,
+    "median_interval_ms": 40.0,
+    "one_interval_order_not_resolvable": true,
+    "interpretation": "25 fps supplies 40 ms steps. Independent hip/shoulder/wrist peaks separated by one interval or less remain unresolved; no peak timing is claimed before native observations exist."
+  },
+  "source_frames": [
+    {
+      "frame_index": 155,
+      "pts": 155,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6200.0,
+      "raw_png": "frame-000155.png",
+      "raw_png_sha256": "8e7449fa49b7388975aff7cc7e096eeaeb661b1b6a2532abb0170c07fae728a6"
+    },
+    {
+      "frame_index": 156,
+      "pts": 156,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6240.0,
+      "raw_png": "frame-000156.png",
+      "raw_png_sha256": "56b92a0f514b76ea971ff8558d0ecfa6025f7e9f9f96263f20c9f094e70c0b61"
+    },
+    {
+      "frame_index": 157,
+      "pts": 157,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6280.0,
+      "raw_png": "frame-000157.png",
+      "raw_png_sha256": "1e52d4c03fb4501e53b2e82f09b0d8f3e124c306183ee05b684bf56d9293d8a7"
+    },
+    {
+      "frame_index": 158,
+      "pts": 158,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6320.0,
+      "raw_png": "frame-000158.png",
+      "raw_png_sha256": "50c944f03a0f5ce6e4a015cb6d8992d256a84f38e1928e3f09aee520d182fe9f"
+    },
+    {
+      "frame_index": 159,
+      "pts": 159,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6360.0,
+      "raw_png": "frame-000159.png",
+      "raw_png_sha256": "3ed7308b7efc106ba75986b45443411d570c2ac78d8211eb4ee4f0d1d9b27424"
+    },
+    {
+      "frame_index": 160,
+      "pts": 160,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6400.0,
+      "raw_png": "frame-000160.png",
+      "raw_png_sha256": "4af10d0d946b0ffabf76e3344e62663ee7ace689bf370e7e108c9655cf619544"
+    },
+    {
+      "frame_index": 161,
+      "pts": 161,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6440.0,
+      "raw_png": "frame-000161.png",
+      "raw_png_sha256": "4ed36b33c54d03a6589977a5b65a04d9578b156562c39768e0d4c1900fe9fe7d"
+    },
+    {
+      "frame_index": 162,
+      "pts": 162,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6480.0,
+      "raw_png": "frame-000162.png",
+      "raw_png_sha256": "f89948a6e77b9ba2f6212051086e80380626848a90713f5a04b6b24e44953694"
+    },
+    {
+      "frame_index": 163,
+      "pts": 163,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6520.0,
+      "raw_png": "frame-000163.png",
+      "raw_png_sha256": "df027d8ec376fa3597dfe96fff0964d847fd14ecd09bccd2d575517ae6347acc"
+    },
+    {
+      "frame_index": 164,
+      "pts": 164,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6560.0,
+      "raw_png": "frame-000164.png",
+      "raw_png_sha256": "b6dd5aef5b8042d2a231833265564a66493a4ccf58054a1ae5d582d27516daeb"
+    },
+    {
+      "frame_index": 165,
+      "pts": 165,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6600.0,
+      "raw_png": "frame-000165.png",
+      "raw_png_sha256": "f7077bd0cccb6b3cb102b83b023dfef413080a195ff79bd0573b7d427f92cf3c"
+    },
+    {
+      "frame_index": 166,
+      "pts": 166,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6640.0,
+      "raw_png": "frame-000166.png",
+      "raw_png_sha256": "b3973c6f2b106a77207f246d4b9661e3f6ffb9c7aca442b61ef457ef28bc52fd"
+    },
+    {
+      "frame_index": 167,
+      "pts": 167,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6680.0,
+      "raw_png": "frame-000167.png",
+      "raw_png_sha256": "57c094e424b9c07c2e170eb6c74f4537c02316fca7a0a5bf0c21c4bafe108b40"
+    },
+    {
+      "frame_index": 168,
+      "pts": 168,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6720.0,
+      "raw_png": "frame-000168.png",
+      "raw_png_sha256": "ecec3e75a5c87a8865474b76b0475b96f49e4d6cb42801816ea371e68ed81d8d"
+    },
+    {
+      "frame_index": 169,
+      "pts": 169,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6760.0,
+      "raw_png": "frame-000169.png",
+      "raw_png_sha256": "3efc814a81038ace0a98f48235e2d7bc3098c9a2ae16fd6e17263028aed54205"
+    },
+    {
+      "frame_index": 170,
+      "pts": 170,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6800.0,
+      "raw_png": "frame-000170.png",
+      "raw_png_sha256": "72ff84b54bef982959012dc1e2accacc499910ed1dd9588bb8253ccc99c23c7f"
+    },
+    {
+      "frame_index": 171,
+      "pts": 171,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6840.0,
+      "raw_png": "frame-000171.png",
+      "raw_png_sha256": "8901c9aaf9cd2b79189c7e12ef53f42eaee4da930b6dd806d896068e8eac73b3"
+    },
+    {
+      "frame_index": 172,
+      "pts": 172,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6880.0,
+      "raw_png": "frame-000172.png",
+      "raw_png_sha256": "3746a7701288308d8c2856c4eb02a8af935f0eb11f74c1b3b387e5b3d66a7ea7"
+    },
+    {
+      "frame_index": 173,
+      "pts": 173,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6920.0,
+      "raw_png": "frame-000173.png",
+      "raw_png_sha256": "57418aef52a04baddba25fe1509c44738cb5ec6f0b9d53159ee86d965e416a8b"
+    },
+    {
+      "frame_index": 174,
+      "pts": 174,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6960.0,
+      "raw_png": "frame-000174.png",
+      "raw_png_sha256": "0dd2735aefdac9bc79e40140346f816c4b335072cb5242f1b1353c65a2afe337"
+    },
+    {
+      "frame_index": 175,
+      "pts": 175,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7000.0,
+      "raw_png": "frame-000175.png",
+      "raw_png_sha256": "f1a1a6175be6a6d38419407c3eef2d5f6eaa5d3f1f2459d6a3fc750e64358f06"
+    },
+    {
+      "frame_index": 176,
+      "pts": 176,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7040.0,
+      "raw_png": "frame-000176.png",
+      "raw_png_sha256": "47cf30f6953663ae85c62761d77954b1667880fd23bbbc5fc838df9199c7abe8"
+    },
+    {
+      "frame_index": 177,
+      "pts": 177,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7080.0,
+      "raw_png": "frame-000177.png",
+      "raw_png_sha256": "90c69162ae61a9ebb0278484abd9cbdcf67f61eb83adb3ebbf861d3a819cef41"
+    },
+    {
+      "frame_index": 178,
+      "pts": 178,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7120.0,
+      "raw_png": "frame-000178.png",
+      "raw_png_sha256": "f050be3f24d8101f99158c0a9bef8ecadafb635fc37a8ccede2b84ce3d72e83e"
+    },
+    {
+      "frame_index": 179,
+      "pts": 179,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7160.0,
+      "raw_png": "frame-000179.png",
+      "raw_png_sha256": "d02c7536ac0f594e7735b87d0376773a817e412894acdf2f18d1b3cf876c6bdb"
+    },
+    {
+      "frame_index": 180,
+      "pts": 180,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7200.0,
+      "raw_png": "frame-000180.png",
+      "raw_png_sha256": "27307c8b5a3352122c07e8fcc2c693bdc404099549a9d35cd1e3907dce19819b"
+    },
+    {
+      "frame_index": 181,
+      "pts": 181,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7240.0,
+      "raw_png": "frame-000181.png",
+      "raw_png_sha256": "000e528f46165a60a763f5f339732c24fc45fa4a8eec9af74bc64e1180bbd058"
+    },
+    {
+      "frame_index": 182,
+      "pts": 182,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7280.0,
+      "raw_png": "frame-000182.png",
+      "raw_png_sha256": "607e2cff49c2d02d9b77a2ec7378fdf8aa9f2c59907ee70320016a72fdb1b08f"
+    },
+    {
+      "frame_index": 183,
+      "pts": 183,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7320.0,
+      "raw_png": "frame-000183.png",
+      "raw_png_sha256": "380d6ce05aa867c3fcb482cd010ac5cb42098e5eee3e096c426f5031d4b52d60"
+    },
+    {
+      "frame_index": 184,
+      "pts": 184,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7360.0,
+      "raw_png": "frame-000184.png",
+      "raw_png_sha256": "876cdae7d9f4fc69ca828633c8ffabe06c805b4ec9a5f999022ce9b6f64a4e93"
+    },
+    {
+      "frame_index": 185,
+      "pts": 185,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7400.0,
+      "raw_png": "frame-000185.png",
+      "raw_png_sha256": "9688696f9abfd9c519e942597b158001f58862b14ce5aa733cea3e0fdca90bd4"
+    },
+    {
+      "frame_index": 186,
+      "pts": 186,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7440.0,
+      "raw_png": "frame-000186.png",
+      "raw_png_sha256": "383ac97e501346291f56e07ec9ca2c0b14fa92d75c3ceb98422c18f25dfb43bd"
+    },
+    {
+      "frame_index": 187,
+      "pts": 187,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7480.0,
+      "raw_png": "frame-000187.png",
+      "raw_png_sha256": "74417599c2f34084cd14d91894eac1279537565db86c97df988deb864bfc408f"
+    },
+    {
+      "frame_index": 188,
+      "pts": 188,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7520.0,
+      "raw_png": "frame-000188.png",
+      "raw_png_sha256": "5103a146509979eda7689dd7a4a167eda529e354819eedeaf6633f49603e0474"
+    },
+    {
+      "frame_index": 189,
+      "pts": 189,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7560.0,
+      "raw_png": "frame-000189.png",
+      "raw_png_sha256": "4dd12e6bab5d03279c3cdc1cb7c907d8fe3a7ed0503ea17f56cb61aaa01fbbbb"
+    },
+    {
+      "frame_index": 190,
+      "pts": 190,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7600.0,
+      "raw_png": "frame-000190.png",
+      "raw_png_sha256": "3bd5a61e47458e9bf858fb44f86ab928f564d844f129fa65ad35c80528cbd942"
+    }
+  ],
+  "source_unchanged": true,
+  "gpu_requested_by_this_script": false,
+  "code_sha256": "bf7fa3cf0a07d3427d71bdc1df51478e46d86d5e6f7863d41247f97f423b3fa1"
+}

@@ -1,0 +1,185 @@
+{
+  "version": "round6-real-inference-captures-v1",
+  "successful_native_records": 1169,
+  "runs": [
+    {
+      "job_id": "round6-wuhan-wuhan-forehand-slice",
+      "completed_at": "2026-10-28T07:41:31.457388+00:00",
+      "duration_seconds": 36.263,
+      "source_sha256": "83039C0E8799FD4F05C09CBE45226D7B4BC1C2D8D9FBDFE3721D68E63F2E88FF",
+      "frame_count": 95,
+      "selected_frames": 81,
+      "native_ok": 81,
+      "native_track_counts": {
+        "1": 81
+      },
+      "native_inference_seconds": 9.618,
+      "candidate_count": 1,
+      "original_request_sha256": "EEC0F2321462DDE3E2C80874CC805D354018A108C9AA318F4B92FF800AAD0C42",
+      "artifact_sha256": {
+        "frames.jsonl": "DFCA40CCA4E6AD86D74CB20E48F40058446AEF960E33233F9A2D35FBCC1EDCBC",
+        "sam3d_frames.jsonl": "E215974B5F1A6DC9696077DE42CF16559B63D850A5640089136F4EC6ED009F2A",
+        "primary-player.jsonl": "2A855C08C75F2A90C17C74A413BA77550CAF6E2D2417DFF9C9BBD72312FA0450",
+        "action-recognition.json": "D5B54CB9EAADA47F380018A4027EDE4A37D4DF1E9F68B5B9F7807E8E4E9EE26A"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "runner_sha256": "355430C6905DFA8533595F5CE78404A0FB5DBB97DCAE2998B226301E2D2876BB",
+      "automatic_subject_selection": true,
+      "capture_source_commit": "0a97871",
+      "code_changed_during_execution": false,
+      "relevant_code_sha256": {
+        "rallymate_scoring/paired_motion.py": "F2C45082B7B0D330B6DD66F023150458379FDC3C5A1CB9E4E5A54132EC0F375C",
+        "rallymate_scoring/stroke_analysis.py": "2A34891E515473EA2627501688A0483548AC2212A9C00B13134152AF90522688",
+        "rallymate_scoring/stroke_candidates.py": "8F832B183185758722EEBF0EFEFAD703099B069A8663DDE5794D0135B14F669D",
+        "rallymate_scoring/stroke_review_fallback.py": "89499C48C6F4ADBD8449289E2EBF7568672ACB3C7A410E01EA967F07056ECF87",
+        "rallymate_service/tennis_assessment.py": "28AB913840E9C6736DD5AD900CD9BC8E38BB911676E00130DAF8930BC9F5159A",
+        "rallymate_service/tennis_coaching.py": "71488A96B44D1BBC1F80FD48C4B7E3128590A3DF9A08BBED86F7F2AAF638E2AB",
+        "rallymate_service/tennis_motion_patterns.py": "2748C48D8F88B4C797F5AD0FF27C63DAAA61266D21FB164D12C5D1AE01B509ED",
+        "rallymate_service/tennis_profiles.py": "84AE9BE1C99E08D1DE68703EE38B7A0419D4B3817593319ABCCFF686AEB5C6AB",
+        "rallymate_service/tennis_source_motion.py": "0EEFDF8634C620A1D15BE6C9D16AE4B25115A2297961E87FBD5515027298ACB9",
+        "rallymate_service/tennis_subjects.py": "270C17770F201FE8580F3B81F1664D96AA4CAA7FCB4B4FDA0F013321F1A72589",
+        "rallymate_tracking/primary_player.py": "88D73274EE550AEE091666C28988FC370AB92A1D478311417A9EC4B92CFC6844",
+        "rallymate_tracking/subject_lock.py": "6EAAAE3F3A5B4AA189B857786FFB7A0D3AA949FDE91E4053409B267313CEA43A"
+      },
+      "source_summary_sha256": "6c863a11777e400256965f548eac2dbf3d1c13a6bee3a1e0f431eb0c5a24e487"
+    },
+    {
+      "job_id": "round6-return-adelaide-return",
+      "completed_at": "2026-10-28T07:48:12.732698+00:00",
+      "duration_seconds": 84.595,
+      "source_sha256": "96E80FCFBE444EDC0EC0597B0FC613076ECFEC8D0038074B3785F1E839FB852D",
+      "frame_count": 100,
+      "selected_frames": 100,
+      "native_ok": 500,
+      "native_track_counts": {
+        "1": 100,
+        "5": 100,
+        "3": 100,
+        "2": 96,
+        "6": 97,
+        "25": 3,
+        "12": 3,
+        "10": 1
+      },
+      "native_inference_seconds": 53.71,
+      "candidate_count": 0,
+      "original_request_sha256": "4DEAC8E923176049B87ACD750F3262993D482B82D3454C832D402B41CB2415DD",
+      "artifact_sha256": {
+        "frames.jsonl": "FC26666D56512CCFEB2EA2C427DA13156471CD55A95725B9567E09F006EA24C6",
+        "sam3d_frames.jsonl": "7F3C62120ED88F76C23CB0C737FEBEA61906FF9AEF9FB35DDF3239B80B90C531",
+        "primary-player.jsonl": "7E52EBC0FD8DFB35D70F9EF7E1ACDBC1CF4EF59C90DE84C9D48340501574DA9B",
+        "action-recognition.json": "1657209E8C8741DEF966B664F50168CD77B3B8F651A43CD22EEB048443A956C2"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "runner_sha256": "355430C6905DFA8533595F5CE78404A0FB5DBB97DCAE2998B226301E2D2876BB",
+      "automatic_subject_selection": true,
+      "capture_source_commit": "0a97871",
+      "code_changed_during_execution": false,
+      "relevant_code_sha256": {
+        "rallymate_scoring/paired_motion.py": "F2C45082B7B0D330B6DD66F023150458379FDC3C5A1CB9E4E5A54132EC0F375C",
+        "rallymate_scoring/stroke_analysis.py": "2A34891E515473EA2627501688A0483548AC2212A9C00B13134152AF90522688",
+        "rallymate_scoring/stroke_candidates.py": "8F832B183185758722EEBF0EFEFAD703099B069A8663DDE5794D0135B14F669D",
+        "rallymate_scoring/stroke_review_fallback.py": "89499C48C6F4ADBD8449289E2EBF7568672ACB3C7A410E01EA967F07056ECF87",
+        "rallymate_service/tennis_assessment.py": "28AB913840E9C6736DD5AD900CD9BC8E38BB911676E00130DAF8930BC9F5159A",
+        "rallymate_service/tennis_coaching.py": "71488A96B44D1BBC1F80FD48C4B7E3128590A3DF9A08BBED86F7F2AAF638E2AB",
+        "rallymate_service/tennis_motion_patterns.py": "2748C48D8F88B4C797F5AD0FF27C63DAAA61266D21FB164D12C5D1AE01B509ED",
+        "rallymate_service/tennis_profiles.py": "84AE9BE1C99E08D1DE68703EE38B7A0419D4B3817593319ABCCFF686AEB5C6AB",
+        "rallymate_service/tennis_source_motion.py": "0EEFDF8634C620A1D15BE6C9D16AE4B25115A2297961E87FBD5515027298ACB9",
+        "rallymate_service/tennis_subjects.py": "270C17770F201FE8580F3B81F1664D96AA4CAA7FCB4B4FDA0F013321F1A72589",
+        "rallymate_tracking/primary_player.py": "88D73274EE550AEE091666C28988FC370AB92A1D478311417A9EC4B92CFC6844",
+        "rallymate_tracking/subject_lock.py": "6EAAAE3F3A5B4AA189B857786FFB7A0D3AA949FDE91E4053409B267313CEA43A"
+      },
+      "source_summary_sha256": "3bac25b446a5d6b78cb6593cdb3d00242b6badf7aae67e1c41af0980c36096ec"
+    },
+    {
+      "job_id": "round6-return-toronto-return",
+      "completed_at": "2026-10-28T07:49:31.973429+00:00",
+      "duration_seconds": 79.049,
+      "source_sha256": "04BE4D1F22BF604133900A86F75772666C7B067C62A39BD63A3A1339A5D93B7F",
+      "frame_count": 90,
+      "selected_frames": 90,
+      "native_ok": 450,
+      "native_track_counts": {
+        "1": 90,
+        "11": 90,
+        "16": 89,
+        "3": 90,
+        "2": 76,
+        "12": 7,
+        "17": 8
+      },
+      "native_inference_seconds": 49.107,
+      "candidate_count": 0,
+      "original_request_sha256": "5F87D976E4B13BAECF6A2CB7ADCB17EC443E67C1D46A200EE71BB92BB64D72FB",
+      "artifact_sha256": {
+        "frames.jsonl": "A117B0AD9038898DA64584607D7DA0B31130596BA45999134248170E66814010",
+        "sam3d_frames.jsonl": "E6DF667FE24F5887C617EEE886C3C9A13B7E949BD401088A6C5DF0F0D3D86000",
+        "primary-player.jsonl": "C9EEFE506DB046BDA4D6636EDCF9A821888E097F1D8C73E460CE91008856C0EE",
+        "action-recognition.json": "7367FB603966A806AC6B6AA16BF86541D7D0330993566D88A75D3AD72569C033"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "runner_sha256": "355430C6905DFA8533595F5CE78404A0FB5DBB97DCAE2998B226301E2D2876BB",
+      "automatic_subject_selection": true,
+      "capture_source_commit": "0a97871",
+      "code_changed_during_execution": false,
+      "relevant_code_sha256": {
+        "rallymate_scoring/paired_motion.py": "F2C45082B7B0D330B6DD66F023150458379FDC3C5A1CB9E4E5A54132EC0F375C",
+        "rallymate_scoring/stroke_analysis.py": "2A34891E515473EA2627501688A0483548AC2212A9C00B13134152AF90522688",
+        "rallymate_scoring/stroke_candidates.py": "8F832B183185758722EEBF0EFEFAD703099B069A8663DDE5794D0135B14F669D",
+        "rallymate_scoring/stroke_review_fallback.py": "89499C48C6F4ADBD8449289E2EBF7568672ACB3C7A410E01EA967F07056ECF87",
+        "rallymate_service/tennis_assessment.py": "28AB913840E9C6736DD5AD900CD9BC8E38BB911676E00130DAF8930BC9F5159A",
+        "rallymate_service/tennis_coaching.py": "71488A96B44D1BBC1F80FD48C4B7E3128590A3DF9A08BBED86F7F2AAF638E2AB",
+        "rallymate_service/tennis_motion_patterns.py": "2748C48D8F88B4C797F5AD0FF27C63DAAA61266D21FB164D12C5D1AE01B509ED",
+        "rallymate_service/tennis_profiles.py": "84AE9BE1C99E08D1DE68703EE38B7A0419D4B3817593319ABCCFF686AEB5C6AB",
+        "rallymate_service/tennis_source_motion.py": "0EEFDF8634C620A1D15BE6C9D16AE4B25115A2297961E87FBD5515027298ACB9",
+        "rallymate_service/tennis_subjects.py": "270C17770F201FE8580F3B81F1664D96AA4CAA7FCB4B4FDA0F013321F1A72589",
+        "rallymate_tracking/primary_player.py": "88D73274EE550AEE091666C28988FC370AB92A1D478311417A9EC4B92CFC6844",
+        "rallymate_tracking/subject_lock.py": "6EAAAE3F3A5B4AA189B857786FFB7A0D3AA949FDE91E4053409B267313CEA43A"
+      },
+      "source_summary_sha256": "d2a9f4b2de2d981800320a4bd5deb22b8e3d03c977ee37afd30601c0c39389eb"
+    },
+    {
+      "job_id": "round6-space-newcombe-space",
+      "completed_at": "2026-10-28T07:59:37.484898+00:00",
+      "duration_seconds": 49.463,
+      "source_sha256": "C5C2BBC96F0242F363D2900041F60094FC530BAED44E8D78601B21339474549E",
+      "frame_count": 138,
+      "selected_frames": 138,
+      "native_ok": 138,
+      "native_track_counts": {
+        "1": 138
+      },
+      "native_inference_seconds": 14.646,
+      "candidate_count": 0,
+      "original_request_sha256": "B41F57C01DFBFEF024C9F82578BEA4895192C6F071A10B3F50F15E40E6D550CC",
+      "artifact_sha256": {
+        "frames.jsonl": "041F740AC03188A46223B58B0C10FCE12A6656FA933A6E27A8669F24D0D48D89",
+        "sam3d_frames.jsonl": "ADAF7CF53EB2F0C04DD60388734B0D60D4A0C5C79FC44CE2587DD11FF7823A75",
+        "primary-player.jsonl": "7FF1B88863F499E72420866171813F7645D27EA7E2C715D9FBB6089B982F9FB1",
+        "action-recognition.json": "EEC7B83E70B89E23C165BB76300D3D6367EC016A5C3D2B0BB46C475988844D95"
+      },
+      "validation_scope": "real_production_detection_decode_camera_subject_lock_SAM_and_stroke_candidates; scoring_and_mesh_preview_not_run",
+      "runner_sha256": "355430C6905DFA8533595F5CE78404A0FB5DBB97DCAE2998B226301E2D2876BB",
+      "automatic_subject_selection": true,
+      "capture_source_commit": "0a97871",
+      "code_changed_during_execution": false,
+      "relevant_code_sha256": {
+        "rallymate_scoring/paired_motion.py": "F2C45082B7B0D330B6DD66F023150458379FDC3C5A1CB9E4E5A54132EC0F375C",
+        "rallymate_scoring/stroke_analysis.py": "2A34891E515473EA2627501688A0483548AC2212A9C00B13134152AF90522688",
+        "rallymate_scoring/stroke_candidates.py": "8F832B183185758722EEBF0EFEFAD703099B069A8663DDE5794D0135B14F669D",
+        "rallymate_scoring/stroke_review_fallback.py": "89499C48C6F4ADBD8449289E2EBF7568672ACB3C7A410E01EA967F07056ECF87",
+        "rallymate_service/tennis_assessment.py": "28AB913840E9C6736DD5AD900CD9BC8E38BB911676E00130DAF8930BC9F5159A",
+        "rallymate_service/tennis_coaching.py": "71488A96B44D1BBC1F80FD48C4B7E3128590A3DF9A08BBED86F7F2AAF638E2AB",
+        "rallymate_service/tennis_motion_patterns.py": "2748C48D8F88B4C797F5AD0FF27C63DAAA61266D21FB164D12C5D1AE01B509ED",
+        "rallymate_service/tennis_profiles.py": "84AE9BE1C99E08D1DE68703EE38B7A0419D4B3817593319ABCCFF686AEB5C6AB",
+        "rallymate_service/tennis_source_motion.py": "0EEFDF8634C620A1D15BE6C9D16AE4B25115A2297961E87FBD5515027298ACB9",
+        "rallymate_service/tennis_subjects.py": "270C17770F201FE8580F3B81F1664D96AA4CAA7FCB4B4FDA0F013321F1A72589",
+        "rallymate_tracking/primary_player.py": "88D73274EE550AEE091666C28988FC370AB92A1D478311417A9EC4B92CFC6844",
+        "rallymate_tracking/subject_lock.py": "6EAAAE3F3A5B4AA189B857786FFB7A0D3AA949FDE91E4053409B267313CEA43A"
+      },
+      "source_summary_sha256": "6dbb843cd7bc76a1b3801275dde3dd7aa352df34dbb2522ab950e43f84f03225"
+    }
+  ],
+  "automatic_success_not_implied": true,
+  "slowmotion_newcombe_is_spatial_only": true
+}

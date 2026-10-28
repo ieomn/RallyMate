@@ -1,0 +1,288 @@
+{
+  "version": "tennis-source-anatomical-review-v1",
+  "baseline": "0a97871",
+  "sample_id": "regression-ordinary-b",
+  "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+  "source_video_sha256": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+  "status": "unresolved_anatomical_grip_identity",
+  "prior_assertion_status": "retracted_pending_handle_review",
+  "retracted_assertion": "The round-five visual review claimed that local SAM left/right labels were proved swapped.",
+  "correction": "Wristband appearance and proximity to the racket head did not establish which hand held the handle or continuously establish anatomical side through arm overlap. The prior assertion is not reliable ground truth.",
+  "source_observations": [
+    "The original frame 104 at 3500 ms shows a low white-wristband region near the racket head and a rear dark-wristband region; the grip/shaft connection is not sufficiently resolved to assign the grip from this frame alone.",
+    "Frames 92-108 include near-overlapping hands, changing trunk orientation and blur. The original single-view pixels do not provide an unambiguous shoulder-elbow-wrist-to-handle chain throughout the disputed interval.",
+    "Nineteen original serve/recovery frames from 600-2400 ms were reviewed as arm-continuity controls. They add context but do not independently resolve the target interval's grip and anatomical side.",
+    "The readable court text has normal orientation; this alone does not establish anatomical handedness. No player name or assumed habitual hand was used."
+  ],
+  "audit_scope": {
+    "original_frame_count": 70,
+    "target_window_ms": [
+      2400,
+      4700
+    ],
+    "control_frame_count": 19,
+    "control_window_ms": [
+      600,
+      2400
+    ],
+    "join_keys": [
+      "source_video_sha256",
+      "frame_index",
+      "timeline_selected_person_track_id"
+    ],
+    "person_track_id": 1,
+    "selection_epoch": 0,
+    "camera_reference_epoch": 0
+  },
+  "independent_model_experiment": {
+    "model": "rtmpose-l-halpe26",
+    "actual_gpu_frames": 70,
+    "succeeded": 70,
+    "window_and_roi_policy": "Fixed original 2400-4700 ms window; each same-frame person ROI padded 1.25, no interpolation.",
+    "summary": "Same-named wrists are generally spatially closer across these two models than crossed names. Agreement is model evidence, not anatomical truth or a majority-vote relabeling rule.",
+    "selected_frame_comparisons": [
+      {
+        "frame_index": 92,
+        "timestamp_ms": 3100.0,
+        "wrist": {
+          "same_name_sum_pixel_distance": 3.404030051185904,
+          "cross_name_sum_pixel_distance": 68.9517812356481,
+          "sam_left_px": [
+            391.5476989746094,
+            703.8396606445312
+          ],
+          "sam_right_px": [
+            360.55108642578125,
+            719.1736450195312
+          ],
+          "rtmpose_left_px": [
+            392.1276054382324,
+            704.2513046264648
+          ],
+          "rtmpose_right_px": [
+            362.296875,
+            721.2239608764648
+          ],
+          "rtmpose_left_confidence": 0.7565116286277771,
+          "rtmpose_right_confidence": 0.7060858011245728
+        }
+      },
+      {
+        "frame_index": 98,
+        "timestamp_ms": 3300.0000000000005,
+        "wrist": {
+          "same_name_sum_pixel_distance": 5.052670505099029,
+          "cross_name_sum_pixel_distance": 9.037122435896396,
+          "sam_left_px": [
+            401.87054443359375,
+            759.515625
+          ],
+          "sam_right_px": [
+            403.570556640625,
+            762.5188598632812
+          ],
+          "rtmpose_left_px": [
+            398.37109375,
+            761.8330078125
+          ],
+          "rtmpose_right_px": [
+            404.40625,
+            762.3359375
+          ],
+          "rtmpose_left_confidence": 0.6454991102218628,
+          "rtmpose_right_confidence": 0.5898516178131104
+        }
+      },
+      {
+        "frame_index": 100,
+        "timestamp_ms": 3366.6666666666665,
+        "wrist": {
+          "same_name_sum_pixel_distance": 3.905630819791053,
+          "cross_name_sum_pixel_distance": 76.39453935224083,
+          "sam_left_px": [
+            447.0345153808594,
+            760.6286010742188
+          ],
+          "sam_right_px": [
+            482.6159973144531,
+            745.7635498046875
+          ],
+          "rtmpose_left_px": [
+            446.3971366882324,
+            758.111328125
+          ],
+          "rtmpose_right_px": [
+            482.67154693603516,
+            747.0712890625
+          ],
+          "rtmpose_left_confidence": 0.7172139883041382,
+          "rtmpose_right_confidence": 0.6811032891273499
+        }
+      },
+      {
+        "frame_index": 102,
+        "timestamp_ms": 3433.3333333333335,
+        "wrist": {
+          "same_name_sum_pixel_distance": 7.226662226738632,
+          "cross_name_sum_pixel_distance": 98.65881667334041,
+          "sam_left_px": [
+            475.1890869140625,
+            753.1018676757812
+          ],
+          "sam_right_px": [
+            512.70166015625,
+            724.5743408203125
+          ],
+          "rtmpose_left_px": [
+            474.78255462646484,
+            755.1432342529297
+          ],
+          "rtmpose_right_px": [
+            517.4713516235352,
+            726.50390625
+          ],
+          "rtmpose_left_confidence": 0.732061505317688,
+          "rtmpose_right_confidence": 0.8100724816322327
+        }
+      },
+      {
+        "frame_index": 104,
+        "timestamp_ms": 3500.0000000000005,
+        "wrist": {
+          "same_name_sum_pixel_distance": 6.297316307958862,
+          "cross_name_sum_pixel_distance": 110.94641121004587,
+          "sam_left_px": [
+            493.0765380859375,
+            760.4368896484375
+          ],
+          "sam_right_px": [
+            529.9246826171875,
+            717.8651733398438
+          ],
+          "rtmpose_left_px": [
+            491.58203125,
+            755.5263671875
+          ],
+          "rtmpose_right_px": [
+            531.07421875,
+            717.6796875
+          ],
+          "rtmpose_left_confidence": 0.7941659092903137,
+          "rtmpose_right_confidence": 0.8308765888214111
+        }
+      },
+      {
+        "frame_index": 106,
+        "timestamp_ms": 3566.666666666667,
+        "wrist": {
+          "same_name_sum_pixel_distance": 5.667228577042062,
+          "cross_name_sum_pixel_distance": 121.67680559766833,
+          "sam_left_px": [
+            497.937744140625,
+            773.8292236328125
+          ],
+          "sam_right_px": [
+            537.9609375,
+            727.0830078125
+          ],
+          "rtmpose_left_px": [
+            500.875,
+            772.5208282470703
+          ],
+          "rtmpose_right_px": [
+            540.40625,
+            727.2604141235352
+          ],
+          "rtmpose_left_confidence": 0.7406543493270874,
+          "rtmpose_right_confidence": 0.814897894859314
+        }
+      },
+      {
+        "frame_index": 108,
+        "timestamp_ms": 3633.333333333334,
+        "wrist": {
+          "same_name_sum_pixel_distance": 5.7628929860367535,
+          "cross_name_sum_pixel_distance": 137.53785046820775,
+          "sam_left_px": [
+            498.0889892578125,
+            794.6310424804688
+          ],
+          "sam_right_px": [
+            542.4390869140625,
+            742.238037109375
+          ],
+          "rtmpose_left_px": [
+            502.06966400146484,
+            796.873046875
+          ],
+          "rtmpose_right_px": [
+            542.515625,
+            741.0462265014648
+          ],
+          "rtmpose_left_confidence": 0.7101016044616699,
+          "rtmpose_right_confidence": 0.7983608245849609
+        }
+      },
+      {
+        "frame_index": 110,
+        "timestamp_ms": 3700.0,
+        "wrist": {
+          "same_name_sum_pixel_distance": 3.7673031964645323,
+          "cross_name_sum_pixel_distance": 166.55108756264843,
+          "sam_left_px": [
+            484.8604431152344,
+            820.8646240234375
+          ],
+          "sam_right_px": [
+            544.6989135742188,
+            763.6966552734375
+          ],
+          "rtmpose_left_px": [
+            485.5247383117676,
+            819.7278594970703
+          ],
+          "rtmpose_right_px": [
+            546.9505233764648,
+            762.7291641235352
+          ],
+          "rtmpose_left_confidence": 0.565222442150116,
+          "rtmpose_right_confidence": 0.7688180208206177
+        }
+      }
+    ],
+    "no_production_pose_replacement": true,
+    "no_scores_computed": true
+  },
+  "disposition": {
+    "manual_right_review_retained": true,
+    "native_labels_changed": false,
+    "whole_window_swap_applied": false,
+    "conflict_bypassed": false,
+    "repaired_scoring_claim": false,
+    "reason": "Neither a safe local swap nor replacement of the existing reviewed hand with left is justified by the available source evidence. Preserve the conflict instead of manufacturing a resolved score."
+  },
+  "general_handling": [
+    "Keep source-reviewed grip identity, motion wrist and model anatomical names distinct.",
+    "A second model can expose disagreement or corroboration but cannot authorize anatomical relabeling by voting.",
+    "Any future local correction needs independent original-pixel shoulder-elbow-wrist and handle evidence bound to exact frames, track and epochs, with ambiguous intervening frames remaining unavailable.",
+    "A second-view or higher-resolution original recording may resolve the ambiguity. Upscaling or synthesized detail does not supply missing anatomical evidence."
+  ],
+  "diagnostic_integrity": {
+    "discarded_first_join": "ordinary-b-source-native/evidence.json is explicitly rejected because that temporary diagnostic joined by frame only and selected the other person's native row. Corrected evidence uniquely joins the timeline-selected track; no production input was changed."
+  },
+  "evidence_sha256": {
+    ".codex_tmp/tennis-score-round6-20261028/ordinary-b-anatomical-source-native/evidence.json": "1fbac7cec659b94d3895d53d168bcd473d85e967ac5734d5182de5c852752fe8",
+    ".codex_tmp/tennis-score-round6-20261028/ordinary-b-arm-continuity-controls/evidence.json": "18fdfbab711ac210e7edd0d93b3cce674c8a67fccb86deed3c5ebfc62d7ebd89",
+    ".codex_tmp/tennis-score-round6-20261028/ordinary-b-rtmpose-l-fixed-window/predictions.jsonl": "2b877b46a8f89ed5ae73694c5b58a939fccda7a5fda822ee49dcda1b98179521",
+    ".codex_tmp/tennis-score-round6-20261028/ordinary-b-rtmpose-l-fixed-window/summary.json": "d811910b1373f81d218586bc697339edb548ec31da0980d474f5639fd8fc1d30",
+    ".codex_tmp/tennis-score-round6-20261028/ordinary-b-rtmpose-l-fixed-window/request.json": "b62d1b6649de3761816a1cf779062b0008973967ba61e0d42f9d8675289cbc81"
+  },
+  "input_sha256": {
+    "video": "da6aae350366acdd2dcf45c7b1d585909719f91427192815d327e806395254c8",
+    "frames": "3fbd6fd1f6ed5881342eb7a869bb5e0b5a0be254224adbcaf746c1c279c903c4",
+    "timeline": "312cdd723919bdf9809ca2debe7ce00079d9cb7cdf1d54c3368839af6f0ff826",
+    "native": "7ed2dcac7ba7d2049624d922c13325fa451e65873eacc7180cb1a774ece44759"
+  },
+  "source_inputs_unchanged": true,
+  "old_round5_evidence_modified": false
+}

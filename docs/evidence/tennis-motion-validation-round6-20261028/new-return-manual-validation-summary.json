@@ -1,0 +1,1813 @@
+{
+  "version": "round6-return-manual-validation-summary-v1",
+  "results": [
+    {
+      "source_id": "wta-ostapenko-four-returns",
+      "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+      "artifact_run_id": "adelaide-return",
+      "automatic_candidate_count": 0,
+      "automatic_segmentation_success": false,
+      "automatic_return_classification_success": false,
+      "manual_class": "return_two_hand_backhand",
+      "requested_manual_window": {
+        "start_ms": 1920,
+        "prep_end_ms": 2160,
+        "peak_ms": 2420,
+        "end_ms": 2760
+      },
+      "source_window_provenance": "Coarse source/window registration preceded GPU. Fine source-frame review occurred concurrently with capture; reviewer has not read GPU output, native poses or scores for these sources.",
+      "primary_racket_hand": null,
+      "primary_grip_status": "source_unresolved",
+      "initial_return_context": {
+        "status": "not_measured",
+        "reason": "manual_return_event_order_unverified",
+        "automatic_return_context": false
+      },
+      "source_v2_return_context": {
+        "status": "review_bound",
+        "reason": null,
+        "automatic_return_context": false,
+        "method": "agent_visual_review",
+        "reviewer": "samples_source_review_with_scoring_independent_context_geometry_check",
+        "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+        "receiver_subject_id": "subject-1",
+        "receiver_source_track_id": 1,
+        "server_subject_description": "远端白上衣绿裙发球者",
+        "relationship_zh": "同一无切镜原速段，远端服务器头顶发出后球向近场移动，随后近端目标用双手反拍接回；球点是源画面人工标注，非自动球跟踪。",
+        "opponent_serve_frames": [
+          {
+            "source_frame_index": 36,
+            "timestamp_ms": 1440,
+            "stage": "preparation",
+            "server_bbox_px": [
+              486,
+              78,
+              535,
+              182
+            ],
+            "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000036.png",
+            "source_frame_sha256": "7aa4ad61d837c8941fffb4c33aee7ed09fa30c7c65edee636406a5e2e99c2d3d",
+            "source_pts": 36,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 37,
+            "timestamp_ms": 1480,
+            "stage": "overhead_swing",
+            "server_bbox_px": [
+              492,
+              77,
+              538,
+              182
+            ],
+            "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000037.png",
+            "source_frame_sha256": "c39cde533d910571bcc3c5814f766f9545a2c5a201cdbb382c4d03b7b4495dbf",
+            "source_pts": 37,
+            "time_base_num": 1,
+            "time_base_den": 25
+          }
+        ],
+        "incoming_ball_frames": [
+          {
+            "source_frame_index": 49,
+            "timestamp_ms": 1960,
+            "point_px": [
+              605,
+              280
+            ],
+            "point_semantics": "visually reviewed motion-streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000049.png",
+            "source_frame_sha256": "10264e4df30565796d4b1f072b98ab661ff8f2d4d29a49cbebc3b7d5a0afa5de",
+            "source_pts": 49,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 50,
+            "timestamp_ms": 2000,
+            "point_px": [
+              620,
+              311
+            ],
+            "point_semantics": "visually reviewed motion-streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000050.png",
+            "source_frame_sha256": "75f5cbf3f75cddc0c361b758d40f7e7b54002d8bf82545bebb21b96fdcdcf174",
+            "source_pts": 50,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 51,
+            "timestamp_ms": 2040,
+            "point_px": [
+              634,
+              344
+            ],
+            "point_semantics": "visually reviewed motion-streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000051.png",
+            "source_frame_sha256": "f2f1fdb1a27211c2e9af30de14a1e88b78c0c4c859bc7dff7b15d826c047e0c3",
+            "source_pts": 51,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 57,
+            "timestamp_ms": 2280,
+            "point_px": [
+              712,
+              369
+            ],
+            "point_semantics": "visually reviewed ball/streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000057.png",
+            "source_frame_sha256": "cb8edc0fa77c125dc4c98313d9be9f06da3e1c05cd383021bc98724177e7d23a",
+            "source_pts": 57,
+            "time_base_num": 1,
+            "time_base_den": 25
+          }
+        ]
+      },
+      "bilateral_measurements": [
+        {
+          "motion_wrist": "left",
+          "primary_racket_hand": null,
+          "status": "measured_proxy",
+          "actual_window": {
+            "start_ms": 1920.0,
+            "prep_end_ms": 2160.0,
+            "peak_ms": 2400.0,
+            "end_ms": 2760.0,
+            "timing_resolution_ms": 40.0
+          },
+          "coverage": {
+            "measured_requirements": 4,
+            "applicable_requirements": 9,
+            "fraction": 0.4444444444444444,
+            "full_source_technique_covered": false
+          },
+          "requirements": [
+            {
+              "id": "phase_continuity",
+              "label": "挥出和随挥连续，不强制击后立即减速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_phase_continuity"
+              ],
+              "reason": null
+            },
+            {
+              "id": "preparation_coupling",
+              "label": "转体与引拍配合",
+              "status": "not_measured",
+              "metric_ids": [
+                "pattern_preparation_coupling"
+              ],
+              "reason": "preparation_shoulder_axis_missing_or_foreshortened"
+            },
+            {
+              "id": "projected_sequence",
+              "label": "髋、肩、手臂的可见运动顺序",
+              "status": "not_measured",
+              "metric_ids": [
+                "pattern_projected_sequence"
+              ],
+              "reason": "acceleration_support_axes_missing_or_foreshortened"
+            },
+            {
+              "id": "center_transfer",
+              "label": "挥出时人体中心前移",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_center_transfer"
+              ],
+              "reason": null
+            },
+            {
+              "id": "forward_swing",
+              "label": "持拍手向前挥出",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_forward_swing"
+              ],
+              "reason": null
+            },
+            {
+              "id": "two_hand_coupling",
+              "label": "双手共同运动与加速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_two_hand_coupling"
+              ],
+              "reason": null
+            },
+            {
+              "id": "physical_chain",
+              "label": "蹬地、真实重心和力的逐级传递",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "force_ground_contact_and_true_center_of_mass_unobserved"
+            },
+            {
+              "id": "racket_and_contact",
+              "label": "球拍轨迹、握拍与真实触球",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "racket_ball_contact_and_grip_unobserved"
+            },
+            {
+              "id": "return_compactness",
+              "label": "按来球压力调整短引拍",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "independent_incoming_ball_pressure_or_reference_unobserved"
+            }
+          ],
+          "metrics": {
+            "pattern_phase_continuity": [
+              0.9444444444444444,
+              94.44444444444444
+            ],
+            "pattern_center_transfer": [
+              0.9588257016830098,
+              95.88257016830099
+            ],
+            "pattern_forward_swing": [
+              0.370084254419339,
+              37.0084254419339
+            ],
+            "pattern_two_hand_coupling": [
+              0.8638292743782556,
+              86.38292743782556
+            ]
+          },
+          "metric_evidence": {
+            "pattern_phase_continuity": {
+              "phases": {
+                "acceleration": {
+                  "fraction": 1.0,
+                  "duration_ms": 240.0,
+                  "active_ms": 240.0
+                },
+                "follow_through": {
+                  "fraction": 0.8888888888888888,
+                  "duration_ms": 360.0,
+                  "active_ms": 320.0
+                }
+              },
+              "deceleration_required": false
+            },
+            "pattern_projected_sequence": {
+              "search_range_ms": [
+                2160.0,
+                2400.0
+              ],
+              "support_range_ms": [
+                2040.0,
+                2520.0
+              ],
+              "unobservable_axes": [
+                "hip",
+                "shoulder"
+              ]
+            },
+            "pattern_center_transfer": {},
+            "pattern_forward_swing": {},
+            "pattern_two_hand_coupling": {
+              "direction_agreement": 0.8214962002731655,
+              "progress_agreement": 0.9061623484833456,
+              "grip_verified": false
+            }
+          },
+          "source_binding": {
+            "subject_id": "subject-1",
+            "person_track_id": 1,
+            "source_selection_epoch": 0,
+            "camera_reference_epoch": 0,
+            "fixed_camera_observations": 22
+          },
+          "native_original_pts": [
+            {
+              "frame_index": 48,
+              "pts": 48,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 1920
+            },
+            {
+              "frame_index": 49,
+              "pts": 49,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 1960
+            },
+            {
+              "frame_index": 50,
+              "pts": 50,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2000
+            },
+            {
+              "frame_index": 51,
+              "pts": 51,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2040
+            },
+            {
+              "frame_index": 52,
+              "pts": 52,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2080
+            },
+            {
+              "frame_index": 53,
+              "pts": 53,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2120
+            },
+            {
+              "frame_index": 54,
+              "pts": 54,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2160
+            },
+            {
+              "frame_index": 55,
+              "pts": 55,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2200
+            },
+            {
+              "frame_index": 56,
+              "pts": 56,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2240
+            },
+            {
+              "frame_index": 57,
+              "pts": 57,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2280
+            },
+            {
+              "frame_index": 58,
+              "pts": 58,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2320
+            },
+            {
+              "frame_index": 59,
+              "pts": 59,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2360
+            },
+            {
+              "frame_index": 60,
+              "pts": 60,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2400
+            },
+            {
+              "frame_index": 61,
+              "pts": 61,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2440
+            },
+            {
+              "frame_index": 62,
+              "pts": 62,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2480
+            },
+            {
+              "frame_index": 63,
+              "pts": 63,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2520
+            },
+            {
+              "frame_index": 64,
+              "pts": 64,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2560
+            },
+            {
+              "frame_index": 65,
+              "pts": 65,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2600
+            },
+            {
+              "frame_index": 66,
+              "pts": 66,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2640
+            },
+            {
+              "frame_index": 67,
+              "pts": 67,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2680
+            },
+            {
+              "frame_index": 68,
+              "pts": 68,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2720
+            },
+            {
+              "frame_index": 69,
+              "pts": 69,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2760
+            }
+          ],
+          "direction_binding": {
+            "status": "bound",
+            "reason": null,
+            "method": "source_frame_vector_transformed_by_background_similarity",
+            "classification_method": "agent_visual_review",
+            "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+            "source_frame_index": 60,
+            "source_timestamp_ms": 2400.0,
+            "camera_reference_epoch": 0,
+            "image_to_reference_linear": [
+              [
+                1.0000237333,
+                8.08659e-05
+              ],
+              [
+                -8.08659e-05,
+                1.0000237333
+              ]
+            ],
+            "source_pts": 60,
+            "time_base_num": 1,
+            "time_base_den": 25,
+            "fields": {
+              "forward_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  -0.4453315804955621,
+                  -0.895365726065793
+                ],
+                "fixed_reference_direction": [
+                  -0.4454039818762267,
+                  -0.8953297118541313
+                ]
+              },
+              "up_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  -0.015382795043203983,
+                  -0.999881677808259
+                ],
+                "fixed_reference_direction": [
+                  -0.015463649405473146,
+                  -0.9998804306251146
+                ]
+              }
+            }
+          },
+          "sequence_axes": {
+            "hip": {
+              "minimum_torso_units": 0.05912400376332668,
+              "fixed_minimum_torso_units": 0.18,
+              "below_floor_timestamp_ms": [
+                2040.0,
+                2080.0,
+                2120.0,
+                2160.0,
+                2200.0,
+                2240.0,
+                2280.0,
+                2320.0,
+                2360.0
+              ]
+            },
+            "shoulder": {
+              "minimum_torso_units": 0.10330271692393593,
+              "fixed_minimum_torso_units": 0.3,
+              "below_floor_timestamp_ms": [
+                2040.0,
+                2080.0,
+                2120.0,
+                2160.0,
+                2200.0,
+                2320.0,
+                2360.0
+              ]
+            }
+          }
+        },
+        {
+          "motion_wrist": "right",
+          "primary_racket_hand": null,
+          "status": "measured_proxy",
+          "actual_window": {
+            "start_ms": 1920.0,
+            "prep_end_ms": 2160.0,
+            "peak_ms": 2400.0,
+            "end_ms": 2760.0,
+            "timing_resolution_ms": 40.0
+          },
+          "coverage": {
+            "measured_requirements": 4,
+            "applicable_requirements": 9,
+            "fraction": 0.4444444444444444,
+            "full_source_technique_covered": false
+          },
+          "requirements": [
+            {
+              "id": "phase_continuity",
+              "label": "挥出和随挥连续，不强制击后立即减速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_phase_continuity"
+              ],
+              "reason": null
+            },
+            {
+              "id": "preparation_coupling",
+              "label": "转体与引拍配合",
+              "status": "not_measured",
+              "metric_ids": [
+                "pattern_preparation_coupling"
+              ],
+              "reason": "preparation_shoulder_axis_missing_or_foreshortened"
+            },
+            {
+              "id": "projected_sequence",
+              "label": "髋、肩、手臂的可见运动顺序",
+              "status": "not_measured",
+              "metric_ids": [
+                "pattern_projected_sequence"
+              ],
+              "reason": "acceleration_support_axes_missing_or_foreshortened"
+            },
+            {
+              "id": "center_transfer",
+              "label": "挥出时人体中心前移",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_center_transfer"
+              ],
+              "reason": null
+            },
+            {
+              "id": "forward_swing",
+              "label": "持拍手向前挥出",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_forward_swing"
+              ],
+              "reason": null
+            },
+            {
+              "id": "two_hand_coupling",
+              "label": "双手共同运动与加速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_two_hand_coupling"
+              ],
+              "reason": null
+            },
+            {
+              "id": "physical_chain",
+              "label": "蹬地、真实重心和力的逐级传递",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "force_ground_contact_and_true_center_of_mass_unobserved"
+            },
+            {
+              "id": "racket_and_contact",
+              "label": "球拍轨迹、握拍与真实触球",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "racket_ball_contact_and_grip_unobserved"
+            },
+            {
+              "id": "return_compactness",
+              "label": "按来球压力调整短引拍",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "independent_incoming_ball_pressure_or_reference_unobserved"
+            }
+          ],
+          "metrics": {
+            "pattern_phase_continuity": [
+              0.8888888888888888,
+              88.88888888888889
+            ],
+            "pattern_center_transfer": [
+              0.9588257016830098,
+              95.88257016830099
+            ],
+            "pattern_forward_swing": [
+              0.2492104997645925,
+              24.92104997645925
+            ],
+            "pattern_two_hand_coupling": [
+              0.8638292743782556,
+              86.38292743782556
+            ]
+          },
+          "metric_evidence": {
+            "pattern_phase_continuity": {
+              "phases": {
+                "acceleration": {
+                  "fraction": 1.0,
+                  "duration_ms": 240.0,
+                  "active_ms": 240.0
+                },
+                "follow_through": {
+                  "fraction": 0.7777777777777778,
+                  "duration_ms": 360.0,
+                  "active_ms": 280.0
+                }
+              },
+              "deceleration_required": false
+            },
+            "pattern_projected_sequence": {
+              "search_range_ms": [
+                2160.0,
+                2400.0
+              ],
+              "support_range_ms": [
+                2040.0,
+                2520.0
+              ],
+              "unobservable_axes": [
+                "hip",
+                "shoulder"
+              ]
+            },
+            "pattern_center_transfer": {},
+            "pattern_forward_swing": {},
+            "pattern_two_hand_coupling": {
+              "direction_agreement": 0.8214962002731655,
+              "progress_agreement": 0.9061623484833456,
+              "grip_verified": false
+            }
+          },
+          "source_binding": {
+            "subject_id": "subject-1",
+            "person_track_id": 1,
+            "source_selection_epoch": 0,
+            "camera_reference_epoch": 0,
+            "fixed_camera_observations": 22
+          },
+          "native_original_pts": [
+            {
+              "frame_index": 48,
+              "pts": 48,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 1920
+            },
+            {
+              "frame_index": 49,
+              "pts": 49,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 1960
+            },
+            {
+              "frame_index": 50,
+              "pts": 50,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2000
+            },
+            {
+              "frame_index": 51,
+              "pts": 51,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2040
+            },
+            {
+              "frame_index": 52,
+              "pts": 52,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2080
+            },
+            {
+              "frame_index": 53,
+              "pts": 53,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2120
+            },
+            {
+              "frame_index": 54,
+              "pts": 54,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2160
+            },
+            {
+              "frame_index": 55,
+              "pts": 55,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2200
+            },
+            {
+              "frame_index": 56,
+              "pts": 56,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2240
+            },
+            {
+              "frame_index": 57,
+              "pts": 57,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2280
+            },
+            {
+              "frame_index": 58,
+              "pts": 58,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2320
+            },
+            {
+              "frame_index": 59,
+              "pts": 59,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2360
+            },
+            {
+              "frame_index": 60,
+              "pts": 60,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2400
+            },
+            {
+              "frame_index": 61,
+              "pts": 61,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2440
+            },
+            {
+              "frame_index": 62,
+              "pts": 62,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2480
+            },
+            {
+              "frame_index": 63,
+              "pts": 63,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2520
+            },
+            {
+              "frame_index": 64,
+              "pts": 64,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2560
+            },
+            {
+              "frame_index": 65,
+              "pts": 65,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2600
+            },
+            {
+              "frame_index": 66,
+              "pts": 66,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2640
+            },
+            {
+              "frame_index": 67,
+              "pts": 67,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2680
+            },
+            {
+              "frame_index": 68,
+              "pts": 68,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2720
+            },
+            {
+              "frame_index": 69,
+              "pts": 69,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 2760
+            }
+          ],
+          "direction_binding": {
+            "status": "bound",
+            "reason": null,
+            "method": "source_frame_vector_transformed_by_background_similarity",
+            "classification_method": "agent_visual_review",
+            "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+            "source_frame_index": 60,
+            "source_timestamp_ms": 2400.0,
+            "camera_reference_epoch": 0,
+            "image_to_reference_linear": [
+              [
+                1.0000237333,
+                8.08659e-05
+              ],
+              [
+                -8.08659e-05,
+                1.0000237333
+              ]
+            ],
+            "source_pts": 60,
+            "time_base_num": 1,
+            "time_base_den": 25,
+            "fields": {
+              "forward_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  -0.4453315804955621,
+                  -0.895365726065793
+                ],
+                "fixed_reference_direction": [
+                  -0.4454039818762267,
+                  -0.8953297118541313
+                ]
+              },
+              "up_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  -0.015382795043203983,
+                  -0.999881677808259
+                ],
+                "fixed_reference_direction": [
+                  -0.015463649405473146,
+                  -0.9998804306251146
+                ]
+              }
+            }
+          },
+          "sequence_axes": {
+            "hip": {
+              "minimum_torso_units": 0.05912400376332668,
+              "fixed_minimum_torso_units": 0.18,
+              "below_floor_timestamp_ms": [
+                2040.0,
+                2080.0,
+                2120.0,
+                2160.0,
+                2200.0,
+                2240.0,
+                2280.0,
+                2320.0,
+                2360.0
+              ]
+            },
+            "shoulder": {
+              "minimum_torso_units": 0.10330271692393593,
+              "fixed_minimum_torso_units": 0.3,
+              "below_floor_timestamp_ms": [
+                2040.0,
+                2080.0,
+                2120.0,
+                2160.0,
+                2200.0,
+                2320.0,
+                2360.0
+              ]
+            }
+          }
+        }
+      ],
+      "aggregation": "none; left and right are both retained; no better-side selection, no primary-hand inference, no overall score",
+      "timing_conclusion": "not_measured: acceleration support axes are foreshortened inside the actual acceleration interval; no peak ordering is assigned",
+      "limitations": [
+        "manual windows and source-reviewed return type are not automatic success",
+        "no expert-calibrated technique ground truth",
+        "unknown primary grip order is retained",
+        "fixed-camera 2D projections do not measure force or true world-space motion",
+        "40 ms source intervals limit independent peak order; no source phase was moved to fit model peaks"
+      ]
+    },
+    {
+      "source_id": "wta-alexandrova-return",
+      "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+      "artifact_run_id": "toronto-return",
+      "automatic_candidate_count": 0,
+      "automatic_segmentation_success": false,
+      "automatic_return_classification_success": false,
+      "manual_class": "return_two_hand_backhand",
+      "requested_manual_window": {
+        "start_ms": 24440,
+        "prep_end_ms": 24600,
+        "peak_ms": 24860,
+        "end_ms": 25080
+      },
+      "source_window_provenance": "Coarse source/window registration preceded GPU. Fine source-frame review occurred concurrently with capture; reviewer has not read GPU output, native poses or scores for these sources.",
+      "primary_racket_hand": null,
+      "primary_grip_status": "source_unresolved",
+      "initial_return_context": {
+        "status": "not_measured",
+        "reason": "manual_return_event_order_unverified",
+        "automatic_return_context": false
+      },
+      "source_v2_return_context": {
+        "status": "review_bound",
+        "reason": null,
+        "automatic_return_context": false,
+        "method": "agent_visual_review",
+        "reviewer": "samples_source_review_with_scoring_independent_context_geometry_check",
+        "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+        "receiver_subject_id": "subject-1",
+        "receiver_source_track_id": 1,
+        "server_subject_description": "远端深蓝/紫服装发球者",
+        "relationship_zh": "同一无切镜原速段，远端服务器头顶发出后球向近场移动，随后近端目标用双手反拍接回；球点是源画面人工标注，非自动球跟踪。",
+        "opponent_serve_frames": [
+          {
+            "source_frame_index": 600,
+            "timestamp_ms": 24000,
+            "stage": "preparation",
+            "server_bbox_px": [
+              671,
+              111,
+              716,
+              196
+            ],
+            "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000600.png",
+            "source_frame_sha256": "3db7d666aa0265431422e02d4ef0e3829c4924ba7192ec53cdaca3e65c84a02b",
+            "source_pts": 600,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 605,
+            "timestamp_ms": 24200,
+            "stage": "overhead_swing",
+            "server_bbox_px": [
+              668,
+              100,
+              716,
+              193
+            ],
+            "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000605.png",
+            "source_frame_sha256": "09e0739c2b1a9d371438447220d4b07646e328cba7f881c8fa6b868bb5d3e4da",
+            "source_pts": 605,
+            "time_base_num": 1,
+            "time_base_den": 25
+          }
+        ],
+        "incoming_ball_frames": [
+          {
+            "source_frame_index": 609,
+            "timestamp_ms": 24360,
+            "point_px": [
+              551,
+              210
+            ],
+            "point_semantics": "visually reviewed motion-streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000609.png",
+            "source_frame_sha256": "9390dae9944f799e6be7b1e874204425d77000298a5306f3be8e35e7ecb0ea11",
+            "source_pts": 609,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 610,
+            "timestamp_ms": 24400,
+            "point_px": [
+              523,
+              240
+            ],
+            "point_semantics": "visually reviewed motion-streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000610.png",
+            "source_frame_sha256": "61a3c2f6af847c75d3646c3974e15a8136f664f8f23c1175be56c47a03b675d4",
+            "source_pts": 610,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 611,
+            "timestamp_ms": 24440,
+            "point_px": [
+              492,
+              279
+            ],
+            "point_semantics": "visually reviewed motion-streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000611.png",
+            "source_frame_sha256": "da387fed771ff81c9d804d4588a46f25d9b065137eeae7dd092a067988669993",
+            "source_pts": 611,
+            "time_base_num": 1,
+            "time_base_den": 25
+          },
+          {
+            "source_frame_index": 617,
+            "timestamp_ms": 24680,
+            "point_px": [
+              320,
+              432
+            ],
+            "point_semantics": "visually reviewed ball/streak midpoint",
+            "point_uncertainty_px": 8,
+            "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000617.png",
+            "source_frame_sha256": "485ef349024f4a0153fb7964ed1ce6c817e6cd82287b81f6a411afe195e2cf77",
+            "source_pts": 617,
+            "time_base_num": 1,
+            "time_base_den": 25
+          }
+        ]
+      },
+      "bilateral_measurements": [
+        {
+          "motion_wrist": "left",
+          "primary_racket_hand": null,
+          "status": "measured_proxy",
+          "actual_window": {
+            "start_ms": 24440.0,
+            "prep_end_ms": 24600.0,
+            "peak_ms": 24840.0,
+            "end_ms": 25080.0,
+            "timing_resolution_ms": 40.0
+          },
+          "coverage": {
+            "measured_requirements": 5,
+            "applicable_requirements": 9,
+            "fraction": 0.5555555555555556,
+            "full_source_technique_covered": false
+          },
+          "requirements": [
+            {
+              "id": "phase_continuity",
+              "label": "挥出和随挥连续，不强制击后立即减速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_phase_continuity"
+              ],
+              "reason": null
+            },
+            {
+              "id": "preparation_coupling",
+              "label": "转体与引拍配合",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_preparation_coupling"
+              ],
+              "reason": null
+            },
+            {
+              "id": "projected_sequence",
+              "label": "髋、肩、手臂的可见运动顺序",
+              "status": "not_measured",
+              "metric_ids": [
+                "pattern_projected_sequence"
+              ],
+              "reason": "acceleration_support_axes_missing_or_foreshortened"
+            },
+            {
+              "id": "center_transfer",
+              "label": "挥出时人体中心前移",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_center_transfer"
+              ],
+              "reason": null
+            },
+            {
+              "id": "forward_swing",
+              "label": "持拍手向前挥出",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_forward_swing"
+              ],
+              "reason": null
+            },
+            {
+              "id": "two_hand_coupling",
+              "label": "双手共同运动与加速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_two_hand_coupling"
+              ],
+              "reason": null
+            },
+            {
+              "id": "physical_chain",
+              "label": "蹬地、真实重心和力的逐级传递",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "force_ground_contact_and_true_center_of_mass_unobserved"
+            },
+            {
+              "id": "racket_and_contact",
+              "label": "球拍轨迹、握拍与真实触球",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "racket_ball_contact_and_grip_unobserved"
+            },
+            {
+              "id": "return_compactness",
+              "label": "按来球压力调整短引拍",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "independent_incoming_ball_pressure_or_reference_unobserved"
+            }
+          ],
+          "metrics": {
+            "pattern_phase_continuity": [
+              0.9166666666666667,
+              91.66666666666667
+            ],
+            "pattern_preparation_coupling": [
+              0.7898551303019974,
+              78.98551303019974
+            ],
+            "pattern_center_transfer": [
+              0.0,
+              0.0
+            ],
+            "pattern_forward_swing": [
+              0.2685751049720061,
+              26.85751049720061
+            ],
+            "pattern_two_hand_coupling": [
+              0.7537851558017173,
+              75.37851558017174
+            ]
+          },
+          "metric_evidence": {
+            "pattern_phase_continuity": {
+              "phases": {
+                "acceleration": {
+                  "fraction": 0.8333333333333334,
+                  "duration_ms": 240.0,
+                  "active_ms": 200.0
+                },
+                "follow_through": {
+                  "fraction": 1.0,
+                  "duration_ms": 240.0,
+                  "active_ms": 240.0
+                }
+              },
+              "deceleration_required": false
+            },
+            "pattern_projected_sequence": {
+              "search_range_ms": [
+                24600.0,
+                24840.0
+              ],
+              "support_range_ms": [
+                24480.0,
+                24960.0
+              ],
+              "unobservable_axes": [
+                "shoulder"
+              ]
+            },
+            "pattern_preparation_coupling": {},
+            "pattern_center_transfer": {},
+            "pattern_forward_swing": {},
+            "pattern_two_hand_coupling": {
+              "direction_agreement": 0.5815575459739101,
+              "progress_agreement": 0.9260127656295246,
+              "grip_verified": false
+            }
+          },
+          "source_binding": {
+            "subject_id": "subject-1",
+            "person_track_id": 1,
+            "source_selection_epoch": 0,
+            "camera_reference_epoch": 0,
+            "fixed_camera_observations": 17
+          },
+          "native_original_pts": [
+            {
+              "frame_index": 611,
+              "pts": 611,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24440
+            },
+            {
+              "frame_index": 612,
+              "pts": 612,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24480
+            },
+            {
+              "frame_index": 613,
+              "pts": 613,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24520
+            },
+            {
+              "frame_index": 614,
+              "pts": 614,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24560
+            },
+            {
+              "frame_index": 615,
+              "pts": 615,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24600
+            },
+            {
+              "frame_index": 616,
+              "pts": 616,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24640
+            },
+            {
+              "frame_index": 617,
+              "pts": 617,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24680
+            },
+            {
+              "frame_index": 618,
+              "pts": 618,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24720
+            },
+            {
+              "frame_index": 619,
+              "pts": 619,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24760
+            },
+            {
+              "frame_index": 620,
+              "pts": 620,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24800
+            },
+            {
+              "frame_index": 621,
+              "pts": 621,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24840
+            },
+            {
+              "frame_index": 622,
+              "pts": 622,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24880
+            },
+            {
+              "frame_index": 623,
+              "pts": 623,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24920
+            },
+            {
+              "frame_index": 624,
+              "pts": 624,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24960
+            },
+            {
+              "frame_index": 625,
+              "pts": 625,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 25000
+            },
+            {
+              "frame_index": 626,
+              "pts": 626,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 25040
+            },
+            {
+              "frame_index": 627,
+              "pts": 627,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 25080
+            }
+          ],
+          "direction_binding": {
+            "status": "bound",
+            "reason": null,
+            "method": "source_frame_vector_transformed_by_background_similarity",
+            "classification_method": "agent_visual_review",
+            "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+            "source_frame_index": 619,
+            "source_timestamp_ms": 24760.0,
+            "camera_reference_epoch": 0,
+            "image_to_reference_linear": [
+              [
+                1.0000483355,
+                1.486e-05
+              ],
+              [
+                -1.486e-05,
+                1.0000483355
+              ]
+            ],
+            "source_pts": 619,
+            "time_base_num": 1,
+            "time_base_den": 25,
+            "fields": {
+              "forward_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  0.39738621072449837,
+                  -0.9176514586301406
+                ],
+                "fixed_reference_direction": [
+                  0.397372575039039,
+                  -0.9176573634025084
+                ]
+              },
+              "up_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  0.016126934718260075,
+                  -0.9998699525321246
+                ],
+                "fixed_reference_direction": [
+                  0.016112077367124094,
+                  -0.9998701920564068
+                ]
+              }
+            }
+          },
+          "sequence_axes": {
+            "hip": {
+              "minimum_torso_units": 0.21806908327578023,
+              "fixed_minimum_torso_units": 0.18,
+              "below_floor_timestamp_ms": []
+            },
+            "shoulder": {
+              "minimum_torso_units": 0.13981240723369734,
+              "fixed_minimum_torso_units": 0.3,
+              "below_floor_timestamp_ms": [
+                24640.0,
+                24680.0,
+                24720.0,
+                24760.0
+              ]
+            }
+          }
+        },
+        {
+          "motion_wrist": "right",
+          "primary_racket_hand": null,
+          "status": "measured_proxy",
+          "actual_window": {
+            "start_ms": 24440.0,
+            "prep_end_ms": 24600.0,
+            "peak_ms": 24840.0,
+            "end_ms": 25080.0,
+            "timing_resolution_ms": 40.0
+          },
+          "coverage": {
+            "measured_requirements": 5,
+            "applicable_requirements": 9,
+            "fraction": 0.5555555555555556,
+            "full_source_technique_covered": false
+          },
+          "requirements": [
+            {
+              "id": "phase_continuity",
+              "label": "挥出和随挥连续，不强制击后立即减速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_phase_continuity"
+              ],
+              "reason": null
+            },
+            {
+              "id": "preparation_coupling",
+              "label": "转体与引拍配合",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_preparation_coupling"
+              ],
+              "reason": null
+            },
+            {
+              "id": "projected_sequence",
+              "label": "髋、肩、手臂的可见运动顺序",
+              "status": "not_measured",
+              "metric_ids": [
+                "pattern_projected_sequence"
+              ],
+              "reason": "acceleration_support_axes_missing_or_foreshortened"
+            },
+            {
+              "id": "center_transfer",
+              "label": "挥出时人体中心前移",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_center_transfer"
+              ],
+              "reason": null
+            },
+            {
+              "id": "forward_swing",
+              "label": "持拍手向前挥出",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_forward_swing"
+              ],
+              "reason": null
+            },
+            {
+              "id": "two_hand_coupling",
+              "label": "双手共同运动与加速",
+              "status": "measured_proxy",
+              "metric_ids": [
+                "pattern_two_hand_coupling"
+              ],
+              "reason": null
+            },
+            {
+              "id": "physical_chain",
+              "label": "蹬地、真实重心和力的逐级传递",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "force_ground_contact_and_true_center_of_mass_unobserved"
+            },
+            {
+              "id": "racket_and_contact",
+              "label": "球拍轨迹、握拍与真实触球",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "racket_ball_contact_and_grip_unobserved"
+            },
+            {
+              "id": "return_compactness",
+              "label": "按来球压力调整短引拍",
+              "status": "not_measured",
+              "metric_ids": [],
+              "reason": "independent_incoming_ball_pressure_or_reference_unobserved"
+            }
+          ],
+          "metrics": {
+            "pattern_phase_continuity": [
+              1.0,
+              100.0
+            ],
+            "pattern_preparation_coupling": [
+              0.893962251741903,
+              89.3962251741903
+            ],
+            "pattern_center_transfer": [
+              0.0,
+              0.0
+            ],
+            "pattern_forward_swing": [
+              0.33456460006552174,
+              33.45646000655218
+            ],
+            "pattern_two_hand_coupling": [
+              0.7537851558017173,
+              75.37851558017174
+            ]
+          },
+          "metric_evidence": {
+            "pattern_phase_continuity": {
+              "phases": {
+                "acceleration": {
+                  "fraction": 1.0,
+                  "duration_ms": 240.0,
+                  "active_ms": 240.0
+                },
+                "follow_through": {
+                  "fraction": 1.0,
+                  "duration_ms": 240.0,
+                  "active_ms": 240.0
+                }
+              },
+              "deceleration_required": false
+            },
+            "pattern_projected_sequence": {
+              "search_range_ms": [
+                24600.0,
+                24840.0
+              ],
+              "support_range_ms": [
+                24480.0,
+                24960.0
+              ],
+              "unobservable_axes": [
+                "shoulder"
+              ]
+            },
+            "pattern_preparation_coupling": {},
+            "pattern_center_transfer": {},
+            "pattern_forward_swing": {},
+            "pattern_two_hand_coupling": {
+              "direction_agreement": 0.5815575459739101,
+              "progress_agreement": 0.9260127656295246,
+              "grip_verified": false
+            }
+          },
+          "source_binding": {
+            "subject_id": "subject-1",
+            "person_track_id": 1,
+            "source_selection_epoch": 0,
+            "camera_reference_epoch": 0,
+            "fixed_camera_observations": 17
+          },
+          "native_original_pts": [
+            {
+              "frame_index": 611,
+              "pts": 611,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24440
+            },
+            {
+              "frame_index": 612,
+              "pts": 612,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24480
+            },
+            {
+              "frame_index": 613,
+              "pts": 613,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24520
+            },
+            {
+              "frame_index": 614,
+              "pts": 614,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24560
+            },
+            {
+              "frame_index": 615,
+              "pts": 615,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24600
+            },
+            {
+              "frame_index": 616,
+              "pts": 616,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24640
+            },
+            {
+              "frame_index": 617,
+              "pts": 617,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24680
+            },
+            {
+              "frame_index": 618,
+              "pts": 618,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24720
+            },
+            {
+              "frame_index": 619,
+              "pts": 619,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24760
+            },
+            {
+              "frame_index": 620,
+              "pts": 620,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24800
+            },
+            {
+              "frame_index": 621,
+              "pts": 621,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24840
+            },
+            {
+              "frame_index": 622,
+              "pts": 622,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24880
+            },
+            {
+              "frame_index": 623,
+              "pts": 623,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24920
+            },
+            {
+              "frame_index": 624,
+              "pts": 624,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 24960
+            },
+            {
+              "frame_index": 625,
+              "pts": 625,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 25000
+            },
+            {
+              "frame_index": 626,
+              "pts": 626,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 25040
+            },
+            {
+              "frame_index": 627,
+              "pts": 627,
+              "time_base_num": 1,
+              "time_base_den": 25,
+              "timestamp_ms": 25080
+            }
+          ],
+          "direction_binding": {
+            "status": "bound",
+            "reason": null,
+            "method": "source_frame_vector_transformed_by_background_similarity",
+            "classification_method": "agent_visual_review",
+            "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+            "source_frame_index": 619,
+            "source_timestamp_ms": 24760.0,
+            "camera_reference_epoch": 0,
+            "image_to_reference_linear": [
+              [
+                1.0000483355,
+                1.486e-05
+              ],
+              [
+                -1.486e-05,
+                1.0000483355
+              ]
+            ],
+            "source_pts": 619,
+            "time_base_num": 1,
+            "time_base_den": 25,
+            "fields": {
+              "forward_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  0.39738621072449837,
+                  -0.9176514586301406
+                ],
+                "fixed_reference_direction": [
+                  0.397372575039039,
+                  -0.9176573634025084
+                ]
+              },
+              "up_direction_2d": {
+                "status": "bound",
+                "source_image_direction": [
+                  0.016126934718260075,
+                  -0.9998699525321246
+                ],
+                "fixed_reference_direction": [
+                  0.016112077367124094,
+                  -0.9998701920564068
+                ]
+              }
+            }
+          },
+          "sequence_axes": {
+            "hip": {
+              "minimum_torso_units": 0.21806908327578023,
+              "fixed_minimum_torso_units": 0.18,
+              "below_floor_timestamp_ms": []
+            },
+            "shoulder": {
+              "minimum_torso_units": 0.13981240723369734,
+              "fixed_minimum_torso_units": 0.3,
+              "below_floor_timestamp_ms": [
+                24640.0,
+                24680.0,
+                24720.0,
+                24760.0
+              ]
+            }
+          }
+        }
+      ],
+      "aggregation": "none; left and right are both retained; no better-side selection, no primary-hand inference, no overall score",
+      "timing_conclusion": "not_measured: acceleration support axes are foreshortened inside the actual acceleration interval; no peak ordering is assigned",
+      "limitations": [
+        "manual windows and source-reviewed return type are not automatic success",
+        "no expert-calibrated technique ground truth",
+        "unknown primary grip order is retained",
+        "fixed-camera 2D projections do not measure force or true world-space motion",
+        "40 ms source intervals limit independent peak order; no source phase was moved to fit model peaks"
+      ]
+    }
+  ],
+  "full_result_sha256": "9c62065292753ab35fa532e64dcd9dc729e09023a220a0e48bdccb7e4db3ada9",
+  "input_sha256": {
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/return-independent-directions.json": "32158c116366d4262cf11c5432933660d94bba994d514594d9df4fb0ee715b5d",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-ostapenko-four-returns-fine-reference-v2.json": "a2e124fe9523a66e35fc136fbc194eabee71c9596dd92d937557cb0e24d90667",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-ostapenko-four-returns-fine-reference.json": "4c230d3c65629695111de3d965f4721572ca4ac8632fa380db6a93b7234580a4",
+    ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-four-returns.mp4": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/adelaide-return/validation-summary.json": "3bac25b446a5d6b78cb6593cdb3d00242b6badf7aae67e1c41af0980c36096ec",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/adelaide-return/sam3d_frames.jsonl": "7f3c62120ed88f76c23cb0c737febea61906ff9aef9fb35ddf3239b80b90c531",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/adelaide-return/primary-player.jsonl": "7e52ebc0fd8dfb35d70f9ef7e1acdbc1cf4ef59c90de84c9d48340501574da9b",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/adelaide-return/frames.jsonl": "fc26666d56512ccfeb2ea2c427da13156471cd55a95725b9567e09f006ea24c6",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-ball-dense/frame-000036.png": "7aa4ad61d837c8941fffb4c33aee7ed09fa30c7c65edee636406a5e2e99c2d3d",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-ball-dense/frame-000037.png": "c39cde533d910571bcc3c5814f766f9545a2c5a201cdbb382c4d03b7b4495dbf",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-ball-dense/frame-000049.png": "10264e4df30565796d4b1f072b98ab661ff8f2d4d29a49cbebc3b7d5a0afa5de",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-ball-dense/frame-000050.png": "75f5cbf3f75cddc0c361b758d40f7e7b54002d8bf82545bebb21b96fdcdcf174",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-ball-dense/frame-000051.png": "f2f1fdb1a27211c2e9af30de14a1e88b78c0c4c859bc7dff7b15d826c047e0c3",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-ball-dense/frame-000057.png": "cb8edc0fa77c125dc4c98313d9be9f06da3e1c05cd383021bc98724177e7d23a",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/ostapenko-return-first-dense/frame-000060.png": "e5500f8d55e2f490b028f4faa546f2f66ab2816a5ad390214e905031e6df3128",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-alexandrova-return-fine-reference-v2.json": "cc80bd60d1b2d256d34faf934cfa8ee461fe07115b25fe2501034254fcacdb82",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-alexandrova-return-fine-reference.json": "74e027c8fd73848da4d034adc5c10e6c10739d3422d0c6f3ad1acbce1e160460",
+    ".codex_tmp/tennis-score-round6-20261028/sources/wta-alexandrova-return.mp4": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/toronto-return/validation-summary.json": "d2a9f4b2de2d981800320a4bd5deb22b8e3d03c977ee37afd30601c0c39389eb",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/toronto-return/sam3d_frames.jsonl": "e6df667fe24f5887c617eee886c3c9a13b7e949bd401088a6c5df0f0d3d86000",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/toronto-return/primary-player.jsonl": "c9eefe506db046bda4d6636edcf9a821888e097f1d8c73e460ce91008856c0ee",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-returns/toronto-return/frames.jsonl": "a117b0ad9038898da64584607d7da0b31130596ba45999134248170e66814010",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000600.png": "3db7d666aa0265431422e02d4ef0e3829c4924ba7192ec53cdaca3e65c84a02b",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000605.png": "09e0739c2b1a9d371438447220d4b07646e328cba7f881c8fa6b868bb5d3e4da",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000609.png": "9390dae9944f799e6be7b1e874204425d77000298a5306f3be8e35e7ecb0ea11",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000610.png": "61a3c2f6af847c75d3646c3974e15a8136f664f8f23c1175be56c47a03b675d4",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000611.png": "da387fed771ff81c9d804d4588a46f25d9b065137eeae7dd092a067988669993",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000617.png": "485ef349024f4a0153fb7964ed1ce6c817e6cd82287b81f6a411afe195e2cf77",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/alexandrova-return-ball-dense/frame-000619.png": "64e1b2d9aebdfa7148ebf4eff859f59ccecfa1c0fde2c73564e7ffb2606c12d2"
+  },
+  "code_sha256": {
+    ".codex_tmp/tennis-score-round6-20261028/validate_new_return_bilateral_patterns.py": "cd86e5275ab6f6c9ad22140d404444406017e563dedbb31fc152e13d448f4538",
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9",
+    "src/rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "37ac22120181600e2009533f30305edc90616b21b47d5a1d0f178619a56901f7",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6"
+  },
+  "score_or_threshold_tuning": false,
+  "unknown_primary_grip_replaced": false,
+  "independent_source_count": 2,
+  "bilateral_results_are_not_four_independent_actions": true,
+  "primary_conclusion_zh": "两条真实源接发具有可测的部分几何代理，但自动候选均为0，主握柄手未知，髋肩腕顺序均因源投影轴短缩而缺测。人工窗口、类型和来球源证据不等于自动识别成功。"
+}

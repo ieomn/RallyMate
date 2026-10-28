@@ -1,0 +1,134 @@
+{
+  "version": "independent-source-and-racket-geometry-review-v1",
+  "reviewed_at_utc": "2026-10-28T08:06:45.980037+00:00",
+  "reviewer": "samples",
+  "scope": "Read-only source/tests/frozen rules/source manifest review. No src, prior GT, or published document edits. No new downloads/GPU.",
+  "freeze_sha256": "73f189ff01470776ecd8d52edea5c59c71748cad8dd9622d690ae1db034cae1c",
+  "code_hashes": {
+    "src/rallymate_scoring/stroke_candidates.py": {
+      "expected": "0c335824d9f238b27b0f7f1ffcdf742baa733f38f6869e6ea4601aafac20385c",
+      "actual": "0c335824d9f238b27b0f7f1ffcdf742baa733f38f6869e6ea4601aafac20385c",
+      "match": true
+    },
+    "src/rallymate_scoring/racket_geometry.py": {
+      "expected": "aa04041774b1b7b4513b4caea2d219d911704983990bbdd7fbcb2429ed0f8885",
+      "actual": "aa04041774b1b7b4513b4caea2d219d911704983990bbdd7fbcb2429ed0f8885",
+      "match": true
+    },
+    "src/rallymate_scoring/stroke_analysis.py": {
+      "expected": "3e18dcfed5a70fd827bb644ae03e8df8f6d81ce58356bb9ac79b7bf352e83c8c",
+      "actual": "3e18dcfed5a70fd827bb644ae03e8df8f6d81ce58356bb9ac79b7bf352e83c8c",
+      "match": true
+    },
+    "tests/test_racket_geometry.py": {
+      "expected": "639ea669decd9e8d511a1843773a98f29aa0ff1fa497717f1cf9edd90b494787",
+      "actual": "639ea669decd9e8d511a1843773a98f29aa0ff1fa497717f1cf9edd90b494787",
+      "match": true
+    }
+  },
+  "blocking_findings": [],
+  "result": "no_blocking_issue_found_in_reviewed_scope",
+  "checks": [
+    {
+      "area": "person_ownership",
+      "result": "pass",
+      "source": "src/rallymate_scoring/stroke_candidates.py:209",
+      "evidence": "Original nearest wrist gate and competing-person margin are applied before forearm geometry; geometry cannot select ownership among near competing persons. The dedicated test rejects two competing track IDs."
+    },
+    {
+      "area": "source_identity_and_epoch",
+      "result": "pass",
+      "source": "src/rallymate_scoring/stroke_candidates.py:319",
+      "evidence": "Alternative proof spans earliest ambiguity through candidate geometry end and invokes samples_are_continuous on each adjacency; this checks track, selected epoch, camera epoch, normalization, explicit SAM source SHA/native selection epoch and advancing PTS. Independent probes changed SHA/native epoch/reset PTS and all rejected."
+    },
+    {
+      "area": "missing_wrist_and_elbow",
+      "result": "pass",
+      "source": "src/rallymate_scoring/stroke_candidates.py:283",
+      "evidence": "Active missing wrist splits upstream _segments; unique ray evidence requires both wrists proximate and both elbow/wrist rays available. Independent active-wrist and support-elbow probes rejected. A missing opposite wrist on an intervening non-support frame is not an invented grip or support frame."
+    },
+    {
+      "area": "head_ambiguity",
+      "result": "pass_with_explicit_uncertainty",
+      "source": "src/rallymate_scoring/racket_geometry.py:37",
+      "evidence": "Mixed >=3 eye/ear landmarks or complete head with both ears are required, both wrists must lie outside. A single nose cannot reject. True overhead/wrist-containing boxes retained. Semantics state ambiguity, not detector false-positive truth."
+    },
+    {
+      "area": "replacement_stage_gate",
+      "result": "pass",
+      "source": "src/rallymate_scoring/stroke_candidates.py:560",
+      "evidence": "Separate alternative must pass measured preparation/acceleration/follow-through and peak inside original geometry window before NMS eligibility. Incomplete alternative does not shorten original proposal."
+    },
+    {
+      "area": "legacy_ordering_vs_grip",
+      "result": "pass",
+      "source": "src/rallymate_scoring/stroke_analysis.py:107",
+      "evidence": "ordering_status explicitly computed via legacy proximity solely for proposal ordering, with legacy_proximity_proposal_order_not_grip_confirmation. Report hand_evidence excludes head-only ambiguity; ray proof says alternative motion wrist, not primary grip/contact."
+    },
+    {
+      "area": "object_support_outside_reported_phase",
+      "result": "pass",
+      "source": "src/rallymate_scoring/stroke_analysis.py:233",
+      "evidence": "candidate_window_ms/direct/geometry counts and reported_phase_window_ms/direct counts are separately emitted; candidate support is not reported-phase coverage. Full geometry observations retain their timestamps. No later-reacquisition route remains."
+    }
+  ],
+  "independent_validation": {
+    "test_command": [
+      "runtime/rtmpose/.venv/Scripts/python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_racket_geometry.py",
+      "-q"
+    ],
+    "test_count": 17,
+    "tests_passed": 17,
+    "extra_boundary_probes": [
+      {
+        "case": "source_sha_changed",
+        "rejected": true
+      },
+      {
+        "case": "native_selection_epoch_changed",
+        "rejected": true
+      },
+      {
+        "case": "source_pts_reset",
+        "rejected": true
+      },
+      {
+        "case": "active_wrist_missing_upstream_segment_split",
+        "rejected": true
+      },
+      {
+        "case": "support_elbow_missing",
+        "rejected": true
+      }
+    ],
+    "full_143_suite": "Freeze receipt reports143 pass; this reviewer did not rerun full suite."
+  },
+  "source_manifest_publication_review": {
+    "path": "source-manifest.json",
+    "sha256": "d48c3c5cb7a3f7bbf81c687589e97ea420cef2f225b48753560c4140f3eab51e",
+    "downloaded_sources": 7,
+    "urls_checked": 7,
+    "signed_or_machine_path_findings": [],
+    "all_manifest_source_urls_have_no_query": true,
+    "status": "manifest itself is suitable for sanitized provenance publication",
+    "do_not_publish": [
+      "sources/*.mp4 and raw source PNG/contact sheets without redistribution authorization",
+      "sources/*.info.json or raw player/page HTML: may contain expiring CDN signatures/player configuration and are not needed public provenance",
+      "unreviewed raw tool logs or exceptions which may include absolute paths"
+    ],
+    "publication_note": "Retain source page URL, publisher, SHA, license/access limitation, selected windows, audit hashes and failed acquisition reasons. Relative media filenames are references only, not authorization to redistribute. Failed Vimeo player query hashes should be replaced with the public referring article in any public attempt summary."
+  },
+  "limitations": [
+    "Source-reviewed Sharapova is development evidence, not independent hand-classification accuracy.",
+    "Forearm rays are only object-motion association; grip order, true handle position and contact remain unconfirmed.",
+    "Exact source-frame uniqueness in production depends on source-bound decoder input; synthetic helper fixtures are not malicious artifact validation.",
+    "No claim that 7 files are 7 independent people: same player/event and publisher groups remain in source inventory."
+  ]
+}

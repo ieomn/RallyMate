@@ -20,7 +20,7 @@ from .temporal_recognition import (LABELS, RuleTemporalBackend, TemporalRecognit
                                    _classification, build_temporal_window, samples_are_continuous,
                                    validate_recognition, wrist_kinematics)
 
-ANALYSIS_VERSION = "stroke-motion-analysis-v2.8.0"
+ANALYSIS_VERSION = "stroke-motion-analysis-v2.9.0"
 LIMITATIONS = [
     "阶段和类型由姿态、球拍及时间顺序规则推断，尚未经过专项标注集准确率验证。",
     "手腕速度以躯干长度/秒表示，轴角速度以度/秒表示；肩髋轴和肘角为画面二维测量，不是球速、三维转体角或技术评分。",
@@ -33,13 +33,25 @@ def _distance(a: tuple[float, float], b: tuple[float, float]) -> float:
     return math.hypot(a[0] - b[0], a[1] - b[1])
 
 
-def racket_hand_evidence(samples: list[Any]) -> dict[str, Any]:
+def racket_hand_evidence(samples: list[Any], *, exclude_head_ambiguity: bool = True) -> dict[str, Any]:
     """Vote only when wrists are separated, so a two-hand grip cannot flip hand."""
     votes: Counter[str] = Counter()
     for sample in samples:
         left, right = sample.points.get("left_wrist"), sample.points.get("right_wrist")
         if left and right and _distance(left, right) > 0.55:
-            votes.update(sample.racket_sides)
+            observations = getattr(sample, "racket_observations", [])
+            for side in sample.racket_sides:
+                # A box overlapping an observed head cluster is still a weak
+                # motion proposal, not independent evidence of grip ownership.
+                head_support = any(side in obs.get("wrist_sides", [])
+                                   and obs.get("limb_geometry", {}).get("head_cluster_overlap_without_wrist")
+                                   for obs in observations)
+                other_support = any(side in obs.get("wrist_sides", [])
+                                    and not obs.get("limb_geometry", {}).get("head_cluster_overlap_without_wrist")
+                                    for obs in observations)
+                if exclude_head_ambiguity and head_support and not other_support:
+                    continue
+                votes[side] += 1
     common = votes.most_common()
     hand = None
     if common and common[0][1] >= 8 and common[0][1] >= max(1, votes["right" if common[0][0] == "left" else "left"]) * 3:
@@ -95,7 +107,17 @@ def candidate_hand_evidence(candidate: Mapping[str, Any], samples: list[Any]) ->
     hand = evidence["hand"]
     status = ("unavailable_context" if not context else "unresolved" if hand is None
               else "matched" if hand == candidate["racket_hand_candidate"] else "conflict")
-    return {"status": status, "candidate_side": candidate["racket_hand_candidate"], "hand_evidence": evidence}
+    # Preserve the previous proximity-only proposal order. Downgrading the
+    # certainty of grip evidence must not itself switch the selected arm; that
+    # needs the separate source-bound alternative-motion proof. This ordering
+    # hint is never returned as the report's independent racket-hand evidence.
+    ordering = racket_hand_evidence(context, exclude_head_ambiguity=False)
+    ordering_hand = ordering["hand"]
+    ordering_status = ("unavailable_context" if not context else "unresolved" if ordering_hand is None
+                       else "matched" if ordering_hand == candidate["racket_hand_candidate"] else "conflict")
+    return {"status": status, "candidate_side": candidate["racket_hand_candidate"], "hand_evidence": evidence,
+            "ordering_status": ordering_status,
+            "ordering_semantics": "legacy_proximity_proposal_order_not_grip_confirmation"}
 
 
 def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence: Mapping[str, Any] | None = None, *,
@@ -146,6 +168,7 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
     preparation_complete = phases[0]["status"] == "measured"
     follow_complete = phases[-1]["status"] == "measured"
     motion_peak_ms = prediction["peak_ms"]
+    candidate_samples = [s for s in samples if candidate["start_ms"] <= s.time <= candidate["end_ms"]]
     samples = samples[preparation_start:follow_end + 1]
     # Recompute on this exact reported source window, using the same helper
     # as process_motion. Context outside the report cannot change its values.
@@ -210,11 +233,24 @@ def _episode(candidate: Mapping[str, Any], all_samples: list[Any], hand_evidence
         "process_motion": analyze_process_motion(samples, phases, side),
         "metric_notes_zh": metric_notes + ([] if preparation_complete and follow_complete else ["连续画面尚未覆盖完整准备或随挥，缺失阶段不作补全。"]),
         "evidence": {"pose_samples": len(samples), "racket_associated_frames": candidate["evidence"]["racket_associated_frames"],
+                     "racket_observation_scope": {
+                         "semantics": "candidate_object_support_is_not_reported_phase_coverage",
+                         "motion_wrist": side,
+                         "candidate_window_ms": [candidate["start_ms"], candidate["end_ms"]],
+                         "candidate_direct_racket_frames": sum(side in s.racket_sides for s in candidate_samples),
+                         "candidate_geometry_supported_racket_frames": (
+                             candidate.get("evidence", {}).get("racket_geometry_alternative") or {}
+                         ).get("distinct_directional_support_frames", 0),
+                         "reported_phase_window_ms": [samples[0].time, samples[-1].time],
+                         "reported_phase_direct_racket_frames": sum(side in s.racket_sides for s in samples),
+                         "candidate_observations": [obs for s in candidate_samples if side in s.racket_sides
+                                                    for obs in getattr(s, "racket_observations", [])]},
                      "hand_evidence": dict(hand_evidence), "phase_method": prediction["phase_method"],
                      "paired_wrist_acceleration": prediction.get("paired_wrist_acceleration"),
                      "motion_sequence_evidence": prediction.get("motion_sequence_evidence"),
                      "supporting_motion_candidates": candidate.get("evidence", {}).get("supporting_motion_candidates", []),
                      "racket_support_transfer": candidate.get("evidence", {}).get("racket_support_transfer"),
+                     "racket_geometry_alternative": candidate.get("evidence", {}).get("racket_geometry_alternative"),
                      "process_continuity": {"selection_epoch": samples[0].selection_epoch,
                                             "camera_reference_epoch": getattr(samples[0], "camera_reference_epoch", None),
                                             "camera_compensated": getattr(samples[0], "camera_compensated", False),

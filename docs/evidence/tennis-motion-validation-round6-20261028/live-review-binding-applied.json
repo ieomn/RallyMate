@@ -1,0 +1,187 @@
+{
+  "version": "round6-exact-live-review-binding-v1",
+  "applied": true,
+  "original_entries_preserved": true,
+  "samples": [
+    {
+      "job_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "context_before_sha256": "16fa0b67312a0da464a7affe1c39dd9ef6bb3d7e918b5b5fdd8030280a1873da",
+      "context_after_sha256": "36ebbbc860a950de42eb1b3090842e999555472f8d227a7cdd63c6ad2e1df869",
+      "exact_bindings": [
+        {
+          "old_episode_id": "9c6727ff72753b25e081",
+          "new_episode_id": "289d186838928e2506c2"
+        },
+        {
+          "old_episode_id": "d52458bf26a6a26dd4a5",
+          "new_episode_id": "237ddacc935508b7beb4"
+        },
+        {
+          "old_episode_id": "f3a3817042c3ee8403b2",
+          "new_episode_id": "b0ed8a0dc49fb0416515"
+        },
+        {
+          "old_episode_id": "91f523bb274beea984eb",
+          "new_episode_id": "7edf861a35cc5489ec7e"
+        },
+        {
+          "old_episode_id": "0f6e129a2ddb4985349e",
+          "new_episode_id": "9e45134e499e77bdfa68"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+      "context_before_sha256": "6927b7c1ae1a6bded65b45220999820d6cd7c213aa0f41e3b5799979c1866787",
+      "context_after_sha256": "d9f0771a9626479e380e4fb8e26a988a2e428ea75a88eba7cfaed59fc53f06f7",
+      "exact_bindings": [
+        {
+          "old_episode_id": "a4028ca39a57447b22e6",
+          "new_episode_id": "812d2baf234369771715"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+      "context_before_sha256": "f2a1a5c0e0685cd0b64b932e044a058fc040882975efbfdcb2ac4f4d64b4a362",
+      "context_after_sha256": "6985dc40cef22bd2dd8ac9c309dc05dd0e5d0c76f21afea78d5887649872241a",
+      "exact_bindings": [
+        {
+          "old_episode_id": "d1d0bbe44afc681e39ad",
+          "new_episode_id": "15bbd351625b9f82ee7a"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+      "context_before_sha256": "1eecae7cd6d886511d371810cbde0faae851bea0a6c9e2692ee3371b57ec28bf",
+      "context_after_sha256": "38971192088c4cf4ebdb0255b74a7828607bdfaa87e77b9985fdd205d7464cd3",
+      "exact_bindings": [
+        {
+          "old_episode_id": "93fb0f6dfd6ba1bbe125",
+          "new_episode_id": "0358884f9959189c5c30"
+        }
+      ],
+      "changed_windows_not_migrated": [
+        {
+          "old_episode_id": "b852a2ae4ff05f422630",
+          "window": [
+            15849,
+            16116,
+            16550
+          ],
+          "reason": "window_changed"
+        }
+      ],
+      "independent_new_reviews": [
+        "b8d2254994c6e956fc17"
+      ]
+    },
+    {
+      "job_id": "5ff1c511-add9-461f-865b-04bd17c69d2f",
+      "context_before_sha256": "38fd2cf0822be91e69ada3c319d96b7ba1db911413eb874eb1ef705e2ad626f2",
+      "context_after_sha256": "6e3f8eec9e62c012d047540e06092094a691a911c9915ff801cc87be12db8c3d",
+      "exact_bindings": [
+        {
+          "old_episode_id": "b31bed2dc8050d73a00b",
+          "new_episode_id": "54afbd834561d5b674c8"
+        },
+        {
+          "old_episode_id": "0a7a483886b81d0aed23",
+          "new_episode_id": "03bc25953c2c6424403b"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "60f60a85-9772-46f9-852f-700404f456d4",
+      "context_before_sha256": "e32c4f07149d161a35aa7de176918f5019c82ef3af20bd1a13b514236eb02467",
+      "context_after_sha256": "7df2f7656614154dff00f5195bac4927f94f7c70c1666531ec171c8a40350578",
+      "exact_bindings": [
+        {
+          "old_episode_id": "79ea6fe9c70a34f30909",
+          "new_episode_id": "158b2172a6058793c05d"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "6ad5ea22-3c1d-4ab2-a2d6-1fa8afbe8654",
+      "context_before_sha256": "bf4f877e68a99b7f3eeb99550aabc8521b35bd0eaf365fc9f6af6cc465a0f8d5",
+      "context_after_sha256": "bf4f877e68a99b7f3eeb99550aabc8521b35bd0eaf365fc9f6af6cc465a0f8d5",
+      "exact_bindings": [],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+      "context_before_sha256": "45c9d1a7199555934ee4d6aba33bfc23a1a506d98e1ffc6584feeedfd040c4d6",
+      "context_after_sha256": "d08f4c158867b5def5b51a0d98bde95b143eed590058d393bb52320bee046cb0",
+      "exact_bindings": [
+        {
+          "old_episode_id": "8f40fd888549fda2c39f",
+          "new_episode_id": "b6c0ab5348a68b0ea337"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "d12255e0-22f1-475e-99ba-b0595b8184b6",
+      "context_before_sha256": "c30d5814f9133795a2415f4e9885ad1f244490ac02949c1b90dba3c76b0b5ada",
+      "context_after_sha256": "1d2a7c598a166e9fa64865f7a9d6b65bf9dd023dfa8b7f3854eba61b96f00538",
+      "exact_bindings": [
+        {
+          "old_episode_id": "5facbbb03c4cb5d2664e",
+          "new_episode_id": "bc16a3b5c36ff8600661"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "d60c8b04-c2f8-47f4-9778-28cdac0110d1",
+      "context_before_sha256": "3d284f2d14b8a5f9c788d454ad645e580837533a4c706c3580e1e4d14ca45364",
+      "context_after_sha256": "fa532e745ec75302f44028ffb83d7aaee0911f16f0b8cfd99cdc2474d0cf87d5",
+      "exact_bindings": [
+        {
+          "old_episode_id": "aa3db17d801cf7e7b40a",
+          "new_episode_id": "c3bea014e1c3f3291693"
+        },
+        {
+          "old_episode_id": "089b4f1a80fa4a2fcc43",
+          "new_episode_id": "5605afd10f2b64218e11"
+        }
+      ],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "e89b6dfa-5bd1-4ff2-a514-2a6f8ffca55c",
+      "context_before_sha256": "d95495ca365d277875baa8ee533d284416361d8b9c6fdce57f6ce10562c1cea0",
+      "context_after_sha256": "d95495ca365d277875baa8ee533d284416361d8b9c6fdce57f6ce10562c1cea0",
+      "exact_bindings": [],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    },
+    {
+      "job_id": "fe0fa23a-3bad-4bd7-ad37-79f0a7f2f468",
+      "context_before_sha256": "1413514c7bd873794cb565e1ab395e369be294bae18d3caa3ea2e227063d2493",
+      "context_after_sha256": "1413514c7bd873794cb565e1ab395e369be294bae18d3caa3ea2e227063d2493",
+      "exact_bindings": [],
+      "changed_windows_not_migrated": [],
+      "independent_new_reviews": []
+    }
+  ],
+  "matching_policy": "identical source, exact track/start/peak/end/family/source-camera epochs; changed windows need new source review",
+  "source_inputs_modified": false,
+  "unchanged_backup_directory": ".codex_tmp/tennis-score-round6-20261028/live-before-inputs"
+}

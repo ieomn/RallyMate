@@ -1,0 +1,25 @@
+{
+  "version": "round6-source-first-capture-v1",
+  "frozen_at_utc": "2026-10-28T07:39:50.304755+00:00",
+  "source_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+  "request_sha256": "eec0f2321462dde3e2c80874cc805d354018a108c9aa318f4b92ff800aad0c42",
+  "capture_source_commit": "0a9787141cb69f308d061b54030fdac89d44e145",
+  "source_url": "https://www.wtatennis.com/videos/4593081/hot-shot_-jelena-ostapenkos-forehand-slice-winner-on-the-run-in-wuhan",
+  "source_audit": "source-audit/ostapenko2026-realtime/contact.jpg",
+  "source_audit_sha256": "68e7599cd612527d8e837738a0921cab47c53f92f77f4082b29e9f7d81ddce39",
+  "selection": "near-end player running to picture right; original real-time continuous rally; no replay",
+  "capture_window_ms": [
+    4800,
+    8600
+  ],
+  "source_action_region_ms": [
+    6400,
+    7400
+  ],
+  "expected_role": "forehand slice, independently source reviewed; not automatically assigned by video title",
+  "purpose": "new actual production inference on a larger full-body real action; retain all candidates and failures",
+  "direction_limit": "court forward and image up may be nearly collinear; independent geometry review pending, no promised slice metric",
+  "source_timing": "25 original frames/s, 40ms nominal interval; no speed conversion",
+  "grading_or_detection_threshold_changes": false,
+  "automatic_subject_selection": true
+}

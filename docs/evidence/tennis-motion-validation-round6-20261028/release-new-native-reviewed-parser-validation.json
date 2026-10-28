@@ -1,0 +1,43 @@
+{
+  "version": "round6-real-report-parser-validation-v1",
+  "parser_sha256": "05f23631820141f996d80f230fa82c2bf3eb503da0551850fa33ea257ece94d0",
+  "report_count": 4,
+  "results": [
+    {
+      "group": "release-new-native-reviewed",
+      "file": "adelaide-return-assessment.json",
+      "sha256": "57a8548a1e2fc45b5265b35770bfb25bebe4c386c48e3ebf1971f4a7a274e9cd",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native-reviewed",
+      "file": "newcombe-space-assessment.json",
+      "sha256": "23f3b464fbc6f5b9c057773822f2e61a313fb14f98429cbdb46d074e0cf93a51",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native-reviewed",
+      "file": "toronto-return-assessment.json",
+      "sha256": "1db8ebdada5dfafceb48678ecd375b50083fa0155baf292fd7ff34149cda45c2",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    },
+    {
+      "group": "release-new-native-reviewed",
+      "file": "wuhan-forehand-slice-assessment.json",
+      "sha256": "8eb9c4220b16d143aeae339553d8a50bad9a1383372ab8425c2ad0d3558eb0bd",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 0,
+      "status": "unavailable"
+    }
+  ]
+}

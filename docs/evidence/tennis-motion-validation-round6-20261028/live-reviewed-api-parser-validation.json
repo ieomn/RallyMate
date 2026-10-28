@@ -1,0 +1,25 @@
+{
+  "version": "round6-real-report-parser-validation-v1",
+  "parser_sha256": "05f23631820141f996d80f230fa82c2bf3eb503da0551850fa33ea257ece94d0",
+  "report_count": 2,
+  "results": [
+    {
+      "group": "live-reviewed-api",
+      "file": "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0-assessment.json",
+      "sha256": "5b09bc83bba46e7610b942b78d256367b19a3f373f5f00b200693402002859e8",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 6,
+      "status": "scored"
+    },
+    {
+      "group": "live-reviewed-api",
+      "file": "5b0b659e-7049-4749-8312-97e72e73a287-assessment.json",
+      "sha256": "687a6c662c1d7b5da35e71ab0c0df675aa767f30673c20d19075b2e908dea29e",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    }
+  ]
+}

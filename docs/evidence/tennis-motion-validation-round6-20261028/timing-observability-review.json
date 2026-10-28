@@ -1,0 +1,68 @@
+{
+  "version": "round6-timing-observability-review-v1",
+  "pattern_version": "tennis-motion-patterns-v1.2.1",
+  "scope": "Independent implementation review and saved-real-peak gate checks; parent runs full current replay separately.",
+  "code_sha256": {
+    "src/rallymate_service/tennis_motion_patterns.py": "37ac22120181600e2009533f30305edc90616b21b47d5a1d0f178619a56901f7"
+  },
+  "evidence_sha256": {
+    ".codex_tmp/tennis-score-round4-20261027/real-sequence-validation-v3.json": "efa96b0ca96bfb1f019289dd33d695aa1332ed6a335354a64ebcecc918edc1d7",
+    ".codex_tmp/tennis-score-round2-20261026/frozen-runs/d12255e0-22f1-475e-99ba-b0595b8184b6/sam3d_frames.jsonl": "7ed40f900f9ab50329215e27b6409250eeec932054604afe5f988ada3eb6322d",
+    ".codex_tmp/tennis-score-round5-20261028/dimitrov-return-new-native-manual-results-v1.2.json": "298843eb8a994fbc172391364c9c2fa11abd157af3f116b5df3605d7e5712d8f",
+    ".codex_tmp/tennis-score-round5-20261028/gpu-dimitrov-context/dimitrov-return-context/sam3d_frames.jsonl": "60f07fde2f6fa5f2a04d444bb7d046a4c986d15b5a0658c130d44398fcec1e09"
+  },
+  "real_checks": [
+    {
+      "case": "ICS01",
+      "evaluation_scope": "saved observed peaks with original native PTS; not a new full motion analysis",
+      "original_search_range_ms": [
+        667.3333333333334,
+        1001.0
+      ],
+      "native_sample_count": 21,
+      "timing_resolution_ms": 16.68333333333328,
+      "hip_shoulder_wrist_peak_ms": [
+        984.3166666666667,
+        834.1666666666666,
+        984.3166666666667
+      ],
+      "current_sequence_gate_result": [
+        0.40000000000000047,
+        59.99999999999995
+      ],
+      "result_unchanged": true
+    },
+    {
+      "case": "Dimitrov_manual_return",
+      "evaluation_scope": "saved observed peaks with original native PTS; not a new full motion analysis",
+      "original_search_range_ms": [
+        8100.0,
+        8216.666666666666
+      ],
+      "native_sample_count": 8,
+      "timing_resolution_ms": 16.66666666666697,
+      "hip_shoulder_wrist_peak_ms": [
+        8100.0,
+        8100.0,
+        8150.0
+      ],
+      "current_sequence_gate_result": null,
+      "result_unchanged": true
+    }
+  ],
+  "findings": [
+    "Hip and shoulder angular rates are computed independently from their own fixed-camera two-point axes; no shared native rotation is subtracted. Only wrist position is body-center relative.",
+    "The derivative uses real decoder PTS and five neighboring observations. Three fixed support observations on each side can support an acceleration-boundary peak; they cannot move the peak search outside the existing acceleration phase.",
+    "Short projected axes, insufficient movement, missing two-sided peak support and broad or multiple peak plateaus remain explicitly unmeasured. These measurement limits were not relaxed.",
+    "The discovered float boundary error could incorrectly call a one-frame difference resolved. The patch prevents that false measurement; it does not manufacture new timing coverage.",
+    "In the frozen real return, hip and shoulder peaks both occur at 8100 ms. Independent rates can legitimately have the same sampled maximum. Their order is unresolved at this video's frame/model resolution, rather than evidence of a software-enforced common peak.",
+    "ICS has a separated shoulder peak and an equal hip/wrist peak. The existing formula compares the adjacent hip-to-shoulder and shoulder-to-wrist relationships; its 60 result is unchanged. It is a projected-order proxy, not measured force or expert-calibrated kinetic-chain quality."
+  ],
+  "remaining_limits": [
+    "single-view projected axes",
+    "pose-estimation uncertainty",
+    "finite frame sampling",
+    "no true force or ball/racket contact measurement"
+  ],
+  "grade_curves_or_weights_changed": false
+}

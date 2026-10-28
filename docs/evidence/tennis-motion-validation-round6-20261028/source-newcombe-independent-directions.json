@@ -1,0 +1,90 @@
+{
+  "version": "source-only-spatial-direction-review-v1",
+  "source_video_sha256": "c5c2bbc96f0242f363d2900041f60094fc530baed44e8d78601b21339474549e",
+  "review_method": "agent_source_pixel_scene_review",
+  "pose_or_scores_read_for_direction_choice": false,
+  "reference_frame_index": 1812,
+  "direction_reference_timestamp_ms": 60400.0,
+  "reference_raw_png_sha256": "a3add1b7d37c18e263985541a9d954a83cd563d2a17d0b8d5d94075960072798",
+  "coordinate_system": "image_pixels_x_right_y_down",
+  "court_line_role_evidence": [
+    "Two adjacent diagonal white lines meet the transverse line near the rear fence, with blue/green court boundaries supporting their interpretation as singles/doubles longitudinal sidelines meeting the baseline.",
+    "The athlete is adjacent to the rear-fence baseline. The court-forward sign is away from that rear boundary, along these lines toward image-left/down.",
+    "No hand, racket or ball motion was fitted to choose the direction. The net is outside this camera view, so court-line roles remain a named visual scene interpretation, not a calibrated 3D proof."
+  ],
+  "court_longitudinal_lines_px": [
+    [
+      [
+        520.0,
+        520.0
+      ],
+      [
+        0.0,
+        630.0
+      ]
+    ],
+    [
+      [
+        360.0,
+        520.0
+      ],
+      [
+        0.0,
+        579.0
+      ]
+    ]
+  ],
+  "longitudinal_vanishing_point_px": [
+    1070.3139013452915,
+    403.58744394618833
+  ],
+  "local_ground_reference_px": [
+    695.0,
+    537.0
+  ],
+  "up_reference": {
+    "object": "upright fence post",
+    "base_top_px": [
+      [
+        727.0,
+        494.0
+      ],
+      [
+        727.0,
+        255.0
+      ]
+    ]
+  },
+  "forward_direction_2d": [
+    -0.9422403524536563,
+    0.3349374840294968
+  ],
+  "up_direction_2d": [
+    0.0,
+    -1.0
+  ],
+  "direction_basis_condition_number": 1.416769596582476,
+  "frozen_maximum_condition_number": 4.0,
+  "sensitivity": {
+    "semantics": "annotation perturbation, not a confidence interval",
+    "trials": 4096,
+    "seed": 20261028,
+    "court_and_post_endpoint_jitter_px": 2,
+    "origin_jitter_px": 10,
+    "condition_range": [
+      1.2773503683730079,
+      1.8077871083537402
+    ]
+  },
+  "time_mode": "unknown-factor slow motion; displayed PTS is source video clock only",
+  "permitted_scope": "spatial forehand-slice path over source-frozen 60400-61300 ms only",
+  "prohibited_claims": [
+    "real-time kinetic sequence",
+    "complete preparation",
+    "overall stroke score",
+    "expert-calibrated technique grade"
+  ],
+  "source_reference_sha256": "9ff3f6fb781d95e440d172b524d92a5fce226763ed40c5bff05662949a7967b3",
+  "frame_evidence_sha256": "a0bffd563cddb7abb95c2e5b08309c8cabc75b1f459bcc2d453c4c738f332681",
+  "code_sha256": "3df39376383503c19b86078bbb668fc63edf99e4eea4bfbb594accf198fcad59"
+}

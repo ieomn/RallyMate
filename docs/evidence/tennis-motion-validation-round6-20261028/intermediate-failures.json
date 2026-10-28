@@ -1,0 +1,55 @@
+{
+  "racket_rule_explorations": [
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v1/summary.json",
+      "sha256": "e06c9a2df3592bf43fb6d8f14a8e586288101bb0649ef7dfb1a246d988b4b5dd",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v2/summary.json",
+      "sha256": "5edc9e25dc2bcbe691700b821af22249c95cfbe38a3de28c4d0cf865a37e5e16",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v3/summary.json",
+      "sha256": "dacbbab0122724a5bf5680ac74aae2b22a93fce4845c1d63bb4f1405be7b030e",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v4/summary.json",
+      "sha256": "4f27678ddc78ac7da2c022241086e02a94129366f3872c6b79968097f9cf0590",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v5/summary.json",
+      "sha256": "6522187f1c51ef8ffd506294ec9d21cc59086450f2bf853b175d353233abcd0a",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v6/summary.json",
+      "sha256": "79f534bca02c98e200b6f454f8ed9206dce64deb5af4a99f9b7e8c5d945a4160",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v7/summary.json",
+      "sha256": "79f534bca02c98e200b6f454f8ed9206dce64deb5af4a99f9b7e8c5d945a4160",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    },
+    {
+      "path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-current-v8/summary.json",
+      "sha256": "387c964ff57f6cdc6ca0651e85912a926176d9c2fb6f0c205245a34539ca281a",
+      "role": "retained exploratory comparison, not release accuracy evidence"
+    }
+  ],
+  "first_capture": {
+    "path": "gpu-wuhan",
+    "failure": "wrong diagnostic interpreter lacked PyAV, before decoding; repeated with production interpreter and identical request",
+    "log_sha256": "c0a07c10ed2cddeef64b5ead2e108759e9714111362cb4a689dec81684f3fb9f"
+  },
+  "first_combined_tests": {
+    "failure": "tests import path absent; invocation corrected, suite rerun",
+    "errors": 3,
+    "receipt_sha256": "8c31f1a1eb429edec091813d7098ebc57079444bbf3b993594f54881a9b72d01"
+  },
+  "ordinary_b_initial_diagnostic_join_rejected": "frame-only join selected wrong native person; corrected source+frame+selected-track join receipt retained; no production relabel"
+}

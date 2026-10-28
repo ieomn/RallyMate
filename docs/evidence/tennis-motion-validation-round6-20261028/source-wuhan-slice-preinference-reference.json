@@ -1,0 +1,84 @@
+{
+  "version": "source-only-preinference-reference-v1",
+  "frozen_at_utc": "2026-10-28T07:40:39.410471+00:00",
+  "selection_basis": "predeclared source observability, no inference scores or pose outputs inspected",
+  "source_id": "wta-ostapenko-fhslice-2026",
+  "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-fhslice-2026.mp4",
+  "source_video_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+  "public_source_url": "https://www.wtatennis.com/videos/4593081/hot-shot_-jelena-ostapenkos-forehand-slice-winner-on-the-run-in-wuhan",
+  "publisher": "WTA",
+  "access": "Normal public Brightcove player; no login, cookies, DRM or bot bypass",
+  "rights": "Copyright retained by publisher; no open redistribution license claimed. Local validation only; original media excluded from Git/public evidence.",
+  "source_media": {
+    "width": 1280,
+    "height": 720,
+    "nominal_fps": 25,
+    "source_frame_count": 997,
+    "duration_seconds": 39.88,
+    "time_mode": "real-time first match presentation; later slow replay excluded",
+    "timestamp_semantics": "actual_OpenCV_decoder_POS_MSEC_sequential_scan_nearest_actual_frame_not_fps_synthesized"
+  },
+  "inference_interval_ms": [
+    4800,
+    8600
+  ],
+  "reviewed_subject": {
+    "description_zh": "近端酒红色裙装运动员，追向画面右侧；远端黄衣对手。姓名不作为源标签依据。",
+    "initial_bbox_approx_px": [
+      204,
+      445,
+      289,
+      552
+    ],
+    "automatic_subject_selection": null,
+    "racket_hand": "right",
+    "racket_hand_basis_zh": "6.60至6.92秒连续后斜视图中，右臂由肩后持拍前伸到身体右前方，另一左臂向后上方展开；拍柄与右手连续相连。未按运动员姓名推断。",
+    "mirror_status": "no horizontal mirror indicated by readable court text; anatomical side visually reviewed"
+  },
+  "positive_actions": [
+    {
+      "reference_id": "wuhan-real-fhslice-1",
+      "technique": "forehand_slice",
+      "status": "reviewed",
+      "method": "agent_visual_review",
+      "reviewer": "samples",
+      "start_ms": 6440,
+      "anchor_ms": 6800,
+      "end_ms": 7080,
+      "anchor_uncertainty_ms": 40,
+      "phase_evidence_ms": {
+        "preparation": 6600,
+        "forward_swing": 6800,
+        "follow_through": 6920
+      },
+      "observations_zh": "6.44–6.64持拍高于肩侧追球；6.72–6.84右臂向右前方伸展，拍面开放、球拍从高位降至低前方，6.80附近可见球与拍面接近，6.84球向前离开；6.88–7.08屈膝承重并收回球拍恢复。独立原图支持真实单手正手切削，不据标题标注。",
+      "actual_ball_visible": true,
+      "direction_status": "pending_independent_geometry_review",
+      "forward_direction_2d_verified": false,
+      "up_direction_2d_verified": false,
+      "source_evidence": "source-audit/ostapenko2026-slice-dense/evidence.json"
+    }
+  ],
+  "negative_intervals": [
+    {
+      "start_ms": 7300,
+      "end_ms": 8600,
+      "label": "recovery_repositioning_no_new_stroke",
+      "reason_zh": "同一拍结束后的追步和恢复，不应另算完整击球。"
+    }
+  ],
+  "limitations": [
+    "Original near subject about 100–120 pixels high; wrist/handle detail limited by motion blur and 25 fps.",
+    "Broadcast court view is near end-on with camera motion; independent forward/up separability is not asserted.",
+    "Later enlarged replay is same action and not real-time evidence."
+  ],
+  "evidence_json_sha256": "c88c027090167e4c8ab2dde46b3a126420322b188968339184ddab8f5fb1051a",
+  "context_intervals": [
+    {
+      "start_ms": 4800,
+      "end_ms": 5800,
+      "label": "preceding_rally_context_not_part_of_slice_positive",
+      "reason_zh": "包含前一底线击球动作后的位移；本次已冻结正例仅6.44–7.08秒切削，不能把此前回合动作并为同拍。"
+    }
+  ]
+}

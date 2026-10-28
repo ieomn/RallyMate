@@ -1,0 +1,456 @@
+{
+  "version": "source-bound-spatial-path-v1",
+  "source_video_sha256": "c5c2bbc96f0242f363d2900041f60094fc530baed44e8d78601b21339474549e",
+  "scale_px": 65.80173859336195,
+  "trajectory_semantics": "body-relative projected wrist, not racket or world path",
+  "rows": [
+    {
+      "frame_index": 1812,
+      "source_relative_timestamp_ms": 60400.0,
+      "fixed_camera_right_wrist_px": [
+        680.4390258789062,
+        424.13348388671875
+      ],
+      "fixed_camera_hip_center_px": [
+        759.6732177734375,
+        443.1182556152344
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.2041352339362703,
+        -0.28851474344525574
+      ]
+    },
+    {
+      "frame_index": 1813,
+      "source_relative_timestamp_ms": 60433.33333333333,
+      "fixed_camera_right_wrist_px": [
+        672.2665421141576,
+        427.0820372161827
+      ],
+      "fixed_camera_hip_center_px": [
+        753.3519794487848,
+        446.08436046976635
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.2322689197578,
+        -0.2887814769000743
+      ]
+    },
+    {
+      "frame_index": 1814,
+      "source_relative_timestamp_ms": 60466.66666666667,
+      "fixed_camera_right_wrist_px": [
+        662.3187157664441,
+        430.449552253211
+      ],
+      "fixed_camera_hip_center_px": [
+        748.2976193053635,
+        447.04307149603414
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.3066357421077743,
+        -0.25217448045509716
+      ]
+    },
+    {
+      "frame_index": 1815,
+      "source_relative_timestamp_ms": 60500.0,
+      "fixed_camera_right_wrist_px": [
+        662.3775234151312,
+        430.4679921459681
+      ],
+      "fixed_camera_hip_center_px": [
+        748.3184010169339,
+        447.0298116696041
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.3060578555970306,
+        -0.2516927345337159
+      ]
+    },
+    {
+      "frame_index": 1816,
+      "source_relative_timestamp_ms": 60533.33333333333,
+      "fixed_camera_right_wrist_px": [
+        653.7193095430603,
+        433.2978425582153
+      ],
+      "fixed_camera_hip_center_px": [
+        743.5593563876807,
+        448.07530814595157
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.3653141811314313,
+        -0.22457561006187454
+      ]
+    },
+    {
+      "frame_index": 1817,
+      "source_relative_timestamp_ms": 60566.66666666667,
+      "fixed_camera_right_wrist_px": [
+        644.2842389447235,
+        436.4213286495784
+      ],
+      "fixed_camera_hip_center_px": [
+        741.0425643413305,
+        447.82467189774263
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.470452414556231,
+        -0.17329850991679674
+      ]
+    },
+    {
+      "frame_index": 1818,
+      "source_relative_timestamp_ms": 60600.0,
+      "fixed_camera_right_wrist_px": [
+        641.3548544014435,
+        438.64527495368384
+      ],
+      "fixed_camera_hip_center_px": [
+        737.594961193595,
+        447.6697358639832
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.4625769599628828,
+        -0.13714623812705362
+      ]
+    },
+    {
+      "frame_index": 1819,
+      "source_relative_timestamp_ms": 60633.33333333333,
+      "fixed_camera_right_wrist_px": [
+        639.8294748578749,
+        439.52414851918843
+      ],
+      "fixed_camera_hip_center_px": [
+        737.137619738689,
+        447.3330791246673
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.478808112991569,
+        -0.11867362128128622
+      ]
+    },
+    {
+      "frame_index": 1820,
+      "source_relative_timestamp_ms": 60666.66666666667,
+      "fixed_camera_right_wrist_px": [
+        639.8470098198776,
+        439.4926648735588
+      ],
+      "fixed_camera_hip_center_px": [
+        737.0705418834631,
+        447.42039026666725
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.4775222378910424,
+        -0.12047896548903925
+      ]
+    },
+    {
+      "frame_index": 1821,
+      "source_relative_timestamp_ms": 60700.0,
+      "fixed_camera_right_wrist_px": [
+        636.8179368710563,
+        440.5553608108865
+      ],
+      "fixed_camera_hip_center_px": [
+        736.9229815672181,
+        447.22465202340624
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.521313066130146,
+        -0.10135433128498761
+      ]
+    },
+    {
+      "frame_index": 1822,
+      "source_relative_timestamp_ms": 60733.33333333333,
+      "fixed_camera_right_wrist_px": [
+        634.4296853232664,
+        441.3746800346018
+      ],
+      "fixed_camera_hip_center_px": [
+        736.2929644727805,
+        447.009846382219
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5480332484678438,
+        -0.0856385631759835
+      ]
+    },
+    {
+      "frame_index": 1823,
+      "source_relative_timestamp_ms": 60766.66666666667,
+      "fixed_camera_right_wrist_px": [
+        632.5372341446986,
+        441.8641266155362
+      ],
+      "fixed_camera_hip_center_px": [
+        735.2271929609367,
+        446.64085279261667
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5605964372892327,
+        -0.07259270467911882
+      ]
+    },
+    {
+      "frame_index": 1824,
+      "source_relative_timestamp_ms": 60800.0,
+      "fixed_camera_right_wrist_px": [
+        631.9900014611651,
+        441.738902940049
+      ],
+      "fixed_camera_hip_center_px": [
+        734.4995730996602,
+        446.59761385168946
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5578550632526333,
+        -0.07383864036885157
+      ]
+    },
+    {
+      "frame_index": 1825,
+      "source_relative_timestamp_ms": 60833.33333333333,
+      "fixed_camera_right_wrist_px": [
+        631.9891214893964,
+        441.7526589044714
+      ],
+      "fixed_camera_hip_center_px": [
+        734.5679496126384,
+        446.5520772543674
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5589075656063294,
+        -0.07293756141543994
+      ]
+    },
+    {
+      "frame_index": 1826,
+      "source_relative_timestamp_ms": 60866.66666666667,
+      "fixed_camera_right_wrist_px": [
+        631.050193220093,
+        441.9588495596319
+      ],
+      "fixed_camera_hip_center_px": [
+        734.8522144050266,
+        446.0831397876084
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5774966346467512,
+        -0.06267752670584503
+      ]
+    },
+    {
+      "frame_index": 1827,
+      "source_relative_timestamp_ms": 60900.0,
+      "fixed_camera_right_wrist_px": [
+        629.9952731429336,
+        442.3568694981423
+      ],
+      "fixed_camera_hip_center_px": [
+        734.6446882681614,
+        445.91092766945115
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5903746217396275,
+        -0.05401161500111762
+      ]
+    },
+    {
+      "frame_index": 1828,
+      "source_relative_timestamp_ms": 60933.33333333333,
+      "fixed_camera_right_wrist_px": [
+        629.4213611523892,
+        442.4476449855516
+      ],
+      "fixed_camera_hip_center_px": [
+        734.183911264669,
+        445.46091867337464
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5920939530137002,
+        -0.045793222979171766
+      ]
+    },
+    {
+      "frame_index": 1829,
+      "source_relative_timestamp_ms": 60966.66666666667,
+      "fixed_camera_right_wrist_px": [
+        628.640390076709,
+        442.55842427140044
+      ],
+      "fixed_camera_hip_center_px": [
+        733.7660211920136,
+        444.7789188855628
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5976117555943983,
+        -0.033745227126663835
+      ]
+    },
+    {
+      "frame_index": 1830,
+      "source_relative_timestamp_ms": 61000.0,
+      "fixed_camera_right_wrist_px": [
+        628.6401661388935,
+        442.5363195765388
+      ],
+      "fixed_camera_hip_center_px": [
+        733.7377479495831,
+        444.7435060433321
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.597185485632318,
+        -0.03354298099071684
+      ]
+    },
+    {
+      "frame_index": 1831,
+      "source_relative_timestamp_ms": 61033.33333333333,
+      "fixed_camera_right_wrist_px": [
+        627.499310171852,
+        442.6775933892256
+      ],
+      "fixed_camera_hip_center_px": [
+        732.9403281439581,
+        444.228133170893
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.6024047422774785,
+        -0.023563811759585107
+      ]
+    },
+    {
+      "frame_index": 1832,
+      "source_relative_timestamp_ms": 61066.66666666667,
+      "fixed_camera_right_wrist_px": [
+        626.7400787634668,
+        442.6616289358086
+      ],
+      "fixed_camera_hip_center_px": [
+        731.6109288703268,
+        443.8167862407811
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5937398061004924,
+        -0.017555118294230176
+      ]
+    },
+    {
+      "frame_index": 1833,
+      "source_relative_timestamp_ms": 61100.0,
+      "fixed_camera_right_wrist_px": [
+        626.2636959615563,
+        442.5398594793512
+      ],
+      "fixed_camera_hip_center_px": [
+        730.9353019742994,
+        443.3798983797027
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.590711860359601,
+        -0.012766211323726573
+      ]
+    },
+    {
+      "frame_index": 1834,
+      "source_relative_timestamp_ms": 61133.33333333333,
+      "fixed_camera_right_wrist_px": [
+        626.2798108127292,
+        442.30933851104766
+      ],
+      "fixed_camera_hip_center_px": [
+        730.7996031707528,
+        443.02781304877414
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5884047229196998,
+        -0.01091877742268288
+      ]
+    },
+    {
+      "frame_index": 1835,
+      "source_relative_timestamp_ms": 61166.66666666667,
+      "fixed_camera_right_wrist_px": [
+        626.2986030930862,
+        442.331104092273
+      ],
+      "fixed_camera_hip_center_px": [
+        730.8612712917254,
+        442.9851430195582
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5890563142230931,
+        -0.00993953870013975
+      ]
+    },
+    {
+      "frame_index": 1836,
+      "source_relative_timestamp_ms": 61200.0,
+      "fixed_camera_right_wrist_px": [
+        626.2036191134049,
+        442.14054341214955
+      ],
+      "fixed_camera_hip_center_px": [
+        730.3115574337432,
+        442.7396424113381
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.582145708393801,
+        -0.009104607446481339
+      ]
+    },
+    {
+      "frame_index": 1837,
+      "source_relative_timestamp_ms": 61233.33333333333,
+      "fixed_camera_right_wrist_px": [
+        626.1516496989884,
+        441.89267799318014
+      ],
+      "fixed_camera_hip_center_px": [
+        730.0194215987846,
+        442.2609007672936
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5784958592305998,
+        -0.005595942933803499
+      ]
+    },
+    {
+      "frame_index": 1838,
+      "source_relative_timestamp_ms": 61266.66666666667,
+      "fixed_camera_right_wrist_px": [
+        626.2236862378437,
+        441.5008220080705
+      ],
+      "fixed_camera_hip_center_px": [
+        729.8728001669504,
+        441.79398313140825
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.575172877568356,
+        -0.004455218503411018
+      ]
+    },
+    {
+      "frame_index": 1839,
+      "source_relative_timestamp_ms": 61300.0,
+      "fixed_camera_right_wrist_px": [
+        626.3386688809267,
+        441.1359907905238
+      ],
+      "fixed_camera_hip_center_px": [
+        729.1562867722882,
+        441.3439059411005
+      ],
+      "body_relative_right_wrist_torso_units": [
+        -1.5625364935529813,
+        -0.003159721232619539
+      ]
+    }
+  ]
+}

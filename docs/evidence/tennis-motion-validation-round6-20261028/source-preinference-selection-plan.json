@@ -1,0 +1,27 @@
+{
+  "version": "round6-source-selection-preplan-v1",
+  "frozen_at_utc": "2026-10-28T07:17:51.089498+00:00",
+  "target": "at least two newly inspected source videos per forehand-slice and serve-return class, if accessible and visually adequate; do not claim completion from titles",
+  "forehand_slice_criteria": [
+    "full body and racket visible at useful pixel scale",
+    "real ball and preparatory/forward/follow phases",
+    "independent court/net forward and upright direction not nearly collinear",
+    "realtime source, fine enough original PTS; no replay speed relabel"
+  ],
+  "return_criteria": [
+    "continuous server-to-receiver view",
+    "actual serve and subsequent incoming ball observed",
+    "adequate receiver pixels and original temporal resolution",
+    "no ordinary rally relabeled return"
+  ],
+  "choice_before_score": true,
+  "negative_windows_retained": true,
+  "access": "normal public access only; stop on login/bot/DRM or membership barrier; retain failure; no media redistribution",
+  "prior_sources_not_counted_as_fill": [
+    "WTA far55px",
+    "Rick missing forward",
+    "THETIS no court forward"
+  ],
+  "manual_labels_not_coach_gold": true,
+  "no_GPU_or_core_changes": true
+}

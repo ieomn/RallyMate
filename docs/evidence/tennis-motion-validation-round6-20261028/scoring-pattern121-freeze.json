@@ -1,0 +1,57 @@
+{
+  "version": "round6-scoring-freeze-v1",
+  "baseline": "0a97871",
+  "assessment_version": "tennis-action-assessment-v1.4.0",
+  "rubric_version": "tennis-action-rubric-v1.3.0",
+  "motion_pattern_version": "tennis-motion-patterns-v1.2.1",
+  "change": "One-frame timing uncertainty is compared with a 1e-7 ms floating-point guard. No thresholds, weights, grade curves, peak search ranges or source boundaries were relaxed.",
+  "reproduction": {
+    "fps": 30,
+    "median_interval_ms": 33.333333333333336,
+    "adjacent_peak_interval_ms": 33.33333333333334,
+    "previous_result": [
+      0,
+      100
+    ],
+    "patched_result": null,
+    "interpretation": "The interval is one decoder frame and must remain unresolved. This false-positive observability bug does not explain missing real timing measurements."
+  },
+  "formula_scope_check": "Exact baseline source equality after reversing only the version, explanatory comment and floating-point guard.",
+  "front_end_compatibility": {
+    "assessment_1_4_patterns": [
+      "1.2.0",
+      "1.2.1"
+    ],
+    "actual_pattern_version_preserved_on_roundtrip": true,
+    "unsupported_future_version_rejected": true
+  },
+  "validation": {
+    "backend": {
+      "modules": [
+        "test_tennis_motion_patterns",
+        "test_tennis_hand_roles",
+        "test_tennis_assessment"
+      ],
+      "passed": 80,
+      "failed": 0
+    },
+    "frontend": {
+      "total": 924,
+      "passed": 923,
+      "skipped": 1,
+      "failed": 0,
+      "build": "passed",
+      "lint": "passed",
+      "typecheck": "passed",
+      "log_sha256": "5a7910767a76d4f7f2a9150341080380b623c334c20ae5108a41147fe405e817"
+    }
+  },
+  "code_sha256": {
+    "src/rallymate_service/tennis_motion_patterns.py": "37ac22120181600e2009533f30305edc90616b21b47d5a1d0f178619a56901f7",
+    "tests/test_tennis_motion_patterns.py": "de3e22916996cc4d35ad2efc2facdd8841c95caa31abe3ce19cfb39ff63d12f4",
+    "scoring-demo-web/app/lib/tennis-assessment.ts": "05f23631820141f996d80f230fa82c2bf3eb503da0551850fa33ea257ece94d0",
+    "scoring-demo-web/tests/tennis-assessment.test.mjs": "9308b0be8a2e55f4e2770f6e697e37ea732fecb67a2d43940a134cdbba772e3e"
+  },
+  "gpu_inference_required_for_patch": false,
+  "production_services_restarted": false
+}

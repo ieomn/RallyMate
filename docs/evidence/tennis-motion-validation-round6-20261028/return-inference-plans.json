@@ -1,0 +1,36 @@
+{
+  "version": "round6-new-return-capture-plan-v1",
+  "frozen_at_utc": "2026-10-28T07:46:47.579476+00:00",
+  "captures": [
+    {
+      "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+      "source_reference_sha256": "95ef7a1bf64001cd8793538bdb33ea75b01d8d9b71e934a7801912487b2fac19",
+      "source_reference": ".codex_tmp\\tennis-score-round6-20261028\\source-audit\\wta-ostapenko-four-returns-preinference-reference.json",
+      "request_sha256": "4deac8e923176049b87acd750f3262993d482b82d3454c832d402b41cb2415dd",
+      "window_ms": [
+        0,
+        4000
+      ],
+      "capture_source_commit": "0a97871",
+      "all_players_context_inference": true,
+      "automatic_primary_selection": true,
+      "selection_before_inference": true,
+      "thresholds_changed": false
+    },
+    {
+      "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+      "source_reference_sha256": "a465a174f391324703016e5b04ff4bd4133a1c6a31e72559d1be8e6b53eb6ca9",
+      "source_reference": ".codex_tmp\\tennis-score-round6-20261028\\source-audit\\wta-alexandrova-return-preinference-reference.json",
+      "request_sha256": "5f87d976e4b13baecf6a2cb7adcb17ec443e67c1d46a200ee71bb92bb64d72fb",
+      "window_ms": [
+        23000,
+        26600
+      ],
+      "capture_source_commit": "0a97871",
+      "all_players_context_inference": true,
+      "automatic_primary_selection": true,
+      "selection_before_inference": true,
+      "thresholds_changed": false
+    }
+  ]
+}

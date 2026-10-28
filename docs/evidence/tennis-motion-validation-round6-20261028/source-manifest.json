@@ -1,0 +1,274 @@
+{
+  "version": "round6-source-inventory-v1",
+  "created_utc": "2026-10-28T08:00:08.908724+00:00",
+  "downloaded_video_count": 7,
+  "sources": [
+    {
+      "source_id": "tenniscom-newcombe-fhslice",
+      "source_group": "newcombe-side-demonstration",
+      "publisher_group": "Tennis Channel / Tennis.com",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/tenniscom-newcombe-fhslice.mp4",
+      "source_video_sha256": "c5c2bbc96f0242f363d2900041f60094fc530baed44e8d78601b21339474549e",
+      "size_bytes": 29591576,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 30.0,
+        "frames": 4359
+      },
+      "source_url": "https://www.tennis.com/news/articles/the-forehand-slice-moonball-body-serve-5-underrated-tennis-tactics",
+      "creator_or_publisher": "Tennis Channel / Tennis.com",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "spatial_only_candidate",
+      "notes": "Full side-view moving slice 60.4–65.0; explicit slow playback following editorial freeze. Not real-time temporal evidence. Court-direction identity independently pending.",
+      "evidence_relative_path": "source-audit/newcombe-space-preinference-reference.json",
+      "evidence_sha256": "9ff3f6fb781d95e440d172b524d92a5fce226763ed40c5bff05662949a7967b3",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    },
+    {
+      "source_id": "tenniscom-master-return",
+      "source_group": "wrong-embedded-studio-show",
+      "publisher_group": "Tennis Channel / Tennis.com",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/tenniscom-master-return.mp4",
+      "source_video_sha256": "0a624cc2bb600ab8cad6c7c14cb56fa83ef3fca51b894ce5317280cb5cac08cd",
+      "size_bytes": 23196568,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 30.0,
+        "frames": 4396
+      },
+      "source_url": "https://www.tennis.com/news/articles/tip-of-the-day-master-the-return-of-serve-position-strategy-technique",
+      "creator_or_publisher": "Tennis Channel / Tennis.com",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "rejected_actual_content",
+      "notes": "Public article current embed is studio discussion Best One-Handed Backhand, no tennis stroke source.",
+      "evidence_relative_path": "source-audit/master-return-overview/evidence.json",
+      "evidence_sha256": "9599809ae61b52574bb0329c30d3125ddd7dd5741b658db09d55cfb5383e0482",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    },
+    {
+      "source_id": "wta-ito-fhslice",
+      "source_group": "ito-2025-match",
+      "publisher_group": "WTA",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ito-fhslice.mp4",
+      "source_video_sha256": "2b19ba434a90242c0a05c0151d95f65890679dbe7f984512c76a2845defa7b06",
+      "size_bytes": 10317165,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 25.0,
+        "frames": 964
+      },
+      "source_url": "https://www.wtatennis.com/videos/4339080/hot-shot-ito-makes-commentators-lol-with-casual-forehand-slice-pass",
+      "creator_or_publisher": "WTA",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "limited_far_subject",
+      "notes": "Slice candidate far end about55–75 px; does not fill near clear slice goal.",
+      "evidence_relative_path": "source-audit/ito-overview/evidence.json",
+      "evidence_sha256": "a7d781dc3521de68a8eb0d65722c6b54159706b1f0e92f7ab8fd3a3e62a573c0",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    },
+    {
+      "source_id": "wta-ostapenko-fhslice-2025",
+      "source_group": "ostapenko-adelaide-2025",
+      "publisher_group": "WTA",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-fhslice-2025.mp4",
+      "source_video_sha256": "306633bf28fb8111162e5a883de8c7e73394e0def72f2f2e6f5da79800868a07",
+      "size_bytes": 8770872,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 25.0,
+        "frames": 820
+      },
+      "source_url": "https://www.wtatennis.com/videos/4195718/look-at-the-swerve-ostapenko-swishes-forehand-slice-winner-against-keys",
+      "creator_or_publisher": "WTA",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "limited_far_subject",
+      "notes": "Candidate slice far end. No near detailed profile claimed.",
+      "evidence_relative_path": "source-audit/ostapenko2025-overview/evidence.json",
+      "evidence_sha256": "718f696a85075cac15e89c51a9f5bb294208970a258bac179dd6fa8a59df4728",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    },
+    {
+      "source_id": "wta-ostapenko-fhslice-2026",
+      "source_group": "ostapenko-wuhan-2026",
+      "publisher_group": "WTA",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-fhslice-2026.mp4",
+      "source_video_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+      "size_bytes": 10557916,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 25.0,
+        "frames": 997
+      },
+      "source_url": "https://www.wtatennis.com/videos/4593081/hot-shot_-jelena-ostapenkos-forehand-slice-winner-on-the-run-in-wuhan",
+      "creator_or_publisher": "WTA",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "selected_with_direction_degeneracy",
+      "notes": "Near-end right forehand slice in real-time; court forward/up independent geometry is degenerate (separate audit), not successful forward/down validation.",
+      "evidence_relative_path": "source-audit/wuhan-slice-preinference-reference.json",
+      "evidence_sha256": "5bf6fe630d8ae2c7ea702d9d202d512860689649ceb976049e52debaa273128a",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    },
+    {
+      "source_id": "wta-ostapenko-four-returns",
+      "source_group": "ostapenko-adelaide-2025",
+      "publisher_group": "WTA",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-four-returns.mp4",
+      "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+      "size_bytes": 11892355,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 25.0,
+        "frames": 1109
+      },
+      "source_url": "https://www.wtatennis.com/videos/4195008/watch-this-jelena-ostapenko-closes-match-with-four-straight-return-winners",
+      "creator_or_publisher": "WTA",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "selected_real_return",
+      "notes": "First full source-visible serve and near-end two-hand return,0–4s; grip bottom hand unresolved.",
+      "evidence_relative_path": "source-audit/wta-ostapenko-four-returns-fine-reference-v2.json",
+      "evidence_sha256": "a2e124fe9523a66e35fc136fbc194eabee71c9596dd92d937557cb0e24d90667",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    },
+    {
+      "source_id": "wta-alexandrova-return",
+      "source_group": "alexandrova-toronto-2026",
+      "publisher_group": "WTA",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-alexandrova-return.mp4",
+      "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+      "size_bytes": 17130686,
+      "media": {
+        "width": 1280,
+        "height": 720,
+        "fps_nominal": 25.0,
+        "frames": 1611
+      },
+      "source_url": "https://www.wtatennis.com/videos/4556617/hot-shots-alexandrova-spams-return-to-sender-button-against-powerful-sabalenka-serve",
+      "creator_or_publisher": "WTA",
+      "license": "No open license asserted; publisher copyright retained",
+      "access_basis": "Normal publicly accessible official page/player without login, cookies, bot impersonation, DRM or paywall bypass; authorized local validation, original media not redistributed",
+      "status": "selected_real_return",
+      "notes": "First full near-end return segment23–26.6s; actual serve/incoming ball/two-hand return source verified; grip hand unresolved.",
+      "evidence_relative_path": "source-audit/wta-alexandrova-return-fine-reference-v2.json",
+      "evidence_sha256": "cc80bd60d1b2d256d34faf934cfa8ee461fe07115b25fe2501034254fcacdb82",
+      "split": "new_source_validation_selected_by_observability_not_score",
+      "evaluation_label": "unknown",
+      "person_count_claim": false
+    }
+  ],
+  "attempt_receipts": [
+    {
+      "path": "source-audit/acquisition-page-attempts-01.json",
+      "sha256": "fbacdbf3fa7cb52eec2efb04b06a27338fe255ddf02ad764f759b56a63bc08e4"
+    },
+    {
+      "path": "source-audit/acquisition-page-attempts-02.json",
+      "sha256": "b737ea7d8888aad672a65bcf73673f3be51a44918e25f5a8e415413f14f0e9f6"
+    },
+    {
+      "path": "source-audit/acquisition-page-attempts-03.json",
+      "sha256": "601271486fc00573b5c655c70e55380354f4ac5901866084fd66aa447b709ffd"
+    },
+    {
+      "path": "source-audit/acquisition-page-attempts-04.json",
+      "sha256": "3ea2403df6b0fc8960aa35128ffc141332244fa710531f1b879f2e601761bff5"
+    },
+    {
+      "path": "source-audit/acquisition-page-attempts-05.json",
+      "sha256": "caba0c7ce3e87d528a9889577b5bf10c95567f88296ab65a4abc086471b105dc"
+    },
+    {
+      "path": "source-audit/brent-abel-fhslice-ch2-attempt.json",
+      "sha256": "22d6e81a3026b95641573e55947877f10d7e61cef2d6917bf9b66f3535ddb5bc"
+    },
+    {
+      "path": "source-audit/nadal-return-practice-attempt.json",
+      "sha256": "e9a0d1941021d88bcfebf85da2d35f130ebd05750e97f399ccf596491387a0ee"
+    },
+    {
+      "path": "source-audit/sikana-french-fhslice-attempt.json",
+      "sha256": "fff189964f044013242e730c5ce3d26a77c4fd1700582b021a94e60f78329dc5"
+    },
+    {
+      "path": "source-audit/tenniscom-master-return-attempt.json",
+      "sha256": "8bf963e3794e4867e8871f24a8b566c96b1f8672f1684ac817cd09a7575a05bb"
+    },
+    {
+      "path": "source-audit/tenniscom-newcombe-attempt.json",
+      "sha256": "eb6160813ffd19587e6aab1b4f39445c4910dce7636bab80cc4482d9c92c7498"
+    },
+    {
+      "path": "source-audit/uspta-download-attempt.json",
+      "sha256": "1a7e68ff11b4a445cdac5477df8f3450d119551340d8b9c520f2381ccc8d02e1"
+    },
+    {
+      "path": "source-audit/uspta-original-http-attempt.json",
+      "sha256": "a5e7b02c51ebe53213694d643a683d810ea5667f70c7ffd94ab55612556f3bd2"
+    },
+    {
+      "path": "source-audit/wta-alexandrova-return-attempt.json",
+      "sha256": "73d0728541dfd0292ff91f9d60ca2cad651db1cc057ded4a2234860e03bb2ef0"
+    },
+    {
+      "path": "source-audit/wta-ito-fhslice-attempt.json",
+      "sha256": "0b3534e05fdc5979c3b90b005551f11e7591ec78605cbd19ebcee136c81e686b"
+    },
+    {
+      "path": "source-audit/wta-ito-fhslice-player-attempt.json",
+      "sha256": "8e0f94c7ff639317778d1cc1d27a04d53cdda2b9d51d84aaf996f85d40417932"
+    },
+    {
+      "path": "source-audit/wta-ostapenko-fhslice-2025-attempt.json",
+      "sha256": "0c64249edd621453eb627fdb8cee6f2907aaceb659de8cf19e94655f467a219f"
+    },
+    {
+      "path": "source-audit/wta-ostapenko-fhslice-2025-player-attempt.json",
+      "sha256": "dc10b03fc6f34135f08f5e768ceeb2d6a5049347e1303e324657b3ef53afad33"
+    },
+    {
+      "path": "source-audit/wta-ostapenko-fhslice-2026-attempt.json",
+      "sha256": "26ebde267f376c80d0dffef3adfcb71f7d63f567a7459720159afe74d27ee2de"
+    },
+    {
+      "path": "source-audit/wta-ostapenko-four-returns-attempt.json",
+      "sha256": "b01b46567be32d68c28a9c44a9a2f0b9dc1c08deeb183be36058134b3a044fc1"
+    },
+    {
+      "path": "source-audit/acquisition-additional-failures.json",
+      "sha256": "e14ef1c77c94caad6505023ffa46ba30e91f2af5fb8bb419b51bcae63ae74b4a"
+    }
+  ],
+  "counting_notes": [
+    "Multiple videos showing same player/event are not independent people; publisher/source groups retained.",
+    "Preselected video windows were locked before GPU; return fine frame refinement ran concurrently without reading native/score output.",
+    "Source semantic labels and manual ball points are independent visual review, not automatic detector success.",
+    "Original media, public player tokens and private absolute paths must not be included in Git/public bundle."
+  ],
+  "selection_plan": {
+    "path": "source-audit/preinference-selection-plan.json",
+    "sha256": "16a43e01831f452c5be37897115a6c6453deb051b00dd093cc8d15957384b8d6"
+  }
+}

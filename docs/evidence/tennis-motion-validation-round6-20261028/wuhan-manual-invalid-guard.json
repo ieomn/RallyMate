@@ -1,0 +1,46 @@
+{
+  "automatic_false_positive_score": 93.28,
+  "manual_review_not_automatic_fix": true,
+  "guarded_result": {
+    "sample_id": "wuhan-forehand-slice",
+    "job_id": "round6-wuhan-wuhan-forehand-slice",
+    "source_video_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+    "observation_origin": "round6_source_first_new_real_video_production_GPU_capture_baseline_0a97871",
+    "input_sha256": {
+      "video": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+      "frames": "dfca40cca4e6ad86d74cb20e48f40058446aef960e33233f9a2d35fbcc1edcbc",
+      "timeline": "2a855c08c75f2a90c17c74a413ba77550caf6e2d2417dff9c9bbd72312fa0450",
+      "native": "e215974b5f1a6dc9696077de42cf16559b63d850a5640089136f4ec6ed009f2a",
+      "context": "25b770abacb99c189240ec6142b16f21e7b3af86b5832e399949698010b72159"
+    },
+    "candidate_count": 1,
+    "phase_episode_count": 1,
+    "scored_count": 0,
+    "score": null,
+    "candidate_accounting": {
+      "proposed_count": 1,
+      "accepted_count": 0,
+      "other_subject_count": 0,
+      "rejected_count": 1,
+      "rejection_counts": {
+        "reviewed_action_incomplete_or_invalid": 1
+      }
+    },
+    "pattern_metric_counts": {},
+    "coverage": {
+      "measured_requirements": 0,
+      "applicable_requirements": 0,
+      "fraction": null,
+      "verified_technique_episodes": 0,
+      "generic_episodes": 0,
+      "full_source_technique_covered": false,
+      "profiles": []
+    },
+    "elapsed_seconds": 0.097,
+    "recognition_sha256": "a8217da406cb953c5811bb63945093cba77d0bcfb010964b29b47e63eac73b5d",
+    "assessment_sha256": "8eb9c4220b16d143aeae339553d8a50bad9a1383372ab8425c2ad0d3558eb0bd",
+    "inputs_unchanged": true
+  },
+  "source_evaluation_sha256": "d49b74e5596cb9778a5ad8b087eb15c23039a73c6581d809d0e603bae8c3e0e0",
+  "review_context_sha256": "25b770abacb99c189240ec6142b16f21e7b3af86b5832e399949698010b72159"
+}

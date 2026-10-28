@@ -1,0 +1,16 @@
+{
+  "version": "round6-real-report-parser-validation-v1",
+  "parser_sha256": "05f23631820141f996d80f230fa82c2bf3eb503da0551850fa33ea257ece94d0",
+  "report_count": 1,
+  "results": [
+    {
+      "group": "live-final-service",
+      "file": "0db25307-7796-4159-a1e2-0cde9f54aa8c-assessment.json",
+      "sha256": "3bf6d2f0758566ee1633ffa0ec3d9c211abec71c1cfb8a03dadfd5b3543401d4",
+      "parsed": true,
+      "roundtrip": true,
+      "episodes": 2,
+      "status": "scored"
+    }
+  ]
+}

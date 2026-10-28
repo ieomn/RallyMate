@@ -1,0 +1,717 @@
+{
+  "version": "round6-independent-final-scoring-review-v1",
+  "generated_at_utc": "2026-10-28T08:18:14.533149+00:00",
+  "baseline": "0a97871",
+  "read_only_inputs": true,
+  "gpu_run_by_this_review": false,
+  "service_mutation": false,
+  "groups": {
+    "release-regression": {
+      "evaluation_sha256": "448df4e877af4704c0533aed60c5374949a6fd8b5483a9a8b2fcb115459c4c6b",
+      "completed_at_utc": "2026-10-28T07:58:09.586977+00:00",
+      "code_changed_during_execution": false,
+      "samples": 38,
+      "candidates": 167,
+      "scored": 102,
+      "all_artifact_hashes_verified": true,
+      "all_recorded_inputs_unchanged": true
+    },
+    "release-new-native": {
+      "evaluation_sha256": "a6bf0958640efdc1794473b8944586747f4997c3d3fe50990b79d88843600300",
+      "completed_at_utc": "2026-10-28T08:01:53.154941+00:00",
+      "code_changed_during_execution": false,
+      "samples": 4,
+      "candidates": 1,
+      "scored": 1,
+      "all_artifact_hashes_verified": true,
+      "all_recorded_inputs_unchanged": true
+    },
+    "release-live-reviewed": {
+      "evaluation_sha256": "5e43270002695d1808985ab620ab9f47af930623f86dc3679912e7b7f469c840",
+      "completed_at_utc": "2026-10-28T08:04:04.755388+00:00",
+      "code_changed_during_execution": false,
+      "samples": 12,
+      "candidates": 48,
+      "scored": 33,
+      "all_artifact_hashes_verified": true,
+      "all_recorded_inputs_unchanged": true
+    },
+    "release-new-native-reviewed": {
+      "evaluation_sha256": "d49b74e5596cb9778a5ad8b087eb15c23039a73c6581d809d0e603bae8c3e0e0",
+      "completed_at_utc": "2026-10-28T08:09:34.285883+00:00",
+      "code_changed_during_execution": false,
+      "samples": 4,
+      "candidates": 1,
+      "scored": 0,
+      "all_artifact_hashes_verified": true,
+      "all_recorded_inputs_unchanged": true
+    }
+  },
+  "shared_code_sha256": {
+    "rallymate_annotation/__init__.py": "67fd5a76d2c8872096f7a341923d28d673a622b3ab5d008a4023ed59f003522c",
+    "rallymate_annotation/scoring_action_readiness.py": "f3e7523e67edf54475ba4c971e295ea49bcd83e1791c25c686cd5bcf02c31e59",
+    "rallymate_annotation/scoring_action_worklist.py": "44be6ee7457bd2d1e2199494fdc90a45e0f341465c0ae6fff2f47dfdb87e0f55",
+    "rallymate_annotation/scoring_evidence_plan.py": "6c941009a662ae5cc5b4542e6144cc5b07a26aa3c9ce30116459fc1f387bd50b",
+    "rallymate_annotation/scoring_truth_authorization.py": "218dc4f4ac4ca514634c562ac53cd0b38644f87794291d75cf44e9d29ef1c39f",
+    "rallymate_annotation/scoring_truth_event_execution.py": "f14bc950cc0007edb31dc779db46b935cdbde68a655b54ebef13c3c5cea0c470",
+    "rallymate_annotation/scoring_truth_event_handoff.py": "3349637af44460d827558d63f1668bb7bbbc946437a332aa802302ca247467d1",
+    "rallymate_annotation/scoring_truth_event_phase_intake.py": "a46a4255f447df0055f66b605155a4ed42ba2190a6df752e8d3bd4c5050ef461",
+    "rallymate_annotation/scoring_truth_intake.py": "74ca0f910b556a57c4a36b27234c9c266e3607b2690b27753dc08339abfdd17b",
+    "rallymate_annotation/scoring_truth_refresh.py": "92d8e7c191491e46455fe1ad380393fec7fc7f3b9801bd3271ef269ebe3a3a5a",
+    "rallymate_annotation/truth_pack.py": "7e879ce4a6f4267d0ad4c4546c4e584ccd00f133d6c44322b19e947644f2243f",
+    "rallymate_evaluation/__init__.py": "cf10d28b0d34bef85d886ab1c8c3085d95aa6a3ca00cdfdf07e7ebbafc4d89c0",
+    "rallymate_evaluation/default_pose_routing.py": "c5a9deb1f0b7c8cea23a85630aa54f912f2084129c429328459e4410760f2a4e",
+    "rallymate_evaluation/event_bounded_pose_gaps.py": "0f9eed70cff6849f70b75e6d6e41c97e239216c4df06907a459607bb2bee3fe4",
+    "rallymate_evaluation/event_gap_feature_truth.py": "dba0ad9b6785c31db4cb7da421340c8202397d213b3fa72de23719181942d402",
+    "rallymate_evaluation/event_gap_keypoint_truth.py": "46cba107eef777740617d460ea9b153cea71bdf9ab56d390fa57812f7a9d003a",
+    "rallymate_evaluation/f2_error_budget_readiness.py": "aff3d7c0b70378410830b2ead5bb8ee85f8363a15d90c9f4621ab67a70f6fd6b",
+    "rallymate_evaluation/feature_errors.py": "5742445a11ffee96843b9798934bea0127faf348c262c2ef11d9eed2e0810211",
+    "rallymate_evaluation/fixed_boundary_ab.py": "1ba3d417da0ca14582802b4dfb77706c9b1336594b8744cdf417e6e84244d739",
+    "rallymate_evaluation/fs09_phase_handoff.py": "afd3f1639e9f6c8ef76a366b25be9dcac28ae62617e01ac425cef638e41541d7",
+    "rallymate_evaluation/fs09_phase_truth.py": "b24a54fdc7972d9a5cbfff65e85d588075eb25af2b24b2f9bdc3ce359f2c6806",
+    "rallymate_evaluation/ground_truth.py": "d38d77843bc76b734d5905f7dfdd7c4bbda9233c0b81a49a3e6959a9198050fa",
+    "rallymate_evaluation/kinematic_continuity.py": "804ba22bfd0c7ed2bf4fc99c9f9094d655f873c469d0f1ae2b186495f4a5eda7",
+    "rallymate_evaluation/m96_pose_pilot.py": "84fad5f13fb044533e81f38a504c22c119593a5e3e91586357170e1e761f3dcb",
+    "rallymate_evaluation/multivideo_measurement_recovery.py": "8e76a84bd61dde06b7603a1fa5664083312f85180268e51e2e1be3cce2a5e8e7",
+    "rallymate_evaluation/pose_crop_context.py": "97b88a80b2b4cc0c6902b604735887c6730ddfef91b7799aa82e427bde020a0a",
+    "rallymate_evaluation/pose_diagnostic_clip_truth.py": "5c896e953f8358759384d0d07ed0607613398293c4851ca5647afae2d4c35cd8",
+    "rallymate_evaluation/pose_diagnostic_review.py": "6762b9f736d137eef230bf86fc5ab8ae5b117b74664047cc3abebc1cb3ce57ec",
+    "rallymate_evaluation/pose_diagnostic_truth.py": "d7217f909c8b66d06e3032f9be4fe0328c1eef32533b9a847263a753736c081a",
+    "rallymate_evaluation/pose_observability_residual.py": "825c36c755c2fa4e2631363d5724e430f8c900453b36ee5660c1ea77a1b3b4b2",
+    "rallymate_evaluation/pose_observability_router.py": "0caddb837ed5ac228ffebb67ef26c746bbe837622fda0cbbf184bbcbf9ccf992",
+    "rallymate_evaluation/pose_policy_composition.py": "8664fce063874b89daed852b2f55ed489cc368dbf92d07a30250486fe0c16707",
+    "rallymate_evaluation/pose_same_frame_diagnostic.py": "9e2611bc9b94d6780a8407617ccff159fccf3c8d4f6b3697dff7c14be54c5dd8",
+    "rallymate_evaluation/pose_shadow_smoke.py": "02725530b4be10d1261f66ea885d5fd8331bb55a0ffbdd8245b87ee6f10b1194",
+    "rallymate_evaluation/pose_x_operational.py": "08b23a15f9fd4bc0885d3ea505c1709ba12d6491dd2d4e6a1c55648cae136499",
+    "rallymate_evaluation/residual_computability.py": "b273ae28f729e34e5502554022a97946edd0bd6fe9610fe0048b5c9c10b565c9",
+    "rallymate_evaluation/scoring_truth.py": "bbb55efd32e730161c08b37a0074eb407c3b3d5cfc448319a2e8e9378da5c035",
+    "rallymate_evaluation/small_roi_keypoint_truth.py": "338a825a769029329044e9e4ebecd139558a6184d9a396a714bad01eac0913c1",
+    "rallymate_evaluation/small_roi_recovery.py": "c0a653d87c5a4c168c77ac1aaaf64c952852165d8c809210c1583d80bcabbab8",
+    "rallymate_evaluation/smoothing_coverage.py": "5bb4e9eee9b89de1dfab1db73d1bcf960a91c98d0cc999171622878308ed91eb",
+    "rallymate_events/__init__.py": "467cdb11c5936838e6b1634925adf9db9ae0f3b84c75d3441c33ea53e2f9a7d9",
+    "rallymate_events/associations.py": "e0b888ac05879359bc2d64f24e79fd9f53d8477b7644f8a65017156100946952",
+    "rallymate_events/disagreement.py": "3b94f7605feb35e397a9471aa232443a7c2c3c4a97bf973807d514974ff51b11",
+    "rallymate_events/evaluation.py": "da711c6ff32579f34d1839c803f2a58587913960a36b24e3871815c8dc426248",
+    "rallymate_events/rules.py": "fb9fa9a5458fbcd1b94170cc365f11ec1d4edddf195debec221b1d055fbc978e",
+    "rallymate_events/schemas.py": "7fcfa34a949df6c41010ed8ec0c5172c359dbb80409f622693cb48b56dedbfcd",
+    "rallymate_features/__init__.py": "ddd249d39e8f3145e51cb09769a8b8796843b4305a575da22984cb10428c8288",
+    "rallymate_features/coordinates.py": "0af8785e7d7936fd7aa10b213809db158e718366543e414ac89f7fc0daacf71f",
+    "rallymate_features/event_features.py": "1ff1209aecc70122bc63483a74b81808fc57420c18b6116ef0a8b112d222799f",
+    "rallymate_features/foot_crossing.py": "41f150d0141e9ca30dab9fee35e2a38b8d7453e1b8455ef11ccb0c6feee75934",
+    "rallymate_features/fs01_fs02_features.py": "39e34739fd1e40247b98ff59f121e4b31b51f0db246bc2fb9d4e0ba285bdb46f",
+    "rallymate_features/fs09_features.py": "f024b943c61f088b087e3f6405bbc8f3a4f46994202631664efcf1f92b9beb96",
+    "rallymate_features/geometry.py": "6c9c9ce323fde501533397d107a2ed665ebc8042292fe7ffd7505d5b0d8865f6",
+    "rallymate_features/hip_path_ratio.py": "efe219b52becf2955397767ea5595da898d831c243468004b13dcd2120444a2f",
+    "rallymate_features/kinematics.py": "8a0c7dbc563e42534e5401b60407448180dac2c29f2c0f76ffd8410143d81dc0",
+    "rallymate_features/native_primary.py": "479a2ba875e6643d165c5d405d94cf33b6e857123c2636a763610e5e38321d98",
+    "rallymate_features/schemas.py": "98dea8643591adb6e3cad5af67d2f8c9ad3a168930c971eec50cd1cddaaedff9",
+    "rallymate_features/smoothing.py": "7eb23f9de1868ef15e3581fc4e6112d54ec0cc77f01bb7351ba783f2e636290b",
+    "rallymate_features/source_alignment.py": "1a9db53213867719be589178354e402c560df28260bfff695f00be3b64245442",
+    "rallymate_features/temporal.py": "b34216980304b409366faad80051d12f9d35c161d3af21ad48e1c98aa7d5c88c",
+    "rallymate_features/validity.py": "baee5cccdb5112d84d7a398df8ee00ed74060a7d7d9222795e763e944f1aecbe",
+    "rallymate_pose_evaluation/__init__.py": "66842efa9ecd42f85ea265ef4c8f50be698d098e9efa7e82de0246c89d5949f4",
+    "rallymate_pose_evaluation/baseline.py": "0a400d1f1456a7020a4d6e7dc924622e1420654337d131779c23263d876c5b64",
+    "rallymate_scoring/__init__.py": "b43e3b78b7c674335ab139b34058d456505a085daddc9be2701bced9540b3a59",
+    "rallymate_scoring/batch.py": "a268d114d0c1a066a080db633876fd52573318a7c9d20fae1f62bfdd560bb3f4",
+    "rallymate_scoring/blocker_taxonomy.py": "eeff9420bac2d664fbd87f809f2cd4d3abe6f26007f0bda14339699eb69bf379",
+    "rallymate_scoring/blocker_taxonomy_audit.py": "c963f2174d9dea2ff605518bb22c3399d1ac8af15ecbc0a8ecfbfec9151c9823",
+    "rallymate_scoring/calculation_readiness.py": "a7dce03ac33df9a6cc98ab951e9e237df01e5bcef0d6a9164692ccc8ad55499e",
+    "rallymate_scoring/calibration.py": "dd0d8b000621ccb8ba4d11d177d09dafee88802052d035ff81ee97fd41a0513e",
+    "rallymate_scoring/calibration_dataset.py": "4ca74da4321bfe05f08d4841c8524548062418aa892c4e3a3a0202d9e499cd67",
+    "rallymate_scoring/calibration_fitting.py": "513fe3e92cb63ac77849cf087112ceec8a206028f4ff291bc25de73c788f5607",
+    "rallymate_scoring/calibration_handoff.py": "157b0005624bcc211ceb82ec90f18066dd48ad880acfe7cbb725d560f55cf58a",
+    "rallymate_scoring/calibration_independent_test.py": "f36ffe2faa33de1a59505f98c1bd5bdf29f7f6c6268e4e75f7409003a282c95e",
+    "rallymate_scoring/calibration_measurement_sources.py": "b0b8a177d87ce86165daa7b3dd5597386fc2ad7e87867587544729b2bd9f985b",
+    "rallymate_scoring/calibration_portfolio.py": "5e14d37c9aff139607a520ddd4bc28ae53a5eeaa9930ddcd4f82903ec44ad001",
+    "rallymate_scoring/calibration_promotion.py": "6303d2c33b669cc0e9ce84caf38daf6bfad0454dcc564b54e950c4e1210729b5",
+    "rallymate_scoring/calibration_ranking.py": "9c7699df669e8bd43b5ae4908480f36881ec5de8ee38e30a631600e4dba788d2",
+    "rallymate_scoring/card_evaluation.py": "c691e80f92c90c58b0099dae24ecf556274eaafcaa8a892fc26077c26f4d797d",
+    "rallymate_scoring/card_kinematics.py": "26a60ae46c8d6c889887ed35400654da40835886d30082893e0b39ea35a77c8e",
+    "rallymate_scoring/card_observable_contracts.py": "bc880cf6ec523191c0813ed12a7c7f34116de01b1f8785db9bf8db2798d80986",
+    "rallymate_scoring/card_rule_catalog.py": "d2f272ede8eb67d0f2c04d27140a5dd2b94ee34d3caca8606253a8f13dbbea53",
+    "rallymate_scoring/card_scoring_policy.py": "6d723b4fee66c7805fba93441a6ef8c866df4f2c08d67712d031ab9a840c68b6",
+    "rallymate_scoring/cycle_measurement.py": "ea4053a742d2603492bc5d7f2d5dcd0d05829fbf5660ff21ed788dd459983ad1",
+    "rallymate_scoring/diagnostic_policy_review.py": "c529c3aaba8fa27ac8a12dc2b107595fab39d07992f564dfcfbd37efc02c8892",
+    "rallymate_scoring/direction_reference_observables.py": "a9ac6cd7fccd541590306a539081c04482ce50930af788a40236e58a0803fcd1",
+    "rallymate_scoring/feasibility.py": "0613ceb80408971b1138e15e0d77ae6afae65d601368a4c7f04cce98551d1017",
+    "rallymate_scoring/footwork_cycle_card_evidence.py": "ec19fd43e1bf1589956b70984eaf86aa2b7c86e550b4211a6839039e8fbfb880",
+    "rallymate_scoring/footwork_cycle_locator.py": "501c65cdece8aaa99413a77225d1568eb7fe562272893f3c736244bcb00fbe9a",
+    "rallymate_scoring/granularity.py": "5e0bb0776ecafe33002239a79e882ccac29abf879757266136e318fc55f164e9",
+    "rallymate_scoring/gs_preload_evidence.py": "ecec39ba22f233d96c8fdd51080a12da5005a11c1aca07bc2ab47d1918cee74f",
+    "rallymate_scoring/gs_recovery_evidence.py": "09fb98b4d11c8a6839314d3eea63b9678ad5e1e006ce8505a274ce5783f62838",
+    "rallymate_scoring/indicator_assessment.py": "a018d7d4cc4558747dacb82fcfe6315018890160cab89a3a74e13f0a9d86c3bb",
+    "rallymate_scoring/indicator_feature_qualification.py": "3002a1b0a6a1146095da3751d2f5200c99f98ca0e4aa4166e803f6e471ea08e1",
+    "rallymate_scoring/indicator_observations.py": "51a4cfdeccd52c6338ead8480211a2ef1ab75f013c18491acfb1d1a60358b0ad",
+    "rallymate_scoring/indicator_requirements.py": "7a046c54175e9e7e898507c137e2ffbaccf2e5e512d0d24446f23967a8d5a09e",
+    "rallymate_scoring/joint_quality_scope.py": "0a1658d685ac347190f190f0d5fbdea1d62427887b6ffccfd493bdad27232385",
+    "rallymate_scoring/loop.py": "5cc379da6857eaa071ef42b2789fd20bbac54c6fc52763babfe04ce3f70c521b",
+    "rallymate_scoring/manual_event_features.py": "57975ff0f6c28880cd621069b20c661d2478b623777f2a45f454c16fee5ac8df",
+    "rallymate_scoring/maturity_evidence.py": "040c912d71daa6a3ae8d80abffc9d935fc0be1628c3341ba79d3205a72015a9c",
+    "rallymate_scoring/measurement_plans.py": "856e2330ba77b422d968a4249bbf3505dc3c3462debe6a7ace0a00f7d74317de",
+    "rallymate_scoring/measurement_portfolio.py": "e0401cf0ea8bcf49e52a31d3da9a00ad33789c97b07b1d6b2bfd864178ab18cf",
+    "rallymate_scoring/model_measurement_contract.py": "886ef84a7218489203fe4bfea8b6be5f824113235fcb622d5c9cbdf8b24eb7b2",
+    "rallymate_scoring/multivideo_coverage.py": "225ecd94271ff3cf317d4265fc693ec21eed97fa99c93ae6f6540d4db75e6881",
+    "rallymate_scoring/multivideo_readiness.py": "6642a443ee5e2c9abe2be968592a7701422bc06f2a52d0edac832af7a84b344c",
+    "rallymate_scoring/paired_motion.py": "f2c45082b7b0d330b6dd66f023150458379fdc3c5a1cb9e4e5a54132ec0f375c",
+    "rallymate_scoring/pose_observations.py": "981caaefab9686570ae233080983895eb37e2a22d15c427ed4690783f802b46d",
+    "rallymate_scoring/pose_only_swing_review.py": "43967b6cbb25f667acc640f2495210456003703ece1829b1719e298953107b14",
+    "rallymate_scoring/preparation_translation.py": "cfaddbbd01cc47fa17ff2550c1bdbb4ba32d62545767334a2ea9f515ce5d366b",
+    "rallymate_scoring/process_motion.py": "5762eeb62b97d430699843e2f428fec0fd4dbd46e7442d1e0cae9413e6a091cc",
+    "rallymate_scoring/quality_policy.py": "8548e5c68c647b5ff66ca5df118948698f45d0da71f041c4492852d48c740627",
+    "rallymate_scoring/racket_geometry.py": "aa04041774b1b7b4513b4caea2d219d911704983990bbdd7fbcb2429ed0f8885",
+    "rallymate_scoring/registry_lifecycle.py": "2cfc26d64208f1668713bdaf18a25728c47a3318bbcdd6ba061526b1f61fdda9",
+    "rallymate_scoring/report.py": "2f6f76e69f61c99bb43e27af23292f64e86bc7e71ec4e6f6b31d22a16533c3e7",
+    "rallymate_scoring/rotation_analysis.py": "20d18e41b47be4c380196cc6cc0da22db8b5b561e2ce55044e90c79149f927fc",
+    "rallymate_scoring/run_bundle_binding.py": "aed748d61948d58033d5ddef5d0f48d2f9fce22dce7980c59af951e4dfb78a7e",
+    "rallymate_scoring/runtime_profile_binding.py": "9bf9fc13810066a3d84f1764697f1f7ba28b2634d2b34266618fb61c76dc4b6b",
+    "rallymate_scoring/score_comparison.py": "9f33691bf42f0f1b28eb8b781d502ac92d4b080810e207762d8094621cff6874",
+    "rallymate_scoring/scoring.py": "04a32c1f2cadba46e2a142ba152470adbcfaa5269d9bffaf63869bedc81fd045",
+    "rallymate_scoring/scoring_context.py": "863a0e747f064a29703c09815acaf2482d3992ecf0ffd465d4747de50ce20ee6",
+    "rallymate_scoring/scoring_loop_report.py": "071d72312b81eaaafb02d8c61fc8c9d6f121b34e8a87495a3e75b1281fd6e035",
+    "rallymate_scoring/scoring_rules.py": "1881bafdda8d8a646d80ccdbe4fcebd8a6e5700a2cf6ce51361e2fe1449a007d",
+    "rallymate_scoring/scoring_truth_authorized_intake.py": "3e76130ffa249a4d2424b39d341d496f0ff1308ff093ff560fa3e1e6482151e7",
+    "rallymate_scoring/scoring_truth_calibration_authorization.py": "5ceb35e86f97066fd908974129c02c038c47175cc26b23de07e7acb7b426488a",
+    "rallymate_scoring/source_aligned_features.py": "6635de3fab5f35607d881683e5a304ddc4c0b7f4ba993a6520c87ae9502b9396",
+    "rallymate_scoring/source_assessment.py": "3e47e38d803e041679a45088f61d74ca31ac2ba56b499cfe925b8665e6848ee4",
+    "rallymate_scoring/step_motion_evidence.py": "ed04e9aa8d128b19263137cb3b92b158cecd076d6fb4a43426a667470a3f3da5",
+    "rallymate_scoring/stroke_analysis.py": "3e18dcfed5a70fd827bb644ae03e8df8f6d81ce58356bb9ac79b7bf352e83c8c",
+    "rallymate_scoring/stroke_candidates.py": "0c335824d9f238b27b0f7f1ffcdf742baa733f38f6869e6ea4601aafac20385c",
+    "rallymate_scoring/stroke_review_fallback.py": "89499c48c6f4adbd8449289e2ebf7568672acb3c7a410e01ea967f07056ecf87",
+    "rallymate_scoring/technique_assessment.py": "ac1f07a9679bec5423df685d77139972cd780d66a5630f433465e7d020a31f65",
+    "rallymate_scoring/technique_registry.py": "b037514635e6bf1adbc3687e0547bd39be5458970d4946cd25fef8d41fa6685e",
+    "rallymate_scoring/temporal_card_evidence.py": "a376d7cb01f4c971512e3e9e9f58ef150434d22801567f3e9cb49d872611c29c",
+    "rallymate_scoring/temporal_recognition.py": "d0681a07dcb56a4da589cedb84ad45609e8c18c3b6884cdaff15ad4a8fdb34db",
+    "rallymate_scoring/training_dimensions.py": "20b2056d2d4d1b99df92b3a088c46306c225c363f7c14829c62d0491e92fb6eb",
+    "rallymate_scoring/vector_kinematics.py": "8a177313cf722ff0046945ee2a4840a57ff29da0d5d70304ce5d8a32f9d6098c",
+    "rallymate_service/__init__.py": "f4f28707219cf88c79f630a521724474ef307e0a5ad61ae47439f91dcb26927c",
+    "rallymate_service/advice_context.py": "2510620a2a015f40222b69a0239e1c6f565be38451d045620b3d4319013360b9",
+    "rallymate_service/analysis_report.py": "c4095e143ccfebaebdd5e1b92706e1e164a9a90c24db4c1264bf3c3f6c7cfe8d",
+    "rallymate_service/api.py": "f8c4a1e5f770500f1da81604f1febf0f597cab5bf11513d424164e141f3acad2",
+    "rallymate_service/artifact_jsonl.py": "0bc98faa6e9b4026de60bf893ddddb9c8fc7f27fcaad89744d090d40500c296e",
+    "rallymate_service/card_execution.py": "4fb5e5dddd83134abb1fdaaf542c0a3e52e5aca36514ea75b7345a802c01dedb",
+    "rallymate_service/cli.py": "119232aeb8a3cbd8aa33a7fffc26fc71a48242367832005985715c18043d0b2d",
+    "rallymate_service/config.py": "d4c1cf52266b5ea4f7483533bc86db2ecfeeb4b87377fcae49a001cf711df674",
+    "rallymate_service/database.py": "cee21b199dbd046af1edc6fb57a3593bbc7e919ecad0909a3076a7bd46c6999b",
+    "rallymate_service/deployment_identity.py": "fc7a7666850e3f2267f0b77a498f97a0923848384fe889ace912980996c9804c",
+    "rallymate_service/directional_micro_adjustment.py": "74ec5ec990d44788f6cfa1ccdc31e5ab1c057165c93012905f8e539673cc962b",
+    "rallymate_service/foot_crossing_candidates.py": "ab41c2965031654f8a0c0932bcc87760e11c4f3e55747807cd7278139b37a08c",
+    "rallymate_service/footwork_cycle_artifacts.py": "6dba521d1e717ffa048f19b8bed9f5812b386e46edd2ea01a7bf3af46bc6f35a",
+    "rallymate_service/footwork_cycle_execution.py": "1be4aa5d303225c7b3fb6991b1c239385c2f2cfe850295ce75a167af4778b1a5",
+    "rallymate_service/footwork_review.py": "63419d8aa30fbcde84132e862ccaf469d38daba65b9d29d95fdd70a2f7586764",
+    "rallymate_service/fs_card_windows.py": "2af4da667362f2d9b8df03874fbb35c43fc50cb1410b041c9bf8e468a3f87728",
+    "rallymate_service/gs_card_execution.py": "a8a298a0d5e5e11b33aa62e741c8e77dd6847ee4f27faae731a33e59948951fe",
+    "rallymate_service/local_secrets.py": "f6abb531a254988843088e8a23de8ee9d6c04fe3559ab8316534f925b82d6bed",
+    "rallymate_service/mesh_preview.py": "d365308d261f446fc86a66d8eb8e05f9cbe2ef162b6d3e18bab674071f672eed",
+    "rallymate_service/mesh_render_worker.py": "a268e0a25fb295e12b1e8dc8d11b188087cc461004d68c027e4fc3c13b142909",
+    "rallymate_service/micro_adjustment_cycles.py": "2c259b3c58c29f0e72e0cf2609cadf3597100e4ba62691f23f73043c577c5845",
+    "rallymate_service/motion_replay_api.py": "28d20b9509f2f672380ba117467da97293321ee49b187ca075694c0e02ffda55",
+    "rallymate_service/motion_replay_provider.py": "f45cdad73f7befa253b9c75faba44f5db855995ddf7689e7b3a5feecdfd912a6",
+    "rallymate_service/motion_replay_recovery.py": "508d20cd5480cdcf91f4e1ceb73f9d6995e0e04e00cf0544a26da3e395ff321f",
+    "rallymate_service/motion_replay_runtime.py": "6b454067fd3138a5695db76697dc5289f37a26be0353e8002d8fdde01bb983f6",
+    "rallymate_service/motion_replay_source.py": "460649315c4ce538ee3f68c511bcd6c507f83099d19b491d7cdd95b72625d412",
+    "rallymate_service/motion_replay_store.py": "3fbc67297a903ba8e6cdf4d5585b90dccf741aed3568fa4a2ed2ddc2b518ce83",
+    "rallymate_service/motion_replay_worker.py": "637c8bdd6cbd6f902aea936c2883d1e42f745beede4e3102299190b2aa1a7476",
+    "rallymate_service/original_video.py": "1d3927e911e0eeef1082c01ac0b76bdb5974051f2ed87b9aa932767b5b90f977",
+    "rallymate_service/original_video_response.py": "4fac3d70ace1b6d0a9bd008d001e408b296b5b9269f572d131c45fdc0d8e95b3",
+    "rallymate_service/pose_request_diagnostics.py": "68549b230776b43a9063730fcd680bb8c44ee6e636add4d46c2e3f31b07d6421",
+    "rallymate_service/preparation_observations.py": "fa49d3cc2467ecc14df8135c83e8c98676e3f840d42cccd7a0995a1f4697c407",
+    "rallymate_service/process_evaluation.py": "e5be0046a91272933e63aca372de215da0003cc9a6797a41b8d695f28814520e",
+    "rallymate_service/relative_score.py": "7c2bac8154564b927f4485c954a534f2b9fdec0ef8ddf8f2d01e527445433d42",
+    "rallymate_service/report_compatibility.py": "b489cd155e0e451e42fccd00ce676195ebf266881c1d272597a358312358bb42",
+    "rallymate_service/report_delivery_cache.py": "86e89429d52c79971f9f5ac4c1b7d9ca82a0b575be6a71bf722af187a7c718f2",
+    "rallymate_service/report_delivery_store.py": "6e881836dcc577b8a77e0d46298e4a0607484c26fc2a4357333bc4c3e4face2d",
+    "rallymate_service/report_evidence_transport.py": "d5246342e87845e8af314b369a9babe32f526535b814fbe8e564f1fef62eaab7",
+    "rallymate_service/score_explanation.py": "9af45f4049e8672c794e523f4a4b3ebfbefd3b72e31db8f59ab31543dd1b61fd",
+    "rallymate_service/source_assessment.py": "86ceaf878edcae764559997562f446cfd4caee8c6adcade38d5ad434df78d258",
+    "rallymate_service/swing_kinematics.py": "c932aaa5717978a5f7d159a150b828f94d9dbd341dbc5f649e528442b2af3833",
+    "rallymate_service/technical_review.py": "b6920b380981e2a3889b52b3f431a76c255aa3772868f806d222e8366248d210",
+    "rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+    "rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "rallymate_service/tennis_motion_patterns.py": "37ac22120181600e2009533f30305edc90616b21b47d5a1d0f178619a56901f7",
+    "rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "rallymate_service/training_evaluation.py": "ba29ead2936b20dc4f1a7dc11be1987f2156bb3d93607204c1074aaf1d0edfd1",
+    "rallymate_service/uploads.py": "cd03a5ad44604621f9ee8d79334f460ce128d85d19e9e88d63a1a74e7ebbb97d",
+    "rallymate_service/user_demo.py": "5c62ab6b9ee99c43589b1abb7bc2c03597821a9547f2af3049fd947c1c415a5e",
+    "rallymate_service/worker.py": "44ce310878472c572dcc0561aba033aec47ad6be9e9a8ee4153b0331174149be",
+    "rallymate_tracking/__init__.py": "6efbb84651d4a4163d616edb6f1154849e14bdd3640566cd3cdc1d18560e23f7",
+    "rallymate_tracking/initial_subject_buffer.py": "41c5f47fdd95d4f797ef2f30e6ac57d40d892cb90e297b03c8552676e2312a66",
+    "rallymate_tracking/primary_player.py": "88d73274ee550aee091666c28988fc370ab92a1d478311417a9ec4b92cfc6844",
+    "rallymate_tracking/subject_lock.py": "6eaaae3f3a5b4aa189b857786ffb7a0d3aa949fde91e4053409b267313cea43a",
+    "rallymate_training/__init__.py": "6bd914fe4bc57a9511e7ba4a363d45457544c412cf5121978a2f0d1d09ef4a1e",
+    "rallymate_training/cli.py": "5aa5b92d6109f5ed431919804c4b024be77c287b0732825cdeceb9e75b228253",
+    "rallymate_training/config.py": "6cba84e171cb86b1d6d5bf361e5892299666098e80f54777b5c79ebf8f41741e",
+    "rallymate_training/dataset.py": "3ee7b7af74ddccec3cbebb5afda6e3484e5ce1cd22130f5a0483652437c89820",
+    "rallymate_training/engine.py": "d11782bf1a08ce022207f86be728ac1bf332f3a18118e83fb3e838a138633d9e",
+    "rallymate_training/mmpose_dataset.py": "d3a2cab56c3885614a7ddd3889641727272d0790c84580de9e04facaeb866b97",
+    "rallymate_training/mmpose_finetune.py": "d1f2fb5f92f3175093f15b04cb22fe3d19663e4a6df43b3cfff16b1d452caeb7",
+    "rallymate_training/pose_finetune_readiness.py": "986e1fe3f4d287bff5e94d078c3de913eee31ac3fe5879ce114ed0c890b420ae",
+    "rallymate_training/registry.py": "daef491997b9797d76f0e8c49d0930576103ddda0fdfc5e1e6b4bc7e205875ec",
+    "rallymate_vision/__init__.py": "e3c96c21d977c624411234c39015ce4de74fa9b462c42ad2959d207031a81275",
+    "rallymate_vision/__main__.py": "14d05a4bc010485efa3d1c2c11d16b1407e0ae221c436d0a0040bb4b75f45dd9",
+    "rallymate_vision/camera_motion.py": "9ab14e11befb7ee2a61eee23fdd19a7f601af47c7ef8a2b6d45b67f386871be3",
+    "rallymate_vision/cli.py": "ff77cebd22a45b539c026ff6a6e4684da40182912aa52fe643c9404c0e0236dd",
+    "rallymate_vision/contracts.py": "6bdf49ace1a465708dbe7eb20126e65bbbcbd60a3fc7c7efc0dccfe92651958d",
+    "rallymate_vision/court.py": "281868cfa6be682dbb2f88bc94c79e7481718397c92fd85303ca3ddc4a483b1f",
+    "rallymate_vision/court_projection.py": "f056519d50f729d2e66f4b3e4d8607b332e7757b108d81856e9e7284ee6505ca",
+    "rallymate_vision/display_continuity.py": "8fa31ae74ee47a2bb386ec6b9beecb29a62b0e9e7f0e1f5de83a236e103a96c9",
+    "rallymate_vision/display_score.py": "4c7f7f4cfab3038bb5556496afe0675df57bb36f4eacd75027a25e5a09f58769",
+    "rallymate_vision/full_body_renderer.py": "e0f6ae10c2fbc0300ec046e50580a2a07ef0eb7a827fda1a9b6a82aa4935be68",
+    "rallymate_vision/inference.py": "b606b5f1359a6bd9c26f226999e23b8ea21df62c94c6d683375416838eeaa686",
+    "rallymate_vision/manual_court.py": "2e8f93f02f893144f2cfb486147c65e4c384a7de970842c9d823e15e0bdf6c74",
+    "rallymate_vision/mesh_render_task.py": "54b61c5fc41b3b61edd2c29f82222035b20e4c4c8aa4d62ee0003791f56f8dbd",
+    "rallymate_vision/motion_reconstruction_reference.py": "8a6b90258754a7b8f74fa85188daf0dd7749b7f3515752b234ef37f04a2360a6",
+    "rallymate_vision/motion_replay.py": "8ecf343f71053009708b3185923feed6dcd48dc8572e244cd719291ee6795a13",
+    "rallymate_vision/owned_subprocess.py": "ccf70825b86e3dff64090f58c9968b9e8900afdd0c4eae4d0527edbfabf373f1",
+    "rallymate_vision/pipeline.py": "461738e56f5b29da53e62ba724a892cd61e2263dfbb11898cab8b89c37ea8247",
+    "rallymate_vision/pose/__init__.py": "a1fe2f93e2500c69e0b05d875906bf19d75d2c56f72a51c2a288f1a5cd92583b",
+    "rallymate_vision/pose/adapters.py": "01d5c413006103631783b967c72df873500c13465c9a91a84b959690b8fe8566",
+    "rallymate_vision/pose/association.py": "fde034cf2ff875f2315e748421e7f628a6c10711d32c43774a69d11121202ade",
+    "rallymate_vision/pose/base.py": "5f6c45bb95e0d6038be69f9c7699180f99ba5bd30e9acdc163c8b941b843f56e",
+    "rallymate_vision/pose/diagnostics.py": "70854c306eacbc6635a9d9e1f52cd5ae9902362a5802f97e2130e33017d0398b",
+    "rallymate_vision/pose/metadata.py": "b5725ab6466baf65adedf8c39e9386d35d0af5d8620d13f8bb0cbea9867b95f9",
+    "rallymate_vision/pose/presets.py": "2e6db4460a60465d144f17d7b0e9863008f93aa2c31c8ab909e3751889d9b801",
+    "rallymate_vision/pose/registry.py": "6e518e536217d21c241b4ac14f67c4e486cce8659cc5e239e06badbcb1343689",
+    "rallymate_vision/pose/rtmpose_backend.py": "f662f2b582d7a307c2f97f4b1fb98f635f5906167768b347dda0439104f3764c",
+    "rallymate_vision/pose/yolo_backend.py": "aaec19ecd21e2edb23430f9ba3b9b88fe8ef41d05b34b88feb3d01e0d2a18d8a",
+    "rallymate_vision/pose_playback.py": "b01172a95bc13f41944ffad29e7e243e476c3eadc18b4ef16c03732f6bee2e54",
+    "rallymate_vision/progress.py": "b0bd20d394c4edf41d2c7e17ed809464587c68ed73d90c1f771e4bd49541a30f",
+    "rallymate_vision/quality.py": "234cd3382a7666e70cec53f04dffb8e450e0e757a2d8bfaa02535c7a7d71d71d",
+    "rallymate_vision/render.py": "2af0fb8a70015f21496393c487d7c93d61e93ca5cfa5272d3f3fee9e0945aad7",
+    "rallymate_vision/sam3d_adapter.py": "fb8bd31d03f92bc8ec9cd3749978ac0e1625945374cca0b39dd617464804fda6",
+    "rallymate_vision/sam3d_cpu.py": "a08eda16e5bbb3dac880edf68d557f0bc8d5988be1651023bfb9933f44d70853",
+    "rallymate_vision/sam3d_cuda_graph.py": "b8f50a5b88d69c602a998029ed06a3f0ba54606a605a1de870c717e7e548c8d6",
+    "rallymate_vision/sam3d_cuda_wait.py": "16c78fdeb06b677ef715312660adb2587c823c2a951158389a34e81d87245487",
+    "rallymate_vision/sam3d_decoder_graph.py": "f817210a128f3519c30ad3e0998dd2551ed4ba52c328b0a7449eaef8ff95120f",
+    "rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6",
+    "rallymate_vision/sam3d_forward_graph.py": "8cc69fb4ccf65f832635b4f913a3445ad8fd7fb69f7af1608818f697141f1752",
+    "rallymate_vision/sam3d_gpu_preprocess.py": "41bfcbe6f2a6bc2bb07e2b4424b402cde04acc4cca62fef9cf13848eeaa1376d",
+    "rallymate_vision/sam3d_ipc.py": "8c5bf8d8290f924c5855c645040ba8251201aba47df49a8da7d0958455dca4e0",
+    "rallymate_vision/sam3d_mesh.py": "83b14c36f426fcf2b55410e48a0dbdda5b1547a5b0864413a3673142737aa4d7",
+    "rallymate_vision/sam3d_mesh_archive.py": "dcf258126b9a77c32a71f3604e6cba55944ca56049629c7a9e8f8f2cadb1fe1f",
+    "rallymate_vision/sam3d_output_transfer.py": "df46bee7391fbee53b79d467d83958493a56eb461c4e13443cda9828578c55d0",
+    "rallymate_vision/sam3d_prompt_optimization.py": "f8bb5ea407f212509606b64d6577e04845da7266da4ccab22ffa2508c98f47b8",
+    "rallymate_vision/sam3d_roma_optimization.py": "23fd68dcb5bf34ba16e7ef370dae1ec024a22a84abdf443dafaa1988589454e7",
+    "rallymate_vision/sam3d_runner.py": "b83e023121b284665c0e503bcff4c92c7a5f814b2634cc6419b9124996999799",
+    "rallymate_vision/source_replay.py": "7fc512656f6cdc8b4bbe0074f9e1bb776a3edb5e142483e2dd722fe001a7fa9f",
+    "rallymate_vision/timebase.py": "eb14646e2e803a14a08aa9ead964e6e618dad09e4bf0a88d0a7f07801ccb3090",
+    "rallymate_vision/tracking.py": "d909f497130423db9712bb41f9edfd716cd3a623c2f52de1c2e86782ba373f80",
+    "rallymate_vision/trajectory.py": "4c42d60d45488308610e75031ea1eb250f61c739d2cee91edcb04e0236a2c40d",
+    "rallymate_vision/utils.py": "34c9ab904bd03b8f579a4b7295912ff215d9eac5a611f7dd39dcf8a10c3104a5",
+    "rallymate_vision/validation.py": "055b6884771bc90abb196d4e69ce0f32d79216f7abb65de5c479280af768ee00",
+    "rallymate_visualization/__init__.py": "bed7fd0a564a6318e17da77a9bbf5245f15466e07b097e477e730855cf79f4f4",
+    "rallymate_visualization/scoring_observer.py": "6338af41d95c5b2f3f2fbe08d88743b2810ff72aa7339724cf581381b18bd2f2"
+  },
+  "current_source_equals_all_release_end_hashes": true,
+  "scoring_stability": {
+    "unchanged_core_files": {
+      "src/rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+      "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+      "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+      "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab"
+    },
+    "pattern_sha256": "37ac22120181600e2009533f30305edc90616b21b47d5a1d0f178619a56901f7",
+    "only_pattern_difference": "version 1.2.1, explanatory comments, and 1e-7 ms tolerance for the existing one-frame temporal-uncertainty gate",
+    "normalized_pattern_exactly_equals_baseline": true,
+    "score_curves_weights_and_other_thresholds_unchanged": true
+  },
+  "comparisons": [
+    {
+      "before": "baseline-regression",
+      "after": "release-regression",
+      "sample_count": 38,
+      "source_and_four_observation_inputs_equal": true,
+      "before_manifest_sha256": "b0621ad841326bef5e38c7b81b6ce2d4bb2b4d24355cd03e7c9d6e9c50dffc0f",
+      "after_manifest_sha256": "b0621ad841326bef5e38c7b81b6ce2d4bb2b4d24355cd03e7c9d6e9c50dffc0f",
+      "context_hash_changed_samples": [],
+      "same_window_identical_metric_count": 101,
+      "window_changes": [
+        {
+          "sample_id": "development-sharapova",
+          "removed": [
+            {
+              "start_ms": 15849.167,
+              "peak_ms": 16116.1,
+              "end_ms": 16549.867,
+              "active_arm": "left",
+              "person_track_id": 1,
+              "subject_id": "subject-1"
+            }
+          ],
+          "added": [
+            {
+              "start_ms": 16149.467,
+              "peak_ms": 16483.133,
+              "end_ms": 16716.7,
+              "active_arm": "right",
+              "person_track_id": 1,
+              "subject_id": "subject-1"
+            }
+          ]
+        }
+      ],
+      "result_changes": [
+        {
+          "sample_id": "development-ordinary-a",
+          "changes": {
+            "coverage": {
+              "before": {
+                "measured_requirements": 11,
+                "applicable_requirements": 35,
+                "fraction": 0.3142857142857143,
+                "verified_technique_episodes": 1,
+                "generic_episodes": 14,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "baseline_forehand",
+                  "generic"
+                ]
+              },
+              "after": {
+                "measured_requirements": 11,
+                "applicable_requirements": 30,
+                "fraction": 0.36666666666666664,
+                "verified_technique_episodes": 0,
+                "generic_episodes": 15,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "generic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "sample_id": "development-sharapova",
+          "changes": {
+            "candidate_count": {
+              "before": 3,
+              "after": 2
+            },
+            "score": {
+              "before": 86.52,
+              "after": 87.16
+            },
+            "coverage": {
+              "before": {
+                "measured_requirements": 1,
+                "applicable_requirements": 4,
+                "fraction": 0.25,
+                "verified_technique_episodes": 0,
+                "generic_episodes": 2,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "generic"
+                ]
+              },
+              "after": {
+                "measured_requirements": 2,
+                "applicable_requirements": 4,
+                "fraction": 0.5,
+                "verified_technique_episodes": 0,
+                "generic_episodes": 2,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "generic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "sample_id": "repeat-ordinary-a",
+          "changes": {
+            "coverage": {
+              "before": {
+                "measured_requirements": 11,
+                "applicable_requirements": 35,
+                "fraction": 0.3142857142857143,
+                "verified_technique_episodes": 1,
+                "generic_episodes": 14,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "baseline_forehand",
+                  "generic"
+                ]
+              },
+              "after": {
+                "measured_requirements": 11,
+                "applicable_requirements": 30,
+                "fraction": 0.36666666666666664,
+                "verified_technique_episodes": 0,
+                "generic_episodes": 15,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "generic"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "before": "baseline-new-native",
+      "after": "release-new-native",
+      "sample_count": 4,
+      "source_and_four_observation_inputs_equal": true,
+      "before_manifest_sha256": "603388b4730775d167a1b47c299130957b947d133112a03e95432795cb3abd8c",
+      "after_manifest_sha256": "603388b4730775d167a1b47c299130957b947d133112a03e95432795cb3abd8c",
+      "context_hash_changed_samples": [],
+      "same_window_identical_metric_count": 1,
+      "window_changes": [],
+      "result_changes": []
+    },
+    {
+      "before": "baseline-live-context",
+      "after": "release-live-reviewed",
+      "sample_count": 12,
+      "source_and_four_observation_inputs_equal": true,
+      "before_manifest_sha256": "2f0dc6f5c36499ada65c810525d130bf5f3f726c58f8d582349b2a9259da1e34",
+      "after_manifest_sha256": "827e1abe140f69d780ac6b9c311666c611cafb1170ff0a034c1be888dd0f8717",
+      "context_hash_changed_samples": [
+        "0a6ba301-acd4-46a9-829f-7afc832a552c",
+        "1012bc1e-1e18-465f-bd0b-c1d8d3fdfaa0",
+        "27ad0489-a097-4abb-b2f0-2f3b0f7c3cb3",
+        "5b0b659e-7049-4749-8312-97e72e73a287",
+        "5ff1c511-add9-461f-865b-04bd17c69d2f",
+        "60f60a85-9772-46f9-852f-700404f456d4",
+        "87d280dc-3e83-47c4-83e1-e2ae899ffef1",
+        "d12255e0-22f1-475e-99ba-b0595b8184b6",
+        "d60c8b04-c2f8-47f4-9778-28cdac0110d1"
+      ],
+      "same_window_identical_metric_count": 32,
+      "window_changes": [
+        {
+          "sample_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+          "removed": [],
+          "added": [
+            {
+              "start_ms": 16149.467,
+              "peak_ms": 16483.133,
+              "end_ms": 16716.7,
+              "active_arm": "right",
+              "person_track_id": 1,
+              "subject_id": "subject-1"
+            }
+          ]
+        }
+      ],
+      "result_changes": [
+        {
+          "sample_id": "5b0b659e-7049-4749-8312-97e72e73a287",
+          "changes": {
+            "candidate_count": {
+              "before": 3,
+              "after": 2
+            },
+            "scored_count": {
+              "before": 1,
+              "after": 2
+            },
+            "score": {
+              "before": 98.49,
+              "after": 89.9
+            },
+            "coverage": {
+              "before": {
+                "measured_requirements": 3,
+                "applicable_requirements": 8,
+                "fraction": 0.375,
+                "verified_technique_episodes": 1,
+                "generic_episodes": 0,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "baseline_two_hand_backhand"
+                ]
+              },
+              "after": {
+                "measured_requirements": 5,
+                "applicable_requirements": 15,
+                "fraction": 0.3333333333333333,
+                "verified_technique_episodes": 2,
+                "generic_episodes": 0,
+                "full_source_technique_covered": false,
+                "profiles": [
+                  "baseline_forehand",
+                  "baseline_two_hand_backhand"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "fresh_service": {
+    "job_id": "0db25307-7796-4159-a1e2-0cde9f54aa8c",
+    "input_and_artifact_sha256": {
+      "summary.json": "835fe4e9f76cba99a3e3895e27e75315ef8b266e8991b93347f617068170d4ca",
+      "frames.jsonl": "2b0b00f499f62f854a5ea6cb7f7d24a5ab15f61cd85709066f0d2967ade7c88e",
+      "primary-player.jsonl": "d15de77eb0a4919ddad6945503b5b7d89e6746237a42364ee4a1bb1465ff346c",
+      "sam3d_frames.jsonl": "330f742c90269e465d5f07c1b8f379525ce4788f10cfff6c00cf4fe2828cee4e",
+      "source_video": "2cdb8821da6d75fab11b4c04c46eea1b93b4d0ed078d5dca498443d56209b9d6"
+    },
+    "summary_status": "completed",
+    "processing": {
+      "processed_frames": 601,
+      "source_timing": {
+        "method": "decoder_presentation_timestamps",
+        "decoder_timestamp_frames": 601,
+        "fallback_timestamp_frames": 0,
+        "source_origin_ms": 0.0,
+        "timing_verified": true,
+        "fallback_semantics": "average_fps_approximation_not_verified_motion_timing"
+      },
+      "frame_stride": 1,
+      "elapsed_seconds": 101.14
+    },
+    "native_status_counts": {
+      "ok": 599,
+      "skipped": 2
+    },
+    "skipped": [
+      {
+        "frame_index": 192,
+        "status": "skipped",
+        "reason": "no_detected_subject"
+      },
+      {
+        "frame_index": 539,
+        "status": "skipped",
+        "reason": "no_detected_subject"
+      }
+    ],
+    "frame_native_timeline_pts_binding_verified_count": 601,
+    "good_native_track_and_epochs_verified_count": 599,
+    "source_sha_equals_original_sharapova": true,
+    "native_sha_differs_from_replay_input": true,
+    "manual_context_or_selection_sidecar_present": false,
+    "saved_api_equals_demo_result": true,
+    "saved_api_equals_read_only_cpu_recomputation": true,
+    "candidate_count": 2,
+    "score": 87.16,
+    "episodes": [
+      {
+        "start_ms": 13646.967,
+        "peak_ms": 13980.633,
+        "end_ms": 14314.3,
+        "active_arm": "left",
+        "person_track_id": 1,
+        "subject_id": "subject-1",
+        "hand_roles": {
+          "version": "tennis-hand-roles-v1",
+          "motion_wrist": "left",
+          "measurement_hand": "left",
+          "primary_racket_hand": null,
+          "primary_hand_provenance": {
+            "method": "unverified"
+          },
+          "relationship": "motion_only",
+          "paired_wrist_evidence": null
+        }
+      },
+      {
+        "start_ms": 16149.467,
+        "peak_ms": 16483.133,
+        "end_ms": 16716.7,
+        "active_arm": "right",
+        "person_track_id": 1,
+        "subject_id": "subject-1",
+        "hand_roles": {
+          "version": "tennis-hand-roles-v1",
+          "motion_wrist": "right",
+          "measurement_hand": "right",
+          "primary_racket_hand": null,
+          "primary_hand_provenance": {
+            "method": "unverified"
+          },
+          "relationship": "motion_only",
+          "paired_wrist_evidence": null
+        }
+      }
+    ],
+    "fresh_and_old_native_replay_windows_equal": true,
+    "fresh_and_old_native_replay_metric_maps_equal": false,
+    "fresh_native_metric_differences": [
+      {
+        "peak_ms": 13980.633,
+        "metric": "coil",
+        "previous_native": {
+          "value": 39.64621,
+          "score": 100.0
+        },
+        "fresh_native": {
+          "value": 39.6462,
+          "score": 100.0
+        }
+      }
+    ],
+    "formal_pipeline_validation": {
+      "status": "passed",
+      "validated_frames": 601,
+      "validated_detections": 13067,
+      "validated_poses": 599,
+      "scoring_artifacts_status": "passed",
+      "validated_primary_player_records": 601,
+      "validated_events": 24,
+      "validated_features": 480,
+      "validated_indicator_records": 104,
+      "validated_scores": 104,
+      "calculation_readiness_status": "all_registry_indicators_have_measured_candidate",
+      "measurement_portfolio_status": "all_registry_indicators_measured",
+      "scoring_cycle_measurement_status": "complete_cycle_available"
+    },
+    "pts_table_sha256": "b73e87fa47b3f4e34842cf4d6da9883edaa0a87270f5e0cdb6c285a7d70ea58f",
+    "source_reference": {
+      "path": "sharapova-source-only-action-reference.json",
+      "sha256": "90c43c1428d777efe9b7c120bcea5bce8a0dd2a8e90ddd835bddb00290dd04cc",
+      "reviewed_frame_png_hashes_verified": 11,
+      "pts_bindings_verified": true,
+      "visible_phase_ranges_ms": {
+        "preparation": [
+          16049.366666666667,
+          16316.3
+        ],
+        "forward_sweep": [
+          16449.766666666666,
+          16516.5
+        ],
+        "follow_through": [
+          16616.6,
+          16816.8
+        ]
+      },
+      "fresh_target_start_peak_end_each_inside_corresponding_visible_phase": true,
+      "automatic_motion_wrist_agrees_with_source_reviewed_arm": true,
+      "source_review_is_not_fed_to_fresh_scoring": true
+    },
+    "frontend_parser_and_roundtrip": {
+      "version": "round6-real-report-parser-validation-v1",
+      "parser_sha256": "05f23631820141f996d80f230fa82c2bf3eb503da0551850fa33ea257ece94d0",
+      "report_count": 1,
+      "results": [
+        {
+          "group": "live-final-service",
+          "file": "0db25307-7796-4159-a1e2-0cde9f54aa8c-assessment.json",
+          "sha256": "3bf6d2f0758566ee1633ffa0ec3d9c211abec71c1cfb8a03dadfd5b3543401d4",
+          "parsed": true,
+          "roundtrip": true,
+          "episodes": 2,
+          "status": "scored"
+        }
+      ]
+    },
+    "api_artifact_sha256": "3bf6d2f0758566ee1633ffa0ec3d9c211abec71c1cfb8a03dadfd5b3543401d4",
+    "frontend_validation_sha256": "7a9e58c6e577d1119ffdf269bc6f65d05a876fe84643d876f01c0eeca252b6cf"
+  },
+  "qualifications": [
+    "Only Sharapova changes scored windows and overall scores in the 38-record frozen-native replay. Ordinary-A and its same-source repeat also lose an unsupported automatic FH classification: score/count unchanged, coverage changes from 11/35 to 11/30.",
+    "Twelve reviewed live reports retain identical source/frame/native/timeline inputs; nine context hashes change for explicit rebinding/review. Only Sharapova gains a scored window (1 to 2). This is a reviewed-context comparison, not an unchanged-context automatic test.",
+    "Fresh upload uses new native inference without manual type/hand labels. It recovers right motion wrist at 16483.133 ms; primary grip remains unverified. A motion-wrist result is not anatomical handedness or contact ground truth.",
+    "Wuhan automatic generic 93.28 is an independently reviewed false complete window. Reviewed output excludes it and has zero scored actions; this is evidence-based exclusion, not automatic detector recovery.",
+    "Saved API response and current artifact recomputation were verified. This receipt makes no additional external HTTP request and does not assert new browser rendering or public-tunnel availability."
+  ],
+  "review_script_sha256": "a369ba53d96e69ff5ae834a5550c20a8e0f67e8da705075bf16acf9fd1bc3c29"
+}

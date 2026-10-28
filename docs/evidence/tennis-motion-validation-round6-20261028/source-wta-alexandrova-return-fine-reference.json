@@ -1,0 +1,131 @@
+{
+  "version": "source-only-fine-action-reference-v1",
+  "frozen_at_utc": "2026-10-28T07:50:29.803080+00:00",
+  "provenance_timing": "Coarse source/window registration preceded GPU. Fine source-frame review occurred concurrently with capture; reviewer has not read GPU output, native poses or scores for these sources.",
+  "source_id": "wta-alexandrova-return",
+  "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-alexandrova-return.mp4",
+  "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+  "coarse_reference_sha256": "a465a174f391324703016e5b04ff4bd4133a1c6a31e72559d1be8e6b53eb6ca9",
+  "inference_interval_ms": [
+    23000,
+    26600
+  ],
+  "reviewed_subject": {
+    "description_zh": "近端蓝白服装白帽运动员；远端深蓝/紫服装服务器",
+    "initial_bbox_approx_px": [
+      314,
+      489,
+      417,
+      612
+    ],
+    "racket_hand": "unresolved_pending_handle_detail",
+    "automatic_subject_selection": null
+  },
+  "manual_window": {
+    "reference_id": "wta-alexandrova-return-return-1-fine",
+    "technique": "return_two_hand_backhand",
+    "method": "agent_visual_review",
+    "reviewer": "samples",
+    "start_ms": 24440,
+    "preparation_end_ms": 24600,
+    "anchor_ms": 24860,
+    "end_ms": 25080,
+    "anchor_uncertainty_ms": 40,
+    "phase_evidence_ms": {
+      "preparation": 24600,
+      "forward_swing": 24840,
+      "follow_through": 24920
+    },
+    "racket_hand": "unknown",
+    "racket_hand_note_zh": "双手持续共同握拍的反拍明确，但广播运动模糊不能可靠分清柄底/柄上主手，保留unknown，不按名字或模型补右手。"
+  },
+  "return_evidence": {
+    "version": "manual-return-context-v1",
+    "source_video_sha256": "04be4d1f22bf604133900a86f75772666c7b067c62a39bd63a3a1339a5d93b7f",
+    "method": "agent_visual_review",
+    "opponent_serve_frames": [
+      {
+        "source_frame_index": 600,
+        "timestamp_ms": 24000,
+        "stage": "preparation",
+        "server_bbox_px": [
+          671,
+          111,
+          716,
+          196
+        ],
+        "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000600.png",
+        "source_frame_sha256": "3db7d666aa0265431422e02d4ef0e3829c4924ba7192ec53cdaca3e65c84a02b"
+      },
+      {
+        "source_frame_index": 605,
+        "timestamp_ms": 24200,
+        "stage": "overhead_swing",
+        "server_bbox_px": [
+          668,
+          100,
+          716,
+          193
+        ],
+        "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000605.png",
+        "source_frame_sha256": "09e0739c2b1a9d371438447220d4b07646e328cba7f881c8fa6b868bb5d3e4da"
+      }
+    ],
+    "incoming_ball_frames": [
+      {
+        "source_frame_index": 609,
+        "timestamp_ms": 24360,
+        "point_px": [
+          551,
+          210
+        ],
+        "point_semantics": "visually reviewed motion-streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000609.png",
+        "source_frame_sha256": "9390dae9944f799e6be7b1e874204425d77000298a5306f3be8e35e7ecb0ea11"
+      },
+      {
+        "source_frame_index": 610,
+        "timestamp_ms": 24400,
+        "point_px": [
+          523,
+          240
+        ],
+        "point_semantics": "visually reviewed motion-streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000610.png",
+        "source_frame_sha256": "61a3c2f6af847c75d3646c3974e15a8136f664f8f23c1175be56c47a03b675d4"
+      },
+      {
+        "source_frame_index": 611,
+        "timestamp_ms": 24440,
+        "point_px": [
+          492,
+          279
+        ],
+        "point_semantics": "visually reviewed motion-streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/alexandrova-return-ball-dense/frame-000611.png",
+        "source_frame_sha256": "da387fed771ff81c9d804d4588a46f25d9b065137eeae7dd092a067988669993"
+      }
+    ],
+    "relationship_zh": "同一无切镜原速段，远端服务器头顶发出后球向近场移动，随后近端目标用双手反拍接回；球点是源画面人工标注，非自动球跟踪。",
+    "receiver_subject_id": null,
+    "receiver_source_track_id": null,
+    "binding_status": "source_only_pending_actual_native_identity"
+  },
+  "direction_status": "not_independently_annotated",
+  "negative_intervals": [
+    {
+      "start_ms": 25200,
+      "end_ms": 26600,
+      "label": "post_return_recovery_no_new_receiver_stroke"
+    }
+  ],
+  "frame_evidence_sha256": "59ae3e73b65bbb73f03ef9fc947f276237c6a0eae97b9694805e5267cc2d9e84",
+  "limitations": [
+    "25 fps; contact bracket is source-frame uncertainty, not measured exact impact.",
+    "Primary grip hand unknown; type is manually reviewed, not automatic recognition.",
+    "Source-only ball annotations do not establish automatic chain success."
+  ]
+}

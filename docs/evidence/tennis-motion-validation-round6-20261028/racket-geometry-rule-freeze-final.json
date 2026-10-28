@@ -1,0 +1,75 @@
+{
+  "version": "racket-box-limb-association-v1",
+  "status": "source_frozen_for_full_regression",
+  "baseline_commit": "0a9787141cb69f308d061b54030fdac89d44e145",
+  "development_source": "Sharapova examined before rules; not independent accuracy evidence",
+  "rules": [
+    "Ordinary nearest-box geometry and existing candidate support/650ms horizons remain intact. No forearm rule globally switches or removes ordinary motion proposals.",
+    "Boxes with >=3 mixed eye+ear points inside, or both ears inside with all five head points available, and both wrists outside retain weak motion-proximity support but cannot independently confirm primary grip. These are semantic ambiguities, not confirmed false detections.",
+    "Alternative wrist requires earlier opposite-wrist head ambiguity within 650ms before its own geometric peak, two distinct later source frames with unique elbow-to-wrist forward ray/box support inside its original valid sweep window, and continuous identity/camera/source binding. No modified threshold, score, review label, name or model speed comparison chooses the wrist.",
+    "A separate alternative proposal must pass unchanged preparation/acceleration/follow-through rules with its measured peak inside that geometry window before NMS can favor it. Incomplete alternatives cannot shorten the original proposal window.",
+    "NMS legacy proximity ordering is separate from reported independent grip evidence; ordinary arm choice does not silently flip when uncertainty downgrades hand confidence.",
+    "Candidate-window object counts and reported-phase object counts/provenance are separate. No later-frame reacquisition support route was retained."
+  ],
+  "versions": {
+    "candidates": "pose-racket-stroke-candidates-v2.5.0",
+    "analysis": "stroke-motion-analysis-v2.9.0",
+    "temporal_unchanged": "2.4.0"
+  },
+  "code_sha256": {
+    "src/rallymate_scoring/stroke_candidates.py": "0c335824d9f238b27b0f7f1ffcdf742baa733f38f6869e6ea4601aafac20385c",
+    "src/rallymate_scoring/racket_geometry.py": "aa04041774b1b7b4513b4caea2d219d911704983990bbdd7fbcb2429ed0f8885",
+    "src/rallymate_scoring/stroke_analysis.py": "3e18dcfed5a70fd827bb644ae03e8df8f6d81ce58356bb9ac79b7bf352e83c8c",
+    "tests/test_racket_geometry.py": "639ea669decd9e8d511a1843773a98f29aa0ff1fa497717f1cf9edd90b494787"
+  },
+  "tests": {
+    "command": [
+      "runtime/rtmpose/.venv/Scripts/python.exe",
+      "-m",
+      "unittest",
+      "test_racket_geometry",
+      "test_shared_racket_preparation",
+      "test_stroke_candidates",
+      "test_stroke_analysis",
+      "test_temporal_recognition",
+      "test_stroke_sequence_segmentation",
+      "test_camera_compensated_strokes",
+      "test_stroke_gap_isolation",
+      "test_temporal_duration",
+      "test_paired_motion",
+      "-q"
+    ],
+    "exit_code": 0,
+    "test_count": 143,
+    "modules": [
+      "test_racket_geometry",
+      "test_shared_racket_preparation",
+      "test_stroke_candidates",
+      "test_stroke_analysis",
+      "test_temporal_recognition",
+      "test_stroke_sequence_segmentation",
+      "test_camera_compensated_strokes",
+      "test_stroke_gap_isolation",
+      "test_temporal_duration",
+      "test_paired_motion"
+    ],
+    "log": "racket-geometry-final-tests.log"
+  },
+  "smallset": {
+    "sources": 10,
+    "changed_sources": [
+      "development-sharapova"
+    ],
+    "comparison": "racket-smallset-v8-comparison.json",
+    "retained_exploratory_failures": [
+      "racket-smallset-current-v1",
+      "racket-smallset-current-v2",
+      "racket-smallset-current-v3",
+      "racket-smallset-current-v4",
+      "racket-smallset-current-v5",
+      "racket-smallset-current-v6",
+      "racket-smallset-current-v7"
+    ]
+  },
+  "remaining_case": "Ordinary B left motion unchanged; no manual right side or native swap inferred."
+}

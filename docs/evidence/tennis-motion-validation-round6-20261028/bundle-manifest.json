@@ -1,0 +1,254 @@
+{
+  "version": "round6-public-evidence-bundle-v1",
+  "status": "verified_changes_with_explicit_unresolved_automatic_cases",
+  "record_count": 42,
+  "unique_content_sha_count": 32,
+  "source_media_redistributed": false,
+  "encoding": "UTF-8 LF; original local evidence hashes and scrubbed publication hashes differ intentionally",
+  "remaining": [
+    "ordinary B anatomical grip identity unresolved",
+    "Wuhan free-arm false positive manually blocked, automatic issue remains",
+    "new return automatic candidate and incoming-ball gaps",
+    "real-time sequence unavailable in new short-projection examples"
+  ],
+  "files": [
+    {
+      "file": "cpu-replay-comparison.json",
+      "sha256": "fdb301b4c6eb4a139b88ace6124aa93eb27cbb8761e93ffede5906f56b635180"
+    },
+    {
+      "file": "fresh-inference-summary.json",
+      "sha256": "9c9f5e1326c0d6be6cf26328e2550cdacd797345cf088c11bfe9096c27fb5955"
+    },
+    {
+      "file": "source-manifest.json",
+      "sha256": "eab0da33711aab4df4eb9d86b17580549c2aa53259ce7dbd2df49a1e2a4c099f",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-manifest.json",
+      "source_evidence_sha256": "d48c3c5cb7a3f7bbf81c687589e97ea420cef2f225b48753560c4140f3eab51e"
+    },
+    {
+      "file": "racket-geometry-rule-freeze-final.json",
+      "sha256": "c90abda1368822fda1a7592aec84aa4b914136dd76042cedc30026beb584de96",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/racket-geometry-rule-freeze-final.json",
+      "source_evidence_sha256": "73f189ff01470776ecd8d52edea5c59c71748cad8dd9622d690ae1db034cae1c"
+    },
+    {
+      "file": "racket-smallset-v8-comparison.json",
+      "sha256": "748635380e654877a2ebfea8ffde9618c7b28445cac1d9912140c4158d039c86",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/racket-smallset-v8-comparison.json",
+      "source_evidence_sha256": "1b2f02bc508ac7d9acd69a4d15a2ecf8f1b0ccf537862878fa9757239baaaf6b"
+    },
+    {
+      "file": "scoring-pattern121-freeze.json",
+      "sha256": "c9709b273fb4f97ef27a711609a19f10c171d7067f7475593681cbafd64f88e1",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/scoring-pattern121-freeze.json",
+      "source_evidence_sha256": "914a60468b1bfe28935cdabe86198401dc32abe48cf57c4cabdd250cff561f49"
+    },
+    {
+      "file": "ordinary-b-source-native-review.json",
+      "sha256": "db3b3f1d242c1df091b4ef6e9f041dabe883174cea0039d8e10e66a1b20564ba",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/ordinary-b-source-native-review.json",
+      "source_evidence_sha256": "e0c6e9ebbefec494a4695b06cb787efe5488d6d6cbde6a171c9fbd6b5cfca205"
+    },
+    {
+      "file": "timing-observability-review.json",
+      "sha256": "4487f66f1283851dac65da9d618ad3c145edc2954509c8e0fbf40f384516a8d7",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/timing-observability-review.json",
+      "source_evidence_sha256": "d63f08e4edade60353c54d72d14b194849f66f5754ad4146b511ae0e8c71f33f"
+    },
+    {
+      "file": "ball-perception-diagnostic-summary.json",
+      "sha256": "09dc11dbaff84af1bfdfc405af76a42bb5241b4390b5f9a6f41a861d9121f846",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/ball-perception-diagnostic-summary.json",
+      "source_evidence_sha256": "9504b2083b0ed9b9418e06e9b2a1a203a601557187df80feae6adab1c15da642"
+    },
+    {
+      "file": "sharapova-source-only-action-reference.json",
+      "sha256": "049260e9b9d911581e8e04a058c2783042d88396a00a741976db2a2d0dfdb543",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sharapova-source-only-action-reference.json",
+      "source_evidence_sha256": "90c43c1428d777efe9b7c120bcea5bce8a0dd2a8e90ddd835bddb00290dd04cc"
+    },
+    {
+      "file": "wuhan-inference-plan.json",
+      "sha256": "555c9c3173edcb5f070d843a2c5d72cb1dc9c65ec2ef89750f4d7b26e26574a8",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/wuhan-inference-plan.json",
+      "source_evidence_sha256": "251b1cb150ac260249ca84bc227a1bc0852dd889a774a56dd9ea27729590cc4f"
+    },
+    {
+      "file": "return-inference-plans.json",
+      "sha256": "4425a1c26a6ba69a7518378da5f0a7f58035e1081d8239babb45b6318254ea67",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/return-inference-plans.json",
+      "source_evidence_sha256": "07ff121124e7e69ca9c878d5436aefc008e02d6752c5d5c2f852d60dcc307673"
+    },
+    {
+      "file": "wuhan-manual-validation-summary.json",
+      "sha256": "75aa1a5186c29aad3ab364affef59aa0b207502a60b2ba51e939f1445437e5d7",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/wuhan-manual-validation-summary.json",
+      "source_evidence_sha256": "beade6a7e50c02b70bd25fb461912c667f9ec66f36fa78ec2bc38d17639d55ef"
+    },
+    {
+      "file": "wuhan-free-arm-false-positive-source-audit.json",
+      "sha256": "2f90115c68e4d382d9d8b47e9a484844807602a892085ddfd3cf5d73dc6a1100",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/wuhan-free-arm-false-positive-source-audit.json",
+      "source_evidence_sha256": "219c4e1a7eecc956ece70611fd8914286224905b00f45fdf67ab13f5509189a1"
+    },
+    {
+      "file": "new-return-baseline-gate-audit.json",
+      "sha256": "553b870e757d8cc8bcff24a6063e04bad71207e3dfd342087a678855f7f59290",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/new-return-baseline-gate-audit.json",
+      "source_evidence_sha256": "2c44603f830335015fb668ee9eb2ea617de5183417887983b8b3fbe1d5542fd0"
+    },
+    {
+      "file": "new-return-manual-validation-summary.json",
+      "sha256": "bc0d7732e7122dec3bd45366d038555134f831d8604df6cfa959cec9614ba7e0",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/new-return-manual-validation-summary.json",
+      "source_evidence_sha256": "827cec89c263a757da71feb42de973171f8706b58f390925fc3ea5850433e3ab"
+    },
+    {
+      "file": "newcombe-spatial-slice-result-v1.2.1.json",
+      "sha256": "80f8f55e2655bb2ecc410739d442984b1f9a0ba6075663db3c580ec05a2feba1",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/newcombe-spatial-slice-result-v1.2.1.json",
+      "source_evidence_sha256": "a35e4a19fa592b5e87fd1fc22da50a15c498a5a1b6a6cbbbb0b5a89733e2fc3a"
+    },
+    {
+      "file": "newcombe-spatial-path-observations.json",
+      "sha256": "844b2e5ba0fbd203608f26b0ec9695d008ace64394364d82134eb88662f824d1",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/newcombe-spatial-path-observations.json",
+      "source_evidence_sha256": "2dbe39d743dd7e4129f265a6d0e0a0a0a2304ba9008c070c6be3b2cee018f510"
+    },
+    {
+      "file": "release-frontend-validation.json",
+      "sha256": "8736a99f40f6e9d92c5ea5cef45d1a878209591ec5f599185f16fd264225eef7",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/release-frontend-validation.json",
+      "source_evidence_sha256": "8736a99f40f6e9d92c5ea5cef45d1a878209591ec5f599185f16fd264225eef7"
+    },
+    {
+      "file": "live-review-binding-applied.json",
+      "sha256": "78e1e64acecca75b4ce0b93fc6d70882b536550f41b220227941afced8dc4c75",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/live-review-binding-applied.json",
+      "source_evidence_sha256": "ba06812a501ebc26c9a8ad74f07dba87c44692b0c6fddf9401121db3edc42365"
+    },
+    {
+      "file": "source-preinference-selection-plan.json",
+      "sha256": "16a43e01831f452c5be37897115a6c6453deb051b00dd093cc8d15957384b8d6",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/preinference-selection-plan.json",
+      "source_evidence_sha256": "16a43e01831f452c5be37897115a6c6453deb051b00dd093cc8d15957384b8d6"
+    },
+    {
+      "file": "source-wuhan-slice-preinference-reference.json",
+      "sha256": "6d7378245ba7a4d7eaa258b5d852cfe3b8abe685c14267abc18e5320c28a7fd2",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wuhan-slice-preinference-reference.json",
+      "source_evidence_sha256": "5bf6fe630d8ae2c7ea702d9d202d512860689649ceb976049e52debaa273128a"
+    },
+    {
+      "file": "source-wta-ostapenko-four-returns-preinference-reference.json",
+      "sha256": "e6990d8b7da76d4fa4936a9b0159c4c0dccf92335a9f1e133c82a5b4b01bdf62",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-ostapenko-four-returns-preinference-reference.json",
+      "source_evidence_sha256": "95ef7a1bf64001cd8793538bdb33ea75b01d8d9b71e934a7801912487b2fac19"
+    },
+    {
+      "file": "source-wta-alexandrova-return-preinference-reference.json",
+      "sha256": "21fee334dc544ecfd06ac543e708c345abb34ba0c99c78d7cb6f9117ac861cc1",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-alexandrova-return-preinference-reference.json",
+      "source_evidence_sha256": "a465a174f391324703016e5b04ff4bd4133a1c6a31e72559d1be8e6b53eb6ca9"
+    },
+    {
+      "file": "source-wta-ostapenko-four-returns-fine-reference.json",
+      "sha256": "125c773dfc650083ccdf8a458d87e4dd8570edbffd81caaf87fef86036fc6a61",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-ostapenko-four-returns-fine-reference.json",
+      "source_evidence_sha256": "4c230d3c65629695111de3d965f4721572ca4ac8632fa380db6a93b7234580a4"
+    },
+    {
+      "file": "source-wta-alexandrova-return-fine-reference.json",
+      "sha256": "2aa8eb404c19f183d581fac895a5a7c99d768e1ad98b48cc977aa1ff2e867f42",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-alexandrova-return-fine-reference.json",
+      "source_evidence_sha256": "74e027c8fd73848da4d034adc5c10e6c10739d3422d0c6f3ad1acbce1e160460"
+    },
+    {
+      "file": "source-wta-ostapenko-four-returns-fine-reference-v2.json",
+      "sha256": "cdcd86d0799ca2d437e6baa87f01cf8348dba82b8652519b2211cc63d4550697",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-ostapenko-four-returns-fine-reference-v2.json",
+      "source_evidence_sha256": "a2e124fe9523a66e35fc136fbc194eabee71c9596dd92d937557cb0e24d90667"
+    },
+    {
+      "file": "source-wta-alexandrova-return-fine-reference-v2.json",
+      "sha256": "d80079337aa06b013a8b1ac0f3228e9dc93040bc07d743236d1bec164c4d2945",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wta-alexandrova-return-fine-reference-v2.json",
+      "source_evidence_sha256": "cc80bd60d1b2d256d34faf934cfa8ee461fe07115b25fe2501034254fcacdb82"
+    },
+    {
+      "file": "source-newcombe-space-preinference-reference.json",
+      "sha256": "e083adda73492e9a13a61072ef419f0a70d75797d4eae53a0c97454c0e0341ae",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/newcombe-space-preinference-reference.json",
+      "source_evidence_sha256": "9ff3f6fb781d95e440d172b524d92a5fce226763ed40c5bff05662949a7967b3"
+    },
+    {
+      "file": "source-newcombe-duplicate-frame-review.json",
+      "sha256": "09a76c38cd40362b12919e9d741b38d5536af751a96a70e61609274bce74e356",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/newcombe-duplicate-frame-review.json",
+      "source_evidence_sha256": "7383e0f1554d182b253c128eabc5a0ba88ffea13853de7a08d72f5d8afc37168"
+    },
+    {
+      "file": "source-newcombe-independent-directions.json",
+      "sha256": "5293badd8bb7b5c814e692aeba51b043b49f5ddb2b4ec5dcca10fd41f36e83f1",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/newcombe-independent-directions.json",
+      "source_evidence_sha256": "e945678cd75d2ac5a8bcf3e2c728f01a6b0bf6e88a952262c87de01fbfd115dc"
+    },
+    {
+      "file": "source-independent-racket-geometry-and-publication-review.json",
+      "sha256": "ce0f323e09f655ef0ba4ebc0e4c2bc5d584a5c35ea78c98d2a805b2de78ac463",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/independent-racket-geometry-and-publication-review.json",
+      "source_evidence_sha256": "7af4d0b758ec39b27bac91c814b058cbc980e3d73ad9c4667372a7e7dffb7244"
+    },
+    {
+      "file": "source-wuhan-independent-directions.json",
+      "sha256": "c38b8905e8194c5e3d8726376d33213611381829d5dc9c5310eb6ec02847c7ea",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/source-audit/wuhan-independent-directions/evidence.json",
+      "source_evidence_sha256": "fa0d22ec0c4687bca22e42a98d8bbe0e8c195a2c5c582d5aebed5af7c98e0da7"
+    },
+    {
+      "file": "backend-test-summary.json",
+      "sha256": "828e6813cefad3189817fe0a0855bdf996578ad535244b711dbd996ebc500fc4",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/release-combined-backend-tests-v2.json",
+      "source_evidence_sha256": "a5855bbff5bcb2b27c55a06af925483968a44e73483eb1f6d0688020aa0b82b4"
+    },
+    {
+      "file": "release-new-native-reviewed-parser-validation.json",
+      "sha256": "202fa9c555f637ea37496e256143b08a7c6bffa608dc835cf40b7a7902527711",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/release-new-native-reviewed/frontend-validation.json",
+      "source_evidence_sha256": "202fa9c555f637ea37496e256143b08a7c6bffa608dc835cf40b7a7902527711"
+    },
+    {
+      "file": "live-final-service-parser-validation.json",
+      "sha256": "7a9e58c6e577d1119ffdf269bc6f65d05a876fe84643d876f01c0eeca252b6cf",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/live-final-service/frontend-validation.json",
+      "source_evidence_sha256": "7a9e58c6e577d1119ffdf269bc6f65d05a876fe84643d876f01c0eeca252b6cf"
+    },
+    {
+      "file": "live-reviewed-api-parser-validation.json",
+      "sha256": "896d23a40d05560b162d02abd4443db81775656fc1d08e8b8bde0a4c6259d10c",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/live-reviewed-api/frontend-validation.json",
+      "source_evidence_sha256": "896d23a40d05560b162d02abd4443db81775656fc1d08e8b8bde0a4c6259d10c"
+    },
+    {
+      "file": "wuhan-manual-invalid-guard.json",
+      "sha256": "06593097c48187a0bf89de5b1da131b8de73740919e2931080fb5c0f890388de"
+    },
+    {
+      "file": "intermediate-failures.json",
+      "sha256": "c1a7ea6b2f5a643e80a303376cbd3c3510ca136029665d53c0171db35c61a138"
+    },
+    {
+      "file": "final-scoring-stability-review.json",
+      "sha256": "105e3a16bdf705e9862f49cd42f4a51d77bda216326432782f9badbdb454d999",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/final-scoring-stability-review.json",
+      "source_evidence_sha256": "6208d702beb3fa482ce526718302ae0fb54b8d98257ba01a56d0b2662cc659e1"
+    },
+    {
+      "file": "live-sharapova-independent-verification.json",
+      "sha256": "588f93f89bcb8dabc99985440baf20bc5e002ec1455ad5c0b1bd40b8f8bf6a08",
+      "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/live-sharapova-independent-verification.json",
+      "source_evidence_sha256": "93f1bd29555ab7ba8af6995f84a1b5c7cb1fbf5596e13a55600596b2bba9b12d"
+    }
+  ]
+}

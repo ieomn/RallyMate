@@ -1,0 +1,146 @@
+{
+  "version": "source-only-fine-action-reference-v1",
+  "frozen_at_utc": "2026-10-28T07:50:29.797278+00:00",
+  "provenance_timing": "Coarse source/window registration preceded GPU. Fine source-frame review occurred concurrently with capture; reviewer has not read GPU output, native poses or scores for these sources.",
+  "source_id": "wta-ostapenko-four-returns",
+  "source_relative_path": ".codex_tmp/tennis-score-round6-20261028/sources/wta-ostapenko-four-returns.mp4",
+  "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+  "coarse_reference_sha256": "95ef7a1bf64001cd8793538bdb33ea75b01d8d9b71e934a7801912487b2fac19",
+  "inference_interval_ms": [
+    0,
+    4000
+  ],
+  "reviewed_subject": {
+    "description_zh": "近端黑衣黑裙白鞋运动员；远端白上衣绿裙服务器",
+    "initial_bbox_approx_px": [
+      850,
+      387,
+      967,
+      535
+    ],
+    "racket_hand": "unresolved_pending_handle_detail",
+    "automatic_subject_selection": null
+  },
+  "manual_window": {
+    "reference_id": "wta-ostapenko-four-returns-return-1-fine",
+    "technique": "return_two_hand_backhand",
+    "method": "agent_visual_review",
+    "reviewer": "samples",
+    "start_ms": 1920,
+    "preparation_end_ms": 2160,
+    "anchor_ms": 2420,
+    "end_ms": 2760,
+    "anchor_uncertainty_ms": 40,
+    "phase_evidence_ms": {
+      "preparation": 2160,
+      "forward_swing": 2400,
+      "follow_through": 2560
+    },
+    "racket_hand": "unknown",
+    "racket_hand_note_zh": "双手持续共同握拍的反拍明确，但广播运动模糊不能可靠分清柄底/柄上主手，保留unknown，不按名字或模型补右手。"
+  },
+  "return_evidence": {
+    "version": "manual-return-context-v1",
+    "source_video_sha256": "96e80fcfbe444edc0ec0597b0fc613076ecfec8d0038074b3785f1e839fb852d",
+    "method": "agent_visual_review",
+    "opponent_serve_frames": [
+      {
+        "source_frame_index": 36,
+        "timestamp_ms": 1440,
+        "stage": "preparation",
+        "server_bbox_px": [
+          486,
+          78,
+          535,
+          182
+        ],
+        "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000036.png",
+        "source_frame_sha256": "7aa4ad61d837c8941fffb4c33aee7ed09fa30c7c65edee636406a5e2e99c2d3d"
+      },
+      {
+        "source_frame_index": 37,
+        "timestamp_ms": 1480,
+        "stage": "overhead_swing",
+        "server_bbox_px": [
+          492,
+          77,
+          538,
+          182
+        ],
+        "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000037.png",
+        "source_frame_sha256": "c39cde533d910571bcc3c5814f766f9545a2c5a201cdbb382c4d03b7b4495dbf"
+      }
+    ],
+    "incoming_ball_frames": [
+      {
+        "source_frame_index": 49,
+        "timestamp_ms": 1960,
+        "point_px": [
+          605,
+          280
+        ],
+        "point_semantics": "visually reviewed motion-streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000049.png",
+        "source_frame_sha256": "10264e4df30565796d4b1f072b98ab661ff8f2d4d29a49cbebc3b7d5a0afa5de"
+      },
+      {
+        "source_frame_index": 50,
+        "timestamp_ms": 2000,
+        "point_px": [
+          620,
+          311
+        ],
+        "point_semantics": "visually reviewed motion-streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000050.png",
+        "source_frame_sha256": "75f5cbf3f75cddc0c361b758d40f7e7b54002d8bf82545bebb21b96fdcdcf174"
+      },
+      {
+        "source_frame_index": 51,
+        "timestamp_ms": 2040,
+        "point_px": [
+          634,
+          344
+        ],
+        "point_semantics": "visually reviewed motion-streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000051.png",
+        "source_frame_sha256": "f2f1fdb1a27211c2e9af30de14a1e88b78c0c4c859bc7dff7b15d826c047e0c3"
+      },
+      {
+        "source_frame_index": 57,
+        "timestamp_ms": 2280,
+        "point_px": [
+          712,
+          369
+        ],
+        "point_semantics": "visually reviewed ball/streak midpoint",
+        "point_uncertainty_px": 8,
+        "source_frame_path": "source-audit/ostapenko-return-ball-dense/frame-000057.png",
+        "source_frame_sha256": "cb8edc0fa77c125dc4c98313d9be9f06da3e1c05cd383021bc98724177e7d23a"
+      }
+    ],
+    "relationship_zh": "同一无切镜原速段，远端服务器头顶发出后球向近场移动，随后近端目标用双手反拍接回；球点是源画面人工标注，非自动球跟踪。",
+    "receiver_subject_id": null,
+    "receiver_source_track_id": null,
+    "binding_status": "source_only_pending_actual_native_identity"
+  },
+  "direction_status": "not_independently_annotated",
+  "negative_intervals": [
+    {
+      "start_ms": 2880,
+      "end_ms": 4000,
+      "label": "post_return_recovery_no_new_receiver_stroke"
+    }
+  ],
+  "frame_evidence_sha256": "91f8e14ec2243bf4c609d9bba123a0be4be20d16e48ed5afd144bece5e0f0962",
+  "limitations": [
+    "25 fps; contact bracket is source-frame uncertainty, not measured exact impact.",
+    "Primary grip hand unknown; type is manually reviewed, not automatic recognition.",
+    "Source-only ball annotations do not establish automatic chain success."
+  ],
+  "supplemented_at_utc": "2026-10-28T07:52:17.481688+00:00",
+  "parent_fine_reference_sha256": "4c230d3c65629695111de3d965f4721572ca4ac8632fa380db6a93b7234580a4",
+  "supplement_reason": "Added one visibly resolved incoming ball point nearer return from already extracted raw source frames; no window/type/hand change and no pose/score inspected."
+}

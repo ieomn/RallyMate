@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from rallymate_service.tennis_motion_patterns import (
-    analyze_motion_pattern, PATTERN_METRICS, SOURCE_REQUIREMENTS, TECHNIQUES, _observed_peak,
+    analyze_motion_pattern, PATTERN_METRICS, SOURCE_REQUIREMENTS, TECHNIQUES, _observed_peak, _sequence,
 )
 
 
@@ -45,6 +45,29 @@ def calculate(data=None, technique="baseline_forehand", **kwargs):
 
 
 class TennisMotionPatternTests(unittest.TestCase):
+    def test_one_decoder_interval_remains_unresolved_after_float_division(self):
+        for fps in (30, 60):
+            times = np.arange(1., 11.) * 1000 / fps
+            peaks = [times[2], times[3], times[6]]
+            self.assertGreater(peaks[1] - peaks[0], np.median(np.diff(times)))
+            with self.subTest(fps=fps):
+                self.assertIsNone(_sequence(peaks, times))
+                self.assertIsNone(_sequence(peaks[::-1], times))
+
+    def test_vfr_one_median_interval_is_not_a_resolved_order(self):
+        times = np.array([0., 20., 40., 70., 100., 120., 150.])
+        # The numerical tolerance does not turn one-frame uncertainty into
+        # evidence merely because subtraction adds a tiny rounding residual.
+        self.assertIsNone(_sequence([20., 45. + 1e-12, 100.], times))
+
+    def test_resolved_multi_frame_order_and_reverse_score_are_unchanged(self):
+        times = np.arange(1., 11.) * 1000 / 30
+        self.assertEqual(_sequence([times[1], times[3], times[6]], times), (0., 100.))
+        reverse = _sequence([times[6], times[3], times[1]], times)
+        tolerance = float(np.median(np.diff(times)))
+        expected = ((times[6] - times[3] - tolerance) + (times[3] - times[1] - tolerance)) / (times[-1] - times[0])
+        self.assertEqual(reverse, (expected, 100 * (1 - expected)))
+
     def test_unknown_technique_gets_only_generic_continuity(self):
         rows, observations, context = fixture()
         result = analyze_motion_pattern(rows, prep_end=25, peak=50, side="right", technique="baseline_forehand",

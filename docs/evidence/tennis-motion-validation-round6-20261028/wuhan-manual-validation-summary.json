@@ -1,0 +1,284 @@
+{
+  "version": "round6-real-slice-validation-summary-v1",
+  "source_video_sha256": "83039c0e8799fd4f05c09cbe45226d7b4bc1c2d8d9fbdfe3721d68e63f2e88ff",
+  "source_class": "forehand_slice",
+  "class_authority": "agent_visual_review_not_automatic_or_expert_gold",
+  "source_window_authority": "source_only_reference_frozen_before_inference",
+  "automatic_subject_selection": true,
+  "automatic_type_or_segmentation_success_claim": false,
+  "manual_window": {
+    "start_ms": 6440.0,
+    "last_preparation_observation_ms": 6600.0,
+    "peak_ms": 6800.0,
+    "end_ms": 7080.0,
+    "timing_resolution_ms": 40.0
+  },
+  "native_original_pts": [
+    {
+      "frame_index": 161,
+      "pts": 161,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6440
+    },
+    {
+      "frame_index": 162,
+      "pts": 162,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6480
+    },
+    {
+      "frame_index": 163,
+      "pts": 163,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6520
+    },
+    {
+      "frame_index": 164,
+      "pts": 164,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6560
+    },
+    {
+      "frame_index": 165,
+      "pts": 165,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6600
+    },
+    {
+      "frame_index": 166,
+      "pts": 166,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6640
+    },
+    {
+      "frame_index": 167,
+      "pts": 167,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6680
+    },
+    {
+      "frame_index": 168,
+      "pts": 168,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6720
+    },
+    {
+      "frame_index": 169,
+      "pts": 169,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6760
+    },
+    {
+      "frame_index": 170,
+      "pts": 170,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6800
+    },
+    {
+      "frame_index": 171,
+      "pts": 171,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6840
+    },
+    {
+      "frame_index": 172,
+      "pts": 172,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6880
+    },
+    {
+      "frame_index": 173,
+      "pts": 173,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6920
+    },
+    {
+      "frame_index": 174,
+      "pts": 174,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 6960
+    },
+    {
+      "frame_index": 175,
+      "pts": 175,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7000
+    },
+    {
+      "frame_index": 176,
+      "pts": 176,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7040
+    },
+    {
+      "frame_index": 177,
+      "pts": 177,
+      "time_base_num": 1,
+      "time_base_den": 25,
+      "timestamp_ms": 7080
+    }
+  ],
+  "subject_binding": {
+    "subject_id": "subject-1",
+    "source_track_id": 1,
+    "source_selection_epoch": 0,
+    "camera_reference_epoch": 0,
+    "fixed_camera_observations": 17,
+    "direction_reference_frame": 170
+  },
+  "coverage": {
+    "measured_requirements": 1,
+    "applicable_requirements": 5,
+    "fraction": 0.2,
+    "full_source_technique_covered": false
+  },
+  "measured_slice_specific_requirements": 0,
+  "requirements": [
+    {
+      "id": "phase_continuity",
+      "label": "挥出和随挥连续，不强制击后立即减速",
+      "status": "measured_proxy",
+      "metric_ids": [
+        "pattern_phase_continuity"
+      ],
+      "reason": null
+    },
+    {
+      "id": "preparation_coupling",
+      "label": "转体与引拍配合",
+      "status": "not_measured",
+      "metric_ids": [
+        "pattern_preparation_coupling"
+      ],
+      "reason": "preparation_shoulder_axis_missing_or_foreshortened"
+    },
+    {
+      "id": "slice_path",
+      "label": "切削高位向前下延展",
+      "status": "not_measured",
+      "metric_ids": [
+        "pattern_slice_path"
+      ],
+      "reason": "slice_joint_directions_ill_conditioned"
+    },
+    {
+      "id": "physical_chain",
+      "label": "蹬地、真实重心和力的逐级传递",
+      "status": "not_measured",
+      "metric_ids": [],
+      "reason": "force_ground_contact_and_true_center_of_mass_unobserved"
+    },
+    {
+      "id": "racket_and_contact",
+      "label": "球拍轨迹、握拍与真实触球",
+      "status": "not_measured",
+      "metric_ids": [],
+      "reason": "racket_ball_contact_and_grip_unobserved"
+    }
+  ],
+  "measured_metrics": {
+    "pattern_phase_continuity": [
+      1.0,
+      100.0
+    ]
+  },
+  "metric_evidence": {
+    "pattern_phase_continuity": {
+      "phases": {
+        "acceleration": {
+          "fraction": 1.0,
+          "duration_ms": 200.0,
+          "active_ms": 200.0
+        },
+        "follow_through": {
+          "fraction": 1.0,
+          "duration_ms": 280.0,
+          "active_ms": 280.0
+        }
+      },
+      "deceleration_required": false
+    },
+    "pattern_slice_path": {
+      "forward_fraction": 0.002327528560813254,
+      "downward_fraction": 0.9568179269294442,
+      "racket_path_measured": false,
+      "direction_basis_condition_number": 5.6671754595137,
+      "maximum_direction_basis_condition_number": 4.0,
+      "direction_semantics": "fixed_image_plane_projections_not_world_components"
+    }
+  },
+  "preparation_shoulder_axis_diagnostic": {
+    "fixed_threshold_torso_units": 0.3,
+    "values": [
+      {
+        "timestamp_ms": 6440.0,
+        "shoulder_axis_torso_units": 0.38959742721891427
+      },
+      {
+        "timestamp_ms": 6480.0,
+        "shoulder_axis_torso_units": 0.3626832052009714
+      },
+      {
+        "timestamp_ms": 6520.0,
+        "shoulder_axis_torso_units": 0.2791818891215723
+      },
+      {
+        "timestamp_ms": 6560.0,
+        "shoulder_axis_torso_units": 0.22127623744987873
+      },
+      {
+        "timestamp_ms": 6600.0,
+        "shoulder_axis_torso_units": 0.1558369074068338
+      }
+    ],
+    "minimum_torso_units": 0.1558369074068338,
+    "interpretation": "The frozen rule requires a sufficiently visible projected shoulder axis at every preparation observation; missing/shortened projection is not a technique fault."
+  },
+  "timing_interpretation": {
+    "source_step_ms": 40.0,
+    "acceleration_original_observations": 6,
+    "hip_shoulder_wrist_sequence_applicable_to_this_profile": false,
+    "explanation": "The forehand-slice profile measures preparation coupling and phase continuity. No different stroke label was applied merely to obtain a hip/shoulder/wrist order result."
+  },
+  "conclusion_zh": "真实原速切削及原窗身份/PTS已验证，但仅通用阶段连续性1/5可测，切削特有要求0项。前下方向退化、准备肩轴短缩仍缺测；不得当成前下轨迹验证成功或完整技术评分。",
+  "source_and_native_unchanged": true,
+  "scoring_code_changed_during_manual_measurement": false,
+  "input_and_evidence_sha256": {
+    ".codex_tmp/tennis-score-round6-20261028/wuhan-manual-pattern-results-v1.2.1.json": "15a0f9c6d379cce0bd84a6a4885c4d8ee4128df7fdd42e741b4b03e354531ede",
+    ".codex_tmp/tennis-score-round6-20261028/wuhan-manual-windows-bound.json": "33cb380ecb09e6376bfe6ad20f836b40bdd398754308eb00582a855a673b9309",
+    ".codex_tmp/tennis-score-round6-20261028/wuhan-source-inventory.json": "9c9a903083261ee175d54a1fcd70ac45a868718c864d08351a1fefc02603e734",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/wuhan-slice-preinference-reference.json": "5bf6fe630d8ae2c7ea702d9d202d512860689649ceb976049e52debaa273128a",
+    ".codex_tmp/tennis-score-round6-20261028/source-audit/wuhan-independent-directions/evidence.json": "fa0d22ec0c4687bca22e42a98d8bbe0e8c195a2c5c582d5aebed5af7c98e0da7",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-wuhan-v2/wuhan-forehand-slice/validation-summary.json": "6c863a11777e400256965f548eac2dbf3d1c13a6bee3a1e0f431eb0c5a24e487",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-wuhan-v2/wuhan-forehand-slice/sam3d_frames.jsonl": "e215974b5f1a6dc9696077de42cf16559b63d850a5640089136f4ec6ed009f2a",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-wuhan-v2/wuhan-forehand-slice/primary-player.jsonl": "2a855c08c75f2a90c17c74a413ba77550caf6e2d2417dff9c9bbd72312fa0450",
+    ".codex_tmp/tennis-score-round6-20261028/gpu-wuhan-v2/wuhan-forehand-slice/frames.jsonl": "dfca40cca4e6ad86d74cb20e48f40058446aef960e33233f9a2d35fbcc1edcbc"
+  },
+  "code_sha256": {
+    "scripts/validate_tennis_manual_patterns.py": "3d1661649db45172f2ced851e8a04319d4949f792fbb28b6c3acd9e3089741d9",
+    "src/rallymate_service/tennis_assessment.py": "28ab913840e9c6736dd5ad900cd9bc8e38bb911676e00130daf8930bc9f5159a",
+    "src/rallymate_service/tennis_coaching.py": "71488a96b44d1bbc1f80fd48c4b7e3128590a3df9a08bbed86f7f2aaf638e2ab",
+    "src/rallymate_service/tennis_motion_patterns.py": "37ac22120181600e2009533f30305edc90616b21b47d5a1d0f178619a56901f7",
+    "src/rallymate_service/tennis_profiles.py": "84ae9be1c99e08d1de68703ee38b7a0419d4b3817593319abccff686aeb5c6ab",
+    "src/rallymate_service/tennis_source_motion.py": "0eefdf8634c620a1d15be6c9d16ae4b25115a2297961e87fbd5515027298acb9",
+    "src/rallymate_service/tennis_subjects.py": "270c17770f201fe8580f3b81f1664d96aa4caa7fcb4b4fda0f013321f1a72589",
+    "src/rallymate_vision/sam3d_evaluation.py": "101fc6db392c2e4c468c724614f40a4799de79d2ec14ce557382428d7e3656b6",
+    ".codex_tmp/tennis-score-round6-20261028/compact_wuhan_validation.py": "52fe89249edacbf98d201c42c8125480153f3e826200702b88b2d642b52cf06e"
+  }
+}

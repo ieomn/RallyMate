@@ -11,7 +11,7 @@ export type TennisDimension = { id: TennisDimensionId; label: string; score: num
 export type TennisImprovement = { dimension_id: TennisDimensionId; title: string; observation: string; action: string; drill: string; retest: string; start_ms: number | null; end_ms: number | null };
 export type TennisPatternRequirement = { id: string; label: string; status: "measured_proxy" | "not_measured"; metric_ids: string[]; reason: string | null };
 export type TennisMotionPattern = {
-  version: "tennis-motion-patterns-v1.0.0" | "tennis-motion-patterns-v1.1.0" | "tennis-motion-patterns-v1.2.0"; profile_id: string; classification_status: "verified" | "technique_unverified";
+  version: "tennis-motion-patterns-v1.0.0" | "tennis-motion-patterns-v1.1.0" | "tennis-motion-patterns-v1.2.0" | "tennis-motion-patterns-v1.2.1"; profile_id: string; classification_status: "verified" | "technique_unverified";
   requirements: TennisPatternRequirement[]; coverage: { measured_requirements: number; applicable_requirements: number; fraction: number; full_source_technique_covered: false };
   classification_provenance: { method: string; reviewer?: string | null };
 };
@@ -61,9 +61,10 @@ export const TENNIS_PATTERN_NAMES: Record<string, string> = {
   return_one_hand_backhand: "单手反手接发", return_forehand_slice: "正手切削接发", return_backhand_slice: "反手切削接发",
 };
 
-function motionPattern(value: unknown, metrics: Record<string, { value: number; score: number }>, expectedVersion: TennisMotionPattern["version"]): TennisMotionPattern | null {
+function motionPattern(value: unknown, metrics: Record<string, { value: number; score: number }>, expectedVersion: TennisMotionPattern["version"] | TennisMotionPattern["version"][]): TennisMotionPattern | null {
   const item = record(value), coverage = record(item?.coverage), provenance = record(item?.classification_provenance);
-  if (!item || item.version !== expectedVersion || typeof item.profile_id !== "string"
+  const acceptedVersions = Array.isArray(expectedVersion) ? expectedVersion : [expectedVersion];
+  if (!item || !acceptedVersions.includes(item.version as TennisMotionPattern["version"]) || typeof item.profile_id !== "string"
     || !Object.hasOwn(TENNIS_PATTERN_NAMES, item.profile_id) || !Array.isArray(item.requirements)
     || item.classification_status !== (item.profile_id === "generic" ? "technique_unverified" : "verified")
     || !coverage || !count(coverage.measured_requirements) || !count(coverage.applicable_requirements)
@@ -83,7 +84,7 @@ function motionPattern(value: unknown, metrics: Record<string, { value: number; 
   const measured = requirements.filter(req => req.status === "measured_proxy").length;
   if (!requirements.length || coverage.applicable_requirements !== requirements.length || coverage.measured_requirements !== measured
     || Math.abs(coverage.fraction - measured / requirements.length) > .000001) return null;
-  return { version: expectedVersion, profile_id: item.profile_id, classification_status: item.classification_status as TennisMotionPattern["classification_status"], requirements,
+  return { version: item.version as TennisMotionPattern["version"], profile_id: item.profile_id, classification_status: item.classification_status as TennisMotionPattern["classification_status"], requirements,
     coverage: { measured_requirements: measured, applicable_requirements: requirements.length, fraction: coverage.fraction, full_source_technique_covered: false },
     classification_provenance: { method: provenance.method, ...(provenance.reviewer === undefined ? {} : { reviewer: provenance.reviewer as string | null }) } };
 }
@@ -192,7 +193,7 @@ function scopedAssessment(report: Record<string, unknown>, duration: number | nu
     }
     const current = report.version === "tennis-action-assessment-v1.3.0" || report.version === "tennis-action-assessment-v1.4.0";
     const pattern = motionPattern(item.motion_pattern, metrics, report.version === "tennis-action-assessment-v1.4.0"
-      ? "tennis-motion-patterns-v1.2.0" : current ? "tennis-motion-patterns-v1.1.0" : "tennis-motion-patterns-v1.0.0");
+      ? ["tennis-motion-patterns-v1.2.0", "tennis-motion-patterns-v1.2.1"] : current ? "tennis-motion-patterns-v1.1.0" : "tennis-motion-patterns-v1.0.0");
     if (!pattern) return null;
     const roles = report.version === "tennis-action-assessment-v1.4.0" ? handRoles(item.hand_roles, item, pattern, String(report.source_video_sha256)) : null;
     if (report.version === "tennis-action-assessment-v1.4.0" && !roles) return null;

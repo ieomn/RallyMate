@@ -13,7 +13,7 @@ import math
 
 import numpy as np
 
-VERSION = "tennis-motion-patterns-v1.2.0"
+VERSION = "tennis-motion-patterns-v1.2.1"
 PATTERN_METRICS = {
     "movement": (("pattern_center_transfer", "人体中心前移", "ratio", "观察髋中心沿已核验击球方向的连续前移"),),
     "preparation": (("pattern_preparation_coupling", "转体引拍进程配合", "ratio", "观察肩线转动与手腕引拍的进程配合"),),
@@ -174,7 +174,9 @@ def _peak(speed, times):
 
 def _sequence(peaks, times):
     tolerance = float(np.median(np.diff(times)))
-    if any(abs(earlier - later) <= tolerance for earlier, later in zip(peaks, peaks[1:])):
+    # Decoder PTS division can put the same one-frame interval a few ulps on
+    # either side of the median. Preserve the one-interval uncertainty gate.
+    if any(abs(earlier - later) <= tolerance + 1e-7 for earlier, later in zip(peaks, peaks[1:])):
         return None
     disorder = sum(max(0., earlier - later - tolerance) for earlier, later in zip(peaks, peaks[1:]))
     ratio = min(1., disorder / (times[-1] - times[0]))
