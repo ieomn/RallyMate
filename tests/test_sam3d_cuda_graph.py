@@ -19,7 +19,9 @@ class FakeTensor:
         self.values[:] = other.values
 
     def clone(self):
-        return FakeTensor(self.values, self.shape[1])
+        value = FakeTensor(self.values, self.shape[1])
+        value.shape = self.shape
+        return value
 
 
 class GraphContractsTest(unittest.TestCase):
@@ -64,6 +66,48 @@ class GraphContractsTest(unittest.TestCase):
         self.assertEqual(second["vertices"].values, [50])
         self.assertEqual(self.handle.receipt["replays"], 2)
         self.assertEqual(self.handle._capture.call_count, 1)
+
+    def test_opt_in_batch_slots_preserve_scalar_graph_and_output_ownership(self):
+        self.handle.restore()
+        self.handle = module.HeadGraphHandle(self.head, object(), self.safe, self.safe_replace,
+            self.torch, additional_batch_sizes=(2, 4))
+        self.install_fake_capture()
+        scalar = self.handle(*self.args)
+        scalar_graph = self.handle.graph
+        for size in (2, 4, 2):
+            args = tuple(value.clone() for value in self.args)
+            for value in args:
+                value.shape = (size, value.shape[1])
+            batch = self.handle(*args)
+            self.assertEqual(batch["vertices"].values, [3])
+            self.assertIs(self.handle.graph, scalar_graph)
+        self.assertEqual(len(self.handle.batch_slots), 2)
+        self.assertEqual(self.handle.receipt["batch_slots"]["2"]["replays"], 2)
+        self.assertEqual(self.handle(*self.args)["vertices"].values, scalar["vertices"].values)
+        self.assertEqual(self.handle._capture.call_count, 3)
+        self.handle.restore()
+        self.assertEqual(self.handle.batch_slots, {})
+
+    def test_batch_slot_capture_failure_does_not_disable_scalar(self):
+        self.handle.restore()
+        self.handle = module.HeadGraphHandle(self.head, object(), self.safe, self.safe_replace,
+            self.torch, additional_batch_sizes=(2,))
+        self.install_fake_capture()
+        scalar = self.handle(*self.args)
+        self.handle._capture = Mock(side_effect=RuntimeError("batch capture failure"))
+        args = tuple(value.clone() for value in self.args)
+        for value in args:
+            value.shape = (2, value.shape[1])
+        self.assertEqual(self.handle(*args), {"original": True})
+        self.assertFalse(self.handle.disabled)
+        self.assertTrue(self.handle.batch_slots[2]["disabled"])
+        self.assertEqual(self.handle(*self.args)["vertices"].values, scalar["vertices"].values)
+
+    def test_batch_shape_configuration_is_bounded(self):
+        for sizes in ((2, 4, 8), (1,), (2, 2), (True,), (9,)):
+            with self.subTest(sizes=sizes), self.assertRaises(ValueError):
+                module.HeadGraphHandle(self.head, object(), self.safe, self.safe_replace,
+                                       self.torch, additional_batch_sizes=sizes)
 
     def test_unsupported_shape_uses_original_and_restores_candidate(self):
         current_mhr = self.head.mhr

@@ -126,6 +126,8 @@ def _parse_json(raw: bytes, *, field: str) -> dict[str, Any]:
 
 
 def _parse_jsonl(raw: bytes, *, field: str) -> list[dict[str, Any]]:
+    from rallymate_scoring.artifact_evidence import contains_artifact_references
+
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
@@ -153,6 +155,12 @@ def _parse_jsonl(raw: bytes, *, field: str) -> list[dict[str, Any]]:
         if not isinstance(value, dict):
             raise IndicatorFeatureQualificationError(
                 f"{field}:{line_number} must be an object"
+            )
+        # The current verification token seals only the JSONL and summary raw
+        # bytes, not an external evidence pool. Do not qualify unresolved proof.
+        if contains_artifact_references(value):
+            raise IndicatorFeatureQualificationError(
+                f"pooled evidence requires a frozen dependency snapshot before qualification: {field}:{line_number}"
             )
         records.append(value)
     return records

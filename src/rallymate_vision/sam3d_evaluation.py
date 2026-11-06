@@ -10,7 +10,9 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from fractions import Fraction
+import json
 import math
+from pathlib import Path
 import statistics
 from typing import Any
 
@@ -38,6 +40,52 @@ MEASUREMENTS = {
 }
 _BINDING_FIELDS = ("video_sha256", "frame_index", "pts", "time_base_num", "time_base_den",
                    "timestamp_ms", "person_track_id", "selection_epoch", "camera_reference_epoch")
+_EVALUATION_FIELDS = (*_BINDING_FIELDS, "schema_version", "image_size", "status",
+                      "coordinate_system_2d", "coordinate_system_3d", "units_3d",
+                      "inference_ms", "peak_memory_bytes", "keypoints_2d", "keypoints_3d", "baseline")
+_BASELINE_FIELDS = ("model", "provenance", "source_binding", "coordinate_system_2d",
+                    "confidence_semantics", "keypoints_2d", "keypoint_scores")
+
+
+def compact_evaluation_record(record: Any) -> Any:
+    """Retain only fields consumed by this diagnostic evaluator, without repair.
+
+    This is an in-memory projection, never a replacement for the native archive.
+    Malformed values and absent fields keep their original validation semantics;
+    in particular, baseline bindings are not filled from the enclosing record.
+    Nested point values are shared read-only with the input and are not modified.
+    """
+    if not isinstance(record, Mapping):
+        return record
+    compact = {field: record[field] for field in _EVALUATION_FIELDS if field in record}
+    for field in ("keypoints_2d", "keypoints_3d"):
+        if isinstance(compact.get(field), Mapping):
+            compact[field] = {name: point for name, point in compact[field].items() if name in CORE_JOINTS}
+    baseline = compact.get("baseline")
+    if isinstance(baseline, Mapping):
+        baseline = {field: baseline[field] for field in _BASELINE_FIELDS if field in baseline}
+        for field in ("keypoints_2d", "keypoint_scores"):
+            if isinstance(baseline.get(field), Mapping):
+                baseline[field] = {name: value for name, value in baseline[field].items() if name in CORE_JOINTS}
+        binding = baseline.get("source_binding")
+        if isinstance(binding, Mapping):
+            baseline["source_binding"] = {field: binding[field] for field in (*_BINDING_FIELDS, "image_size")
+                                          if field in binding}
+        compact["baseline"] = baseline
+    return compact
+
+
+def evaluate_sam3d_jsonl(path: str | Path, **kwargs: Any) -> dict:
+    """Read the native archive one row at a time and retain compact diagnostics.
+
+    Original rows are not accumulated or modified. The existing exact evaluator
+    still retains compact rows and temporal/statistical arrays, so total memory
+    remains O(number of records), not constant. Blank lines are ignored; invalid
+    JSON raises instead of silently dropping evidence from the denominator.
+    """
+    with Path(path).open("r", encoding="utf-8") as stream:
+        records = (compact_evaluation_record(json.loads(line)) for line in stream if line.strip())
+        return evaluate_sam3d_records(records, **kwargs)
 
 
 def _number(value: Any) -> bool:
@@ -489,6 +537,7 @@ def evaluate_sam3d_records(records: Iterable[Mapping], *, max_gap_ms: float = 16
             "measurements_3d": measurements,
             "runtime": {"inference_ms": _stats(performance), "peak_memory_bytes": _stats(memory),
                         "scope": "reported_per_frame_measurements_only_including_reported_failed_attempts",
+                        "inference_ms_semantics": "scalar_subject_wall_or_apportioned_batch_wall; not_individual_frame_latency; use_pipeline_wall_for_throughput",
                         "missing_inference_records": total - len(performance),
                         "missing_memory_records": total - len(memory),
                         "warmup_or_model_load_included": False}}

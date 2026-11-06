@@ -169,8 +169,10 @@ async function readUploadChunk(request: Request, signal: AbortSignal): Promise<A
   if (!request.body) return reply("upload_chunk_empty", 400);
   if (signal.aborted) return reply("upload_chunk_interrupted", 408);
   const reader = request.body.getReader();
-  // A fixed buffer bounds memory even when the incoming stream uses tiny parts.
-  const bytes = new Uint8Array(UPLOAD_CHUNK_BYTES);
+  // Bounded growth avoids allocating 4 MiB for every 128 KiB request while
+  // retaining a hard cap even for forged lengths and tiny stream fragments.
+  const hintedLength = declaredLength && /^\d+$/.test(declaredLength) ? Number(declaredLength) : 0;
+  let bytes = new Uint8Array(hintedLength > 0 && hintedLength <= UPLOAD_CHUNK_BYTES ? hintedLength : 64 * 1024);
   let length = 0;
   const cancel = () => { void reader.cancel().catch(() => {}); };
   signal.addEventListener("abort", cancel, { once: true });
@@ -182,6 +184,11 @@ async function readUploadChunk(request: Request, signal: AbortSignal): Promise<A
       if (length + part.value.byteLength > UPLOAD_CHUNK_BYTES) {
         cancel();
         return reply("upload_chunk_too_large", 413);
+      }
+      if (length + part.value.byteLength > bytes.byteLength) {
+        const grown = new Uint8Array(Math.min(UPLOAD_CHUNK_BYTES, Math.max(length + part.value.byteLength, bytes.byteLength * 2)));
+        grown.set(bytes.subarray(0, length));
+        bytes = grown;
       }
       bytes.set(part.value, length);
       length += part.value.byteLength;
@@ -217,8 +224,8 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     }
     return response;
   };
-  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
-  const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/technical-review$`).test(url.pathname);
+  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
+  const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/(?:technical-review|shot-statistics)$`).test(url.pathname);
   const cancelWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/cancel$`).test(url.pathname);
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
   const uploadWrite = new RegExp(`^/v1/uploads/${id}/(?:complete|chunks/[0-9]{1,6})$`);
@@ -240,7 +247,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     if (!isLoopback(url.hostname) && !localTunnel && (base.protocol !== "https:" || isLoopback(base.hostname))) throw new Error();
   } catch { return finish(reply("invalid_analysis_origin", 503), "gateway_rejected"); }
   const headers = new Headers();
-  for (const name of ["content-type", "accept", "range", "if-range", "x-request-id", "x-chunk-sha256", "idempotency-key"]) {
+  for (const name of ["content-type", "accept", "range", "if-range", "x-request-id", "x-chunk-sha256", "x-upload-acknowledgement", "idempotency-key"]) {
     if (reportHead && ["range", "if-range"].includes(name)) continue;
     const value = request.headers.get(name); if (value) headers.set(name, value);
   }

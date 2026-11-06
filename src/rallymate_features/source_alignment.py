@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from fractions import Fraction
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -146,7 +146,10 @@ _CACHE: dict[tuple[int, int, int], SourceAlignedContext] = {}
 
 def prepare_source_aligned_context(sequence: PoseSequence,
                                    events: Sequence[Mapping[str, Any]], *,
-                                   primary_timeline: Sequence[Mapping[str, Any]] | None = None) -> SourceAlignedContext:
+                                   primary_timeline: Sequence[Mapping[str, Any]] | None = None,
+                                   cancellation_callback: Callable[[], None] | None = None) -> SourceAlignedContext:
+    if cancellation_callback is not None:
+        cancellation_callback()
     key = id(sequence), id(events), id(primary_timeline)
     cached = _CACHE.get(key)
     if cached is not None and cached.sequence is sequence and cached.source_events is events:
@@ -154,6 +157,8 @@ def prepare_source_aligned_context(sequence: PoseSequence,
     points, masks = {}, {}
     size = len(sequence.timestamp_ms)
     for name in JOINTS + HEAD:
+        if cancellation_callback is not None:
+            cancellation_callback()
         xy, valid = point_series(sequence, name, confidence_min=DEFAULT_KEYPOINT_CONFIDENCE_MIN)
         if sequence.model_estimate_bindings is None:
             valid &= np.asarray(sequence.confidence.get(name, np.full(size, np.nan))) <= 1
@@ -168,7 +173,9 @@ def prepare_source_aligned_context(sequence: PoseSequence,
     knees = {side: 180 - angle_three_points_deg(points[f"{side}_hip"], points[f"{side}_knee"], points[f"{side}_ankle"])
              for side in ("left", "right")}
     identity_rows = {}
-    for row in primary_timeline or []:
+    for index, row in enumerate(primary_timeline or []):
+        if index % 64 == 0 and cancellation_callback is not None:
+            cancellation_callback()
         if not isinstance(row, Mapping) or not isinstance(row.get("source_frame_index"), int) or isinstance(row["source_frame_index"], bool):
             continue
         frame = row["source_frame_index"]
@@ -708,8 +715,12 @@ def _launch_direction(context: SourceAlignedContext, event: Mapping, reason: str
 
 def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, Any], *,
                                     events: Sequence[Mapping[str, Any]],
-                                    context: SourceAlignedContext | None = None) -> dict[str, Any]:
-    context = context or prepare_source_aligned_context(sequence, events)
+                                    context: SourceAlignedContext | None = None,
+                                    cancellation_callback: Callable[[], None] | None = None) -> dict[str, Any]:
+    if cancellation_callback is not None:
+        cancellation_callback()
+    context = context or prepare_source_aligned_context(sequence, events,
+                                                        cancellation_callback=cancellation_callback)
     if context.sequence is not sequence or context.source_events is not events:
         raise ValueError("Prepared source context does not belong to these inputs")
     result = {"version": VERSION, "video_id": event.get("video_id"), "event_id": event.get("event_id"),
@@ -724,6 +735,8 @@ def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, 
     result.update(model_geometry_evidence(sequence, indexes, JOINTS + HEAD))
     reason = _identity_reason(context, event) or context.window_reason(indexes, start, end)
     for indicator in {"FS01": ("FS01-M02", "FS01-M04", "FS01-M05", "FS01-M01"), "FS02": ("FS02-M01",), "FS09": ("FS09-M05",)}[event["event_code"]]:
+        if cancellation_callback is not None:
+            cancellation_callback()
         core_coverage = context.coverage(indexes, CORE_GROUPS[indicator], SOURCE_REQUIRED_JOINTS[indicator])
         indicator_reason = reason or (None if core_coverage["passes"] else "source_required_joint_coverage_below_70_percent")
         association = None
@@ -764,4 +777,6 @@ def compute_source_aligned_features(sequence: PoseSequence, event: Mapping[str, 
                 "unresolved_conditions": unresolved, "source_ref": SOURCE_LOCATORS[indicator][1]},
             "limitations_zh": limitations, "grade": None, "technical_score_0_to_100": None})
     result["status"] = "partial" if any(item["status"] == "partial" for item in result["indicators"]) else "unavailable"
+    if cancellation_callback is not None:
+        cancellation_callback()
     return result

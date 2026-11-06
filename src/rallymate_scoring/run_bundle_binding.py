@@ -12,6 +12,7 @@ from rallymate_scoring.calibration_fitting import canonical_sha256
 TRUSTED_SCORING_RUN_BUNDLE_LEDGER_SCHEMA_VERSION = "1.0.0"
 TRUSTED_SCORING_RUN_BUNDLE_LEDGER_SCOPE = "trusted_scoring_run_bundles"
 SCORING_RUN_BUNDLE_BINDING_VERSION = "scoring-run-bundle-v1"
+EVIDENCE_SCORING_RUN_BUNDLE_BINDING_VERSION = "scoring-run-bundle-v2"
 CANONICALIZATION = "rallymate-canonical-json-v1"
 REQUIRED_SCORING_ARTIFACTS = frozenset(
     {
@@ -79,13 +80,30 @@ def _timestamp(value: Any, field: str) -> datetime:
     return parsed
 
 
-def _artifact_hashes(value: Any, field: str) -> dict[str, str]:
+def _artifact_hashes(value: Any, field: str, *, with_evidence: bool = False) -> dict[str, str]:
     artifacts = _object(value, field)
-    _exact_keys(artifacts, set(REQUIRED_SCORING_ARTIFACTS), field)
+    names = set(REQUIRED_SCORING_ARTIFACTS)
+    if with_evidence and "source_aligned_measurements_json" in artifacts:
+        names.add("source_aligned_measurements_json")
+    _exact_keys(artifacts, names, field)
     return {
         name: _sha256(artifacts[name], f"{field}.{name}")
-        for name in sorted(REQUIRED_SCORING_ARTIFACTS)
+        for name in sorted(names)
     }
+
+
+def _storage_identity(value: Any, video_id: str, video_sha256: str) -> dict:
+    from rallymate_scoring.artifact_evidence import CODEC_VERSION, POOL_FILENAME
+    storage = _object(value, "evidence_storage")
+    _exact_keys(storage, {"codec", "path", "sha256", "binding_sha256", "video_id", "source_id", "video_sha256"}, "evidence_storage")
+    if storage["codec"] != CODEC_VERSION or storage["path"] != POOL_FILENAME:
+        raise ScoringRunBundleBindingError("unsupported evidence storage format")
+    if storage["video_id"] != video_id or _sha256(storage["video_sha256"], "evidence.video_sha256") != video_sha256:
+        raise ScoringRunBundleBindingError("evidence storage video binding mismatch")
+    return {**storage, "source_id": _string(storage["source_id"], "evidence.source_id"),
+            "video_sha256": video_sha256,
+            "sha256": _sha256(storage["sha256"], "evidence.sha256"),
+            "binding_sha256": _sha256(storage["binding_sha256"], "evidence.binding_sha256")}
 
 
 def scoring_run_bundle_identity(
@@ -112,19 +130,30 @@ def scoring_run_bundle_identity(
         provenance.get("video_sha256"),
         "scoring_summary.provenance.video_sha256",
     )
+    storage = (_storage_identity(summary["evidence_storage"], video_id, video_sha256)
+               if "evidence_storage" in summary else None)
+    names = set(REQUIRED_SCORING_ARTIFACTS)
+    if storage is not None and "source_aligned_measurements_json" in summary.get("artifacts", {}):
+        names.add("source_aligned_measurements_json")
     artifact_paths = _object(summary.get("artifacts"), "scoring_summary.artifacts")
     _exact_keys(
         artifact_paths,
-        set(REQUIRED_SCORING_ARTIFACTS),
+        names,
         "scoring_summary.artifacts",
     )
     for name, path in artifact_paths.items():
         _string(path, f"scoring_summary.artifacts.{name}")
     artifacts = _artifact_hashes(
-        summary.get("artifact_sha256"), "scoring_summary.artifact_sha256"
+        summary.get("artifact_sha256"), "scoring_summary.artifact_sha256", with_evidence=storage is not None
     )
+    if set(artifact_paths) != set(artifacts):
+        raise ScoringRunBundleBindingError(
+            "scoring_summary artifact paths and content hashes must name the same files"
+        )
     return {
-        "binding_version": SCORING_RUN_BUNDLE_BINDING_VERSION,
+        "binding_version": (EVIDENCE_SCORING_RUN_BUNDLE_BINDING_VERSION if storage is not None
+                            else SCORING_RUN_BUNDLE_BINDING_VERSION),
+        **({"evidence_storage": storage} if storage is not None else {}),
         "scoring_summary": {
             "schema_version": schema_version,
             "loop_version": loop_version,
@@ -147,12 +176,13 @@ def scoring_run_bundle_root_sha256(identity: dict[str, Any]) -> str:
 
 def _validate_bundle_identity(identity: Any, field: str) -> dict[str, Any]:
     identity = _object(identity, field)
+    with_evidence = identity.get("binding_version") == EVIDENCE_SCORING_RUN_BUNDLE_BINDING_VERSION
     _exact_keys(
         identity,
-        {"binding_version", "scoring_summary", "video", "artifact_sha256"},
+        {"binding_version", "scoring_summary", "video", "artifact_sha256"} | ({"evidence_storage"} if with_evidence else set()),
         field,
     )
-    if identity["binding_version"] != SCORING_RUN_BUNDLE_BINDING_VERSION:
+    if identity["binding_version"] not in (SCORING_RUN_BUNDLE_BINDING_VERSION, EVIDENCE_SCORING_RUN_BUNDLE_BINDING_VERSION):
         raise ScoringRunBundleBindingError(
             f"{field}.binding_version is unsupported"
         )
@@ -182,7 +212,9 @@ def _validate_bundle_identity(identity: Any, field: str) -> dict[str, Any]:
         video["video_sha256"], f"{field}.video.video_sha256"
     )
     return {
-        "binding_version": SCORING_RUN_BUNDLE_BINDING_VERSION,
+        "binding_version": identity["binding_version"],
+        **({"evidence_storage": _storage_identity(identity["evidence_storage"], video_id, video_sha256)}
+           if with_evidence else {}),
         "scoring_summary": {
             "schema_version": schema_version,
             "loop_version": loop_version,
@@ -193,7 +225,7 @@ def _validate_bundle_identity(identity: Any, field: str) -> dict[str, Any]:
             "video_sha256": video_sha256,
         },
         "artifact_sha256": _artifact_hashes(
-            identity["artifact_sha256"], f"{field}.artifact_sha256"
+            identity["artifact_sha256"], f"{field}.artifact_sha256", with_evidence=with_evidence
         ),
     }
 

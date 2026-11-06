@@ -14,6 +14,7 @@ from rallymate_features import (
     pose_sequence_from_records,
 )
 from rallymate_scoring.calibration_dataset import canonical_sha256, file_sha256
+from rallymate_scoring.artifact_evidence import EvidencePoolWriter
 from rallymate_scoring.feasibility import (
     load_feasibility_registry,
     measurement_feature_names,
@@ -55,10 +56,9 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
-    path.write_text(
-        "".join(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n" for record in records),
-        encoding="utf-8",
-    )
+    with path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def _compact_feature(item: dict[str, Any]) -> dict[str, Any]:
@@ -246,7 +246,7 @@ def build_manual_event_features(
         for result in compute_event_features(
             sequence, interval, sorted(required_by_event[event["event_code"]])
         ):
-            payload = result.to_dict()
+            payload = result.to_dict(copy_evidence=False)
             payload.update(
                 {
                     "schema_version": "1.0.0",
@@ -376,13 +376,18 @@ def build_manual_event_features(
     indicators_path = output_dir / "indicator-features.jsonl"
     scores_path = output_dir / "scores.jsonl"
     _write_jsonl(events_path, emitted_events)
-    _write_jsonl(features_path, feature_records)
-    _write_jsonl(indicators_path, indicator_records)
-    _write_jsonl(scores_path, score_records)
+    with EvidencePoolWriter(
+        output_dir, video_id=video_id, source_id=lineage_root_sha,
+        video_sha256=base_provenance.get("video_sha256"), allow_nan=False,
+    ) as evidence_writer:
+        evidence_writer.write_jsonl(features_path, feature_records)
+        evidence_writer.write_jsonl(indicators_path, indicator_records)
+        evidence_writer.write_jsonl(scores_path, score_records)
     summary = {
         "schema_version": "1.0.0",
         "build_version": MANUAL_EVENT_FEATURE_BUILD_VERSION,
         "video_id": video_id,
+        "evidence_storage": evidence_writer.manifest,
         "status": (
             "manual_event_features_measured_calibration_required"
             if emitted_events

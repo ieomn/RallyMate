@@ -21,7 +21,7 @@ export function SwingKinematicsView({ view, jobId, selectedId, onSelect, loading
     <p className="swing-description">复用本次已推理的姿态，查看肩、髋和手腕如何衔接；点击峰值时间回看动作。</p>
     {loading ? <p className="swing-status" role="status">正在读取转体与挥拍测量…</p>
       : failed ? <div className="swing-status" role="status">本次测量暂未读取成功。{onRetry && <button type="button" onClick={onRetry}>重新读取</button>}</div>
-      : !selected ? <p className="swing-status">{view.status === "rejected" ? "测量与当前视频或动作时段未能对应，暂不展示数值。" : "本次尚无连续的三维动作测量，可先使用上方片段回放。"}</p>
+      : !selected ? <p className="swing-status">—</p>
       : <>
         <div className="swing-selection"><label><span>选择测量片段</span><select aria-label="选择转体与挥拍片段" value={selected.episode_id} onChange={event => onSelect(event.target.value)}>
           {view.episodes.map((episode, index) => <option key={episode.episode_id} value={episode.episode_id}>{index + 1}. {episode.label} · {clock(episode.start_ms)} – {clock(episode.end_ms)}</option>)}
@@ -31,13 +31,12 @@ export function SwingKinematicsView({ view, jobId, selectedId, onSelect, loading
         <div className="swing-metrics">{SWING_METRICS.map(spec => {
           const metric = selected.metrics[spec.key], available = metric.status === "estimated";
           return <article key={spec.key}><span className="swing-metric-label">{spec.label}</span><div className="swing-value"><strong>{swingMetricText(metric)}</strong>{available && <span>{spec.displayUnit}</span>}</div>
-            {available && metric.timestamp_ms !== null ? <button type="button" aria-label={`定位${spec.label} ${clock(metric.timestamp_ms)}`} onClick={() => seek(selected, metric.timestamp_ms)}><time>{clock(metric.timestamp_ms)}</time> 回看峰值 ↗</button> : <span className="swing-missing">本段暂无有效测量</span>}
+            {available && metric.timestamp_ms !== null && <button type="button" aria-label={`定位${spec.label} ${clock(metric.timestamp_ms)}`} onClick={() => seek(selected, metric.timestamp_ms)}><time>{clock(metric.timestamp_ms)}</time> 回看峰值 ↗</button>}
           </article>;
         })}</div>
-        {Object.values(selected.metrics).every(metric => metric.status === "unavailable") && <p className="swing-status">{selected.reason_zh || "本段没有连续且主体一致的三维测量。"}</p>}
-        <p className="swing-scope">{selected.racket_hand ? `${selected.racket_hand === "left" ? "左" : "右"}腕相对髋中心的运动速度，以本段固定躯干长度归一化。` : "本段未确认用于腕速测量的持拍侧。"} 回看准备到挥拍的连续变化，数值不以越大越好判断。</p>
+        {selected.racket_hand && <p className="swing-scope">{selected.racket_hand === "left" ? "左" : "右"}腕相对髋中心的运动速度，以本段固定躯干长度归一化。</p>}
       </>}
-    <p className="swing-note">单目三维模型估计；相机旋转未校正，不用于跨视频绝对速度排名，也不表示真实受力、触球时刻或技术评分。</p>
+    <p className="swing-note">单目三维模型估计。</p>
   </section>;
 }
 

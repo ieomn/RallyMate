@@ -96,7 +96,7 @@ test("a measured zero is retained but missing data never becomes zero or another
   assert.equal(parse(input).episodes[0].metrics.wrist_speed_torso_s.value, null);
 });
 
-test("missing 3D episodes remain selectable with their reason and real preparation/swing boundaries", () => {
+test("missing 3D episodes retain source reasons internally while showing blanks and real phase boundaries", () => {
   const input = report(); input.status = "unavailable"; input.episodes[0].valid_frame_count = 0; input.episodes[0].coverage = 0;
   input.episodes[0].reason_zh = "这一段未能持续锁定同一运动员。";
   const parsed = parse(input); assert.equal(parsed.status, "unavailable"); assert.equal(parsed.episodes.length, 1);
@@ -104,7 +104,7 @@ test("missing 3D episodes remain selectable with their reason and real preparati
   assert.ok(Object.values(parsed.episodes[0].metrics).every(item => item.value === null && item.timestamp_ms === null));
   assert.deepEqual(parsed.episodes[0].phases.map(row => [row.label, row.startMs, row.endMs]), [["准备", 1000, 1400], ["加速挥拍", 1400, 1700]]);
   const html = render(parsed); assert.equal((html.match(/<strong>—<\/strong>/g) ?? []).length, 4);
-  assert.match(html, /这一段未能持续锁定同一运动员/); assert.match(html, /选择转体与挥拍片段/);
+  assert.doesNotMatch(html, /这一段未能持续锁定同一运动员|本段暂无有效测量/); assert.match(html, /选择转体与挥拍片段/);
   assert.doesNotMatch(html, /回看峰值|<strong>0<\/strong>|score=|技术优秀/);
 });
 
@@ -131,8 +131,8 @@ test("view shows four dimensioned maxima and one model qualification without a s
   const html = render(parse(report()));
   for (const text of ["转体与挥拍", "肩髋分离角峰值", "髋轴变化峰速", "肩轴变化峰速", "相对躯干腕速峰值", "34.25", "180.25", "6.25", "°/秒", "躯干长度/秒", "准备", "加速挥拍", "1.50 秒"]) assert.ok(html.includes(text), text);
   assert.equal((html.match(/单目三维模型估计/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /100分|总分|职业分|技战术评分|Word|原文|候选事件|人体真实受力/);
-  assert.match(render({ status: "rejected", episodes: [] }), /未能对应/);
+  assert.doesNotMatch(html, /100分|总分|职业分|技战术评分|Word|原文|候选事件|人体真实受力|不表示真实受力|不用于跨视频|技术评分/);
+  assert.match(render({ status: "rejected", episodes: [] }), /<p class="swing-status">—<\/p>/);
   assert.match(render({ status: "unavailable", episodes: [] }, { failed: true, onRetry() {} }), /重新读取/);
 });
 

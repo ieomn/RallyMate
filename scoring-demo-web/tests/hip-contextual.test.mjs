@@ -246,25 +246,25 @@ test("zero net displacement keeps real zero distances and unavailable ratio thro
   const result = fixture(), row = getRow(result);
   Object.assign(row, { status: "unavailable", reason: "zero_net_displacement", hip_path_length_px: 0, hip_net_displacement_px: 0, hip_path_over_net_ratio: null });
   const html = panel(result);
-  assert.match(html, /路径长度：0 像素/); assert.match(html, /起终点净位移：0 像素/); assert.match(html, /路径\/净位移比：不可用/);
-  assert.match(html, /净位移为 0/);
+  assert.match(html, /路径长度：0 像素/); assert.match(html, /起终点净位移：0 像素/); assert.match(html, /路径\/净位移比：—/);
+  assert.doesNotMatch(html, /净位移为 0/);
   const imported = await reload(buildReportBackup(exportInput(result)));
   assert.deepEqual(contextualHipMeasurements(imported.result), contextualHipMeasurements(result));
-  assert.match(panel(imported.result), /路径\/净位移比：不可用/);
+  assert.match(panel(imported.result), /路径\/净位移比：—/);
 });
 
-test("optional ordinary failure keeps the original whole window and explicit reason with no fabricated numeric value", async () => {
+test("optional ordinary failure keeps the original whole window and empty values without a failure explanation", async () => {
   const result = fixture(), row = getRow(result);
   Object.assign(row, { status: "unavailable", reason: "contextual_measurement_failed", hip_path_length_px: null,
     hip_net_displacement_px: null, hip_path_over_net_ratio: null, source_bindings: [], source_reference: null });
   Object.assign(row.window_input_sha256, { records: null, original_primary: null, adapted_primary: null });
   assert.equal(contextualHipMeasurements(result).length, 1);
-  assert.match(panel(result), /独立测量计算未完成/); assert.match(panel(result), /路径长度：不可用/);
+  assert.doesNotMatch(panel(result), /独立测量计算未完成/); assert.match(panel(result), /路径长度：—/);
   const imported = await reload(buildReportBackup(exportInput(result)));
   assert.deepEqual(contextualHipMeasurements(imported.result), contextualHipMeasurements(result));
 });
 
-test("missing complete source window can show a bound unavailable reason without inventing frame range", () => {
+test("missing complete source window keeps empty bound measurements without inventing a frame range", () => {
   const result = fixture(), row = getRow(result);
   Object.assign(row, { status: "unavailable", reason: "contextual_event_source_window_unavailable", hip_path_length_px: null,
     hip_net_displacement_px: null, hip_path_over_net_ratio: null, source_window: null, source_bindings: [], source_reference: null,
@@ -272,9 +272,9 @@ test("missing complete source window can show a bound unavailable reason without
   Object.assign(row.window_input_sha256, { records: null, original_primary: null, adapted_primary: null });
   getEpisode(result).source_window = { video_sha256: sha };
   const html = panel(result);
-  assert.match(html, /未取得完整且可核验的原帧窗口/); assert.doesNotMatch(html, /原帧 12–14/);
+  assert.match(html, /路径长度：—/); assert.doesNotMatch(html, /未取得完整且可核验的原帧窗口|原帧 12–14/);
   delete getEpisode(result).source_window;
-  assert.doesNotMatch(panel(result), /路径长度：不可用/, "missing episode digest cannot be self-certified by the contextual item");
+  assert.doesNotMatch(panel(result), /路径长度：—/, "missing episode digest cannot be self-certified by the contextual item");
 });
 
 test("backup preserves all valid contextual rows beyond the visible event subset, without admitting private paths", async () => {

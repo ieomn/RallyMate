@@ -207,7 +207,7 @@ test("a truly observed technique keeps its ready status even when other types ar
   assert.match(html, /status-pill status-ready">证据就绪<\/span>/);
   assert.match(html, /最新动作定义 · 证据就绪/);
   assert.doesNotMatch(html, /85\.0%/);
-  assert.match(html, /尚缺完整评分依据/);
+  assert.doesNotMatch(html, /尚缺完整评分依据/);
   assert.equal((html.match(/status-pill status-not_observed">未分类<\/span>/g) ?? []).length, 4);
 });
 
@@ -234,28 +234,25 @@ test("motion results show one measured episode and phases without restoring the 
   assert.match(html, /手腕峰值速度/);
   assert.match(html, /3\.25/);
   assert.match(html, /准备.*加速.*随挥/s);
-  assert.match(html, /触球未确认/);
   assert.match(html, /下一片段/);
   assert.equal((html.match(/motion-episode-heading/g) ?? []).length, 1);
   assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<svg\b[\s\S]*?<\/svg>/g, svg => svg.replace(/<[^>]+>/g, "")), /57|已定位|status-pill status-not_observed/);
 });
 
-test("return analysis explains missing context and never fills it with a zero score", () => {
+test("return analysis leaves absent measurements blank without explanation blocks or zero scores", () => {
   const html = renderToStaticMarkup(createElement(MotionPanel, { familyLabel: "接发", data: { status: "insufficient_evidence", reason_zh: "没有对手发球与来球顺序，不能区分接发与普通底线挥拍。", episodes: [] }, pending: false }));
   assert.match(html, /接发 · 当前视频/);
-  assert.match(html, /没有对手发球与来球顺序/);
-  assert.doesNotMatch(html, /motion-metrics|等待|0 \/ 100/);
+  assert.match(html, /<strong>—<\/strong>/);
+  assert.doesNotMatch(html, /没有对手发球与来球顺序|证据不足|motion-metrics|等待|0 \/ 100/);
 });
 
 test("partial motion disables missing follow-through and labels available stages as estimates", () => {
   const partial = { ...motionEpisode, analysis_status: "partial", phase_timing_status: "estimated_from_2d_motion", phases: [...motionEpisode.phases.slice(0, 2), { phase: "follow_through", label_zh: "随挥", status: "unavailable", start_ms: null, end_ms: null }], metric_notes_zh: ["肩线投影缩短，未输出肩线变化。"] };
   const html = renderToStaticMarkup(createElement(MotionPanel, { familyLabel: "底线", data: { episodes: [partial] }, pending: false }));
-  assert.match(html, /阶段证据不完整/);
-  assert.match(html, /二维运动变化估计，不代表触球时刻/);
-  assert.match(html, /<button type="button" disabled=""><span>随挥证据不足<\/span><small>未定位阶段<\/small>/);
+  assert.match(html, /动作阶段按二维运动变化估计/);
+  assert.match(html, /<button type="button" disabled=""><span>随挥<\/span><small>—<\/small>/);
   assert.match(html, /1\.00–1\.50s · 估计/);
-  assert.match(html, /肩线投影缩短/);
-  assert.doesNotMatch(html, /0\.00–0\.00s/);
+  assert.doesNotMatch(html, /阶段证据不完整|证据不足|肩线投影缩短|测量依据与限制|不作为技术评分|尚未经过专项标注集|0\.00–0\.00s/);
 });
 
 function rotationEpisode(status = "measured_2d") {
@@ -284,8 +281,7 @@ test("rotation cards show measured angles and speeds once, with no technical gra
   const html = renderToStaticMarkup(createElement(MotionPanel, { familyLabel: "底线", data: { episodes: [row] }, pending: false }));
   assert.match(html, /二维转体观察/);
   assert.match(html, /连续测量可用/);
-  assert.match(html, /技术评分：待教练标定/);
-  assert.match(html, /不能据此判断真实三维转体幅度或动力链先后/);
+  assert.doesNotMatch(html, /技术评分：|待教练标定|不能据此判断真实三维转体幅度或动力链先后/);
   assert.match(html, /画面内肩线变化<\/span><strong>0\.00<\/strong>/);
   assert.match(html, /髋线峰值角速度<\/span><strong>60\.00<\/strong>/);
   assert.match(html, /°\/秒/);
@@ -302,8 +298,8 @@ test("partial rotation cards suppress weak axes and only offer replay for observ
   }
   const parsed = parsedRotationEpisode(row);
   const html = renderToStaticMarkup(createElement(RotationPanel, { episode: parsed, seek() {} }));
-  assert.match(html, /部分指标可测/);
-  assert.match(html, /轴投影缩短，连续证据不足/);
+  assert.match(html, /动作测量/);
+  assert.doesNotMatch(html, /轴投影缩短，连续证据不足/);
   assert.match(html, /有效采样 25%/);
   assert.equal((html.match(/复核测量区间/g) ?? []).length, 3);
   assert.equal((html.match(/<strong>—<\/strong>/g) ?? []).length, 3);
@@ -313,8 +309,7 @@ test("partial rotation cards suppress weak axes and only offer replay for observ
 test("unavailable rotation cards keep missing values and offer no fabricated replay target", () => {
   const row = parsedRotationEpisode(rotationEpisode("unavailable"));
   const html = renderToStaticMarkup(createElement(RotationPanel, { episode: row, seek() {} }));
-  assert.match(html, /测量证据不足/);
-  assert.match(html, /技术评分：证据不足/);
+  assert.doesNotMatch(html, /测量证据不足|技术评分：证据不足/);
   assert.equal((html.match(/<strong>—<\/strong>/g) ?? []).length, 6);
   assert.doesNotMatch(html, /<button|0\.00|待教练标定|\/ 100/);
 });
@@ -335,4 +330,15 @@ test("rotation review buttons seek to their validated measurement window start",
   for (const button of buttons) button.props.onClick();
   assert.deepEqual(sought, [1100, 1100, 1100, 1100, 1100, 1100]);
   assert.equal(RotationPanel({ episode: structuredClone(motionEpisode), seek() {} }), null);
+});
+
+test("ball summary retains observation metrics without scoring limitation paragraphs", () => {
+  const trajectory = { status: "ready", source: { frame_count: 100, start_timestamp_ms: 0, end_timestamp_ms: 2000 }, ball: {
+    observed: [], observed_count: 10, reconstruction: { summary: { observed_count: 10, observed_frame_count: 10, coverage_fraction: .1,
+      segment_count: 1, interpolated_count: 2, confidence: { mean: .9 } },
+      segments: [{ segment_id: 1, start_ms: 500, end_ms: 1000, analysis: { motion_status: "moving" } }] },
+  } };
+  const html = renderToStaticMarkup(createElement(Summary, { trajectory }));
+  for (const value of ["10.0%", "球检测观测点", "独立轨迹片段", "短缺口插值点", "10 / 100 帧", "0.90", "移动 1 段", "选择球路片段"]) assert.ok(html.includes(value), value);
+  assert.doesNotMatch(html, /不参与评分|不作为击球次数|未确认触球|尚未确认唯一比赛用球/);
 });

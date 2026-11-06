@@ -209,7 +209,7 @@ test("annotated replay cannot be captured as an original court frame", async t =
   panel.find(node => node.props.children === "从原视频当前画面取图").props.onClick();
   await Promise.resolve(); await Promise.resolve(); panel.render();
   assert.equal(canvases, 0); assert.equal(draws, 0);
-  assert.match(panel.html(), /切换到“原视频”/);
+  assert.match(panel.html(), /打开“原片与关键点”/);
   assert.doesNotMatch(panel.html(), /class="court-calibration-image"/);
 });
 

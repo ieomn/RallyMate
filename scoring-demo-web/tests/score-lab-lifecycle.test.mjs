@@ -10,7 +10,7 @@ function load(relative, require) {
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { fileName: file.pathname,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const exports = {};
-  new Function("require", "exports", code)(require, exports);
+  new Function("require", "exports", code)(require ?? (name => load(new URL(`${name}.ts`, file))), exports);
   return exports;
 }
 const session = load("../app/lib/analysis-session.ts");
@@ -49,6 +49,7 @@ function harness(t, clientOverrides = {}) {
     "./lib/api-client": { createApiClient: () => client, RallyMateApiError: class extends Error {} },
     "./TrainingJournal": { useTrainingJournal: () => journal, journalRecordId: (source, id) => `${source}:${id}` },
     "./lib/training-report": { recentReports: value => value },
+    "./lib/report-file": { readReportJson: async file => JSON.parse(await file.text()) },
     "./lib/workspace-navigation": { workspaceHref: (view, id) => `/?view=${view}${id ? `&job=${id}` : ""}`, readWorkspaceLocation: () => ({ view: "analysis" }) },
     "./lib/advice-display": { adviceContextKey: (id, technique) => `${id}:${technique}`, adviceForContext: (saved, key) => saved?.contextKey === key ? saved.response : null, adviceNotice: () => "建议已返回" },
     "./lib/training-guidance": { trainingGuidance: () => [], focusSelection: value => value }, "./lib/motion-analysis": { motionAnalysisOf: () => null },
@@ -65,12 +66,12 @@ function harness(t, clientOverrides = {}) {
   t.after(() => { globalThis.window = oldWindow; globalThis.localStorage = oldStorage; });
   let tree;
   const render = () => { cursor = 0; return tree = component(); };
-  const nodes = value => !value || typeof value !== "object" ? [] : Array.isArray(value) ? value.flatMap(nodes) : [value, ...nodes(value.props?.children), ...nodes(value.props?.details)];
+  const nodes = value => !value || typeof value !== "object" ? [] : Array.isArray(value) ? value.flatMap(nodes) : [value, ...nodes(value.props?.children), ...nodes(value.props?.details), ...nodes(value.props?.coaching)];
   const find = predicate => nodes(tree).find(predicate);
-  const text = value => value == null || typeof value === "boolean" ? "" : typeof value !== "object" ? String(value) : Array.isArray(value) ? value.map(text).join("") : text(value.props?.children) + text(value.props?.details);
+  const text = value => value == null || typeof value === "boolean" ? "" : typeof value !== "object" ? String(value) : Array.isArray(value) ? value.map(text).join("") : text(value.props?.children) + text(value.props?.details) + text(value.props?.coaching);
   const open = id => { tree.props.onNavigate("overview"); render(); find(node => node.type === "TrainingHome").props.onOpenReport(id); render(); };
   render();
-  return { calls, render, find, text: () => text(tree), open, button: label => find(node => node.type === "button" && text(node) === label), form: () => find(node => node.props?.className === "coach-form") };
+  return { calls, render, find, findAll: predicate => nodes(tree).filter(predicate), text: () => text(tree), open, button: label => find(node => node.type === "button" && text(node) === label), form: () => find(node => node.props?.className === "coach-form") };
 }
 
 test("a ready report unlocks report actions while evidence is pending, and switching discards late evidence", async t => {
@@ -113,6 +114,37 @@ test("reopening a failed same report reconnects; duplicate clicks while waiting 
   pending.resolve(report); await tick(); ui.render(); assert.equal(ui.render().props.busy, false);
 });
 
+test("an expired preparation wait offers the same report again without an interruption warning or upload", async t => {
+  const ids = []; let submissions = 0;
+  const ui = harness(t, {
+    getDemoResult: async id => {
+      ids.push(id);
+      if (ids.length === 1) throw Object.assign(new Error("still preparing"), { status: 425, payload: { detail: { code: "report_still_preparing" } } });
+      return report;
+    },
+    submitVideo: async () => { submissions++; assert.fail("resuming must not submit the video again"); },
+  });
+  ui.open(jobId); await tick(); ui.render();
+  assert.equal(ui.render().props.busy, false);
+  assert.match(ui.text(), /分析已完成，报告仍在整理/); assert.match(ui.text(), /无需重新上传/);
+  assert.doesNotMatch(ui.text(), /读取中断|本次分析需要处理/);
+  assert.equal(ui.find(node => node.props?.className === "product-recovery").props.role, "status");
+  ui.button("继续读取结果").props.onClick(); await tick(); ui.render();
+  assert.deepEqual(ids, [jobId, jobId]); assert.equal(ui.calls.jobs, 2); assert.equal(submissions, 0); assert.equal(ui.calls.cancel, 0);
+  assert.ok(ui.find(node => node.type === "LiveResults"));
+  assert.doesNotMatch(ui.text(), /报告仍在整理/);
+});
+
+test("a real server failure keeps the interrupted-read recovery instead of the preparing notice", async t => {
+  const original = Object.assign(new Error("builder deadline"), { status: 504, payload: { detail: { code: "report_preparation_timeout" } } });
+  const ui = harness(t, { getDemoResult: async () => { throw original; } });
+  ui.open(jobId); await tick(); ui.render();
+  assert.match(ui.text(), /报告读取中断/); assert.match(ui.text(), /服务器整理报告已超时/);
+  assert.doesNotMatch(ui.text(), /报告仍在整理/);
+  assert.equal(ui.find(node => node.props?.className === "product-recovery").props.role, "alert");
+  assert.ok(ui.button("继续读取结果"));
+});
+
 test("stopping report waiting preserves the job and can resume without cancelling the server", async t => {
   let reads = 0, firstSignal;
   const ui = harness(t, { getDemoResult: (_id, options) => {
@@ -146,8 +178,44 @@ test("advice timeout unlocks retry, and changing the report cancels stale advice
   const ui = harness(t); ui.open(jobId); await tick(); ui.render();
   ui.form().props.onSubmit({ preventDefault() {} }); await tick(); ui.render();
   assert.equal(ui.button("正在整理…").props.disabled, true);
-  deadlines.findLast(row => row.ms === 20000).controller.abort(new DOMException("deadline", "TimeoutError"));
+  deadlines.findLast(row => row.ms === 55000).controller.abort(new DOMException("deadline", "TimeoutError"));
   await tick(); ui.render(); assert.match(ui.text(), /建议读取超时/); assert.equal(ui.button("查看解释与建议").props.disabled, false);
   ui.form().props.onSubmit({ preventDefault() {} }); await tick(); ui.render().props.onNewAnalysis(); await tick();
   assert.equal(requests[1].signal.aborted, true); ui.render(); assert.doesNotMatch(ui.text(), /建议读取超时/);
+});
+
+test("the primary coaching slot appears once and discards results from a prior job even if fetch ignores abort", async t => {
+  const pending = deferred(); let adviceSignal;
+  t.mock.method(globalThis, "fetch", (_url, options) => { adviceSignal = options.signal; return pending.promise; });
+  const ui = harness(t, { getDemoResult: async id => ({ ...report, job_id: id }) });
+  ui.open(jobId); await tick(); ui.render();
+  assert.equal(ui.findAll(node => node.props?.id === "coach").length, 1);
+  assert.equal(ui.find(node => node.type === "LiveResults").props.coaching.props.id, "coach");
+  assert.equal(ui.find(node => node.type === "AdviceResult").props.jobId, jobId);
+  ui.form().props.onSubmit({ preventDefault() {} }); await tick();
+  ui.open("different-job-4567"); await tick(); ui.render();
+  assert.equal(adviceSignal.aborted, true);
+  pending.resolve({ ok: true, json: async () => ({ advice: { summary: "旧任务的训练结论" } }) });
+  await tick(); ui.render();
+  assert.equal(ui.findAll(node => node.props?.id === "coach").length, 1);
+  assert.equal(ui.find(node => node.type === "AdviceResult").props.jobId, "different-job-4567");
+  assert.equal(ui.find(node => node.type === "AdviceResult").props.response, null);
+  assert.doesNotMatch(ui.text(), /旧任务的训练结论|建议已返回/);
+});
+
+test("imported report coaching cannot reuse online advice or submit an API request", async t => {
+  let requests = 0;
+  t.mock.method(globalThis, "fetch", async () => { requests++; return { ok: true, json: async () => ({ advice: { summary: "在线报告的说明" } }) }; });
+  const ui = harness(t); ui.open(jobId); await tick(); ui.render();
+  ui.form().props.onSubmit({ preventDefault() {} }); await tick(); ui.render();
+  assert.equal(requests, 1);
+  assert.equal(ui.find(node => node.type === "AdviceResult").props.response.advice.summary, "在线报告的说明");
+  const content = JSON.stringify({ schemaVersion: "rallymate-practice-report/1", jobId, result: report });
+  await ui.find(node => node.type === "input" && node.props.accept === "application/json,.json").props.onChange({ target: { files: [{ name: "saved-report.json", size: content.length, text: async () => content }] } });
+  ui.render();
+  assert.match(ui.text(), /离线导入的报告/);
+  assert.equal(ui.find(node => node.type === "AdviceResult"), undefined);
+  assert.equal(ui.button("查看解释与建议").props.disabled, true);
+  await ui.form().props.onSubmit({ preventDefault() {} }); await tick(); ui.render();
+  assert.equal(requests, 1, "even direct form submission cannot invoke advice for imported evidence");
 });

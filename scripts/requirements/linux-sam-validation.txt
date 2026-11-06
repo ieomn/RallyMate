@@ -1,0 +1,18 @@
+# Minimal pinned SAM BODY inference/validation dependencies, not training.
+# Install the matching Torch/cu128 pair separately with setup_linux_validation.sh.
+numpy==1.26.4
+opencv-python-headless==4.11.0.86
+av==16.0.1
+einops==0.8.2
+networkx==3.2.1
+pytorch-lightning==2.6.6
+roma==1.6.1
+timm==1.0.30
+yacs==0.1.8
+braceexpand==0.1.7
+omegaconf==2.4.0
+scipy==1.17.1
+pyrender==0.1.45
+trimesh==5.1.1
+termcolor==3.3.0
+huggingface_hub==2.2.0

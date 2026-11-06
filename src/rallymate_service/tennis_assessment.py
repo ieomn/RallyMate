@@ -166,6 +166,13 @@ def _segments(timeline, records, sha):
             reason = "primary_subject_unverified"
         elif record is None:
             reason = "native_record_missing_or_duplicate"
+        elif (_binding_error(record) is None
+              and str(record.get("video_sha256", "")).lower() == sha
+              and record.get("status") in {"failed", "skipped"}):
+            # A source-bound rejected estimate is a measurement gap, not a
+            # corrupt video/clock binding. Preserve the actual failure category.
+            reason = ("native_pose_quality_rejected" if record.get("reason") == "sam_pose_quality_rejected"
+                      else "native_pose_unavailable")
         elif (_binding_error(record) is not None or record.get("status") != "ok"
               or str(record.get("video_sha256", "")).lower() != sha
               or record.get("coordinate_system_3d") != COORDINATES_3D or record.get("units_3d") != "model_units"
@@ -557,6 +564,10 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
         outcomes.append({"episode_id": candidate.get("episode_id"), "start_ms": candidate.get("start_ms"),
                          "end_ms": candidate.get("end_ms"), "person_track_id": candidate.get("person_track_id"),
                          "status": "rejected", "reason_codes": [code]})
+    def reference_key(candidate):
+        reference = _map(candidate.get("continuity"))
+        return (candidate.get("person_track_id"), reference.get("source_selection_epoch"),
+                reference.get("camera_reference_epoch"))
     ordered = []
     return_aliases = _verified_return_aliases(episodes)
     for candidate in sorted(episodes, key=lambda e: (e.get("start_ms", 0), e.get("episode_id", ""))):
@@ -607,9 +618,6 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
                            and segment[0]["time"] <= mid <= segment[-1]["time"] for segment in segments)):
             reject(candidate, "candidate_source_or_complete_phase_unverified")
             continue
-        if any(max(lo, prior["start_ms"]) < min(hi, prior["end_ms"]) for prior in ordered):
-            reject(candidate, "candidate_overlap_duplicate")
-            continue
         ordered.append(candidate)
     for candidate_index, episode in enumerate(ordered):
         start, peak_time, end = (episode.get(k) for k in ("start_ms", "peak_ms", "end_ms"))
@@ -625,7 +633,12 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
         source_phases = _source_phase_authority(episode)
         if not _finite(prep_end) or not start < prep_end < peak_time:
             continue
-        if any(max(start, a) < min(end, b) for a, b in seen_intervals):
+        reference = reference_key(episode)
+        # Only a successfully bound action owns an interval. An earlier clipped
+        # or discontinuous candidate must not suppress a complete alternative.
+        if any(reference == prior_reference and max(start, a) < min(end, b)
+               for a, b, prior_reference in seen_intervals):
+            reject(episode, "candidate_overlap_duplicate")
             continue
         choices = []
         active_jump_seen = False
@@ -638,8 +651,12 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
             # The 2D proposal can stop in the backswing or select the balancing
             # arm. Bind a finite complete context before choosing the active arm;
             # no samples are synthesized and neighboring actions cannot overlap.
-            previous_peak = ordered[candidate_index - 1].get("peak_ms") if candidate_index else None
-            next_peak = ordered[candidate_index + 1].get("peak_ms") if candidate_index + 1 < len(ordered) else None
+            # Overlapping proposals describe the same potential action, not
+            # neighboring swings. They cannot truncate each other's context.
+            previous_peak = next((prior["peak_ms"] for prior in reversed(ordered[:candidate_index])
+                                  if reference_key(prior) == reference and prior["end_ms"] <= start), None)
+            next_peak = next((following["peak_ms"] for following in ordered[candidate_index + 1:]
+                              if reference_key(following) == reference and following["start_ms"] >= end), None)
             context_start = start if source_phases else max(start - 350, (previous_peak + peak_time) / 2 if _finite(previous_peak) else start - 350)
             context_end = end if source_phases else min(end + 550, (next_peak + peak_time) / 2 if _finite(next_peak) else end + 550)
             a, b = int(np.searchsorted(t, context_start - .51)), int(np.searchsorted(t, context_end + .51, side="right"))
@@ -719,7 +736,7 @@ def _bound_windows(segments, episodes, sha, rejection_counts=None, candidate_out
         if choices:
             chosen = max(choices, key=lambda item: item[1][1] - item[1][0])
             out.append(chosen)
-            seen_intervals.append((start, end))
+            seen_intervals.append((start, end, reference))
             rows, window = chosen
             outcomes.append({"episode_id": episode["episode_id"], "start_ms": round(rows[window[0]]["time"], 3),
                              "end_ms": round(rows[window[1] - 1]["time"], 3),
@@ -1069,7 +1086,7 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
     segments, reasons = _segments(timeline, records, video_sha256.lower())
     sha = video_sha256.lower()
     motion_episodes = [{**e, "verified_action_context": verified_action_context(action_context, e, sha)} for e in motion_episodes]
-    observations = source_motion_by_frame(records, list(source_frames), sha)
+    observations = source_motion_by_frame(records, list(source_frames), sha) if motion_episodes else {}
     rejected = Counter()
     outcomes = []
     all_episodes = [_score_window(segment, window, source_observations=observations, video_sha256=sha)
@@ -1100,6 +1117,14 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
                                  "full_source_technique_covered": False, "profiles": sorted({e["motion_pattern"]["profile_id"] for e in episodes})}
     if not episodes and motion_episodes:
         result["reason_zh"] = f"识别到 {len(motion_episodes)} 个动作候选，但没有片段同时满足来源一致、阶段完整和连续主球员姿态要求。"
+    elif not motion_episodes:
+        gaps = []
+        for code, label in (("primary_subject_unverified", "帧未确认主球员"),
+                            ("native_pose_quality_rejected", "帧姿态未通过质量检查"),
+                            ("native_pose_unavailable", "帧未取得模型姿态")):
+            if reasons[code]:
+                gaps.append(f"{reasons[code]} {label}")
+        result["reason_zh"] = "未识别到可评分的完整挥拍片段。" + ("；".join(gaps) + "。" if gaps else "") + "未识别不代表没有挥拍或动作错误。"
     families = {e["family"] for e in episodes}
     for identifier, label in DIMENSIONS:
         definitions = dict((row[0], row) for row in (SERVE_METRICS[identifier] if families == {"serve"} else METRICS[identifier]))
@@ -1158,12 +1183,18 @@ def _cached(directory, signatures, sha, job_id, episodes_json):
                                              frames_sha256=signatures[2][2] if signatures[2] else None)
     keys = {(r.get("source_frame_index"), r.get("source_track_id")) for r in timeline}
     records = [r for r in _read_rows(directory / "sam3d_frames.jsonl") if (r.get("frame_index"), r.get("person_track_id")) in keys]
-    frames = list(_read_rows(directory / "frames.jsonl")) if (directory / "frames.jsonl").is_file() else []
+    candidate_episodes = json.loads(episodes_json)
+    # Without any candidate, projected observations cannot contribute a score.
+    # Keep native/timeline diagnostics, but avoid materializing the largest
+    # artifact merely to return an empty assessment. A reselection sidecar is
+    # different: it must redetect candidates from its own target timeline.
+    needs_frames = bool(candidate_episodes) or reviewed_selection.is_file()
+    frames = list(_read_rows(directory / "frames.jsonl")) if needs_frames and (directory / "frames.jsonl").is_file() else []
     # A sidecar chooses a different source-bound target timeline. Its motion
     # proposals must use that same timeline instead of the historical summary.
     # The original primary timeline and formal report remain untouched.
-    candidate_episodes = (_summary_episodes({"action_recognition": detect_stroke_candidates(frames, primary_timeline=timeline)})
-                          if reviewed_selection.is_file() else json.loads(episodes_json))
+    if reviewed_selection.is_file():
+        candidate_episodes = _summary_episodes({"action_recognition": detect_stroke_candidates(frames, primary_timeline=timeline)})
     context_path = directory / "action-context.json"
     context = json.loads(context_path.read_text(encoding="utf-8")) if context_path.is_file() else None
     result = analyze_tennis_assessment(timeline, records, video_sha256=sha, source_run_id=job_id,

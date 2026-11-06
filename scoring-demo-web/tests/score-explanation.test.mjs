@@ -169,7 +169,7 @@ test("malformed explanations never become deductions, despite retaining a separa
   ];
   for (const mutate of cases) { const input = valid(); mutate(input.training_evaluation); const state = scoreExplanationOf(input); assert.equal(state.status, "invalid"); assert.equal(state.score, 88); }
   const invalid = valid(); invalid.training_evaluation.score_explanation.components[0].earned_points = NaN;
-  assert.match(textOf(invalid), /未附可核验的分数明细/);
+  assert.match(textOf(invalid), /分数明细校验失败/);
   assert.doesNotMatch(textOf(invalid), /各分量差额|−NaN/);
 });
 
@@ -184,15 +184,16 @@ test("legacy and entirely unavailable reports stay honest instead of acquiring a
   assert.deepEqual(scoreExplanationOf(null), { status: "missing", score: null });
   const legacy = valid(); delete legacy.training_evaluation.score_explanation;
   assert.deepEqual(scoreExplanationOf(legacy), { status: "missing", score: 88 });
-  assert.match(textOf(legacy), /历史报告没有保存分数构成/);
+  assert.match(textOf(legacy), /88\/ 100/);
+  assert.doesNotMatch(textOf(legacy), /历史报告没有保存分数构成/);
   const unavailable = resultOf([indicator("FS01-M02", null)], null);
   assert.equal(scoreExplanationOf(unavailable).status, "verified");
-  assert.match(textOf(unavailable), /不会被记为 0 分/);
-  assert.match(textOf(unavailable), /1 项未纳入总分/);
-  assert.doesNotMatch(textOf(unavailable), /各分量差额|\/ 100/);
+  assert.match(textOf(unavailable), /—/);
+  assert.doesNotMatch(textOf(unavailable), /各分量差额|\/ 100|未纳入总分|没有可计入|不会被记为 0 分/);
   const html = renderToStaticMarkup(createElement(Panel, { result: valid() }));
   assert.match(html, /id="score-explanation"/); assert.doesNotMatch(html, /核对原文规则|原文核验|标注|评审/);
-  assert.match(html, /分数高低不代表技术水平/); assert.match(html, /不按零分参与平均/);
+  assert.match(html, /测量证据参考分及各分量构成/);
+  assert.doesNotMatch(html, /未纳入总分|哪些证据条件没有满足|哪些测量没有计入/);
   assert.equal((html.match(/aria-pressed=/g) ?? []).length, 5);
 });
 

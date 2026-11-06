@@ -96,7 +96,9 @@ class CpuFinalizationRecoveryTests(unittest.TestCase):
         phases = []
         seen = []
 
-        def validate(directory):
+        def validate(directory, *, cancellation_callback=None):
+            self.assertTrue(callable(cancellation_callback))
+            cancellation_callback()
             current = json.loads((directory / "summary.json").read_text(encoding="utf-8"))
             seen.append(current)
             self.assertEqual(current["job_id"], self.request.job_id)

@@ -1,6 +1,6 @@
 /** Deliberately excludes URLs, headers, bodies, messages, stacks and cause text. */
 export type RequestDiagnostic = Readonly<{
-  operation: "job" | "report" | "trajectory" | "technique_assessment" | "pose_preview" | "technical_review" | "meta" | "other_read";
+  operation: "job" | "report" | "trajectory" | "technique_assessment" | "tennis_assessment" | "pose_preview" | "technical_review" | "meta" | "other_read";
   stage: "headers" | "body" | "json" | "decode";
   outcome: "success" | "failure";
   category: "http" | "timeout" | "network" | "body_read" | "json_parse" | "response_contract" | "decode" | "preparation_timeout" | "pose_normalization" | "pose_window_mismatch" | null;
@@ -25,7 +25,7 @@ export function reportReadStage(diagnostic?: RequestDiagnostic): string {
 }
 
 const diagnostics = new WeakMap<object, readonly RequestDiagnostic[]>();
-const operations = new Set(["job", "report", "trajectory", "technique_assessment", "pose_preview", "technical_review", "meta", "other_read"]);
+const operations = new Set(["job", "report", "trajectory", "technique_assessment", "tennis_assessment", "pose_preview", "technical_review", "meta", "other_read"]);
 const stages = new Set(["headers", "body", "json", "decode"]);
 const categories = new Set(["http", "timeout", "network", "body_read", "json_parse", "response_contract", "decode", "preparation_timeout", "pose_normalization", "pose_window_mismatch"]);
 

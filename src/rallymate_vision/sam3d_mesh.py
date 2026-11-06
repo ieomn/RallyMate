@@ -111,6 +111,11 @@ def archive_mesh_records(records: list[dict], output_dir: Path, runtime_dir: Pat
     archived = []
     for record in records:
         if record.get("status") != "ok":
+            if record.get("reason") == "sam_pose_quality_rejected" and record.get("mesh_artifact"):
+                removed = discard_unarchived_mesh_records([record], runtime_dir)
+                if removed:
+                    record.pop("mesh_artifact")
+                    record["mesh_discard_reason"] = "sam_pose_quality_rejected"
             continue
         artifact = record.get("mesh_artifact")
         if not artifact:
@@ -139,10 +144,56 @@ def archive_mesh_records(records: list[dict], output_dir: Path, runtime_dir: Pat
             "video_sha256", "frame_index", "processed_index", "pts", "time_base_num",
             "time_base_den", "timestamp_ms", "relative_timestamp_ms", "person_track_id",
             "selection_epoch", "image_size", "bbox_px", "inference_type",
+            "pose_quality",
         )
-        archived.append({**{key: record[key] for key in binding_keys if key in record},
-                         "mesh_artifact": artifact})
+        mesh_record = {**{key: record[key] for key in binding_keys if key in record},
+                       "mesh_artifact": artifact}
+        selection = record.get("subject_selection")
+        if isinstance(selection, dict):
+            # Full candidate diagnostics stay in native/frame archives. A mesh
+            # ledger has a bounded per-line contract even in crowded scenes.
+            mesh_record["subject_selection"] = {
+                "version": selection.get("version"),
+                "primary_track_id": selection.get("primary_track_id"),
+                "decision": next((item for item in selection.get("decisions", [])
+                                  if item.get("track_id") == record.get("person_track_id")), None),
+            }
+        archived.append(mesh_record)
     return archived
+
+
+def discard_unarchived_mesh_records(records: list[dict], runtime_dir: Path) -> int:
+    """Discard only verified captures still owned by the supplied records.
+
+    This never scans the cache or removes shared topology. Archived records use
+    relative paths, and captures already moved by the archive worker are absent.
+    Invalid, changed or inaccessible files are retained rather than allowing
+    best-effort cancellation cleanup to replace the original failure.
+    """
+    root = Path(runtime_dir).resolve() / "cache" / "mesh"
+    removed = 0
+    for record in records:
+        artifact = record.get("mesh_artifact") if isinstance(record, dict) else None
+        if not isinstance(artifact, dict) or artifact.get("version") != VERSION:
+            continue
+        raw_path, digest = artifact.get("path"), artifact.get("sha256")
+        if (not isinstance(raw_path, str) or not isinstance(digest, str) or len(digest) != 64
+                or any(value not in "0123456789abcdefABCDEF" for value in digest)):
+            continue
+        try:
+            path = Path(raw_path)
+            if not path.is_absolute() or path.is_symlink() or not path.name.endswith(".mesh.npz"):
+                continue
+            source = _contained(path, root)
+            if source.parent != root.resolve() or not source.is_file():
+                continue
+            if sha256_file(source).upper() != digest.upper():
+                continue
+            source.unlink(missing_ok=True)
+            removed += 1
+        except (OSError, ValueError):
+            continue
+    return removed
 
 
 class OfficialMeshRenderer:

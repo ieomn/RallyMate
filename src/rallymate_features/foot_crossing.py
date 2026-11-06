@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections import Counter
 from fractions import Fraction
 import re
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 
@@ -60,7 +60,12 @@ def _bounded_strings(values, limit=32):
     return [value[:160] for value in values[:limit]]
 
 
-def _parent_source_association(parent, bindings):
+def _check(cancellation_callback):
+    if cancellation_callback is not None:
+        cancellation_callback()
+
+
+def _parent_source_association(parent, bindings, cancellation_callback=None):
     """Check supplied proof before admitting even a weak parent association.
 
     Older RTM parents have only a source-track association. Keep their local
@@ -122,6 +127,8 @@ def _parent_source_association(parent, bindings):
             mismatches.add(f"{location}.source_frames_length_mismatch")
         seen = set()
         for index, row in enumerate(rows):
+            if index % 64 == 0:
+                _check(cancellation_callback)
             if not isinstance(row, dict):
                 mismatches.add(f"{location}.invalid_binding")
                 continue
@@ -165,7 +172,9 @@ def _parent_source_association(parent, bindings):
                     if not isinstance(values, list) or len(values) != len(source_frames):
                         mismatches.add(f"source_window.{key}_length_mismatch")
                         continue
-                    for frame, value in zip(source_frames, values):
+                    for index, (frame, value) in enumerate(zip(source_frames, values)):
+                        if index % 64 == 0:
+                            _check(cancellation_callback)
                         if frame not in by_frame:
                             continue
                         if target == "source_timestamp_ms":
@@ -185,7 +194,9 @@ def _parent_source_association(parent, bindings):
         else:
             diagnostic_bindings = []
             diagnostic_frames = []
-            for row in evidence:
+            for index, row in enumerate(evidence):
+                if index % 64 == 0:
+                    _check(cancellation_callback)
                 if not isinstance(row, dict):
                     mismatches.add(location + ".invalid_row")
                     continue
@@ -221,7 +232,7 @@ def _parent_source_association(parent, bindings):
     }
 
 
-def _parent_evidence(parents, bindings, frames, is_model):
+def _parent_evidence(parents, bindings, frames, is_model, cancellation_callback=None):
     """Preserve event context while applying diagnostics only to involved joints.
 
     Full diagnostics remain in the hashed events input. Every serialized list
@@ -235,8 +246,9 @@ def _parent_evidence(parents, bindings, frames, is_model):
     confirmed, bound_count, diagnostic_count = False, 0, 0
     association_counts = Counter()
     for parent in parents:
+        _check(cancellation_callback)
         diagnostics = parent.get("track_diagnostics") or {}
-        association = _parent_source_association(parent, bindings)
+        association = _parent_source_association(parent, bindings, cancellation_callback=cancellation_callback)
         bound = association["eligible_for_gating"]
         association_counts[association["status"]] += 1
         parent_flags = sorted({value for value in parent.get("quality_flags", []) if isinstance(value, str)})
@@ -325,14 +337,18 @@ def _chord_relation(left: np.ndarray, right: np.ndarray) -> str:
 
 
 class _Context:
-    def __init__(self, sequence, primary_timeline, events, video_id):
+    def __init__(self, sequence, primary_timeline, events, video_id, cancellation_callback=None):
+        self.cancellation_callback = cancellation_callback
+        _check(cancellation_callback)
         self.sequence = sequence
         self.video_id = video_id
         self.events = events
         self.timeline: dict[int, dict | None] = {}
         self.duplicate_processed = set()
         processed_counts = Counter()
-        for row in primary_timeline or ():
+        for index, row in enumerate(primary_timeline or ()):
+            if index % 64 == 0:
+                _check(cancellation_callback)
             if not isinstance(row, dict):
                 continue
             frame = row.get("source_frame_index")
@@ -345,6 +361,7 @@ class _Context:
         self.frame_counts = Counter(int(frame) for frame in sequence.source_frames)
         self.points, self.masks = {}, {}
         for name in JOINTS:
+            _check(cancellation_callback)
             xy, mask = point_series(sequence, name, confidence_min=CONFIDENCE_MIN)
             if sequence.model_estimate_bindings is None and name in sequence.confidence:
                 confidence = np.asarray(sequence.confidence[name])
@@ -357,12 +374,17 @@ class _Context:
         # Parent phase boundaries are never used to create the geometric pair.
         if self.video_id is None:
             return []
-        return [event for event in self.events
-                if event.get("video_id") == self.video_id
+        parents = []
+        for index, event in enumerate(self.events):
+            if index % 64 == 0:
+                _check(self.cancellation_callback)
+            if (event.get("video_id") == self.video_id
                 and event.get("person_track_id") == self.sequence.primary_player_id
                 and isinstance(event.get("start_ms"), (int, float))
                 and isinstance(event.get("end_ms"), (int, float))
-                and event["start_ms"] <= end and event["end_ms"] >= start]
+                and event["start_ms"] <= end and event["end_ms"] >= start):
+                parents.append(event)
+        return parents
 
     def pair(self, before: int) -> dict[str, Any]:
         sequence = self.sequence
@@ -456,7 +478,8 @@ class _Context:
             result["unavailable_joints"] = invalid
             return exclude("model_geometry_unavailable" if sequence.model_estimate_bindings is not None else "joint_confidence_or_geometry_unavailable")
         parents = self.parents(a["video_timestamp_ms"], b["video_timestamp_ms"])
-        parent_evidence, confirmed = _parent_evidence(parents, bindings, frames, sequence.model_estimate_bindings is not None)
+        parent_evidence, confirmed = _parent_evidence(parents, bindings, frames,
+            sequence.model_estimate_bindings is not None, cancellation_callback=self.cancellation_callback)
         result.update(parent_evidence)
         if confirmed:
             return exclude("parent_confirmed_identity_switch")
@@ -554,15 +577,17 @@ def inspect_foot_crossing_pair(sequence: PoseSequence, before_index: int, *,
 
 def compute_foot_crossing_candidates(sequence: PoseSequence, *, primary_timeline: Sequence[dict] | None,
                                      events: Sequence[dict] = (), video_id: str | None = None,
-                                     max_candidates: int = 64, max_exclusions: int = 16) -> dict:
+                                     max_candidates: int = 64, max_exclusions: int = 16,
+                                     cancellation_callback: Callable[[], None] | None = None) -> dict:
     """Scan adjacent rows; bounded samples plus complete, disjoint outcome counts."""
     if type(max_candidates) is not int or not 0 <= max_candidates <= 128:
         raise ValueError("max_candidates must be an integer from 0 to 128")
     if type(max_exclusions) is not int or not 0 <= max_exclusions <= 32:
         raise ValueError("max_exclusions must be an integer from 0 to 32")
-    context = _Context(sequence, primary_timeline, events, video_id)
+    context = _Context(sequence, primary_timeline, events, video_id, cancellation_callback=cancellation_callback)
     counts, candidate_quality_counts, candidates, exclusions = Counter(), Counter(), [], []
     for before in range(len(sequence.timestamp_ms) - 1):
+        _check(cancellation_callback)
         row = context.pair(before)
         counts[row["reason"]] += 1
         if row["status"] == "candidate":
@@ -575,6 +600,7 @@ def compute_foot_crossing_candidates(sequence: PoseSequence, *, primary_timeline
     no_exchange = counts.get("same_projected_order", 0)
     pair_count = max(0, len(sequence.timestamp_ms) - 1)
     excluded_count = pair_count - candidate_count - no_exchange
+    _check(cancellation_callback)
     return {
         "version": VERSION, "source_refs": SOURCE_REFS,
         "semantics": "independent_projected_ankle_order_candidates_not_formal_FS03_measurement_or_grade",

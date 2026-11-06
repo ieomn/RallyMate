@@ -12,6 +12,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Callable, Hashable, Literal
 import hashlib
+import logging
 import time
 import uuid
 from rallymate_service.report_delivery_store import ReportDeliveryStore
@@ -19,6 +20,7 @@ from rallymate_service.report_delivery_store import ReportDeliveryStore
 
 ReportDelivery = Literal["inline", "deferred-v1"]
 REPORT_PROCESS_VERSION = "deferred-report-v1:" + uuid.uuid4().hex
+logger = logging.getLogger("rallymate.report_delivery")
 
 
 def artifact_signature(path: Path, *, content_hash: bool = False) -> tuple:
@@ -167,33 +169,51 @@ class ReportDeliveryCache:
 
     def _build(self, key, build, source_is_current, scope=None, persistent_key=None):
         stored = False
+        started = time.monotonic()
+        # Log only the public request scope, never the dependency key (which
+        # contains paths and the complete source identity). Exception chains
+        # stay in server logs; the client still receives a sanitized envelope.
+        request_scope = scope if scope is not None else "unspecified"
+        phase = "checking_source"
+        logger.info("report preparation started scope=%s", request_scope)
         try:
             self._check_deadline(key)
             if not source_is_current():
                 raise DeliveryError(409, "report_source_changed", "Report source changed; request it again.")
+            phase = "loading_cache"
             body = (self._store.load(persistent_key)
                     if self._store is not None and persistent_key is not None else None)
             disk_hit = body is not None
             if body is None:
+                phase = "building_report"
                 body = build()
             self._check_deadline(key)
             if not isinstance(body, bytes):
                 raise TypeError("report builder must return UTF-8 bytes")
+            phase = "verifying_source"
             if not source_is_current():
                 raise DeliveryError(409, "report_source_changed", "Report source changed; request it again.")
             if len(body) > self.max_bytes:
                 raise DeliveryError(413, "report_delivery_limit", "Prepared report exceeds the delivery cache limit.")
             self._check_deadline(key)
             if not disk_hit and self._store is not None and persistent_key is not None:
+                phase = "persisting_report"
                 self._store.save(persistent_key, body)
                 stored = True
             self._check_deadline(key)
             result = DeliveryResult("ready", body=body)
+            logger.info("report preparation ready scope=%s elapsed_seconds=%.3f bytes=%d disk_hit=%s",
+                        request_scope, time.monotonic() - started, len(body), disk_hit)
         except DeliveryError as exc:
+            logger.warning("report preparation failed scope=%s phase=%s elapsed_seconds=%.3f code=%s status=%d",
+                           request_scope, phase, time.monotonic() - started, exc.code, exc.status,
+                           exc_info=exc.status >= 500)
             if stored and exc.code == "report_preparation_timeout":
                 self._store.remove(persistent_key)
             result = DeliveryResult("error", error=exc)
         except Exception:
+            logger.exception("report preparation failed scope=%s phase=%s elapsed_seconds=%.3f",
+                             request_scope, phase, time.monotonic() - started)
             # Do not leak file paths, credentials, or arbitrary exception text.
             result = DeliveryResult("error", error=DeliveryError(
                 500, "report_preparation_failed", "Report preparation failed."))

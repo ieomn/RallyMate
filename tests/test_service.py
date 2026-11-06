@@ -443,16 +443,18 @@ class ServiceTests(unittest.TestCase):
             data_root = root / "service"
             artifact_path = data_root / "uploads" / "runtime-registry.json"
             artifact_path.parent.mkdir(parents=True)
-            shutil.copyfile(
-                Path(__file__).resolve().parents[1]
-                / "metric-feasibility-pose-wave-v2.json",
-                artifact_path,
-            )
             manifest = json.loads(
                 (
                     Path(__file__).resolve().parents[1]
                     / "registry-lifecycle.json"
                 ).read_text(encoding="utf-8")
+            )
+            # Exercise the writable-directory rejection with the actual current
+            # artifact; a historical v2 file fails its v3 hash before that check.
+            shutil.copyfile(
+                Path(__file__).resolve().parents[1]
+                / manifest["roles"]["runtime_feasibility"]["relative_path"],
+                artifact_path,
             )
             manifest["roles"]["runtime_feasibility"]["relative_path"] = (
                 "service/uploads/runtime-registry.json"

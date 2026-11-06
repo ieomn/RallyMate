@@ -4,6 +4,7 @@ import json
 import math
 import statistics
 from collections.abc import Iterable, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -182,61 +183,22 @@ def _reject_nonfinite_constant(value: str) -> None:
     raise UserDemoResultError(f"non-finite JSON number: {value}")
 
 
-def load_indicator_feature_records(path: Path) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    options = dict(object_pairs_hook=_duplicate_rejecting_object,
-                   parse_constant=_reject_nonfinite_constant)
+@contextmanager
+def open_indicator_feature_records(path: Path, *, cancellation_callback=None):
+    """Keep complete evidence on disk while report builders retain row handles."""
+    from rallymate_service.indicator_records import IndicatorRecords, IndicatorRecordError
+    from rallymate_scoring.artifact_evidence import ArtifactEvidenceError
     try:
-        # JSON Lines records are independently parseable. Keep only each line
-        # alongside the parsed records, not the entire UTF-8 text and a second
-        # splitlines copy (production artifacts can approach a gigabyte).
-        # Preserve support for compact and pretty-printed regular JSON exports.
-        with path.open(encoding="utf-8") as handle:
-            lines = ((number, line) for number, line in enumerate(handle, 1) if line.strip())
-            first = next(lines, None)
-            if first is None:
-                raise UserDemoResultError("indicator features are empty")
-            try:
-                document = json.loads(first[1], **options)
-            except json.JSONDecodeError:
-                handle.seek(0)
-                document = json.load(handle, **options)
-                second = None
-            else:
-                second = next(lines, None)
-            if second is not None:
-                if not isinstance(document, dict):
-                    raise UserDemoResultError(f"indicator feature line {first[0]} is not an object")
-                records.append(document)
-                number, line = second
-                while True:
-                    value = json.loads(line, **options)
-                    if not isinstance(value, dict):
-                        raise UserDemoResultError(f"indicator feature line {number} is not an object")
-                    records.append(value)
-                    following = next(lines, None)
-                    if following is None:
-                        break
-                    number, line = following
-                return records
-            if isinstance(document, list):
-                candidates = document
-            elif isinstance(document, dict):
-                candidates = next(
-                    (document[key] for key in ("records", "indicator_features", "predictions", "detections", "actions", "events") if isinstance(document.get(key), list)),
-                    [document],
-                )
-            else:
-                candidates = []
-            for index, value in enumerate(candidates, start=1):
-                if not isinstance(value, dict):
-                    raise UserDemoResultError(f"indicator feature item {index} is not an object")
-                records.append(value)
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        with IndicatorRecords(path, cancellation_callback=cancellation_callback) as records:
+            yield records
+    except (IndicatorRecordError, ArtifactEvidenceError, OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise UserDemoResultError(f"cannot read indicator features: {exc}") from exc
-    if not records:
-        raise UserDemoResultError("indicator features are empty")
-    return records
+
+
+def load_indicator_feature_records(path: Path) -> list[dict[str, Any]]:
+    """Compatibility materializer for small offline callers; APIs use open()."""
+    with open_indicator_feature_records(path) as records:
+        return [dict(record) for record in records]
 
 
 def _finite_number(value: Any) -> float | None:

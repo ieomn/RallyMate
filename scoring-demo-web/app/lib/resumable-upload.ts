@@ -6,6 +6,7 @@ export type UploadProgress = {
   message: string; resumed: boolean; retryAttempt: number;
 };
 type UploadSession = { upload_id: string; size: number; chunk_size: number; chunk_count: number; received_chunks: number[]; chunk_sha256: Record<string, string>; received_bytes: number; job_id: string | null };
+type ChunkReceipt = { acknowledgement: "chunk-v1"; upload_id: string; size: number; chunk_size: number; chunk_count: number; chunk_index: number; chunk_bytes: number; sha256: string };
 
 async function digest(blob: Blob) {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", await blob.arrayBuffer())), b => b.toString(16).padStart(2, "0")).join("");
@@ -31,9 +32,14 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
   let stage: "preparing" | "uploading" | "merging" = "preparing";
   let preparationMessage = "正在准备视频";
   let initialBytes = 0;
+  let uploadedBytes = 0;
   let resumed = false;
+  const markReceived = (index: number) => {
+    if (!session || !Number.isInteger(index) || index < 0 || index >= session.chunk_count || received.has(index)) return;
+    received.add(index);
+    uploadedBytes += Math.min(session.chunk_size, file.size - index * session.chunk_size);
+  };
   const progress = () => {
-    const uploadedBytes = session ? [...received].reduce((sum, index) => sum + Math.min(session!.chunk_size, file.size - index * session!.chunk_size), 0) : 0;
     const retryAttempt = Math.max(0, ...retrying.values());
     const phase = retryAttempt ? "retrying" : waiting.size ? "waiting" : stage;
     const message = phase === "retrying" ? `连接中断，正在自动重试（第 ${retryAttempt} 次）`
@@ -100,17 +106,25 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
       uploadId = crypto.randomUUID(); remember(); session = await create(); break;
     }
   }
-  session.received_chunks.forEach(index => received.add(index));
+  session.received_chunks.forEach(markReceived);
   resumed = received.size > 0;
-  initialBytes = session.received_bytes;
+  initialBytes = uploadedBytes;
   stage = "uploading";
   progress();
   const activeSession = session;
-  const acknowledge = (snapshot: UploadSession) => {
-    if (snapshot.upload_id !== uploadId || snapshot.size !== file.size || snapshot.chunk_size !== activeSession.chunk_size || snapshot.chunk_count !== activeSession.chunk_count || !Array.isArray(snapshot.received_chunks)) return;
+  const acknowledge = (snapshot: UploadSession | ChunkReceipt) => {
+    if (snapshot.upload_id !== uploadId || snapshot.size !== file.size || snapshot.chunk_size !== activeSession.chunk_size || snapshot.chunk_count !== activeSession.chunk_count) return;
+    if ("acknowledgement" in snapshot) {
+      const index = snapshot.chunk_index;
+      const expected = knownDigests.get(index);
+      if (snapshot.acknowledgement === "chunk-v1" && expected && snapshot.sha256 === expected && snapshot.chunk_bytes === Math.min(activeSession.chunk_size, file.size - index * activeSession.chunk_size)) markReceived(index);
+      return;
+    }
+    // Older API/gateway versions may still reply with the complete snapshot.
+    if (!Array.isArray(snapshot.received_chunks)) return;
     for (const index of snapshot.received_chunks) {
       const expected = knownDigests.get(index);
-      if (expected && snapshot.chunk_sha256?.[String(index)] === expected) received.add(index);
+      if (expected && snapshot.chunk_sha256?.[String(index)] === expected) markReceived(index);
     }
   };
   const pending = Array.from({ length: session.chunk_count }, (_, i) => i).filter(i => !received.has(i));
@@ -124,7 +138,7 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
       try {
         const checksum = await digest(chunk);
         knownDigests.set(index, checksum);
-        const confirmation = await request<UploadSession>(`/v1/uploads/${uploadId}/chunks/${index}`, { method: "PUT", headers: { "Content-Type": "application/octet-stream", "X-Chunk-SHA256": checksum }, body: chunk }, 90000, async () => {
+        const confirmation = await request<UploadSession | ChunkReceipt>(`/v1/uploads/${uploadId}/chunks/${index}`, { method: "PUT", headers: { "Content-Type": "application/octet-stream", "X-Chunk-SHA256": checksum, "X-Upload-Acknowledgement": "chunk-v1" }, body: chunk }, 90000, async () => {
           // A lost PUT response does not imply lost bytes. Read durable status
           // before resending, and only merge matching checksums monotonically.
           const snapshot = await perform<UploadSession>(`/v1/uploads/${uploadId}`, { method: "GET" }, 10000);

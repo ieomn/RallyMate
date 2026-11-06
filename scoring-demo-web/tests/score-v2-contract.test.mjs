@@ -52,7 +52,10 @@ test("missing dimensions remain unscored without exposing internal formulas or h
   const rendered = html(process());
   const firstScreen = rendered.slice(0, rendered.indexOf("<details"));
   assert.match(firstScreen, /aria-label="本次训练评分"/);
-  assert.equal((firstScreen.match(/<strong>未评分<\/strong>/g) ?? []).length, 5);
+  const dimensionScores = firstScreen.match(/class="process-reference-method"[^>]*>(.*?)<\/div>/)?.[1];
+  assert.ok(dimensionScores);
+  assert.equal((dimensionScores.match(/<strong>—<\/strong>/g) ?? []).length, 5);
+  assert.doesNotMatch(dimensionScores, /<strong>\d/);
   assert.doesNotMatch(firstScreen, /n\/\(n\+3\)|中性暂估|历史 v1|评分卡/);
   assert.equal((rendered.match(/class="process-radar-point/g) ?? []).length, 0);
   assert.match(rendered, /已测/);
@@ -71,7 +74,7 @@ test("unknown versions and arbitrary bare scores show explicit failed validation
   for (const raw of [process("swing", undefined, { version: "unknown-v99" }), process("swing", undefined, { overall_score: 98 }), process("swing", undefined, { relative_reference: { version: "future", overall_score: 98 } }), { overall_score: 98 }]) {
     assert.equal(processEvaluationOf(raw), null);
     assert.equal(processEvaluationValidationOf(raw).status, "invalid");
-    assert.match(html(raw), /role="alert">数据校验未通过/);
+    assert.match(html(raw), /role="alert">评分数据读取异常，请重新读取报告。/);
     assert.doesNotMatch(html(raw), /<strong>98/);
   }
   assert.equal(processEvaluationValidationOf(undefined).status, "missing");

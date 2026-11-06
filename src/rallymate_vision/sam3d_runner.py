@@ -35,12 +35,45 @@ CHECKPOINT_HASHES = {
     "3b1cb897f4bbd977bf81cbb0b30780a9582681ac642ee112865790ceb4d66056": "vith",
 }
 MHR_HASH = "352e271a6c42729c68554ceaea0c955e866970160c31e35506d782dc0f7377bc"
+BATCH_PROTOCOL = "sam-body-frames-v1"
+MAX_BATCH_FRAMES = 8
+MAX_BATCH_SOURCE_BYTES = 128 * 1024 * 1024
+
+
+def _validate_frame_requests(requests):
+    if not isinstance(requests, list) or len(requests) > MAX_BATCH_FRAMES:
+        raise ValueError("SAM batch requires a list of at most eight frames")
+    total = 0
+    for request in requests:
+        frame, boxes = request["frame"], request["boxes"]
+        if (not isinstance(frame, np.ndarray) or frame.dtype != np.uint8 or frame.ndim != 3
+                or frame.shape[2] != 3 or min(frame.shape[:2]) < 1):
+            raise ValueError("SAM batch requires exact uint8 source BGR pixels")
+        if not isinstance(boxes, list) or len(boxes) > 4:
+            raise ValueError("SAM batch supports at most four subjects per frame")
+        height, width = frame.shape[:2]
+        for box in boxes:
+            array = np.asarray(box, dtype=float)
+            if (array.shape != (4,) or not np.isfinite(array).all()
+                    or not (0 <= array[0] < array[2] <= width and 0 <= array[1] < array[3] <= height)):
+                raise ValueError("SAM batch source bbox is invalid")
+        total += frame.nbytes
+    if total > MAX_BATCH_SOURCE_BYTES:
+        raise ValueError("SAM batch source pixels exceed 128 MiB")
+
+
+def _validate_batch_outputs(outputs, requests):
+    if (not isinstance(outputs, list) or len(outputs) != len(requests)
+            or any(not isinstance(rows, list) or len(rows) != len(request["boxes"])
+                   or any(not isinstance(row, dict) for row in rows)
+                   for rows, request in zip(outputs, requests))):
+        raise ValueError("SAM batch output cardinality differs from frame/subject requests")
 
 
 def configure_runtime_optimizations(model, *, inference_type, prompt_enabled, rotation_enabled,
                                     graph_enabled=False, forward_graph_scope="off",
                                     gpu_preprocess_enabled=False, output_transfer_enabled=False,
-                                    decoder_graph_enabled=False, estimator=None):
+                                    decoder_graph_enabled=False, estimator=None, batch_graph_sizes=()):
     """Bind validated instance optimizations; other inference modes stay official.
 
     Loading dependencies is deliberately lazy. A partially applied setup is
@@ -48,6 +81,11 @@ def configure_runtime_optimizations(model, *, inference_type, prompt_enabled, ro
     """
     if forward_graph_scope not in {"off", "backbone", "backbone_decoder_layers"}:
         raise ValueError("Unsupported SAM forward graph scope")
+    if (len(batch_graph_sizes) > 2 or len(set(batch_graph_sizes)) != len(batch_graph_sizes)
+            or any(type(size) is not int or not 2 <= size <= 8 for size in batch_graph_sizes)):
+        raise ValueError("SAM batch graph sizes must contain at most two distinct sizes in 2..8")
+    if batch_graph_sizes and (inference_type != "body" or not graph_enabled or not rotation_enabled):
+        raise ValueError("SAM batch graphs require body mode, the body-head graph and rotation binding")
     if decoder_graph_enabled and inference_type == "body" and not (graph_enabled and rotation_enabled):
         raise ValueError("Complete decoder graph requires the validated body-head graph and rotation binding")
     handles, metadata = [], {}
@@ -66,12 +104,15 @@ def configure_runtime_optimizations(model, *, inference_type, prompt_enabled, ro
             if not requested or inference_type != "body":
                 continue
             module = importlib.import_module("rallymate_vision." + module_name)
-            handle = getattr(module, function_name)(model)
+            options = ({"additional_batch_sizes": batch_graph_sizes}
+                       if batch_graph_sizes and name == "body_head_cuda_graph" else {})
+            handle = getattr(module, function_name)(model, **options)
             handles.append(handle)
             metadata[name].update(handle.receipt, enabled=True)
         if forward_graph_scope != "off" and inference_type == "body":
             module = importlib.import_module("rallymate_vision.sam3d_forward_graph")
-            handle = module.apply_forward_cuda_graph(model, scope=forward_graph_scope)
+            options = {"additional_batch_sizes": batch_graph_sizes} if batch_graph_sizes else {}
+            handle = module.apply_forward_cuda_graph(model, scope=forward_graph_scope, **options)
             handles.append(handle)
             metadata["forward_cuda_graph"] = {**handle.receipt, "enabled": True}
         if gpu_preprocess_enabled and inference_type == "body":
@@ -340,8 +381,15 @@ class Sam3DEngine:
         self.torch = None
         self.estimator = None
         self.optimization_handles = []
+        self.body_batch_executor = None
+        preprocess = os.environ.get("RALLYMATE_SAM3D_BATCH_PREPROCESS", "0")
+        if preprocess not in {"0", "1"}:
+            raise ValueError("RALLYMATE_SAM3D_BATCH_PREPROCESS must be 0 or 1")
+        self.batch_preprocess_enabled = preprocess == "1"
         if inference_type not in {"body", "full"}:
             raise ValueError("SAM inference_type must be body or full")
+        if self.batch_preprocess_enabled and inference_type != "body":
+            raise ValueError("SAM batch preprocessing requires body inference")
         checkpoint, runtime_dir = Path(checkpoint).resolve(), Path(runtime_dir).resolve()
         self.runtime_dir = runtime_dir
         self.mesh_export_enabled = os.environ.get("RALLYMATE_SAM3D_EXPORT_MESH", "1") == "1"
@@ -392,6 +440,8 @@ class Sam3DEngine:
                     output_transfer_enabled=os.environ.get("RALLYMATE_SAM3D_BATCH_OUTPUT_TRANSFER", "0") == "1",
                     decoder_graph_enabled=os.environ.get("RALLYMATE_SAM3D_COMPLETE_DECODER_GRAPH", "0") == "1",
                     estimator=self.estimator,
+                    batch_graph_sizes=tuple(int(value.strip()) for value in
+                        os.environ.get("RALLYMATE_SAM3D_BATCH_GRAPH_SIZES", "").split(",") if value.strip()),
                 )
                 torch.cuda.synchronize()
                 verify_sam_cuda_wait(cuda_wait_policy)
@@ -407,6 +457,8 @@ class Sam3DEngine:
                 "load_seconds": load_seconds,
                 "load_timing_scope": "model_load_and_estimator_with_final_cuda_sync_excludes_import_hash_and_device_initialization",
                 "inference_timing_scope": "per_subject_wall_includes_bgr_conversion_estimator_completion_sync_and_output_validation_excludes_prior_sync_model_load_IPC_and_timing_report",
+                "batch_inference_timing_scope": "per_subject_inference_ms_is_apportioned_batch_wall_not_individual_latency; batch_execution.wall_ms_is_shared_do_not_sum; excludes_prior_sync_model_load_and_IPC",
+                "batch_preprocess_requested": self.batch_preprocess_enabled,
                 "cold_call_semantics": "first_model_call_is_first_subject_after_model_load_no_separate_warmup",
                 "input_size": list(config.MODEL.IMAGE_SIZE),
                 "inference_type": inference_type, "native_keypoint_format": "mhr70",
@@ -538,10 +590,108 @@ class Sam3DEngine:
             results.append(result)
         return results
 
+    def infer_batch(self, requests: list[dict]) -> list[list[dict]]:
+        """One ordered result list per source frame; independent crops share a forward.
+
+        Frame metadata stays in the adapter. No concurrent calls or singleton
+        CUDA graph replay is used for a multi-subject forward. Failure preserves
+        every requested output slot and never silently reruns a failed batch.
+        """
+        _validate_frame_requests(requests)
+        if self.inference_type != "body":
+            raise ValueError("SAM multi-frame inference currently supports body mode only")
+        limit = int(os.environ.get("RALLYMATE_SAM3D_BATCH_PERSONS", "4"))
+        if not 1 <= limit <= 8:
+            raise ValueError("RALLYMATE_SAM3D_BATCH_PERSONS must be between 1 and 8")
+        outputs = [[None for _ in request["boxes"]] for request in requests]
+        subjects = [(frame_index, box_index, request["frame"], box)
+                    for frame_index, request in enumerate(requests)
+                    for box_index, box in enumerate(request["boxes"])]
+        for start in range(0, len(subjects), limit):
+            group = subjects[start:start + limit]
+            if len(group) == 1:
+                fi, bi, frame, box = group[0]
+                outputs[fi][bi] = self.infer(frame, [box])[0]
+                continue
+            if getattr(self, "body_batch_executor", None) is None:
+                from rallymate_vision.sam3d_batch import BodyBatchInference
+                self.body_batch_executor = BodyBatchInference(self.estimator,
+                    batch_preprocess=getattr(self, "batch_preprocess_enabled", False))
+            self.torch.cuda.synchronize()
+            self.torch.cuda.reset_peak_memory_stats()
+            started = time.perf_counter()
+            first_call = self.inference_calls == 0
+            self.inference_calls += 1
+            results = [{"status": "failed", "reason": None,
+                        "first_model_call": first_call} for _ in group]
+            try:
+                with contextlib.redirect_stdout(sys.stderr):
+                    raw = self.body_batch_executor.infer([(item[2], item[3]) for item in group],
+                        clear_cuda_cache=not self.reuse_cuda_cache)
+                self.torch.cuda.synchronize()
+                if len(raw) != len(group):
+                    raise ValueError("SAM batch returned a different number of subjects")
+                # Validate every slot before publishing any geometry/artifact.
+                for output in raw:
+                    xy, xyz = np.asarray(output["pred_keypoints_2d"]), np.asarray(output["pred_keypoints_3d"])
+                    camera, focal = np.asarray(output["pred_cam_t"]), np.asarray(output["focal_length"])
+                    if (xy.shape != (70, 2) or xyz.shape != (70, 3)
+                            or not np.isfinite(xy).all() or not np.isfinite(xyz).all()
+                            or camera.shape != (3,) or not np.isfinite(camera).all()
+                            or focal.shape not in ((), (1,)) or not np.isfinite(focal).all()):
+                        raise ValueError("SAM batch returned invalid native geometry")
+                for result, output in zip(results, raw):
+                    xy, xyz = np.asarray(output["pred_keypoints_2d"]), np.asarray(output["pred_keypoints_3d"])
+                    result.update(status="ok", keypoints_2d=xy.tolist(), keypoints_3d=xyz.tolist(),
+                                  pred_cam_t=np.asarray(output["pred_cam_t"]).tolist(),
+                                  focal_length=np.asarray(output["focal_length"]).tolist())
+                    if self.mesh_export_enabled:
+                        from rallymate_vision.sam3d_mesh import capture_mesh_output
+                        result["mesh_artifact"] = capture_mesh_output(output, self.estimator.faces, self.runtime_dir)
+            except Exception as exc:
+                if self.mesh_export_enabled:
+                    from rallymate_vision.sam3d_mesh import discard_unarchived_mesh_records
+                    discard_unarchived_mesh_records(results, self.runtime_dir)
+                for result in results:
+                    for key in ("keypoints_2d", "keypoints_3d", "pred_cam_t", "focal_length", "mesh_artifact"):
+                        result.pop(key, None)
+                    result.update(status="failed", reason="sam_batch_inference_error", error_type=type(exc).__name__)
+                print(f"SAM batch failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+            finally:
+                self.torch.cuda.synchronize()
+                elapsed_ms = (time.perf_counter() - started) * 1000
+                executor_receipt = getattr(self.body_batch_executor, "receipt", {})
+                preprocess_receipt = (executor_receipt.get("batch_preprocess", {})
+                                      if isinstance(executor_receipt, dict) else {})
+                for (fi, bi, _, _), result in zip(group, results):
+                    result.update(inference_ms=elapsed_ms / len(group),
+                        inference_type=self.inference_type,
+                        peak_memory_bytes=self.torch.cuda.max_memory_allocated(),
+                        peak_reserved_memory_bytes=self.torch.cuda.max_memory_reserved(),
+                        memory_scope="current_process_cuda_allocated_absolute_peak_includes_other_loaded_models",
+                        batch_execution={"protocol": BATCH_PROTOCOL, "subjects": len(group),
+                            "forward_calls": 1, "wall_ms": elapsed_ms,
+                            "timing_scope": "inference_ms_is_apportioned_batch_wall_not_individual_latency",
+                            "singleton_graph_policy": "preserved; opt_in_shape_graphs_else_eager_fallback",
+                            "batch_preprocess": dict(preprocess_receipt),
+                            "head_graph": next((dict(handle.receipt.get("batch_slots", {}).get(str(len(group)), {}))
+                                for handle in getattr(self, "optimization_handles", [])
+                                if handle.receipt.get("candidate") == "single_person_body_head_cuda_graph_v1"), {})})
+                    outputs[fi][bi] = result
+        _validate_batch_outputs(outputs, requests)
+        return outputs
+
     def close(self):
+        executor = getattr(self, "body_batch_executor", None)
+        self.body_batch_executor = None
+        failure = None
+        if callable(getattr(executor, "close", None)):
+            try:
+                executor.close()
+            except BaseException as exc:
+                failure = exc
         handles = getattr(self, "optimization_handles", [])
         self.optimization_handles = []
-        failure = None
         for handle in reversed(handles):
             try:
                 handle.restore()
@@ -571,6 +721,7 @@ class Sam3DProcess:
         self.transport = configured_transport(env)
         self.transport_metadata = transport_metadata(self.transport)
         self.shared_writer = SharedFrameWriter() if self.transport == "shared_memory" else None
+        self.batch_writers = []
         self.request_id = 0
         # Timeout handling closes the process from inside infer(). External
         # cancellation terminates it first, then waits for this lock to release.
@@ -701,6 +852,82 @@ class Sam3DProcess:
                 if path is not None:
                     path.unlink(missing_ok=True)
 
+    def infer_batch(self, requests: list[dict]) -> list[list[dict]]:
+        _validate_frame_requests(requests)
+        if not requests:
+            return []
+        started = time.perf_counter()
+        with self.lock:
+            timing = {"lock_wait_ms": (time.perf_counter() - started) * 1000}
+            if self.process.poll() is not None:
+                raise RuntimeError("SAM subprocess is no longer running")
+            paths = []
+            try:
+                stage_started = time.perf_counter()
+                if self.shared_writer is not None:
+                    # The prior matching reply guarantees the child released
+                    # its views/handles. Bound retained capacities across jobs,
+                    # not merely the bytes in this request's current shapes.
+                    for writer in self.batch_writers[len(requests):]:
+                        writer.close()
+                    self.batch_writers = self.batch_writers[:len(requests)]
+                    planned = sum(max(self.batch_writers[i].capacity if i < len(self.batch_writers) else 0,
+                                      item["frame"].nbytes) for i, item in enumerate(requests))
+                    if planned > MAX_BATCH_SOURCE_BYTES:
+                        for writer in self.batch_writers:
+                            writer.close()
+                        self.batch_writers = []
+                frames = []
+                for index, item in enumerate(requests):
+                    descriptor = {"boxes": item["boxes"]}
+                    if self.shared_writer is not None:
+                        while len(self.batch_writers) <= index:
+                            self.batch_writers.append(SharedFrameWriter())
+                        descriptor["shared_image"] = self.batch_writers[index].write(item["frame"])
+                    else:
+                        with tempfile.NamedTemporaryFile(dir=self.ipc_dir, suffix=".npy", delete=False) as handle:
+                            path = Path(handle.name)
+                            paths.append(path)
+                            np.save(handle, item["frame"], allow_pickle=False)
+                        descriptor["image"] = str(path)
+                    frames.append(descriptor)
+                timing["prepare_source_arrays_ms"] = (time.perf_counter() - stage_started) * 1000
+                self.request_id += 1
+                request = {"operation": "infer_batch", "batch_protocol": BATCH_PROTOCOL,
+                           "request_id": self.request_id, "transport": self.transport, "frames": frames}
+                stage_started = time.perf_counter()
+                try:
+                    self.process.stdin.write(json.dumps(request) + "\n")
+                    self.process.stdin.flush()
+                except (OSError, ValueError):
+                    self.close()
+                    raise
+                result = self._receive(float(os.environ.get("RALLYMATE_SAM3D_FRAME_TIMEOUT", "180")))
+                timing["worker_round_trip_wait_ms"] = (time.perf_counter() - stage_started) * 1000
+                if type(result.get("request_id")) is not int or result["request_id"] != self.request_id:
+                    self.close()
+                    raise RuntimeError("SAM batch response does not match the in-flight source frames")
+                try:
+                    if result.get("status") != "ok" or result.get("batch_protocol") != BATCH_PROTOCOL:
+                        raise ValueError("SAM worker rejected the batch protocol")
+                    outputs = result["outputs"]
+                    _validate_batch_outputs(outputs, requests)
+                    if not isinstance(result.get("transport_timing", {}), dict):
+                        raise ValueError("invalid transport timing")
+                except (KeyError, ValueError, TypeError) as exc:
+                    self.close()
+                    raise RuntimeError("SAM subprocess protocol_error: malformed batch response") from exc
+                timing.update(result.get("transport_timing", {}))
+                for rows in outputs:
+                    for output in rows:
+                        output["ipc_request_timing_ms"] = dict(timing)
+                        output["ipc_timing_scope"] = "shared_per_batch_request_do_not_sum_across_frames_or_subjects"
+                        output["ipc_transport"] = dict(self.transport_metadata)
+                return outputs
+            finally:
+                for path in paths:
+                    path.unlink(missing_ok=True)
+
     def close(self):
         # Do not wait for infer's request lock before terminating: the worker
         # may be hung. Release the termination lock before waiting on infer so
@@ -710,6 +937,8 @@ class Sam3DProcess:
         with self.lock:
             if self.shared_writer is not None:
                 self.shared_writer.close()
+            for writer in self.batch_writers:
+                writer.close()
             for stream in (self.process.stdin, self.process.stdout, self.log):
                 if stream is not None:
                     stream.close()
@@ -740,10 +969,13 @@ def _serve(args):
         return 2
     print(json.dumps({"status": "ready", "metadata": engine.metadata}), flush=True)
     shared_reader = SharedFrameReader() if transport == "shared_memory" else None
+    batch_readers = []
     last_request_id = 0
     try:
         for line in sys.stdin:
             frame = None
+            pixels = None
+            frame_requests = None
             request_id = None
             try:
                 request = json.loads(line)
@@ -754,18 +986,52 @@ def _serve(args):
                 if request.get("transport") != transport:
                     raise ValueError("SAM IPC request uses an unexpected transport")
                 load_started = time.perf_counter()
-                frame = (shared_reader.read(request["shared_image"]) if shared_reader is not None
-                         else np.load(request["image"], allow_pickle=False))
-                load_ms = (time.perf_counter() - load_started) * 1000
-                outputs = engine.infer(frame, request["boxes"])
-                result = {"status": "ok", "request_id": request_id, "outputs": outputs,
-                          "transport_timing": {"worker_load_source_array_ms": load_ms}}
+                operation = request.get("operation", "infer")
+                if operation == "infer_batch":
+                    descriptors = request.get("frames")
+                    if (request.get("batch_protocol") != BATCH_PROTOCOL or not isinstance(descriptors, list)
+                            or not 1 <= len(descriptors) <= MAX_BATCH_FRAMES):
+                        raise ValueError("SAM IPC invalid batch envelope")
+                    frame_requests = []
+                    for index, descriptor in enumerate(descriptors):
+                        if shared_reader is not None:
+                            while len(batch_readers) <= index:
+                                batch_readers.append(SharedFrameReader())
+                            pixels = batch_readers[index].read(descriptor["shared_image"])
+                        else:
+                            pixels = np.load(descriptor["image"], allow_pickle=False)
+                        frame_requests.append({"frame": pixels, "boxes": descriptor["boxes"]})
+                        pixels = None
+                    _validate_frame_requests(frame_requests)
+                    load_ms = (time.perf_counter() - load_started) * 1000
+                    outputs = engine.infer_batch(frame_requests)
+                    _validate_batch_outputs(outputs, frame_requests)
+                    result = {"status": "ok", "request_id": request_id, "outputs": outputs,
+                              "batch_protocol": BATCH_PROTOCOL,
+                              "transport_timing": {"worker_load_source_array_ms": load_ms}}
+                elif operation == "infer":
+                    frame = (shared_reader.read(request["shared_image"]) if shared_reader is not None
+                             else np.load(request["image"], allow_pickle=False))
+                    load_ms = (time.perf_counter() - load_started) * 1000
+                    outputs = engine.infer(frame, request["boxes"])
+                    result = {"status": "ok", "request_id": request_id, "outputs": outputs,
+                              "transport_timing": {"worker_load_source_array_ms": load_ms}}
+                else:
+                    raise ValueError("SAM IPC unknown operation")
             except Exception as exc:
                 result = {"status": "failed", "request_id": request_id, "error_type": type(exc).__name__}
             finally:
                 # Release the exported view before the next request can switch
                 # mapping sizes and before acknowledging safe parent reuse.
                 frame = None
+                pixels = None
+                frame_requests = None
+                # Release every batch mapping before acknowledging safe reuse.
+                # Parent keeps the bounded allocation pool; no child handle
+                # can retain a dropped/downsized slot across later requests.
+                for reader in batch_readers:
+                    reader.close()
+                batch_readers = []
             print(json.dumps(result, allow_nan=False), flush=True)
     finally:
         try:
@@ -773,6 +1039,8 @@ def _serve(args):
         finally:
             if shared_reader is not None:
                 shared_reader.close()
+            for reader in batch_readers:
+                reader.close()
     return 0
 
 

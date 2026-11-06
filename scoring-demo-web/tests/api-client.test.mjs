@@ -22,6 +22,13 @@ const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-cli
 const { getRequestDiagnostics } = await import(compiledUrl(new URL("../app/lib/request-diagnostics.ts", import.meta.url)));
 const { MAX_REPORT_WIRE_BYTES } = await import(compiledUrl(new URL("../app/lib/report-limits.ts", import.meta.url)));
 
+test("separate action-score reads have their own diagnostic category", async () => {
+  const rows = [];
+  const client = createApiClient({}, async () => Response.json({ status: "unavailable" }), undefined, row => rows.push(row));
+  assert.equal((await client.getTennisAssessment("job-12345678")).status, "unavailable");
+  assert.deepEqual(rows.map(row => row.operation), ["tennis_assessment", "tennis_assessment", "tennis_assessment"]);
+});
+
 test("report Content-Length is rejected before reading an oversized response", async () => {
   let cancelled = false;
   const body = new ReadableStream({ cancel() { cancelled = true; } });
@@ -100,11 +107,20 @@ test("preparation cannot be forged by a wrong job, missing marker, wrong HTTP st
   }
 });
 
-test("report preparation has one 120-second overall deadline without a final extra request", async () => {
+test("report preparation has one 360-second overall deadline without a final extra request", async () => {
   const clock = fakeReportClock(); let calls = 0;
   const client = createApiClient(configured, async () => { calls++; return Response.json(preparing(), { status: 202 }); }, clock);
-  await assert.rejects(client.getDemoResult("job-12345678"), error => error.status === 425 && /等待时限/.test(error.message));
-  assert.equal(clock.now(), 120000); assert.equal(calls, 120); assert.equal(clock.waits.length, 120);
+  await assert.rejects(client.getDemoResult("job-12345678"), error => error.status === 425 && error.payload?.detail?.code === "report_still_preparing" && /报告仍在整理/.test(error.message));
+  assert.equal(clock.now(), 360000); assert.equal(calls, 360); assert.equal(clock.waits.length, 360);
+});
+
+test("custom report wait budgets may be shorter but cannot exceed 360 seconds", async () => {
+  for (const [maxWaitMs, expected] of [[2500, 2500], [999999, 360000]]) {
+    const clock = fakeReportClock(); let calls = 0;
+    const client = createApiClient(configured, async () => { calls++; return Response.json(preparing(), { status: 202 }); }, clock);
+    await assert.rejects(client.getDemoResult("job-12345678", { maxWaitMs }), error => error.status === 425 && error.payload?.detail?.code === "report_still_preparing");
+    assert.equal(clock.now(), expected); assert.equal(calls, Math.ceil(expected / 1000));
+  }
 });
 
 test("aborting report preparation clears the real wait timer and prevents all later fetches", async t => {
@@ -116,7 +132,7 @@ test("aborting report preparation clears the real wait timer and prevents all la
   await noticed;
   controller.abort(new DOMException("User stopped", "AbortError"));
   await assert.rejects(pending, error => error.name === "AbortError");
-  t.mock.timers.tick(120000); await Promise.resolve();
+  t.mock.timers.tick(360000); await Promise.resolve();
   assert.equal(calls, 1);
 });
 
@@ -327,6 +343,30 @@ test("body interruption preserves the stream error without guessing its network 
 });
 
 const flushReads = async () => { for (let i = 0; i < 16; i++) await Promise.resolve(); };
+
+test("cold preparation and the final successful transfer can cross the former 120-second deadline", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let now = 0, stream, fetchSignal, notify;
+  const readyStarted = new Promise(resolve => { notify = resolve; });
+  const response = new Response(new ReadableStream({ start(controller) { stream = controller; } }));
+  const timing = { now: () => now, wait: async (ms, signal) => {
+    signal.throwIfAborted(); now += ms; t.mock.timers.tick(ms);
+  } };
+  const client = createApiClient(configured, async (_url, init) => {
+    if (now < 118000) return Response.json(preparing(), { status: 202 });
+    fetchSignal = init.signal; notify(); return response;
+  }, timing);
+  const work = client.getDemoResult("job-12345678").then(value => ({ value }), error => ({ error }));
+  await readyStarted; await flushReads();
+  now += 5500; t.mock.timers.tick(5500);
+  assert.equal(fetchSignal.aborted, false);
+  stream.enqueue(new TextEncoder().encode(JSON.stringify(nativeReport()))); stream.close();
+  await flushReads(); t.mock.timers.tick(0); await flushReads();
+  const result = await work;
+  assert.equal(now, 123500); assert.equal(result.error, undefined); assert.equal(result.value.status, "ready");
+  t.mock.timers.tick(360000); assert.equal(fetchSignal.aborted, false);
+});
+
 function slowReport(t, options = {}) {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   let now = 0, stream, fetchSignal, cancelled = false;
@@ -350,7 +390,7 @@ test("a progressing report body can take more than 20 seconds after headers", as
   assert.equal(result.error, undefined); assert.equal(result.value.status, "ready");
   assert.equal(result.value.job_id, "job-12345678"); assert.equal(read.cancelled(), false);
   assert.equal(read.rows.at(-1).stage, "decode");
-  await read.advance(120000); assert.equal(read.signal().aborted, false, "all completed report timers must be cleared");
+  await read.advance(360000); assert.equal(read.signal().aborted, false, "all completed report timers must be cleared");
 });
 
 test("a report body stops after 20 seconds without byte progress and clears its reader", async t => {
@@ -364,9 +404,9 @@ test("a report body stops after 20 seconds without byte progress and clears its 
   assert.deepEqual([diagnostic.stage, diagnostic.category, diagnostic.bodyComplete], ["body", "timeout", false]);
 });
 
-test("continuous slow progress cannot extend a report beyond the overall 120 second budget", async t => {
+test("continuous slow progress cannot extend a report beyond the overall 360 second budget", async t => {
   const read = slowReport(t); await flushReads();
-  for (let i = 0; i < 7; i++) { await read.advance(15000); read.stream.enqueue(new TextEncoder().encode(" ")); await flushReads(); }
+  for (let i = 0; i < 23; i++) { await read.advance(15000); read.stream.enqueue(new TextEncoder().encode(" ")); await flushReads(); }
   await read.advance(15000);
   const result = await read.work;
   assert.equal(result.error.status, 425); assert.equal(result.error.cause.name, "TimeoutError");
@@ -381,7 +421,7 @@ test("navigation abort cancels a progressing report body without publishing late
   const count = read.rows.length;
   caller.abort(reason); await flushReads(); const result = await read.work;
   assert.equal(result.error, reason); assert.equal(read.cancelled(), true); assert.equal(read.rows.length, count);
-  await read.advance(120000); assert.equal(read.rows.length, count);
+  await read.advance(360000); assert.equal(read.rows.length, count);
 });
 
 test("report connection still times out after 20 seconds before response headers", async t => {
@@ -443,11 +483,30 @@ test("preparation deadline diagnostic records actual 202 rather than synthetic r
   const client = createApiClient(configured, async () => { requests++; return Response.json(preparing(), { status: 202 }); }, timing, row => rows.push(row));
   await assert.rejects(client.getDemoResult("job-12345678"), error => {
     assert.equal(error.status, 425);
+    assert.equal(error.payload.detail.code, "report_still_preparing");
     assert.equal(getRequestDiagnostics(error).at(-1).category, "preparation_timeout");
     assert.equal(getRequestDiagnostics(error).at(-1).httpStatus, 202);
     return true;
   });
-  assert.equal(timing.now(), 120000); assert.equal(requests, 120);
+  assert.equal(timing.now(), 360000); assert.equal(requests, 360);
+});
+
+test("the real total timer retains preparing semantics when it expires between valid 202 polls", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let calls = 0, notify;
+  const noticed = new Promise(resolve => { notify = resolve; });
+  const client = createApiClient(configured, async () => { calls++; return Response.json(preparing(), { status: 202 }); });
+  const pending = client.getDemoResult("job-12345678", { onPrepare: notify });
+  await noticed;
+  t.mock.timers.tick(360000);
+  await assert.rejects(pending, error => {
+    assert.equal(error.status, 425); assert.equal(error.payload.detail.code, "report_still_preparing");
+    const diagnostic = getRequestDiagnostics(error).at(-1);
+    assert.deepEqual([diagnostic.category, diagnostic.httpStatus, diagnostic.bodyComplete], ["preparation_timeout", 202, true]);
+    return true;
+  });
+  t.mock.timers.tick(360000); await Promise.resolve();
+  assert.equal(calls, 1);
 });
 
 
@@ -467,10 +526,11 @@ test("a final in-flight failure never inherits the preceding preparation respons
   const client = createApiClient(configured, async (_url, init) => {
     requestIds.push(init.headers["X-Request-ID"]);
     if (++calls === 1) return Response.json(preparing(), { status: 202 });
-    now = 120000; throw original;
+    now = 360000; throw original;
   }, timing);
   await assert.rejects(client.getDemoResult("job-12345678"), error => {
     assert.equal(error.status, 425); assert.equal(error.cause, original);
+    assert.equal(error.payload, undefined, "a later failed request must not be labelled still preparing");
     const row = getRequestDiagnostics(error).at(-1);
     assert.equal(row.requestId, requestIds[1]); assert.notEqual(row.requestId, requestIds[0]);
     assert.equal(row.httpStatus, null); assert.equal(row.stage, "headers");

@@ -6,7 +6,7 @@ export function originalReplayHash(hash: string): "#evidence" | null {
   return ["#evidence", "#motion-replay", "#skeleton-replay"].includes(hash) ? "#evidence" : null;
 }
 
-export default function TrainingReplayPanel({ jobId, children, mediaKind }: { jobId?: string; children: ReactNode; mediaKind?: "annotated" | "original" | null }) {
+export default function TrainingReplayPanel({ jobId, children, mediaKind }: { jobId?: string; children: ReactNode; mediaKind?: "original" | null }) {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function TrainingReplayPanel({ jobId, children, mediaKind }: { jo
   }, [jobId]);
 
   return <section ref={root} className="report-replay" id="evidence" aria-labelledby="evidence-title" data-job-id={jobId}>
-    <div className="report-section-heading"><div><h2 id="evidence-title">{mediaKind === "annotated" ? "标注回放" : mediaKind === null ? "训练回放" : "原视频"} · 动作识别</h2><p className="training-replay-intro">{mediaKind === "annotated" ? "当前为服务器生成的标注回放，支持慢放查看。" : mediaKind === null ? "选择可用的视频回放查看动作。" : "结合动作标记复看原片，支持慢放与动作片段定位。"}</p></div></div>
+    <div className="report-section-heading"><div><h2 id="evidence-title">{mediaKind === null ? "训练回放" : "原视频"} · 动作识别</h2><p className="training-replay-intro">{mediaKind === null ? "选择可用的视频回放查看动作。" : "结合动作标记复看原片，支持慢放与动作片段定位。"}</p></div></div>
     <div id="replay-view-original">{children}</div>
   </section>;
 }

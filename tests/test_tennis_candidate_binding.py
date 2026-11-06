@@ -44,6 +44,77 @@ class TennisCandidateBindingTests(unittest.TestCase):
                                                'model_estimate_sample_count':29})
         return episode
 
+    def test_clipped_candidate_cannot_reserve_a_complete_alternative_window(self):
+        timeline, records = inputs()
+        complete = self.source_phased_episode()
+        clipped = deepcopy(complete)
+        clipped.update(episode_id='earlier-clipped', start_ms=0)
+        clipped['phases'][0]['start_ms'] = 0
+        args = dict(video_sha256=SHA)
+        expected = analyze_tennis_assessment(timeline[1:], records[1:], motion_episodes=[complete], **args)
+        actual = analyze_tennis_assessment(timeline[1:], records[1:], motion_episodes=[clipped, complete], **args)
+        self.assertEqual(expected['observation_count'], 1)
+        self.assertEqual(actual['episodes'], expected['episodes'])
+        self.assertEqual(actual['overall_score'], expected['overall_score'])
+        self.assertEqual(actual['candidate_accounting']['rejection_counts'],
+                         {'candidate_lacks_continuous_complete_motion': 1})
+        self.assertEqual(actual['candidate_accounting']['rejected_count'], 1)
+
+    def test_successful_overlapping_candidates_are_scored_only_once_and_accounted(self):
+        timeline, records = inputs()
+        for complete in (self.source_phased_episode(), episodes()[0]):
+            alternative = deepcopy(complete)
+            alternative['episode_id'] = 'z-overlapping-alternative'
+            args = dict(video_sha256=SHA)
+            expected = analyze_tennis_assessment(timeline, records, motion_episodes=[complete], **args)
+            actual = analyze_tennis_assessment(timeline, records, motion_episodes=[complete, alternative], **args)
+            with self.subTest(phase_authority=complete.get('phase_authority')):
+                self.assertEqual(actual['episodes'], expected['episodes'])
+                self.assertEqual(actual['candidate_accounting']['accepted_count'], 1)
+                self.assertEqual(actual['candidate_accounting']['rejection_counts'], {'candidate_overlap_duplicate': 1})
+                self.assertEqual(len(actual['episode_validity']), 2)
+
+    def test_rejected_native_estimate_is_not_reported_as_source_corruption(self):
+        for status, failure, expected in (
+                ('skipped', 'sam_pose_quality_rejected', 'native_pose_quality_rejected'),
+                ('failed', 'model_execution_failed', 'native_pose_unavailable')):
+            timeline, records = inputs()
+            records[20].update(status=status, reason=failure)
+            timeline[20].update(selection_epoch=None, camera_reference_epoch=None, pose_present=False)
+            segments, reasons = _segments(timeline, records, SHA)
+            with self.subTest(status=status):
+                self.assertEqual(reasons[expected], 1)
+                self.assertNotIn('source_binding_mismatch', reasons)
+                self.assertFalse(any(row['frame'] == 20 for segment in segments for row in segment))
+                records[20]['video_sha256'] = 'b' * 64
+                _, invalid = _segments(timeline, records, SHA)
+                self.assertEqual(invalid['source_binding_mismatch'], 1)
+
+    def test_no_candidates_skip_projected_frame_materialization_but_keep_diagnostics(self):
+        from rallymate_service.swing_kinematics import _read_rows
+        timeline, records = inputs()
+        records[20].update(status='skipped', reason='sam_pose_quality_rejected')
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary) / 'test-run'
+            directory.mkdir()
+            for filename, data in (('primary-player.jsonl', timeline), ('sam3d_frames.jsonl', records),
+                                   ('frames.jsonl', source_frames(records))):
+                (directory / filename).write_text(''.join(json.dumps(r) + '\n' for r in data), encoding='utf-8')
+            summary = {'job_id': 'test-run', 'minimum_scoring_loop': {'provenance': {'video_sha256': SHA}}}
+            def read_without_projected_frames(path):
+                self.assertNotEqual(path.name, 'frames.jsonl')
+                return _read_rows(path)
+            with patch('rallymate_service.tennis_assessment._read_rows', side_effect=read_without_projected_frames), \
+                    patch('rallymate_service.tennis_assessment.source_motion_by_frame') as projected:
+                report = build_tennis_assessment(summary, directory)
+            projected.assert_not_called()
+            self.assertEqual(report['status'], 'unavailable')
+            self.assertEqual(report['observation_count'], 0)
+            self.assertEqual(report['quality_reason_counts']['native_pose_quality_rejected'], 1)
+            self.assertTrue(report['subject_scope']['subjects'])
+            self.assertIn('1 帧姿态未通过质量检查', report['reason_zh'])
+            self.assertIn('未识别不代表没有挥拍或动作错误', report['reason_zh'])
+
     def test_bound_primary_motion_phases_are_not_retimed_using_another_coordinate_peak(self):
         timeline, records = inputs()
         episode = self.source_phased_episode()

@@ -104,49 +104,103 @@ class Yolo26Perception:
         ]
 
     def detect(self, frame: np.ndarray) -> list[dict]:
+        return self.detect_batch([frame])[0]
+
+    def detect_batch(self, frames: Sequence[np.ndarray]) -> list[list[dict]]:
+        """Batch stateless detection, returning exactly one ordered slot per frame.
+
+        Tracking, camera state and subject selection must still consume these
+        slots chronologically. Grouping identical source shapes preserves YOLO's
+        rectangular padding policy; mixing aspect ratios in one model call can
+        otherwise change the effective input geometry. The caller owns the
+        bounded video queue and must not accumulate a whole decoded video.
+        """
+        if isinstance(frames, np.ndarray):
+            raise ValueError("detect_batch expects a sequence of source frames")
+        if len(frames) > 16:
+            raise ValueError("detection batch must contain at most 16 frames")
+        frames = list(frames)
+        for frame in frames:
+            if (not isinstance(frame, np.ndarray) or frame.ndim != 3
+                    or frame.shape[2] != 3 or frame.dtype != np.uint8
+                    or min(frame.shape[:2]) < 1):
+                raise ValueError("detection requires non-empty uint8 BGR source frames")
         started = time.perf_counter()
         self.last_detection_timing = {}
-        height, width = frame.shape[:2]
-        result = self.detect_model.predict(
-            frame,
-            imgsz=self.detect_imgsz,
-            conf=self.detect_confidence,
-            classes=self.target_class_ids,
-            device=self.device,
-            verbose=False,
-        )[0]
-        self.last_detection_timing["base_predict_wall_ms"] = (time.perf_counter() - started) * 1000
-        # Ultralytics publishes these per-image stage measurements itself.
-        for key, value in (getattr(result, "speed", None) or {}).items():
-            if isinstance(value, (int, float)):
-                self.last_detection_timing[f"base_{key}_ms"] = value
-        decode_started = time.perf_counter()
-        detections = self._decode_detections(result, width, height)
-        self.last_detection_timing["base_output_transfer_decode_ms"] = (time.perf_counter() - decode_started) * 1000
+        self.last_detection_timings = [{} for _ in frames]
+        outputs: list[list[dict]] = [[] for _ in frames]
+        shape_groups: dict[tuple, list[int]] = {}
+        for index, frame in enumerate(frames):
+            shape_groups.setdefault(frame.shape, []).append(index)
+        for indexes in shape_groups.values():
+            results = self._predict_detection_group(
+                frames, indexes, imgsz=self.detect_imgsz, confidence=self.detect_confidence,
+                classes=self.target_class_ids, component="base",
+            )
+            for index, result in zip(indexes, results):
+                height, width = frames[index].shape[:2]
+                decode_started = time.perf_counter()
+                outputs[index] = self._decode_detections(result, width, height)
+                self.last_detection_timings[index]["base_output_transfer_decode_ms"] = (
+                    time.perf_counter() - decode_started) * 1000
         # Refinement uses the same source pixels, never reconstructed detail.
-        # The native-size 720p branch is deliberately gated: indiscriminate
-        # upscaling adds small background candidates as well as real balls.
-        refinement_size, refinement_confidence = self._ball_refinement_policy(width, height, detections)
+        # Apply the per-frame policy first, then batch only compatible requests.
         ball_classes = [key for key, name in self.detect_model.names.items()
                         if self.TARGET_ALIASES.get(name) == "ball"]
-        if refinement_size and ball_classes:
-            refine_started = time.perf_counter()
-            refined = self.detect_model.predict(
-                frame, imgsz=refinement_size, conf=refinement_confidence,
-                classes=ball_classes, device=self.device, verbose=False,
-            )[0]
-            self.last_detection_timing["refinement_predict_wall_ms"] = (time.perf_counter() - refine_started) * 1000
-            for key, value in (getattr(refined, "speed", None) or {}).items():
+        refinement_groups: dict[tuple, list[int]] = {}
+        if ball_classes:
+            for index, (frame, detections) in enumerate(zip(frames, outputs)):
+                height, width = frame.shape[:2]
+                size, confidence = self._ball_refinement_policy(width, height, detections)
+                if size:
+                    refinement_groups.setdefault((frame.shape, size, confidence), []).append(index)
+        for (_, size, confidence), indexes in refinement_groups.items():
+            results = self._predict_detection_group(
+                frames, indexes, imgsz=size, confidence=confidence,
+                classes=ball_classes, component="refinement",
+            )
+            for index, refined in zip(indexes, results):
+                height, width = frames[index].shape[:2]
+                decode_started = time.perf_counter()
+                extras = [item for item in self._decode_detections(refined, width, height)
+                          if item["class_name"] == "ball"
+                          and item["confidence"] >= confidence
+                          and self._small_ball_refinement(item, width, height)]
+                outputs[index] = self._merge_ball_scales(outputs[index], extras)
+                self.last_detection_timings[index]["refinement_output_transfer_decode_ms"] = (
+                    time.perf_counter() - decode_started) * 1000
+        outputs = [self._deduplicate(detections) for detections in outputs]
+        total_ms = (time.perf_counter() - started) * 1000
+        # Shared call wall time is apportioned, not per-frame latency. Preserve
+        # actual batch wall time separately so profiling never sums it N times.
+        for timing in self.last_detection_timings:
+            timing["total_wall_ms"] = total_ms / len(frames)
+        self.last_detection_timing = self.last_detection_timings[-1] if frames else {}
+        self.last_detection_batch_timing = {
+            "frames": len(frames), "base_calls": len(shape_groups),
+            "refinement_calls": len(refinement_groups), "total_wall_ms": total_ms,
+            "per_frame_wall_semantics": "shared_batch_wall_apportioned_not_latency",
+        }
+        return outputs
+
+    def _predict_detection_group(self, frames, indexes, *, imgsz, confidence, classes, component):
+        started = time.perf_counter()
+        source = frames[indexes[0]] if len(indexes) == 1 else [frames[index] for index in indexes]
+        results = list(self.detect_model.predict(
+            source, imgsz=imgsz, conf=confidence, classes=classes,
+            device=self.device, verbose=False,
+        ))
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        if len(results) != len(indexes):
+            raise ValueError("detector must return exactly one result per source frame")
+        for index, result in zip(indexes, results):
+            timing = self.last_detection_timings[index]
+            timing[f"{component}_predict_wall_ms"] = elapsed_ms / len(indexes)
+            # Ultralytics publishes its own per-image stage measurements.
+            for key, value in (getattr(result, "speed", None) or {}).items():
                 if isinstance(value, (int, float)):
-                    self.last_detection_timing[f"refinement_{key}_ms"] = value
-            extras = [item for item in self._decode_detections(refined, width, height)
-                      if item["class_name"] == "ball"
-                      and item["confidence"] >= refinement_confidence
-                      and self._small_ball_refinement(item, width, height)]
-            detections = self._merge_ball_scales(detections, extras)
-        detections = self._deduplicate(detections)
-        self.last_detection_timing["total_wall_ms"] = (time.perf_counter() - started) * 1000
-        return detections
+                    timing[f"{component}_{key}_ms"] = value
+        return results
 
     def _ball_refinement_policy(self, width: int, height: int, detections: list[dict]) -> tuple[int | None, float]:
         """Choose one bounded extra scale without assuming the active ball ID."""
@@ -321,6 +375,12 @@ class Yolo26Perception:
             getattr(self.pose_estimator, "last_association_diagnostics", None)
         )
         return poses
+
+    def estimate_pose_batch(self, requests: list[dict]) -> list[dict]:
+        if self.pose_backend.metadata().backend != "sam3d":
+            raise ValueError("multi-frame pose requests require the SAM backend")
+        self.last_pose_association_diagnostics = None
+        return self.pose_estimator.estimate_batch(requests)
 
     def pose_metadata(self) -> dict:
         if callable(getattr(self.pose_backend, "details", None)):

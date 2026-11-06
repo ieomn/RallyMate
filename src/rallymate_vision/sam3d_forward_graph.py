@@ -2,7 +2,8 @@
 
 This executes the original forwards without arithmetic rewrites. Decoder prompt
 updates and all six body heads remain outside these graphs, in original order.
-One fixed input signature is retained per module; other signatures run eagerly.
+By default one singleton signature is retained per module. Up to two explicitly
+configured batch sizes may retain independent graphs; other signatures are eager.
 """
 from __future__ import annotations
 
@@ -73,7 +74,12 @@ def _clone_tree(value, torch):
 class ModuleForwardGraph:
     """Bounded graph replay with fresh inputs and independently owned outputs."""
 
-    def __init__(self, module, torch, *, name, argument_names, device):
+    def __init__(self, module, torch, *, name, argument_names, device,
+                 additional_batch_sizes=(), batch_memory_budget=None):
+        sizes = tuple(additional_batch_sizes)
+        if (len(sizes) > 2 or any(type(size) is not int or not 2 <= size <= 8 for size in sizes)
+                or len(set(sizes)) != len(sizes)):
+            raise ValueError("At most two additional SAM graph batch sizes in [2,8] are supported")
         self.module, self.torch, self.device = module, torch, device
         self.name, self.argument_names = name, tuple(argument_names)
         self.had_forward = "forward" in vars(module)
@@ -82,8 +88,19 @@ class ModuleForwardGraph:
         self.graph = self.inputs = self.outputs = self.key = None
         self.disabled = self.restored = False
         self.lock = threading.Lock()
+        self.additional_batch_sizes = sizes
+        self.batch_memory_budget = (batch_memory_budget if batch_memory_budget is not None
+                                    else {"limit_bytes": 512 * 1024 * 1024, "retained_bytes": 0})
+        self.batch_slots = {size: {"graph": None, "inputs": None, "outputs": None, "key": None,
+                                  "disabled": False, "memory_bytes": 0,
+                                  "receipt": {"batch_size": size, "capture_status": "pending_first_call",
+                                              "replays": 0, "fallback_calls": 0}}
+                            for size in sizes}
         self.receipt = {"module": name, "capture_status": "pending_first_call", "replays": 0,
-                        "fallback_calls": 0, "capture_seconds": None, "maximum_graphs": 1}
+                        "fallback_calls": 0, "capture_seconds": None, "maximum_graphs": 1 + len(sizes)}
+        if sizes:
+            self.receipt["additional_batch_graphs"] = {str(size): slot["receipt"] for size, slot in self.batch_slots.items()}
+            self.receipt["batch_graph_memory_budget"] = self.batch_memory_budget
         try:
             module.forward = self
             self.state = _state_signature(module)
@@ -112,36 +129,108 @@ class ModuleForwardGraph:
             return None
         values = tuple(binding.arguments.values())
         tensor_count = 0
-        for value in values:
+        batch_size = None
+        for name, value in zip(self.argument_names, values):
             if value is None:
                 continue
             if not isinstance(value, self.torch.Tensor):
                 return None
             if (not value.is_cuda or value.device != self.device or value.ndim < 2
-                    or value.shape[0] != 1 or value.layout != self.torch.strided):
+                    or value.shape[0] not in (1, *self.additional_batch_sizes)
+                    or value.layout != self.torch.strided):
                 return None
+            # The pinned decoder intentionally broadcasts dense image PE from
+            # (1,tokens,channels). Preserve that exact input and arithmetic;
+            # only this known argument may differ from the primary batch axis.
+            broadcast_context_pe = (
+                self.argument_names == ("x", "context", "x_pe", "context_pe", "x_mask")
+                and name == "context_pe" and value.shape[0] == 1)
+            if batch_size is not None and value.shape[0] != batch_size and not broadcast_context_pe:
+                return None
+            if batch_size is None:
+                batch_size = value.shape[0]
             tensor_count += 1
         return values if tensor_count else None
 
-    def _capture(self, values):
+    def _build_graph(self, values):
         torch = self.torch
-        started = time.perf_counter()
-        self.inputs = tuple(value.detach().clone() if value is not None else None for value in values)
+        inputs = tuple(value.detach().clone() if value is not None else None for value in values)
         stream = torch.cuda.Stream(device=self.device)
         stream.wait_stream(torch.cuda.current_stream(self.device))
         with torch.cuda.stream(stream):
             for _ in range(3):
-                self.original(*self.inputs)
+                self.original(*inputs)
         torch.cuda.current_stream(self.device).wait_stream(stream)
         torch.cuda.synchronize(self.device)
         graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(graph, stream=stream):
-            outputs = self.original(*self.inputs)
+            outputs = self.original(*inputs)
         # Check the complete returned structure before retaining captured output.
         # The temporary clones also validate output ownership outside capture.
         _clone_tree(outputs, torch)
-        self.graph, self.outputs = graph, outputs
+        return graph, inputs, outputs
+
+    def _capture(self, values):
+        started = time.perf_counter()
+        self.graph, self.inputs, self.outputs = self._build_graph(values)
         self.receipt.update(capture_status="captured", capture_seconds=time.perf_counter() - started)
+
+    def _additional_forward(self, batch_size, values, args, kwargs):
+        slot = self.batch_slots[batch_size]
+        receipt = slot["receipt"]
+
+        def fallback(reason):
+            receipt["fallback_calls"] += 1
+            receipt["last_fallback_reason"] = reason
+            return self._fallback(args, kwargs, "batch_" + reason)
+
+        if slot["disabled"]:
+            return fallback("disabled")
+        key = tuple(None if value is None else
+                    (tuple(value.shape), tuple(value.stride()), value.dtype, value.device) for value in values)
+        if slot["key"] is not None and slot["key"] != key:
+            return fallback("different_input_signature")
+        torch, budget = self.torch, self.batch_memory_budget
+        if slot["graph"] is None:
+            free_bytes, _ = torch.cuda.mem_get_info(self.device)
+            if free_bytes < 256 * 1024 * 1024 or budget["retained_bytes"] >= budget["limit_bytes"]:
+                slot["disabled"] = True
+                receipt["capture_status"] = "memory_admission_rejected"
+                return fallback("memory_admission")
+            before_allocated = torch.cuda.memory_allocated(self.device)
+            before_reserved = torch.cuda.memory_reserved(self.device)
+            started = time.perf_counter()
+            try:
+                graph, inputs, outputs = self._build_graph(values)
+                cost = max(0, torch.cuda.memory_allocated(self.device) - before_allocated,
+                           torch.cuda.memory_reserved(self.device) - before_reserved)
+                if budget["retained_bytes"] + cost > budget["limit_bytes"]:
+                    # Budget governs retained graph pools, not transient capture
+                    # peak; discard this signature instead of growing a cache.
+                    torch.cuda.synchronize(self.device)
+                    graph = inputs = outputs = None
+                    slot["disabled"] = True
+                    receipt.update(capture_status="retained_memory_budget_exceeded", measured_bytes=cost)
+                else:
+                    slot.update(graph=graph, inputs=inputs, outputs=outputs, key=key, memory_bytes=cost)
+                    budget["retained_bytes"] += cost
+                    receipt.update(capture_status="captured", retained_memory_delta_bytes=cost,
+                                   capture_seconds=time.perf_counter() - started)
+            except Exception as error:
+                slot["disabled"] = True
+                receipt.update(capture_status="fallback_after_capture_error", capture_error_type=type(error).__name__)
+                torch.cuda.synchronize(self.device)
+                return fallback("capture_error")
+            if slot["graph"] is None:
+                # Keep eager execution outside the capture exception handler:
+                # an eager model failure must propagate without a second call.
+                return fallback("retained_memory_budget")
+        for target, source in zip(slot["inputs"], values):
+            if target is not None:
+                target.copy_(source)
+        slot["graph"].replay()
+        receipt["replays"] += 1
+        return _clone_tree(slot["outputs"], torch)
 
     def __call__(self, *args, **kwargs):
         if not self.lock.acquire(blocking=False):
@@ -156,7 +245,12 @@ class ModuleForwardGraph:
             if self.module.training or torch.is_grad_enabled() or torch.is_autocast_enabled():
                 return self._fallback(args, kwargs, "training_grad_or_autocast")
             values = self._arguments(args, kwargs)
-            if self.disabled or values is None:
+            if values is None:
+                return self._fallback(args, kwargs, "disabled_or_unsupported_contract")
+            batch_size = next(value.shape[0] for value in values if value is not None)
+            if batch_size != 1:
+                return self._additional_forward(batch_size, values, args, kwargs)
+            if self.disabled:
                 return self._fallback(args, kwargs, "disabled_or_unsupported_contract")
             key = tuple(None if value is None else
                         (tuple(value.shape), tuple(value.stride()), value.dtype, value.device)
@@ -190,9 +284,13 @@ class ModuleForwardGraph:
         if not self.lock.acquire(blocking=False):
             raise RuntimeError("Cannot restore a running SAM module graph")
         try:
-            if self.graph is not None:
+            if self.graph is not None or any(slot["graph"] is not None for slot in self.batch_slots.values()):
                 self.torch.cuda.synchronize(self.device)
             self.graph = self.inputs = self.outputs = None
+            for slot in self.batch_slots.values():
+                self.batch_memory_budget["retained_bytes"] -= slot["memory_bytes"]
+                slot.update(graph=None, inputs=None, outputs=None, memory_bytes=0)
+                slot["receipt"]["restored"] = True
             self._restore_forward()
             self.restored = True
             self.receipt["restored"] = True
@@ -207,7 +305,8 @@ class ForwardGraphHandle:
             "candidate": "pinned_backbone_decoder_layers_cuda_graph_v1", "scope": scope,
             "candidate_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "source_sha256": source_hashes, "modules": [handle.receipt for handle in handles],
-            "maximum_graphs": len(handles), "output_tensors_cloned": True,
+            "maximum_graphs": sum(handle.receipt.get("maximum_graphs", 1) for handle in handles),
+            "output_tensors_cloned": True,
             "all_six_decoder_heads_retained": True, "decoder_callbacks_unchanged": True,
             "original_forward_arithmetic_unchanged": True,
             "precision_resolution_and_weights_unchanged": True, "original_files_unchanged": True,
@@ -230,7 +329,7 @@ class ForwardGraphHandle:
             raise first_error
 
 
-def apply_forward_cuda_graph(model, *, scope="backbone_decoder_layers"):
+def apply_forward_cuda_graph(model, *, scope="backbone_decoder_layers", additional_batch_sizes=()):
     """Add graph-safe regions without nesting the existing body-head graph.
 
     ``backbone`` allows an isolated ablation. All installation is reversible;
@@ -254,6 +353,8 @@ def apply_forward_cuda_graph(model, *, scope="backbone_decoder_layers"):
             sources["decoder_layer"] = _verify_source(layer, SOURCE_HASHES["decoder_layer"])
             modules.append((f"decoder.layers.{index}", layer, ("x", "context", "x_pe", "context_pe", "x_mask")))
     handles = []
+    budget = {"limit_bytes": 512 * 1024 * 1024, "retained_bytes": 0,
+              "scope": "shared_backbone_and_layer_extra_graph_pool_deltas; capture_peak_not_hard_limited"}
     try:
         for name, module, arguments in modules:
             device = next(module.parameters()).device
@@ -262,7 +363,9 @@ def apply_forward_cuda_graph(model, *, scope="backbone_decoder_layers"):
             # Hooks nested inside a captured module would execute only on capture.
             if any(child._forward_hooks or child._forward_pre_hooks for child in module.modules()):
                 raise ValueError("SAM forward graph does not capture modules with runtime hooks")
-            handles.append(ModuleForwardGraph(module, torch, name=name, argument_names=arguments, device=device))
+            handles.append(ModuleForwardGraph(module, torch, name=name, argument_names=arguments, device=device,
+                                              additional_batch_sizes=additional_batch_sizes,
+                                              batch_memory_budget=budget))
         return ForwardGraphHandle(handles, scope, sources)
     except BaseException:
         for handle in reversed(handles):

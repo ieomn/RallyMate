@@ -7,7 +7,9 @@ export const MAX_MODEL_PROOFS = 2048;
 export const MAX_MODEL_PROOF_REFERENCES = 20000;
 // Repeated validated proofs are shared after decoding; wire size is separately bounded.
 export const MAX_EXPANDED_BACKUP_BYTES = 512 * 1024 * 1024;
-const MAX_DEPTH = 32, MAX_BASE_NODES = 2_000_000;
+// Full current reports can exceed 2M base nodes while staying within the
+// independent wire, expanded-byte, depth, proof and reference budgets.
+const MAX_DEPTH = 32, MAX_BASE_NODES = 4_000_000;
 const CODEC = "model_evidence_codec", POOL = "model_evidence_pool", REF = "model_evidence_ref";
 const API_TRANSPORT = "report_transport";
 const PROOF_KEYS = ["measurement_provenance", "source_window", "geometry_mask", "source_track_id"];
@@ -164,7 +166,7 @@ export function unpackApiReport(value: unknown): unknown {
   }
   // A stripped pooled envelope must not become a native response. This scan
   // does not expand or copy evidence and intentionally has a separate budget:
-  // legitimate old native SAM reports already exceed the pool's 2M base nodes.
+  // legitimate old native SAM reports can exceed the pool's base-node budget.
   const active = new WeakSet<object>(), complete = new WeakSet<object>();
   let nodes = 0;
   function scan(raw: unknown, depth: number): void {

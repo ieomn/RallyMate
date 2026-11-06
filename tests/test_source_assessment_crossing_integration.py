@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from rallymate_scoring import source_assessment
 from rallymate_scoring.source_assessment import (
     ARTIFACT_NAME, CROSSING_ARTIFACT_NAME, file_sha, write_foot_crossing_candidates, write_source_aligned_assessment,
 )
@@ -130,20 +131,20 @@ class CrossingArtifactIntegrationTests(unittest.TestCase):
                 previous_candidate = (directory / CROSSING_ARTIFACT_NAME).read_bytes()
                 unrelated = directory / (CROSSING_ARTIFACT_NAME + ".another-attempt.tmp")
                 unrelated.write_bytes(b"do not delete another attempt")
-                original_write, original_replace = Path.write_bytes, Path.replace
+                original_write, original_replace = source_assessment._write_json, Path.replace
 
-                def write(path, data):
+                def write(path, data, **kwargs):
                     if path.name.startswith(CROSSING_ARTIFACT_NAME + ".") and path.suffix == ".tmp":
-                        original_write(path, data[:16])
+                        path.write_bytes(b"partial candidate")
                         raise OSError("simulated partial candidate write")
-                    return original_write(path, data)
+                    return original_write(path, data, **kwargs)
 
                 def replace(path, target):
                     if Path(target).name == CROSSING_ARTIFACT_NAME:
                         raise PermissionError("simulated candidate atomic replacement error")
                     return original_replace(path, target)
 
-                with patch.object(Path, "write_bytes", write if failure == "write" else original_write), \
+                with patch.object(source_assessment, "_write_json", write if failure == "write" else original_write), \
                      patch.object(Path, "replace", replace if failure == "replace" else original_replace):
                     result = write_source_aligned_assessment(directory, sequence, events, video_id="video-a", primary_timeline=timeline)
                     downstream = "continued"

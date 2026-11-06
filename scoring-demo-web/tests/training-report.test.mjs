@@ -71,7 +71,7 @@ test("server focus keeps its evidence semantics and only links a validated repla
 test("legacy report measurements and timeline remain accessible inside the single details area", () => {
   const result = { ...motionResult(), analysis_report: serverReport(), footwork_review: footwork() };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /正在生成动作评分/);
+  assert.match(html, /暂无可展示的结果/);
   assert.match(html, /训练时间线/);
   assert.match(html, /class="report-timeline" id="timeline"/);
   assert.ok(html.indexOf('id="details"') < html.indexOf('id="timeline"'));
@@ -84,7 +84,7 @@ test("legacy report measurements and timeline remain accessible inside the singl
 
 test("an empty report shows one loading state without an empty timeline or old score cards", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /正在生成动作评分/);
+  assert.match(html, /暂无可展示的结果/);
   assert.doesNotMatch(html, /report-timeline|process-overall-reference|id="details"/);
 });
 
@@ -116,14 +116,14 @@ test("legacy 298-card evidence stays out of the primary score and survives compl
   // isolation. It is not a claim that these two source runs describe one video.
   const result = { status: "ready", job_id: rawCards.source_run_id, card_execution: rawCards, process_evaluation: process };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /正在生成动作评分/);
+  assert.match(html, /暂无可展示的结果/);
   assert.ok(Number.isFinite(expected.overall_score));
   assert.doesNotMatch(html.slice(0, html.indexOf('id="details"')), /process-overall-reference|步伐动作得分/);
   assert.doesNotMatch(html, /card-execution-panel|逐卡计算|正式逐卡|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}|全部原文指标/);
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const readable = buildPracticeReport(input), markdown = renderReportMarkdown(readable);
   assert.doesNotMatch(markdown, /逐卡计算|逐卡视频实例|原文目录|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}/);
-  assert.ok(readable.sections.some(row => row.title === `步伐动作得分：${Number(expected.overall_score.toFixed(3))} / 100`));
+  assert.ok(readable.sections.some(row => row.title === `步伐条件完成度总分：${Number(expected.overall_score.toFixed(3))} / 100`));
   const serialized = JSON.stringify(buildReportBackup(input));
   const restored = await readReportJson({ size: Buffer.byteLength(serialized), text: async () => serialized });
   assert.equal(restored.result.card_execution.cards.length, 298);

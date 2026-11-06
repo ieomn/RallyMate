@@ -11,7 +11,7 @@ from concurrent.futures import CancelledError as FutureCancelledError
 from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from rallymate_features.schemas import PoseSequence, validated_source_time_binding
 from rallymate_features.foot_crossing import VERSION as FOOT_CROSSING_VERSION, compute_foot_crossing_candidates
@@ -35,10 +35,49 @@ CONTEXTUAL_VERSION = "hip-contextual-measurement-v1.0.0"
 CONTEXTUAL_TYPE = "hip_path_ratio_2d"
 
 
-def contextual_input_digest(value: Any) -> str:
+def _check(cancellation_callback: Callable[[], None] | None) -> None:
+    if cancellation_callback is not None:
+        cancellation_callback()
+
+
+def _json_chunks(value: Any, *, sort_keys: bool = False,
+                 cancellation_callback: Callable[[], None] | None = None):
+    """Keep the existing JSON bytes, without materializing a second full copy."""
+    _check(cancellation_callback)
+    encoder = json.JSONEncoder(ensure_ascii=False, sort_keys=sort_keys,
+                               separators=(",", ":"), allow_nan=False)
+    pending = bytearray()
+    for index, token in enumerate(encoder.iterencode(value)):
+        if index % 1024 == 0:
+            _check(cancellation_callback)
+        pending.extend(token.encode("utf-8"))
+        if len(pending) >= 64 * 1024:
+            yield bytes(pending)
+            pending.clear()
+    if pending:
+        yield bytes(pending)
+    _check(cancellation_callback)
+
+
+def _write_json(path: Path, value: Any, *,
+                cancellation_callback: Callable[[], None] | None = None) -> None:
+    with path.open("wb") as handle:
+        for chunk in _json_chunks(value, cancellation_callback=cancellation_callback):
+            handle.write(chunk)
+        handle.write(b"\n")
+
+
+def contextual_input_digest(value: Any, *,
+                            cancellation_callback: Callable[[], None] | None = None) -> str:
     """Pin the exact in-memory input, without serializing it into public output."""
-    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+    # These repeated, event-local digests keep the C encoder; streaming the
+    # complete output below avoids its full extra copy without slowing every
+    # small per-window identity check into Python token iteration.
+    _check(cancellation_callback)
+    digest = hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
         separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
+    _check(cancellation_callback)
+    return digest
 
 
 def canonical_contextual_window(event: dict) -> dict | None:
@@ -54,7 +93,8 @@ def canonical_contextual_window(event: dict) -> dict | None:
 
 
 def _contextual_hip_result(event: dict, *, video_id: str, source_id: str | None,
-                           video_sha256: str | None, input_sha256: dict) -> dict:
+                           video_sha256: str | None, input_sha256: dict,
+                           cancellation_callback: Callable[[], None] | None = None) -> dict:
     return {
         "type": CONTEXTUAL_TYPE, "version": CONTEXTUAL_VERSION, "helper_version": HIP_PATH_VERSION,
         "event_id": event.get("event_id"), "event_code": event.get("event_code"),
@@ -74,20 +114,23 @@ def _contextual_hip_result(event: dict, *, video_id: str, source_id: str | None,
                     "source_files_changed": False},
         "input_sha256": copy.deepcopy(input_sha256),
         "window_input_sha256": {"records": None, "original_primary": None,
-                                "adapted_primary": None, "event": contextual_input_digest(event)},
+                                "adapted_primary": None, "event": contextual_input_digest(
+                                    event, cancellation_callback=cancellation_callback)},
     }
 
 
 def compute_contextual_hip_measurement(raw_records: list[dict], primary_timeline: list[dict],
                                       event: dict, *, video_id: str, source_id: str | None,
-                                      video_sha256: str | None, input_sha256: dict) -> dict:
+                                      video_sha256: str | None, input_sha256: dict,
+                                      cancellation_callback: Callable[[], None] | None = None) -> dict:
     """Measure a pre-existing whole event on independent native-primary copies.
 
     The legacy sequence, selected timeline, indicators and event discovery never
     receive this adapter's output. A failing window is retained as unavailable.
     """
     result = _contextual_hip_result(event, video_id=video_id, source_id=source_id,
-                                    video_sha256=video_sha256, input_sha256=input_sha256)
+                                    video_sha256=video_sha256, input_sha256=input_sha256,
+                                    cancellation_callback=cancellation_callback)
 
     def reject(reason: str) -> dict:
         result["reason"] = reason
@@ -117,46 +160,66 @@ def compute_contextual_hip_measurement(raw_records: list[dict], primary_timeline
         source_frame_bounds={"start_source_frame": window["source_frames"][0],
                              "end_source_frame": window["source_frames"][-1]})
     wanted = set(window["source_frames"])
-    records = [row for row in raw_records if isinstance(row, dict) and isinstance(row.get("frame"), dict)
-               and type(row["frame"].get("index")) is int and row["frame"]["index"] in wanted]
-    timeline = [row for row in primary_timeline if isinstance(row, dict)
-                and type(row.get("source_frame_index")) is int and row["source_frame_index"] in wanted]
-    result["window_input_sha256"].update(records=contextual_input_digest(records),
-                                         original_primary=contextual_input_digest(timeline))
+    records, timeline = [], []
+    for index, row in enumerate(raw_records):
+        if index % 64 == 0:
+            _check(cancellation_callback)
+        if (isinstance(row, dict) and isinstance(row.get("frame"), dict)
+                and type(row["frame"].get("index")) is int and row["frame"]["index"] in wanted):
+            records.append(row)
+    for index, row in enumerate(primary_timeline):
+        if index % 64 == 0:
+            _check(cancellation_callback)
+        if (isinstance(row, dict) and type(row.get("source_frame_index")) is int
+                and row["source_frame_index"] in wanted):
+            timeline.append(row)
+    result["window_input_sha256"].update(records=contextual_input_digest(
+        records, cancellation_callback=cancellation_callback), original_primary=contextual_input_digest(
+        timeline, cancellation_callback=cancellation_callback))
     if ([row["frame"]["index"] for row in records] != window["source_frames"]
             or [row["source_frame_index"] for row in timeline] != window["source_frames"]):
         return reject("contextual_source_window_incomplete")
     if any(row.get("job_id") != source_id for row in records):
         return reject("contextual_raw_source_identity_mismatch")
     # The adapter receives no writable aliases into legacy records or timeline.
+    _check(cancellation_callback)
     try:
         adapted, diagnostics = adapt_native_primary_timeline(copy.deepcopy(records), copy.deepcopy(timeline),
                                                              video_sha256=video_sha256)
     except NativePrimaryTimelineError:
         return reject("contextual_native_adapter_rejected")
-    result["window_input_sha256"]["adapted_primary"] = contextual_input_digest(adapted)
+    result["window_input_sha256"]["adapted_primary"] = contextual_input_digest(
+        adapted, cancellation_callback=cancellation_callback)
     if diagnostics.get("adapter_version") != NATIVE_ADAPTER_VERSION:
         return reject("contextual_native_adapter_version_mismatch")
+    _check(cancellation_callback)
     try:
         sequence = pose_sequence_from_records(copy.deepcopy(records), adapted)
     except (ValueError, KeyError, TypeError, IndexError, ArithmeticError):
         return reject("contextual_source_loader_rejected")
     if sequence.source_frames.tolist() != window["source_frames"]:
         return reject("contextual_source_window_incomplete")
-    bindings = [validated_source_time_binding(sequence.source_time_bindings.get(frame))
-                for frame in window["source_frames"]]
+    bindings = []
+    for index, frame in enumerate(window["source_frames"]):
+        if index % 64 == 0:
+            _check(cancellation_callback)
+        bindings.append(validated_source_time_binding(sequence.source_time_bindings.get(frame)))
     if any(binding is None for binding in bindings):
         return reject("contextual_source_binding_unavailable")
     for index, (actual, expected) in enumerate(zip(bindings, window["source_bindings"])):
+        if index % 64 == 0:
+            _check(cancellation_callback)
         if (any(actual[key] != expected[key] for key in ("video_sha256", "frame_index", "processed_index",
                 "pts", "time_base_num", "time_base_den", "person_track_id", "selection_epoch", "camera_reference_epoch"))
                 or actual["video_timestamp_ms"] != window["video_timestamps_ms"][index]
                 or actual["source_timestamp_ms"] != expected["timestamp_ms"]
                 or actual["primary_player_id"] != event.get("provenance", {}).get("primary_player_id")):
             return reject("contextual_event_source_binding_mismatch")
+    _check(cancellation_callback)
     measured = compute_hip_path_ratio(sequence, primary_timeline=adapted,
         start_source_frame=window["source_frames"][0], end_source_frame=window["source_frames"][-1],
         sampling_protocol=SAMPLING_PROTOCOL)
+    _check(cancellation_callback)
     for key in ("status", "reason", "hip_path_length_px", "hip_net_displacement_px", "hip_path_over_net_ratio",
                 "source_bindings", "source_reference"):
         if key in measured:
@@ -178,6 +241,10 @@ def _candidate_failure_must_propagate(error: Exception) -> bool:
     """
     if isinstance(error, (FutureCancelledError, MemoryError, SystemError)):
         return True
+    resources = sys.modules.get("rallymate_vision.postprocess_resources")
+    resource_limit = getattr(resources, "PostprocessResourceLimit", None)
+    if isinstance(resource_limit, type) and isinstance(error, resource_limit):
+        return True
     worker = sys.modules.get("rallymate_service.worker")
     for name in ("JobCancelled", "JobLeaseLost"):
         control = getattr(worker, name, None)
@@ -194,10 +261,11 @@ def source_binding() -> dict:
             "document": next(item for item in catalog["source_documents"] if item["id"] == "CARD-FS")}
 
 
-def file_sha(path: Path) -> str:
+def file_sha(path: Path, *, cancellation_callback: Callable[[], None] | None = None) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            _check(cancellation_callback)
             digest.update(chunk)
     return digest.hexdigest()
 
@@ -208,31 +276,37 @@ def write_foot_crossing_candidates(output_dir: Path, sequence: PoseSequence,
                                    frames_sha256: str | None = None,
                                    frames_path: Path | None = None,
                                    primary_timeline_path: Path | None = None,
-                                   primary_timeline: list[dict] | None = None) -> dict:
+                                   primary_timeline: list[dict] | None = None,
+                                   cancellation_callback: Callable[[], None] | None = None) -> dict:
     """Write independent geometry evidence without invoking any score calculation."""
     if video_sha256 is not None:
         if not isinstance(video_sha256, str) or re.fullmatch(r"[0-9a-fA-F]{64}", video_sha256) is None:
             raise ValueError("candidate video_sha256 must be a SHA256 hex digest")
         expected_video = video_sha256.lower()
-        for raw_binding in sequence.source_time_bindings.values():
+        for index, raw_binding in enumerate(sequence.source_time_bindings.values()):
+            if index % 64 == 0:
+                _check(cancellation_callback)
             binding = validated_source_time_binding(raw_binding)
             if binding is not None and binding["video_sha256"] != expected_video:
                 raise ValueError("candidate video identity disagrees with source-time bindings")
+    _check(cancellation_callback)
     candidate_result = compute_foot_crossing_candidates(
-        sequence, primary_timeline=primary_timeline, events=events, video_id=video_id)
+        sequence, primary_timeline=primary_timeline, events=events, video_id=video_id,
+        cancellation_callback=cancellation_callback)
     artifact = {
         "artifact_version": CROSSING_ARTIFACT_VERSION,
         "pose_input_identity": "frames_sha256_pins_exact_model_observations_backbone_name_not_in_PoseSequence_contract",
         "source_binding_origin": "validated_saved_decoder_frame_and_primary_records_with_additional_SAM_request_binding_when_present",
         "video_id": video_id, "source_binding": source_binding(),
         "video_sha256": video_sha256.lower() if video_sha256 else None,
-        "frames_sha256": frames_sha256.lower() if frames_sha256 else file_sha(frames_path or output_dir / "frames.jsonl"),
-        "events_sha256": file_sha(output_dir / "events.jsonl"),
-        "primary_timeline_sha256": file_sha(primary_timeline_path or output_dir / "primary-player.jsonl"),
+        "frames_sha256": frames_sha256.lower() if frames_sha256 else file_sha(
+            frames_path or output_dir / "frames.jsonl", cancellation_callback=cancellation_callback),
+        "events_sha256": file_sha(output_dir / "events.jsonl", cancellation_callback=cancellation_callback),
+        "primary_timeline_sha256": file_sha(primary_timeline_path or output_dir / "primary-player.jsonl",
+                                            cancellation_callback=cancellation_callback),
         **candidate_result,
     }
     path = output_dir / CROSSING_ARTIFACT_NAME
-    payload = (json.dumps(artifact, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
     temporary: Path | None = None
     try:
         # Each attempt owns only its uniquely named temporary. Do not delete a
@@ -240,9 +314,11 @@ def write_foot_crossing_candidates(output_dir: Path, sequence: PoseSequence,
         with tempfile.NamedTemporaryFile(dir=output_dir, prefix=CROSSING_ARTIFACT_NAME + ".",
                                          suffix=".tmp", delete=False) as handle:
             temporary = Path(handle.name)
-        temporary.write_bytes(payload)
+        _write_json(temporary, artifact, cancellation_callback=cancellation_callback)
+        _check(cancellation_callback)
         temporary.replace(path)
-        return {"status": "available", "path": CROSSING_ARTIFACT_NAME, "sha256": file_sha(path),
+        return {"status": "available", "path": CROSSING_ARTIFACT_NAME, "sha256": file_sha(
+                    path, cancellation_callback=cancellation_callback),
                 "artifact_version": CROSSING_ARTIFACT_VERSION,
                 "version": candidate_result["version"], "candidate_count": candidate_result["counts"]["candidates"],
                 "stored_candidate_count": len(candidate_result["candidates"]), "scoring_allowed": False}
@@ -264,20 +340,41 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
                                     primary_timeline_path: Path | None = None,
                                     primary_timeline: list[dict] | None = None,
                                     raw_records: list[dict] | None = None,
-                                    source_id: str | None = None) -> dict:
-    context = prepare_source_aligned_context(sequence, events, primary_timeline=primary_timeline)
+                                    source_id: str | None = None,
+                                    cancellation_callback: Callable[[], None] | None = None) -> dict:
+    # Optional measurements may fail closed, but never consume callback control
+    # flow, including caller-defined exceptions outside the known worker types.
+    callback_error: Exception | None = None
+
+    def check() -> None:
+        nonlocal callback_error
+        try:
+            _check(cancellation_callback)
+        except Exception as error:
+            callback_error = error
+            raise
+
+    check()
+    context = prepare_source_aligned_context(sequence, events, primary_timeline=primary_timeline,
+                                              cancellation_callback=check)
     try:
-        records = [compute_source_aligned_features(sequence, event, events=events, context=context)
-                   for event in events if event.get("event_code") in {"FS01", "FS02", "FS09"}]
+        records = []
+        for event in events:
+            check()
+            if event.get("event_code") in {"FS01", "FS02", "FS09"}:
+                records.append(compute_source_aligned_features(sequence, event, events=events, context=context,
+                                                                cancellation_callback=check))
     finally:
         clear_source_aligned_feature_cache(sequence)
     artifact = {
         "version": ARTIFACT_VERSION, "video_id": video_id,
         "source_binding": source_binding(),
         "video_sha256": video_sha256.lower() if video_sha256 else None,
-        "frames_sha256": frames_sha256.lower() if frames_sha256 else file_sha(frames_path or output_dir / "frames.jsonl"),
-        "events_sha256": file_sha(output_dir / "events.jsonl"),
-        "primary_timeline_sha256": file_sha(primary_timeline_path or output_dir / "primary-player.jsonl"),
+        "frames_sha256": frames_sha256.lower() if frames_sha256 else file_sha(
+            frames_path or output_dir / "frames.jsonl", cancellation_callback=check),
+        "events_sha256": file_sha(output_dir / "events.jsonl", cancellation_callback=check),
+        "primary_timeline_sha256": file_sha(primary_timeline_path or output_dir / "primary-player.jsonl",
+                                            cancellation_callback=check),
         "score_semantics": "source_aligned_measurement_not_technical_grade",
         "technical_grade": None, "technical_score_0_to_100": None,
         "records": records,
@@ -288,17 +385,20 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
                   "primary_timeline": artifact["primary_timeline_sha256"]}
         for record, event in zip(records, (event for event in events
                                           if event.get("event_code") in {"FS01", "FS02", "FS09"})):
+            check()
             try:
                 contextual = compute_contextual_hip_measurement(
                     raw_records, primary_timeline or [], event, video_id=video_id,
-                    source_id=source_id, video_sha256=video_sha256, input_sha256=inputs)
+                    source_id=source_id, video_sha256=video_sha256, input_sha256=inputs,
+                    cancellation_callback=check)
             except Exception as error:
-                if _candidate_failure_must_propagate(error):
+                if error is callback_error or _candidate_failure_must_propagate(error):
                     raise
                 # Only the optional addition is isolated. Legacy computations,
                 # writes and task cancellation retain their existing behavior.
                 contextual = _contextual_hip_result(event, video_id=video_id, source_id=source_id,
-                                                     video_sha256=video_sha256, input_sha256=inputs)
+                                                     video_sha256=video_sha256, input_sha256=inputs,
+                                                     cancellation_callback=check)
                 contextual["reason"] = "contextual_measurement_failed"
                 window = canonical_contextual_window(event)
                 if window is not None:
@@ -309,15 +409,24 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
             record["contextual_measurements"] = [contextual]
     path = output_dir / ARTIFACT_NAME
     temporary = output_dir / (ARTIFACT_NAME + ".tmp")
-    temporary.write_bytes((json.dumps(artifact, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8"))
-    temporary.replace(path)
+    try:
+        _write_json(temporary, artifact, cancellation_callback=check)
+        check()
+        temporary.replace(path)
+    finally:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+    check()
     try:
         crossing_artifact = write_foot_crossing_candidates(
             output_dir, sequence, events, video_id=video_id, video_sha256=video_sha256,
             frames_sha256=frames_sha256, frames_path=frames_path,
-            primary_timeline_path=primary_timeline_path, primary_timeline=primary_timeline)
+            primary_timeline_path=primary_timeline_path, primary_timeline=primary_timeline,
+            cancellation_callback=check)
     except Exception as error:
-        if _candidate_failure_must_propagate(error):
+        if error is callback_error or _candidate_failure_must_propagate(error):
             raise
         # This boundary belongs only to the optional sidecar. Legacy compute,
         # serialization and writes above retain their original failure behavior.
@@ -329,6 +438,7 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
             "candidate_count": None, "stored_candidate_count": None, "scoring_allowed": False,
             "existing_candidate_file_is_not_this_attempt": True,
         }
-    return {"path": ARTIFACT_NAME, "sha256": file_sha(path), "event_count": len(records),
+    check()
+    return {"path": ARTIFACT_NAME, "sha256": file_sha(path, cancellation_callback=check), "event_count": len(records),
             "indicator_window_count": sum(len(r["indicators"]) for r in records),
             "foot_crossing_candidates": crossing_artifact}

@@ -158,6 +158,17 @@ class _LocalCourtCalibrationWindows:
         self._finish()
         return self.windows
 
+    def snapshot(self):
+        """Expose a complete current window without ending its continuity."""
+        windows = list(self.windows)
+        truncated = self.truncated
+        if self.current is not None:
+            if len(windows) < MAX_COURT_CALIBRATION_WINDOWS:
+                windows.append(dict(self.current))
+            else:
+                truncated = True
+        return windows, truncated
+
 
 def _finite(value: Any) -> float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -344,6 +355,78 @@ def _point_from_detection(
     return result
 
 
+class TrajectoryObservationAccumulator:
+    """Retain compact observations and continuity state, never pose records."""
+
+    def __init__(self):
+        self.frame_count = 0
+        self.schema_versions = set()
+        self.calibrations = {}
+        self.camera_guard = FixedCameraReferenceGuard()
+        self.local_court_windows = _LocalCourtCalibrationWindows()
+        self.tracks = {"ball": defaultdict(list), "racket": defaultdict(list)}
+        self.dimensions = {"width": None, "height": None, "start_timestamp_ms": None, "end_timestamp_ms": None}
+        self.observation_count = 0
+
+    def observe(self, record, line_number):
+        if not isinstance(record, Mapping):
+            raise TrajectoryExtractionError(f"frames line {line_number} is not an object")
+        frame = record.get("frame")
+        if not isinstance(frame, Mapping):
+            raise TrajectoryExtractionError(f"frames line {line_number} has no frame object")
+        self.frame_count += 1
+        schema = record.get("schema_version")
+        if isinstance(schema, str) and schema:
+            self.schema_versions.add(schema)
+        width = _positive_int(frame.get("width"))
+        height = _positive_int(frame.get("height"))
+        if self.dimensions["width"] is None and width is not None:
+            self.dimensions["width"] = width
+        if self.dimensions["height"] is None and height is not None:
+            self.dimensions["height"] = height
+        timestamp_ms = _positive_int(frame.get("timestamp_ms"))
+        if timestamp_ms is not None:
+            start, end = self.dimensions["start_timestamp_ms"], self.dimensions["end_timestamp_ms"]
+            self.dimensions["start_timestamp_ms"] = timestamp_ms if start is None else min(start, timestamp_ms)
+            self.dimensions["end_timestamp_ms"] = timestamp_ms if end is None else max(end, timestamp_ms)
+        detections = record.get("detections", [])
+        self.local_court_windows.observe(frame, record.get("camera_motion"))
+        self.camera_guard.observe(record.get("camera_motion"), width, height)
+        calibration = self.camera_guard.calibration(record.get("court"), width, height)
+        if not isinstance(detections, list):
+            return
+        for raw_detection in detections:
+            if not isinstance(raw_detection, Mapping):
+                continue
+            class_name = raw_detection.get("class_name")
+            if class_name not in self.tracks:
+                continue
+            point = _point_from_detection(frame=frame, detection=raw_detection,
+                frame_width=width, frame_height=height, include_box=class_name == "racket")
+            if point is None:
+                continue
+            if class_name == "ball" and calibration is not None:
+                self.calibrations[(point["frame_index"], point["processed_index"], point["timestamp_ms"])] = calibration
+            self.observation_count += 1
+            if self.observation_count > MAX_OBSERVATION_POINTS:
+                raise TrajectoryExtractionError(f"frames artifact exceeds the trajectory preview observation limit ({MAX_OBSERVATION_POINTS})")
+            track_key = point["track_id"] if point["track_id"] is not None else "untracked"
+            self.tracks[class_name][track_key].append(point)
+
+    def snapshot(self):
+        windows, truncated = self.local_court_windows.snapshot()
+        return self.frame_count, {"schema_version": self.schema_versions, "calibrations": self.calibrations,
+            "court_calibration_windows": windows, "court_calibration_windows_truncated": truncated}, self.tracks, self.dimensions
+
+
+def parse_trajectory_line(raw_line: bytes, line_number: int):
+    try:
+        return json.loads(raw_line, object_pairs_hook=_strict_json_object,
+                          parse_constant=_reject_json_constant, parse_float=_finite_json_float)
+    except (ValueError, UnicodeError, RecursionError) as exc:
+        raise TrajectoryExtractionError(f"invalid frames JSON at line {line_number}: {exc}") from exc
+
+
 def _read_observations(
     frames_path: Path,
     *,
@@ -370,27 +453,12 @@ def _read_observations(
             f"({MAX_FRAMES_ARTIFACT_BYTES} bytes): {frames_path}"
         )
 
-    frame_count = 0
-    schema_versions: set[str] = set()
-    calibrations = {}
-    camera_guard = FixedCameraReferenceGuard()
-    local_court_windows = _LocalCourtCalibrationWindows()
-    tracks: dict[str, dict[Any, list[dict[str, Any]]]] = {
-        "ball": defaultdict(list),
-        "racket": defaultdict(list),
-    }
-    dimensions: dict[str, Any] = {
-        "width": None,
-        "height": None,
-        "start_timestamp_ms": None,
-        "end_timestamp_ms": None,
-    }
+    observations = TrajectoryObservationAccumulator()
     try:
         handle = frames_path.open("rb")
     except OSError as exc:
         raise TrajectoryExtractionError(f"cannot open frames artifact: {exc}") from exc
 
-    observation_count = 0
     # Parse a fixed-size snapshot so a running worker cannot append bytes while
     # this read is in progress.
     with handle:
@@ -421,78 +489,8 @@ def _read_observations(
                 break
             if not raw_line.strip():
                 continue
-            try:
-                record = json.loads(raw_line, object_pairs_hook=_strict_json_object,
-                                    parse_constant=_reject_json_constant,
-                                    parse_float=_finite_json_float)
-            except (ValueError, UnicodeError, RecursionError) as exc:
-                raise TrajectoryExtractionError(
-                    f"invalid frames JSON at line {line_number}: {exc}"
-                ) from exc
-            if not isinstance(record, Mapping):
-                raise TrajectoryExtractionError(
-                    f"frames line {line_number} is not an object"
-                )
-            frame = record.get("frame")
-            if not isinstance(frame, Mapping):
-                raise TrajectoryExtractionError(
-                    f"frames line {line_number} has no frame object"
-                )
-            frame_count += 1
-            schema = record.get("schema_version")
-            if isinstance(schema, str) and schema:
-                schema_versions.add(schema)
-            width = _positive_int(frame.get("width"))
-            height = _positive_int(frame.get("height"))
-            if dimensions["width"] is None and width is not None:
-                dimensions["width"] = width
-            if dimensions["height"] is None and height is not None:
-                dimensions["height"] = height
-            timestamp_ms = _positive_int(frame.get("timestamp_ms"))
-            if timestamp_ms is not None:
-                start = dimensions["start_timestamp_ms"]
-                end = dimensions["end_timestamp_ms"]
-                dimensions["start_timestamp_ms"] = timestamp_ms if start is None else min(start, timestamp_ms)
-                dimensions["end_timestamp_ms"] = timestamp_ms if end is None else max(end, timestamp_ms)
-            detections = record.get("detections", [])
-            # Camera continuity must be checked even when no ball was found.
-            local_court_windows.observe(frame, record.get("camera_motion"))
-            camera_guard.observe(record.get("camera_motion"), width, height)
-            calibration = camera_guard.calibration(record.get("court"), width, height)
-            if not isinstance(detections, list):
-                continue
-            for raw_detection in detections:
-                if not isinstance(raw_detection, Mapping):
-                    continue
-                class_name = raw_detection.get("class_name")
-                if class_name not in tracks:
-                    continue
-                point = _point_from_detection(
-                    frame=frame,
-                    detection=raw_detection,
-                    frame_width=width,
-                    frame_height=height,
-                    include_box=class_name == "racket",
-                )
-                if point is None:
-                    continue
-                if class_name == "ball" and calibration is not None:
-                    calibrations[(point["frame_index"], point["processed_index"], point["timestamp_ms"])] = calibration
-                observation_count += 1
-                if observation_count > MAX_OBSERVATION_POINTS:
-                    raise TrajectoryExtractionError(
-                        "frames artifact exceeds the trajectory preview observation "
-                        f"limit ({MAX_OBSERVATION_POINTS}): {frames_path}"
-                    )
-                track_key: Any = point["track_id"]
-                if track_key is None:
-                    # Keep detections without IDs visible, but do not pretend
-                    # that disconnected observations form a verified track.
-                    track_key = "untracked"
-                tracks[class_name][track_key].append(point)
-    return frame_count, {"schema_version": schema_versions, "calibrations": calibrations,
-                         "court_calibration_windows": local_court_windows.finish(),
-                         "court_calibration_windows_truncated": local_court_windows.truncated}, tracks, dimensions
+            observations.observe(parse_trajectory_line(raw_line, line_number), line_number)
+    return observations.snapshot()
 
 
 def _select_track(
@@ -1054,6 +1052,7 @@ def build_trajectory_preview(
     sample_limit: int = DEFAULT_SAMPLE_LIMIT,
     prediction_horizon_ms: int = DEFAULT_PREDICTION_HORIZON_MS,
     allow_partial: bool = False,
+    _observations: tuple | None = None,
 ) -> dict[str, Any]:
     """Build a bounded, JSON-safe trajectory/racket observability payload.
 
@@ -1078,9 +1077,10 @@ def build_trajectory_preview(
     path = Path(frames_path).resolve()
     if not isinstance(allow_partial, bool):
         raise TrajectoryExtractionError("allow_partial must be a boolean")
-    frame_count, metadata, tracks, dimensions = _read_observations(
-        path, allow_partial=allow_partial
-    )
+    # The live API can supply its append-only accumulator snapshot. Rendering,
+    # confidence, camera windows and reconstruction remain the same algorithm.
+    frame_count, metadata, tracks, dimensions = (_observations if _observations is not None
+        else _read_observations(path, allow_partial=allow_partial))
     ball_track_id, ball_points = _select_track(tracks["ball"])
     racket_track_id, racket_points = _select_track(tracks["racket"])
 

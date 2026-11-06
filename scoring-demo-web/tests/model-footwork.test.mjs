@@ -96,7 +96,9 @@ test("full process parser and radar label show model measurement with no numeric
   assert.equal(movement.status_reason, "independent_reference_missing");
   assert.match(movement.status_reason_zh, /已有单目模型估计/);
   const html = renderToStaticMarkup(createElement(ProcessRadar, { dimensions: parsed.dimensions, selected: "movement", reference: parsed.relative_reference }));
-  assert.match(html, />未评分<\/text>/);
+  const scoreLabels = [...html.matchAll(/class="process-radar-label-score"[^>]*>([^<]*)<\/text>/g)];
+  assert.equal(scoreLabels.length, parsed.dimensions.length);
+  assert.ok(scoreLabels.every(([, label]) => label === "—"));
   assert.doesNotMatch(html, /中性暂估|class="process-radar-point/);
   assert.doesNotMatch(html, />需参照<\/text>/);
   assert.deepEqual(processEvaluationOf(parsed), parsed);

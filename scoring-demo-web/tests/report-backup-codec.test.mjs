@@ -29,27 +29,28 @@ const envelope = rows => ({ schemaVersion: "rallymate-practice-report/1", result
 const packed = () => packReportBackup(envelope([{ ...proof(), value: 0, confidence: null }, { ...proof(), value: null } ]));
 const rejects = change => { const value = packed(); change(value); assert.throws(() => unpackReportBackup(value), /来源证据引用无效/); };
 
-test("packer and decoder accept the same exact expanded-byte boundary including reference fields", async () => {
+test("packer and decoder enforce the same exact byte and base-node boundaries including reference fields", async () => {
   const file = new URL("../app/lib/report-backup-codec.ts", import.meta.url);
-  async function codec(limit) {
-    const source = fs.readFileSync(file, "utf8").replace(/export const MAX_EXPANDED_BACKUP_BYTES = [^;]+;/,
-      `export const MAX_EXPANDED_BACKUP_BYTES = ${limit};`);
+  async function codec(setting, limit) {
+    const source = fs.readFileSync(file, "utf8").replace(new RegExp(`\\b${setting} = [^;]+;`), `${setting} = ${limit};`);
     let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
     js = js.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(compiledUrl(new URL(name.endsWith(".json") ? name : `${name}.ts`, file)))}`);
     return import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
   }
   const raw = envelope([{ ...proof(), value: 0, confidence: null }, { ...proof(), value: null }]);
-  let low = 1, high = Buffer.byteLength(JSON.stringify(raw)) * 2;
-  while (low < high) {
-    const middle = Math.floor((low + high) / 2), candidate = await codec(middle);
-    try { candidate.packReportBackup(raw); high = middle; }
-    catch { low = middle + 1; }
+  for (const setting of ["MAX_EXPANDED_BACKUP_BYTES", "MAX_BASE_NODES"]) {
+    let low = 1, high = Buffer.byteLength(JSON.stringify(raw)) * 2;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2), candidate = await codec(setting, middle);
+      try { candidate.packReportBackup(raw); high = middle; }
+      catch { low = middle + 1; }
+    }
+    const boundary = await codec(setting, low), encoded = boundary.packReportBackup(raw);
+    assert.deepEqual(boundary.unpackReportBackup(encoded), raw);
+    const below = await codec(setting, low - 1);
+    assert.throws(() => below.packReportBackup(raw), /来源证据引用无效/);
+    assert.throws(() => below.unpackReportBackup(encoded), /来源证据引用无效/);
   }
-  const boundary = await codec(low), encoded = boundary.packReportBackup(raw);
-  assert.deepEqual(boundary.unpackReportBackup(encoded), raw);
-  const below = await codec(low - 1);
-  assert.throws(() => below.packReportBackup(raw), /来源证据引用无效/);
-  assert.throws(() => below.unpackReportBackup(encoded), /来源证据引用无效/);
 });
 
 test("complete proof pooling is lossless, immutable, shared after read and idempotent", () => {
@@ -190,8 +191,8 @@ test("API native fallback rejects stripped envelopes and every nested reserved t
   }
 });
 
-test("native-only scanning bounds depth and rejects cycles without applying the pooled two-million-node budget", () => {
-  const native = { rows: Array(2_100_000).fill(0) };
+test("native-only scanning bounds depth and rejects cycles without applying the pooled four-million-node budget", () => {
+  const native = { rows: Array(4_100_000).fill(0) };
   assert.equal(unpackApiReport(native), native);
   const shared = { value: 0 }, aliases = { a: shared, b: shared };
   assert.equal(unpackApiReport(aliases), aliases);

@@ -61,6 +61,34 @@
       },
       "additionalProperties": false
     },
+    "artifact_sha256_v2": {
+      "type": "object",
+      "required": ["events_jsonl", "features_jsonl", "indicator_features_jsonl", "scores_jsonl", "event_feature_errors_json"],
+      "properties": {
+        "events_jsonl": {"$ref": "#/$defs/sha256"},
+        "features_jsonl": {"$ref": "#/$defs/sha256"},
+        "indicator_features_jsonl": {"$ref": "#/$defs/sha256"},
+        "scores_jsonl": {"$ref": "#/$defs/sha256"},
+        "event_feature_errors_json": {"$ref": "#/$defs/sha256"},
+        "source_aligned_measurements_json": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "evidence_storage": {
+      "type": "object",
+      "required": ["codec", "path", "sha256", "binding_sha256", "video_id", "source_id", "video_sha256"],
+      "properties": {
+        "codec": {"const": "scoring-artifact-evidence-v1"},
+        "path": {"const": "scoring-evidence.sqlite3"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "binding_sha256": {"$ref": "#/$defs/sha256"},
+        "video_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": "string", "minLength": 1},
+        "video_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false,
+      "description": "The immutable evidence pool is part of the v2 bundle identity. Runtime validation also checks its file/content hashes and matching video/source bindings."
+    },
     "bundle_identity": {
       "type": "object",
       "required": [
@@ -70,7 +98,7 @@
         "artifact_sha256"
       ],
       "properties": {
-        "binding_version": {"const": "scoring-run-bundle-v1"},
+        "binding_version": {"enum": ["scoring-run-bundle-v1", "scoring-run-bundle-v2"]},
         "scoring_summary": {
           "type": "object",
           "required": ["schema_version", "loop_version", "file_sha256"],
@@ -93,8 +121,22 @@
           },
           "additionalProperties": false
         },
-        "artifact_sha256": {"$ref": "#/$defs/artifact_sha256"}
+        "artifact_sha256": {"type": "object"},
+        "evidence_storage": {"$ref": "#/$defs/evidence_storage"}
       },
+      "allOf": [
+        {
+          "if": {"properties": {"binding_version": {"const": "scoring-run-bundle-v1"}}},
+          "then": {
+            "not": {"required": ["evidence_storage"]},
+            "properties": {"artifact_sha256": {"$ref": "#/$defs/artifact_sha256"}}
+          },
+          "else": {
+            "required": ["evidence_storage"],
+            "properties": {"artifact_sha256": {"$ref": "#/$defs/artifact_sha256_v2"}}
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "authorization_review": {

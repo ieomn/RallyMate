@@ -275,7 +275,8 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
   const processValidation = processEvaluationValidationOf(result.process_evaluation, processEvaluation);
   const currentScore = trainingScoreOf(input.evidence.result ?? null, processEvaluation);
   if (currentScore.source === "validated_card_execution") {
-    sections.push({ title: `${currentScore.scoreLabel}：${numberText(currentScore.score)} / 100`, paragraphs: [
+    sections.push({ title: `${currentScore.onlyFootwork ? "步伐条件完成度总分" : "条件完成度总分"}：${numberText(currentScore.score)} / 100`, paragraphs: [
+      "分数表示工程条件完成度，不是 Word 原文 A–E 技术等级；工程阈值和百分制换算不来自 Word 原文。",
       `${currentScore.measuredIndicatorCount} 项动作指标、${currentScore.scoredInstanceCount} 条有效测量参与评分。根据本次已测得的动作项目计算，未测得的项目不计入平均分。`,
       currentScore.onlyFootwork ? "本次得分只覆盖步伐动作条件，不代表挥拍发力、触球控制或完整技术水平；跨视频应在相同项目和评分规则下比较。" : "本次得分只覆盖已测动作条件；跨视频应在相同项目和评分规则下比较。",
     ] });

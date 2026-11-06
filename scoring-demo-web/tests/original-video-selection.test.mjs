@@ -27,9 +27,8 @@ function mount(overrides = {}) {
     React, AbortSignal, URL, useCallback: value => value, useMemo: compute => compute(), useRef: value => ({ current: value }), useEffect() {},
     verifiedMeshMedia: () => overrides.meshMedia ?? null, motionAnalysisOf: () => null,
     useState(initial) { const slot = index++; if (!(slot in state)) state[slot] = initial; return [state[slot], value => { state[slot] = value; }]; },
-    BallTrajectoryViewer: "viewer", BallTrajectorySummary: "summary", ReplayClipNavigator: "clips", OfficialMeshReplay: "mesh", SwingKinematicsPanel: "swing",
+    BallTrajectoryViewer: "viewer", BallTrajectorySummary: "summary", ReplayClipNavigator: "clips", OfficialMeshReplay: "mesh", SwingKinematicsPanel: "swing", ShotStatisticsSidebar: "shot-statistics",
     swingVideoDurationMs: () => null,
-    poseReplayTimingAllowed: (local, result) => local || result?.runtime?.annotated_video_compatibility?.timing_preserved === true,
     originalPoseTimeBinding, poseWindowMatchesOriginal,
   });
   const app = {
@@ -38,12 +37,11 @@ function mount(overrides = {}) {
     get mesh() { return nodes(tree).find(node => node.type === "mesh")?.props; },
     get swing() { return nodes(tree).find(node => node.type === "swing")?.props; },
     button(text) { return nodes(tree).find(node => node.type === "button" && node.props.children === text); },
-    choose(text) { const button = app.button(text); assert.equal(button.props.disabled, false); button.props.onClick(); app.render(); },
   };
   app.render(); return app;
 }
 
-test("verified server originals are preferred, switch to annotation and back, without certifying timing", () => {
+test("verified server originals remain the only 2D video even when annotated artifacts exist, without certifying timing", () => {
   const app = mount();
   assert.equal(app.viewer.videoSrc, original.url); assert.equal(app.viewer.videoKind, "original");
   assert.equal(app.viewer.poseTimingPreserved, false);
@@ -51,12 +49,10 @@ test("verified server originals are preferred, switch to annotation and back, wi
   assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
   assert.equal(app.viewer.candidateReplayBinding.originMs, null);
   assert.equal(app.swing, undefined, "3D measurements live in the report details, outside continuous playback");
-  app.choose("标注回放");
-  assert.equal(app.viewer.videoSrc, `/v1/jobs/${jobId}/artifacts/annotated.mp4`);
-  assert.equal(app.viewer.videoKind, "annotated"); assert.equal(app.viewer.candidateReplayBinding.kind, "annotated");
-  assert.equal(app.viewer.candidateReplayBinding.videoSha256, null);
-  assert.equal(app.viewer.poseTimingPreserved, true);
-  app.choose("原视频"); assert.equal(app.viewer.videoSrc, original.url);
+  assert.equal(app.button("标注回放"), undefined);
+  assert.equal(app.button("原视频"), undefined, "there is no redundant media-selection group");
+  assert.equal(app.viewer.candidateReplayBinding.kind, "original");
+  assert.equal(app.viewer.videoTimeOriginMs, 0);
   assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
 });
 
@@ -121,8 +117,10 @@ test("a local upload object URL is preferred even when annotated playback alread
   assert.equal(app.viewer.videoSrc, "blob:local-upload"); assert.equal(app.viewer.videoKind, "original");
   assert.equal(app.viewer.poseTimingPreserved, true);
   assert.equal(app.viewer.candidateReplayBinding.videoSha256, null);
-  app.choose("标注回放"); assert.equal(app.viewer.videoKind, "annotated");
-  app.choose("原视频"); assert.equal(app.viewer.videoSrc, "blob:local-upload");
+  assert.equal(app.button("标注回放"), undefined);
+  assert.equal(app.viewer.candidateReplayBinding.kind, "original");
+  assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
+  assert.equal(app.viewer.videoTimeOriginMs, 0);
 });
 
 test("an online absolute public URL with the exact job path is replayed only via the local gateway", () => {
@@ -143,8 +141,14 @@ test("absent, malformed, cross-job, remote and imported original claims never be
   ];
   for (const fields of variants) {
     const app = mount({ evidence: { result: { job_id: jobId, artifact_urls: { "annotated.mp4": "available" }, ...fields } } });
-    assert.equal(app.button("原视频")?.props.disabled ?? true, true);
-    assert.equal(app.viewer.videoKind, fields.job_id === "other-job" ? null : "annotated");
+    assert.equal(app.button("原视频"), undefined);
+    assert.equal(app.button("标注回放"), undefined);
+    assert.equal(app.viewer.videoKind, null);
+    assert.equal(app.viewer.videoSrc, null, "invalid originals must not fall back to annotated artifacts");
+    assert.equal(app.viewer.candidateReplayBinding.kind, "original");
+    assert.equal(app.viewer.candidateReplayBinding.videoSha256, null);
+    assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
+    assert.equal(app.viewer.poseTimingPreserved, false);
     assert.equal(app.swing, undefined);
   }
   const imported = mount({ evidence: { candidateSource: undefined } });
@@ -153,9 +157,16 @@ test("absent, malformed, cross-job, remote and imported original claims never be
   assert.equal(imported.swing, undefined);
 });
 
-test("an original load error stays explicit until a user switches or retries, never relabeling annotations", () => {
+test("an original load error remains without annotation fallback until the user retries the original", () => {
   const app = mount(); app.viewer.onVideoError(); app.render();
   assert.equal(app.viewer.videoSrc, null); assert.equal(app.viewer.videoKind, "original");
-  app.choose("标注回放"); assert.equal(app.viewer.videoKind, "annotated"); assert.ok(app.viewer.videoSrc.endsWith("annotated.mp4"));
-  app.choose("原视频"); assert.equal(app.viewer.videoSrc, original.url);
+  assert.equal(app.button("标注回放"), undefined);
+  const retry = app.button("重新加载原视频"); assert.ok(retry);
+  retry.props.onClick(); app.render();
+  assert.equal(app.viewer.videoSrc, original.url);
+  assert.equal(app.viewer.videoKind, "original");
+  assert.equal(app.viewer.candidateReplayBinding.videoSha256, original.sha256);
+  assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
+  assert.equal(app.viewer.poseTimingPreserved, false);
+  assert.equal(app.button("重新加载原视频"), undefined);
 });

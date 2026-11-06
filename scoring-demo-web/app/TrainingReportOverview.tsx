@@ -23,8 +23,8 @@ export default function TrainingReportOverview({ result, motion, pending, title,
       <div className="report-score-heading"><h2 id="report-overview-title">本次测量概览</h2><span className="report-state">{pending ? result ? "部分结果可用" : "整理中" : result ? "已读取结果" : "暂无结果"}</span></div>
       {result && !pending && <div className="report-measurement-summary">{independent ? <><div><strong>{independent.footwork_measured_feature_instances ?? "—"}</strong><span>步伐单项观测</span></div><div><strong>{independent.rotation_local_window_count ?? "—"}</strong><span>转体局部窗口</span></div></> : <div><strong>{counts.measured}<small> / {counts.total}</small></strong><span>项可复核测量</span></div>}</div>}
       {independent?.is_truncated && <p className="report-summary-scope">仅统计已返回片段</p>}
-      <p className="report-summary-note">二维过程测量 · 完整评分依据见各项说明</p>
-      {result && !pending && <div className="report-reference-score"><p>测量证据参考分：{score === null ? "—（暂不可计算）" : `${score} / 100`}。</p><p>{score === null ? "当前未提供可用的测量证据参考分；已保存的逐项测量仍可查看。" : `${counts.measured} / ${counts.total} 项有测量；高分不代表动作正确。`} 此分仅用于了解测量情况，不参与过程评分。</p></div>}
+      <p className="report-summary-note">二维过程测量 · 对照动作片段查看</p>
+      {result && !pending && <div className="report-reference-score"><p>测量证据参考分：{score === null ? "—" : `${score} / 100`}。</p><p>{counts.measured} / {counts.total} 项有测量。</p>{score !== null && <p>参考分反映测量的完整度与一致性，高分不代表动作正确。</p>}</div>}
       {(!result || pending) && <p className="report-status-copy"><strong>{title}</strong>{description}</p>}
     </details>
     {children}
@@ -51,7 +51,7 @@ export function TrainingRecommendations({ result, motion, pending, status, onSav
         <dl className="focus-review-steps"><div><dt>练习目标</dt><dd>{item.goal}</dd></div><div><dt>怎么练</dt><dd>{item.drill}</dd></div><div><dt>复测标准</dt><dd>{item.retest}</dd></div>{item.moment && <div><dt>对应片段</dt><dd>{clock(item.moment.startMs)} – {clock(item.moment.endMs)}</dd></div>}</dl>
         {!replayAvailable && item.moment && <p className="focus-media-unavailable">此报告未附可用原片，可按上方时间在自己的视频中查看。</p>}
         <div className="focus-actions">{item.moment && replayAvailable && <button type="button" className="focus-replay" onClick={() => replayMoment(item.moment!, result?.job_id)}>回看这段原片 <span aria-hidden="true">↗</span></button>}{onSaveFocus && <button type="button" className="focus-save" onClick={() => onSaveFocus(focusSelection(item))}>保存练习目标</button>}</div>
-        <details className="focus-evidence-detail"><summary>测量说明与练习参考</summary><p>{item.detail}</p><p>{item.limitation}</p>{item.source_links?.map(source => <p key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a></p>)}</details>
+        <details className="focus-evidence-detail"><summary>测量说明与练习参考</summary><p>{item.detail}</p>{item.source_links?.map(source => <p key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a></p>)}</details>
       </div></article>) : <p className="report-status-copy">{emptyMessage}</p>}</div>
     {!!focus.length && <p className="report-judgment-boundary">建议从舒适、低强度的节奏开始；出现不适时停止。</p>}
   </section>;

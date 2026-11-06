@@ -50,7 +50,9 @@ cd RallyMate
 
 ### 分支与报告兼容
 
-`main` 在 `024d240` 同步后端测量、评分 API、上传与服务端代理，并保留原有前端。当前完整界面和后续姿态准确度、可解释技术评分工作在 `codex/pose-scoring-accuracy`；`codex/scoring-report-rebuild` 的 `ed5481c` 保留为此前完整预览基线。
+`main` 集成当前本机使用的完整前后端，包括上传与推理调度、共享评分证据、流式校验、报告资源预算和服务监控优化。独立开发的 `codex/automatic-shot-statistics` 自动击球分析分支不包含在本次同步中；旧预览分支仅保留作历史参考。
+
+本轮实现与适用范围见[评分证据存储说明](docs/scoring-evidence-storage-v1.md)、[上传与推理性能记录](docs/upload-inference-performance-20261101.md)、[SAM 批推理记录](docs/sam3d-batching-20261101.md)和[评分与报告交付核查](docs/scoring-audit-20261104.md)。批推理仍按显式配置启用，不因合并代码改变本机启动参数。
 
 报告 API 默认返回 `legacy-v1` 兼容表示，当前开发网页显式请求 `report_contract=current` 获取完整新测量结构。两种表示共用真实测量值，不能把缺测转为技术扣分。原始 `summary.json` 默认按原字节提供，可显式请求 `report_contract=legacy-v1` 下载兼容副本。两份已发布注册表通过 Git 属性保留原始字节，权威 SHA-256 不变。
 
@@ -128,7 +130,7 @@ SAM body 模式默认启用经过来源与数值核查的提示点和旋转转�
 
 以上相对路径命令必须在项目根目录运行；从其他目录操作时，将 `-File` 后面的路径换成脚本的绝对路径并加双引号。
 
-运行期间可在另一个 PowerShell 窗口执行 `powershell -ExecutionPolicy Bypass -File .\scripts\full_service_status.ps1` 查看端口、进程和健康状态；执行 `powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1` 查看 API/Worker、网页和 Cloudflare 的实时日志。日志位于 `.codex_tmp\full-service\`，按 `Ctrl+C` 只会停止查看，不会停止服务。
+运行期间可在另一个 PowerShell 窗口执行 `powershell -ExecutionPolicy Bypass -File .\scripts\full_service_status.ps1` 查看端口、进程和健康状态；执行 `powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1` 打开固定屏幕监视器。顶部显示准确的上传、分析、排队数量，当前任务优先；已提交上传退出上传区，失败/取消作为历史记录单独显示，不再展示废弃的 MiniMax/白模生成服务。默认只汇总监视期间近 5 分钟的异常，正常 HTTP 200/202 轮询不刷屏；`-IncludeLogs -Lines 6` 展开更多异常摘要，`-LogsOnly` 在固定屏幕查看原始 API/网页日志。历史 Cloudflare 文件不会自动作为当前日志展示，隧道日志请查看当前 `cloudflared` 启动终端。界面适应窗口大小，按 `Ctrl+C` 恢复原终端且不停止服务；非交互输出只显示一次快照，也可显式使用 `-Once`。服务日志位于 `.codex_tmp\full-service\`。
 
 已有 RTMPose 环境可使用 `scripts/run_rtmpose_service.ps1` 或 `scripts/run_local_inference.ps1` 选择对应模型预设。只有显式设置 `RALLYMATE_POSE_PRESET=yolo-baseline` 或传入同名参数时，才回滚到 YOLO Pose。
 

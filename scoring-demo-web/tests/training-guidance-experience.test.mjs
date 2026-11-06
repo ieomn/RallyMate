@@ -35,7 +35,7 @@ const recommendations = (value, props = {}) => renderToStaticMarkup(createElemen
 test("a legacy report waits for the new score while replay stays above folded measurements", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, status: "succeeded", journal: createElement("div", { id: "test-journal" }, "journal"), replay: createElement("div", { id: "test-replay" }, "replay") }));
   const primary = html.slice(0, html.indexOf('id="details"'));
-  assert.equal((primary.match(/正在生成动作评分/g) ?? []).length, 1);
+  assert.equal((primary.match(/暂无可展示的结果/g) ?? []).length, 1);
   assert.ok(primary.includes('id="test-replay"'));
   assert.doesNotMatch(primary, /process-overall-reference|0 \/ 5|中性先验|298.*评分卡/);
   assert.ok(html.indexOf('id="details"') < html.indexOf('id="test-journal"'));

@@ -41,7 +41,7 @@ export function resolveMimoConfig(runtime: Readonly<Record<string, string | unde
   if (configuredBase !== endpoint.baseUrl) return { status: "invalid_configuration" };
   if (!key) return { status: "not_configured" };
   if (/\s/.test(key)) return { status: "invalid_configuration" };
-  const model = runtime.MIMO_MODEL?.trim() || "mimo-v2.5-pro";
+  const model = runtime.MIMO_MODEL?.trim() || "mimo-v2.6-pro";
   if (!/^[a-zA-Z0-9._:-]{1,128}$/.test(model)) return { status: "invalid_configuration" };
   return { status: "ready", config: { provider, model, key, ...endpoint } };
 }

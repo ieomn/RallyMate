@@ -91,7 +91,13 @@ function protocol(hooks = {}) {
         if (old) assert.deepEqual(bytes, old, "idempotent chunk retries must preserve bytes");
         session.chunks.set(request.index, bytes);
         const replacement = await hooks.afterPut?.(request, session, snapshot(session));
-        return Response.json(replacement ?? snapshot(session));
+        const receipt = hooks.legacyAcknowledgements ? snapshot(session) : {
+          acknowledgement: "chunk-v1", upload_id: session.upload_id, size: session.size,
+          chunk_size: session.chunkSize, chunk_count: Math.ceil(session.size / session.chunkSize),
+          chunk_index: request.index, chunk_bytes: bytes.length, sha256: sha(bytes),
+        };
+        assert.equal(request.headers.get("x-upload-acknowledgement"), "chunk-v1");
+        return Response.json(replacement ?? receipt);
       } finally { activePuts--; }
     }
     assert.equal(init.method, "POST");
@@ -163,6 +169,28 @@ test("after a disconnect resume verifies saved chunks and sends only the missing
   assert.equal(progress.find(p => p.phase === "uploading").resumed, true);
   assert.equal(progress.at(-1).uploadedBytes, file.size);
   assert.equal(storage.size, 0);
+});
+
+test("new client accepts legacy full-history acknowledgements during staged upgrades", async t => {
+  browserStorage(t);
+  const server = protocol({ chunkSize: 128 * 1024, legacyAcknowledgements: true });
+  const file = video(Buffer.alloc(128 * 1024 * 3 + 7));
+  const progress = [];
+  await uploadResumable(file, { onUploadProgress: p => progress.push(p) }, urlFor, server.fetch, parse);
+  assert.equal(progress.at(-1).uploadedBytes, file.size);
+  assert.equal(server.createdJobs, 1);
+});
+
+test("compact receipts with a different checksum never count or submit unconfirmed bytes", async t => {
+  browserStorage(t);
+  const server = protocol({ afterPut: (_request, session) => ({
+    acknowledgement: "chunk-v1", upload_id: session.upload_id, size: session.size,
+    chunk_size: session.chunkSize, chunk_count: 1, chunk_index: 0, chunk_bytes: session.size, sha256: "0".repeat(64),
+  }) });
+  const progress = [];
+  await assert.rejects(uploadResumable(video(Buffer.alloc(1024)), { onUploadProgress: p => progress.push(p) }, urlFor, server.fetch, parse), /尚未确认/);
+  assert.ok(progress.every(p => p.uploadedBytes === 0));
+  assert.equal(server.createdJobs, 0);
 });
 
 test("same name size and endpoint bytes cannot reuse uploaded chunks with different middle bytes", async t => {
@@ -303,6 +331,7 @@ test("gateway forwards PUT bytes and checksum to the loopback API without client
     assert.equal(String(url), `http://127.0.0.1:8001/v1/uploads/${id}/chunks/0`);
     assert.equal(init.method, "PUT");
     assert.equal(init.headers.get("x-chunk-sha256"), checksum);
+    assert.equal(init.headers.get("x-upload-acknowledgement"), "chunk-v1");
     assert.equal(init.headers.get("content-type"), "application/octet-stream");
     assert.equal(init.headers.get("authorization"), "Bearer server-test-key");
     assert.deepEqual(Buffer.from(await new Response(init.body).arrayBuffer()), bytes);
@@ -311,7 +340,7 @@ test("gateway forwards PUT bytes and checksum to the loopback API without client
   const response = await proxyAnalysis(new Request(`http://test.trycloudflare.com/v1/uploads/${id}/chunks/0`, {
     method: "PUT", body: bytes,
     headers: { origin: "https://test.trycloudflare.com", "sec-fetch-site": "same-origin",
-      "content-type": "application/octet-stream", "x-chunk-sha256": checksum, authorization: "Bearer client-must-not-forward" },
+      "content-type": "application/octet-stream", "x-chunk-sha256": checksum, "x-upload-acknowledgement": "chunk-v1", authorization: "Bearer client-must-not-forward" },
   }), { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_LOCAL_TUNNEL: "1", RALLYMATE_API_KEY: "server-test-key" });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { received_chunks: [0] });

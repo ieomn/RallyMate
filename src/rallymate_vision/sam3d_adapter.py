@@ -13,6 +13,7 @@ from rallymate_vision.pose.base import PoseModelMetadata
 from rallymate_vision.pose.metadata import MHR70_NAMES, keypoint_schema
 from rallymate_vision.sam3d_evaluation import COORDINATES_2D, COORDINATES_3D, FRAME_VERSION, measure_sam3d_frame
 from rallymate_vision.sam3d_runner import Sam3DEngine, Sam3DProcess
+from rallymate_vision.sam3d_quality import Sam3DPoseQualityGate
 
 
 class Sam3DPoseAdapter:
@@ -37,12 +38,14 @@ class Sam3DPoseAdapter:
         self._last_seen: dict = {}
         self._epochs: dict = {}
         self._video_sha: str | None = None
+        self._quality_gate = Sam3DPoseQualityGate()
 
     def reset_sequence(self) -> None:
         self.last_records = []
         self._last_seen.clear()
         self._epochs.clear()
         self._video_sha = None
+        self._quality_gate = Sam3DPoseQualityGate()
 
     def metadata(self) -> PoseModelMetadata:
         raw = self.engine.metadata
@@ -83,6 +86,65 @@ class Sam3DPoseAdapter:
 
     def estimate(self, frame: np.ndarray, player_detections: Sequence[dict], max_players: int,
                  *, source_binding: dict | None = None) -> list[dict]:
+        prepared = self._prepare_frame(frame, player_detections, max_players, source_binding=source_binding)
+        if not prepared["boxes"]:
+            return []
+        try:
+            outputs = self.engine.infer(frame, prepared["boxes"])
+            if len(outputs) != len(prepared["boxes"]):
+                raise ValueError("SAM worker output count does not match subject requests")
+        except Exception as exc:
+            self._mark_worker_failure(prepared, exc)
+            return []
+        return self._decode_frame_outputs(prepared, outputs)
+
+    def estimate_batch(self, requests: Sequence[dict]) -> list[dict]:
+        """Prepare identities chronologically, then batch only model inference.
+
+        Each request owns its exact source image, selected detections and source
+        binding. The returned slots preserve every input frame, including empty,
+        invalid or failed frames. Callers must archive each slot's ``records``;
+        ``last_records`` remains the final frame for single-frame compatibility.
+        A batch is limited to eight frames; the engine additionally bounds the
+        flattened subject forward batches independently of this frame envelope.
+        """
+        if len(requests) > 8:
+            raise ValueError("SAM adapter batch must contain at most 8 source frames")
+        prepared_frames = [self._prepare_frame(
+            request["frame"], request["player_detections"], request["max_players"],
+            source_binding=request.get("source_binding"),
+        ) for request in requests]
+        result = [{"poses": [], "records": item["records"]} for item in prepared_frames]
+        accepted_frames = [(index, item) for index, item in enumerate(prepared_frames) if item["boxes"]]
+        if not accepted_frames:
+            return result
+        try:
+            outputs = self.engine.infer_batch([
+                {"frame": item["frame"], "boxes": item["boxes"]} for _, item in accepted_frames
+            ])
+            if len(outputs) != len(accepted_frames):
+                raise ValueError("SAM worker output frame count does not match requests")
+        except Exception as exc:
+            for _, item in accepted_frames:
+                self._mark_worker_failure(item, exc)
+            return result
+        for (index, item), frame_outputs in zip(accepted_frames, outputs):
+            try:
+                if len(frame_outputs) != len(item["boxes"]):
+                    raise ValueError("SAM worker output subject count does not match requests")
+            except (TypeError, ValueError) as exc:
+                self._mark_worker_failure(item, exc)
+                continue
+            result[index]["poses"] = self._decode_frame_outputs(item, frame_outputs)
+        return result
+
+    @staticmethod
+    def _mark_worker_failure(prepared: dict, exc: Exception) -> None:
+        for record, _ in prepared["accepted"]:
+            record.update(status="failed", reason="sam_worker_error", error_type=type(exc).__name__)
+
+    def _prepare_frame(self, frame: np.ndarray, player_detections: Sequence[dict], max_players: int,
+                       *, source_binding: dict | None = None) -> dict:
         source = dict(source_binding or {})
         # Also normalize at the adapter boundary for callers that supply decoded
         # milliseconds as a float. Preserve the exact PTS/time base and reject
@@ -96,6 +158,9 @@ class Sam3DPoseAdapter:
             self._video_sha = source.get("video_sha256")
         self.last_records = []
         height, width = frame.shape[:2]
+        prepared = {"frame": frame, "width": width, "height": height,
+                    "boxes": [], "accepted": [], "records": self.last_records,
+                    "quality_gate": self._quality_gate}
         players = sorted(player_detections,
                          key=lambda p: (p["bbox_px"][2] - p["bbox_px"][0]) * (p["bbox_px"][3] - p["bbox_px"][1]),
                          reverse=True)[:max_players]
@@ -103,8 +168,8 @@ class Sam3DPoseAdapter:
             self.last_records.append({**source, "schema_version": FRAME_VERSION, "status": "skipped",
                                       "reason": "no_detected_subject", "person_track_id": None,
                                       "selection_epoch": None, "image_size": [width, height]})
-            return []
-        requests, accepted = [], []
+            return prepared
+        requests, accepted = prepared["boxes"], prepared["accepted"]
         for player in players:
             track_id = player.get("track_id")
             processed = source.get("processed_index")
@@ -133,24 +198,23 @@ class Sam3DPoseAdapter:
                 continue
             requests.append(box.tolist())
             accepted.append((record, binding))
-        if not requests:
-            return []
-        try:
-            outputs = self.engine.infer(frame, requests)
-            if len(outputs) != len(requests):
-                raise ValueError("SAM worker output count does not match subject requests")
-        except Exception as exc:
-            for record, _ in accepted:
-                record.update(status="failed", reason="sam_worker_error", error_type=type(exc).__name__)
-            return []
+        return prepared
+
+    @staticmethod
+    def _decode_frame_outputs(prepared: dict, outputs: Sequence[dict]) -> list[dict]:
+        width, height = prepared["width"], prepared["height"]
         poses = []
-        for (record, binding), output in zip(accepted, outputs):
+        for (record, binding), output in zip(prepared["accepted"], outputs):
             record.update({key: value for key, value in output.items() if key not in {"keypoints_2d", "keypoints_3d"}})
             if output["status"] != "ok":
                 continue
             xy, xyz = output["keypoints_2d"], output["keypoints_3d"]
             record["keypoints_2d"] = dict(zip(MHR70_NAMES, xy))
             record["keypoints_3d"] = dict(zip(MHR70_NAMES, xyz))
+            record["pose_quality"] = prepared["quality_gate"].evaluate(record)
+            if not record["pose_quality"]["accepted"]:
+                record.update(status="skipped", reason="sam_pose_quality_rejected")
+                continue
             record["measurements_3d"] = measure_sam3d_frame(record)
             points = []
             for definition, point, point3d in zip(keypoint_schema("mhr70")["keypoints"], xy, xyz):

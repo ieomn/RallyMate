@@ -23,6 +23,13 @@ test("read failure preserves partial evidence and does not call completed infere
   assert.equal(partial.phase, "read-error"); assert.equal(partial.showReport, true); assert.equal(partial.canResumeRead, true);
   assert.match(partial.recoveryTitle, /分析已完成/);
 });
+test("a report still preparing has its own recovery state and retains the same-job read action", () => {
+  const pending = state({ uploadState: "report-preparing", jobStatus: "succeeded", hasReplay: true });
+  assert.equal(pending.phase, "preparing"); assert.equal(pending.canResumeRead, true);
+  assert.equal(pending.showReport, false); assert.equal(pending.showReplayOnly, true);
+  assert.equal(pending.recoveryTitle, "分析已完成，报告仍在整理");
+  assert.match(state({ uploadState: "error", jobStatus: "succeeded" }).recoveryTitle, /读取中断/);
+});
 test("cancelled and failed jobs keep available replay without report navigation", () => {
   for (const jobStatus of ["cancelled", "failed"]) {
     const stopped = state({ uploadState: jobStatus === "failed" ? "error" : "cancelled", jobStatus, hasReplay: true });

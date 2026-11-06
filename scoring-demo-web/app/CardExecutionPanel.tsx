@@ -106,13 +106,13 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
   const canReplay = instance?.window && jobId && report.source_run_id === jobId
     && typeof durationMs === "number" && Number.isFinite(durationMs) && instance.window.end_ms <= durationMs;
   return <details className="indicator-assessment card-execution-panel" open={formal}>
-    <summary>{formal ? "逐卡正式评分" : "逐卡计算与复核"} <span>{summary.catalogue_cards} / {summary.expected_source_cards} 张规则已返回 · 本次执行 {summary.computed_cards} 张</span></summary>
-    <p className="indicator-assessment-intro">{formal ? "可计算条件已自动生成正式评分，总分按各卡实例均值再等权汇总。缺测不记零分，也不记 E。" : "规则清单完整度与本次可评分范围分别显示。以下视觉代理分表示工程条件完成度，原卡技术等级尚未自动判定。缺测不记零分，也不记 E。"}</p>
+    <summary>{formal ? "逐卡条件评分" : "逐卡计算与复核"} <span>{summary.catalogue_cards} / {summary.expected_source_cards} 张规则已返回 · 本次执行 {summary.computed_cards} 张</span></summary>
+    <p className="indicator-assessment-intro">{formal ? "评分表示工程条件完成度，总分按各卡实例均值再等权汇总。A–E 为工程条件等级，不是 Word 原文技术等级。缺测不记零分，也不记 E。" : "规则清单完整度与本次可评分范围分别显示。以下视觉代理分表示工程条件完成度，A–E 为工程条件等级，原卡技术等级尚未自动判定。缺测不记零分，也不记 E。"}</p>
     {report.status === "unavailable" && <p role="status">本次评分卡计算暂不可用，未生成评分结果。</p>}
     {report.reason_codes.length > 0 && formal ? <p>本次部分评分依据不足，缺失项未计入总分。</p> : report.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
     {report.limitations.length > 0 && <details><summary>本次计算范围与限制</summary>{report.limitations.map((limitation, index) => <p key={index}>{limitation}</p>)}</details>}
     <dl className="report-measurement-summary">
-      {formal ? <><div><dt>正式总分</dt><dd>{report.overall_score === null ? "—" : `${format(report.overall_score)} / 100`}</dd></div><div><dt>已评分</dt><dd>{summary.formal_scored_cards} 张 · {summary.formal_scored_instances} 次</dd></div></>
+      {formal ? <><div><dt>条件完成度总分</dt><dd>{report.overall_score === null ? "—" : `${format(report.overall_score)} / 100`}</dd></div><div><dt>已评分</dt><dd>{summary.formal_scored_cards} 张 · {summary.formal_scored_instances} 次</dd></div></>
         : <><div><dt>原卡自动判级</dt><dd>{summary.original_scored_cards} 张</dd></div><div><dt>有视觉代理分的卡</dt><dd>{summary.proxy_scored_cards} 张 · {summary.proxy_scored_instances} 次</dd></div><div><dt>需要人工复核</dt><dd>{summary.review_instances} 次</dd></div></>}
       <div><dt>证据不足</dt><dd>{summary.unavailable_instances} 次</dd></div>
     </dl>
@@ -129,7 +129,7 @@ export default function CardExecutionPanel({ value, jobId, durationMs }: { value
       {formal ? card.reason_codes.length > 0 && <p>{card.instances.some(row => row.status === "scored") ? "部分实例缺少完整计算依据，已评分实例保持成绩。" : "缺少本卡所需的完整计算依据。"}</p> : card.reason_codes.map(reason => <p key={reason}>{cardReasonLabel(reason)}</p>)}
       {card.instances.length > 1 && <label className="indicator-picker">动作实例<select value={instance ? instanceKey(instance) : ""} onChange={event => setSelectedEvent(event.target.value)}>{card.instances.map((row, index) => <option key={instanceKey(row)} value={instanceKey(row)}>{index + 1}. {row.window ? `${clock(row.window.start_ms)}–${clock(row.window.end_ms)}` : "未定位完整时间窗"} · {CARD_RUN_LABELS[row.status]}</option>)}</select></label>}
       {instance ? <div className="indicator-observation">
-        <strong>{instance.score === null ? "— 未评分" : `${formal ? instance.grade : instance.proxy_grade} · ${instance.score} / 100`} <small>{instance.score === null ? CARD_RUN_LABELS[instance.status] : formal ? "正式评分" : "工程条件完成度"}</small></strong>
+        <strong>{instance.score === null ? "— 未评分" : `工程等级 ${formal ? instance.grade : instance.proxy_grade} · ${instance.score} / 100`} <small>{instance.score === null ? CARD_RUN_LABELS[instance.status] : "工程条件完成度"}</small></strong>
         <p>{instance.window ? `计算窗口：${clock(instance.window.start_ms)}–${clock(instance.window.end_ms)}` : "计算窗口不完整，保留缺失原因。"}</p>
         <details><summary>测量与来源依据</summary>
         {instance.limitations.map((limitation, index) => <p key={`scope-${index}`}>{limitation}</p>)}

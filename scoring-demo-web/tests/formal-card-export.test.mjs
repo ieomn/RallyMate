@@ -12,7 +12,7 @@ function compiledUrl(fileUrl) {
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`; cache.set(fileUrl.href, url); return url;
 }
 const { cardExecutionOf } = await import(compiledUrl(new URL("../app/lib/card-execution.ts", import.meta.url)));
-const { buildPracticeReport, buildReportBackup } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
+const { buildPracticeReport, buildReportBackup, renderReportMarkdown, renderReportHtml } = await import(compiledUrl(new URL("../app/lib/report-export.ts", import.meta.url)));
 const fixtures = ["fs-step-motion-formal-synthetic-contract.json","footwork-cycle-formal-synthetic-contract.json","gs-formal-synthetic-contract.json","temporal-formal-real-0a3-contract.json"].map(name=>JSON.parse(fs.readFileSync(new URL("./fixtures/"+name,import.meta.url),"utf8")));
 const reports=fixtures.flatMap(f=>f.report?[f.report]:f.cases.map(c=>c.report));
 const completed=raw=>({mode:"live",uploadState:"complete",job:{id:raw.source_run_id,status:"succeeded"},evidence:{jobId:raw.source_run_id,result:{job_id:raw.source_run_id,card_execution:raw}}});
@@ -21,8 +21,12 @@ test("every formal report preserves all validated state and source proof across 
 });
 test("readable exports show one recomputed formal total and keep internal rows only in backup",()=>{
  const raw=structuredClone(fixtures.at(-1).report);raw.overall_score=999;raw.summary.formal_scored_cards=999;
- const report=buildPracticeReport(completed(raw)),totals=report.sections.filter(s=>s.title.startsWith("步伐动作得分："));
- assert.equal(totals.length,1);assert.equal(totals[0].title,"步伐动作得分：68 / 100");
+ const report=buildPracticeReport(completed(raw)),totals=report.sections.filter(s=>s.title.startsWith("步伐条件完成度总分："));
+ assert.equal(totals.length,1);assert.equal(totals[0].title,"步伐条件完成度总分：68 / 100");
+ for (const rendered of [renderReportMarkdown(report), renderReportHtml(report)]) {
+  assert.match(rendered,/工程条件完成度/);assert.match(rendered,/不是 Word 原文 A–E 技术等级/);
+  assert.doesNotMatch(rendered,/逐卡正式评分|正式总分|自动生成正式评分/);
+ }
  assert.doesNotMatch(totals[0].paragraphs.join(" "),/待复核|999/);
  assert.equal(report.sections.some(s=>s.title.startsWith("逐卡")),false);
  assert.doesNotMatch(JSON.stringify(report),/FS01-M02|D \/ 40|原卡技术等级/);

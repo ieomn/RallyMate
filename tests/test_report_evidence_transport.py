@@ -10,7 +10,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from rallymate_service.report_evidence_transport import (
-    MODEL_PROOF_CODEC, ReportEvidenceTransportError, pack_report_evidence, unpack_report_evidence,
+    MODEL_PROOF_CODEC, ReportEvidenceTransportError, ReportEvidenceLimitError,
+    pack_report_evidence, unpack_report_evidence,
 )
 from rallymate_service import report_evidence_transport as transport
 from tests.test_model_measurement_contract import model_window_fixture
@@ -27,6 +28,51 @@ def native_fixture():
 
 
 class ReportEvidenceTransportTests(unittest.TestCase):
+    def test_large_report_packing_can_stop_before_traversal_finishes(self):
+        original = native_fixture()
+        original['measured_samples'] = [0] * 20_000
+        calls = []
+
+        def check():
+            calls.append(True)
+            if len(calls) == 5:
+                raise RuntimeError('report budget exhausted')
+
+        with self.assertRaisesRegex(RuntimeError, 'report budget exhausted'):
+            pack_report_evidence(original, cancellation_callback=check)
+        self.assertEqual(len(calls), 5)
+        self.assertNotIn('report_transport', original)
+        self.assertEqual(len(original['measured_samples']), 20_000)
+
+    def test_capacity_failure_is_distinct_from_malformed_evidence(self):
+        with patch.object(transport, 'MAX_MODEL_PROOFS', 0):
+            with self.assertRaisesRegex(ReportEvidenceLimitError, 'proof count'):
+                pack_report_evidence(native_fixture())
+        malformed = native_fixture()
+        malformed['rows'][0]['source_track_id'] = -1
+        with self.assertRaises(ReportEvidenceTransportError) as failure:
+            pack_report_evidence(malformed)
+        self.assertNotIsInstance(failure.exception, ReportEvidenceLimitError)
+
+    def test_complete_report_above_previous_two_million_node_limit_roundtrips(self):
+        # Real full-length reports can cross the old structural limit while
+        # remaining well below both wire and expanded evidence byte budgets.
+        raw = native_fixture()
+        raw['measured_samples'] = [0] * 2_000_000
+        encoded = pack_report_evidence(raw)
+        self.assertEqual(unpack_report_evidence(encoded), raw)
+
+    def test_exhausted_budgets_identify_the_limit_for_server_diagnostics(self):
+        for setting, value, action, message in (
+            ('MAX_BASE_NODES', 0, lambda budget: budget.enter(None, 0), 'base nodes.*1 > 0'),
+            ('MAX_DEPTH', 0, lambda budget: budget.enter(None, 1), 'depth.*1 > 0'),
+            ('MAX_EXPANDED_REPORT_BYTES', 1, lambda budget: budget.add(2), 'expanded bytes.*2 > 1'),
+            ('MAX_MODEL_PROOF_REFERENCES', 0, lambda budget: budget.reference(1), 'reference count.*1 > 0'),
+        ):
+            with self.subTest(budget=setting), patch.object(transport, setting, value):
+                with self.assertRaisesRegex(ReportEvidenceTransportError, message):
+                    action(transport._Budget())
+
     def test_pack_and_decode_charge_the_same_reference_budget_at_boundaries(self):
         budgets = []
         original_budget = transport._Budget

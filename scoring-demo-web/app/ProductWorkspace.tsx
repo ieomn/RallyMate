@@ -4,8 +4,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { recentReports, type RecentReport } from "./lib/training-report";
-import { annotationHref } from "./lib/annotation-navigation";
 import { AnimatedDisclosure } from "./AnimatedDisclosure";
+import { courtArtworkPath, courtArtworkPoint, COURT_LENGTH, DOUBLES_WIDTH, NET_DISTANCE, SERVICE_DISTANCE, SINGLES_WIDTH } from "./lib/court-artwork";
 
 export type WorkspaceView = "overview" | "sessions" | "analysis" | "guide";
 type IconName = "home" | "sessions" | "analysis" | "guide" | "plus" | "arrow-left" | "arrow-right" | "arrow-up-right" | "search" | "chevron-right" | "chevron-down" | "clock" | "play" | "check" | "camera" | "frame" | "upload" | "movement" | "close" | "menu" | "tennis";
@@ -62,21 +62,9 @@ function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: R
   return <main ref={contentRef} id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>;
 }
 
-function SecondaryTools({ children }: { children: ReactNode }) {
-  const toolsRef = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const closeOutside = (event: PointerEvent) => { if (toolsRef.current && !toolsRef.current.contains(event.target as Node)) toolsRef.current.open = false; };
-    const closeWithEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && toolsRef.current?.open) { toolsRef.current.open = false; toolsRef.current.querySelector("summary")?.focus(); } };
-    document.addEventListener("pointerdown", closeOutside);
-    document.addEventListener("keydown", closeWithEscape);
-    return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeWithEscape); };
-  }, []);
-  return <details className="pw-tools" ref={toolsRef}><summary>更多工具<ProductIcon name="chevron-down" size={15} /></summary><div className="pw-tools-menu">{children}</div></details>;
-}
-
-export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, annotationJobId, busy = false, onImportReport, importBusy = false }: {
+export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, busy = false }: {
   view: WorkspaceView; onNavigate: (view: WorkspaceView) => void; onNewAnalysis: () => void;
-  children: ReactNode; currentName?: string; annotationJobId?: string; busy?: boolean; onImportReport?: () => void; importBusy?: boolean;
+  children: ReactNode; currentName?: string; busy?: boolean;
 }) {
   const title = navigation.find(item => item.view === view)?.label ?? "训练总览";
   return <div className="product-app">
@@ -86,7 +74,7 @@ export function ProductShell({ view, onNavigate, onNewAnalysis, children, curren
       <nav className="pw-desktop-nav" aria-label="主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} /><span>{item.label}</span>{item.view === "analysis" && busy && <i className="pw-busy-dot" aria-label="分析进行中" />}</button>)}</nav>
     </aside>
     <div className="pw-workspace">
-      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><SecondaryTools>{onImportReport && <button type="button" disabled={busy || importBusy} onClick={event => { onImportReport(); const details = event.currentTarget.closest("details"); if (details) details.open = false; }}><ProductIcon name="upload" size={17} />导入报告备份</button>}<a className="pw-annotation-link" href={annotationHref(annotationJobId)} target="_blank" rel="noopener noreferrer"><ProductIcon name="frame" size={17} />标注工作台<span className="pw-sr-only">（新标签页打开）</span></a><a href="/welcome/sample"><ProductIcon name="guide" size={17} />查看只读交付样例</a></SecondaryTools><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
+      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
       <WorkspaceSurface view={view}>{children}</WorkspaceSurface>
     </div>
     <nav className="pw-mobile-nav" aria-label="移动主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} size={21} /><span>{item.label}</span></button>)}</nav>
@@ -95,10 +83,35 @@ export function ProductShell({ view, onNavigate, onNewAnalysis, children, curren
 
 function CourtArtwork({ compact = false }: { compact?: boolean }) {
   const id = useId().replace(/:/g, "");
+  const halfWidth = DOUBLES_WIDTH / 2, singles = SINGLES_WIDTH / 2;
+  const serviceFar = NET_DISTANCE - SERVICE_DISTANCE, serviceNear = NET_DISTANCE + SERVICE_DISTANCE;
+  const [netLeft, netY] = courtArtworkPoint(-halfWidth - .45, NET_DISTANCE);
+  const [netRight] = courtArtworkPoint(halfWidth + .45, NET_DISTANCE);
+  const [netCenter] = courtArtworkPoint(0, NET_DISTANCE);
+  const netHeight = 15;
   return <svg className={compact ? "pw-court-art pw-court-art-compact" : "pw-court-art"} viewBox="0 0 640 460" fill="none" aria-hidden="true">
     <defs><linearGradient id={`${id}-floor`} x1="120" y1="0" x2="570" y2="440" gradientUnits="userSpaceOnUse"><stop stopColor="#344c34" /><stop offset="1" stopColor="#18221c" /></linearGradient><radialGradient id={`${id}-glow`}><stop stopColor="#c4f469" stopOpacity=".16" /><stop offset="1" stopColor="#c4f469" stopOpacity="0" /></radialGradient></defs>
     <ellipse cx="358" cy="228" rx="295" ry="218" fill={`url(#${id}-glow)`} />
-    <g transform="translate(70 28) rotate(-13 250 200)"><path d="M148 24h268l111 344H5Z" fill={`url(#${id}-floor)`} stroke="#8fa387" strokeOpacity=".18" /><path d="M173 53h222l86 280H47Z" stroke="#d5e6c5" strokeOpacity=".7" strokeWidth="1.4" /><path d="M191 53 84 333M377 53l67 280M128 169h302M91 254h365M281 169l-5 85M163 88h242" stroke="#d5e6c5" strokeOpacity=".58" strokeWidth="1.2" /><path d="m106 211 338 0" stroke="#eff8e7" strokeWidth="2" /><path d="M106 205v20m338-20v20" stroke="#d5e6c5" strokeWidth="3" /><path d="M106 214h338m-338 4h338" stroke="#d5e6c5" strokeOpacity=".2" /><path d="m181 288 97-119" stroke="#c4f469" strokeOpacity=".2" strokeWidth="1.2" strokeDasharray="4 8" /><circle cx="181" cy="288" r="25" stroke="#c4f469" strokeOpacity=".12" /><circle cx="181" cy="288" r="13" stroke="#c4f469" strokeOpacity=".2" /><circle cx="181" cy="288" r="5" fill="#c4f469" /><circle cx="327" cy="117" r="4" fill="#b6cab0" fillOpacity=".45" /></g>
+    <g transform="translate(70 28) rotate(-13 250 200)">
+      <path d="M148 24h268l111 344H5Z" fill={`url(#${id}-floor)`} stroke="#8fa387" strokeOpacity=".18" />
+      <path d={courtArtworkPath([[-halfWidth, 0], [halfWidth, 0], [halfWidth, COURT_LENGTH], [-halfWidth, COURT_LENGTH]], true)} stroke="#d5e6c5" strokeOpacity=".7" strokeWidth="1.4" />
+      <g stroke="#d5e6c5" strokeOpacity=".58" strokeWidth="1.2">
+        {[-singles, singles].map(x => <path key={x} d={courtArtworkPath([[x, 0], [x, COURT_LENGTH]])} />)}
+        {[serviceFar, serviceNear].map(distance => <path key={distance} d={courtArtworkPath([[-singles, distance], [singles, distance]])} />)}
+        <path d={courtArtworkPath([[0, serviceFar], [0, serviceNear]])} />
+        <path d={courtArtworkPath([[0, 0], [0, .28]]) + courtArtworkPath([[0, COURT_LENGTH - .28], [0, COURT_LENGTH]])} />
+      </g>
+      <g data-court-net="midcourt">
+        <path d={`M${netLeft} ${netY}H${netRight}`} stroke="#101b14" strokeWidth="3" strokeOpacity=".35" />
+        <path d={`M${netLeft} ${netY - netHeight}Q${netCenter} ${netY - netHeight + 4} ${netRight} ${netY - netHeight}V${netY}H${netLeft}Z`} fill="#101b14" fillOpacity=".35" stroke="#d5e6c5" strokeOpacity=".25" />
+        {[.25, .5, .75].map(row => <path key={row} d={`M${netLeft} ${netY - netHeight * row}H${netRight}`} stroke="#d5e6c5" strokeOpacity=".18" />)}
+        {Array.from({ length: 31 }, (_, index) => netLeft + (netRight - netLeft) * (index + 1) / 32).map(x => <path key={x} d={`M${x} ${netY - netHeight + 2}V${netY}`} stroke="#d5e6c5" strokeOpacity=".14" />)}
+        <path d={`M${netLeft} ${netY - netHeight}Q${netCenter} ${netY - netHeight + 4} ${netRight} ${netY - netHeight}`} stroke="#eff8e7" strokeWidth="2" />
+        {[netLeft, netRight].map(x => <path key={x} d={`M${x} ${netY - netHeight - 3}V${netY + 2}`} stroke="#d5e6c5" strokeWidth="2.6" />)}
+      </g>
+      <path d={courtArtworkPath([[-2.8, 20], [0, serviceFar]])} stroke="#c4f469" strokeOpacity=".2" strokeWidth="1.2" strokeDasharray="4 8" />
+      <circle cx="181" cy="288" r="25" stroke="#c4f469" strokeOpacity=".12" /><circle cx="181" cy="288" r="13" stroke="#c4f469" strokeOpacity=".2" /><circle cx="181" cy="288" r="5" fill="#c4f469" /><circle cx="327" cy="117" r="4" fill="#b6cab0" fillOpacity=".45" />
+    </g>
     {!compact && <g stroke="#9eb08f" strokeOpacity=".2"><path d="M551 55h24m-12-12v24M79 369H55m12-12v24" /><circle cx="567" cy="361" r="38" /><path d="M567 313v96m-48-48h96" /></g>}
   </svg>;
 }

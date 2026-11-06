@@ -1,16 +1,25 @@
 from __future__ import annotations
 
 import html
+import io
 import json
 import math
+import os
+import sqlite3
+import tempfile
 from collections import Counter, defaultdict
 from itertools import islice
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable, Iterator
 
 
 SCORING_LOOP_REPORT_VERSION = "scoring-loop-report-v0.4.0"
 _GRADES = frozenset({"A", "B", "C", "D", "E"})
+MAX_REPORT_RECORD_BYTES = 64 * 1024 * 1024
+
+
+class ReportRecordLimit(ValueError):
+    """A single report fact exceeds the supported, explicit memory budget."""
 
 
 def _h(value: Any) -> str:
@@ -18,22 +27,52 @@ def _h(value: Any) -> str:
 
 
 def _json_text(value: Any, *, max_chars: int = 40_000) -> str:
-    """Serialize diagnostic payloads without allowing an unbounded HTML report."""
+    """Project before serializing: truncating a giant serialized object is too late."""
+    remaining = max(1, max_chars)
+    omitted = False
 
-    try:
-        rendered = json.dumps(
-            value,
-            ensure_ascii=False,
-            sort_keys=True,
-            indent=2,
-            default=str,
-        )
-    except (TypeError, ValueError):
-        rendered = str(value)
-    if len(rendered) <= max_chars:
-        return rendered
-    omitted = len(rendered) - max_chars
-    return f"{rendered[:max_chars]}\n… [摘要截断 {omitted} 个字符；完整事实保留在机器产物中]"
+    def project(item: Any, depth: int = 0) -> Any:
+        nonlocal remaining, omitted
+        if remaining <= 0 or depth >= 24:
+            omitted = True
+            return "…"
+        remaining -= 1
+        if isinstance(item, str):
+            keep = min(len(item), max(0, remaining))
+            remaining -= keep
+            if keep < len(item):
+                omitted = True
+                return item[:keep] + "…"
+            return item
+        if item is None or isinstance(item, (bool, int, float)):
+            remaining -= 24
+            return item
+        if isinstance(item, dict):
+            result = {}
+            for key, child in item.items():
+                if remaining <= 0:
+                    omitted = True
+                    break
+                # JSON artifacts have string keys. Avoid copying/sorting all
+                # keys from an arbitrarily large diagnostics dictionary.
+                projected_key = project(key if isinstance(key, str) else str(key), depth + 1)
+                result[projected_key] = project(child, depth + 1)
+            return result
+        if isinstance(item, (list, tuple)):
+            result = []
+            for child in item:
+                if remaining <= 0:
+                    omitted = True
+                    break
+                result.append(project(child, depth + 1))
+            return result
+        omitted = True
+        return f"<{type(item).__name__}>"
+
+    rendered = json.dumps(project(value), ensure_ascii=False, sort_keys=True, indent=2)
+    if omitted or len(rendered) > max_chars:
+        return rendered[:max_chars] + "\n… [摘要截断；完整事实保留在机器产物中]"
+    return rendered
 
 
 def _number(value: Any) -> str:
@@ -99,6 +138,8 @@ def _payload_summary(value: Any, *, depth: int = 0) -> str:
     if isinstance(value, list):
         if all(isinstance(item, dict) and "value" in item for item in value):
             return _series_summary(value)
+        if depth >= 3:
+            return f"array(n={len(value)})"
         shown = value[:6]
         rendered = ", ".join(_payload_summary(item, depth=depth + 1) for item in shown)
         suffix = f", … (+{len(value) - len(shown)})" if len(value) > len(shown) else ""
@@ -178,7 +219,7 @@ def _event_details(event: dict[str, Any]) -> str:
     )
 
 
-def _timeline(events: list[dict[str, Any]]) -> str:
+def _timeline(events: list[dict[str, Any]], *, bounds: tuple[int, int] | None = None) -> str:
     if not events:
         return '<p class="warn">未定位到满足质量门禁的候选事件。</p>'
     ordered = sorted(
@@ -190,8 +231,8 @@ def _timeline(events: list[dict[str, Any]]) -> str:
             str(item.get("event_id", "")),
         ),
     )
-    start = min(int(item["start_ms"]) for item in ordered)
-    end = max(int(item["end_ms"]) for item in ordered)
+    start = bounds[0] if bounds is not None else min(int(item["start_ms"]) for item in ordered)
+    end = bounds[1] if bounds is not None else max(int(item["end_ms"]) for item in ordered)
     span = max(end - start, 1)
     rows = []
     for event in ordered:
@@ -245,10 +286,10 @@ def _evidence_frames(
     return sorted(frames)
 
 
-def _feature_table(
+def _typed_features(
     record: dict[str, Any],
-    feature_records_by_key: dict[tuple[str, str], dict[str, Any]],
-) -> tuple[str, list[dict[str, Any]]]:
+    feature_records_by_key: Any,
+) -> Iterator[tuple[str, dict[str, Any]]]:
     required = record.get("features", [])
     measurement_names = {
         item.get("feature_name") for item in required if isinstance(item, dict)
@@ -269,61 +310,68 @@ def _feature_table(
         # The compact indicator record remains authoritative for score-facing
         # value/validity. The canonical feature record contributes the full
         # raw/smoothed evidence omitted by that intentionally compact contract.
-        return {**canonical, **item}
+        merged = {**canonical, **item}
+        for field in ("raw_value", "smoothed_value", "value"):
+            if field in item:
+                merged.pop(f"_report_{field}", None)
+        return merged
 
-    typed_features = [
-        ("required", expanded(item))
-        for item in required
-        if isinstance(item, dict)
-    ] + [
-        ("scoring-context", expanded(item))
-        for item in scoring_only
-    ] + [
-        ("supplemental", expanded(item))
-        for item in supplemental
-        if isinstance(item, dict)
-    ]
+    for kind, items in (("required", required), ("scoring-context", scoring_only), ("supplemental", supplemental)):
+        for item in items:
+            if isinstance(item, dict):
+                yield kind, expanded(item)
+
+
+def _feature_row(kind: str, feature: dict[str, Any]) -> str:
+    valid = bool(feature.get("valid"))
+    raw_summary = feature.get("_report_raw_value", (
+        _payload_summary(feature["raw_value"])
+        if "raw_value" in feature
+        else "独立目标方向上下文；无逐帧原始序列"
+        if kind == "scoring-context"
+        else "contract field missing"
+    ))
+    smoothed_summary = feature.get("_report_smoothed_value", (
+        _payload_summary(feature["smoothed_value"])
+        if "smoothed_value" in feature
+        else "上下文标量未进行时序平滑"
+        if kind == "scoring-context"
+        else "contract field missing"
+    ))
+    return (
+        "<tr>"
+        f'<td>{_h(kind)}</td>'
+        f'<td><code>{_h(feature.get("feature_name", "—"))}</code><br>'
+        f'<small>{_h(feature.get("feature_version", "—"))}</small></td>'
+        f'<td><strong>{_h(feature.get("_report_value", _payload_summary(feature.get("value"))))}</strong> '
+        f'{_h(feature.get("unit", ""))}</td>'
+        f'<td><code>{_h(_number(feature.get("confidence")))}</code></td>'
+        f'<td><span class="{"ok" if valid else "bad"}">{"valid" if valid else "invalid"}</span><br>'
+        f'<code>{_h(feature.get("reason", "—"))}</code></td>'
+        f'<td><code>{_h(raw_summary)}</code></td>'
+        f'<td><code>{_h(smoothed_summary)}</code></td>'
+        f'<td><code>{_h(feature.get("source_frames", []))}</code></td>'
+        "</tr>"
+    )
+
+
+_FEATURE_TABLE_START = (
+    '<div class="table-scroll"><table class="feature-table"><thead><tr>'
+    '<th>类型</th><th>特征 / 版本</th><th>值 / 单位</th><th>置信度</th>'
+    '<th>有效性 / 原因</th><th>raw 摘要</th><th>smoothed 摘要</th>'
+    '<th>source frames</th></tr></thead><tbody>'
+)
+_FEATURE_TABLE_END = '</tbody></table></div>'
+
+
+def _feature_table(
+    record: dict[str, Any],
+    feature_records_by_key: Any,
+) -> tuple[str, list[dict[str, Any]]]:
+    typed_features = list(_typed_features(record, feature_records_by_key))
     if not typed_features:
         return '<p class="warn">未提供特征事实。</p>', []
-    rows = []
-    for kind, feature in typed_features:
-        valid = bool(feature.get("valid"))
-        raw_summary = (
-            _payload_summary(feature["raw_value"])
-            if "raw_value" in feature
-            else "独立目标方向上下文；无逐帧原始序列"
-            if kind == "scoring-context"
-            else "contract field missing"
-        )
-        smoothed_summary = (
-            _payload_summary(feature["smoothed_value"])
-            if "smoothed_value" in feature
-            else "上下文标量未进行时序平滑"
-            if kind == "scoring-context"
-            else "contract field missing"
-        )
-        rows.append(
-            "<tr>"
-            f'<td>{_h(kind)}</td>'
-            f'<td><code>{_h(feature.get("feature_name", "—"))}</code><br>'
-            f'<small>{_h(feature.get("feature_version", "—"))}</small></td>'
-            f'<td><strong>{_h(_payload_summary(feature.get("value")))}</strong> '
-            f'{_h(feature.get("unit", ""))}</td>'
-            f'<td><code>{_h(_number(feature.get("confidence")))}</code></td>'
-            f'<td><span class="{"ok" if valid else "bad"}">{"valid" if valid else "invalid"}</span><br>'
-            f'<code>{_h(feature.get("reason", "—"))}</code></td>'
-            f'<td><code>{_h(raw_summary)}</code></td>'
-            f'<td><code>{_h(smoothed_summary)}</code></td>'
-            f'<td><code>{_h(feature.get("source_frames", []))}</code></td>'
-            "</tr>"
-        )
-    table = (
-        '<div class="table-scroll"><table class="feature-table"><thead><tr>'
-        '<th>类型</th><th>特征 / 版本</th><th>值 / 单位</th><th>置信度</th>'
-        '<th>有效性 / 原因</th><th>raw 摘要</th><th>smoothed 摘要</th>'
-        '<th>source frames</th></tr></thead>'
-        f'<tbody>{"".join(rows)}</tbody></table></div>'
-    )
+    table = _FEATURE_TABLE_START + "".join(_feature_row(kind, feature) for kind, feature in typed_features) + _FEATURE_TABLE_END
     return table, [feature for _, feature in typed_features]
 
 
@@ -340,15 +388,12 @@ def _legal_event_grade(
     return None
 
 
-def _indicator_instance(
+def _indicator_instance_parts(
     indicator: dict[str, Any],
     record: dict[str, Any],
     score: dict[str, Any],
     event: dict[str, Any] | None,
-    feature_records_by_key: dict[tuple[str, str], dict[str, Any]],
-) -> str:
-    feature_table, all_features = _feature_table(record, feature_records_by_key)
-    frames = _evidence_frames(all_features, score)
+) -> tuple[str, str]:
     status = score.get("status", record.get("scoring_status", "unavailable"))
     grade = _legal_event_grade(indicator, record, score)
     reasons = score.get("reason_codes", record.get("reason_codes", []))
@@ -382,17 +427,28 @@ def _indicator_instance(
         f'threshold/model version <code>{_h(score.get("threshold_version") or "—")}</code>'
         '</p>'
         f'<p>reason codes：<code>{_h(_list_text(reasons))}</code></p>'
-        f'<p>feedback：{_h(score.get("feedback", "—"))}</p>'
-        f'<p>合并证据帧：<code>{_h(frames)}</code></p>'
-        f'{feature_table}'
+        f'<p>feedback：{_h(score.get("feedback", "—"))}</p>',
         '<h5>Quality gate</h5>'
         f'{gate_html}'
         '<details><summary>评分 evidence 与模型版本</summary>'
-        f'<h5>evidence</h5><pre>{_h(_json_text(evidence, max_chars=8_000))}</pre>'
-        f'<h5>model versions</h5><pre>{_h(_json_text(model_versions, max_chars=8_000))}</pre>'
+        f'<h5>evidence</h5><pre>{_h(score.get("_report_evidence", _json_text(evidence, max_chars=8_000)))}</pre>'
+        f'<h5>model versions</h5><pre>{_h(score.get("_report_model_versions", _json_text(model_versions, max_chars=8_000)))}</pre>'
         '</details>'
         '</div></details>'
     )
+
+
+def _indicator_instance(
+    indicator: dict[str, Any],
+    record: dict[str, Any],
+    score: dict[str, Any],
+    event: dict[str, Any] | None,
+    feature_records_by_key: Any,
+) -> str:
+    feature_table, all_features = _feature_table(record, feature_records_by_key)
+    frames = _evidence_frames(all_features, score)
+    opening, closing = _indicator_instance_parts(indicator, record, score, event)
+    return opening + f'<p>合并证据帧：<code>{_h(frames)}</code></p>' + feature_table + closing
 
 
 def _metric_value(stats: dict[str, Any], name: str) -> str:
@@ -574,6 +630,13 @@ def build_scoring_loop_report_html(result: dict[str, Any]) -> str:
             "</tr>"
         )
 
+    opening, middle, closing = _document_parts(result, legal_grade_counts)
+    return opening + _timeline(events) + middle + "".join(indicator_rows) + closing
+
+
+def _document_parts(result: dict[str, Any], legal_grade_counts: Counter[str]) -> tuple[str, str, str]:
+    summary = result["summary"]
+    registry = result["feasibility"]
     score_counts = summary.get("score_status_counts", {})
     result_state = summary.get("result_state", {})
     event_eval = summary.get("event_evaluation", {})
@@ -591,7 +654,7 @@ def build_scoring_loop_report_html(result: dict[str, Any]) -> str:
             "没有数学等级规则时保留测量，不擅自生成 A～E，未评价不显示成数字 0。"
         )
     phase_error_details = event_eval.get("phase_boundary_by_name", {})
-    return f"""<!doctype html>
+    return (f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="rallymate-report-version" content="{_h(SCORING_LOOP_REPORT_VERSION)}">
 <title>RallyMate 最小可行评分闭环</title><style>
@@ -605,20 +668,24 @@ h1,h2,h3,h4,h5{{line-height:1.25}}section{{background:white;border:1px solid #c9
 <p>事件实例状态：<code>{_h(score_counts)}</code>。{_h(scoring_explanation)}</p></section>
 <section><h2>评分参考上下文</h2><p>目标方向参考状态：<code>{_h(scoring_reference_context.get("status", "not_provided"))}</code> · FS02 目标事件：<code>{_h(scoring_reference_context.get("target_event_count", 0))}</code> · 可计算方向对齐误差：<code>{_h(scoring_reference_context.get("available_alignment_count", 0))}</code>。</p>
 <p>该层接受显式给出的独立目标方向上下文，并计算人体运动方向相对目标方向的角度误差；不会从人体运动反推“目标”，也不会生成等级或 A～E 阈值。</p><details><summary>上下文审计字段</summary><pre>{_h(_json_text(scoring_reference_context, max_chars=8_000))}</pre></details></section>
-<section><h2>事件时间轴（规则候选，非真值）</h2>{_timeline(events)}
+<section><h2>事件时间轴（规则候选，非真值）</h2>""", f"""
 <p>Event F1：<code>{_h(event_eval.get("event_f1"))}</code>；Segment IoU：<code>{_h(event_eval.get("mean_segment_iou"))}</code>；起止 Boundary MAE / P95：<code>{_h(event_eval.get("boundary_mae_ms"))}</code> / <code>{_h(event_eval.get("boundary_p95_ms"))}</code>；关键阶段 Boundary MAE / P95 / 有效率：<code>{_h(event_eval.get("phase_boundary_mae_ms"))}</code> / <code>{_h(event_eval.get("phase_boundary_p95_ms"))}</code> / <code>{_h(event_eval.get("phase_boundary_valid_rate"))}</code>。人工事件真值缺失时这些字段保持空值。</p>
 <details><summary>按关键阶段的边界误差</summary><pre>{_h(_json_text(phase_error_details, max_chars=12_000))}</pre></details></section>
-<section><h2>{_h(summary.get("scope", {}).get("indicator_count", len(registry["indicators"])))}个指标成熟度、全部事件实例、特征与证据</h2><p><strong>特征测量与正式评分分别统计：</strong><code>feature_status=measured</code> 仅代表该事件特征有效，不能解释成 <code>score.status=calibration_required</code> 或已评分。</p><table><thead><tr><th>指标</th><th>F0–F4</th><th>特征测量状态</th><th>评分状态</th><th>全部事件实例</th><th>阻断原因</th></tr></thead><tbody>{''.join(indicator_rows)}</tbody></table></section>
+<section><h2>{_h(summary.get("scope", {}).get("indicator_count", len(registry["indicators"])))}个指标成熟度、全部事件实例、特征与证据</h2><p><strong>特征测量与正式评分分别统计：</strong><code>feature_status=measured</code> 仅代表该事件特征有效，不能解释成 <code>score.status=calibration_required</code> 或已评分。</p><table><thead><tr><th>指标</th><th>F0–F4</th><th>特征测量状态</th><th>评分状态</th><th>全部事件实例</th><th>阻断原因</th></tr></thead><tbody>""", f"""</tbody></table></section>
 <section><h2>特征误差与评分误差预算</h2>{_feature_error_section(feature_eval)}</section>
 <section><h2>可追溯版本</h2><pre>{_h(_json_text(summary.get("model_versions", {}), max_chars=16_000))}</pre><p>机器产物：<code>events.jsonl</code>、<code>features.jsonl</code>、<code>indicator-features.jsonl</code>、<code>scores.jsonl</code>、<code>event-feature-errors.json</code>。</p></section>
-</body></html>"""
+</body></html>""")
 
 
-def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+def _load_jsonl(path: Path, *, max_record_bytes: int = MAX_REPORT_RECORD_BYTES) -> list[dict[str, Any]]:
+    """Compatibility reader for small callers; production rendering uses an iterator."""
     records = []
     line_number = 0
-    with path.open("r", encoding="utf-8") as handle:
-        for physical_line in handle:
+    with path.open("rb") as handle:
+        while physical_bytes := handle.readline(max_record_bytes + 1):
+            if len(physical_bytes) > max_record_bytes:
+                raise ReportRecordLimit(f"report record exceeds {max_record_bytes} bytes at {path}:{line_number + 1}")
+            physical_line = physical_bytes.decode("utf-8")
             # Keep str.splitlines' existing separator/line-number semantics,
             # without retaining the complete file text and all its line copies.
             for line in physical_line.splitlines():
@@ -648,18 +715,348 @@ def _artifact_path(
     return path if path.is_absolute() else output_path.parent / path
 
 
-def write_scoring_loop_report(result: dict[str, Any], output_path: str | Path) -> Path:
-    output_path = Path(output_path)
-    enriched = dict(result)
-    if "feature_records" not in enriched:
-        features_path = _artifact_path(
-            result, output_path, "features_jsonl", "features.jsonl"
+def _report_feature(item: dict[str, Any]) -> dict[str, Any]:
+    """Keep exactly the fields rendered, never copy large model provenance."""
+    result = {key: item[key] for key in (
+        "feature_name", "feature_version", "unit", "valid", "confidence", "reason", "source_frames"
+    ) if key in item}
+    for key in ("value", "raw_value", "smoothed_value"):
+        if key in item:
+            result[f"_report_{key}"] = _payload_summary(item[key])
+    return result
+
+
+def _report_record(item: dict[str, Any], *, indicator: bool = False) -> dict[str, Any]:
+    result = {key: item[key] for key in (
+        "indicator_id", "event_id", "event_code", "person_track_id", "feature_status",
+        "scoring_feature_status", "scoring_status", "status", "grade", "confidence",
+        "threshold_version", "feedback", "reason_codes", "quality_gate",
+    ) if key in item}
+    if "evidence" in item:
+        result["_report_evidence"] = _json_text(item["evidence"], max_chars=8_000)
+        result["evidence"] = [
+            {key: evidence[key] for key in ("source_frame", "source_frames") if key in evidence}
+            for evidence in item["evidence"] if isinstance(evidence, dict)
+        ]
+    if "model_versions" in item:
+        result["_report_model_versions"] = _json_text(item["model_versions"], max_chars=8_000)
+    if indicator:
+        for key in ("features", "scoring_features", "supplemental_features"):
+            if key in item:
+                result[key] = [_report_feature(feature) for feature in item[key] if isinstance(feature, dict)]
+    return result
+
+
+def _encoded_record(item: dict[str, Any], limit: int, check: Callable[[], None]) -> bytes:
+    # iterencode avoids constructing the full document before checking the cap.
+    with io.BytesIO() as buffer:
+        for count, part in enumerate(json.JSONEncoder(ensure_ascii=False, separators=(",", ":")).iterencode(item)):
+            if count % 1024 == 0:
+                check()
+            encoded = part.encode("utf-8")
+            if buffer.tell() + len(encoded) > limit:
+                raise ReportRecordLimit(f"report record exceeds {limit} bytes")
+            buffer.write(encoded)
+        return buffer.getvalue()
+
+
+class _ReportIndex:
+    """Disposable, disk-backed joins. No list grows with the number of events."""
+
+    def __init__(self, path: Path, *, check: Callable[[], None], record_limit: int):
+        self.db = sqlite3.connect(path)
+        self.check = check
+        self.record_limit = record_limit
+        self.db.executescript("""
+            PRAGMA temp_store=FILE;
+            PRAGMA cache_size=-2048;
+            PRAGMA mmap_size=0;
+            PRAGMA journal_mode=OFF;
+            CREATE TABLE events(seq INTEGER PRIMARY KEY, event_id TEXT, start INTEGER,
+                                end INTEGER, code TEXT, payload TEXT);
+            CREATE INDEX events_identity ON events(event_id, seq DESC);
+            CREATE INDEX events_order ON events(start, end, code, event_id, seq);
+            CREATE TABLE features(event_id TEXT, name TEXT, payload TEXT,
+                                  PRIMARY KEY(event_id,name));
+            CREATE TABLE scores(indicator_id TEXT, event_id TEXT, payload TEXT,
+                                PRIMARY KEY(indicator_id,event_id));
+            CREATE TABLE records(seq INTEGER PRIMARY KEY, indicator_id TEXT, event_id TEXT,
+                                 start INTEGER, payload TEXT);
+            CREATE INDEX records_order ON records(indicator_id,start,event_id,seq);
+            CREATE TABLE stats(indicator_id TEXT, kind TEXT, value TEXT, n INTEGER,
+                               ordinal INTEGER, PRIMARY KEY(indicator_id,kind,value));
+            CREATE TABLE blockers(indicator_id TEXT, reason TEXT, PRIMARY KEY(indicator_id,reason));
+            CREATE TABLE instance_frames(frame INTEGER PRIMARY KEY);
+        """)
+        # Long SQL sorts/joins must still observe cancellation, not just Python loops.
+        self.sql_cancelled: BaseException | None = None
+
+        def sql_progress() -> int:
+            try:
+                self.check()
+                return 0
+            except BaseException as exc:
+                self.sql_cancelled = exc
+                return 1
+
+        self.db.set_progress_handler(sql_progress, 10000)
+
+    def close(self) -> None:
+        self.db.close()
+
+    def get(self, key: tuple[str, str], default: Any = None) -> Any:
+        self.check()
+        row = self.db.execute("SELECT payload FROM features WHERE event_id=? AND name=?", key).fetchone()
+        return json.loads(row[0]) if row is not None else default
+
+    def event(self, event_id: str) -> dict[str, Any] | None:
+        row = self.db.execute("SELECT payload FROM events WHERE event_id=? ORDER BY seq DESC LIMIT 1", (event_id,)).fetchone()
+        return json.loads(row[0]) if row is not None else None
+
+    def samples(self, indicator_id: str) -> Iterator[tuple[dict, dict, dict | None]]:
+        for (payload,) in self.db.execute(
+            "SELECT payload FROM records WHERE indicator_id=? ORDER BY start,event_id,seq", (indicator_id,)
+        ):
+            self.check()
+            record = json.loads(payload)
+            row = self.db.execute("SELECT payload FROM scores WHERE indicator_id=? AND event_id=?",
+                                  (indicator_id, record["event_id"])).fetchone()
+            yield record, json.loads(row[0]) if row is not None else record, self.event(record.get("event_id", ""))
+
+    def counts(self, indicator_id: str, kind: str) -> dict[str, int]:
+        result = {}
+        for value, count in self.db.execute(
+            "SELECT value,n FROM stats WHERE indicator_id=? AND kind=? ORDER BY ordinal", (indicator_id, kind)
+        ):
+            self.check()
+            # These are schema enum values, not one arbitrary group per event.
+            if len(result) >= 1024:
+                raise ReportRecordLimit("report has too many distinct status values")
+            result[value] = count
+        return result
+
+    def add_count(self, indicator_id: str, kind: str, value: str, ordinal: int) -> None:
+        self.db.execute("INSERT INTO stats VALUES(?,?,?,1,?) ON CONFLICT(indicator_id,kind,value) DO UPDATE SET n=n+1",
+                        (indicator_id, kind, value, ordinal))
+
+
+def _iter_report_records(result: dict[str, Any], output: Path, key: str,
+                         artifact: str, fallback: str, *, check: Callable[[], None], limit: int) -> Iterator[dict]:
+    if key in result:
+        for record in result[key]:
+            check()
+            if not isinstance(record, dict):
+                raise ValueError(f"report {key} record must be an object")
+            yield record
+        return
+    path = _artifact_path(result, output, artifact, fallback)
+    if path.is_file():
+        from rallymate_scoring.artifact_evidence import iter_artifact_records
+        summary = result.get("summary", {})
+        yield from iter_artifact_records(path, cancellation_callback=check, max_record_bytes=limit,
+                                        expected_video_id=summary.get("video_id"),
+                                        expected_source_id=summary.get("provenance", {}).get("pipeline_job_id"))
+
+
+def _fill_report_index(index: _ReportIndex, result: dict, output: Path,
+                       notify: Callable[[str, int], None]) -> Counter[str]:
+    sources = (
+        ("events", "events_jsonl", "events.jsonl"),
+        ("feature_records", "features_jsonl", "features.jsonl"),
+        ("scores", "scores_jsonl", "scores.jsonl"),
+        ("indicator_records", "indicator_features_jsonl", "indicator-features.jsonl"),
+    )
+    for key, artifact, filename in sources:
+        count = 0
+        for count, record in enumerate(_iter_report_records(result, output, key, artifact, filename,
+                                                           check=index.check, limit=index.record_limit), start=1):
+            if key == "events":
+                index.db.execute("INSERT INTO events VALUES(?,?,?,?,?,?)", (
+                    count, str(record.get("event_id", "")), int(record.get("start_ms", 0)),
+                    int(record.get("end_ms", 0)), str(record.get("event_code", "")),
+                    _encoded_record(record, index.record_limit, index.check)))
+            elif key == "feature_records":
+                index.db.execute("INSERT OR REPLACE INTO features VALUES(?,?,?)", (
+                    str(record.get("event_id", "")), str(record.get("feature_name", "")),
+                    _encoded_record(_report_feature(record), index.record_limit, index.check)))
+            elif key == "scores":
+                index.db.execute("INSERT OR REPLACE INTO scores VALUES(?,?,?)", (
+                    record["indicator_id"], record["event_id"],
+                    _encoded_record(_report_record(record), index.record_limit, index.check)))
+            else:
+                event = index.event(record.get("event_id", "")) or {}
+                index.db.execute("INSERT INTO records VALUES(?,?,?,?,?)", (
+                    count, record["indicator_id"], record.get("event_id", ""), int(event.get("start_ms", 0)),
+                    _encoded_record(_report_record(record, indicator=True), index.record_limit, index.check)))
+                for reason in record.get("reason_codes", []):
+                    index.check()
+                    index.db.execute("INSERT OR IGNORE INTO blockers VALUES(?,?)", (record["indicator_id"], str(reason)))
+            if count % 128 == 0:
+                index.db.commit()
+                notify(f"indexing_{key}", count)
+        index.db.commit()
+        notify(f"indexing_{key}", count)
+
+    legal_grades: Counter[str] = Counter()
+    for indicator in result["feasibility"]["indicators"]:
+        identity = indicator["indicator_id"]
+        for ordinal, (record, score, _) in enumerate(index.samples(identity)):
+            for kind, value in (
+                ("measurement", str(record.get("feature_status", "unavailable"))),
+                ("scoring_feature", str(record.get("scoring_feature_status", record.get("feature_status", "unavailable")))),
+                ("score", str(score.get("status", record.get("scoring_status", "unavailable")))),
+            ):
+                index.add_count(identity, kind, value, ordinal)
+            grade = _legal_event_grade(indicator, record, score)
+            if grade is not None:
+                legal_grades[grade] += 1
+                index.add_count(identity, "grade", grade, ordinal)
+        index.db.commit()
+    return legal_grades
+
+
+def _stream_instance(index: _ReportIndex, indicator: dict, record: dict, score: dict,
+                     event: dict | None) -> Iterator[str]:
+    opening, closing = _indicator_instance_parts(indicator, record, score, event)
+    yield opening
+    index.db.execute("DELETE FROM instance_frames")
+
+    def add_frame(frame: Any) -> None:
+        if isinstance(frame, int) and not isinstance(frame, bool) and frame >= 0:
+            index.db.execute("INSERT OR IGNORE INTO instance_frames VALUES(?)", (frame,))
+
+    for _, feature in _typed_features(record, index):
+        index.check()
+        for frame in feature.get("source_frames", []):
+            add_frame(frame)
+    for evidence in score.get("evidence", []):
+        index.check()
+        if isinstance(evidence, dict):
+            for frame in evidence.get("source_frames", []):
+                add_frame(frame)
+            add_frame(evidence.get("source_frame"))
+    yield '<p>合并证据帧：<code>['
+    separator = ""
+    for (frame,) in index.db.execute("SELECT frame FROM instance_frames ORDER BY frame"):
+        index.check()
+        yield separator + str(frame)
+        separator = ", "
+    yield ']</code></p>'
+    features_present = False
+    for kind, feature in _typed_features(record, index):
+        index.check()
+        if not features_present:
+            yield _FEATURE_TABLE_START
+            features_present = True
+        yield _feature_row(kind, feature)
+    yield _FEATURE_TABLE_END if features_present else '<p class="warn">未提供特征事实。</p>'
+    yield closing
+
+
+def _stream_report(index: _ReportIndex, result: dict, legal_grades: Counter[str],
+                   notify: Callable[[str, int], None]) -> Iterator[str]:
+    opening, middle, closing = _document_parts(result, legal_grades)
+    yield opening
+    bounds = index.db.execute("SELECT MIN(start),MAX(end) FROM events").fetchone()
+    if bounds[0] is None:
+        yield '<p class="warn">未定位到满足质量门禁的候选事件。</p>'
+    else:
+        for count, (payload,) in enumerate(index.db.execute("SELECT payload FROM events ORDER BY start,end,code,event_id,seq"), start=1):
+            index.check()
+            yield _timeline([json.loads(payload)], bounds=bounds)
+            if count % 128 == 0:
+                notify("writing_events", count)
+    yield middle
+    completed = 0
+    for indicator in result["feasibility"]["indicators"]:
+        index.check()
+        identity = indicator["indicator_id"]
+        measurement = index.counts(identity, "measurement")
+        scoring_features = index.counts(identity, "scoring_feature")
+        scores = index.counts(identity, "score")
+        grades = index.counts(identity, "grade")
+        count = sum(measurement.values())
+        valid = measurement.get("measured", 0)
+        yield (
+            '<tr>'
+            f'<td><strong>{_h(identity)}</strong><br>{_h(indicator.get("name_zh", "—"))}</td>'
+            f'<td><span class="level">{_h(indicator.get("feasibility_level", "—"))}</span></td>'
+            f'<td><strong>{"measured" if valid else "unavailable"}</strong><br>'
+            f'{valid}/{count} 个候选事件实例有效<br>'
+            f'<small>measurement feature_status {_h(measurement)}</small><br>'
+            f'<small>scoring_feature_status {_h(scoring_features)}</small></td>'
+            f'<td>score.status <code>{_h(scores)}</code><br>'
+            f'<small>按明确规则计算的事件级等级分布 {_h(grades if grades else "无")}</small></td><td>'
         )
-        if features_path.is_file():
-            enriched["feature_records"] = _load_jsonl(features_path)
-    if "scores" not in enriched:
-        scores_path = _artifact_path(result, output_path, "scores_jsonl", "scores.jsonl")
-        if scores_path.is_file():
-            enriched["scores"] = _load_jsonl(scores_path)
-    output_path.write_text(build_scoring_loop_report_html(enriched), encoding="utf-8")
+        if count:
+            yield f'<details class="all-instances"><summary>查看全部 {count} 个事件实例</summary>'
+            for record, score, event in index.samples(identity):
+                yield from _stream_instance(index, indicator, record, score, event)
+                completed += 1
+                if completed % 128 == 0:
+                    index.db.commit()
+                    notify("writing_instances", completed)
+            yield '</details>'
+        else:
+            yield "无候选事件"
+        yield '</td><td>'
+        separator = ""
+        for (reason,) in index.db.execute("SELECT reason FROM blockers WHERE indicator_id=? ORDER BY reason", (identity,)):
+            index.check()
+            yield separator + _h(reason)
+            separator = "；"
+        if not separator:
+            yield "无"
+        yield '</td></tr>'
+    notify("writing_instances", completed)
+    yield closing
+
+
+def write_scoring_loop_report(
+    result: dict[str, Any], output_path: str | Path, *,
+    cancellation_callback: Callable[[], None] | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    max_record_bytes: int = MAX_REPORT_RECORD_BYTES,
+) -> Path:
+    """Render all facts with bounded joins and publish only a complete HTML file.
+
+    ``build_scoring_loop_report_html`` remains the string API for small fixtures.
+    Progress callbacks receive ``phase``, ``completed_items`` and a stage message;
+    a raised cancellation or callback exception preserves the previous report.
+    """
+    if not isinstance(max_record_bytes, int) or isinstance(max_record_bytes, bool) or max_record_bytes <= 0:
+        raise ValueError("max_record_bytes must be a positive integer")
+    output_path = Path(output_path)
+
+    def check() -> None:
+        if cancellation_callback is not None:
+            cancellation_callback()
+
+    def notify(stage: str, count: int) -> None:
+        check()
+        if progress_callback is not None:
+            progress_callback({"phase": "finalizing", "completed_items": count,
+                               "message": "正在生成训练报告", "report_stage": stage})
+
+    check()
+    with tempfile.TemporaryDirectory(prefix=".scoring-report-", dir=output_path.parent) as directory:
+        temporary = Path(directory)
+        index = _ReportIndex(temporary / "facts.sqlite3", check=check, record_limit=max_record_bytes)
+        try:
+            legal_grades = _fill_report_index(index, result, output_path, notify)
+            staged = temporary / "report.html"
+            with staged.open("w", encoding="utf-8", newline="") as handle:
+                for fragment in _stream_report(index, result, legal_grades, notify):
+                    check()
+                    handle.write(fragment)
+                handle.flush()
+                os.fsync(handle.fileno())
+            check()
+            os.replace(staged, output_path)
+        except sqlite3.OperationalError:
+            if index.sql_cancelled is not None:
+                raise index.sql_cancelled
+            raise
+        finally:
+            index.close()
     return output_path

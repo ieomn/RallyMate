@@ -109,7 +109,7 @@ function CourtSimulationContent({ trajectory, pending }: CourtSimulationProps) {
     setNotice(""); setSettingsOpen(true);
     const replay = document.getElementById("evidence");
     const video = (!trajectory?.job_id || replay?.dataset.jobId === trajectory.job_id) ? replay?.querySelector<HTMLVideoElement>("#replay-view-original video[data-replay-role='original']") : null;
-    if (!replay || !video) { setNotice("取图仅支持原视频。请在上方训练回放切换到“原视频”并加载画面后重试；标注回放不能用于取图。"); return; }
+    if (!replay || !video) { setNotice("取图需要原视频画面。请在上方训练回放打开“原片与关键点”，加载画面后重试。"); return; }
     captureController.current?.abort();
     const controller = new AbortController(); captureController.current = controller;
     const target = { time: video.currentTime, source: video.src, currentSource: video.currentSrc, origin: video.dataset.timeOriginMs, jobId: replay.dataset.jobId };

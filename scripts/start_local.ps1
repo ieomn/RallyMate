@@ -129,7 +129,8 @@ $env:OPENCV_FOR_THREADS_NUM = "1"
 # Explicit settings remain available for controlled performance comparisons.
 if ([string]::IsNullOrWhiteSpace($env:OMP_WAIT_POLICY)) { $env:OMP_WAIT_POLICY = "PASSIVE" }
 if ([string]::IsNullOrWhiteSpace($env:KMP_BLOCKTIME)) { $env:KMP_BLOCKTIME = "0" }
-$env:MIMO_ADVICE_ENABLED = "0"
+# MiMo stays disabled unless explicitly enabled in the process or .dev.vars.
+# Let Node read that choice instead of overwriting it during every restart.
 $env:MIMO_ALLOWED_ORIGIN = ""
 foreach ($name in @("NEXT_PUBLIC_RALLYMATE_API_URL", "NEXT_PUBLIC_API_BASE_URL", "NEXT_PUBLIC_API_URL", "VITE_RALLYMATE_API_URL", "VITE_API_BASE_URL", "VITE_API_URL")) {
     [Environment]::SetEnvironmentVariable($name, "", "Process")

@@ -14,8 +14,8 @@ const steps = [
 
 const questions = [
   { title: "第一次使用，需要准备什么？", text: "一段正常速度的网球训练原视频就可以开始。固定手机，尽量让全身和双脚始终入镜，保留动作前后的过程。可以先查看拍摄指南，再上传视频。" },
-  { title: "只读样例是真实分析结果吗？", text: "不是。只读样例沿用项目已有的虚构标注，用来说明片段、观察和复盘问题如何连接，没有对应原视频。当前没有获准公开的真实样片。另有球场与时间轴操作示意；品牌主视觉是原创概念图。上传自己的视频后，报告会显示实际可用的结果。" },
-  { title: "分析报告能代替教练的判断吗？", text: "RallyMate 帮你回看画面、定位片段，并整理可观察的测量信息。动作是否合理、应该怎样调整，仍需结合场景和教练判断。测量证据参考分不等同于正式技术评分。" },
+  { title: "上传后可以查看哪些内容？", text: "可以查看五维动作评分、关键片段、原视频与人体三维回放，以及已识别的球路轨迹和击球统计。报告还会结合动作测量给出练习建议，帮助你确定下一次训练的重点。" },
+  { title: "怎么把分析结果用到训练中？", text: "从报告里选择一个练习重点，回看对应动作，按照建议进行练习。保存关注点，下一次用相近机位记录同类动作，再结合报告和教练反馈比较变化。" },
   { title: "训练结束后，可以留下什么？", text: "可以下载 HTML 报告和 JSON 备份，之后导入备份继续查看。当前训练记录保存在此浏览器中；备份本身不包含原视频，建议同时保留原片。" },
 ];
 
@@ -94,7 +94,7 @@ export default function MarketingLanding() {
     <header className="mk-header">
       <a href="/welcome" className="mk-brand" aria-label="RallyMate 品牌首页"><ProductIcon name="tennis" size={28} /><span>RallyMate</span></a>
       <nav id="marketing-nav" className={`mk-nav${menuOpen ? " is-open" : ""}`} aria-label="品牌导航">
-        {[{ id: "experience", title: "回看体验" }, { id: "workflow", title: "如何开始" }, { id: "questions", title: "常见问题" }].map(item => <a key={item.id} href={`#${item.id}`} aria-current={activeSection === item.id ? "location" : undefined} onClick={() => setMenuOpen(false)}>{item.title}</a>)}
+        {[{ id: "experience", title: "功能介绍" }, { id: "workflow", title: "如何开始" }, { id: "questions", title: "常见问题" }].map(item => <a key={item.id} href={`#${item.id}`} aria-current={activeSection === item.id ? "location" : undefined} onClick={() => setMenuOpen(false)}>{item.title}</a>)}
         <a className="mk-nav-workspace" href="/?view=overview">训练空间<ProductIcon name="arrow-up-right" size={15} /></a>
       </nav>
       <div className="mk-header-actions"><a href="/?view=analysis" className="mk-button mk-button-lime mk-header-cta">开始体验<ProductIcon name="arrow-up-right" size={16} /></a><button className="mk-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="marketing-nav" aria-label={menuOpen ? "收起导航" : "展开导航"} onClick={() => setMenuOpen(value => !value)}><ProductIcon name={menuOpen ? "close" : "menu"} /></button></div>
@@ -109,7 +109,7 @@ export default function MarketingLanding() {
         <div className="mk-hero-content">
           <h1 id="mk-hero-title">下一拍，<br /><span>更有方向。</span></h1>
           <p className="mk-hero-description">用一段训练视频，<br />回到值得看清的瞬间。</p>
-          <div className="mk-hero-actions"><a href="/?view=analysis" className="mk-button mk-button-lime">开启我的复盘<ProductIcon name="arrow-up-right" size={20} /></a><a href="/welcome/sample" className="mk-watch-link"><span><ProductIcon name="play" size={14} /></span>先看交付样例</a></div>
+          <div className="mk-hero-actions"><a href="/?view=analysis" className="mk-button mk-button-lime">开启我的复盘<ProductIcon name="arrow-up-right" size={20} /></a><a href="#experience" className="mk-watch-link"><span><ProductIcon name="arrow-right" size={14} /></span>了解分析功能</a></div>
         </div>
         <div className="mk-hero-bottom"><a href="#experience"><span className="mk-scroll-line" aria-hidden="true" />向下探索</a></div>
       </section>
@@ -139,6 +139,6 @@ export default function MarketingLanding() {
       <section className="mk-last-call mk-wrap mk-reveal" aria-labelledby="mk-last-title"><div><h2 id="mk-last-title">下一拍，<span>从这里开始。</span></h2></div><a href="/?view=analysis" className="mk-round-cta" aria-label="上传视频，开始我的复盘"><ProductIcon name="arrow-up-right" size={48} /></a><div className="mk-last-line"><a href="/?view=overview">进入训练空间<ProductIcon name="arrow-up-right" size={15} /></a></div></section>
     </main>
 
-    <footer className="mk-footer"><div className="mk-wrap"><div className="mk-footer-top"><a href="/welcome" className="mk-brand"><ProductIcon name="tennis" size={23} /><span>RallyMate</span></a><a href="#marketing-main" className="mk-back-top">回到顶部<ProductIcon name="arrow-up-right" size={16} /></a></div><div className="mk-wordmark" aria-hidden="true">RallyMate<span>↗</span></div><div className="mk-footer-bottom"><p>© 2026 RallyMate</p><p>原创品牌概念视觉 · 演示内容为交互示意</p><a href="/?view=overview">训练工作台<ProductIcon name="arrow-up-right" size={14} /></a></div></div></footer>
+    <footer className="mk-footer"><div className="mk-wrap"><div className="mk-footer-top"><a href="/welcome" className="mk-brand"><ProductIcon name="tennis" size={23} /><span>RallyMate</span></a><a href="#marketing-main" className="mk-back-top">回到顶部<ProductIcon name="arrow-up-right" size={16} /></a></div><div className="mk-wordmark" aria-hidden="true">RallyMate<span>↗</span></div><div className="mk-footer-bottom"><p>© 2026 RallyMate</p><p>网球视频分析 · 让每次训练更有方向</p><a href="/?view=overview">训练工作台<ProductIcon name="arrow-up-right" size={14} /></a></div></div></footer>
   </div>;
 }

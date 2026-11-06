@@ -62,7 +62,7 @@ try {
         LogDirectory = $LogRoot
     } | Format-List
     Write-Host "状态检查：powershell -ExecutionPolicy Bypass -File .\scripts\full_service_status.ps1" -ForegroundColor Cyan
-    Write-Host "实时日志：powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1" -ForegroundColor Cyan
+    Write-Host "实时监控：powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1" -ForegroundColor Cyan
 } finally {
     Pop-Location
 }

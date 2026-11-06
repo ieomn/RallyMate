@@ -65,7 +65,7 @@
 .product-app .report-recommendations { margin-top:20px; padding:24px; }
 .report-recommendation-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:24px; margin-top:20px; }
 .product-app .report-recommendation-grid .report-focus-item { margin:0; padding:0; border:0; }
-.product-app .report-coach.coach-section { margin-top:20px; padding:24px; border:1px solid var(--product-border); border-radius:14px; background:var(--product-panel); }
+.product-app .report-coach.coach-section { width:100%; max-width:none; min-width:0; margin:20px 0 0; padding:24px; border:1px solid var(--product-border); border-radius:14px; background:var(--product-panel); }
 .product-app .report-coach .logic-heading h2 { margin-top:7px; font-size:19px; }
 .product-app .report-export-disclosure { margin-top:20px; }
 .indicator-assessment { padding:0 24px; border-top:1px solid var(--product-border); color:var(--product-text); }

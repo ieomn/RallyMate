@@ -172,7 +172,10 @@ class PipelineMeshArchiveTests(unittest.TestCase):
                     self.native_handles.append(handle)
             return handle
         evaluated = []
-        def evaluate(records, **kwargs):
+        def evaluate(path, **kwargs):
+            # Evaluation now consumes the durable JSONL after archive drain,
+            # rather than requiring full native rows to stay live in RAM.
+            records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
             self._assert_durable_archives(records)
             evaluated.extend(records)
             return {"runtime": {}, "status": "fixture", "counts": {}}
@@ -198,7 +201,7 @@ class PipelineMeshArchiveTests(unittest.TestCase):
             stack.enter_context(patch.object(pipeline, "Yolo26Perception", side_effect=AssertionError("models must stay mocked")))
             stack.enter_context(patch.object(sam3d_runner, "SourcePTSDecoder", return_value=self.capture))
             stack.enter_context(patch.object(sam3d_mesh_archive, "BoundedMeshArchiver", side_effect=lambda *a, **kw: self._factory(mode, *a, **kw)))
-            evaluator = stack.enter_context(patch.object(sam3d_evaluation, "evaluate_sam3d_records", side_effect=evaluate))
+            evaluator = stack.enter_context(patch.object(sam3d_evaluation, "evaluate_sam3d_jsonl", side_effect=evaluate))
             render_task = stack.enter_context(patch.object(mesh_render_task, "create_mesh_render_task", wraps=mesh_render_task.create_mesh_render_task))
             scorer = stack.enter_context(patch.object(pipeline, "run_minimum_scoring_loop", side_effect=score))
             stack.enter_context(patch.object(pipeline, "build_primary_player_artifacts", return_value={}))

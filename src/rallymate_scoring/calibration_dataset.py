@@ -84,6 +84,8 @@ def _parse_json_bytes(raw: bytes, *, label: str) -> Any:
 
 
 def _parse_jsonl_bytes(raw: bytes, *, label: str) -> list[dict[str, Any]]:
+    from rallymate_scoring.artifact_evidence import contains_artifact_references
+
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
@@ -104,6 +106,13 @@ def _parse_jsonl_bytes(raw: bytes, *, label: str) -> list[dict[str, Any]]:
             raise ValueError(f"invalid JSONL {label}:{line_number}: {exc}") from exc
         if not isinstance(record, dict):
             raise ValueError(f"JSONL record must be an object: {label}:{line_number}")
+        # This compiler seals exact input bytes and later compares that frozen
+        # snapshot at commit. Resolving an external pool here without freezing
+        # its dependency closure would silently weaken the source guarantee.
+        if contains_artifact_references(record):
+            raise ValueError(
+                f"pooled evidence requires a frozen dependency snapshot before calibration: {label}:{line_number}"
+            )
         records.append(record)
     return records
 

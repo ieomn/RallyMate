@@ -17,6 +17,26 @@ def completed(cache, key, build=lambda: b"unused", check=lambda: True):
 
 
 class ReportDeliveryCacheTests(unittest.TestCase):
+    def test_original_failure_is_logged_without_exposing_it_to_client(self):
+        cache = ReportDeliveryCache()
+        def build():
+            try:
+                raise ValueError("diagnostic cause only for server logs")
+            except ValueError as exc:
+                raise DeliveryError(500, "report_preparation_failed", "Report preparation failed.") from exc
+        try:
+            with self.assertLogs("rallymate.report_delivery", level="INFO") as logs:
+                result = completed(cache, "private-source-key", build)
+            logged = "\n".join(logs.output)
+            self.assertIn("phase=building_report", logged)
+            self.assertIn("diagnostic cause only for server logs", logged)
+            self.assertNotIn("private-source-key", logged)
+            self.assertEqual(result.error.detail(), {
+                "code": "report_preparation_failed", "message": "Report preparation failed."})
+            self.assertIsNone(result.body)
+        finally:
+            cache.close()
+
     def test_parallel_same_key_singleflight_and_one_worker_across_keys(self):
         cache = ReportDeliveryCache(max_queued=1)
         entered, release = Event(), Event()

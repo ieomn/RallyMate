@@ -34,7 +34,7 @@ if ($internalKey.Length -lt 32 -or $internalKey -notmatch '^[A-Za-z0-9_-]+$') {
 $env:RALLYMATE_API_KEY = $internalKey
 $env:RALLYMATE_API_ORIGIN = "http://127.0.0.1:$ApiPort"
 $env:RALLYMATE_LOCAL_TUNNEL = "1"
-$env:MIMO_ADVICE_ENABLED = "0"
+# The advice route defaults to disabled; honor an explicit .dev.vars setting.
 
 Push-Location $webRoot
 try {

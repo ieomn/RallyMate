@@ -201,7 +201,12 @@ def _state_signature(head):
 
 class HeadGraphHandle:
     """One bounded graph, owned by one head, with independent returned tensors."""
-    def __init__(self, head, candidate, safe_forward, safe_replace, torch):
+    def __init__(self, head, candidate, safe_forward, safe_replace, torch, *, additional_batch_sizes=()):
+        sizes = tuple(additional_batch_sizes)
+        if len(sizes) > 2 or len(set(sizes)) != len(sizes) or any(type(n) is not int or not 2 <= n <= 8 for n in sizes):
+            raise ValueError("At most two additional head graph batch sizes in 2..8 are supported")
+        self.batch_slots = {}
+        self.additional_batch_sizes = sizes
         self.head, self.torch = head, torch
         self.original_mhr, self.candidate = head.mhr, candidate
         self.previous = {name: (name in vars(head), getattr(head, name))
@@ -216,7 +221,9 @@ class HeadGraphHandle:
             "mhr_sha256": MHR_SHA256, "head_source_sha256": HEAD_SHA256,
             "utility_source_sha256": UTIL_SHA256, "script_utility_sha256": SCRIPT_UTIL_SHA256,
             "capture_status": "pending_first_body_head", "replays": 0, "fallback_calls": 0,
-            "capture_seconds": None, "maximum_graphs": 1,
+            "capture_seconds": None, "maximum_graphs": 1 + len(sizes),
+            "additional_batch_sizes": list(sizes), "batch_slots": {},
+            "additional_retained_pool_budget_bytes": 512 * 1024 * 1024,
             "all_six_decoder_heads_retained": True, "output_tensors_cloned": True,
             "precision_resolution_and_weights_unchanged": True,
             "original_files_unchanged": True, "sparse_indices_verified_sorted_unique": True,
@@ -263,6 +270,71 @@ class HeadGraphHandle:
         self.receipt.update(capture_status="captured",
                             capture_seconds=time.perf_counter() - started)
 
+    def _execute_graph(self, args):
+        torch = self.torch
+        key = tuple((tuple(value.shape), value.dtype, value.device) for value in args)
+        if self.key is not None and key != self.key:
+            return self._fallback(*args)
+        if self.graph is None:
+            self.key = key
+            try:
+                self._capture(args)
+            except Exception as error:
+                self.disabled = True
+                self.graph = self.inputs = self.outputs = None
+                self.receipt.update(capture_status="fallback_after_capture_error", capture_error_type=type(error).__name__)
+                torch.cuda.synchronize(args[0].device)
+                return self._fallback(*args)
+        for destination, source in zip(self.inputs, args):
+            destination.copy_(source)
+        self.graph.replay()
+        self.receipt["replays"] += 1
+        return {key: value.clone() if isinstance(value, torch.Tensor) else value
+                for key, value in self.outputs.items()}
+
+    def _execute_batch_graph(self, args):
+        size = args[0].shape[0]
+        fields = ("graph", "inputs", "outputs", "key", "disabled", "receipt")
+        if size not in self.batch_slots:
+            receipt = {"batch_size": size, "capture_status": "pending_first_body_head",
+                       "replays": 0, "fallback_calls": 0, "capture_seconds": None}
+            self.batch_slots[size] = dict(graph=None, inputs=None, outputs=None, key=None, disabled=False, receipt=receipt)
+            self.receipt["batch_slots"][str(size)] = receipt
+        slot = self.batch_slots[size]
+        scalar = {field: getattr(self, field) for field in fields}
+        budget = scalar["receipt"]["additional_retained_pool_budget_bytes"]
+        try:
+            for field in fields:
+                setattr(self, field, slot[field])
+            if self.disabled:
+                return self._fallback(*args)
+            before = None
+            if self.graph is None and hasattr(self.torch.cuda, "memory_reserved"):
+                free, _ = self.torch.cuda.mem_get_info(args[0].device)
+                if free < 256 * 1024 * 1024:
+                    self.disabled = True
+                    self.receipt["capture_status"] = "skipped_low_free_memory"
+                    return self._fallback(*args)
+                before = self.torch.cuda.memory_reserved(args[0].device)
+            result = self._execute_graph(args)
+            if before is not None and self.graph is not None:
+                retained = max(0, self.torch.cuda.memory_reserved(args[0].device) - before)
+                other = sum(item["receipt"].get("retained_pool_delta_bytes", 0)
+                            for key, item in self.batch_slots.items() if key != size)
+                if other + retained > budget:
+                    # Returned tensors are clones and remain valid. Discard the
+                    # cached graph instead of holding it beyond the pool budget.
+                    self.graph = self.inputs = self.outputs = None
+                    self.disabled = True
+                    self.receipt.update(capture_status="released_memory_budget", retained_pool_delta_bytes=0)
+                else:
+                    self.receipt["retained_pool_delta_bytes"] = retained
+            return result
+        finally:
+            for field in fields:
+                slot[field] = getattr(self, field)
+                setattr(self, field, scalar[field])
+
     def __call__(self, *args, **kwargs):
         if not self.lock.acquire(blocking=False):
             raise RuntimeError("Concurrent use of a single SAM CUDA Graph head is unsupported")
@@ -276,34 +348,18 @@ class HeadGraphHandle:
                 raise RuntimeError("SAM CUDA Graph model state changed; reload the inference worker")
             supported = (not kwargs and len(args) == 2 and not torch.is_grad_enabled()
                 and not torch.is_autocast_enabled()
-                and all(isinstance(x, torch.Tensor) and x.ndim == 2 and x.shape[0] == 1
+                and all(isinstance(x, torch.Tensor) and x.ndim == 2 and x.shape[0] in (1, *self.additional_batch_sizes)
                         and x.is_cuda and x.dtype == torch.float32 for x in args)
+                and args[0].shape[0] == args[1].shape[0]
                 and args[0].device == self.head.faces.device and args[1].device == args[0].device
                 and args[1].shape[1] == self.head.npose)
-            if self.disabled or not supported:
+            if not supported:
                 return self._fallback(*args, **kwargs)
-            key = tuple((tuple(value.shape), value.dtype, value.device) for value in args)
-            if self.key is not None and key != self.key:
+            if args[0].shape[0] != 1:
+                return self._execute_batch_graph(args)
+            if self.disabled:
                 return self._fallback(*args, **kwargs)
-            if self.graph is None:
-                self.key = key
-                try:
-                    self._capture(args)
-                except Exception as error:
-                    self.disabled = True
-                    self.graph = self.inputs = self.outputs = None
-                    self.receipt.update(capture_status="fallback_after_capture_error",
-                                        capture_error_type=type(error).__name__)
-                    # Confirm the device is usable before calling the original path.
-                    # Fatal CUDA errors propagate instead of being hidden as fallback.
-                    torch.cuda.synchronize(args[0].device)
-                    return self._fallback(*args, **kwargs)
-            for destination, source in zip(self.inputs, args):
-                destination.copy_(source)
-            self.graph.replay()
-            self.receipt["replays"] += 1
-            return {key: value.clone() if isinstance(value, torch.Tensor) else value
-                    for key, value in self.outputs.items()}
+            return self._execute_graph(args)
         finally:
             self.lock.release()
 
@@ -315,6 +371,7 @@ class HeadGraphHandle:
         try:
             self.torch.cuda.synchronize(self.head.faces.device)
             self.graph = self.inputs = self.outputs = None
+            self.batch_slots.clear()
             self.head.mhr = self.original_mhr
             for name, (existed, value) in self.previous.items():
                 if existed:
@@ -327,7 +384,7 @@ class HeadGraphHandle:
             self.lock.release()
 
 
-def apply_head_cuda_graph(model):
+def apply_head_cuda_graph(model, *, additional_batch_sizes=()):
     """Install only after the validated RoMa instance binding, in body mode."""
     import torch
     head = model.head_pose
@@ -335,4 +392,5 @@ def apply_head_cuda_graph(model):
         raise ValueError("SAM CUDA Graph requires a CUDA evaluation model")
     safe_forward, safe_replace = _safe_head_functions(head, torch)
     candidate = _load_graph_safe_mhr(Path(head.model_data_dir), head.mhr, torch)
-    return HeadGraphHandle(head, candidate, safe_forward, safe_replace, torch)
+    return HeadGraphHandle(head, candidate, safe_forward, safe_replace, torch,
+                           additional_batch_sizes=additional_batch_sizes)

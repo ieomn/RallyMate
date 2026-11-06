@@ -1,5 +1,5 @@
 export type AnalysisViewInput = {
-  uploadState: "idle" | "ready" | "uploading" | "processing" | "complete" | "cancelled" | "error";
+  uploadState: "idle" | "ready" | "uploading" | "processing" | "report-preparing" | "complete" | "cancelled" | "error";
   jobStatus?: string;
   hasResult: boolean;
   hasReplay: boolean;
@@ -13,6 +13,7 @@ export function analysisViewState(input: AnalysisViewInput) {
   const reading = ["succeeded", "completed"].includes(jobStatus ?? "");
   const phase = missingJob ? "missing"
     : uploadState === "cancelled" || jobStatus === "cancelled" ? "cancelled"
+    : uploadState === "report-preparing" ? "preparing"
     : uploadState === "error" ? reading ? "read-error" : "failed"
     : uploadState === "uploading" ? "uploading"
     : uploadState === "processing" ? hasResult ? "partial" : reading ? "reading" : "analyzing"
@@ -24,6 +25,7 @@ export function analysisViewState(input: AnalysisViewInput) {
     showReplayOnly: !hasResult && hasReplay && !missingJob,
     showNavigation: hasResult && !missingJob,
     recoveryTitle: missingJob ? "当前服务找不到这份记录"
+      : phase === "preparing" ? "分析已完成，报告仍在整理"
       : phase === "read-error" ? "分析已完成，报告读取中断"
       : "这次分析暂时无法完成",
     recoveryDetail: missingJob ? "记录和关注点仍保存在此浏览器。它可能来自另一个分析服务；可导入报告备份，或返回训练记录。" : "",

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import hashlib
 import json
+import os
 import re
 import secrets
+import stat
+import sys
 import uuid
 from collections import OrderedDict
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, ExitStack
 from importlib.resources import files
 from pathlib import Path
 from threading import Lock
@@ -27,6 +31,10 @@ from fastapi import (
 )
 from starlette.concurrency import run_in_threadpool
 from rallymate_service.uploads import CHUNK_BYTES, UploadStore
+from rallymate_vision.postprocess_resources import (
+    PostprocessBudget, PostprocessOutputLimit, PostprocessResourceLimit, encode_bounded_json,
+)
+from rallymate_scoring.artifact_evidence import POOL_FILENAME, ArtifactEvidenceError, verify_evidence_manifest
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -44,6 +52,11 @@ from rallymate_scoring.technique_assessment import (
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase
+from rallymate_service.live_trajectory import LiveTrajectoryCache
+from rallymate_service.shot_statistics import build_shot_statistics, validate_review
+from rallymate_service.shot_review_store import (
+    ShotReviewStore, ShotReviewError, MAX_SHOT_REVIEW_BYTES, parse_shot_review,
+)
 from rallymate_service.original_video import (
     OriginalVideoUnavailable, original_video_descriptor, verify_original_video,
 )
@@ -76,7 +89,7 @@ from rallymate_service.report_compatibility import (
 from rallymate_service.source_assessment import load_source_aligned_assessment
 from rallymate_service.foot_crossing_candidates import load_foot_crossing_candidates
 from rallymate_service.report_evidence_transport import (
-    ReportTransport, ReportEvidenceTransportError, pack_report_evidence,
+    ReportTransport, ReportEvidenceTransportError, ReportEvidenceLimitError, pack_report_evidence,
 )
 from rallymate_service.report_delivery_cache import (
     REPORT_PROCESS_VERSION, DeliveryError, ReportDelivery, ReportDeliveryCache,
@@ -87,7 +100,7 @@ from rallymate_service.advice_context import AdviceTechnique, AdviceContextTooLa
 from rallymate_service.user_demo import (
     UserDemoResultError,
     build_user_demo_result,
-    load_indicator_feature_records,
+    load_indicator_feature_records, open_indicator_feature_records,
 )
 from rallymate_vision.quality import probe_video
 from rallymate_vision.pose_playback import PosePlaybackError, build_pose_playback
@@ -115,6 +128,7 @@ ALLOWED_ARTIFACTS = {
     "primary-player-summary.json",
     "events.jsonl",
     "features.jsonl",
+    "scoring-evidence.sqlite3",
     "indicator-features.jsonl",
     "scores.jsonl",
     "event-feature-errors.json",
@@ -371,6 +385,154 @@ def _safe_filename(value: str | None) -> str:
     return f"{stem or 'upload'}{suffix}"
 
 
+def _owned_upload_source(
+    source: Path, uploads_dir: Path, upload_id: str, expected_size: int, max_bytes: int,
+) -> tuple[Path, os.stat_result]:
+    """Validate the one temporary file that the upload store may hand off.
+
+    This is an internal path capability, never a path accepted by an HTTP
+    endpoint. The store holds the session lock and has verified every chunk.
+    A same-filesystem rename preserves those bytes without another full copy.
+    """
+    try:
+        if str(uuid.UUID(upload_id)) != upload_id:
+            raise ValueError("invalid upload identity")
+        root = uploads_dir.resolve(strict=True)
+        expected = root / ".chunks" / upload_id / "assembled.video"
+        source = Path(source)
+        if not source.is_absolute() or source.resolve(strict=True) != expected:
+            raise ValueError("source is not the session's assembled video")
+        # A configured uploads root may itself be reached through a junction;
+        # resolve it once, then reject links within the owned session subtree.
+        for item in (expected.parent.parent, expected.parent, expected):
+            item_stat = item.lstat()
+            if (stat.S_ISLNK(item_stat.st_mode)
+                    or getattr(item_stat, "st_file_attributes", 0)
+                    & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                raise ValueError("linked upload paths are not owned captures")
+        source_stat = expected.stat()
+        if not stat.S_ISREG(source_stat.st_mode) or source_stat.st_nlink != 1:
+            raise ValueError("upload source must be an exclusively owned regular file")
+        if source_stat.st_dev != root.stat().st_dev:
+            raise ValueError("upload handoff requires the same filesystem")
+    except (OSError, ValueError, TypeError) as exc:
+        raise HTTPException(409, "上传文件移交校验失败，请重试完成上传") from exc
+    if type(expected_size) is not int or expected_size != source_stat.st_size:
+        raise HTTPException(422, "视频合并长度不正确")
+    if source_stat.st_size == 0:
+        raise HTTPException(422, "uploaded video is empty")
+    if source_stat.st_size > max_bytes:
+        raise HTTPException(413, "video exceeds the configured size limit")
+    return expected, source_stat
+
+
+def _submission_file_identity(metadata: os.stat_result) -> tuple:
+    return (metadata.st_dev, metadata.st_ino, metadata.st_size, metadata.st_mtime_ns)
+
+
+def _sync_submission_directory(directory: Path) -> None:
+    if os.name == "nt":
+        return
+    descriptor = os.open(directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _rename_submission_file(source: Path, target: Path) -> None:
+    """Publish without replacing an existing name on Windows or Linux.
+
+    Path.rename overwrites on POSIX. Linux's explicit NOREPLACE operation also
+    avoids the crash window where a link/unlink fallback leaves two writable
+    names for the upload store's next assembly.
+    """
+    if os.name == "nt":
+        source.rename(target)
+        return
+    if not sys.platform.startswith("linux"):
+        raise OSError(errno.ENOTSUP, "Atomic no-replace upload publication is unsupported")
+    import ctypes
+    libc = ctypes.CDLL(None, use_errno=True)
+    rename = getattr(libc, "renameat2", None)
+    if rename is None:
+        raise OSError(errno.ENOTSUP, "Linux renameat2 is required for upload publication")
+    rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    rename.restype = ctypes.c_int
+    if rename(-100, os.fsencode(source), -100, os.fsencode(target), 1) != 0:
+        code = ctypes.get_errno()
+        raise OSError(code, os.strerror(code), str(target))
+
+
+def _regular_submission_file(path: Path) -> os.stat_result:
+    metadata = path.lstat()
+    if (not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1
+            or getattr(metadata, "st_file_attributes", 0)
+            & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+        raise HTTPException(409, "上传目标文件校验失败")
+    return metadata
+
+
+def _verify_recovered_video(source: Path, target: Path, source_stat: os.stat_result) -> None:
+    """Reuse a queue-uncertain orphan only when all of its bytes still match."""
+    target_stat = _regular_submission_file(target)
+    if (target_stat.st_dev, target_stat.st_size) != (source_stat.st_dev, source_stat.st_size):
+        raise HTTPException(409, "上传目标已存在其他文件")
+    digests = []
+    for path in (source, target):
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            while block := handle.read(1024 * 1024):
+                digest.update(block)
+        digests.append(digest.digest())
+    if (digests[0] != digests[1]
+            or _submission_file_identity(source.stat()) != _submission_file_identity(source_stat)
+            or _submission_file_identity(_regular_submission_file(target)) != _submission_file_identity(target_stat)):
+        raise HTTPException(409, "上传目标已存在其他文件")
+
+
+def _publish_owned_request(path: Path, payload: dict) -> bool:
+    """Return whether this attempt created the request; never replace a file."""
+    def comparable(value):
+        if not isinstance(value, dict) or not isinstance(value.get("upstream_metadata"), dict):
+            raise ValueError("invalid saved request")
+        metadata = dict(value["upstream_metadata"])
+        # Retries may arrive through a different connection/request identifier.
+        metadata.pop("source_ip", None)
+        metadata.pop("request_id", None)
+        return {**value, "upstream_metadata": metadata}
+
+    def check_existing():
+        metadata = _regular_submission_file(path)
+        try:
+            if metadata.st_size > 256 * 1024:
+                raise ValueError("saved request is too large")
+            saved = json.loads(path.read_text("utf-8"))
+            if (comparable(saved) != comparable(payload)
+                    or _submission_file_identity(_regular_submission_file(path)) != _submission_file_identity(metadata)):
+                raise ValueError("saved request differs")
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise HTTPException(409, "上传任务配置已存在且不一致") from exc
+
+    if path.exists() or path.is_symlink():
+        check_existing()
+        return False
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4()}.tmp")
+    try:
+        with temporary.open("x", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            _rename_submission_file(temporary, path)
+        except FileExistsError:
+            check_existing()
+            return False
+        return True
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def _parse_polygon(raw: str | None) -> list[list[float]] | None:
     if raw is None or not raw.strip():
         return None
@@ -414,10 +576,14 @@ def create_app(
     deployment_identity = load_deployment_identity(Path(__file__).resolve().parents[2])
     db = database or JobDatabase(service_settings.database_path)
     technical_reviews = TechnicalReviewStore(service_settings.data_root / "technical-reviews.sqlite3")
+    shot_reviews = ShotReviewStore(service_settings.data_root / "shot-reviews.sqlite3")
+    shot_statistics_cache: OrderedDict[tuple, dict] = OrderedDict()
+    shot_statistics_lock = Lock()
     # Cache bounded previews only while the underlying frame snapshot matches.
     # A progressing job or a transition to succeeded always invalidates it.
     trajectory_cache: OrderedDict[tuple, dict] = OrderedDict()
     trajectory_cache_lock = Lock()
+    live_trajectory_cache = LiveTrajectoryCache()
     pose_cache: OrderedDict[tuple, dict] = OrderedDict()
     pose_cache_lock = Lock()
     action_cache: OrderedDict[tuple, dict] = OrderedDict()
@@ -453,10 +619,10 @@ def create_app(
         # Stat-only identities cannot detect same-size rewrites with restored
         # mtime (Windows ctime is creation time). Hash every body dependency.
         body_dependencies = {"summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl",
-                             "indicator-features.jsonl", "source-aligned-measurements.json", "sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}
+                             "indicator-features.jsonl", "scoring-evidence.sqlite3", "source-aligned-measurements.json", "sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}
         artifacts = tuple(artifact_signature(Path(job["output_dir"]) / name,
                                             content_hash=name in body_dependencies)
-                          for name in sorted((ALLOWED_ARTIFACTS - MESH_ARTIFACTS) | {"sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}))
+                          for name in sorted((ALLOWED_ARTIFACTS - MESH_ARTIFACTS) | {"scoring-evidence.sqlite3", "sam3d_frames.jsonl", "action-context.json", "tennis-subject-selection.json"}))
         registry = service_settings.resolved_technique_registry
         # These small resources are content-addressed, including an external
         # registry whose operator might preserve file size/modification time.
@@ -507,6 +673,7 @@ def create_app(
         try:
             yield
         finally:
+            live_trajectory_cache.clear()
             await run_in_threadpool(report_delivery_cache.close)
 
     app = FastAPI(
@@ -546,7 +713,7 @@ def create_app(
         allow_origins=list(service_settings.cors_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256", "Idempotency-Key"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256", "X-Upload-Acknowledgement", "Idempotency-Key"],
         expose_headers=["X-Request-ID"],
     )
     if pose_request_diagnostics_enabled():
@@ -613,7 +780,8 @@ def create_app(
             },
             "capabilities": {
                 "async_video_jobs": True,
-                "resumable_uploads": {"chunk_bytes": CHUNK_BYTES, "parallel_chunks": 2, "expires_after_hours": 24},
+                "resumable_uploads": {"chunk_bytes": CHUNK_BYTES, "default_chunk_bytes": uploads.chunk_bytes,
+                                      "acknowledgement": "chunk-v1", "parallel_chunks": 2, "expires_after_hours": 24},
                 "trajectory_preview": True,
                 "racket_bbox_observability": True,
                 "technique_registry": technique_registry_info["available"],
@@ -842,12 +1010,13 @@ def create_app(
         }
 
     async def _submit_video(
-        request: Request, video: UploadFile, court_mode: str = "disabled",
+        request: Request, video: UploadFile | None, court_mode: str = "disabled",
         manual_polygon_normalized: str | None = None,
         manual_polygon_role: str = "court_outer_doubles_corners",
         write_annotated_video: bool = True, max_players: int = 2,
         start_ms: int = 0, end_ms: int | None = None,
         max_frames: int | None = None, job_id: str | None = None,
+        *, _owned_upload: tuple[Path, dict] | None = None,
     ) -> dict:
         if court_mode not in {"auto", "manual", "disabled"}:
             raise HTTPException(422, "court_mode must be auto, manual or disabled")
@@ -895,7 +1064,9 @@ def create_app(
             raise HTTPException(
                 422, "manual_polygon_normalized is required for manual court mode"
             )
-        filename = _safe_filename(video.filename)
+        if (video is None) != (_owned_upload is not None):
+            raise ValueError("submission must own either a multipart stream or an upload-store file")
+        filename = _safe_filename(_owned_upload[1]["filename"] if _owned_upload else video.filename)
         suffix = Path(filename).suffix.lower()
         if suffix not in ALLOWED_EXTENSIONS:
             raise HTTPException(415, f"unsupported video extension: {suffix}")
@@ -903,19 +1074,36 @@ def create_app(
         job_id = job_id or str(uuid.uuid4())
         video_path = service_settings.uploads_dir / f"{job_id}{suffix}"
         total = 0
+        owned_source = None
+        handed_off = False
+        request_created = False
+        request_path = None
+        request_identity = None
         try:
-            if video_path.exists() and db.get_job(job_id) is None:
-                video_path.unlink()
-            with video_path.open("xb") as handle:
-                while chunk := await video.read(1024 * 1024):
-                    total += len(chunk)
-                    if total > service_settings.max_upload_bytes:
-                        raise HTTPException(413, "video exceeds the configured size limit")
-                    handle.write(chunk)
+            if _owned_upload is not None:
+                source, manifest = _owned_upload
+                if manifest.get("upload_id") != job_id:
+                    raise HTTPException(409, "上传文件与会话不一致")
+                owned_source, owned_stat = _owned_upload_source(
+                    source, service_settings.uploads_dir, job_id,
+                    manifest["size"], service_settings.max_upload_bytes,
+                )
+                total = owned_stat.st_size
+                probe_path = owned_source
+            else:
+                if video_path.exists() and db.get_job(job_id) is None:
+                    video_path.unlink()
+                with video_path.open("xb") as handle:
+                    while chunk := await video.read(1024 * 1024):
+                        total += len(chunk)
+                        if total > service_settings.max_upload_bytes:
+                            raise HTTPException(413, "video exceeds the configured size limit")
+                        handle.write(chunk)
+                probe_path = video_path
             if total == 0:
                 raise HTTPException(422, "uploaded video is empty")
             try:
-                metadata = probe_video(video_path)
+                metadata = probe_video(probe_path)
             except (ValueError, RuntimeError) as exc:
                 raise HTTPException(
                     422,
@@ -981,7 +1169,7 @@ def create_app(
                 },
                 "upstream_metadata": {
                     "original_filename": filename,
-                    "content_type": video.content_type,
+                    "content_type": video.content_type if video is not None else None,
                     "upload_bytes": total,
                     "source_ip": request.client.host if request.client else None,
                     "request_id": getattr(request.state, "request_id", None),
@@ -1001,18 +1189,61 @@ def create_app(
                     },
                 },
             }
-            request_path.write_text(
-                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
+            if owned_source is not None:
+                # Recheck captured identity and metadata after probing, while
+                # the store still holds the upload session's exclusive lock.
+                owned_source, current_stat = _owned_upload_source(
+                    owned_source, service_settings.uploads_dir, job_id,
+                    total, service_settings.max_upload_bytes,
+                )
+                if _submission_file_identity(owned_stat) != _submission_file_identity(current_stat):
+                    raise HTTPException(409, "上传文件在校验期间发生变化，请重试")
+                if db.get_job(job_id) is not None:
+                    raise HTTPException(409, "视频已提交推理")
+                request_created = _publish_owned_request(request_path, payload)
+                request_identity = _submission_file_identity(request_path.stat())
+                _sync_submission_directory(request_path.parent)
+                try:
+                    _rename_submission_file(owned_source, video_path)
+                    handed_off = True
+                except FileExistsError:
+                    # An uncertain database commit may leave a durable input.
+                    # Recover matching bytes without ever replacing its name.
+                    _verify_recovered_video(owned_source, video_path, current_stat)
+                _sync_submission_directory(video_path.parent)
+                _sync_submission_directory(owned_source.parent)
+            else:
+                request_path.write_text(
+                    json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
             job = db.create_job(
                 job_id, filename, video_path, request_path, output_dir
             )
         except Exception:
-            if video_path.exists() and db.get_job(job_id) is None:
-                video_path.unlink()
+            # A database error may occur after commit. Never remove a durable
+            # input if queue ownership cannot be determined reliably.
+            try:
+                committed = db.get_job(job_id) is not None
+            except Exception:
+                committed = True
+            if not committed and video_path.exists():
+                if handed_off:
+                    # The store retains chunks until enqueue succeeds. Restore
+                    # its assembled source as well when the queue rejected it.
+                    if not owned_source.exists():
+                        _rename_submission_file(video_path, owned_source)
+                        _sync_submission_directory(video_path.parent)
+                        _sync_submission_directory(owned_source.parent)
+                elif _owned_upload is None:
+                    video_path.unlink()
+            if (not committed and request_created and request_path.exists()
+                    and _submission_file_identity(request_path.stat()) == request_identity):
+                request_path.unlink()
+                _sync_submission_directory(request_path.parent)
             raise
         finally:
-            await video.close()
+            if video is not None:
+                await video.close()
         return _public_job(
             job,
             service_settings.public_base_url,
@@ -1083,13 +1314,16 @@ def create_app(
     @app.put("/v1/uploads/{upload_id}/chunks/{index}")
     async def upload_chunk(upload_id: str, index: int, request: Request, _: None = Depends(authorize)) -> dict:
         # Bound each request even when Content-Length is absent or forged.
-        uploads.status(upload_id)
+        await run_in_threadpool(uploads.read_metadata, uploads.directory(upload_id))
         content = bytearray()
         async for block in request.stream():
             if len(content) + len(block) > CHUNK_BYTES:
                 raise HTTPException(413, "分块过大")
             content.extend(block)
-        return await run_in_threadpool(uploads.put, upload_id, index, bytes(content), request.headers.get("X-Chunk-SHA256", ""))
+        return await run_in_threadpool(
+            uploads.put, upload_id, index, bytes(content), request.headers.get("X-Chunk-SHA256", ""),
+            compact_ack=request.headers.get("X-Upload-Acknowledgement") == "chunk-v1",
+        )
 
     @app.post("/v1/uploads/{upload_id}/complete", status_code=202)
     def complete_upload(upload_id: str, request: Request, _: None = Depends(authorize)) -> dict:
@@ -1098,9 +1332,9 @@ def create_app(
             return _public_job(job, service_settings.public_base_url, redact_summary=_should_redact_public(service_settings)) if job else None
 
         def enqueue(path, manifest):
-            with path.open("rb") as handle:
-                video = UploadFile(file=handle, filename=manifest["filename"])
-                return asyncio.run(_submit_video(request, video, job_id=upload_id, **manifest["options"]))
+            return asyncio.run(_submit_video(
+                request, None, job_id=upload_id, _owned_upload=(path, manifest), **manifest["options"],
+            ))
 
         return uploads.complete(upload_id, enqueue, existing)
 
@@ -1110,6 +1344,8 @@ def create_app(
         job = db.get_job(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
+        if job["status"] != "running":
+            live_trajectory_cache.discard(job_id)
         job["summary"] = summary_with_actions(job)
         result = _public_job(
             job,
@@ -1127,6 +1363,7 @@ def create_app(
         job = db.request_cancel(job_id)
         if job is None:
             raise HTTPException(404, "job not found")
+        live_trajectory_cache.discard(job_id)
         response.headers["Cache-Control"] = "no-store"
         job["summary"] = summary_with_actions(job)
         result = _public_job(job, service_settings.public_base_url,
@@ -1176,110 +1413,150 @@ def create_app(
         except TechnicalReviewError as exc:
             raise HTTPException(exc.status, exc.detail()) from exc
 
-    def build_demo_payload(job: dict, report_contract: ReportContract,
-                           report_transport: ReportTransport) -> dict:
-        job_id = job["id"]
-        indicator_features_path = Path(job["output_dir"]) / "indicator-features.jsonl"
-        # A successful run can legitimately contain no measured indicator
-        # records (for example a short clip with no detectable motion).  Keep
-        # the result contract available in that case so the UI can show a
-        # truthful "not observed" report instead of falling back to synthetic
-        # scores or forcing a re-upload.  Non-empty artifacts remain strictly
-        # validated by ``load_indicator_feature_records`` below.
-        records: list[dict[str, Any]] = []
-        summary = summary_with_actions(job)
-        try:
-            if indicator_features_path.is_file() and indicator_features_path.stat().st_size > 0:
-                records = load_indicator_feature_records(indicator_features_path)
-            result = build_user_demo_result(
-                summary,
-                records,
-                technique_registry_path=service_settings.resolved_technique_registry,
-                include_derived_assessments=False,
-            )
-        except TechniqueRegistrySnapshotError as exc:
-            raise HTTPException(
-                409, _public_error_detail(exc.as_detail(), service_settings)
-            ) from exc
-        except (UserDemoResultError, TechniqueRegistryError, OSError) as exc:
-            raise HTTPException(
-                500,
-                _public_error_detail(
-                    f"demo result is unavailable: {exc}", service_settings
-                ),
-            ) from exc
-        public_job = _public_job(
-            job,
-            service_settings.public_base_url,
-            redact_summary=_should_redact_public(service_settings),
-        )
-        result["artifact_urls"] = {
-            name: url for name, url in public_job["artifact_urls"].items()
-            if name not in MESH_ARTIFACTS
-        }
-        # Keep cached report bytes independent of concurrent renderer output.
-        # This is only a bootstrap hint: the browser immediately resolves a
-        # declared mesh task via the small, uncached /mesh-preview endpoint.
-        # A ready preview also uses that route, rather than baking mutable
-        # descriptors or URLs into the numerical report's content identity.
-        declared_artifacts = (job.get("summary") or {}).get("artifacts")
-        declared_mesh = declared_artifacts.get("sam3d_mesh") if isinstance(declared_artifacts, dict) else None
-        declared_mesh_status = declared_mesh.get("status") if isinstance(declared_mesh, dict) else None
-        result["sam3d_mesh"] = None
-        result["sam3d_mesh_status"] = (
-            "pending" if declared_mesh_status in {"pending", "ready"}
-            else "failed" if declared_mesh_status == "failed" else "unavailable"
-        )
-        result["original_video"] = original_video_descriptor(job, service_settings)
-        result["trajectory_url"] = public_job["trajectory_url"]
-        result["technique_assessment_url"] = public_job["technique_assessment_url"]
-        loop_summary = summary.get("minimum_scoring_loop")
-        review_video_id = loop_summary.get("video_id") if isinstance(loop_summary, dict) else None
-        result["footwork_review"] = load_footwork_review(
-            Path(job["output_dir"]) / "events.jsonl",
-            records,
-            video_id=review_video_id or job_id,
-        )
-        loop_provenance = (loop_summary or {}).get("provenance", {})
-        result["source_aligned_assessment"] = load_source_aligned_assessment(
-            Path(job["output_dir"]),
-            video_id=review_video_id or job_id,
-            duration_ms=summary.get("input", {}).get("video", {}).get("duration_ms"),
-            video_sha256=loop_provenance.get("video_sha256"),
-            frames_sha256=loop_provenance.get("frames_sha256"),
-        )
-        result["process_evaluation"] = build_process_evaluation(
-            summary, records, footwork_review=result["footwork_review"],
-        )
-        result["swing_kinematics"] = build_swing_kinematics(Path(job["output_dir"]), summary)
-        result["tennis_assessment"] = build_tennis_assessment(
-            summary, Path(job["output_dir"]), job_id=job_id,
-        )
-        result["indicator_assessment"] = build_indicator_assessment(
-            summary, records, source_assessment=result["source_aligned_assessment"],
-            process_evaluation=result["process_evaluation"],
-        )
-        try:
-            card_execution = build_card_execution_report(Path(job["output_dir"]))
-            if card_execution.get("source_run_id") != job_id:
-                raise ValueError("card_report_job_binding_mismatch")
-            result["card_execution"] = card_execution
-        except (OSError, ValueError, TypeError, KeyError, OverflowError):
-            result["card_execution"] = {
-                "version": CARD_EXECUTION_VERSION, "rule_version": CARD_RULE_VERSION,
-                "status": "unavailable", "source_run_id": job_id,
-                "reason_codes": ["raw_card_execution_evidence_unavailable"],
-                "cards": [], "overall_score": None,
-                "limitations": ["本次逐卡计算所需的原始帧证据缺失、身份不一致或校验未通过，暂不能生成逐卡结果。"],
-            }
-        result["analysis_report"] = build_analysis_report(result, summary=summary)
-        projected = project_report(result, report_contract)
-        if report_transport == 'model-proof-pool-v1':
+    def report_records(path, summary, check):
+        loop = summary.get("minimum_scoring_loop") or {}
+        manifest = loop.get("evidence_storage")
+        if manifest is not None or (path.parent / POOL_FILENAME).exists():
+            provenance = loop.get("provenance") or {}
             try:
-                return pack_report_evidence(projected)
-            except ReportEvidenceTransportError as exc:
-                raise HTTPException(500, 'report evidence transport is unavailable') from exc
-        return projected
+                verify_evidence_manifest(path.parent, manifest,
+                    expected_video_id=loop.get("video_id"),
+                    expected_source_id=provenance.get("pipeline_job_id"),
+                    cancellation_callback=check)
+                video_sha = provenance.get("video_sha256")
+                if isinstance(video_sha, str) and manifest.get("video_sha256") != video_sha.lower():
+                    raise ArtifactEvidenceError("evidence video hash differs from report provenance")
+            except ArtifactEvidenceError as exc:
+                raise UserDemoResultError(f"报告证据校验失败：{exc}") from exc
+        return open_indicator_feature_records(path, cancellation_callback=check)
+
+    def build_demo_payload(job: dict, report_contract: ReportContract,
+                           report_transport: ReportTransport, *, report_budget=None) -> dict:
+        report_budget = report_budget or PostprocessBudget(max_seconds=report_delivery_cache.preparation_timeout_seconds)
+        def check_report_budget(*, force=False):
+            try:
+                report_budget.check(force=force)
+            except PostprocessResourceLimit as exc:
+                raise HTTPException(503, {"code": "report_resource_limit", "message": str(exc)}) from exc
+        with ExitStack() as evidence_context:
+            check_report_budget(force=True)
+            job_id = job["id"]
+            indicator_features_path = Path(job["output_dir"]) / "indicator-features.jsonl"
+            # A successful run can legitimately contain no measured indicator
+            # records (for example a short clip with no detectable motion).  Keep
+            # the result contract available in that case so the UI can show a
+            # truthful "not observed" report instead of falling back to synthetic
+            # scores or forcing a re-upload.  Non-empty artifacts remain strictly
+            # validated by ``load_indicator_feature_records`` below.
+            records: list[dict[str, Any]] = []
+            summary = summary_with_actions(job)
+            check_report_budget(force=True)
+            try:
+                if indicator_features_path.is_file() and indicator_features_path.stat().st_size > 0:
+                    records = evidence_context.enter_context(report_records(indicator_features_path, summary, check_report_budget))
+                result = build_user_demo_result(
+                    summary,
+                    records,
+                    technique_registry_path=service_settings.resolved_technique_registry,
+                    include_derived_assessments=False,
+                )
+                check_report_budget(force=True)
+            except TechniqueRegistrySnapshotError as exc:
+                raise HTTPException(
+                    409, _public_error_detail(exc.as_detail(), service_settings)
+                ) from exc
+            except (UserDemoResultError, TechniqueRegistryError, OSError) as exc:
+                raise HTTPException(
+                    500,
+                    _public_error_detail(
+                        f"demo result is unavailable: {exc}", service_settings
+                    ),
+                ) from exc
+            public_job = _public_job(
+                job,
+                service_settings.public_base_url,
+                redact_summary=_should_redact_public(service_settings),
+            )
+            result["artifact_urls"] = {
+                name: url for name, url in public_job["artifact_urls"].items()
+                if name not in MESH_ARTIFACTS
+            }
+            # Keep cached report bytes independent of concurrent renderer output.
+            # This is only a bootstrap hint: the browser immediately resolves a
+            # declared mesh task via the small, uncached /mesh-preview endpoint.
+            # A ready preview also uses that route, rather than baking mutable
+            # descriptors or URLs into the numerical report's content identity.
+            declared_artifacts = (job.get("summary") or {}).get("artifacts")
+            declared_mesh = declared_artifacts.get("sam3d_mesh") if isinstance(declared_artifacts, dict) else None
+            declared_mesh_status = declared_mesh.get("status") if isinstance(declared_mesh, dict) else None
+            result["sam3d_mesh"] = None
+            result["sam3d_mesh_status"] = (
+                "pending" if declared_mesh_status in {"pending", "ready"}
+                else "failed" if declared_mesh_status == "failed" else "unavailable"
+            )
+            result["original_video"] = original_video_descriptor(job, service_settings)
+            result["trajectory_url"] = public_job["trajectory_url"]
+            result["technique_assessment_url"] = public_job["technique_assessment_url"]
+            loop_summary = summary.get("minimum_scoring_loop")
+            review_video_id = loop_summary.get("video_id") if isinstance(loop_summary, dict) else None
+            result["footwork_review"] = load_footwork_review(
+                Path(job["output_dir"]) / "events.jsonl",
+                records,
+                video_id=review_video_id or job_id,
+            )
+            check_report_budget(force=True)
+            loop_provenance = (loop_summary or {}).get("provenance", {})
+            result["source_aligned_assessment"] = load_source_aligned_assessment(
+                Path(job["output_dir"]),
+                video_id=review_video_id or job_id,
+                duration_ms=summary.get("input", {}).get("video", {}).get("duration_ms"),
+                video_sha256=loop_provenance.get("video_sha256"),
+                frames_sha256=loop_provenance.get("frames_sha256"),
+            )
+            check_report_budget(force=True)
+            result["process_evaluation"] = build_process_evaluation(
+                summary, records, footwork_review=result["footwork_review"],
+            )
+            check_report_budget(force=True)
+            result["swing_kinematics"] = build_swing_kinematics(Path(job["output_dir"]), summary)
+            check_report_budget(force=True)
+            result["tennis_assessment"] = build_tennis_assessment(
+                summary, Path(job["output_dir"]), job_id=job_id,
+            )
+            check_report_budget(force=True)
+            result["indicator_assessment"] = build_indicator_assessment(
+                summary, records, source_assessment=result["source_aligned_assessment"],
+                process_evaluation=result["process_evaluation"],
+            )
+            check_report_budget(force=True)
+            try:
+                card_execution = build_card_execution_report(Path(job["output_dir"]))
+                if card_execution.get("source_run_id") != job_id:
+                    raise ValueError("card_report_job_binding_mismatch")
+                result["card_execution"] = card_execution
+            except (OSError, ValueError, TypeError, KeyError, OverflowError):
+                result["card_execution"] = {
+                    "version": CARD_EXECUTION_VERSION, "rule_version": CARD_RULE_VERSION,
+                    "status": "unavailable", "source_run_id": job_id,
+                    "reason_codes": ["raw_card_execution_evidence_unavailable"],
+                    "cards": [], "overall_score": None,
+                    "limitations": ["本次逐卡计算所需的原始帧证据缺失、身份不一致或校验未通过，暂不能生成逐卡结果。"],
+                }
+            check_report_budget(force=True)
+            result["analysis_report"] = build_analysis_report(result, summary=summary)
+            check_report_budget(force=True)
+            projected = project_report(result, report_contract)
+            check_report_budget(force=True)
+            if report_transport == 'model-proof-pool-v1':
+                try:
+                    projected = pack_report_evidence(projected, cancellation_callback=check_report_budget)
+                except ReportEvidenceLimitError as exc:
+                    raise HTTPException(413, {"code": "report_delivery_limit",
+                        "message": "报告证据超过传输上限，分析产物已保留；当前页面暂不能读取这份完整报告。"}) from exc
+                except ReportEvidenceTransportError as exc:
+                    raise HTTPException(500, 'report evidence transport is unavailable') from exc
+            check_report_budget(force=True)
+            return projected
 
     @app.get("/v1/jobs/{job_id}/demo-result")
     def get_demo_result(job_id: str, report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
@@ -1340,10 +1617,25 @@ def create_app(
 
         def build_bytes():
             try:
-                payload = build_demo_payload(job, report_contract, report_transport)
-                return json.dumps(payload, ensure_ascii=False, separators=(",", ":"),
-                                  allow_nan=False).encode("utf-8")
+                budget = PostprocessBudget(max_seconds=report_delivery_cache.preparation_timeout_seconds)
+                payload = build_demo_payload(job, report_contract, report_transport, report_budget=budget)
+                body = encode_bounded_json(payload, max_bytes=report_delivery_cache.max_bytes,
+                                           cancellation_callback=budget.check)
+                budget.check(force=True)
+                return body
+            except PostprocessOutputLimit as exc:
+                raise DeliveryError(413, "report_delivery_limit", str(exc)) from exc
+            except PostprocessResourceLimit as exc:
+                raise DeliveryError(503, "report_resource_limit", str(exc)) from exc
             except HTTPException as exc:
+                # Preserve the known, public resource diagnosis across deferred
+                # delivery. Otherwise the same limit is specific inline but
+                # becomes an unexplained generic failure in the normal UI path.
+                if (isinstance(exc.detail, dict)
+                        and (exc.status_code, exc.detail.get("code")) in {
+                            (503, "report_resource_limit"), (413, "report_delivery_limit")
+                        }):
+                    raise DeliveryError(exc.status_code, exc.detail["code"], exc.detail["message"]) from exc
                 # Keep the original HTTP status but do not leak arbitrary
                 # nested exceptions into the asynchronous transport envelope.
                 raise DeliveryError(exc.status_code, "report_preparation_failed",
@@ -1364,6 +1656,82 @@ def create_app(
             return Response(content=delivery.body, media_type="application/json",
                             headers={"Cache-Control": "no-store"})
         return preparing_response()
+
+    def shot_statistics_base(job_id: str) -> dict:
+        job = db.get_job(job_id)
+        if job is None:
+            raise HTTPException(404, "job not found")
+        if job["status"] != "succeeded" or job.get("cancel_requested"):
+            raise HTTPException(409, "shot statistics require a completed analysis")
+        output = Path(job["output_dir"]).resolve()
+        if output != (service_settings.runs_dir / job_id).resolve():
+            raise HTTPException(409, "shot statistics source is unavailable")
+        frames = output / "frames.jsonl"
+        try:
+            if frames.is_symlink() or not frames.is_file():
+                raise ValueError("missing frames")
+            frame_stat, video_stat = frames.stat(), Path(job["video_path"]).stat()
+            provenance = (job.get("summary") or {}).get("minimum_scoring_loop", {}).get("provenance", {})
+            key = (job_id, frame_stat.st_size, frame_stat.st_mtime_ns,
+                   video_stat.st_size, video_stat.st_mtime_ns, provenance.get("video_sha256"))
+            with shot_statistics_lock:
+                base = shot_statistics_cache.get(key)
+                if base is None:
+                    original = verify_original_video(job, service_settings)
+                    base = build_shot_statistics(frames, job_id=job_id,
+                                                 expected_video_sha256=original.sha256)
+                    shot_statistics_cache[key] = base
+                    while len(shot_statistics_cache) > 4:
+                        shot_statistics_cache.popitem(last=False)
+                shot_statistics_cache.move_to_end(key)
+                return base
+        except (OSError, ValueError, TypeError, KeyError):
+            raise HTTPException(409, "击球统计的原视频或帧数据缺失、来源不匹配，请重新读取。") from None
+
+    @app.get("/v1/jobs/{job_id}/shot-statistics")
+    def get_shot_statistics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        response.headers["Cache-Control"] = "private, no-store"
+        base = shot_statistics_base(job_id)
+        try:
+            reviews, revision = shot_reviews.read(job_id, base["source"]["video_sha256"])
+            return build_shot_statistics(service_settings.runs_dir / job_id / "frames.jsonl",
+                job_id=job_id, reviews=reviews, revision=revision,
+                expected_video_sha256=base["source"]["video_sha256"], trusted_reviews=True)
+        except ShotReviewError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+        except (ValueError, OSError):
+            raise HTTPException(409, "击球统计数据已改变或暂不可读取，请重新读取。") from None
+
+    @app.post("/v1/jobs/{job_id}/shot-statistics")
+    async def save_shot_statistics(job_id: str, request: Request, response: Response,
+                                   _: None = Depends(authorize)) -> dict:
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            body = bytearray()
+            async for chunk in request.stream():
+                body.extend(chunk)
+                if len(body) > MAX_SHOT_REVIEW_BYTES:
+                    raise ShotReviewError("本次标记内容过长。", 413)
+            submission = parse_shot_review(bytes(body))
+
+            def save():
+                base = shot_statistics_base(job_id)
+                digest = base["source"]["video_sha256"]
+                def validate_event(reviews, revision):
+                    current = build_shot_statistics(service_settings.runs_dir / job_id / "frames.jsonl",
+                        job_id=job_id, reviews=reviews, revision=revision, expected_video_sha256=digest, trusted_reviews=True)
+                    return validate_review(submission.event, current)
+
+                reviews, revision = shot_reviews.save(job_id, digest, submission, validate_event)
+                return build_shot_statistics(service_settings.runs_dir / job_id / "frames.jsonl",
+                    job_id=job_id, reviews=reviews, revision=revision, expected_video_sha256=digest, trusted_reviews=True)
+
+            return await run_in_threadpool(save)
+        except ShotReviewError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+        except ValueError:
+            raise HTTPException(422, "标记时间、事件或球场位置无效，请重新选择。") from None
 
     @app.get("/v1/jobs/{job_id}/mesh-preview")
     def get_mesh_preview(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
@@ -1406,6 +1774,7 @@ def create_app(
         if job is None:
             raise HTTPException(404, "job not found")
         if job["status"] not in {"running", "succeeded"}:
+            live_trajectory_cache.discard(job_id)
             raise HTTPException(409, "trajectory requires a running or succeeded job")
         frames_path = Path(job["output_dir"]) / "frames.jsonl"
         if not frames_path.is_file():
@@ -1418,6 +1787,12 @@ def create_app(
                 },
             )
         try:
+            if job["status"] == "running":
+                payload = live_trajectory_cache.preview(job, frames_path, sample_limit=sample_limit,
+                    prediction_horizon_ms=prediction_horizon_ms)
+                response.headers["Cache-Control"] = "no-store"
+                return payload
+            live_trajectory_cache.discard(job_id)
             stat = frames_path.stat()
             cache_key = (str(frames_path), stat.st_mtime_ns, stat.st_size,
                          job["status"], sample_limit, prediction_horizon_ms)
@@ -1530,50 +1905,63 @@ def create_app(
         report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
         _: None = Depends(authorize),
     ) -> dict:
-        """Return the evidence-gated qualitative assessment for a completed job."""
-
-        job = db.get_job(job_id)
-        if job is None:
-            raise HTTPException(404, "job not found")
-        if job["status"] != "succeeded":
-            raise HTTPException(409, "job has not succeeded")
-        indicator_features_path = Path(job["output_dir"]) / "indicator-features.jsonl"
-        records: list[dict] = []
-        if indicator_features_path.is_file():
+        report_budget = PostprocessBudget(max_seconds=report_delivery_cache.preparation_timeout_seconds)
+        def check_report_budget(*, force=False):
             try:
-                if indicator_features_path.stat().st_size > 0:
-                    records = load_indicator_feature_records(indicator_features_path)
-            except UserDemoResultError as exc:
+                report_budget.check(force=force)
+            except PostprocessResourceLimit as exc:
+                raise HTTPException(503, {"code": "report_resource_limit", "message": str(exc)}) from exc
+        with ExitStack() as evidence_context:
+            """Return the evidence-gated qualitative assessment for a completed job."""
+
+            job = db.get_job(job_id)
+            if job is None:
+                raise HTTPException(404, "job not found")
+            if job["status"] != "succeeded":
+                raise HTTPException(409, "job has not succeeded")
+            indicator_features_path = Path(job["output_dir"]) / "indicator-features.jsonl"
+            check_report_budget(force=True)
+            summary = summary_with_actions(job)
+            check_report_budget(force=True)
+            records: list[dict] = []
+            if indicator_features_path.is_file():
+                try:
+                    if indicator_features_path.stat().st_size > 0:
+                        records = evidence_context.enter_context(report_records(indicator_features_path, summary, check_report_budget))
+                except UserDemoResultError as exc:
+                    raise HTTPException(
+                        422,
+                        _public_error_detail(
+                            f"technique evidence is invalid: {exc}", service_settings
+                        ),
+                    ) from exc
+            try:
+                result = build_technique_assessment(
+                    summary,
+                    records,
+                    registry_path=service_settings.resolved_technique_registry,
+                )
+                check_report_budget(force=True)
+            except TechniqueRegistrySnapshotError as exc:
                 raise HTTPException(
-                    422,
+                    409, _public_error_detail(exc.as_detail(), service_settings)
+                ) from exc
+            except (ValueError, TechniqueRegistryError) as exc:
+                raise HTTPException(
+                    503,
                     _public_error_detail(
-                        f"technique evidence is invalid: {exc}", service_settings
+                        f"technique assessment is unavailable: {exc}", service_settings
                     ),
                 ) from exc
-        try:
-            result = build_technique_assessment(
-                summary_with_actions(job),
-                records,
-                registry_path=service_settings.resolved_technique_registry,
+            result["catalog_url"] = _public_url(
+                "/v1/techniques", service_settings.public_base_url
             )
-        except TechniqueRegistrySnapshotError as exc:
-            raise HTTPException(
-                409, _public_error_detail(exc.as_detail(), service_settings)
-            ) from exc
-        except (ValueError, TechniqueRegistryError) as exc:
-            raise HTTPException(
-                503,
-                _public_error_detail(
-                    f"technique assessment is unavailable: {exc}", service_settings
-                ),
-            ) from exc
-        result["catalog_url"] = _public_url(
-            "/v1/techniques", service_settings.public_base_url
-        )
-        result["trajectory_url"] = _public_url(
-            f"/v1/jobs/{job_id}/trajectory", service_settings.public_base_url
-        )
-        return project_report(result, report_contract)
+            result["trajectory_url"] = _public_url(
+                f"/v1/jobs/{job_id}/trajectory", service_settings.public_base_url
+            )
+            projected = project_report(result, report_contract)
+            check_report_budget(force=True)
+            return projected
 
     @app.get("/v1/jobs/{job_id}/foot-crossing-candidates")
     def get_foot_crossing_candidates(

@@ -166,7 +166,7 @@ test("legacy model phase measurements preserve provenance and measured zero with
   assert.match(parsed.status_reason_zh, /已有单目模型估计.*置信度和可见性未提供/);
   assert.doesNotMatch(parsed.summary_zh, /尚缺连续运动测量/);
   assert.deepEqual(parsedSwing(processEvaluationOf(input)), parsed);
-  assert.match(render(input), /已有单目模型估计/);
+  assert.match(render(input), /单目模型估计/);
   assert.deepEqual(processRadarGeometry(trainingDimensions(processEvaluationOf(input).dimensions)).points, [null, null, null, null, null]);
 });
 
@@ -271,9 +271,8 @@ test("real v1.1 report retains all 298 source memberships and full versus sample
   }
   assert.deepEqual(processEvaluationOf(JSON.parse(JSON.stringify(parsed))), parsed);
   const html = render(realProcess);
-  assert.match(html, /缺少评分依据的维度留空/);
-  assert.match(html, /未评分/);
-  assert.match(html, /完整技术规则尚未实现/);
+  assert.match(html, /process-radar-label-score[^>]*>—/);
+  assert.doesNotMatch(html, /缺少评分依据|未评分|完整技术规则尚未实现/);
   assert.doesNotMatch(html, /原文目录|298|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}/);
   assert.doesNotMatch(html, /击球效果|击球质量|随挥恢复/);
 });
@@ -420,7 +419,7 @@ test("raw zero stays real while missing axes remain unscored in the product char
   const html = render(report());
   assert.equal((html.match(/class="process-radar-point/g) ?? []).length, 0);
   assert.equal((html.match(/class="process-radar-point[^"]*is-neutral/g) ?? []).length, 0);
-  assert.match(html, /缺少评分依据的维度留空/);
+  assert.doesNotMatch(html, /缺少评分依据的维度留空/);
   for (const tick of [0, 25, 50, 75, 100]) assert.match(html, new RegExp(`class="process-radar-tick"[^>]*>${tick}</text>`));
 });
 
@@ -447,7 +446,7 @@ test("long reports render one selected episode instead of hundreds of evidence c
   assert.equal((html.match(/class="process-criterion"/g) ?? []).length, 1);
   assert.equal((html.match(/<option /g) ?? []).length, 73);
   assert.match(html, /选择过程评价维度/); assert.match(html, /aria-pressed="true"[^>]*><span>挥拍/);
-  assert.match(html, /未评分的维度留空|已测到动作数据，但还不足以判断各维表现/); assert.match(html, /本次训练评分/);
+  assert.doesNotMatch(html, /未评分的维度留空|已测到动作数据，但还不足以判断各维表现/); assert.match(html, /本次训练评分/);
 });
 
 test("completed empty and historical reports stay unscored while pending preserves evidence", () => {
@@ -457,9 +456,9 @@ test("completed empty and historical reports stay unscored while pending preserv
     assert.match(html, /class="process-overall-reference"><strong>—<\/strong>/);
     assert.doesNotMatch(html, /中性起点|显示 50 中性暂估|补为 50/);
     assert.match(html, /0 \/ 5 维有评分依据/);
-    assert.match(html, /当前识别结果还不足以计算动作得分/);
+    assert.doesNotMatch(html, /当前识别结果还不足以计算动作得分/);
     assert.match(html, /0 \/ 5 维有测量/);
-    assert.match(html, /未评分/);
+    assert.doesNotMatch(html, /未评分/);
   }
   const pending = render(null, { pending: true });
   assert.doesNotMatch(pending, /class="process-radar-point/); assert.match(pending, /分析中/);

@@ -7,6 +7,7 @@ import tempfile
 import time
 import unittest
 import uuid
+from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -22,6 +23,39 @@ from rallymate_service.uploads import CHUNK_BYTES, DEFAULT_CHUNK_BYTES, SESSION_
 
 
 class ResumableUploadTests(unittest.TestCase):
+    def test_compact_receipts_are_bounded_and_legacy_snapshots_remain_available(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = UploadStore(Path(temporary), 20 * CHUNK_BYTES)
+            upload_id = str(uuid.uuid4())
+            chunk = b"a" * DEFAULT_CHUNK_BYTES
+            checksum = hashlib.sha256(chunk).hexdigest()
+            store.create(upload_id, "a.mp4", 32 * len(chunk), {})
+            receipts = [store.put(upload_id, index, chunk, checksum, compact_ack=True) for index in range(32)]
+            self.assertTrue(all(len(json.dumps(receipt)) < 400 for receipt in receipts))
+            self.assertTrue(all("received_chunks" not in receipt and "chunk_sha256" not in receipt for receipt in receipts))
+            self.assertEqual(receipts[-1]["chunk_index"], 31)
+            self.assertEqual(receipts[-1]["chunk_bytes"], len(chunk))
+            self.assertEqual(receipts[-1]["sha256"], checksum)
+            self.assertEqual(store.put(upload_id, 31, chunk, checksum, compact_ack=True), receipts[-1])
+            self.assertEqual(store.put(upload_id, 31, chunk, checksum)["received_chunks"], list(range(32)))
+            self.assertEqual(store.status(upload_id)["received_bytes"], 32 * len(chunk))
+
+    def test_configured_chunk_size_only_applies_to_new_sessions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            old = UploadStore(root, 20 * CHUNK_BYTES, chunk_bytes=DEFAULT_CHUNK_BYTES)
+            old_id = str(uuid.uuid4())
+            old.create(old_id, "old.mp4", CHUNK_BYTES, {})
+            with patch.dict("os.environ", {"RALLYMATE_UPLOAD_CHUNK_BYTES": str(1024 * 1024)}):
+                store = UploadStore(root, 20 * CHUNK_BYTES)
+            self.assertEqual(store.create(old_id, "old.mp4", CHUNK_BYTES, {})["chunk_size"], DEFAULT_CHUNK_BYTES)
+            created = store.create(str(uuid.uuid4()), "new.mp4", CHUNK_BYTES, {})
+            self.assertEqual(created["chunk_size"], 1024 * 1024)
+            self.assertEqual(created["chunk_count"], 4)
+            for invalid in [0, DEFAULT_CHUNK_BYTES - 1, CHUNK_BYTES + 1, True]:
+                with self.assertRaises(ValueError):
+                    UploadStore(root, CHUNK_BYTES, chunk_bytes=invalid)
+
     def test_out_of_order_resume_corruption_and_exactly_once_complete(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = UploadStore(Path(temporary), 20 * CHUNK_BYTES)
@@ -60,11 +94,13 @@ class ResumableUploadTests(unittest.TestCase):
 
     @staticmethod
     def _legacy_manifest(store, upload_id, size):
-        store.create(upload_id, "legacy.mp4", size, {})
         directory = store.directory(upload_id)
-        data = store.read(directory)
-        del data["chunk_size"]
-        data["chunk_count"] = math.ceil(size / CHUNK_BYTES)
+        directory.mkdir(exist_ok=True)
+        # Explicitly construct an old on-disk session. New sessions use SQLite
+        # and must not be silently converted just to exercise compatibility.
+        data = {"upload_id": upload_id, "filename": "legacy.mp4", "size": size,
+                "chunk_count": math.ceil(size / CHUNK_BYTES), "options": {},
+                "chunks": {}, "job_id": None}
         store.save(directory, data)
         return directory / "manifest.json"
 
@@ -153,13 +189,12 @@ class ResumableUploadTests(unittest.TestCase):
                 store.status("../other")
             store.put(upload_id, 0, b"abc", hashlib.sha256(b"abc").hexdigest())
             directory = store.directory(upload_id)
-            manifest = store.read(directory)
-            manifest["updated_at"] = time.time() - SESSION_TTL_SECONDS - 1
-            (directory / "manifest.json").write_text(json.dumps(manifest))
-            self.assertEqual(store.cleanup(), 1)
-            self.assertFalse((directory / "0.part").exists())
-            with self.assertRaises(HTTPException) as expired:
-                store.status(upload_id)
+            future = time.time() + SESSION_TTL_SECONDS + 1
+            with patch("rallymate_service.uploads.time.time", return_value=future):
+                self.assertEqual(store.cleanup(), 1)
+                self.assertFalse((directory / "0.part").exists())
+                with self.assertRaises(HTTPException) as expired:
+                    store.status(upload_id)
             self.assertEqual(expired.exception.status_code, 410)
 
     def test_http_upload_persists_and_queues_once_without_inference_on_parts(self):
@@ -183,6 +218,9 @@ class ResumableUploadTests(unittest.TestCase):
             with TestClient(create_app(settings, database)) as client:
                 self.assertEqual(client.post("/v1/uploads", json=payload).status_code, 401)
                 client.headers["Authorization"] = "Bearer test-key"
+                capabilities = client.get("/v1/meta").json()["capabilities"]["resumable_uploads"]
+                self.assertEqual(capabilities["default_chunk_bytes"], DEFAULT_CHUNK_BYTES)
+                self.assertEqual(capabilities["acknowledgement"], "chunk-v1")
                 created = client.post("/v1/uploads", json=payload)
                 self.assertEqual(created.status_code, 201, created.text)
                 self.assertEqual(created.json()["chunk_size"], DEFAULT_CHUNK_BYTES)
@@ -191,8 +229,14 @@ class ResumableUploadTests(unittest.TestCase):
                 self.assertEqual(client.post(url + "/complete").status_code, 409)
                 for index in reversed(range(created.json()["chunk_count"])):
                     chunk = content[index * DEFAULT_CHUNK_BYTES:(index + 1) * DEFAULT_CHUNK_BYTES]
-                    part = client.put(url + f"/chunks/{index}", content=chunk, headers={"X-Chunk-SHA256": hashlib.sha256(chunk).hexdigest()})
+                    checksum = hashlib.sha256(chunk).hexdigest()
+                    with patch("rallymate_service.upload_state.chunks", side_effect=AssertionError("HTTP PUT loaded full chunk history")):
+                        part = client.put(url + f"/chunks/{index}", content=chunk, headers={"X-Chunk-SHA256": checksum, "X-Upload-Acknowledgement": "chunk-v1"})
                     self.assertEqual(part.status_code, 200, part.text)
+                    self.assertEqual(part.json()["acknowledgement"], "chunk-v1")
+                    self.assertEqual(part.json()["chunk_index"], index)
+                    self.assertEqual(part.json()["sha256"], checksum)
+                    self.assertNotIn("received_chunks", part.json())
                     self.assertEqual(database.list_jobs(), [])
             # Restart API before finalizing.
             with TestClient(create_app(settings, database), headers={"Authorization": "Bearer test-key"}) as client:

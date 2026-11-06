@@ -29,18 +29,18 @@ test("step review rejects missing, duplicate and invented time intervals", () =>
   assert.equal(footworkFeatureText(0, "ms"), "0 毫秒");
 });
 
-test("step panel renders measured values, timestamp replay and calibration limit", () => {
+test("step panel keeps measured values and timestamp replay without scoring-limit copy", () => {
   const html = renderToStaticMarkup(createElement(Panel, { review, jobId: "job" }));
   assert.match(html, /1\.20–1\.90 秒/);
   assert.match(html, /定位回放/);
   assert.match(html, /1\.25 身体尺度\/秒/);
-  assert.match(html, /尚缺可执行计分规则/);
+  assert.doesNotMatch(html, /尚缺可执行计分规则|评分证据不足/);
   assert.doesNotMatch(html, /100 分|表现较稳定/);
 });
 
-test("missing step artifact explains unavailability without a fake zero-length episode", () => {
+test("missing step artifact stays hidden without a fake zero-length episode", () => {
   const html = renderToStaticMarkup(createElement(Panel, { review: { ...review, status: "unavailable", reason_zh: "事件文件缺失。" } }));
-  assert.match(html, /事件文件缺失/);
+  assert.equal(html, "");
   assert.doesNotMatch(html, /定位回放|0\.00/);
 });
 
@@ -51,13 +51,14 @@ test("imported malformed indicators and unavailable feature values cannot crash 
   assert.ok(parsed[0].indicators.every(item => item.features.length === 0));
   const html = renderToStaticMarkup(createElement(Panel, { review: malformed }));
   assert.doesNotMatch(html, /999|fake/);
-  assert.match(html, /没有通过质量门槛/);
+  assert.match(html, /<p>—<\/p>/);
+  assert.doesNotMatch(html, /没有通过质量门槛/);
 });
 
 test("evidence inspector shows actual medians and keeps unknown repeatability empty", () => {
   const html = renderToStaticMarkup(createElement(Evidence, { indicator: { components: { measured_instance_ratio_percent: 100, repeatability_percent: null }, representative_measurements: [{ feature_name: "stance", label_zh: "支撑宽度", median_value: 45, unit_zh: "% 身体尺度", sample_count: 1 }] } }));
   assert.match(html, /支撑宽度：45/);
-  assert.match(html, /跨片段重复性<\/dt><dd>证据不足/);
-  assert.match(html, /重复性高不代表动作正确/);
+  assert.match(html, /跨片段重复性<\/dt><dd>—/);
+  assert.doesNotMatch(html, /证据不足|待教练标定/);
   assert.doesNotMatch(html, /50%/);
 });

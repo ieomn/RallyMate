@@ -1,5 +1,14 @@
 export type AdviceEvidenceStatus = "no_video" | "analysis_unavailable" | "insufficient_evidence" | "motion_only" | "observed";
 export type EvidenceStatus = AdviceEvidenceStatus;
+export type AdviceTrainingFocus = {
+  id: string; dimensionId: string; title: string; observation: string; action: string; drill: string; retest: string;
+  startMs: number; endMs: number;
+};
+export type AdviceCoaching = {
+  status: "measured_focus" | "review_focus" | "insufficient_evidence";
+  focus: string; evidence: string[]; whyItMatters: string; practice: string[]; checkNextTime: string;
+  reviewQuestion?: string; startMs?: number; endMs?: number; assessmentScope?: string;
+};
 export type AdviceEvidence = {
   status: AdviceEvidenceStatus;
   technique: string;
@@ -12,6 +21,7 @@ export type AdviceEvidence = {
   observedPhases: string[];
   missingPhases: string[];
   partialMotion: boolean;
+  trainingFocus?: AdviceTrainingFocus[];
 };
 
 const FAMILIES: Record<string, string> = { "底线击球": "baseline", "发球": "serve", "接发": "return", "网前进攻": "net_attack", "步伐": "footwork" };
@@ -114,6 +124,9 @@ export function adviceEvidenceFromPayload(technique: string, jobId: string, raw:
     const partial = missing.length > 0 || episodes.some(episode => episode.analysis_status === "partial");
     const phases = unique(perEpisodePhases.flat()).map(phase => PHASES[phase]);
     const facts = [`已获得${episodes.length}段${technique}相关的二维运动测量。`];
+    const replay = episodes.slice().sort((a, b) => Number(a.start_ms) - Number(b.start_ms)).slice(0, 3)
+      .map(episode => `${(Number(episode.start_ms) / 1000).toFixed(1)}–${(Number(episode.end_ms) / 1000).toFixed(1)} 秒`);
+    facts.push(`可回看的运动片段：${replay.join("、")}；这些时间段不确认触球。`);
     if (phases.length) facts.push(`本次测量覆盖${phases.join("、")}阶段。`);
     if (partial) facts.push(`部分片段还缺少${missing.map(phase => PHASES[phase]).join("、")}阶段的测量。`);
     return {
@@ -136,4 +149,44 @@ export function adviceEvidenceFromPayload(technique: string, jobId: string, raw:
 
 export function mayExplainEvidence(evidence: AdviceEvidence): boolean {
   return ["motion_only", "observed"].includes(evidence.status) && evidence.availableFacts.length > 0;
+}
+
+const FOCUS: Record<string, [string, string, string]> = {
+  baseline: ["先核对准备、挥出与随挥能否连贯完成。", "一般训练目标是把准备和挥出连起来，再自然完成随挥；当前运动记录尚不能确认你的技术缺陷。", "保持同样来球与机位，记录连续完成准备、挥出和随挥的次数，并对比原片。"],
+  serve: ["先核对抛球、上挥和落地后的恢复是否顺畅衔接。", "发球各阶段需要相互配合；仅定位到发球片段不能说明问题出在抛球或发力。", "用相近机位记录下一组发球，核对无需追球即可接上挥拍并恢复站稳的次数。"],
+  return: ["先核对来球、准备和挥拍在同一片段中的先后关系。", "接发需要结合对手发球和来球判断准备时机；只有自身挥拍不能证明启动早晚。", "保留对手发球、来球和接球者的连续画面，再比较准备到挥拍的衔接。"],
+  net_attack: ["先核对到位、挥拍和恢复准备是否连续。", "网前动作要结合来球与站位复核；片段定位本身不能确定拍面或触球质量。", "在相同喂球条件下，记录下一球来前恢复准备的次数，并保留完整来球画面。"],
+  footwork: ["先核对移动到位后能否站稳，以及下一球前能否恢复准备。", "移动与回位影响下一次准备的衔接；目前定位到的步伐片段尚不能证明回位太慢。", "保持同样喂球节奏，记录下一球发出前已回位的次数，再与这次比较。"],
+};
+const WHY_DIMENSION: Record<string, string> = {
+  movement: "先建立可重复的到位和支撑，才能比较后续挥拍。这里说明的是视频中的动作表现，不能推断真实蹬地力量。",
+  preparation: "准备与引拍的衔接决定后续挥出是否有稳定起点；练习时先改善配合，不盲目增加转体或下蹲幅度。",
+  coordination: "身体与手臂连续衔接有助于重复同一节奏。画面内运动先后不能直接证明真实发力传递。",
+  striking: "在舒适范围内保持挥拍姿态和手臂空间，便于重复动作；这些姿态估计不直接等于击球质量或球速。",
+  follow_through: "挥出后自然随挥并恢复准备，有助于衔接下一次动作；不要为了追求数值刻意急停或锁住关节。",
+};
+
+/** The actionable finding remains server-authored; the model can only select it. */
+export function coachingForEvidence(context: AdviceEvidence, focusId?: string, reviewQuestion?: string): AdviceCoaching {
+  const measured = context.trainingFocus?.find(item => item.id === focusId) ?? context.trainingFocus?.[0];
+  if (measured) return {
+    status: "measured_focus", focus: measured.title,
+    evidence: [`${(measured.startMs / 1000).toFixed(1)}–${(measured.endMs / 1000).toFixed(1)} 秒：${measured.observation}`],
+    whyItMatters: WHY_DIMENSION[measured.dimensionId] ?? "先针对这一项可见动作练习，再用相同条件复测。",
+    practice: [measured.action, measured.drill], checkNextTime: measured.retest,
+    startMs: measured.startMs, endMs: measured.endMs,
+    assessmentScope: "基于所选球员与对应片段的工程试验评估，尚未经教练标定；不代表整段视频或竞技等级。",
+    ...(reviewQuestion ? { reviewQuestion } : {}),
+  };
+  const supported = mayExplainEvidence(context);
+  const [focus, whyItMatters, checkNextTime] = FOCUS[context.family] ?? FOCUS.baseline;
+  return {
+    status: supported ? "review_focus" : "insufficient_evidence",
+    focus: supported ? `目前尚不能确认具体技术问题。${focus}` : context.explanation,
+    evidence: context.availableFacts.slice(0, 4),
+    whyItMatters: supported ? whyItMatters : "缺少可靠测量时，不能把未识别或测不到的部分解释成你的动作错误。",
+    practice: supported ? skillSteps(context.family).slice(0, 1) : context.nextSteps,
+    checkNextTime: supported ? checkNextTime : "补齐所选动作的完整画面后，再判断是否需要调整技术。",
+    ...(reviewQuestion ? { reviewQuestion } : {}),
+  };
 }

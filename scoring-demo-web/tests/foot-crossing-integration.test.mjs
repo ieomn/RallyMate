@@ -120,11 +120,11 @@ test("only FS03-M03 gains a collapsed independent entry without changing grade o
   assert.equal(requests, 0);
 });
 
-test("the replay container labels the selected media while retaining old callers", () => {
-  const annotated = renderToStaticMarkup(createElement(TrainingReplayPanel, { jobId: "job-live", mediaKind: "annotated" }, "player"));
-  assert.match(annotated, /标注回放/); assert.doesNotMatch(annotated, /原视频|原片/);
+test("the replay container labels original or unavailable media while retaining old callers", () => {
+  const original = renderToStaticMarkup(createElement(TrainingReplayPanel, { jobId: "job-live", mediaKind: "original" }, "player"));
+  assert.match(original, /原视频 · 动作识别/); assert.doesNotMatch(original, /标注回放/);
   const unknown = renderToStaticMarkup(createElement(TrainingReplayPanel, { mediaKind: null }, "player"));
-  assert.match(unknown, /训练回放/); assert.doesNotMatch(unknown, /原视频|原片/);
+  assert.match(unknown, /训练回放/); assert.doesNotMatch(unknown, /原视频|原片|标注回放/);
   const legacy = renderToStaticMarkup(createElement(TrainingReplayPanel, null, "player"));
   assert.match(legacy, /原视频 · 动作识别/);
 });

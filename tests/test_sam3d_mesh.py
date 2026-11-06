@@ -1,5 +1,6 @@
 from pathlib import Path
 import io
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -44,6 +45,18 @@ class MeshCaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             archive_mesh_records([{"status": "ok", "mesh_artifact": artifact}], self.output_dir, self.runtime)
         self.assertFalse((self.output_dir / "sam3d-mesh-data").exists())
+
+    def test_crowded_selection_diagnostics_do_not_overflow_mesh_ledger(self):
+        artifact = capture_mesh_output(self.output, self.faces, self.runtime)
+        selection = {"version": "secondary-subject-selection-v1", "primary_track_id": 1,
+                     "decisions": [{"track_id": i, "decision": "rejected", "reason": "test_candidate"}
+                                   for i in range(400)]}
+        record = {"status": "ok", "mesh_artifact": artifact, "person_track_id": 8,
+                  "subject_selection": selection}
+        row = archive_mesh_records([record], self.output_dir, self.runtime)[0]
+        self.assertLess(len(json.dumps(row)), 16384)
+        self.assertEqual(row["subject_selection"]["decision"], selection["decisions"][8])
+        self.assertEqual(len(record["subject_selection"]["decisions"]), 400)
 
     def test_path_outside_worker_cache_is_rejected(self):
         artifact = capture_mesh_output(self.output, self.faces, self.runtime)

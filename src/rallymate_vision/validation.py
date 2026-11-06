@@ -4,7 +4,12 @@ import hashlib
 import json
 import math
 import re
+import sqlite3
+import tempfile
+import zlib
 from collections import Counter
+from collections.abc import Callable, Iterator, MutableMapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +64,121 @@ LEGACY_SCORING_LOOP_VERSIONS_WITHOUT_CONTEXT_EVIDENCE_IDENTITY = {
 
 class OutputValidationError(ValueError):
     """Raised when a stage-1 artifact violates the handoff invariants."""
+
+
+class _DiskMap(MutableMapping):
+    """Scratch join index; only the requested record is decoded in memory.
+
+    Evidence is never modified. Compression keeps repeated native proofs from
+    turning the temporary validation index into another large JSON export.
+    SQLite's bounded page cache is shared by all maps in a validation pass.
+    """
+
+    def __init__(self, connection: sqlite3.Connection, namespace: str):
+        self.connection, self.namespace = connection, namespace
+        self._size = connection.execute(
+            "SELECT count(*) FROM facts WHERE namespace = ?", (namespace,),
+        ).fetchone()[0]
+
+    @staticmethod
+    def _key(key):
+        return json.dumps(key, ensure_ascii=False, separators=(",", ":"))
+
+    def __getitem__(self, key):
+        row = self.connection.execute(
+            "SELECT value FROM facts WHERE namespace = ? AND key = ?",
+            (self.namespace, self._key(key)),
+        ).fetchone()
+        if row is None:
+            raise KeyError(key)
+        return json.loads(zlib.decompress(row[0]))
+
+    def __setitem__(self, key, value):
+        if key not in self:
+            self._size += 1
+        encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        self.connection.execute(
+            "INSERT OR REPLACE INTO facts(namespace, key, value, timestamp_ms) VALUES (?, ?, ?, ?)",
+            (self.namespace, self._key(key), zlib.compress(encoded, level=1),
+             value.get("timestamp_ms") if isinstance(value, dict) else None),
+        )
+
+    def __delitem__(self, key):
+        cursor = self.connection.execute(
+            "DELETE FROM facts WHERE namespace = ? AND key = ?",
+            (self.namespace, self._key(key)),
+        )
+        if cursor.rowcount == 0:
+            raise KeyError(key)
+        self._size -= 1
+
+    def __contains__(self, key):
+        return self.connection.execute(
+            "SELECT 1 FROM facts WHERE namespace = ? AND key = ?",
+            (self.namespace, self._key(key)),
+        ).fetchone() is not None
+
+    def __iter__(self):
+        cursor = self.connection.execute(
+            "SELECT key FROM facts WHERE namespace = ? ORDER BY rowid", (self.namespace,),
+        )
+        for row in cursor:
+            key = json.loads(row[0])
+            yield tuple(key) if isinstance(key, list) else key
+
+    def __len__(self):
+        return self._size
+
+    def has_timestamp_between(self, start, end):
+        return self.connection.execute(
+            "SELECT 1 FROM facts WHERE namespace = ? AND timestamp_ms BETWEEN ? AND ? LIMIT 1",
+            (self.namespace, start, end),
+        ).fetchone() is not None
+
+    def values(self):
+        cursor = self.connection.execute(
+            "SELECT value FROM facts WHERE namespace = ? ORDER BY rowid", (self.namespace,),
+        )
+        for row in cursor:
+            yield json.loads(zlib.decompress(row[0]))
+
+
+@contextmanager
+def _validation_index():
+    # A per-call directory prevents concurrent validations from sharing state.
+    # Close before cleanup so Windows can unlink even after cancellation/error.
+    with tempfile.TemporaryDirectory(prefix="rallymate-validation-") as directory:
+        connection = sqlite3.connect(str(Path(directory) / "joins.sqlite3"))
+        try:
+            connection.execute("PRAGMA cache_size = -2048")
+            connection.execute("PRAGMA temp_store = FILE")
+            connection.execute("PRAGMA journal_mode = OFF")
+            connection.execute("PRAGMA synchronous = OFF")
+            connection.execute(
+                "CREATE TABLE facts(namespace TEXT NOT NULL, key TEXT NOT NULL, value BLOB NOT NULL, timestamp_ms INTEGER, "
+                "UNIQUE(namespace, key))"
+            )
+            connection.execute("CREATE INDEX facts_timestamps ON facts(namespace, timestamp_ms)")
+            yield connection
+        finally:
+            connection.close()
+
+
+def _check_cancelled(callback: Callable[[], None] | None) -> None:
+    if callback is not None:
+        callback()
+
+
+def _iter_validation_records(path: Path, *, cancellation_callback=None,
+                             expected_video_id=None, expected_source_id=None) -> Iterator[dict[str, Any]]:
+    from rallymate_scoring.artifact_evidence import iter_artifact_records, ArtifactEvidenceError
+
+    try:
+        yield from iter_artifact_records(path, cancellation_callback=cancellation_callback,
+                                         expected_video_id=expected_video_id,
+                                         expected_source_id=expected_source_id)
+    except ArtifactEvidenceError as exc:
+        raise OutputValidationError(f"invalid artifact evidence in {path.name}: {exc}") from exc
 
 
 def _validate_pipeline_derived_report(
@@ -144,10 +264,11 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     return records
 
 
-def _sha256(path: Path) -> str:
+def _sha256(path: Path, cancellation_callback=None) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            _check_cancelled(cancellation_callback)
             digest.update(chunk)
     return digest.hexdigest().upper()
 
@@ -223,31 +344,30 @@ def _compact_feature(record: dict[str, Any]) -> dict[str, Any]:
             **{field: record[field] for field in MODEL_FEATURE_FIELDS if field in record}}
 
 
-def _model_source_index(frames_path: Path, primary: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
-    """Bind exported feature proof to independently validated frame/selection records."""
+def _model_source_index(frames_path: Path, primary, connection, *, cancellation_callback=None):
+    """Bind native proofs to validated frames without retaining all frame rows."""
     from rallymate_features.coordinates import _bound_model_points
 
-    selected = {}
-    for item in primary:
+    selected = _DiskMap(connection, "selected-primary")
+    for item in primary.values():
+        _check_cancelled(cancellation_callback)
         index = item["processed_index"]
         selected[index] = item if index not in selected else None
-    result = {}
-    with frames_path.open(encoding="utf-8") as handle:
-        for line in handle:
-            record = json.loads(line)
-            frame = record["frame"]
-            is_sam = any(pose.get("source") == "sam3d" for pose in record.get("poses", []))
-            if not is_sam:
-                continue
-            # Frame uniqueness has already been checked by validate_run_artifacts.
-            bound = _bound_model_points(record, selected.get(frame["processed_index"]), unique_source=True)
-            result[frame["index"]] = {"timestamp_ms": frame["timestamp_ms"],
-                "binding": bound[1] if bound is not None else None,
-                "joints": set(bound[0]) if bound is not None else set()}
+    result = _DiskMap(connection, "model-sources")
+    for record in _iter_validation_records(frames_path, cancellation_callback=cancellation_callback):
+        frame = record["frame"]
+        is_sam = any(pose.get("source") == "sam3d" for pose in record.get("poses", []))
+        if not is_sam:
+            continue
+        # Frame uniqueness has already been checked by validate_run_artifacts.
+        bound = _bound_model_points(record, selected.get(frame["processed_index"]), unique_source=True)
+        result[frame["index"]] = {"timestamp_ms": frame["timestamp_ms"],
+            "binding": bound[1] if bound is not None else None,
+            "joints": sorted(bound[0]) if bound is not None else []}
     return result
 
 
-def _validate_model_feature_source(record, event, model_sources, prefix):
+def _validate_model_feature_source(record, event, model_sources, prefix, cancellation_callback=None):
     from rallymate_scoring.model_measurement_contract import has_model_measurement_context, SOURCE_BINDING_FIELDS
 
     is_model = has_model_measurement_context(record)
@@ -257,7 +377,9 @@ def _validate_model_feature_source(record, event, model_sources, prefix):
         return
     window = record.get("source_window")
     if window is None:
-        _require(any(event["start_ms"] <= source["timestamp_ms"] <= event["end_ms"]
+        _require(model_sources.has_timestamp_between(event["start_ms"], event["end_ms"])
+                 if isinstance(model_sources, _DiskMap) else
+                 any(event["start_ms"] <= source["timestamp_ms"] <= event["end_ms"]
                      for source in model_sources.values()),
                  f"{prefix}.SAM provenance has no corresponding source observations")
         return
@@ -269,6 +391,8 @@ def _validate_model_feature_source(record, event, model_sources, prefix):
     _require(set(record["geometry_mask"]) == expected_joints,
              f"{prefix}.geometry_mask must retain the complete native joint set")
     for index, frame in enumerate(window["source_frames"]):
+        if index % 64 == 0:
+            _check_cancelled(cancellation_callback)
         source = model_sources.get(frame)
         _require(source is not None and source["binding"] is not None,
                  f"{prefix}.source_window has unverified model frame {frame}")
@@ -373,7 +497,24 @@ def _validate_scoring_artifacts(
     frame_timestamps: dict[int, int],
     frame_processed_indexes: list[int],
     frames_path: Path,
+    cancellation_callback: Callable[[], None] | None = None,
+    _connection: sqlite3.Connection | None = None,
 ) -> dict[str, int | str]:
+    if _connection is None:
+        with _validation_index() as connection:
+            return _validate_scoring_artifacts_indexed(
+                output_dir, frame_count=frame_count, frame_timestamps=frame_timestamps,
+                frame_processed_indexes=frame_processed_indexes, frames_path=frames_path,
+                cancellation_callback=cancellation_callback, connection=connection)
+    return _validate_scoring_artifacts_indexed(
+        output_dir, frame_count=frame_count, frame_timestamps=frame_timestamps,
+        frame_processed_indexes=frame_processed_indexes, frames_path=frames_path,
+        cancellation_callback=cancellation_callback, connection=_connection)
+
+
+def _validate_scoring_artifacts_indexed(output_dir, *, frame_count, frame_timestamps,
+                                       frame_processed_indexes, frames_path,
+                                       cancellation_callback, connection):
     # Import lazily: scoring's diagnostic review helpers depend on this module.
     # A top-level import would make the standalone validate_run.py entry point
     # depend on whichever package happened to be imported first.
@@ -403,6 +544,24 @@ def _validate_scoring_artifacts(
     _require(isinstance(model_versions, dict) and model_versions, "scoring model_versions missing")
     provenance = loop_summary.get("provenance")
     _require(isinstance(provenance, dict), "scoring summary provenance missing")
+    from rallymate_scoring.artifact_evidence import (
+        POOL_FILENAME, ArtifactEvidenceError, verify_evidence_manifest,
+    )
+    evidence_manifest = loop_summary.get("evidence_storage")
+    evidence_source_id = None
+    if evidence_manifest is not None or (output_dir / POOL_FILENAME).exists():
+        try:
+            verify_evidence_manifest(
+                output_dir, evidence_manifest, expected_video_id=video_id,
+                expected_source_id=provenance.get("pipeline_job_id"),
+                cancellation_callback=cancellation_callback,
+            )
+        except ArtifactEvidenceError as exc:
+            raise OutputValidationError(f"invalid scoring evidence manifest: {exc}") from exc
+        evidence_source_id = evidence_manifest["source_id"]
+        if isinstance(provenance.get("video_sha256"), str):
+            _require(evidence_manifest.get("video_sha256") == provenance["video_sha256"].lower(),
+                     "scoring evidence video SHA256 differs from provenance")
     indicator_validity = loop_summary.get("indicator_feature_validity")
     _require(
         isinstance(indicator_validity, dict) and indicator_validity,
@@ -410,7 +569,7 @@ def _validate_scoring_artifacts(
     )
     scoring_indicators = set(indicator_validity)
     _require(
-        str(provenance.get("frames_sha256", "")).upper() == _sha256(frames_path),
+        str(provenance.get("frames_sha256", "")).upper() == _sha256(frames_path, cancellation_callback),
         "scoring summary frames_sha256 does not match frames.jsonl",
     )
     video_path_value = provenance.get("video_path")
@@ -419,13 +578,19 @@ def _validate_scoring_artifacts(
         video_path = Path(video_path_value)
         _require(video_path.exists(), "scoring provenance video_path is missing")
         _require(
-            video_sha.upper() == _sha256(video_path),
+            video_sha.upper() == _sha256(video_path, cancellation_callback),
             "scoring summary video_sha256 does not match video",
         )
 
-    primary = _load_jsonl(paths["primary_player"])
-    _require(len(primary) == frame_count, "primary-player timeline length mismatch")
-    for expected_processed_index, item in zip(frame_processed_indexes, primary):
+    primary = _DiskMap(connection, "primary")
+    expected_indexes = iter(frame_processed_indexes)
+    primary_count = 0
+    for item in _iter_validation_records(paths["primary_player"], cancellation_callback=cancellation_callback):
+        _check_cancelled(cancellation_callback)
+        expected_processed_index = next(expected_indexes, None)
+        _require(expected_processed_index is not None, "primary-player timeline length mismatch")
+        primary[primary_count] = item
+        primary_count += 1
         _require(item.get("schema_version") == "1.0.0", "invalid primary-player schema")
         _require(
             item.get("processed_index") == expected_processed_index,
@@ -443,15 +608,20 @@ def _validate_scoring_artifacts(
             "invalid primary-player selection_status",
         )
 
-    events = _load_jsonl(paths["events"])
-    event_by_id = {}
+    _require(primary_count == frame_count, "primary-player timeline length mismatch")
+    event_by_id = _DiskMap(connection, "events")
+    event_counts = Counter()
     max_timestamp = max(frame_timestamps.values())
-    for item in events:
+    for item in _iter_validation_records(paths["events"], cancellation_callback=cancellation_callback,
+                                         expected_video_id=video_id, expected_source_id=evidence_source_id):
         try:
             validate_event_record(item)
         except ValueError as exc:
             raise OutputValidationError(f"invalid event {item.get('event_id')}: {exc}") from exc
         event_id = item["event_id"]
+        if evidence_source_id is not None:
+            _require(item.get("provenance", {}).get("source_id") == evidence_source_id,
+                     "event source differs from scoring evidence manifest")
         _require(event_id not in event_by_id, f"duplicate event_id: {event_id}")
         _require(item["person_track_id"] == 1, "event must reference primary player 1")
         _require(item["end_ms"] <= max_timestamp, "event boundary exceeds processed video")
@@ -469,39 +639,42 @@ def _validate_scoring_artifacts(
         ):
             _require(field in diagnostics, f"event track_diagnostics.{field} missing")
         event_by_id[event_id] = item
+        event_counts[item["event_code"]] += 1
 
-    frame_indexes = set(frame_timestamps)
-    features = _load_jsonl(paths["features"])
+    feature_count = 0
     from rallymate_scoring.model_measurement_contract import (
         has_model_measurement_context, model_measurement_provenance,
     )
-    model_sources = _model_source_index(frames_path, primary) if features else {}
-    feature_by_key: dict[tuple[str, str], dict[str, Any]] = {}
-    for index, item in enumerate(features):
+    model_sources = None
+    feature_by_key = _DiskMap(connection, "features")
+    for index, item in enumerate(_iter_validation_records(paths["features"],
+            cancellation_callback=cancellation_callback, expected_video_id=video_id,
+            expected_source_id=evidence_source_id)):
+        if model_sources is None:
+            model_sources = _model_source_index(frames_path, primary, connection,
+                                                 cancellation_callback=cancellation_callback)
+        feature_count += 1
         prefix = f"features[{index}]"
         _validate_feature_result(item, prefix)
         _require(item.get("video_id") == video_id, f"{prefix}.video_id mismatch")
         event = event_by_id.get(item.get("event_id"))
         _require(event is not None, f"{prefix} references unknown event")
-        _validate_model_feature_source(item, event, model_sources, prefix)
+        _validate_model_feature_source(item, event, model_sources, prefix, cancellation_callback)
         _require(item.get("event_code") == event["event_code"], f"{prefix}.event_code mismatch")
         _require(item.get("person_track_id") == 1, f"{prefix}.person_track_id mismatch")
         key = (item["event_id"], item["feature_name"])
         _require(key not in feature_by_key, f"duplicate event feature: {key}")
-        feature_by_key[key] = item
+        # All downstream joins consume compact feature facts. Raw/smoothed
+        # series and the coordinate ledger remain in the hash-bound artifact;
+        # none of the checks below consumes them, so do not copy them here.
+        feature_by_key[key] = _compact_feature(item)
         _require(
-            set(item["source_frames"]).issubset(frame_indexes),
+            all(frame in frame_timestamps for frame in item["source_frames"]),
             f"{prefix} references source frame outside frames.jsonl",
         )
 
-    indicator_records = _load_jsonl(paths["indicator_features"])
-    scores = _load_jsonl(paths["scores"])
-    _require(len(indicator_records) == len(scores), "indicator/scores record count mismatch")
-    if not events:
-        _require(
-            not features and not indicator_records and not scores,
-            "no-event scoring bundle must keep all derived record streams empty",
-        )
+    if not event_by_id:
+        _require(not feature_count, "no-event scoring bundle must keep all derived record streams empty")
         _require(
             loop_summary.get("status")
             == "unavailable_no_pose_motion_event_candidate",
@@ -521,8 +694,13 @@ def _validate_scoring_artifacts(
             and result_state.get("grade") is None,
             "no-event result_state must remain unavailable without grade",
         )
-    indicator_by_key = {}
-    for index, item in enumerate(indicator_records):
+    indicator_by_key = _DiskMap(connection, "indicators")
+    indicator_count = 0
+    for index, item in enumerate(_iter_validation_records(paths["indicator_features"],
+            cancellation_callback=cancellation_callback, expected_video_id=video_id,
+            expected_source_id=evidence_source_id)):
+        indicator_count += 1
+        _require(bool(event_by_id), "no-event scoring bundle must keep all derived record streams empty")
         prefix = f"indicator-features[{index}]"
         event = event_by_id.get(item.get("event_id"))
         _require(event is not None, f"{prefix} references unknown event")
@@ -712,13 +890,26 @@ def _validate_scoring_artifacts(
                 )
         key = (item["event_id"], indicator_id)
         _require(key not in indicator_by_key, f"duplicate indicator event record: {key}")
-        indicator_by_key[key] = item
+        # Drop only fields never consumed below (e.g. repeated score_result).
+        indicator_by_key[key] = {name: item[name] for name in (
+            "event_code", "scoring_status", "grade", "measurement_provenance",
+            "source_window", "geometry_mask", "feasibility_level",
+            "features", "scoring_features", "reason_codes", "quality_gate", "scoring_context",
+        ) if name in item}
 
     score_statuses = Counter()
     grades = Counter()
-    for index, item in enumerate(scores):
+    score_count = 0
+    score_keys = _DiskMap(connection, "score-keys")
+    for index, item in enumerate(_iter_validation_records(paths["scores"],
+            cancellation_callback=cancellation_callback, expected_video_id=video_id,
+            expected_source_id=evidence_source_id)):
+        score_count += 1
+        _require(bool(event_by_id), "no-event scoring bundle must keep all derived record streams empty")
         prefix = f"scores[{index}]"
         key = (item.get("event_id"), item.get("indicator_id"))
+        _require(key not in score_keys, f"duplicate score event record: {key}")
+        score_keys[key] = True
         indicator = indicator_by_key.get(key)
         _require(indicator is not None, f"{prefix} has no indicator feature record")
         _require(item.get("video_id") == video_id, f"{prefix}.video_id mismatch")
@@ -821,12 +1012,12 @@ def _validate_scoring_artifacts(
         score_statuses[item["status"]] += 1
         if item.get("grade") is not None:
             grades[item["grade"]] += 1
+    _require(indicator_count == score_count, "indicator/scores record count mismatch")
     _require(
         dict(score_statuses) == loop_summary.get("score_status_counts"),
         "scoring summary score_status_counts mismatch",
     )
     _require(dict(grades) == loop_summary.get("grade_counts"), "scoring summary grade_counts mismatch")
-    event_counts = Counter(item["event_code"] for item in events)
     _require(dict(event_counts) == loop_summary.get("event_counts"), "scoring event_counts mismatch")
     errors = json.loads(paths["feature_errors"].read_text(encoding="utf-8"))
     _require(isinstance(errors, dict) and errors.get("schema_version") == "1.0.0", "invalid feature error report")
@@ -855,16 +1046,16 @@ def _validate_scoring_artifacts(
             expected_hash = artifact_hashes.get(artifact_name)
             _require(
                 isinstance(expected_hash, str)
-                and expected_hash.upper() == _sha256(output_dir / filename),
+                and expected_hash.upper() == _sha256(output_dir / filename, cancellation_callback),
                 f"scoring artifact SHA256 mismatch: {filename}",
             )
     return {
         "scoring_artifacts_status": "passed",
-        "validated_primary_player_records": len(primary),
-        "validated_events": len(events),
-        "validated_features": len(features),
-        "validated_indicator_records": len(indicator_records),
-        "validated_scores": len(scores),
+        "validated_primary_player_records": primary_count,
+        "validated_events": len(event_by_id),
+        "validated_features": feature_count,
+        "validated_indicator_records": indicator_count,
+        "validated_scores": score_count,
     }
 
 
@@ -1097,7 +1288,12 @@ def validate_frame_observation(record: dict[str, Any]) -> None:
     )
 
 
-def validate_run_artifacts(output_dir: Path) -> dict[str, int | str]:
+def validate_run_artifacts(output_dir: Path, *, cancellation_callback: Callable[[], None] | None = None) -> dict[str, int | str]:
+    with _validation_index() as connection:
+        return _validate_run_artifacts_indexed(output_dir, connection, cancellation_callback)
+
+
+def _validate_run_artifacts_indexed(output_dir: Path, connection, cancellation_callback) -> dict[str, int | str]:
     frames_path = output_dir / "frames.jsonl"
     summary_path = output_dir / "summary.json"
     _require(frames_path.exists(), f"missing artifact: {frames_path}")
@@ -1107,10 +1303,12 @@ def validate_run_artifacts(output_dir: Path) -> dict[str, int | str]:
     detection_count = 0
     pose_count = 0
     previous_timestamp = -1
-    frame_timestamps: dict[int, int] = {}
-    frame_processed_indexes: list[int] = []
+    frame_timestamps = _DiskMap(connection, "frame-times")
+    frame_processed_indexes = _DiskMap(connection, "processed-indexes")
+    previous_processed_index = None
     with frames_path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
+            _check_cancelled(cancellation_callback)
             try:
                 record = json.loads(line)
             except json.JSONDecodeError as exc:
@@ -1139,12 +1337,13 @@ def validate_run_artifacts(output_dir: Path) -> dict[str, int | str]:
                 isinstance(processed_index, int) and processed_index >= 0,
                 "frame.processed_index must be a non-negative integer",
             )
-            if frame_processed_indexes:
+            if previous_processed_index is not None:
                 _require(
-                    processed_index == frame_processed_indexes[-1] + 1,
+                    processed_index == previous_processed_index + 1,
                     "frame.processed_index must be contiguous",
                 )
-            frame_processed_indexes.append(processed_index)
+            frame_processed_indexes[frame_count] = processed_index
+            previous_processed_index = processed_index
             _require(
                 timestamp > previous_timestamp,
                 "frame timestamps must be strictly increasing",
@@ -1175,8 +1374,10 @@ def validate_run_artifacts(output_dir: Path) -> dict[str, int | str]:
             output_dir,
             frame_count=frame_count,
             frame_timestamps=frame_timestamps,
-            frame_processed_indexes=frame_processed_indexes,
+            frame_processed_indexes=frame_processed_indexes.values(),
             frames_path=frames_path,
+            cancellation_callback=cancellation_callback,
+            _connection=connection,
         )
     )
     # Import lazily because the scoring package also exposes diagnostic modules

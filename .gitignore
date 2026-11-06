@@ -67,6 +67,7 @@ data/training/*
 !data/training/.gitkeep
 
 # Generated runs, registries, training outputs, and deployed service state.
+/outputs/
 runs/*
 !runs/.gitkeep
 model_registry/*

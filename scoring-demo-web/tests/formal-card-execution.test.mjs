@@ -45,7 +45,9 @@ test("advisory quality and source-bound model measurements are formally scored w
     assert.deepEqual(i.source_window_evidence, instance(raw).source_window_evidence);
     if (variant === "bound_synthetic_model") assert.deepEqual(i.measurement_provenance, instance(raw).measurement_provenance);
     const html = renderToStaticMarkup(createElement(Panel, { value: raw }));
-    assert.match(html, /正式评分/); assert.match(html, /100/);
+    assert.match(html, /逐卡条件评分/); assert.match(html, /条件完成度总分/);
+    assert.match(html, /工程等级 A/); assert.match(html, /不是 Word 原文技术等级/);
+    assert.doesNotMatch(html, /正式评分|正式总分/); assert.match(html, /100/);
   }
 });
 

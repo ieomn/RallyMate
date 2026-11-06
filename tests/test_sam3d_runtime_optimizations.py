@@ -7,6 +7,69 @@ from rallymate_vision.sam3d_runner import Sam3DEngine, configure_runtime_optimiz
 
 
 class RuntimeOptimizationsTest(unittest.TestCase):
+    @staticmethod
+    def graph_modules():
+        bindings = {
+            "sam3d_prompt_optimization": "apply_prompt_vectorized",
+            "sam3d_roma_optimization": "apply_roma_fixedshape",
+            "sam3d_cuda_graph": "apply_head_cuda_graph",
+            "sam3d_forward_graph": "apply_forward_cuda_graph",
+        }
+        modules, functions, handles = {}, {}, []
+        for name, method in bindings.items():
+            handle = SimpleNamespace(receipt={"candidate": name}, restore=Mock())
+            function = Mock(return_value=handle)
+            modules["rallymate_vision." + name] = SimpleNamespace(**{method: function})
+            functions[method] = function
+            handles.append(handle)
+        return modules, functions, handles
+
+    def test_batch_shapes_reach_only_head_and_forward_on_current_model(self):
+        modules, functions, expected_handles = self.graph_modules()
+        model = object()
+        with patch("importlib.import_module", side_effect=modules.__getitem__):
+            handles, metadata = configure_runtime_optimizations(
+                model, inference_type="body", prompt_enabled=True, rotation_enabled=True,
+                graph_enabled=True, forward_graph_scope="backbone_decoder_layers", batch_graph_sizes=(2, 4))
+        functions["apply_prompt_vectorized"].assert_called_once_with(model)
+        functions["apply_roma_fixedshape"].assert_called_once_with(model)
+        functions["apply_head_cuda_graph"].assert_called_once_with(model, additional_batch_sizes=(2, 4))
+        functions["apply_forward_cuda_graph"].assert_called_once_with(
+            model, scope="backbone_decoder_layers", additional_batch_sizes=(2, 4))
+        self.assertEqual(handles, expected_handles)
+        self.assertTrue(metadata["body_head_cuda_graph"]["enabled"])
+        self.assertTrue(metadata["forward_cuda_graph"]["enabled"])
+
+    def test_default_or_explicit_empty_batch_shapes_preserve_old_installer_calls(self):
+        for options in ({}, {"batch_graph_sizes": ()}):
+            with self.subTest(options=options):
+                modules, functions, _ = self.graph_modules()
+                model = object()
+                with patch("importlib.import_module", side_effect=modules.__getitem__):
+                    configure_runtime_optimizations(
+                        model, inference_type="body", prompt_enabled=True, rotation_enabled=True,
+                        graph_enabled=True, forward_graph_scope="backbone", **options)
+                functions["apply_head_cuda_graph"].assert_called_once_with(model)
+                functions["apply_forward_cuda_graph"].assert_called_once_with(model, scope="backbone")
+
+    def test_invalid_batch_shape_limits_fail_before_imports_or_model_mutation(self):
+        for sizes in ((2, 2), (2, 4, 8), (1,), (9,), (True,), (2.5,)):
+            with self.subTest(sizes=sizes), patch("importlib.import_module") as load:
+                with self.assertRaisesRegex(ValueError, "batch graph sizes"):
+                    configure_runtime_optimizations(
+                        object(), inference_type="body", prompt_enabled=True, rotation_enabled=True,
+                        graph_enabled=True, forward_graph_scope="backbone", batch_graph_sizes=sizes)
+                load.assert_not_called()
+
+    def test_batch_shapes_require_body_and_actual_validated_head_before_imports(self):
+        for mode, graph, rotation in (("full", True, True), ("body", False, True), ("body", True, False)):
+            with self.subTest(mode=mode, graph=graph, rotation=rotation), patch("importlib.import_module") as load:
+                with self.assertRaisesRegex(ValueError, "batch graphs require"):
+                    configure_runtime_optimizations(
+                        object(), inference_type=mode, prompt_enabled=True, rotation_enabled=rotation,
+                        graph_enabled=graph, forward_graph_scope="backbone", batch_graph_sizes=(4,))
+                load.assert_not_called()
+
     def test_complete_decoder_requires_head_binding_before_any_mutation(self):
         with patch("importlib.import_module") as load:
             with self.assertRaisesRegex(ValueError, "validated body-head"):

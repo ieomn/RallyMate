@@ -42,6 +42,12 @@ SUPPORTED_CORE_IDENTITIES = {
 }
 SUPPORTED_CORE_IDENTITIES["src/rallymate_scoring/source_assessment.py"] |= frozenset((
     ("3e47e38d803e041679a45088f61d74ca31ac2ba56b499cfe925b8665e6848ee4", 19962),
+    # Cooperative cancellation and streamed JSON preserve candidate geometry,
+    # source bindings and the existing artifact contract.
+    ("652bfe1822e575d2c9c0ce9a85e3e463dcfd9e510554b4a28513b9f918bc6298", 24741),
+))
+SUPPORTED_CORE_IDENTITIES["src/rallymate_features/foot_crossing.py"] |= frozenset((
+    ("969d7f72563c8d1e139a348ed04b8f77f74753c1c48eb0bc2f51f912e91319a6", 38394),
 ))
 JOINTS = frozenset(("left_hip", "right_hip", "left_ankle", "right_ankle"))
 PARENT_POLICY = "existing_source_conflicts_excluded;legacy_track_only_association_is_weak_not_fully_verified"

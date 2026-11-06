@@ -18,7 +18,7 @@ test("enabled advice resolves only canonical paid API endpoints with the existin
   const openai = resolveMimoConfig(enabled);
   assert.equal(openai.status, "ready");
   assert.equal(openai.config.url, "https://api.xiaomimimo.com/v1/chat/completions");
-  assert.equal(openai.config.model, "mimo-v2.5-pro");
+  assert.equal(openai.config.model, "mimo-v2.6-pro");
   const anthropic = resolveMimoConfig({ ...enabled, MIMO_PROVIDER: "anthropic" });
   assert.equal(anthropic.status, "ready");
   assert.equal(anthropic.config.url, "https://api.xiaomimimo.com/anthropic/v1/messages");

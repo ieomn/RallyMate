@@ -25,7 +25,7 @@ function compiledUrl(file) {
   const url = dataUrl(js); modules.set(file.href, url); return url;
 }
 const sessionUrl = compiledUrl(new URL("../app/lib/analysis-session.ts", import.meta.url));
-const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, mergeAnalysisProgress } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].watch(...args);`);
+const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].watch(...args);`);
 let componentJs = ts.transpileModule(fs.readFileSync(new URL("../app/ScoreLab.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 componentJs = componentJs.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(name === "react" ? hooksUrl : name === "./lib/api-client" ? apiUrl : name === "./lib/analysis-session" ? sessionMockUrl : name === "./ProductWorkspace" ? shellUrl : name === "./TrainingJournal" ? journalUrl : name === "./BallTrajectoryViewer" ? compiledUrl(new URL("../app/BallTrajectoryViewer.tsx", import.meta.url)) : name.startsWith("./lib/") ? compiledUrl(new URL(`../app/${name}.ts`, import.meta.url)) : name.startsWith(".") ? childUrl : import.meta.resolve(name))}`);
 const { default: ScoreLab } = await import(dataUrl(componentJs));
@@ -36,12 +36,26 @@ const deferred = () => { let resolve, reject; const promise = new Promise((yes, 
 // while keeping the peripheral view itself opaque to this lifecycle harness.
 const nodes = node => Array.isArray(node) ? node.flatMap(nodes) : node?.props ? [node, ...nodes(node.props.children), ...nodes(node.props.details)] : [];
 const text = node => Array.isArray(node) ? node.map(text).join("") : node?.props ? text(node.props.children) : typeof node === "string" || typeof node === "number" ? String(node) : "";
-const result = id => ({ job_id: id, artifact_urls: { "annotated.mp4": "available" }, runtime: { annotated_video_compatibility: { timing_preserved: true } } });
+const videoSha256 = "a".repeat(64);
+// The optional scoring read is outside this pose transport lifecycle fixture.
+const noAssessment = async () => { throw Object.assign(new Error("No assessment in this pose-only fixture"), { status: 404 }); };
+const result = id => ({ job_id: id, original_video: {
+  url: `/v1/jobs/${id}/original-video`, sha256: videoSha256, bytes: 12345, source_job_id: id,
+  pose_time_binding: { version: "original-video-decoder-pts-v1", job_id: id, source_job_id: id,
+    video_sha256: videoSha256, frames_sha256: "b".repeat(64), timestamp_semantics: "source_relative_decoder_pts",
+    source_pts_origin_ms: 0, media_time_origin_ms: 0,
+    anchor: { index: 0, processed_index: 0, pts: 0, time_base_num: 1, time_base_den: 25, source_timestamp_ms: 0, timestamp_ms: 0 } },
+} });
 function preview(request, x = .4) {
-  const start = request.options.startMs;
-  return { schema_version: "1.0.0", result_kind: "observed_pose_playback", job_id: request.jobId, coordinate_space: "normalized_frame_0_1", joint_schema: "halpe26_named", min_keypoint_confidence: .35, skeleton_edges: [],
+  const start = request.options.startMs, index = start / 40;
+  return { schema_version: "1.0.0", result_kind: "observed_pose_playback", job_id: request.jobId, coordinate_space: "normalized_frame_0_1", joint_schema: "mhr70_named", min_keypoint_confidence: .35, skeleton_edges: [],
     source: { requested_start_ms: start, requested_end_ms: start + 10000, width: 1280, height: 720, returned_frames: 1, is_sampled: false, is_partial: false, timestamp_semantics: "source_frame_timestamp_ms" },
-    frames: [{ frame_index: start / 1000, timestamp_ms: start, valid_until_ms: start + 100, person_track_id: 1, selection_epoch: 0, selection_status: "selected", width: 1280, height: 720, keypoints: [{ name: "left_wrist", x, y: .5, confidence: .9 }] }] };
+    frames: [{ frame_index: index, processed_index: index, timestamp_ms: start, valid_until_ms: start + 100, person_track_id: 1, selection_epoch: 0, selection_status: "selected", width: 1280, height: 720,
+      pose_source: "sam3d", source_keypoint_format: "mhr70", observation_semantics: "monocular_model_estimate",
+      source_binding: { video_sha256: videoSha256, frame_index: index, processed_index: index, pts: index,
+        time_base_num: 1, time_base_den: 25, timestamp_ms: start, person_track_id: 1, selection_epoch: 0, camera_reference_epoch: 0 },
+      keypoints: [{ name: "left_wrist", native_index: 62, x, y: .5, raw_x_px: x * 1280, raw_y_px: 360, in_frame: true,
+        confidence: null, confidence_semantics: "not_provided_by_sam3d", source: "model_estimate", observation_semantics: "model_estimate" }] }] };
 }
 
 // Real ScoreLab -> ReplayPanel -> BallTrajectoryViewer -> usePosePlayback, with
@@ -86,9 +100,12 @@ function mount(t, { realTransport = false } = {}) {
           response.text = () => body.promise;
           return response;
         }, undefined, observer);
+        api.getTennisAssessment = noAssessment;
         clients.push(api); return api;
       }
-      const api = { getPosePreview(id, options) {
+      const api = {
+        getTennisAssessment: noAssessment,
+        getPosePreview(id, options) {
         const request = { jobId: id, options, ...deferred(), diagnostic(stage, extra = {}) { observer?.({ operation: "pose_preview", stage, outcome: "success", category: null, requestId: "11111111-1111-4111-8111-111111111111", httpStatus: 200, startedAt: "2026-10-19T00:00:00.000Z", elapsedMs: 10, bodyComplete: stage !== "headers", ...extra }); } };
         requests.push(request); request.diagnostic("headers"); return request.promise;
       } };

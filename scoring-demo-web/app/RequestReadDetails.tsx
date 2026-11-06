@@ -1,7 +1,7 @@
 import { safeRequestDiagnostic, type RequestDiagnostic } from "./lib/request-diagnostics";
 
 const operations: Record<RequestDiagnostic["operation"], string> = {
-  job: "任务状态", report: "训练报告", trajectory: "球路", technique_assessment: "动作依据",
+  job: "任务状态", report: "训练报告", trajectory: "球路", technique_assessment: "动作依据", tennis_assessment: "动作评分",
   pose_preview: "动作标记", technical_review: "技术评审", meta: "服务信息", other_read: "其他读取",
 };
 const stages: Record<RequestDiagnostic["stage"], string> = { headers: "收到响应", body: "接收内容", json: "解析数据", decode: "恢复报告" };
@@ -16,7 +16,7 @@ export default function RequestReadDetails({ diagnostics }: { diagnostics: reado
   if (!rows.length) return null;
   return <details className="report-replay-details" aria-label="结果读取详情">
     <summary>结果读取详情</summary>
-    <p>读取未完成时，可用下列请求编号定位原因。</p>
+    <p>读取未完成时，可用下列请求编号定位原因。编号随每次读取更新，用于排查网络请求；它不是视频哈希，也不表示任务重新分析。</p>
     <ol>{rows.map((row, index) => <li key={`${row.requestId}-${row.stage}-${index}`}>
       <strong>{operations[row.operation]} · {row.operation === "pose_preview" && row.stage === "decode" ? "核对动作标记" : stages[row.stage]}：{row.outcome === "success" ? "完成" : "未完成"}</strong>
       <p>{row.category ? `${categories[row.category]}；` : ""}HTTP {row.httpStatus ?? "未收到"}；正文{row.bodyComplete ? "已收完" : "未收完"}；耗时 {Math.round(row.elapsedMs)} ms</p>

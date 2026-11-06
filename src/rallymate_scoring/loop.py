@@ -46,6 +46,7 @@ from rallymate_scoring.scoring_context import (
     resolve_target_direction_context,
 )
 from rallymate_scoring.scoring import score_indicator
+from rallymate_scoring.artifact_evidence import EvidencePoolWriter, iter_artifact_records
 from rallymate_scoring.source_assessment import write_source_aligned_assessment
 from rallymate_tracking import (
     PRIMARY_PLAYER_ALGORITHM_VERSION,
@@ -73,21 +74,22 @@ SUPPLEMENTAL_FEATURES_BY_INDICATOR = {
 }
 
 
-def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+def _load_jsonl(path: Path, *, cancellation_callback: Callable[[], None] | None = None) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(path)
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    # The numerical stage still needs its frame sequence. Avoid also retaining
+    # a full file string and a second list of every line before parsing it.
+    return list(iter_artifact_records(path, cancellation_callback=cancellation_callback))
 
 
-def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
+def _write_jsonl(path: Path, records: list[dict[str, Any]], *,
+                 cancellation_callback: Callable[[], None] | None = None) -> None:
     # Long videos can produce gigabytes of evidence. Keep only one serialized
     # row in memory instead of joining the entire artifact before writing.
     with path.open("w", encoding="utf-8") as handle:
         for record in records:
+            if cancellation_callback is not None:
+                cancellation_callback()
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
@@ -194,6 +196,7 @@ def run_minimum_scoring_loop(
     runtime_view_evidence: dict[str, Any] | None = None,
     scoring_reference_context_path: str | Path | None = None,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    cancellation_callback: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
     """Run the fixed-camera, single-primary-player Pose-only maturity loop.
 
@@ -204,6 +207,8 @@ def run_minimum_scoring_loop(
     """
 
     def report_progress(phase: str, completed: int, total: int) -> None:
+        if cancellation_callback is not None:
+            cancellation_callback()
         if progress_callback is not None:
             progress_callback({"phase": phase, "completed": completed, "total": total})
 
@@ -234,8 +239,8 @@ def run_minimum_scoring_loop(
         # an independently supplied target.  It is not inferred as the target.
         required_by_event[TARGET_DIRECTION_EVENT_CODE].add("launch_direction_deg")
 
-    records = _load_jsonl(frames_path)
-    timeline = _load_jsonl(primary_timeline_path)
+    records = _load_jsonl(frames_path, cancellation_callback=cancellation_callback)
+    timeline = _load_jsonl(primary_timeline_path, cancellation_callback=cancellation_callback)
     required_primary_version = registry_required_primary_player_version(indicators)
     primary_player_version = primary_timeline_algorithm_version(
         timeline,
@@ -269,6 +274,8 @@ def run_minimum_scoring_loop(
     )
     report_progress("detecting_events", 1, 1)
     for event in events:
+        if cancellation_callback is not None:
+            cancellation_callback()
         diagnostics = diagnose_primary_timeline(
             records,
             timeline,
@@ -279,7 +286,7 @@ def run_minimum_scoring_loop(
         event["quality_flags"] = sorted(
             set(event["quality_flags"]) | set(diagnostics["quality_flags"])
         )
-    _write_jsonl(output_dir / "events.jsonl", events)
+    _write_jsonl(output_dir / "events.jsonl", events, cancellation_callback=cancellation_callback)
 
     reference_context_payload: dict[str, Any] | None = None
     reference_observations: dict[str, dict[str, Any]] = {}
@@ -367,6 +374,8 @@ def run_minimum_scoring_loop(
     feature_lookup: dict[tuple[str, str], dict[str, Any]] = {}
     report_progress("extracting_features", 0, len(events))
     for event_index, event in enumerate(events):
+        if cancellation_callback is not None:
+            cancellation_callback()
         interval = EventInterval(
             event_id=event["event_id"],
             event_code=event["event_code"],
@@ -403,6 +412,8 @@ def run_minimum_scoring_loop(
     resolved_scoring_contexts: list[dict[str, Any]] = []
     report_progress("scoring", 0, len(events))
     for event_index, event in enumerate(events):
+        if cancellation_callback is not None:
+            cancellation_callback()
         for indicator in indicators_by_event[event["event_code"]]:
             features = [
                 feature_lookup[(event["event_id"], name)]
@@ -576,15 +587,32 @@ def run_minimum_scoring_loop(
         if event_index % max(1, len(events) // 100) == 0 or event_index + 1 == len(events):
             report_progress("scoring", event_index + 1, len(events))
     report_progress("writing_results", 0, 1)
-    _write_jsonl(output_dir / "features.jsonl", feature_records)
-    _write_jsonl(output_dir / "indicator-features.jsonl", indicator_records)
-    _write_jsonl(output_dir / "scores.jsonl", score_records)
+    write_total = len(feature_records) + len(indicator_records) + len(score_records)
+    write_completed = 0
+
+    def writing_records(rows):
+        nonlocal write_completed
+        for row in rows:
+            if write_completed % 64 == 0:
+                report_progress("writing_results", write_completed, max(1, write_total))
+            yield row
+            write_completed += 1
+
+    with EvidencePoolWriter(
+        output_dir, video_id=canonical_video_id, source_id=source_id,
+        video_sha256=provenance.get("video_sha256"),
+        cancellation_callback=cancellation_callback,
+    ) as evidence_writer:
+        evidence_writer.write_jsonl(output_dir / "features.jsonl", writing_records(feature_records))
+        evidence_writer.write_jsonl(output_dir / "indicator-features.jsonl", writing_records(indicator_records))
+        evidence_writer.write_jsonl(output_dir / "scores.jsonl", writing_records(score_records))
     source_assessment_artifact = write_source_aligned_assessment(
         output_dir, sequence, events, video_id=canonical_video_id,
         video_sha256=provenance.get("video_sha256"),
         frames_sha256=provenance.get("frames_sha256"), frames_path=frames_path,
         primary_timeline_path=primary_timeline_path, primary_timeline=timeline,
         raw_records=records, source_id=source_id,
+        cancellation_callback=cancellation_callback,
     )
 
     # Truth interfaces are executable, but absent truth must never appear as a
@@ -647,6 +675,7 @@ def run_minimum_scoring_loop(
         "schema_version": "1.0.0",
         "loop_version": SCORING_LOOP_VERSION,
         "coordinate_contract": sequence.coordinate_metadata,
+        "evidence_storage": evidence_writer.manifest,
         "native_primary_binding": native_primary_binding,
         "video_id": canonical_video_id,
         "status": loop_status,

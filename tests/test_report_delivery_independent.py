@@ -265,7 +265,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
         replacements = {"build_user_demo_result": build, "load_indicator_feature_records": lambda *args, **kwargs: [],
             "load_footwork_review": lambda *args, **kwargs: {}, "load_source_aligned_assessment": lambda *args, **kwargs: {},
             "build_process_evaluation": lambda *args, **kwargs: {}, "build_indicator_assessment": lambda *args, **kwargs: {},
-            "build_analysis_report": lambda *args, **kwargs: {}, "pack_report_evidence": lambda value: value,
+            "build_analysis_report": lambda *args, **kwargs: {}, "pack_report_evidence": lambda value, **kwargs: value,
             "recognize_strokes_from_artifacts": lambda *args, **kwargs: {}}
         replacements.update(overrides or {})
         for name, replacement in replacements.items():

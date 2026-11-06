@@ -1,10 +1,18 @@
 import type { RallyMateApiClient } from "./api-client";
 import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./api-types";
+import { REPORT_READ_BUDGET_MS } from "./report-limits";
 
 export type AnalysisResult = { job: JobProgress; result: DemoResultResponse; trajectory: TrajectoryPreviewResponse | null; assessment: TechniqueAssessmentResponse | null; warning: string | null };
 
 export class AnalysisCancelledError extends Error {
   constructor() { super("本次分析已取消，服务器已停止处理。"); this.name = "AnalysisCancelledError"; }
+}
+
+export class ReportStillPreparingError extends Error {
+  constructor(cause: unknown) {
+    super("服务器仍在整理报告，本次等待已达到时限。点击“继续读取结果”即可继续等待，无需重新上传。", { cause });
+    this.name = "ReportStillPreparingError";
+  }
 }
 
 /** Poll and cancel responses can arrive out of order. Terminal reports must not regress. */
@@ -32,10 +40,26 @@ function preparationTimedOut(error: unknown) {
   return !!detail && typeof detail === "object" && "code" in detail && detail.code === "report_preparation_timeout";
 }
 
+function reportStillPreparing(error: unknown) {
+  if (!error || typeof error !== "object" || !("status" in error) || error.status !== 425 || !("payload" in error)) return false;
+  const payload = error.payload;
+  const detail = payload && typeof payload === "object" && "detail" in payload ? payload.detail : null;
+  return !!detail && typeof detail === "object" && "code" in detail && detail.code === "report_still_preparing";
+}
+
+function reportLimitCode(error: unknown): "report_resource_limit" | "report_delivery_limit" | null {
+  if (!error || typeof error !== "object" || !("status" in error) || !("payload" in error)) return null;
+  const payload = error.payload;
+  const detail = payload && typeof payload === "object" && "detail" in payload ? payload.detail : null;
+  if (!detail || typeof detail !== "object" || !("code" in detail)) return null;
+  return error.status === 503 && detail.code === "report_resource_limit" ? "report_resource_limit"
+    : error.status === 413 && detail.code === "report_delivery_limit" ? "report_delivery_limit" : null;
+}
+
 function retryable(error: unknown) {
   // An explicit builder deadline is terminal for this read, not a transient
   // network 504. The user can choose a later fresh read.
-  if (preparationTimedOut(error)) return false;
+  if (preparationTimedOut(error) || reportLimitCode(error)) return false;
   const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 0;
   return !status || status === 408 || status === 429 || status >= 500;
 }
@@ -100,7 +124,7 @@ export async function watchAnalysis(client: RallyMateApiClient, jobId: string, s
     watching = false;
     previewController.abort();
   }
-  const reportDeadline = performance.now() + 120000;
+  const reportDeadline = performance.now() + REPORT_READ_BUDGET_MS;
   const readResult = async () => {
     for (let attempt = 1; ; attempt += 1) {
       try {
@@ -129,6 +153,11 @@ export async function watchAnalysis(client: RallyMateApiClient, jobId: string, s
     try { primary = await primaryRead; }
     catch (cause) {
       signal.throwIfAborted();
+      if (reportStillPreparing(cause)) throw new ReportStillPreparingError(cause);
+      const limit = reportLimitCode(cause);
+      if (limit) throw new Error(limit === "report_delivery_limit"
+        ? "推理已完成，但报告超过当前传输或解码上限。分析产物已保留，需要调整报告交付后再读取，无需重新上传视频。"
+        : "推理已完成，但整理报告触发服务器内存或处理预算限制。分析产物已保留，可稍后继续读取，无需重新上传视频。", { cause });
       throw new Error(preparationTimedOut(cause)
         ? "服务器整理报告已超时。可稍后点击“继续读取结果”；本次分析无需重新上传。"
         : "推理已完成，结果暂未读取成功。点击“继续读取结果”，无需重新上传。", { cause });

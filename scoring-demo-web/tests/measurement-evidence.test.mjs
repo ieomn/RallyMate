@@ -39,7 +39,8 @@ test("historical scores are suppressed without discarding partial or single-samp
   assert.equal(JSON.stringify(source), snapshot);
   const html = renderToStaticMarkup(createElement(LiveResults, { result: source, assessment: null, catalog: null, pending: false, trajectory: null }));
   assert.match(html, /实测指标|1 \/ 1/);
-  assert.match(html, /完整评分依据/);
+  assert.match(html, /测量证据参考分：—/);
+  assert.doesNotMatch(html, /尚缺完整评分依据|评分尚未实现|测量证据不足/);
   assert.match(html, /分腿垫步（候选）/);
   assert.match(html, /12 % 身体尺度/);
   // Chart coordinates can contain any digits; retain SVG text but omit its geometry.
@@ -83,8 +84,8 @@ test("normalization preserves zero measurements and actual missing causes withou
   assert.doesNotMatch(result.training_evaluation.summary_zh, /待教练标定/);
   assert.deepEqual(normalizeMeasurementResult(result), result);
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /当前未提供可用的测量证据参考分；已保存的逐项测量仍可查看/);
-  assert.doesNotMatch(html, /未取得足够的可靠测量/);
+  assert.match(html, /测量证据参考分：—/);
+  assert.doesNotMatch(html, /当前未提供可用的测量证据参考分|未取得足够的可靠测量|尚缺完整评分依据|评分尚未实现|测量证据不足/);
 });
 
 test("API normalization accepts scoreless successful results and historical artifacts", async () => {
@@ -101,7 +102,10 @@ test("HTML/Markdown and JSON export preserve raw evidence but never revive histo
   const result = historical();
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   assert.equal(getReportExportGate(input).allowed, true);
-  const report = buildPracticeReport(input), markdown = renderReportMarkdown(report), backup = buildReportBackup(input);
+  // Keep the clock deterministic: timestamp milliseconds can contain the
+  // historical score digits without reintroducing a score into the report.
+  const exportedAt = "2026-01-01T00:00:00.000Z";
+  const report = buildPracticeReport(input, exportedAt), markdown = renderReportMarkdown(report), backup = buildReportBackup(input, exportedAt);
   assert.match(markdown, /尚缺完整评分依据/);
   assert.match(markdown, /12|50%/);
   assert.doesNotMatch(markdown, /97/);

@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
 
-async function moduleFrom(path) {
-  const source = fs.readFileSync(new URL(path, import.meta.url), "utf8");
-  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  return import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+function compiledUrl(file) {
+  const source = fs.readFileSync(file, "utf8");
+  let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+  js = js.replace(/from "(\.[^"]+)"/g, (_match, name) => `from ${JSON.stringify(compiledUrl(new URL(`${name}.ts`, file)))}`);
+  return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
 }
-const { watchAnalysis, reconnectDelay, AnalysisCancelledError, mergeAnalysisProgress } = await moduleFrom("../app/lib/analysis-session.ts");
+const moduleFrom = path => import(compiledUrl(new URL(path, import.meta.url)));
+const { watchAnalysis, reconnectDelay, AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress } = await moduleFrom("../app/lib/analysis-session.ts");
 const { analysisProgress } = await moduleFrom("../app/lib/analysis-progress.ts");
 const { proxyAnalysis } = await moduleFrom("../worker/gateway.ts");
 const id = "test-job-12345678";
@@ -16,6 +18,19 @@ const client = (overrides = {}) => ({
   getJob: async () => ({ id, status: "succeeded" }),
   getDemoResult: async () => ({ job_id: id, status: "ready", training_evaluation: { score_0_to_100: 77 } }),
   getTrajectory: async () => ({}), getTechniqueAssessment: async () => ({}), ...overrides,
+});
+
+test("explicit report size and resource limits retain the job and do not repeat an expensive build", async () => {
+  for (const [status, code, message] of [[413, "report_delivery_limit", /传输或解码上限/], [503, "report_resource_limit", /内存或处理预算限制/]]) {
+    let reads = 0;
+    const original = Object.assign(new Error("private server detail"), { status, payload: { detail: { code } } });
+    await assert.rejects(watchAnalysis(client({ getDemoResult: async () => { reads++; throw original; } }), id,
+      new AbortController().signal, () => {}, 0), error => {
+        assert.match(error.message, message); assert.match(error.message, /无需重新上传/);
+        assert.doesNotMatch(error.message, /private/); assert.equal(error.cause, original); return true;
+      });
+    assert.equal(reads, 1);
+  }
 });
 
 test("requested cancellation remains running until a server terminal response, without reading a false report", async () => {
@@ -423,17 +438,44 @@ test("an explicit server preparation deadline is terminal and does not auto-retr
   let reads = 0;
   const original = Object.assign(new Error("builder deadline"), { status: 504, payload: { detail: { code: "report_preparation_timeout" } } });
   await assert.rejects(watchAnalysis(client({ getDemoResult: async () => { reads++; throw original; } }),
-    id, new AbortController().signal, () => {}, 0), error => error.cause === original && /整理报告已超时/.test(error.message));
+    id, new AbortController().signal, () => {}, 0), error => !(error instanceof ReportStillPreparingError) && error.cause === original && /整理报告已超时/.test(error.message));
   assert.equal(reads, 1);
 });
 
-test("automatic report retries share one 120 second budget instead of restarting it", async t => {
+test("a validated preparation wait limit remains resumable and does not start supplementary reads", async () => {
+  let reads = 0;
+  const original = Object.assign(new Error("wait limit"), { status: 425, payload: { detail: { code: "report_still_preparing" } } });
+  await assert.rejects(watchAnalysis(client({
+    getDemoResult: async () => { reads++; throw original; },
+    getTrajectory: async () => assert.fail("report is not ready"),
+    getTechniqueAssessment: async () => assert.fail("report is not ready"),
+  }), id, new AbortController().signal, () => {}, 0), error => {
+    assert.ok(error instanceof ReportStillPreparingError); assert.equal(error.cause, original);
+    assert.match(error.message, /仍在整理报告/); assert.match(error.message, /继续读取结果/); assert.match(error.message, /无需重新上传/);
+    return true;
+  });
+  assert.equal(reads, 1);
+});
+
+test("transfer deadlines and network failures are never relabelled report preparation", async () => {
+  for (const original of [Object.assign(new Error("transfer deadline"), { status: 425 }), new TypeError("network failure")]) {
+    let reads = 0;
+    await assert.rejects(watchAnalysis(client({ getDemoResult: async () => { reads++; throw original; } }),
+      id, new AbortController().signal, () => {}, 0), error => {
+      assert.ok(!(error instanceof ReportStillPreparingError)); assert.equal(error.cause, original);
+      assert.match(error.message, /结果暂未读取成功/); return true;
+    });
+    assert.equal(reads, original.status === 425 ? 1 : 3);
+  }
+});
+
+test("automatic report retries share one 360 second budget instead of restarting it", async t => {
   let now = 0; const budgets = [];
   t.mock.method(performance, "now", () => now);
   await assert.rejects(watchAnalysis(client({ getDemoResult: async (_id, options) => {
     budgets.push(options.maxWaitMs);
-    now += budgets.length === 1 ? 80000 : 40001;
+    now += budgets.length === 1 ? 320000 : 40001;
     throw Object.assign(new Error("temporary transfer failure"), { status: 503 });
   } }), id, new AbortController().signal, () => {}, 0), error => error.cause.status === 425);
-  assert.deepEqual(budgets, [120000, 40000]);
+  assert.deepEqual(budgets, [360000, 40000]);
 });

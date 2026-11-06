@@ -1,0 +1,11 @@
+# CPU/API validation environment, matched to the current service interfaces.
+numpy==1.26.4
+opencv-python-headless==4.11.0.86
+fastapi==0.135.1
+starlette==0.52.1
+pydantic==2.12.5
+python-multipart==0.0.22
+httpx==0.28.1
+jsonschema==4.26.0
+rfc3339-validator==0.1.4
+PyYAML==6.0.3

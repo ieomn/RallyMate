@@ -14,6 +14,7 @@ from pathlib import Path
 
 import cv2
 
+from rallymate_vision.postprocess_resources import PostprocessBudget
 from rallymate_scoring.scoring_rules import validate_scoring_rule
 from rallymate_scoring.granularity import analyze_scoring_readiness
 from rallymate_scoring.registry_lifecycle import (
@@ -39,6 +40,7 @@ from rallymate_tracking import (
 )
 from rallymate_vision.contracts import FRAME_SCHEMA_VERSION, SCHEMA_VERSION, PipelineRequest
 from rallymate_vision.inference import Yolo26Perception
+from rallymate_vision.detection_batch import detected_observations
 from rallymate_vision.pose.metadata import keypoint_schema, sha256_file
 from rallymate_vision.pose.diagnostics import bind_pose_association_diagnostics
 from rallymate_vision.quality import (
@@ -277,6 +279,7 @@ def finalize_pipeline_artifacts(
     started_at: float | None = None,
     timings: dict[str, float] | None = None,
     recovery_metadata: dict | None = None,
+    postprocessing_budget: PostprocessBudget | None = None,
 ) -> dict:
     """Finish already-written inference/scoring artifacts without loading a model.
 
@@ -287,9 +290,11 @@ def finalize_pipeline_artifacts(
     identity changes; immutable frame/event/feature provenance remains intact.
     The caller owns the job lease, directory clone and database transition.
     """
+    budget = postprocessing_budget or PostprocessBudget(
+        cancellation_callback=cancellation_callback, heartbeat=report_postprocessing,
+    )
     def check_cancelled() -> None:
-        if cancellation_callback is not None:
-            cancellation_callback()
+        budget.check()
 
     check_cancelled()
     cpu_started_at = time.perf_counter()
@@ -375,6 +380,8 @@ def finalize_pipeline_artifacts(
     processed = summary["processing"]["processed_frames"]
 
     def update_timing() -> None:
+        resource_target = summary["recovery"] if recovering else summary.setdefault("processing", {})
+        resource_target["postprocessing_resources"] = budget.snapshot()
         if recovering:
             summary["recovery"].update(
                 cpu_finalization_elapsed_seconds=safe_float(time.perf_counter() - cpu_started_at, 3),
@@ -391,7 +398,7 @@ def finalize_pipeline_artifacts(
     check_cancelled()
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     stage_started = time.perf_counter()
-    summary["validation"] = validate_run_artifacts(request.output_dir)
+    summary["validation"] = validate_run_artifacts(request.output_dir, cancellation_callback=check_cancelled)
     stage_timings["artifact_validation_seconds"] = stage_timings.get("artifact_validation_seconds", 0) + time.perf_counter() - stage_started
     check_cancelled()
     if report_postprocessing is not None:
@@ -421,7 +428,7 @@ def finalize_pipeline_artifacts(
         # Validate the completed summary, not just the provisional one. The
         # existing run validator does not inspect the two newly written reports.
         stage_started = time.perf_counter()
-        summary["validation"] = validate_run_artifacts(request.output_dir)
+        summary["validation"] = validate_run_artifacts(request.output_dir, cancellation_callback=check_cancelled)
         if (json.loads(scoring_readiness_path.read_text(encoding="utf-8")) != scoring_readiness
                 or not analysis_report_path.is_file() or analysis_report_path.stat().st_size == 0):
             raise ValueError("CPU finalization report export is incomplete")
@@ -432,6 +439,7 @@ def finalize_pipeline_artifacts(
         summary["recovery"]["status"] = "completed"
         update_timing()
         summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    budget.check(force=True)
     return summary
 
 
@@ -674,7 +682,8 @@ def _run_pipeline(
     preview_path = request.output_dir / "preview.jpg"
 
     sam_enabled = perception.pose_metadata()["backend"] == "sam3d"
-    sam_records: list[dict] = []
+    sam_has_mesh = False
+    sam_first_model_call = False
     sam_frames_path = request.output_dir / "sam3d_frames.jsonl"
     sam_evaluation_path = request.output_dir / "sam3d_evaluation.json"
     sam_file = None
@@ -683,7 +692,9 @@ def _run_pipeline(
     sam3d_mesh = None
     if sam_enabled:
         from rallymate_vision.sam3d_runner import PrefetchSourcePTSDecoder, SourcePTSDecoder
-        from rallymate_vision.sam3d_mesh import LEDGER_NAME, archive_mesh_records
+        from rallymate_vision.sam3d_mesh import (
+            LEDGER_NAME, archive_mesh_records, discard_unarchived_mesh_records,
+        )
         sam_runtime_dir = Path(os.environ.get(
             "RALLYMATE_SAM3D_RUNTIME", Path(__file__).resolve().parents[2] / "runtime" / "sam3d",
         ))
@@ -773,28 +784,33 @@ def _run_pipeline(
     quality_samples: list[dict] = []
     timings = Counter()
     court_status_counts: Counter[str] = Counter()
+    detection_batch_size = int(os.environ.get("RALLYMATE_DETECT_BATCH_SIZE", "1"))
+    if not 1 <= detection_batch_size <= 16:
+        raise ValueError("RALLYMATE_DETECT_BATCH_SIZE must be between 1 and 16")
+    detection_batch_statistics: dict = {}
+    sam_batch_frames = int(os.environ.get("RALLYMATE_SAM3D_BATCH_FRAMES", "1")) if sam_enabled else 1
+    if not 1 <= sam_batch_frames <= 8:
+        raise ValueError("RALLYMATE_SAM3D_BATCH_FRAMES must be between 1 and 8")
+    sam_batch_statistics: dict = {}
 
     def publish_sam_records(records, mesh_records):
+        nonlocal sam_has_mesh, sam_first_model_call
         # Only this control thread publishes verified native rows, in source
         # order. The archive worker owns copies and never writes these streams.
         for mesh_record in mesh_records:
             mesh_ledger.write(json.dumps(mesh_record, ensure_ascii=False, allow_nan=False) + "\n")
-        sam_records.extend(records)
         for sam_record in records:
             sam_file.write(json.dumps(sam_record, ensure_ascii=False, allow_nan=False) + "\n")
+            sam_has_mesh = sam_has_mesh or bool(sam_record.get("mesh_artifact"))
+            sam_first_model_call = sam_first_model_call or bool(sam_record.get("first_model_call"))
         sam_file.flush()
 
     def publish_archived_batches(batches):
         for batch in batches:
             publish_sam_records(batch.records, batch.mesh_records)
 
-    def prepared_frames():
-        # Detection/camera state advances during bounded initial lookahead;
-        # pose inference consumes the released source frames in original order.
+    def decoded_observations():
         nonlocal first_processed_source_frame, last_processed_timestamp_ms, last_processed_source_frame
-        nonlocal person_frame_count, camera_compensated_frames
-        from rallymate_tracking.initial_subject_buffer import InitialSubjectBuffer
-        initial_buffer = InitialSubjectBuffer() if sam_enabled else None
         scan_index, scan_count = 0, 0
         while scan_index < metadata.frame_count:
             check_cancelled()
@@ -819,22 +835,37 @@ def _run_pipeline(
                 continue
             last_processed_timestamp_ms = timestamp_ms
             last_processed_source_frame = scan_index
+            # Capture the PTS envelope before another read advances the decoder.
+            yield {"image": frame, "timestamp_ms": timestamp_ms,
+                   "timestamp_source": timestamp_source, "source_frame_index": scan_index,
+                   "frame_stride": request.processing.frame_stride,
+                   "decoded_binding": dict(capture.binding) if sam_enabled else {}}
+            scan_index += 1
+            scan_count += 1
+            if request.processing.max_frames is not None and scan_count >= request.processing.max_frames:
+                break
 
+    def prepared_frames():
+        # Only detection is stateless. Tracking, camera and subject selection
+        # consume every result in source order, followed by ordered pose calls.
+        nonlocal person_frame_count, camera_compensated_frames
+        from rallymate_tracking.initial_subject_buffer import InitialSubjectBuffer
+        initial_buffer = InitialSubjectBuffer() if sam_enabled else None
+        for decoded in detected_observations(
+            decoded_observations(), perception, batch_size=detection_batch_size,
+            check_cancelled=check_cancelled, timings=timings,
+            statistics=detection_batch_statistics,
+        ):
+            frame = decoded["image"]
+            timestamp_ms, timestamp_source = decoded["timestamp_ms"], decoded["timestamp_source"]
             stage_started = time.perf_counter()
             quality = analyze_frame(frame)
             quality_samples.append(quality)
             timings["frame_quality_seconds"] += time.perf_counter() - stage_started
 
             stage_started = time.perf_counter()
-            detections = perception.detect(frame)
-            timings["detection_seconds"] += time.perf_counter() - stage_started
-            detection_timing = getattr(perception, "last_detection_timing", None)
-            if isinstance(detection_timing, dict):
-                for key, value in detection_timing.items():
-                    timings[f"detection_component_{key.removesuffix('_ms')}_seconds"] += value / 1000
-            stage_started = time.perf_counter()
             detections = tracker.update(
-                detections, metadata.width, metadata.height, timestamp_ms=timestamp_ms
+                decoded["detections"], metadata.width, metadata.height, timestamp_ms=timestamp_ms
             )
             timings["tracking_seconds"] += time.perf_counter() - stage_started
 
@@ -863,23 +894,26 @@ def _run_pipeline(
                 height=metadata.height, image=frame,
                 camera_epoch=camera_motion["reference_epoch"], camera_motion=camera_motion,
             ) if sam_enabled else None)
-            observation = {"image": frame, "detections": detections, "players": players,
+            observation = {**decoded, "detections": detections, "players": players,
                 "quality": quality, "camera_motion": camera_motion,
-                "timestamp_ms": timestamp_ms, "timestamp_source": timestamp_source,
-                "source_frame_index": scan_index, "frame_stride": request.processing.frame_stride,
-                "decoded_binding": dict(capture.binding) if sam_enabled else {},
                 "subject_identity": subject_identity}
             ready = initial_buffer.push(observation) if initial_buffer is not None else [observation]
-            scan_index += 1
-            scan_count += 1
             yield from ready
-            if request.processing.max_frames is not None and scan_count >= request.processing.max_frames:
-                break
         if initial_buffer is not None:
             yield from initial_buffer.finish()
 
+    observations = prepared_frames()
+    if sam_enabled:
+        from rallymate_vision.sam3d_pipeline_batch import sam_pose_observations
+        observations = sam_pose_observations(
+            observations, perception, max_players=request.processing.max_players,
+            video_sha256=input_video_sha256, batch_frames=sam_batch_frames,
+            timings=timings, statistics=sam_batch_statistics, check_cancelled=check_cancelled,
+            discard_records=lambda records: discard_unarchived_mesh_records(records, sam_runtime_dir),
+        )
+        cleanup.callback(observations.close)
     with frames_path.open("w", encoding="utf-8", newline="\n") as frames_file:
-        for observation in prepared_frames():
+        for observation in observations:
             frame = observation["image"]
             detections, players = observation["detections"], observation["players"]
             quality, camera_motion = observation["quality"], observation["camera_motion"]
@@ -887,29 +921,18 @@ def _run_pipeline(
             source_frame_index = observation["source_frame_index"]
             decoded_binding = observation["decoded_binding"]
             stage_started = time.perf_counter()
-            check_cancelled()
+            try:
+                check_cancelled()
+            except BaseException:
+                if sam_enabled:
+                    discard_unarchived_mesh_records(observation["sam_records"], sam_runtime_dir)
+                raise
             if sam_enabled:
                 subject_identity = observation["subject_identity"]
-                target_track = subject_identity.get("source_track_id")
-                target_players = [player for player in players if player["track_id"] == target_track]
-                if target_players and request.processing.max_players > 1:
-                    others = sorted((player for player in players if player["track_id"] != target_track),
-                                    key=lambda p: -(p["bbox_px"][2] - p["bbox_px"][0]) * (p["bbox_px"][3] - p["bbox_px"][1]))
-                    target_players += others[:request.processing.max_players - 1]
                 source_timestamp_ms = (round(decoded_binding["timestamp_ms"])
                                        if decoded_binding.get("timestamp_ms") is not None else None)
-                source_binding = {
-                    **decoded_binding, "video_sha256": input_video_sha256,
-                    "timestamp_ms": source_timestamp_ms,
-                    "frame_index": source_frame_index, "processed_index": processed,
-                    "camera_reference_epoch": camera_motion["reference_epoch"],
-                    "relative_timestamp_ms": timestamp_ms,
-                    "timestamp_source": timestamp_source,
-                }
-                poses = perception.estimate_poses(
-                    frame, target_players, request.processing.max_players, source_binding=source_binding,
-                )
-                frame_sam_records = perception.pose_frame_records()
+                poses = observation["sam_poses"]
+                frame_sam_records = observation["sam_records"]
                 mesh_started = time.perf_counter()
                 if mesh_archiver is not None:
                     publish_archived_batches(mesh_archiver.submit(frame_sam_records))
@@ -973,12 +996,13 @@ def _run_pipeline(
             }
             if sam_enabled:
                 record["subject_identity"] = subject_identity
+                record["sam_subject_selection"] = observation.get("sam_subject_selection")
                 record["frame"].update({**decoded_binding, "timestamp_ms": timestamp_ms,
                                         "source_timestamp_ms": source_timestamp_ms,
                                         "video_sha256": input_video_sha256})
                 record["sam3d_requests"] = [
                     {key: row.get(key) for key in ("person_track_id", "selection_epoch", "status", "reason",
-                                                  "inference_ms", "peak_memory_bytes")}
+                                                  "inference_ms", "peak_memory_bytes", "pose_quality")}
                     for row in frame_sam_records
                 ]
             stage_started = time.perf_counter()
@@ -1050,28 +1074,39 @@ def _run_pipeline(
             mesh_ledger.flush()
             timings["mesh_archive_drain_seconds"] += time.perf_counter() - stage_started
             check_cancelled()
-        from rallymate_vision.sam3d_evaluation import evaluate_sam3d_records
+        from rallymate_vision.sam3d_evaluation import evaluate_sam3d_jsonl
         sam_file.flush()
-        sam_evaluation = evaluate_sam3d_records(
-            sam_records, max_frame_gap=request.processing.frame_stride,
+        stage_started = time.perf_counter()
+        sam_evaluation = evaluate_sam3d_jsonl(
+            sam_frames_path, max_frame_gap=request.processing.frame_stride,
             max_gap_ms=max(160, 1500 * request.processing.frame_stride / metadata.fps),
         )
         sam_evaluation["model"] = perception.pose_metadata()
         sam_evaluation["runtime"].update(
-            warmup_or_model_load_included=any(row.get("first_model_call") for row in sam_records),
+            warmup_or_model_load_included=sam_first_model_call,
             model_load_included=False,
-            first_call_may_include_cuda_warmup=any(row.get("first_model_call") for row in sam_records),
+            first_call_may_include_cuda_warmup=sam_first_model_call,
             memory_scope="current_process_cuda_allocated_absolute_peak_includes_other_loaded_models",
         )
         sam_evaluation_path.write_text(json.dumps(sam_evaluation, ensure_ascii=False, indent=2, allow_nan=False),
                                        encoding="utf-8")
+        # The complete diagnostic report is durable; scoring reads native rows
+        # from disk. Retain only the two fields needed by the final summary.
+        sam_evaluation = {key: sam_evaluation[key] for key in ("status", "counts")}
+        timings["sam_diagnostic_evaluation_seconds"] += time.perf_counter() - stage_started
     if processed == 0:
         if writer is not None:
             writer.release()
         raise RuntimeError("no frames were processed; check start/end/stride settings")
 
+    post_budget = PostprocessBudget(
+        cancellation_callback=check_cancelled,
+        heartbeat=lambda phase: emit_progress(postprocess_progress(
+            phase, processed_frames=processed, total_frames=planned_frames)),
+    )
+
     def report_postprocessing(phase: str, **counts) -> None:
-        check_cancelled()
+        post_budget.stage(phase)
         emit_progress(postprocess_progress(
             phase, processed_frames=processed, total_frames=planned_frames, **counts,
         ))
@@ -1106,7 +1141,7 @@ def _run_pipeline(
                 "timing_warning": "constant_fps_fallback_replay_may_not_match_source_timing",
             }
     timings["replay_export_seconds"] += time.perf_counter() - stage_started
-    if sam_enabled and any(row.get("mesh_artifact") for row in sam_records):
+    if sam_enabled and sam_has_mesh:
         from rallymate_vision.mesh_render_task import create_mesh_render_task
         mesh_ledger.flush()
         check_cancelled()
@@ -1200,6 +1235,7 @@ def _run_pipeline(
         runtime_view_evidence=runtime_view_evidence,
         scoring_reference_context_path=scoring_reference_context_path,
         progress_callback=report_scoring_progress,
+        cancellation_callback=post_budget.check,
     )
     report_postprocessing("finalizing")
     _verify_scoring_registry_authority_unchanged(registry_authority)
@@ -1265,7 +1301,8 @@ def _run_pipeline(
         encoding="utf-8",
     )
     scoring_loop_report_path = request.output_dir / "scoring-loop-report.html"
-    write_scoring_loop_report(scoring_loop, scoring_loop_report_path)
+    write_scoring_loop_report(scoring_loop, scoring_loop_report_path,
+                              cancellation_callback=post_budget.check)
     timings["minimum_scoring_loop_seconds"] += time.perf_counter() - stage_started
 
     elapsed = time.perf_counter() - started_at
@@ -1401,6 +1438,11 @@ def _run_pipeline(
             "stage_seconds": {
                 key: safe_float(value, 3) for key, value in timings.items()
             },
+            "detection_batch": {**detection_batch_statistics,
+                "semantics": "stateless_detection_only; tracking_camera_subject_and_pose_remain_ordered"},
+            "sam_pose_batch": ({**sam_batch_statistics,
+                "semantics": "ordered_subject_bindings_then_body_forward_microbatches_then_ordered_publication"}
+                if sam_enabled else None),
             "stage_timing_semantics": "wall_clock; stages are partial and residual orchestration is not separately assigned; component breakdowns must not be added to parent stages; with prefetch decoder producer work overlaps consumer stages; SAM CUDA event spans and IPC waits are retained per native record; first model call may include CUDA warmup while eager model loading precedes this pipeline",
             "source_prefetch": ({"queue_capacity_frames": prefetch_depth,
                                  "decoded_frames": getattr(capture, "produced_frames", None),
@@ -1486,6 +1528,7 @@ def _run_pipeline(
             ),
             "events_jsonl": "events.jsonl",
             "features_jsonl": "features.jsonl",
+            "scoring_evidence_sqlite3": "scoring-evidence.sqlite3",
             "indicator_features_jsonl": "indicator-features.jsonl",
             "scores_jsonl": "scores.jsonl",
             "event_feature_errors_json": "event-feature-errors.json",
@@ -1512,4 +1555,5 @@ def _run_pipeline(
         cancellation_callback=check_cancelled,
         started_at=started_at,
         timings=timings,
+        postprocessing_budget=post_budget,
     )

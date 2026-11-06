@@ -140,6 +140,61 @@ class SamEngineLifecycleTests(unittest.TestCase):
         self.assertEqual(restored, ["rotation", "prompt"])
         self.assertIsNone(engine.estimator)
 
+    def test_preprocess_flag_is_explicit_default_off_and_rejects_incompatible_mode(self):
+        for value in ("0", "1"):
+            with patch.dict(os.environ, {"RALLYMATE_SAM3D_BATCH_PREPROCESS": value}):
+                engine, _, _, error, _ = self.initialize()
+            self.assertIsNone(error)
+            self.assertEqual(engine.batch_preprocess_enabled, value == "1")
+            self.assertEqual(engine.metadata["batch_preprocess_requested"], value == "1")
+            engine.close()
+        with patch.dict(os.environ, os.environ.copy()):
+            os.environ.pop("RALLYMATE_SAM3D_BATCH_PREPROCESS", None)
+            engine, _, _, error, _ = self.initialize()
+            self.assertIsNone(error)
+            self.assertFalse(engine.batch_preprocess_enabled)
+            engine.close()
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_BATCH_PREPROCESS": "yes"}):
+            with self.assertRaisesRegex(ValueError, "0 or 1"):
+                runner.Sam3DEngine("missing.pt", runtime_dir="missing")
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_BATCH_PREPROCESS": "1"}):
+            with self.assertRaisesRegex(ValueError, "body inference"):
+                runner.Sam3DEngine("missing.pt", runtime_dir="missing", inference_type="full")
+
+    def test_executor_closes_before_restoring_transforms_and_only_once(self):
+        engine, _, restored, error, _ = self.initialize()
+        self.assertIsNone(error)
+        executor = SimpleNamespace(close=Mock(side_effect=lambda: restored.append("batch_staging")))
+        engine.body_batch_executor = executor
+        engine.close()
+        engine.close()
+        executor.close.assert_called_once_with()
+        self.assertEqual(restored, ["batch_staging", "rotation", "prompt"])
+        self.assertIsNone(engine.body_batch_executor)
+
+    def test_executor_close_failure_preserves_error_and_attempts_remaining_cleanup(self):
+        cleanup_error = ValueError("batch event wait failure")
+        engine, torch, restored, error, _ = self.initialize(restore_error=RuntimeError("restore failure"))
+        self.assertIsNone(error)
+        executor = SimpleNamespace(close=Mock(side_effect=cleanup_error))
+        engine.body_batch_executor = executor
+        with self.assertRaises(ValueError) as caught:
+            engine.close()
+        self.assertIs(caught.exception, cleanup_error)
+        self.assertEqual(restored, ["rotation", "prompt"])
+        self.assertIsNone(engine.estimator)
+        self.assertIsNone(engine.body_batch_executor)
+        torch.cuda.empty_cache.assert_called_once_with()
+        engine.close()
+        executor.close.assert_called_once_with()
+
+    def test_executor_without_close_remains_compatible(self):
+        engine, _, restored, error, _ = self.initialize()
+        self.assertIsNone(error)
+        engine.body_batch_executor = SimpleNamespace(infer=Mock())
+        engine.close()
+        self.assertEqual(restored, ["rotation", "prompt"])
+
     def test_close_attempts_remaining_handles_and_cache_cleanup_before_reraising(self):
         restored = []
         first_error = ValueError("rotation restore failure")

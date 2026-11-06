@@ -1,6 +1,6 @@
 import { normalizeMeasurementResult } from "./measurement-evidence";
 import { MODEL_PROOF_CODEC, unpackApiReport } from "./report-backup-codec";
-import { MAX_REPORT_WIRE_BYTES } from "./report-limits";
+import { MAX_REPORT_WIRE_BYTES, REPORT_READ_BUDGET_MS } from "./report-limits";
 import { uploadResumable } from "./resumable-upload";
 import { parseTechnicalReview, type TechnicalReviewInput, type TechnicalReviewLedger } from "./technical-review";
 import type {
@@ -24,6 +24,9 @@ import { RallyMateApiError } from "./api-types";
 import { attachRequestDiagnostics, safeRequestDiagnostic, type RequestDiagnostic, type RequestDiagnosticObserver } from "./request-diagnostics";
 import { normalizePosePreview } from "./pose-playback";
 import { FOOT_CROSSING_RESPONSE_BYTES, parseFootCrossingResponse, type FootCrossingResponse } from "./foot-crossing-candidates";
+import { parseShotStatistics, type ShotStatisticsResponse } from "./shot-statistics";
+
+export type ShotReviewSubmission = { mutation_id: string; expected_revision: number; source_video_sha256: string; event: Record<string, unknown> };
 
 export { RallyMateApiError } from "./api-types";
 export type { JobProgress } from "./api-types";
@@ -98,6 +101,8 @@ export function getApiConfig(): RallyMateApiConfig {
 }
 
 export interface RallyMateApiClient {
+  getShotStatistics(jobId: string, signal?: AbortSignal): Promise<ShotStatisticsResponse>;
+  saveShotReview(jobId: string, submission: ShotReviewSubmission, signal?: AbortSignal): Promise<ShotStatisticsResponse>;
   getTennisAssessment(jobId: string, signal?: AbortSignal): Promise<Record<string, unknown>>;
   getSwingKinematics(jobId: string, signal?: AbortSignal): Promise<SwingKinematicsReport>;
   getMeshPreview(jobId: string, signal?: AbortSignal): Promise<{ job_id: string; status: "ready" | "pending" | "failed" | "unavailable"; sam3d_mesh: Sam3dMeshPreview | null }>;
@@ -148,6 +153,7 @@ export function createApiClient(
     const pathname = path.split(/[?#]/, 1)[0];
     if (/\/demo-result$/.test(pathname)) return "report";
     if (/\/technique-assessment$/.test(pathname)) return "technique_assessment";
+    if (/\/tennis-assessment$/.test(pathname)) return "tennis_assessment";
     if (/\/trajectory$/.test(pathname)) return "trajectory";
     if (/\/pose-preview$/.test(pathname)) return "pose_preview";
     if (/\/technical-review(?:\/export)?$/.test(pathname)) return "technical_review";
@@ -314,16 +320,20 @@ export function createApiClient(
 
   async function demoResult(jobId: string, options: { endpoint?: string | null; signal?: AbortSignal; onPrepare?: () => void; maxWaitMs?: number } = {}): Promise<DemoResultResponse> {
     const budgetMs = typeof options.maxWaitMs === "number" && Number.isFinite(options.maxWaitMs)
-      ? Math.max(1, Math.min(120000, options.maxWaitMs)) : 120000;
+      ? Math.max(1, Math.min(REPORT_READ_BUDGET_MS, options.maxWaitMs)) : REPORT_READ_BUDGET_MS;
     const deadline = reportTiming.now() + budgetMs;
     const budget = new AbortController();
     const reportSignal = options.signal ? AbortSignal.any([options.signal, budget.signal]) : budget.signal;
     let lastContext: ReadContext | undefined;
+    let waitingForPreparation = false;
     const timeout = (cause?: unknown) => {
-      const error = new RallyMateApiError("报告读取已达到本次等待时限。请稍后继续读取，无需重新上传。", 425, undefined, cause !== undefined ? { cause } : undefined);
+      const error = new RallyMateApiError(waitingForPreparation
+        ? "报告仍在整理，本次等待已达到时限。可继续读取结果，无需重新上传。"
+        : "报告读取已达到本次等待时限。请稍后继续读取，无需重新上传。", 425,
+      waitingForPreparation ? { detail: { code: "report_still_preparing" } } : undefined, cause !== undefined ? { cause } : undefined);
       // An in-flight failure already owns its request diagnostics. Do not attach
       // the preceding 202 response's request ID to that newer failure.
-      if (cause === undefined) record(lastContext, "json", "failure", "preparation_timeout", error);
+      if (waitingForPreparation || cause === undefined) record(lastContext, "json", "failure", "preparation_timeout", error);
       return error;
     };
     const totalTimer = setTimeout(() => budget.abort(new DOMException("报告读取达到总等待时限。", "TimeoutError")), budgetMs);
@@ -331,15 +341,16 @@ export function createApiClient(
     let preparing = false;
     for (;;) {
       options.signal?.throwIfAborted();
+      reportSignal.throwIfAborted();
       const remaining = deadline - reportTiming.now();
       if (remaining <= 0) throw timeout();
       let response: Response;
+      waitingForPreparation = false;
       try { response = await requestGet(options.endpoint || reportPath(jobId, "/demo-result"), options.signal, "current", MODEL_PROOF_CODEC, "deferred-v1", remaining, budget.signal); }
       catch (error) { options.signal?.throwIfAborted(); if (reportTiming.now() >= deadline) throw timeout(error); throw error; }
       lastContext = responseContexts.get(response);
       const payload = await parseResponse<Record<string, unknown>>(response, { maxBytes: MAX_REPORT_WIRE_BYTES, signal: reportSignal });
       options.signal?.throwIfAborted();
-      if (reportTiming.now() >= deadline) throw timeout();
       if (response.status === 202) {
         if (payload.job_id !== jobId || payload.status !== "preparing" || payload.report_delivery !== "deferred-v1"
           || !Number.isSafeInteger(payload.retry_after_ms) || Number(payload.retry_after_ms) < 0) {
@@ -347,10 +358,13 @@ export function createApiClient(
           record(lastContext, "json", "failure", "response_contract", error);
           throw error;
         }
-        preparing = true; options.onPrepare?.();
+        preparing = true; waitingForPreparation = true;
+        if (reportTiming.now() >= deadline) throw timeout();
+        options.onPrepare?.();
         await reportTiming.wait(Math.min(deadline - reportTiming.now(), Math.max(1000, Math.min(3000, Number(payload.retry_after_ms)))), reportSignal);
         continue;
       }
+      if (reportTiming.now() >= deadline) throw timeout();
       if (response.status !== 200 || payload.status === "preparing" || "report_delivery" in payload
         || preparing && (payload.job_id !== jobId || payload.status !== "ready")) {
         const error = new RallyMateApiError("服务未返回当前任务的完整报告，请重新读取。", 422);
@@ -390,6 +404,20 @@ export function createApiClient(
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(reportPath(jobId), signal, "current"),
     getMeshPreview: (jobId, signal) => get(reportPath(jobId, "/mesh-preview"), signal),
+    getShotStatistics: (jobId, signal) => get<unknown>(reportPath(jobId, "/shot-statistics"), signal).then(value => {
+      const parsed = parseShotStatistics(value, jobId);
+      if (!parsed) throw new RallyMateApiError("击球统计与当前任务不匹配。", 422);
+      return parsed;
+    }),
+    saveShotReview: (jobId, submission, signal) => fetchImpl(urlFor(reportPath(jobId, "/shot-statistics")), {
+      method: "POST", cache: "no-store", headers: { "content-type": "application/json", "X-Request-ID": requestId() },
+      body: JSON.stringify(submission),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+    }).then(parseResponse<unknown>).then(value => {
+      const parsed = parseShotStatistics(value, jobId, submission.source_video_sha256);
+      if (!parsed) throw new RallyMateApiError("保存结果与当前视频不匹配，请重新读取。", 422);
+      return parsed;
+    }),
     getSwingKinematics: (jobId, signal) => get(reportPath(jobId, "/swing-kinematics"), signal),
     getTennisAssessment: (jobId, signal) => get(reportPath(jobId, "/tennis-assessment"), signal),
     cancelJob: (jobId, signal) => fetchImpl(urlFor(reportPath(jobId, "/cancel")), {

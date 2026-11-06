@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from rallymate_scoring.model_measurement_contract import (
     MODEL_MEASUREMENT_PROVENANCE, SOURCE_BINDING_FIELDS,
@@ -22,7 +22,10 @@ MAX_MODEL_PROOF_REFERENCES = 20000
 # JSON bound, not the pooled wire size (delivery remains capped at 128 MiB).
 MAX_EXPANDED_REPORT_BYTES = 512 * 1024 * 1024
 MAX_DEPTH = 32
-MAX_BASE_NODES = 2_000_000
+# A complete 97-second report has 2,078,940 base nodes while its pooled body
+# is 53.52 MiB and its expanded evidence 194.31 MiB. Keep a finite structural
+# budget aligned with the browser codec, alongside the independent byte caps.
+MAX_BASE_NODES = 4_000_000
 CODEC, POOL, REF, TRANSPORT = 'model_evidence_codec', 'model_evidence_pool', 'model_evidence_ref', 'report_transport'
 PROOF_KEYS = ('measurement_provenance', 'source_window', 'geometry_mask', 'source_track_id')
 WINDOW_KEYS = ('start_ms', 'end_ms', 'source_frames', 'video_timestamps_ms', 'source_timestamps_ms',
@@ -32,6 +35,10 @@ RESERVED_KEYS = frozenset(('__proto__', 'constructor', 'prototype'))
 
 class ReportEvidenceTransportError(ValueError):
     pass
+
+
+class ReportEvidenceLimitError(ReportEvidenceTransportError):
+    """Valid evidence is too large for the negotiated delivery contract."""
 
 
 def _require(condition: bool) -> None:
@@ -103,11 +110,20 @@ class _Budget:
 
     def add(self, count: int):
         self.bytes += count
-        _require(self.bytes <= MAX_EXPANDED_REPORT_BYTES)
+        self._limit('expanded bytes', self.bytes, MAX_EXPANDED_REPORT_BYTES)
+
+    @staticmethod
+    def _limit(name: str, actual: int, maximum: int) -> None:
+        # The API returns a public capacity error without internal counters;
+        # retain the specific exhausted budget in the server-side exception chain.
+        if actual > maximum:
+            raise ReportEvidenceLimitError(
+                f'Report proof {name} exceeds transport limit ({actual} > {maximum})')
 
     def enter(self, value: Any, depth: int):
         self.nodes += 1
-        _require(self.nodes <= MAX_BASE_NODES and depth <= MAX_DEPTH)
+        self._limit('base nodes', self.nodes, MAX_BASE_NODES)
+        self._limit('depth', depth, MAX_DEPTH)
         if isinstance(value, (list, dict)):
             self.add(2)
         else:
@@ -121,17 +137,23 @@ class _Budget:
 
     def reference(self, cost: int):
         self.references += 1
-        _require(self.references <= MAX_MODEL_PROOF_REFERENCES)
+        self._limit('reference count', self.references, MAX_MODEL_PROOF_REFERENCES)
         self.add(cost)
 
 
-def pack_report_evidence(value: dict) -> dict:
+def pack_report_evidence(value: dict, *, cancellation_callback: Callable[[], None] | None = None) -> dict:
     """Return a new pool transport, or the native input when no proofs exist."""
+    check = cancellation_callback or (lambda: None)
+    check()
     _require(isinstance(value, dict))
     entries, content_ids, cache = [], {}, {}
     budget = _Budget()
 
     def visit(raw, depth):
+        # Large reports can spend most of their preparation time in this walk.
+        # Check during it, not only after the new report and pool are allocated.
+        if budget.nodes % 4096 == 0:
+            check()
         budget.enter(raw, depth)
         if isinstance(raw, list):
             return [visit(item, depth + 1) for item in raw]
@@ -145,6 +167,7 @@ def pack_report_evidence(value: dict) -> dict:
             signature = _json(candidate)
             cached = cache.get(signature)
             if cached is None:
+                check()
                 proof = _checked_proof(candidate)
                 canonical = _json(_canonical(proof))
                 cached = proof, canonical, _bytes(proof)
@@ -152,7 +175,7 @@ def pack_report_evidence(value: dict) -> dict:
             proof, canonical, cost = cached
             identifier = content_ids.get(canonical)
             if identifier is None:
-                _require(len(entries) < MAX_MODEL_PROOFS)
+                budget._limit('proof count', len(entries) + 1, MAX_MODEL_PROOFS)
                 identifier = len(entries)
                 entries.append({'id': identifier, 'evidence': proof})
                 content_ids[canonical] = identifier
@@ -171,6 +194,7 @@ def pack_report_evidence(value: dict) -> dict:
         return result
 
     packed = visit(value, 0)
+    check()
     if not entries:
         return value
     return {**packed, TRANSPORT: MODEL_PROOF_CODEC, CODEC: MODEL_PROOF_CODEC, POOL: entries}

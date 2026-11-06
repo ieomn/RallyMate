@@ -58,16 +58,9 @@ def _canonical_sha256(payload: Any) -> str:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as stream:
-        for line_number, line in enumerate(stream, start=1):
-            if not line.strip():
-                continue
-            value = json.loads(line)
-            if not isinstance(value, dict):
-                raise ValueError(f"{path}:{line_number} must be a JSON object")
-            records.append(value)
-    return records
+    from rallymate_scoring.artifact_evidence import iter_artifact_records
+
+    return list(iter_artifact_records(path))
 
 
 def _round_optional(value: Any, digits: int) -> float | None:
