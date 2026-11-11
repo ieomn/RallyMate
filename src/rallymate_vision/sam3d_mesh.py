@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+from contextlib import nullcontext
 from fractions import Fraction
 import hashlib
 import io
@@ -502,7 +503,9 @@ def _open_video_outputs(av, destinations, *, width, height, rate, time_base,
 def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
                       first_frame: int, last_frame: int, stride: int, source_sha256: str,
                       model: dict, max_height: int = 720,
-                      check_cancelled: Callable[[], None] | None = None) -> dict:
+                      check_cancelled: Callable[[], None] | None = None,
+                      _geometry_dir: Path | None = None, _rows: list[dict] | None = None,
+                      _allow_empty: bool = False, _source_session=None) -> dict:
     """Encode actual source PTS with PyAV; missing people remain genuinely empty."""
     import av
     import cv2
@@ -517,17 +520,25 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
     started = time.perf_counter()
     timings = defaultdict(float)
     output_dir = Path(output_dir).resolve()
-    rows = _read_ledger(output_dir / LEDGER_NAME, output_dir)
+    geometry_dir = Path(_geometry_dir or output_dir).resolve()
+    rows = _read_ledger(geometry_dir / LEDGER_NAME, geometry_dir) if _rows is None else _rows
     identity_started = time.perf_counter()
-    if sha256_file(source).lower() != source_sha256.lower():
-        raise ValueError("mesh replay source changed")
+    if _source_session is None:
+        if sha256_file(source).lower() != source_sha256.lower():
+            raise ValueError("mesh replay source changed")
+    else:
+        # The segment owner hashes once before and after the whole turn.
+        # Cheap per-segment stat checks avoid rescanning a long source video.
+        _source_session.verify_source()
     timings["source_identity_validation_before"] += time.perf_counter() - identity_started
     by_frame = defaultdict(list)
     for row in rows:
         if row["video_sha256"].lower() != source_sha256.lower():
             raise ValueError("mesh/source video mismatch")
         by_frame[row["frame_index"]].append(row)
-    faces_cache = {}
+    faces_cache = {} if _source_session is None else _source_session.faces_cache
+    renderer_timing_start = (dict(_source_session.renderer.timing_seconds)
+                             if _source_session is not None and _source_session.renderer is not None else {})
     renderer = None
     preparation = None
     encoding = None
@@ -545,12 +556,15 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
     def verified_frames():
         nonlocal renderer, containers, encoder, first_pts, source_first_pts, time_base, width, height, w0, h0
         open_started = time.perf_counter()
-        with av.open(str(source)) as source_container:
+        with (av.open(str(source)) if _source_session is None else nullcontext(_source_session.container)) as source_container:
             timings["source_open"] += time.perf_counter() - open_started
             stream = source_container.streams.video[0]
             time_base = Fraction(stream.time_base)
 
             def timed_decode():
+                if _source_session is not None:
+                    yield from _source_session.frames(first_frame, last_frame, timings)
+                    return
                 iterator = iter(source_container.decode(stream))
                 index = 0
                 while True:
@@ -572,7 +586,7 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
                     raise ValueError("mesh replay requires real decoder PTS")
                 pts = Fraction(decoded.pts) * decoded.time_base
                 if source_first_pts is None:
-                    source_first_pts = pts
+                    source_first_pts = pts if _source_session is None else _source_session.source_first_pts
                 if index > last_frame:
                     break
                 if index < first_frame or (index - first_frame) % stride:
@@ -586,7 +600,8 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
                     # difference comes only from mandatory even H.264 dimensions.
                     scale = width / w0
                     setup_started = time.perf_counter()
-                    renderer = OfficialMeshRenderer(width, height, runtime_dir)
+                    renderer = (OfficialMeshRenderer(width, height, runtime_dir) if _source_session is None else
+                                _source_session.get_renderer(width, height, runtime_dir, OfficialMeshRenderer))
                     timings["renderer_setup"] += time.perf_counter() - setup_started
                     encoder_started = time.perf_counter()
                     containers, encoder = _open_video_outputs(
@@ -602,7 +617,7 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
                     if pts != expected or row["image_size"] != [w0, h0]:
                         raise ValueError("mesh source frame/time/dimensions changed")
                     artifact = row["mesh_artifact"]
-                    arrays = _load_verified_geometry(output_dir, artifact, faces_cache, timings)
+                    arrays = _load_verified_geometry(geometry_dir, artifact, faces_cache, timings)
                     # The main thread alone verifies/caches geometry. CPU scene
                     # jobs receive read-only arrays; shared topology never mutates.
                     for array in arrays[:3]:
@@ -654,11 +669,14 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
         timings["mesh_prepare_foreground_wait"] = preparation_receipt["foreground_wait_seconds"]
         if by_frame:
             raise ValueError("mesh ledger contains frames outside the rendered source interval")
-        if not count or not mesh_frames:
+        if not count or not mesh_frames and not _allow_empty:
             raise ValueError("mesh replay contains no inferred human surface")
         identity_started = time.perf_counter()
-        if sha256_file(source).lower() != source_sha256.lower():
-            raise ValueError("mesh replay source changed during rendering")
+        if _source_session is None:
+            if sha256_file(source).lower() != source_sha256.lower():
+                raise ValueError("mesh replay source changed during rendering")
+        else:
+            _source_session.verify_source()
         timings["source_identity_validation_after"] += time.perf_counter() - identity_started
         flush_started = time.perf_counter()
         for container, out_stream in containers:
@@ -695,15 +713,20 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
             "frame_count": count, "mesh_frame_count": mesh_frames, "subject_count": subjects,
             "source_timestamp_origin_ms": float(first_pts * 1000),
             "source_relative_origin_ms": float((first_pts - source_first_pts) * 1000),
+            "source_pts_origin": [first_pts.numerator, first_pts.denominator],
+            "source_stream_origin": [source_first_pts.numerator, source_first_pts.denominator],
+            "source_last_pts": [(first_pts + timestamps[-1]*time_base).numerator,
+                                (first_pts + timestamps[-1]*time_base).denominator],
             "timing_preserved": True, "timebase": "source_pts_relative_to_first_selected_frame",
             "width": width, "height": height, "source_width": w0, "source_height": h0,
             "render_seconds": round(time.perf_counter() - started, 6),
             "mesh_prepare": preparation_receipt,
             "mesh_encode": encoding_receipt,
             "stage_seconds": {key: round(value, 6) for key, value in
-                              {**timings, **renderer.timing_seconds}.items()},
+                              {**timings, **{key: value - renderer_timing_start.get(key, 0.)
+                                           for key, value in renderer.timing_seconds.items()}}.items()},
             "stage_timing_semantics": "geometry_substage_* are included in geometry_read_and_validation; mesh_and_scene is joined CPU prepare wall sum; video_encode is joined codec worker wall when overlap enabled; prepare/encode can overlap main-thread decode/GL; foreground waits measure only consumer blocking; do not add overlapping/child stages as pipeline wall",
-            "ledger": LEDGER_NAME, "ledger_sha256": sha256_file(output_dir / LEDGER_NAME),
+            "ledger": LEDGER_NAME, "ledger_sha256": sha256_file(geometry_dir / LEDGER_NAME),
             "video": VIDEO_NAME, "side_video": SIDE_VIDEO_NAME, "preview_image": PREVIEW_NAME,
             "preview_source_frame": preview_source_frame,
             "manifest": MANIFEST_NAME,
@@ -729,7 +752,7 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
             raise cleanup_error
         for container, _ in containers:
             container.close()
-        if renderer is not None:
+        if renderer is not None and _source_session is None:
             renderer.close()
         for path in pending:
             path.unlink(missing_ok=True)
@@ -737,13 +760,14 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
 
 def render_mesh_subprocess(source: Path, output_dir: Path, runtime_dir: Path, *,
                            first_frame: int, last_frame: int, stride: int, source_sha256: str,
-                           model: dict, check_cancelled: Callable[[], None]) -> dict:
+                           model: dict, check_cancelled: Callable[[], None],
+                           time_slice_seconds: float | None = None) -> dict:
     """Use the installed SAM Python/OpenGL dependencies, with cancellable polling."""
     from rallymate_vision.owned_subprocess import OwnedProcess
     config = {"source": str(source.resolve()), "output_dir": str(output_dir.resolve()),
               "runtime_dir": str(runtime_dir.resolve()), "first_frame": first_frame,
               "last_frame": last_frame, "stride": stride, "source_sha256": source_sha256,
-              "model": model}
+              "model": model, "time_slice_seconds": time_slice_seconds}
     config_path = output_dir / "sam3d-mesh-render-request.json"
     config_path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
     python = os.environ.get("RALLYMATE_SAM3D_PYTHON") or sys.executable
@@ -764,7 +788,8 @@ def render_mesh_subprocess(source: Path, output_dir: Path, runtime_dir: Path, *,
             raise
         finally:
             process.close()
-    return json.loads((output_dir / MANIFEST_NAME).read_text(encoding="utf-8"))
+    from rallymate_vision.mesh_render_segments import RESULT_NAME
+    return json.loads((output_dir / RESULT_NAME).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
@@ -774,4 +799,5 @@ if __name__ == "__main__":
     request = json.loads(args.render_request.read_text(encoding="utf-8"))
     for key in ("source", "output_dir", "runtime_dir"):
         request[key] = Path(request[key])
-    render_mesh_video(**request)
+    from rallymate_vision.mesh_render_segments import render_mesh_resumable
+    render_mesh_resumable(**request)

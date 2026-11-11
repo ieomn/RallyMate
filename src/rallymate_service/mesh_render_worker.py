@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import logging
+import math
 import os
 from pathlib import Path
 from threading import Event
@@ -161,11 +162,12 @@ class MeshRenderCoordinator:
         self._state(path.parent, task_sha, "cancelled", "preview_cancelled_by_request")
 
     def process_one(self, stop_event: Event | None = None, *, allow_queued: bool = False) -> bool:
-        """Attempt at most one complete mesh, yielding again to the worker loop.
+        """Give one mesh a resumable turn, yielding again to the worker loop.
 
         A worker's fair turn may ignore queued work, which has not acquired GPU
         resources. Running inference, cancellation and shutdown always win.
-        This is a complete-job turn, not a resumable render time slice.
+        Fair turns retain complete encoded segments before yielding. Running
+        inference still interrupts the current segment immediately.
         """
         # CUDA visibility alone does not route OpenGL/NVENC to a physical card.
         # Managed inference fleets retain optional requests until a separately
@@ -240,8 +242,24 @@ class MeshRenderCoordinator:
                     else:
                         renderer = self.renderer
                     arguments = {**render, **{key: Path(render[key]) for key in ("source", "output_dir", "runtime_dir")}}
+                    if allow_queued and self.renderer is None:
+                        seconds = float(os.environ.get("RALLYMATE_SAM3D_MESH_TIME_SLICE_SECONDS", "15"))
+                        if not math.isfinite(seconds) or seconds <= 0:
+                            raise ValueError("Mesh time slice must be a positive finite number")
+                        arguments["time_slice_seconds"] = seconds
                     manifest = renderer(**arguments, check_cancelled=check_cancelled)
                     check_cancelled(preempt=False)
+                    if isinstance(manifest, dict) and manifest.get("status") == "pending":
+                        if (manifest.get("source_video_sha256") != render["source_sha256"]
+                                or manifest.get("ledger_sha256") != task["ledger_sha256"]
+                                or type(manifest.get("completed_frames")) is not int
+                                or manifest["completed_frames"] < 1):
+                            raise ValueError("mesh progress does not match source task")
+                        self._state(output, task_sha, "pending", "mesh_time_slice_complete", retryable=True,
+                            completed_frames=manifest["completed_frames"],
+                            completed_segments=manifest.get("completed_segments"),
+                            next_source_frame=manifest.get("next_source_frame"))
+                        return True
                     if (not isinstance(manifest, dict) or manifest.get("status") != "ready"
                             or manifest.get("source_video_sha256") != render["source_sha256"]
                             or manifest.get("ledger_sha256") != task["ledger_sha256"]):
