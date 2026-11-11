@@ -9,7 +9,7 @@ SOURCE_BUFFER_ENV = "RALLYMATE_SAM3D_SOURCE_BUFFER_MIB"
 
 
 def configured_source_buffer_bytes(environment):
-    """Unset uses a frame-size-aware budget; explicit values remain hard bounds."""
+    """Unset scales with frames; explicit values bound multi-frame groups."""
     value = environment.get(SOURCE_BUFFER_ENV)
     if value is None:
         return None
