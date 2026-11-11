@@ -263,7 +263,9 @@ function scopedAssessment(report: Record<string, unknown>, duration: number | nu
       || item.subject_id !== undefined && item.subject_id !== null && !identifier(item.subject_id)
       || item.person_track_id !== undefined && item.person_track_id !== null && !count(item.person_track_id)) return null;
     if (item.status === "scored") {
-      if (item.subject_id !== scope.selected_subject_id || !episodeIds.has(item.episode_id) || scored.has(item.episode_id)) return null;
+      const episode = episodes.find(episode => episode.episode_id === item.episode_id);
+      if (item.subject_id !== scope.selected_subject_id || !episode || scored.has(item.episode_id)
+        || item.person_track_id !== episode.person_track_id || item.start_ms !== episode.start_ms || item.end_ms !== episode.end_ms) return null;
       scored.add(item.episode_id);
     } else if (item.status === "other_subject" && (!identifier(item.subject_id) || !subjectIds.has(item.subject_id) || item.subject_id === scope.selected_subject_id)) return null;
     validity.push({ episode_id: item.episode_id, status: item.status as TennisEpisodeValidity["status"], reason_codes: [...item.reason_codes],
@@ -335,7 +337,7 @@ export function validatedTennisAssessment(value: unknown, context: TennisAssessm
     || context.durationMs !== undefined && context.durationMs !== null && (!finite(context.durationMs) || context.durationMs <= 0)) return null;
   const scopedFields = scoped ? scopedAssessment(report, context.durationMs) : null;
   if (scoped && !scopedFields) return null;
-  const dimensions: TennisDimension[] = [];
+  const dimensions: TennisDimension[] = [], metricDimensions = new Map<string, TennisDimensionId>();
   for (const spec of TENNIS_DIMENSIONS) {
     const matches = report.dimensions.map(record).filter(item => item?.id === spec.id);
     const dimension = matches[0];
@@ -343,10 +345,11 @@ export function validatedTennisAssessment(value: unknown, context: TennisAssessm
     const metrics: TennisMetric[] = [], ids = new Set<string>();
     for (const raw of dimension.metrics) {
       const metric = record(raw);
-      if (!metric || !text(metric.id) || !metric.id || ids.has(metric.id) || !text(metric.label) || !text(metric.unit) || !text(metric.target)
+      if (!metric || !identifier(metric.id) || ids.has(metric.id) || metricDimensions.has(metric.id) || !text(metric.label) || !text(metric.unit) || !text(metric.target)
         || !(metric.value === null || finite(metric.value)) || !score(metric.score) || !finite(metric.weight) || metric.weight <= 0
         || !count(metric.observation_count) || metric.score !== null && (metric.value === null || metric.observation_count === 0)) return null;
       ids.add(metric.id);
+      metricDimensions.set(metric.id, spec.id);
       metrics.push({ id: metric.id, label: metric.label, value: metric.value, unit: metric.unit, score: metric.score,
         weight: metric.weight, observation_count: metric.observation_count, target: metric.target });
     }
@@ -375,6 +378,9 @@ export function validatedTennisAssessment(value: unknown, context: TennisAssessm
     }
     dimensions.push({ id: spec.id, label: spec.label, score: dimension.score, observation_count: dimension.observation_count, metrics });
   }
+  // Every scored episode measurement contributes to exactly one dimension.
+  // A self-consistent subtotal must not hide a measurement or count it twice.
+  if (scopedFields?.episodes.some(episode => Object.keys(episode.metrics!).some(id => !metricDimensions.has(id)))) return null;
   const measured = dimensions.filter(item => item.score !== null);
   if (scopedFields && scopedFields.episodes.some(episode => episode.motion_pattern!.requirements.some(requirement => requirement.status === "measured_proxy"
     && requirement.metric_ids.some(id => !dimensions.some(dimension => dimension.metrics.some(metric => metric.id === id && metric.score !== null)))))) return null;
