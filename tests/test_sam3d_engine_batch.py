@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import tempfile
+import threading
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -200,12 +201,108 @@ class EngineBatchTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.engine.infer_batch(inputs)
         with patch("rallymate_vision.sam3d_runner.MAX_BATCH_SOURCE_BYTES", 100):
-            with self.assertRaisesRegex(ValueError, "128 MiB"):
+            with self.assertRaisesRegex(ValueError, "256 MiB"):
                 self.engine.infer_batch([request(0, 1)])
         with patch.dict(os.environ, {"RALLYMATE_SAM3D_BATCH_PERSONS": "9"}):
             with self.assertRaises(ValueError):
                 self.engine.infer_batch([request(0, 1)])
         self.executor.infer.assert_not_called()
+
+    def test_background_mesh_capture_overlaps_next_forward_and_is_ready_at_return(self):
+        from rallymate_vision.sam3d_mesh import capture_mesh_output
+        next_forward = threading.Event()
+        capture_started = threading.Event()
+        calls = []
+        faces = np.array([[0, 1, 2]], np.int64)
+
+        def infer(rows, **kwargs):
+            calls.append(1)
+            if len(calls) == 2:
+                self.assertTrue(capture_started.wait(5))
+                next_forward.set()
+            return [{**native(len(calls)), "pred_vertices": np.array(
+                [[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]], np.float32)} for _ in rows]
+
+        def capture(output, topology, runtime):
+            capture_started.set()
+            if not next_forward.wait(5):
+                raise RuntimeError("Mesh capture blocked the next GPU group")
+            return capture_mesh_output(output, topology, runtime)
+
+        with tempfile.TemporaryDirectory() as directory:
+            self.engine.runtime_dir = Path(directory)
+            self.engine.estimator = SimpleNamespace(faces=faces)
+            self.engine.mesh_export_enabled = self.engine.async_mesh_capture = True
+            self.engine.mesh_capture_writer = None
+            self.executor.infer.side_effect = infer
+            try:
+                with patch("rallymate_vision.sam3d_mesh.capture_mesh_output", side_effect=capture):
+                    rows = self.engine.infer_batch([request(0, 4), request(1, 4)])
+                for row in rows[0] + rows[1]:
+                    self.assertEqual(row["status"], "ok")
+                    self.assertTrue(Path(row["mesh_artifact"]["path"]).is_file())
+                    self.assertEqual(row["mesh_capture_timing"]["subjects"], 4)
+                self.assertLessEqual(self.engine.mesh_capture_writer.receipt["peak_pending_groups"], 2)
+                self.assertIsNone(self.engine._pending_mesh_captures)
+            finally:
+                next_forward.set()
+                self.engine.mesh_capture_writer.close()
+
+    def test_request_exception_drains_and_discards_unpublished_background_mesh(self):
+        from tests.test_sam3d_mesh_capture import native_mesh
+        with tempfile.TemporaryDirectory() as directory:
+            self.engine.runtime_dir = Path(directory)
+            self.engine.estimator = SimpleNamespace(faces=np.array([[0, 1, 2]], np.int64))
+            self.engine.mesh_export_enabled = self.engine.async_mesh_capture = True
+            self.engine.mesh_capture_writer = None
+
+            def interrupted(_requests):
+                self.engine._capture_mesh_results([native_mesh()], [{}], "sam_batch_inference_error")
+                raise KeyboardInterrupt("controlled request cancellation")
+
+            self.engine._infer_batch = interrupted
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    self.engine.infer_batch([])
+                self.assertEqual(list((Path(directory) / "cache/mesh").glob("*.npz")), [])
+                self.assertIsNone(self.engine._pending_mesh_captures)
+            finally:
+                self.engine.mesh_capture_writer.close()
+
+    def test_cancellation_during_join_drains_same_future_before_discard(self):
+        from rallymate_vision.sam3d_mesh import capture_mesh_output
+        from tests.test_sam3d_mesh_capture import native_mesh
+        with tempfile.TemporaryDirectory() as directory:
+            self.engine.runtime_dir = Path(directory)
+            artifact = capture_mesh_output(native_mesh(), np.array([[0, 1, 2]]), Path(directory))
+            future = Mock()
+            future.result.side_effect = [KeyboardInterrupt("during join"), ([artifact], 2.0)]
+            future.done.return_value = False
+            with self.assertRaises(KeyboardInterrupt):
+                with self.engine._mesh_capture_scope():
+                    self.engine._pending_mesh_captures.append((future, [{}], "sam_inference_error", 0))
+            self.assertEqual(future.result.call_count, 2)
+            self.assertFalse(Path(artifact["path"]).exists())
+            self.assertIsNone(self.engine._pending_mesh_captures)
+
+    def test_background_write_failure_fails_entire_group_before_reply(self):
+        from tests.test_sam3d_mesh_capture import native_mesh
+        with tempfile.TemporaryDirectory() as directory:
+            self.engine.runtime_dir = Path(directory)
+            self.engine.estimator = SimpleNamespace(faces=np.array([[0, 1, 2]], np.int64))
+            self.engine.mesh_export_enabled = self.engine.async_mesh_capture = True
+            self.engine.mesh_capture_writer = None
+            good, bad = {**native(1), **native_mesh()}, {**native(2), **native_mesh()}
+            bad["pred_vertices"].fill(np.nan)
+            self.executor.infer.side_effect = lambda *args, **kwargs: [good, bad]
+            try:
+                rows = self.engine.infer_batch([request(0, 2)])[0]
+                self.assertEqual([row["status"] for row in rows], ["failed", "failed"])
+                self.assertTrue(all(row["reason"] == "sam_batch_inference_error" for row in rows))
+                self.assertTrue(all("mesh_artifact" not in row and "keypoints_2d" not in row for row in rows))
+                self.assertEqual(list((Path(directory) / "cache/mesh").glob("*.npz")), [])
+            finally:
+                self.engine.mesh_capture_writer.close()
         self.engine.infer.assert_not_called()
 
     def test_explicit_one_subject_limit_keeps_existing_single_path(self):

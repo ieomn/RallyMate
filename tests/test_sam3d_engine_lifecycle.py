@@ -209,6 +209,22 @@ class SamEngineLifecycleTests(unittest.TestCase):
         engine.close()
         self.assertEqual(restored, ["rotation", "prompt"])
 
+    def test_mesh_writer_drains_before_estimator_teardown_even_if_close_fails(self):
+        engine, torch, restored, error, _ = self.initialize()
+        self.assertIsNone(error)
+        failure = OSError("controlled writer close failure")
+        writer = SimpleNamespace(close=Mock(side_effect=failure))
+        engine.mesh_capture_writer = writer
+        with self.assertRaises(OSError) as caught:
+            engine.close()
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(restored, ["rotation", "prompt"])
+        self.assertIsNone(engine.estimator)
+        self.assertIsNone(engine.mesh_capture_writer)
+        torch.cuda.empty_cache.assert_called_once_with()
+        engine.close()
+        writer.close.assert_called_once_with()
+
     def test_close_attempts_remaining_handles_and_cache_cleanup_before_reraising(self):
         restored = []
         first_error = ValueError("rotation restore failure")
