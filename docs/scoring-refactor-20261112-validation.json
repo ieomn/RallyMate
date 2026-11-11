@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-12",
+  "timezone": "Asia/Shanghai",
+  "branch": "评分重构",
+  "base_commit": "73f4ec41bc189f9742e5eadeeb9d9fad8a066c55",
+  "tested_code_commit": "c362e53a8d09c658a31f3005175e26c0409a13cd",
+  "scoring_policy_version": "level-grading-policy-v2.0.0",
+  "source_weight_table_count": 45,
+  "backend": {
+    "tests_run": 631,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "all_passed": true
+  },
+  "frontend": {
+    "tests": 1083,
+    "pass": 1082,
+    "fail": 0,
+    "skipped": 1,
+    "optional_skip": "FORMAL_V2_REPORT not supplied",
+    "typecheck_passed": true,
+    "lint_passed": true,
+    "production_build_passed": true
+  },
+  "real_video_replay": {
+    "inputs": 10,
+    "unique_source_hashes": 10,
+    "scored_episodes": 278,
+    "all_passed": true,
+    "inference_mode": "reuse_verified_complete_native_artifacts_recompute_scores",
+    "source_code_stable": true,
+    "scorer_source_fingerprint": "6bb39b30e08172e981b7fcbfbcb5ab4766fdd9bd5ded75d42f340c5cae7b74e7"
+  },
+  "frontend_real_report_validation": {
+    "reports": 10,
+    "all_passed": true,
+    "joint_kinematics_preserved": true,
+    "level_assessments_preserved": true
+  },
+  "parallel_branch_check": {
+    "branch": "性能优化",
+    "commit": "6078413b2193fb699ee60914722b82b2670855db",
+    "overlapping_changed_files": 0,
+    "git_trial_merge_conflicts": 0
+  }
+}
