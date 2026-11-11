@@ -332,6 +332,35 @@ class MeshSegmentTests(unittest.TestCase):
         self.assertEqual(checkpoint["cache_retention"], "retained")
         self.assertEqual(checkpoint["cache_cleanup_error_type"], "ValueError")
 
+    def test_remux_retains_fine_container_timebase_with_nominal_fps_codec_headers(self):
+        # NVENC writes nominal-rate H.264 headers even when the MP4 uses a
+        # finer source clock. Reproduce that distinction with CPU x264.
+        parts = []
+        expected = []
+        for number, origin in enumerate((Fraction(0), Fraction(9001, 90000))):
+            path = self.root / f"nominal-codec-{number}.mp4"
+            with av.open(str(path), "w") as container:
+                stream = container.add_stream("libx264", rate=30)
+                stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+                stream.time_base = Fraction(1, 90000)
+                stream.codec_context.time_base = Fraction(1, 30)
+                stream.codec_context.max_b_frames = 0
+                for index in range(3):
+                    frame = av.VideoFrame.from_ndarray(np.full((48, 64, 3), index*30, np.uint8), format="bgr24")
+                    frame.pts, frame.time_base = index, Fraction(1, 30)
+                    for packet in stream.encode(frame):
+                        container.mux(packet)
+                for packet in stream.encode():
+                    container.mux(packet)
+            parts.append((path, {"source_pts_origin": [origin.numerator, origin.denominator], "frame_count": 3}))
+            expected.extend(origin + Fraction(index, 30) for index in range(3))
+        output = self.root / "fine-timebase-joined.mp4"
+        segments_module._remux_parts(parts, output)
+        actual = self.pixels_and_pts(output)
+        self.assertEqual([pts for pts, _ in actual], expected)
+        with av.open(str(output)) as container:
+            self.assertEqual(container.streams.video[0].time_base, Fraction(1, 90000))
+
 
 if __name__ == "__main__":
     unittest.main()

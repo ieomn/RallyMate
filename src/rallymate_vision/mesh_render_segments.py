@@ -285,6 +285,10 @@ def _remux_parts(parts, destination, *, check_cancelled=lambda: None):
                 codec_identity = current_codec
                 if output_stream is None:
                     output_stream = target.add_stream_from_template(stream)
+                    # Codec headers can describe only a nominal frame rate.
+                    # Preserve the MP4 source clock explicitly so the muxer
+                    # cannot round fine-grained VFR timestamps to that rate.
+                    output_stream.time_base = stream.time_base
                 for packet in source.demux(stream):
                     check_cancelled()
                     if packet.dts is None:
