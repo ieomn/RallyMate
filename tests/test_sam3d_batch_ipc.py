@@ -28,14 +28,21 @@ def item(marker=1, shape=(16, 20, 3), subjects=1):
 class BatchBoundsTests(unittest.TestCase):
     def test_frame_count_pixels_and_total_bytes_rejected_before_transport(self):
         self.assertEqual(runner.MAX_BATCH_FRAMES, 8)
-        self.assertEqual(runner.MAX_BATCH_SOURCE_BYTES, 128 * 1024 * 1024)
-        huge_view = np.broadcast_to(np.uint8(1), (8192, 8192, 3))
+        self.assertEqual(runner.MAX_BATCH_SOURCE_BYTES, 256 * 1024 * 1024)
+        huge_view = np.broadcast_to(np.uint8(1), (10240, 10240, 3))
         cases = ([item() for _ in range(9)], [{"frame": huge_view, "boxes": []}],
                  [{"frame": np.zeros((8, 8, 3), dtype=np.float32), "boxes": []}],
                  [item(subjects=5)], [dict(item(), boxes=[[1., 2., 999., 11.]])])
         for requests in cases:
             with self.subTest(kind=str(type(requests))), self.assertRaises(ValueError):
                 runner._validate_frame_requests(requests)
+
+    def test_eight_4k_frames_fit_the_same_transport_bound_as_staging(self):
+        frame = np.broadcast_to(np.uint8(1), (2160, 3840, 3))
+        runner._validate_frame_requests([{"frame": frame, "boxes": []} for _ in range(8)])
+        with self.assertRaisesRegex(ValueError, "256 MiB"):
+            runner._validate_frame_requests([{"frame": frame, "boxes": []},
+                {"frame": np.broadcast_to(np.uint8(1), (8192, 10240, 3)), "boxes": []}])
 
 
 @unittest.skipUnless(os.name == "nt" and SAM_PYTHON.exists(), "Windows SAM Python 3.11 runtime required")

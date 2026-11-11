@@ -161,6 +161,20 @@ class SamEngineLifecycleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "body inference"):
                 runner.Sam3DEngine("missing.pt", runtime_dir="missing", inference_type="full")
 
+    def test_isolated_worker_reuses_cache_by_default_and_accepts_baseline_override(self):
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_ISOLATED_WORKER": "1"}):
+            os.environ.pop("RALLYMATE_SAM3D_REUSE_CUDA_CACHE", None)
+            engine, _, _, error, _ = self.initialize()
+            self.assertIsNone(error)
+            self.assertTrue(engine.reuse_cuda_cache)
+            self.assertEqual(engine.metadata["cuda_cache_policy"], "reuse_between_frames")
+            engine.close()
+            os.environ["RALLYMATE_SAM3D_REUSE_CUDA_CACHE"] = "0"
+            engine, _, _, error, _ = self.initialize()
+            self.assertIsNone(error)
+            self.assertFalse(engine.reuse_cuda_cache)
+            engine.close()
+
     def test_executor_closes_before_restoring_transforms_and_only_once(self):
         engine, _, restored, error, _ = self.initialize()
         self.assertIsNone(error)

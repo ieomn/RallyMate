@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import contextlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -28,6 +29,7 @@ from rallymate_vision.sam3d_ipc import (
 )
 from rallymate_vision.owned_subprocess import OwnedProcess
 from rallymate_vision.sam3d_cuda_wait import configure_sam_cuda_wait, verify_sam_cuda_wait
+from rallymate_vision.sam3d_limits import MAX_BATCH_FRAMES, MAX_BATCH_SOURCE_BYTES
 
 
 SAM_SOURCE_COMMIT = "b5c765a0d89d789985e186d396315e7590887b94"
@@ -37,8 +39,6 @@ CHECKPOINT_HASHES = {
 }
 MHR_HASH = "352e271a6c42729c68554ceaea0c955e866970160c31e35506d782dc0f7377bc"
 BATCH_PROTOCOL = "sam-body-frames-v1"
-MAX_BATCH_FRAMES = 8
-MAX_BATCH_SOURCE_BYTES = 128 * 1024 * 1024
 
 
 def _validate_frame_requests(requests):
@@ -60,7 +60,7 @@ def _validate_frame_requests(requests):
                 raise ValueError("SAM batch source bbox is invalid")
         total += frame.nbytes
     if total > MAX_BATCH_SOURCE_BYTES:
-        raise ValueError("SAM batch source pixels exceed 128 MiB")
+        raise ValueError("SAM batch source pixels exceed 256 MiB")
 
 
 def _validate_batch_outputs(outputs, requests):
@@ -173,11 +173,18 @@ class EstimatorStageTiming:
     additional per-stage synchronize is introduced. Patches are always restored.
     """
 
-    def __init__(self, estimator, torch, *, enabled: bool, reuse_cuda_cache: bool):
+    def __init__(self, estimator, torch, *, enabled: bool, reuse_cuda_cache: bool,
+                 batch_executor=None):
         self.estimator, self.torch = estimator, torch
         self.enabled, self.reuse_cuda_cache = enabled, reuse_cuda_cache
         self.wall_ms, self.calls, self.events = Counter(), Counter(), []
         self.restores = []
+        self.batch_executor = batch_executor
+
+    def _patch_global(self, namespace, name, replacement):
+        original = namespace[name]
+        namespace[name] = replacement
+        self.restores.append((namespace, name, original, True))
 
     def _patch(self, owner, name, replacement):
         original = getattr(owner, name)
@@ -211,25 +218,35 @@ class EstimatorStageTiming:
             return self
         if os.environ.get("RALLYMATE_SAM3D_ISOLATED_WORKER") != "1":
             raise RuntimeError("SAM stage profiling/cache reuse requires the isolated SAM worker")
-        module = sys.modules[type(self.estimator).__module__]
         try:
             original_empty = self.torch.cuda.empty_cache
             empty = self._wrapper("allocator_cache_release",
                                   (lambda: None) if self.reuse_cuda_cache else original_empty)
-            # Only the official estimator's module reference is shadowed.
-            # Real torch.cuda.empty_cache and close() remain untouched, even
-            # inside this dedicated single-model process.
-            cuda_view = _AttributeOverrides(self.torch.cuda, empty_cache=empty)
-            self._patch(module, "torch", _AttributeOverrides(self.torch, cuda=cuda_view))
+            if self.batch_executor is None:
+                # The output-transfer handle clones process_one_image globals.
+                # Instrument the globals actually used by the active method so
+                # its converter, cache policy and timings compose correctly.
+                method = getattr(self.estimator, "process_one_image", None)
+                namespace = (inspect.unwrap(method).__globals__ if method is not None
+                             else vars(sys.modules[type(self.estimator).__module__]))
+                cuda_view = _AttributeOverrides(self.torch.cuda, empty_cache=empty)
+                self._patch_global(namespace, "torch", _AttributeOverrides(self.torch, cuda=cuda_view))
             if self.enabled:
-                self._patch(module, "prepare_batch", self._wrapper("crop_preprocess", module.prepare_batch))
-                recursive = module.recursive_to
+                if self.batch_executor is None:
+                    self._patch_global(namespace, "prepare_batch", self._wrapper("crop_preprocess", namespace["prepare_batch"]))
+                    recursive = namespace["recursive_to"]
+                else:
+                    self._patch(self.batch_executor, "prepare_batch", self._wrapper("crop_preprocess", self.batch_executor.prepare_batch))
+                    recursive = self.batch_executor.recursive_to
 
                 def transfer(data, destination, *args, **kwargs):
                     name = {"cuda": "host_to_device", "cpu": "device_to_host", "numpy": "tensor_to_numpy"}.get(str(destination), "other_transfer")
                     return self._wrapper(name, recursive, cuda=str(destination) in {"cuda", "cpu"})(data, destination, *args, **kwargs)
 
-                self._patch(module, "recursive_to", transfer)
+                if self.batch_executor is None:
+                    self._patch_global(namespace, "recursive_to", transfer)
+                else:
+                    self._patch(self.batch_executor, "recursive_to", transfer)
                 for name, label in (("_initialize_batch", "initialize_batch"), ("run_inference", "model_forward")):
                     self._patch(self.estimator.model, name, self._wrapper(label, getattr(self.estimator.model, name), cuda=True))
             return self
@@ -239,7 +256,9 @@ class EstimatorStageTiming:
 
     def __exit__(self, *_exc):
         for owner, name, original, had_own in reversed(self.restores):
-            if had_own:
+            if isinstance(owner, dict):
+                owner[name] = original
+            elif had_own:
                 setattr(owner, name, original)
             else:
                 delattr(owner, name)
@@ -451,7 +470,8 @@ class Sam3DEngine:
                 verify_sam_cuda_wait(cuda_wait_policy)
             self.torch, self.inference_type = torch, inference_type
             self.profile_stages = os.environ.get("RALLYMATE_SAM3D_PROFILE_STAGES", "0") == "1"
-            self.reuse_cuda_cache = os.environ.get("RALLYMATE_SAM3D_REUSE_CUDA_CACHE", "0") == "1"
+            self.reuse_cuda_cache = os.environ.get("RALLYMATE_SAM3D_REUSE_CUDA_CACHE",
+                os.environ.get("RALLYMATE_SAM3D_ISOLATED_WORKER", "0")) == "1"
             self.inference_calls = 0
             self.metadata = {
                 "backend": "sam3d", "runtime": "pytorch", "model_path": str(checkpoint),
@@ -630,8 +650,11 @@ class Sam3DEngine:
             self.inference_calls += 1
             results = [{"status": "failed", "reason": None,
                         "first_model_call": first_call} for _ in group]
+            profiler = EstimatorStageTiming(getattr(self, "estimator", None), self.torch,
+                enabled=getattr(self, "profile_stages", False), reuse_cuda_cache=self.reuse_cuda_cache,
+                batch_executor=self.body_batch_executor)
             try:
-                with contextlib.redirect_stdout(sys.stderr):
+                with contextlib.redirect_stdout(sys.stderr), profiler:
                     raw = self.body_batch_executor.infer([(item[2], item[3]) for item in group],
                         clear_cuda_cache=not self.reuse_cuda_cache)
                 self.torch.cuda.synchronize()
@@ -670,6 +693,8 @@ class Sam3DEngine:
                 preprocess_receipt = (executor_receipt.get("batch_preprocess", {})
                                       if isinstance(executor_receipt, dict) else {})
                 for (fi, bi, _, _), result in zip(group, results):
+                    if getattr(self, "profile_stages", False) or self.reuse_cuda_cache:
+                        result["estimator_stage_timing"] = profiler.report()
                     result.update(inference_ms=elapsed_ms / len(group),
                         inference_type=self.inference_type,
                         peak_memory_bytes=self.torch.cuda.max_memory_allocated(),

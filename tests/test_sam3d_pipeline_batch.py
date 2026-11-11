@@ -6,6 +6,7 @@ import numpy as np
 
 from rallymate_service.worker import JobCancelled
 from rallymate_vision.sam3d_pipeline_batch import sam_pose_observations
+from rallymate_vision.sam3d_limits import configured_source_buffer_bytes, SOURCE_BUFFER_ENV
 
 
 def person(track, box):
@@ -99,6 +100,45 @@ class SamPipelineBatchTests(unittest.TestCase):
             self.assertEqual([r["sam_subject_selection"] for r in rows],
                              [r["sam_subject_selection"] for r in scalar])
             self.assertEqual([r["sam_records"] for r in rows], [r["sam_records"] for r in scalar])
+
+    def test_automatic_budget_delivers_eight_exact_4k_frames_and_reports_tail(self):
+        source = []
+        for i in range(9):
+            row = observation(i, no_players=True)
+            row["image"] = np.broadcast_to(np.uint8(i), (2160, 3840, 3))
+            source.append(row)
+        rows, perception, _, stats = self.run_helper(source, batch=8)
+        self.assertEqual(len(rows), 9)
+        self.assertEqual([len(batch) for batch in perception.batch_calls], [8])
+        self.assertEqual(stats["max_buffer_bytes"], 8 * 2160 * 3840 * 3)
+        self.assertEqual(stats["peak_source_bytes"], stats["max_buffer_bytes"])
+        self.assertEqual(stats["frame_batch_histogram"], {"8": 1, "1": 1})
+        self.assertEqual(stats["selected_subject_histogram"], {"0": 2})
+        self.assertEqual(stats["flush_reasons"], {"requested_frames": 1, "end_of_stream": 1})
+        self.assertEqual(stats["frame_fill_ratio"], 9 / 16)
+        for index, row in enumerate(rows):
+            self.assertIs(row["image"], source[index]["image"])
+            self.assertEqual(row["sam_records"][0]["marker"], index)
+
+    def test_explicit_budget_retains_backpressure_and_reports_byte_limit(self):
+        _, perception, _, stats = self.run_helper([observation(i) for i in range(5)], batch=8,
+                                                  max_buffer_bytes=384)
+        self.assertEqual([len(batch) for batch in perception.batch_calls], [2, 2])
+        self.assertEqual(stats["buffer_policy"], "explicit")
+        self.assertEqual(stats["flush_reasons"], {"source_byte_limit": 2, "end_of_stream": 1})
+
+    def test_source_budget_configuration_is_bounded_and_fail_fast(self):
+        self.assertIsNone(configured_source_buffer_bytes({}))
+        self.assertEqual(configured_source_buffer_bytes({SOURCE_BUFFER_ENV: "192"}), 192 * 1024**2)
+        for value in ("", "0", "257", "-1", "1.5", "true", " 64", "６４", None):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                # None is not a string supplied by an actual environment.
+                if value is None:
+                    self.run_helper([], max_buffer_bytes=True)
+                else:
+                    configured_source_buffer_bytes({SOURCE_BUFFER_ENV: value})
+        with self.assertRaises(ValueError):
+            self.run_helper([], max_buffer_bytes=257 * 1024**2)
 
     def test_byte_bound_flushes_before_next_batch_and_oversized_frame_runs_alone(self):
         rows, perception, _, stats = self.run_helper([observation(i) for i in range(5)], batch=4,

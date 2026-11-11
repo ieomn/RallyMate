@@ -128,6 +128,11 @@ class BodyBatchTests(unittest.TestCase):
         self.assertEqual(set(outputs[0]), set(OUTPUT_FIELDS) | {"bbox", "mask"})
         self.assertIsNone(outputs[0]["mask"])
 
+    def test_default_retains_allocator_cache(self):
+        with patch.object(self.torch.cuda, "empty_cache") as release:
+            self.runner.infer(self.requests)
+        release.assert_not_called()
+
     def test_single_and_batch_output_binding_are_identical_with_mixed_image_shapes(self):
         single = [self.runner.infer([request], clear_cuda_cache=False)[0] for request in self.requests]
         together = self.runner.infer(self.requests, clear_cuda_cache=False)

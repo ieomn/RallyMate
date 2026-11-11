@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import hashlib
 import inspect
-import os
 from pathlib import Path
 import types
 
@@ -169,9 +168,8 @@ class OutputTransferHandle:
 def apply_output_transfer(estimator, *, inference_type="body"):
     """Opt-in complete-tree D2H batching; caller must explicitly install it.
 
-    Profiling/cache-reuse wrappers currently patch official module globals;
-    reject those combinations rather than silently bypass their behavior.
-    torch.profiler around the inference call remains supported.
+    Scoped profiling/cache-reuse instrumentation follows the active method's
+    cloned globals and therefore retains this instance-local D2H converter.
     """
     import torch
 
@@ -181,9 +179,6 @@ def apply_output_transfer(estimator, *, inference_type="body"):
     if device.type != "cuda" or device.index not in (None, 0):
         raise ValueError("Output transfer is validated only for CUDA device 0")
     device = torch.device("cuda:0")
-    if (os.environ.get("RALLYMATE_SAM3D_PROFILE_STAGES", "0") != "0"
-            or os.environ.get("RALLYMATE_SAM3D_REUSE_CUDA_CACHE", "0") != "0"):
-        raise ValueError("Output transfer cannot bypass scoped stage/cache wrappers")
     if "process_one_image" in vars(estimator):
         raise ValueError("Estimator already has an instance method replacement")
     function = inspect.unwrap(estimator.process_one_image)
