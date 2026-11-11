@@ -224,7 +224,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     }
     return response;
   };
-  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|status|report-summary|report-overview|report-motion/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159}|report-actions(?:/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159})?|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
+  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|status|report-summary|report-overview|report-motion/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159}|report-actions(?:/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159})?|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|reference-comparison|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
   const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/(?:technical-review|shot-statistics)$`).test(url.pathname);
   const cancelWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/cancel$`).test(url.pathname);
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
@@ -264,7 +264,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     // the API's 60-second budget. Let it return its own result/error while the
     // independent summary, score and video remain available. Cold action-score
     // recomputation has its own bounded 120s budget; ordinary GETs stay at 30s.
-    getDeadline = AbortSignal.timeout(url.pathname.endsWith("/tennis-assessment") ? 120000
+    getDeadline = AbortSignal.timeout((url.pathname.endsWith("/tennis-assessment") || url.pathname.endsWith("/reference-comparison")) ? 120000
       : url.pathname.endsWith("/report-overview") ? 65000 : 30000);
   }
   // The chunk deadline covers both receiving and forwarding, and finishes before

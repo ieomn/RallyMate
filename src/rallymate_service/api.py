@@ -84,6 +84,7 @@ from rallymate_service.analysis_report import build_analysis_report
 from rallymate_service.process_evaluation import build_process_evaluation
 from rallymate_service.swing_kinematics import build_swing_kinematics
 from rallymate_service.tennis_assessment import build_tennis_assessment
+from rallymate_scoring.reference_comparison import compare_action_to_reference
 from rallymate_scoring.indicator_assessment import build_indicator_assessment
 from rallymate_service.card_execution import VERSION as CARD_EXECUTION_VERSION, build_card_execution_report
 from rallymate_scoring.card_rule_catalog import VERSION as CARD_RULE_VERSION
@@ -2164,6 +2165,36 @@ def create_app(
         return build_tennis_assessment(
             summary_with_actions(job), Path(job["output_dir"]), job_id=job_id,
         )
+
+    @app.get("/v1/jobs/{job_id}/reference-comparison")
+    def get_reference_comparison(
+        job_id: str,
+        response: Response,
+        episode_id: str = Query(..., min_length=1, max_length=128),
+        reference_job_id: str = Query(..., min_length=1, max_length=128),
+        reference_episode_id: str = Query(..., min_length=1, max_length=128),
+        _: None = Depends(authorize),
+    ) -> dict:
+        """Compare two source-bound actions rebuilt with the current scorer."""
+        jobs = [db.get_job(identifier) for identifier in (job_id, reference_job_id)]
+        if any(job is None for job in jobs):
+            raise HTTPException(404, "job not found")
+        if any(job["status"] != "succeeded" for job in jobs):
+            raise HTTPException(409, "reference comparison requires succeeded jobs")
+        response.headers["Cache-Control"] = "no-store"
+        reports = {}
+        for identifier, job in zip((job_id, reference_job_id), jobs):
+            if identifier not in reports:
+                reports[identifier] = build_tennis_assessment(
+                    summary_with_actions(job), Path(job["output_dir"]), job_id=identifier,
+                )
+        try:
+            return compare_action_to_reference(
+                reports[job_id], episode_id, reports[reference_job_id], reference_episode_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, {"code": "reference_comparison_invalid",
+                                      "reason": str(exc)}) from exc
 
     @app.get("/v1/jobs/{job_id}/swing-kinematics")
     def get_swing_kinematics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:

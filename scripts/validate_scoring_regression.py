@@ -21,6 +21,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "src")]
 MODULES = (
     "action_aggregation", "source_level_weights", "scoring_source_binding", "level_route_isolation",
     "scoring_identity_namespaces", "scoring_loop", "sam_footwork",
+    "reference_comparison", "reference_comparison_api", "reference_scoring_validation", "reference_comparison_report",
     "level_grading", "level_assessment_integration", "direct_scoring_rules", "indicator_assessment",
     "card_formal_scoring_inputs", "card_evaluation", "training_dimensions",
     "relative_score", "score_comparison", "scoring_unknown_confidence", "model_measurement_contract",
