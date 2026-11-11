@@ -27,6 +27,7 @@ from rallymate_service.tennis_source_motion import source_motion_by_frame, windo
 from rallymate_service.tennis_motion_patterns import analyze_motion_pattern, PATTERN_METRICS, TECHNIQUES, RUBRIC as PATTERN_RUBRIC
 from rallymate_vision.sam3d_evaluation import COORDINATES_3D, _binding_error, _time
 from rallymate_scoring.stroke_candidates import detect_stroke_candidates, _normalization
+from rallymate_scoring.action_aggregation import aggregate_action_dimensions
 from rallymate_events.gs_phase_segmentation import segment_motion_phases
 from rallymate_features.gs_features import measure_joint_kinematics
 from rallymate_service.level_assessment import build_level_assessments
@@ -1193,6 +1194,7 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
                 gaps.append(f"{reasons[code]} {label}")
         result["reason_zh"] = "未识别到可评分的完整挥拍片段。" + ("；".join(gaps) + "。" if gaps else "") + "未识别不代表没有挥拍或动作错误。"
     families = {e["family"] for e in episodes}
+    dimension_definitions = []
     for identifier, label in DIMENSIONS:
         definitions = dict((row[0], row) for row in (SERVE_METRICS[identifier] if families == {"serve"} else METRICS[identifier]))
         if "serve" in families:
@@ -1201,21 +1203,8 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
         for row in (*PATTERN_METRICS[identifier], *SPECIALIST_METRICS[identifier]):
             if any(row[0] in e["metrics"] or any(row[0] in req["metric_ids"] for req in e["motion_pattern"]["requirements"]) for e in episodes):
                 definitions[row[0]] = row
-        available_counts = [sum(key in e["metrics"] for key in definitions) for e in episodes]
-        count = sum(n > 0 for n in available_counts)
-        metrics = []
-        for key, title, unit, target in definitions.values():
-            observations = [(e["metrics"][key], 1 / n) for e, n in zip(episodes, available_counts) if key in e["metrics"]]
-            mass = sum(w for _, w in observations)
-            metrics.append({"id": key, "label": title, "unit": unit, "target": target,
-                            "weight": round(mass / count, 8) if observations else 1,
-                            "value": round(sum(v[0] * w for v, w in observations) / mass, 5) if observations else None,
-                            "score": round(sum(v[1] * w for v, w in observations) / mass, 2) if observations else None,
-                            "observation_count": len(observations)})
-        scored = [m for m in metrics if m["score"] is not None]
-        score = sum(m["score"] * m["weight"] for m in scored) / sum(m["weight"] for m in scored) if scored else None
-        result["dimensions"].append({"id": identifier, "label": label, "score": round(score, 2) if score is not None else None,
-                                     "observation_count": count, "metrics": metrics})
+        dimension_definitions.append((identifier, label, tuple(definitions.values())))
+    result["dimensions"] = aggregate_action_dimensions(episodes, dimension_definitions)
     available = [d for d in result["dimensions"] if d["score"] is not None]
     if available:
         result["overall_score"] = round(float(np.mean([d["score"] for d in available])), 2)
