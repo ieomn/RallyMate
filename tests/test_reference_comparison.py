@@ -4,6 +4,8 @@ import json
 import math
 import unittest
 
+import numpy as np
+
 from rallymate_scoring.reference_comparison import compare_action_to_reference, policy_snapshot
 
 
@@ -85,6 +87,29 @@ class ReferenceComparisonTests(unittest.TestCase):
         self.assertFalse(result["policy"]["coach_calibrated"])
         self.assertIn("not_skill_or_action_quality", result["score_semantics"])
         json.dumps(result, allow_nan=False)
+
+    def test_native_numpy_float64_timeline_matches_json_roundtrip(self):
+        for report in (self.candidate, self.reference):
+            action = episode(report)
+            for field in ("start_ms", "peak_ms", "end_ms"):
+                action[field] = np.float64(action[field])
+            for row in action["joint_kinematics"]["phases"]:
+                for field in ("start_ms", "anchor_ms", "end_ms"):
+                    row[field] = np.float64(row[field])
+        set_value(phase(self.candidate)["metrics"]["shoulder_hip_separation_deg"], np.float64(80.))
+        native = compare(self.candidate, self.reference)
+        persisted = compare(json.loads(json.dumps(self.candidate, allow_nan=False)),
+                            json.loads(json.dumps(self.reference, allow_nan=False)))
+        self.assertEqual(native, persisted)
+        self.assertEqual(native["reference_similarity_score"], 92.5)
+
+    def test_native_numeric_support_preserves_json_boolean_and_finite_boundaries(self):
+        for value in (True, np.float64(math.nan), np.float64(math.inf), 10 ** 400,
+                      np.float32(500.), np.int64(500)):
+            candidate = deepcopy(self.candidate)
+            episode(candidate)["peak_ms"] = value
+            with self.subTest(value_type=type(value).__name__), self.assertRaises(ValueError):
+                compare(candidate, self.reference)
 
     def test_known_trunk_error_has_phase_and_group_weighted_deduction(self):
         set_value(phase(self.candidate)["metrics"]["shoulder_hip_separation_deg"], 80.)

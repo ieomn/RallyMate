@@ -12,6 +12,7 @@ from copy import deepcopy
 import hashlib
 import json
 import math
+from numbers import Real
 import re
 
 
@@ -52,7 +53,7 @@ def _require(condition, code):
 
 def _number(value):
     try:
-        return type(value) in (int, float) and math.isfinite(value)
+        return isinstance(value, Real) and not isinstance(value, bool) and math.isfinite(value)
     except OverflowError:
         return False
 
