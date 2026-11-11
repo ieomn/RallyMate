@@ -47,6 +47,7 @@ def aggregate_action_dimensions(episodes, definitions):
     (id, label, unit, target), matching the existing versioned action rubrics.
     Public rounding happens after weighted aggregation, as in the action report.
     """
+    episodes = list(episodes)
     definitions = list(definitions)
     keys = {identifier: [row[0] for row in rows] for identifier, _, rows in definitions}
     if len(keys) != len(definitions):

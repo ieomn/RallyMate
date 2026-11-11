@@ -1,4 +1,4 @@
-"""Connect measured motion rubrics to the MD's eight-system level weights."""
+"""Connect measured motion rubrics to the source document's level weights."""
 from __future__ import annotations
 
 from collections import defaultdict

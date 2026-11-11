@@ -39,6 +39,7 @@ class ActionAggregationTests(unittest.TestCase):
     def test_permutation_and_replication_preserve_scores(self):
         episodes = [{"metrics": {"a": (1., 0.), "b": (2., 100.)}}, {"metrics": {"a": (3., 100.)}}]
         original = aggregate_action_dimensions(episodes, DEFINITIONS)
+        self.assertEqual(aggregate_action_dimensions(iter(episodes), DEFINITIONS), original)
         self.assertEqual(aggregate_action_dimensions(list(reversed(episodes)), DEFINITIONS), original)
         repeated = aggregate_action_dimensions(episodes * 4, DEFINITIONS)
         self.assertEqual(repeated[0]["score"], original[0]["score"])

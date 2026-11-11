@@ -1,8 +1,8 @@
 """Level-specific aggregation of measured technique scores.
 
-The major weights and promotion gates come from the supplied audit guide.
-Unspecified internal weights are a versioned engineering policy, not a claim
-that the unavailable source tables were reproduced. Missing measurements affect
+The major and subtechnique weights come from the supplied technical scoring
+document's tables, with source hashes and table locators in the shared policy.
+Missing measurements affect
 coverage, never become zero scores, and never prevent displaying observed work.
 """
 from __future__ import annotations
