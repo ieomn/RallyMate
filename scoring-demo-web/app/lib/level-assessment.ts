@@ -1,5 +1,6 @@
-import { DOMAINS, GATES, moduleWeightsFor, type Level, type LevelAssessment } from "../scoring/level-grading";
-import policy from "../../../src/rallymate_scoring/data/level_grading_v1.json";
+import { DOMAINS, GATES, type LevelAssessment } from "../scoring/level-grading";
+import currentPolicy from "../../../src/rallymate_scoring/data/level_grading_v1.json";
+import legacyPolicy from "../../../src/rallymate_scoring/data/level_grading_legacy_v1.json";
 
 const object = (value: unknown): Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const bounded = (v: unknown, max = 1): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max;
@@ -9,11 +10,15 @@ const close = (a: number, b: number) => Math.abs(a - b) <= 0.0002;
 /** Validate the contract and recompute totals before displaying API values. */
 export function levelAssessmentOf(value: unknown): LevelAssessment | null {
   const row = object(value);
-  if (row.version !== "level-assessment-v1.0.0" || row.policy_version !== policy.version ||
+  // Historical exports keep their original grades and policy. New scoring uses
+  // currentPolicy only; this read path never upgrades or rewrites saved scores.
+  const policy = [currentPolicy, legacyPolicy].find(policy => policy.version === row.policy_version);
+  if (row.version !== "level-assessment-v1.0.0" || !policy ||
       !Number.isInteger(row.target_level) || !bounded(row.target_level, 5) || row.target_level < 1 ||
       !["one_handed", "two_handed"].includes(String(row.backhand_style))) return null;
-  const domains = object(row.domains), major = moduleWeightsFor(row.target_level as Level);
-  const configured = policy.levels[String(row.target_level) as keyof typeof policy.levels].technique_weights;
+  const domains = object(row.domains);
+  const level = policy.levels[String(row.target_level) as keyof typeof policy.levels];
+  const major = level.module_weights, configured = level.technique_weights;
   if (row.weight_source !== policy.internal_weight_source && row.weight_source !== "caller_override"
       || row.major_weight_source !== policy.major_weight_source
       || Object.keys(domains).length !== DOMAINS.length) return null;
