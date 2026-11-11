@@ -1,0 +1,295 @@
+{
+  "version": "djokovic-reference-validation-summary-v1",
+  "scorer_code_revision": "6f04544c941c57a68216d59e327aa466647f0cb8",
+  "scorer_source_fingerprint": "0b01b643e838d12b458a9295d25e29f294f0be5886b7e3e2f3f60da4c5c33d93",
+  "source_code_stable": true,
+  "source_inputs_stable": true,
+  "assessment_files_stable": true,
+  "source_video_count": 3,
+  "original_video_frames": 9162,
+  "recomputed_episodes": 46,
+  "new_inference_run": false,
+  "reused_native_model": "sam-3d-body-dinov3",
+  "backend": {
+    "tests_run": 704,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "all_passed": true
+  },
+  "frontend": {
+    "tests_run": 1090,
+    "passed": 1089,
+    "failures": 0,
+    "skipped": 1,
+    "skip": "optional external FORMAL_V2_REPORT historical replay absent",
+    "typecheck": true,
+    "eslint": true,
+    "production_build": true
+  },
+  "real_api": {
+    "real_reports_rebuilt_through_api": true,
+    "original_database_read_only": true,
+    "new_inference_run": false,
+    "all_passed": true,
+    "results": [
+      {
+        "pair": "fh-night",
+        "http_status": 200,
+        "identical_to_cli": true,
+        "status": "scored",
+        "reference_similarity_score": 79.416723
+      },
+      {
+        "pair": "fh-indoor-a",
+        "http_status": 200,
+        "identical_to_cli": true,
+        "status": "scored",
+        "reference_similarity_score": 61.737842
+      },
+      {
+        "pair": "fh-indoor-b",
+        "http_status": 200,
+        "identical_to_cli": true,
+        "status": "scored",
+        "reference_similarity_score": 61.474508
+      },
+      {
+        "pair": "bh-same-source",
+        "http_status": 200,
+        "identical_to_cli": true,
+        "status": "scored",
+        "reference_similarity_score": 63.620774
+      },
+      {
+        "pair": "bh-hand-mismatch",
+        "http_status": 200,
+        "identical_to_cli": true,
+        "status": "unavailable",
+        "reference_similarity_score": null
+      },
+      {
+        "pair": "self-control",
+        "http_status": 200,
+        "identical_to_cli": true,
+        "status": "scored",
+        "reference_similarity_score": 100.0
+      }
+    ]
+  },
+  "browser": {
+    "checks": 90,
+    "all_passed": true,
+    "html_sha256": "e658bfefebe4eca682a1c8aaf95ad9490c7a5287df7e4c8ce9d7fe1ace86ce8d",
+    "desktop_width": 1440,
+    "narrow_width": 390,
+    "javascript_errors": []
+  },
+  "sample_results": [
+    {
+      "sample_id": "djokovic-usopen-2012",
+      "run_id": "0a6ba301-acd4-46a9-829f-7afc832a552c",
+      "video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "assessment_sha256": "65ab6316ab3e155a2645d9fdce4066ede71ab1f402ad88de3b28f0676811d0cb",
+      "overall_score": 93.11,
+      "observation_count": 5
+    },
+    {
+      "sample_id": "c235227fffcd3290b60572d0c3f9cc85",
+      "run_id": "fd448c4a-7edb-4f6a-bced-329747c1af3f",
+      "video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "assessment_sha256": "c1e0a98700647049cdde20e2cc9a19cddcf3b1cd1682b2f5b281ebf9f1bd6d60",
+      "overall_score": 87.22,
+      "observation_count": 33
+    },
+    {
+      "sample_id": "c2485607c23646e706d9c4aae89e668e",
+      "run_id": "0fdee4d4-b680-40e6-808e-07795fc89815",
+      "video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "assessment_sha256": "9b437d55bae967a6e13b0a8410fa5419b25700252a254ac81bccdcc2c75c3add",
+      "overall_score": 72.31,
+      "observation_count": 8
+    }
+  ],
+  "pairs": [
+    {
+      "id": "fh-night",
+      "candidate_action_score": 98.54,
+      "reference_action_score": 95.83,
+      "reference_similarity_score": 79.416723,
+      "status": "scored",
+      "comparison_scope": "independent_video_source",
+      "common_measurement_coverage": 1.0,
+      "source_review_verified": true,
+      "accepted_as_source_reviewed_comparison": true,
+      "reason_codes": [
+        "classification_not_independently_reviewed"
+      ]
+    },
+    {
+      "id": "fh-indoor-a",
+      "candidate_action_score": 62.61,
+      "reference_action_score": 95.83,
+      "reference_similarity_score": 61.737842,
+      "status": "scored",
+      "comparison_scope": "independent_video_source",
+      "common_measurement_coverage": 1.0,
+      "source_review_verified": true,
+      "accepted_as_source_reviewed_comparison": true,
+      "reason_codes": [
+        "classification_not_independently_reviewed"
+      ]
+    },
+    {
+      "id": "fh-indoor-b",
+      "candidate_action_score": 69.15,
+      "reference_action_score": 95.83,
+      "reference_similarity_score": 61.474508,
+      "status": "scored",
+      "comparison_scope": "independent_video_source",
+      "common_measurement_coverage": 1.0,
+      "source_review_verified": true,
+      "accepted_as_source_reviewed_comparison": true,
+      "reason_codes": [
+        "classification_not_independently_reviewed"
+      ]
+    },
+    {
+      "id": "bh-same-source",
+      "candidate_action_score": 82.49,
+      "reference_action_score": 97.49,
+      "reference_similarity_score": 63.620774,
+      "status": "scored",
+      "comparison_scope": "same_source_holdout",
+      "common_measurement_coverage": 1.0,
+      "source_review_verified": true,
+      "accepted_as_source_reviewed_comparison": false,
+      "reason_codes": [
+        "same_source_holdout"
+      ]
+    },
+    {
+      "id": "bh-hand-mismatch",
+      "candidate_action_score": 98.64,
+      "reference_action_score": 97.49,
+      "reference_similarity_score": null,
+      "status": "unavailable",
+      "comparison_scope": "same_source_holdout",
+      "common_measurement_coverage": 0.0,
+      "source_review_verified": true,
+      "accepted_as_source_reviewed_comparison": false,
+      "reason_codes": [
+        "measurement_hand_mismatch"
+      ]
+    },
+    {
+      "id": "self-control",
+      "candidate_action_score": 95.83,
+      "reference_action_score": 95.83,
+      "reference_similarity_score": 100.0,
+      "status": "scored",
+      "comparison_scope": "self_reference",
+      "common_measurement_coverage": 1.0,
+      "source_review_verified": true,
+      "accepted_as_source_reviewed_comparison": false,
+      "reason_codes": [
+        "self_reference"
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "sample_id": "c235227fffcd3290b60572d0c3f9cc85",
+      "episode_id": "a7bc1a7a1b98faddbf32",
+      "reason": "124.50至124.97秒主要为站立、球拍在体侧下垂；125.00至125.23秒把球拍抬回身前，随后维持准备姿态。逐帧检查未见完整正手的独立引拍、前挥和随挥序列。",
+      "source_window_ms": {
+        "start_ms": 124533.333,
+        "peak_ms": 125000.0,
+        "end_ms": 125466.667
+      }
+    }
+  ],
+  "policy": {
+    "version": "phase-geometry-reference-policy-v1.0.0",
+    "origin": "explicit_engineering_policy_not_source_document_numeric_thresholds",
+    "coach_calibrated": false,
+    "phase_weights": {
+      "M01": 0.03,
+      "M02": 0.03,
+      "M03": 0.03,
+      "M04": 0.13333333333333333,
+      "M05": 0.13333333333333333,
+      "M06": 0.13333333333333333,
+      "M07": 0.25,
+      "M08": 0.2,
+      "M09": 0.03,
+      "M10": 0.03
+    },
+    "group_weights": {
+      "lower_body": 0.3,
+      "trunk": 0.3,
+      "upper_body": 0.4
+    },
+    "metric_groups": {
+      "lower_body": [
+        "left_knee_flexion_deg",
+        "right_knee_flexion_deg",
+        "stance_width_shoulders"
+      ],
+      "trunk": [
+        "shoulder_hip_separation_deg"
+      ],
+      "upper_body": [
+        "left_elbow_flexion_deg",
+        "right_elbow_flexion_deg",
+        "left_shoulder_elevation_deg",
+        "right_shoulder_elevation_deg"
+      ]
+    },
+    "metric_weights": {
+      "left_knee_flexion_deg": 0.09999999999999999,
+      "right_knee_flexion_deg": 0.09999999999999999,
+      "stance_width_shoulders": 0.09999999999999999,
+      "shoulder_hip_separation_deg": 0.3,
+      "left_elbow_flexion_deg": 0.1,
+      "right_elbow_flexion_deg": 0.1,
+      "left_shoulder_elevation_deg": 0.1,
+      "right_shoulder_elevation_deg": 0.1
+    },
+    "minimum_coverage": 0.8,
+    "required_measured_phases": [
+      "M04",
+      "M05",
+      "M06",
+      "M07",
+      "M08"
+    ],
+    "minimum_joint_coverage": 0.7,
+    "angle_tolerance_deg": 5.0,
+    "angle_scale_deg": 45.0,
+    "stance_tolerance_shoulders": 0.1,
+    "stance_scale_shoulders": 1.0,
+    "statistic": "phase_median",
+    "distance": "clamp((abs(candidate-reference)-tolerance)/scale,0,1)",
+    "aggregation": "100_minus_available_weight_normalized_sum_of_weighted_distances",
+    "weight_semantics": "phase_weight_times_group_weight_divided_by_group_metric_count",
+    "missing_policy": "exclude_from_distance_keep_in_total_weight_coverage",
+    "angle_difference": "absolute_reported_angle_difference_no_mirror_or_time_warp",
+    "phase_semantics": "overlapping_kinematic_observations_not_physical_contact_or_force",
+    "source_clock_validation": "report_preserved_original_decoder_pts_internal_frame_time_consistency",
+    "report_sha256_semantics": "sha256_canonical_utf8_json_sorted_keys_no_whitespace",
+    "deduction_semantics": "weighted_deduction_uses_available_weight_normalization_raw_weighted_deduction_preserves_policy_mass",
+    "evaluation_acceptance": "independent_video_sources_and_both_classifications_visually_reviewed_no_automatic_quality_pass"
+  },
+  "parallel_branch": {
+    "revision": "6078413b2193fb699ee60914722b82b2670855db",
+    "overlapping_files": [],
+    "merge_tree_exit_code": 0
+  },
+  "artifacts": {
+    "current\\validation-results.json": "8e64140f26b1f4da470eae5e866fcc6eaffcc312c9cfe15f4ca047b8a1ef0f95",
+    "comparison\\comparison.json": "ba25c4d7a9fbd10000270e8395c67fa9ed0b30352f5cc2006757eb684ae9c12e",
+    "real-api-parity.json": "c302387b939018c2e3b646f432a1c57fa9ab1e23789109f48f998bba5f3a3622",
+    "comparison\\browser-review-receipt.json": "27d5e0c1a7fe5764f2edfb228935d8204199f686ce99abc024fa609b87bc54ec"
+  }
+}
