@@ -2,6 +2,7 @@ from pathlib import Path
 import tempfile
 import threading
 import unittest
+import weakref
 from unittest.mock import patch
 
 import numpy as np
@@ -114,6 +115,26 @@ class MeshCaptureTests(unittest.TestCase):
         writer.close()
         with self.assertRaisesRegex(RuntimeError, "closed"):
             writer.submit([native_mesh()], self.faces)
+
+    def test_failed_future_traceback_does_not_retain_snapshots_after_budget_release(self):
+        references = []
+
+        def fail(output, faces, root):
+            references.extend(weakref.ref(array) for array in [faces, *output.values()])
+            raise OSError("controlled capture failure")
+
+        writer = BoundedMeshWriter(self.root)
+        try:
+            with patch("rallymate_vision.sam3d_mesh.capture_mesh_output", new=fail):
+                future, _ = writer.submit([native_mesh()], self.faces)
+                with self.assertRaises(OSError):
+                    future.result(timeout=5)
+            # The Future deliberately stays alive, including its exception and
+            # executor traceback, while the array budget is available again.
+            self.assertEqual(writer._bytes, 0)
+            self.assertTrue(all(reference() is None for reference in references))
+        finally:
+            writer.close()
 
 
 if __name__ == "__main__":
