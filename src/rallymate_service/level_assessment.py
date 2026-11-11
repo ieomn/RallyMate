@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-import math
 from statistics import mean
 
+from rallymate_scoring.action_aggregation import episode_dimension_scores
 from rallymate_scoring.level_grading import grade_level
 
 TECHNIQUES = {
@@ -25,29 +25,30 @@ def build_level_assessments(report, *, backhand_style=None, technique_weights=No
     """
     technique_values, family_values, gate_values = defaultdict(list), defaultdict(list), defaultdict(list)
     counts = defaultdict(int)
-    dimension_keys = [[m["id"] for m in d["metrics"]] for d in report.get("dimensions", [])]
+    dimension_keys = {d["id"]: [m["id"] for m in d["metrics"]] for d in report.get("dimensions", [])}
     for episode in report.get("episodes", []):
         metrics = episode.get("metrics", {})
         def score_of(keys):
-            values = [metrics[k]["score"] for k in keys if k in metrics and
-                      type(metrics[k].get("score")) in (int, float) and math.isfinite(metrics[k]["score"])]
-            return mean(values) if values else None
-        dimensions = [score_of(keys) for keys in dimension_keys]
-        observed = [v for v in dimensions if v is not None]
+            return episode_dimension_scores(metrics, {"gate": keys})["gate"]
+        dimensions = episode_dimension_scores(metrics, dimension_keys)
+        observed = [v for v in dimensions.values() if v is not None]
         if not observed:
             continue
         score = mean(observed)
         domain = {"baseline": "GS", "serve": "SS", "return": "RS"}.get(episode.get("family"))
-        if domain:
-            family_values[domain].append(score)
         profile = episode.get("motion_pattern", {}).get("profile_id")
         code = TECHNIQUES.get(profile)
         if code:
             technique_values[code].append(score)
             counts[code] += 1
+        elif domain:
+            # Family fallback describes genuinely unresolved subtypes. A known
+            # subtype stays in technique_values, so a mutually exclusive route
+            # or a zero weight at this level cannot re-enter as a family score.
+            family_values[domain].append(score)
         # This is observed support during a stroke, not invented FS01..FS10 events.
-        if dimensions and dimensions[0] is not None:
-            family_values["FS"].append(dimensions[0])
+        if dimensions.get("movement") is not None:
+            family_values["FS"].append(dimensions["movement"])
         for name, keys in (
             ("non_dominant_hand_ok", ("pattern_two_hand_coupling", "serve_arm_coordination")),
             ("stroke_continuity_ok", ("pattern_phase_continuity", "follow_path")),
