@@ -105,7 +105,8 @@ class MeshSegmentTests(unittest.TestCase):
         self.assertEqual(first["completed_frames"], 2)
         self.assertEqual(FakeRenderer.rendered, 2)
         self.assertFalse((self.output / mesh.MANIFEST_NAME).exists())
-        final = self.render()
+        with patch.object(segments_module, "_collect_completed_segments"):
+            final = self.render()
         self.assertEqual(final["status"], "ready")
         self.assertEqual(final["mesh_segments"]["resumed_frames"], 2)
         self.assertEqual(final["frame_count"], 8)
@@ -223,6 +224,113 @@ class MeshSegmentTests(unittest.TestCase):
         self.assertIs(session.renderer, renderer)
         session.close()
         self.assertEqual(FakeRenderer.closed, 1)
+
+    def test_completed_output_reclaims_cache_and_reuses_verified_media_without_rendering(self):
+        result = self.render()
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["state"], "complete")
+        self.assertEqual(checkpoint["cache_retention"], "removed")
+        self.assertFalse((self.output / SEGMENTS_NAME).exists())
+        self.assertEqual(FakeRenderer.rendered, 8)
+        published = {**result, "source_job_id": self.output.name, "task_sha256": "a" * 64}
+        (self.output / mesh.MANIFEST_NAME).write_text(json.dumps(published))
+        with patch.object(segments_module, "SourceFrames", side_effect=AssertionError("must reuse completed media")):
+            again = self.render()
+        self.assertEqual(again, result)
+        self.assertEqual(json.loads((self.output / mesh.MANIFEST_NAME).read_text()), published)
+        self.assertEqual(FakeRenderer.rendered, 8)
+
+    def test_cleanup_failure_keeps_ready_output_and_next_entry_retries_without_rendering(self):
+        original = Path.unlink
+        def fail_one(path, *args, **kwargs):
+            if path.parent.name == "00000000" and path.name == mesh.SIDE_VIDEO_NAME:
+                raise OSError("file busy")
+            return original(path, *args, **kwargs)
+        with patch.object(Path, "unlink", new=fail_one):
+            result = self.render()
+        self.assertEqual(result["status"], "ready")
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["state"], "complete")
+        self.assertEqual(checkpoint["cache_retention"], "partial")
+        self.assertEqual(checkpoint["cache_cleanup_error_type"], "OSError")
+        self.assertTrue((self.output / SEGMENTS_NAME).exists())
+        again = self.render()
+        self.assertEqual(again, result)
+        self.assertEqual(FakeRenderer.rendered, 8)
+        self.assertFalse((self.output / SEGMENTS_NAME).exists())
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["cache_retention"], "removed")
+        self.assertNotIn("cache_cleanup_error_type", checkpoint)
+
+    def test_process_interruption_during_cleanup_leaves_complete_receipt_for_restart(self):
+        original = Path.unlink
+        def interrupt_one(path, *args, **kwargs):
+            if path.parent.name == "00000000" and path.name == mesh.SIDE_VIDEO_NAME:
+                raise KeyboardInterrupt("simulated process termination")
+            return original(path, *args, **kwargs)
+        with patch.object(Path, "unlink", new=interrupt_one), self.assertRaises(KeyboardInterrupt):
+            self.render()
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["state"], "complete")
+        self.assertEqual(checkpoint["cache_retention"], "cleanup_pending")
+        self.assertEqual(self.render()["status"], "ready")
+        self.assertEqual(FakeRenderer.rendered, 8)
+        self.assertFalse((self.output / SEGMENTS_NAME).exists())
+
+    def test_tampered_final_media_is_not_reused_after_segment_cache_is_removed(self):
+        self.render()
+        with (self.output / mesh.VIDEO_NAME).open("ab") as handle:
+            handle.write(b"changed")
+        with self.assertRaisesRegex(ValueError, "completed mesh media changed"):
+            self.render()
+        self.assertEqual(FakeRenderer.rendered, 8)
+
+    def test_cleanup_preserves_unknown_files_without_failing_ready_media(self):
+        collect = segments_module._collect_completed_segments
+        def add_unknown(output, checkpoint):
+            (output / SEGMENTS_NAME / "00000000" / "user-notes.txt").write_text("keep")
+            return collect(output, checkpoint)
+        with patch.object(segments_module, "_collect_completed_segments", side_effect=add_unknown):
+            result = self.render()
+        notes = self.output / SEGMENTS_NAME / "00000000" / "user-notes.txt"
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(notes.read_text(), "keep")
+        self.assertEqual(self.render(), result)
+        self.assertEqual(notes.read_text(), "keep")
+        self.assertEqual(FakeRenderer.rendered, 8)
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["cache_retention"], "partial")
+
+    def test_cleanup_state_write_failure_keeps_ready_result_and_retained_segments(self):
+        atomic = segments_module.atomic_json
+        def write(path, value):
+            if path.name == CHECKPOINT_NAME and value.get("cache_retention") == "cleanup_pending":
+                raise OSError("cleanup receipt busy")
+            return atomic(path, value)
+        with patch.object(segments_module, "atomic_json", side_effect=write):
+            result = self.render()
+        self.assertEqual(result["status"], "ready")
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["state"], "complete")
+        self.assertEqual(checkpoint["cache_retention"], "retained")
+        self.assertEqual(self.render(), result)
+        self.assertEqual(FakeRenderer.rendered, 8)
+        self.assertFalse((self.output / SEGMENTS_NAME).exists())
+
+    def test_changed_segment_media_is_retained_while_verified_final_output_is_reused(self):
+        with patch.object(segments_module, "_collect_completed_segments"):
+            result = self.render()
+        directory = self.output / SEGMENTS_NAME / "00000000"
+        before = {path.name for path in directory.iterdir()}
+        with (directory / mesh.SIDE_VIDEO_NAME).open("ab") as handle:
+            handle.write(b"user-changed-cache")
+        again = self.render()
+        self.assertEqual(again, result)
+        self.assertEqual({path.name for path in directory.iterdir()}, before)
+        self.assertEqual(FakeRenderer.rendered, 8)
+        checkpoint = json.loads((self.output / CHECKPOINT_NAME).read_text())
+        self.assertEqual(checkpoint["cache_retention"], "retained")
+        self.assertEqual(checkpoint["cache_cleanup_error_type"], "ValueError")
 
 
 if __name__ == "__main__":

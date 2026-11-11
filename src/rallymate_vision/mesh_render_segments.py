@@ -179,6 +179,92 @@ def _verified_segments(output, checkpoint, identity):
     return segments, expected_first
 
 
+def _completed_result(output, checkpoint, identity):
+    """Verify the completed media before treating removed segments as reusable."""
+    from rallymate_vision import sam3d_mesh as mesh
+    if checkpoint.get("version") != CHECKPOINT_VERSION or checkpoint.get("identity") != identity:
+        raise ValueError("mesh checkpoint identity changed")
+    result_path = output / RESULT_NAME
+    if result_path.resolve() != result_path.absolute() or sha256_file(result_path) != checkpoint.get("result_sha256"):
+        raise ValueError("completed mesh result changed")
+    result = _read_json(result_path)
+    if (result.get("status") != "ready" or result.get("source_video_sha256") != identity["source_video_sha256"]
+            or result.get("ledger_sha256") != identity["ledger_sha256"]):
+        raise ValueError("completed mesh identity changed")
+    published = _read_json(output / mesh.MANIFEST_NAME)
+    # The service attaches these two ownership fields after child completion.
+    # Its immutable media/provenance fields still match the child receipt.
+    if {key: value for key, value in published.items() if key not in {"source_job_id", "task_sha256"}} != result:
+        raise ValueError("completed mesh manifest changed")
+    for name in (mesh.VIDEO_NAME, mesh.SIDE_VIDEO_NAME, mesh.PREVIEW_NAME):
+        path = output / name
+        entry = result["files"][name]
+        if (path.resolve() != path.absolute() or path.stat().st_size != entry["bytes"]
+                or sha256_file(path) != entry["sha256"]):
+            raise ValueError("completed mesh media changed")
+    return result
+
+
+def _collect_completed_segments(output, checkpoint):
+    """Best-effort cleanup of fixed generated files, after a complete receipt.
+
+    Each resolved directory must remain a direct child of the owned cache.
+    Files are removed individually; unknown files and symlinks are retained.
+    A killed cleanup can restart from its complete receipt without rendering.
+    """
+    from rallymate_vision import sam3d_mesh as mesh
+    checkpoint_path = output / CHECKPOINT_NAME
+    root = output / SEGMENTS_NAME
+    previous_retention = checkpoint.get("cache_retention")
+    checkpoint["cache_retention"] = "cleanup_pending"
+    try:
+        atomic_json(checkpoint_path, checkpoint)
+    except OSError:
+        return  # Completed media stay ready even if cleanup state cannot persist.
+    changed = previous_retention in {"partial", "cleanup_pending"}
+    try:
+        if root.resolve() != root.absolute() or root.parent != output:
+            raise ValueError("mesh cleanup root escapes owned output")
+        for index, entry in enumerate(checkpoint["segments"]):
+            directory = root / f"{index:08d}"
+            if not directory.exists():
+                continue
+            if directory.resolve() != directory.absolute() or directory.parent != root:
+                raise ValueError("mesh cleanup segment escapes owned cache")
+            manifest_path = directory / mesh.MANIFEST_NAME
+            if manifest_path.exists():
+                if manifest_path.resolve() != manifest_path.absolute() or sha256_file(manifest_path) != entry["manifest_sha256"]:
+                    raise ValueError("mesh cleanup segment manifest changed")
+                manifest = _read_json(manifest_path)
+                paths = [directory / name for name in (mesh.VIDEO_NAME, mesh.SIDE_VIDEO_NAME, mesh.PREVIEW_NAME)]
+                # Verify all surviving files before deleting any of this part.
+                for path in paths:
+                    if path.exists() and (path.resolve() != path.absolute()
+                            or sha256_file(path) != manifest["files"][path.name]["sha256"]):
+                        raise ValueError("mesh cleanup segment media changed")
+                for path in paths:
+                    if path.exists():
+                        path.unlink()
+                        changed = True
+                manifest_path.unlink()
+                changed = True
+            # This succeeds for an interrupted, already emptied directory;
+            # unknown files prevent removal instead of being recursively lost.
+            directory.rmdir()
+            changed = True
+        if root.exists():
+            root.rmdir()
+        checkpoint["cache_retention"] = "removed"
+        checkpoint.pop("cache_cleanup_error_type", None)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        checkpoint["cache_retention"] = "partial" if changed else "retained"
+        checkpoint["cache_cleanup_error_type"] = type(error).__name__
+    try:
+        atomic_json(checkpoint_path, checkpoint)
+    except OSError:
+        pass  # The durable cleanup_pending receipt is retryable on next entry.
+
+
 def _remux_parts(parts, destination, *, check_cancelled=lambda: None):
     """Copy encoded H.264 packets; exact rational source PTS determine offsets."""
     import av
@@ -265,12 +351,16 @@ def render_mesh_resumable(source: Path, output_dir: Path, runtime_dir: Path, *,
            or row["video_sha256"].lower() != source_sha256.lower() for row in rows):
         raise ValueError("mesh ledger contains frames outside the rendered source interval")
     root = output / SEGMENTS_NAME
-    if root.resolve() != root.absolute():
-        raise ValueError("mesh segment root cannot be a symlink")
-    root.mkdir(exist_ok=True)
     checkpoint_path = output / CHECKPOINT_NAME
     checkpoint = (_read_json(checkpoint_path) if checkpoint_path.exists() else
                   {"version": CHECKPOINT_VERSION, "identity": identity, "segments": []})
+    if checkpoint.get("state") == "complete":
+        result = _completed_result(output, checkpoint, identity)
+        _collect_completed_segments(output, checkpoint)
+        return result
+    if root.resolve() != root.absolute():
+        raise ValueError("mesh segment root cannot be a symlink")
+    root.mkdir(exist_ok=True)
     segments, next_frame = _verified_segments(output, checkpoint, identity)
     resumed_frames = sum(entry["frame_count"] for entry in segments)
     previous = _read_json(root / f"{len(segments)-1:08d}" / mesh.MANIFEST_NAME) if segments else None
@@ -337,6 +427,7 @@ def render_mesh_resumable(source: Path, output_dir: Path, runtime_dir: Path, *,
             "stage_seconds": {key: round(value, 6) for key, value in stages.items()},
             "mesh_segments": {"count": len(manifests), "max_frames": frames, "resumed_frames": resumed_frames,
                 "checkpoint": CHECKPOINT_NAME, "join": "encoded_packet_copy_exact_source_pts",
+                "checkpoint_semantics": "completed_output_receipt_and_segment_cache_retention",
                 "turn_source_decoded_frames": decoder.decoded_frames if decoder else 0,
                 "turn_seek_prefix_frames": decoder.seek_prefix_frames if decoder else 0,
                 "time_slice_seconds": time_slice_seconds, "time_slice_boundary": "complete_segment"},
@@ -346,6 +437,9 @@ def render_mesh_resumable(source: Path, output_dir: Path, runtime_dir: Path, *,
                       for name in (mesh.VIDEO_NAME, mesh.SIDE_VIDEO_NAME, mesh.PREVIEW_NAME)}}
         atomic_json(output / mesh.MANIFEST_NAME, result)
         atomic_json(output / RESULT_NAME, result)
+        checkpoint.update(state="complete", result_sha256=sha256_file(output / RESULT_NAME), cache_retention="retained")
+        atomic_json(checkpoint_path, checkpoint)
+        _collect_completed_segments(output, checkpoint)
         return result
     finally:
         for target in pending:
