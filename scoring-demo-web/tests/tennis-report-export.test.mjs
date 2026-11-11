@@ -146,11 +146,20 @@ test("validated numeric follow_path metrics survive privacy scrubbing and report
   const source = input(), scoped = tennisScopedFixture();
   source.job.id = source.evidence.jobId = source.evidence.result.job_id = scoped.source_run_id;
   for (const episode of scoped.episodes) episode.metrics.follow_path = { value: 1.8, score: 80 };
+  const follow = scoped.dimensions.find(dimension => dimension.id === "follow_through");
+  follow.metrics[0].weight = 0.5;
+  follow.metrics.push({ id: "follow_path", label: "随挥延展", unit: "ratio", target: "主挥拍后继续完成手臂运动",
+    value: 1.8, score: 80, weight: 0.5, observation_count: 2 });
+  follow.score = 85;
+  scoped.overall_score = 69;
   source.evidence.result.tennis_assessment = scoped;
   const expected = tennisAssessmentOf(source.evidence.result);
   assert.ok(expected);
+  assert.equal(expected.overall_score, 69);
+  assert.equal(expected.dimensions.find(dimension => dimension.id === "follow_through").score, 85);
   assert.deepEqual(expected.episodes[0].metrics.follow_path,{value:1.8,score:80});
   const encoded=JSON.stringify(buildReportBackup(source));
   const saved=await readReportJson({size:Buffer.byteLength(encoded),text:async()=>encoded});
   assert.deepEqual(tennisAssessmentOf(saved.result),expected);
+  assert.equal(trainingScoreOf(saved.result).score, 69);
 });
