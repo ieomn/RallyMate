@@ -84,6 +84,9 @@ class ScoringIdentityNamespaceTests(unittest.TestCase):
         self.assertEqual(result["evidence"][0]["source_track_id"], 7)
         wrong_event = {**self.record, "person_track_id": 2}
         self.assertEqual(self.batch(authoritative_events=[wrong_event])["status"], "unavailable")
+        other_event = {**self.record, "event_id": "unrelated-event"}
+        self.assertEqual(self.batch(authoritative_events=[other_event])["status"], "unavailable")
+        self.assertEqual(self.batch(authoritative_events=[])["status"], "unavailable")
 
     def test_transport_rejects_modified_identity_event_and_frame_proof(self):
         trace = self.batch()["evidence"][0]

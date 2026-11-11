@@ -252,7 +252,7 @@ def score_indicator_records(
                 if provenance.get(name) is not None:
                     evidence[name] = provenance[name]
         if any("source_window" in item or "measurement_provenance" in item for item in scoring_features):
-            identity_event = event_by_id.get(record["event_id"], record) if event_by_id is not None else record
+            identity_event = event_by_id.get(record["event_id"], {}) if event_by_id is not None else record
             evidence = bind_primary_player_score_trace(evidence, identity_event)
         evidence_items = [evidence]
         if scoring_context is not None:
