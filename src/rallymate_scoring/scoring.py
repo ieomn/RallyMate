@@ -30,7 +30,7 @@ def _model_trace_binding_error(trace, identity, frames):
             or any(type(frame) is not int or frame not in frames for frame in source_frames)
             or len(source_frames) != len(set(source_frames))):
         return "model_source_frames_mismatch"
-    for field, binding_field in (("source_timestamps_ms", "timestamp_ms"),
+    for field, binding_field in (("source_timestamps_ms", "source_timestamp_ms"),
                                   ("video_timestamps_ms", "video_timestamp_ms")):
         if field in trace:
             values = trace[field]
@@ -218,8 +218,12 @@ def score_indicator(
             if identity is not None and identity != current_identity:
                 return result("unavailable", ["model_source_identity_mismatch"], "同一指标的特征不属于同一视频、人物或坐标时段。")
             identity = current_identity
-            for frame, local_time, binding in zip(window["source_frames"], window["video_timestamps_ms"], window["source_bindings"]):
-                bound = {**binding, "video_sha256": binding["video_sha256"].lower(), "video_timestamp_ms": local_time}
+            for frame, local_time, source_time, binding in zip(window["source_frames"], window["video_timestamps_ms"],
+                                                              window["source_timestamps_ms"], window["source_bindings"]):
+                # The exact PTS clock and its rounded display timestamp have
+                # different contracts, especially at fractional frame rates.
+                bound = {**binding, "video_sha256": binding["video_sha256"].lower(),
+                         "video_timestamp_ms": local_time, "source_timestamp_ms": source_time}
                 if frame in bound_frames and bound_frames[frame] != bound:
                     return result("unavailable", ["model_source_clock_mismatch"], "同一原视频帧的测量使用了不同的时钟或身份绑定。")
                 bound_frames[frame] = bound

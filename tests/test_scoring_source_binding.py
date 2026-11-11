@@ -5,6 +5,7 @@ import unittest
 from rallymate_features.coordinates import pose_sequence_from_records
 from rallymate_features.schemas import model_geometry_evidence
 from rallymate_scoring.scoring import score_indicator
+from rallymate_scoring.model_measurement_contract import validated_model_window
 from tests.test_direct_scoring_rules import evaluate, feature, rule
 from tests.test_sam_footwork import sam_motion_fixture
 
@@ -83,6 +84,29 @@ class ScoringSourceBindingTests(unittest.TestCase):
                                  calibration=rule(), model_versions={}, evidence=[])
         self.assertEqual(result["status"], "unavailable")
         self.assertIn("model_source_clock_mismatch", result["reason_codes"])
+
+    def test_fractional_pts_preserves_exact_source_time_and_rounded_display_time(self):
+        for offset in (0, 900000):
+            item = deepcopy(self.item)
+            window = item["source_window"]
+            source = []
+            for index, binding in enumerate(window["source_bindings"]):
+                pts = offset + index * 1001
+                exact = pts / 30000 * 1000
+                source.append(exact)
+                binding.update(pts=pts, time_base_num=1, time_base_den=30000,
+                               timestamp_ms=round(exact), video_timestamp_ms=round(index * 1001 / 30))
+            local = [round(index * 1001 / 30) for index in range(len(source))]
+            window.update(source_timestamps_ms=source, video_timestamps_ms=local,
+                          start_ms=local[0], end_ms=local[-1])
+            self.assertIsNotNone(validated_model_window(item))
+            for trace in ({"source_window": window},
+                          {"source_frames": window["source_frames"], "source_timestamps_ms": source},
+                          window["source_bindings"][1]):
+                with self.subTest(offset=offset, trace=trace):
+                    self.assertEqual(evaluate(item, rule(), evidence=[trace])["grade"], "B")
+            broken = {"source_frames": window["source_frames"], "source_timestamps_ms": [round(value) for value in source]}
+            self.assertEqual(evaluate(item, rule(), evidence=[broken])["status"], "unavailable")
 
 
 if __name__ == "__main__":
