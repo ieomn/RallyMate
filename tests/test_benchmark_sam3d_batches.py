@@ -97,6 +97,26 @@ class SamBatchBenchmarkTests(unittest.TestCase):
         self.assertEqual(settings["RALLYMATE_SAM3D_BATCH_GRAPH_SIZES"], "")
         self.assertEqual(settings["RALLYMATE_SAM3D_BATCH_PREPROCESS"], "1")
 
+    def test_runtime_policies_allow_reproducible_baseline_and_candidate(self):
+        options = dict(profile="production", batch_sizes=[1, 8], max_players=1)
+        defaults = build_worker_profile(**options, environment={})
+        self.assertEqual(defaults["RALLYMATE_SAM3D_REUSE_CUDA_CACHE"], "1")
+        self.assertEqual(defaults["RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE"], "1")
+        environment = {"RALLYMATE_SAM3D_REUSE_CUDA_CACHE": "0",
+                       "RALLYMATE_SAM3D_PROFILE_STAGES": "1",
+                       "RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE": "0"}
+        inherited = build_worker_profile(**options, environment=environment)
+        for name, value in environment.items():
+            self.assertEqual(inherited[name], value)
+        explicit = build_worker_profile(**options, environment=environment,
+            reuse_cuda_cache=1, profile_stages=0, async_mesh_capture=1)
+        self.assertEqual(explicit["RALLYMATE_SAM3D_REUSE_CUDA_CACHE"], "1")
+        self.assertEqual(explicit["RALLYMATE_SAM3D_PROFILE_STAGES"], "0")
+        self.assertEqual(explicit["RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE"], "1")
+        for name in environment:
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                build_worker_profile(**options, environment={name: "invalid"})
+
     def test_cuda_wait_policy_is_explicit_in_profile_instead_of_hidden_inheritance(self):
         options = dict(profile="production", batch_sizes=[1, 8], max_players=1)
         self.assertEqual(build_worker_profile(**options, environment={})["RALLYMATE_SAM3D_CUDA_WAIT_MODE"],

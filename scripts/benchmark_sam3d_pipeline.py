@@ -18,11 +18,15 @@ import uuid
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.benchmark_sam3d_batches import BINDING_FIELDS, build_worker_profile, snapshots, validate_archive_filesystem, verify_batch_execution, worker_profile
+from scripts.benchmark_sam3d_batches import BINDING_FIELDS, add_runtime_profile_arguments, build_worker_profile, snapshots, validate_archive_filesystem, verify_batch_execution, worker_profile
 from scripts.benchmark_idle import IdleJobsGuard
 from scripts.sam3d_pipeline_comparison import compare_pipeline
 from rallymate_vision.pose.metadata import sha256_file
 from rallymate_vision.sam3d_runner import SourcePTSDecoder
+from rallymate_vision.sam3d_limits import (
+    MAX_BATCH_SOURCE_BYTES, MIN_AUTO_SOURCE_BYTES, automatic_source_buffer_bytes,
+    configured_source_buffer_bytes,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +55,7 @@ class IdleGuard:
         self.reader.close()
 
 
-MAX_WARMUP_SOURCE_BYTES = 64 * 1024 * 1024
+MAX_WARMUP_SOURCE_BYTES = MAX_BATCH_SOURCE_BYTES
 MAX_BENCHMARK_FRAMES = 72_000
 MAX_NATIVE_LINE_BYTES = 8 * 1024 * 1024
 
@@ -196,11 +200,16 @@ def scheduling_trials(experiment, candidate, pending):
 
 def pipeline_settings(runtime: Path, sam_python: Path, batch_preprocess: int, *,
                       graph_sizes=(8,), forward_graph_budget_mib=None,
-                      head_graph_budget_mib=None, archive_pending_frames=None) -> dict:
+                      head_graph_budget_mib=None, archive_pending_frames=None,
+                      reuse_cuda_cache=None, profile_stages=None, async_mesh_capture=None) -> dict:
     if type(batch_preprocess) is not int or batch_preprocess not in (0, 1):
         raise ValueError("batch preprocessing must be explicitly 0 or 1")
     profile = build_worker_profile(profile="production", batch_sizes=[1, 4], max_players=2,
-                                   batch_preprocess=batch_preprocess)
+        batch_preprocess=batch_preprocess, reuse_cuda_cache=reuse_cuda_cache,
+        profile_stages=profile_stages, async_mesh_capture=async_mesh_capture)
+    source_budget = configured_source_buffer_bytes(os.environ)
+    if source_budget is not None:
+        profile["RALLYMATE_SAM3D_SOURCE_BUFFER_MIB"] = str(source_budget // (1024 * 1024))
     graphs = parse_graph_sizes(",".join(str(value) for value in graph_sizes))
     decoder_raw = os.environ.get("RALLYMATE_SAM3D_DECODER_BATCH_GRAPH_SIZES", "").strip()
     decoder_graphs = parse_graph_sizes(decoder_raw) if decoder_raw else ()
@@ -230,11 +239,12 @@ def validate_output_root(output: Path, jobs_db: Path) -> Path:
     return output
 
 
-def candidate_subject_shapes(selected, batch_frames, max_source_bytes=MAX_WARMUP_SOURCE_BYTES, *, max_players=2):
+def candidate_subject_shapes(selected, batch_frames, max_source_bytes=None, *, max_players=2):
     """Expected BODY microbatch shapes from source-bound people and image limits."""
     if type(batch_frames) is not int or not 1 <= batch_frames <= 8:
         raise ValueError("Candidate batch frames must be in [1,8]")
     shapes, pending_people, pending_frames, pending_bytes = set(), 0, 0, 0
+    budget = MIN_AUTO_SOURCE_BYTES if max_source_bytes is None else max_source_bytes
     def flush():
         if pending_people:
             if pending_frames == 1:
@@ -245,13 +255,15 @@ def candidate_subject_shapes(selected, batch_frames, max_source_bytes=MAX_WARMUP
     for group in selected:
         width, height = group[0]["image_size"]
         size = width * height * 3
-        if pending_frames and pending_bytes + size > max_source_bytes:
+        if max_source_bytes is None:
+            budget = max(budget, automatic_source_buffer_bytes(size, batch_frames))
+        if pending_frames and pending_bytes + size > budget:
             flush()
             pending_people, pending_frames, pending_bytes = 0, 0, 0
         pending_people += len(_warmup_subjects(group, max_players))
         pending_frames += 1
         pending_bytes += size
-        if pending_frames >= batch_frames or pending_bytes >= max_source_bytes:
+        if pending_frames >= batch_frames or pending_bytes >= budget:
             flush()
             pending_people, pending_frames, pending_bytes = 0, 0, 0
     flush()
@@ -260,7 +272,7 @@ def candidate_subject_shapes(selected, batch_frames, max_source_bytes=MAX_WARMUP
 
 def prepare_source(video: Path, archive: Path, count: int, guard, *, batch_frames=4,
                    start_frame=0, max_players=2) -> tuple[dict, list]:
-    """Check all selected PTS; retain at most eight images and 64 MiB for warmup."""
+    """Check all selected PTS; retain at most eight images and 256 MiB for warmup."""
     guard(force=True)
     selected = select_pipeline_records(archive, count=count, start_frame=start_frame,
                                        max_players=max_players, guard=guard)
@@ -269,7 +281,10 @@ def prepare_source(video: Path, archive: Path, count: int, guard, *, batch_frame
     source_sha = sha256_file(video).lower()
     if any(row["video_sha256"].lower() != source_sha for group in selected for row in group):
         raise ValueError("Video bytes differ from the existing native source archive")
-    shapes = candidate_subject_shapes(selected, batch_frames, max_players=max_players)
+    source_budget = configured_source_buffer_bytes(os.environ)
+    shapes = candidate_subject_shapes(selected, batch_frames,
+        max_source_bytes=source_budget, max_players=max_players)
+    warmup_budget = source_budget or MIN_AUTO_SOURCE_BYTES
     if not shapes:
         raise ValueError("Source interval has no successful real subjects for model warmup")
     decoder = SourcePTSDecoder(video)
@@ -301,23 +316,26 @@ def prepare_source(video: Path, archive: Path, count: int, guard, *, batch_frame
                 if row["image_size"] != [frame.shape[1], frame.shape[0]]:
                     raise ValueError("Decoded dimensions differ from the existing native archive")
             subjects = _warmup_subjects(group, max_players)
+            if source_budget is None:
+                warmup_budget = max(warmup_budget, automatic_source_buffer_bytes(frame.nbytes, batch_frames))
             needs_images = (len(warmup) < min(batch_frames, count)
                             or sum(len(item["boxes"]) for item in warmup) < max(shapes))
-            if subjects and needs_images and len(warmup) < 8 and warmup_bytes + frame.nbytes <= MAX_WARMUP_SOURCE_BYTES:
+            if subjects and needs_images and len(warmup) < 8 and warmup_bytes + frame.nbytes <= warmup_budget:
                 warmup_bytes += frame.nbytes
                 warmup.append({"frame": frame, "boxes": [row["bbox_px"] for row in subjects], "bindings": subjects})
     finally:
         decoder.release()
     guard(force=True)
     if not warmup or sum(len(item["boxes"]) for item in warmup) < max(shapes):
-        raise ValueError("Cannot warm every expected candidate shape within eight source frames / 64 MiB")
+        raise ValueError("Cannot warm every expected candidate shape within eight source frames / 256 MiB")
     return {"video_sha256": source_sha, "frames": selected, "start_frame": start_frame,
             "start_ms": start_ms, "end_frame_exclusive": start_frame + count,
             "max_players": max_players, "decoded_frames_excluded": start_frame + count,
             "empty_source_frames": sum(not _warmup_subjects(group, max_players) for group in selected),
             "warmup_image_bytes": warmup_bytes,
+            "warmup_source_byte_budget": warmup_budget,
             "warmup_source_frame_count": len(warmup), "warmup_expected_subject_shapes": shapes,
-            "warmup_shapes_basis": "native archive source-bound subjects; candidate frame/64MiB envelopes and <=8-person forwards"}, warmup
+            "warmup_shapes_basis": "native archive source-bound subjects; production source-byte budget and <=8-person forwards"}, warmup
 
 
 def warmup_group(frames, subjects):
@@ -388,6 +406,7 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Optional host Python for a persistent read-only queue bridge (for WSL reading a Windows WAL database)")
     parser.add_argument("--prepare-only", action="store_true", help="Validate source/configuration on CPU; never load models")
     parser.add_argument("--write-annotated-video", action="store_true", help="Include the normal annotated-video artifact and its cost in each measured trial")
+    add_runtime_profile_arguments(parser)
     return parser
 
 
@@ -419,7 +438,9 @@ def main(argv=None):
         graph_sizes = parse_graph_sizes(args.graph_sizes)
         settings = pipeline_settings(args.runtime_dir, args.sam_python, args.batch_preprocess,
             graph_sizes=graph_sizes, forward_graph_budget_mib=args.forward_graph_budget_mib,
-            head_graph_budget_mib=args.head_graph_budget_mib, archive_pending_frames=args.archive_pending_frames)
+            head_graph_budget_mib=args.head_graph_budget_mib, archive_pending_frames=args.archive_pending_frames,
+            reuse_cuda_cache=args.reuse_cuda_cache, profile_stages=args.profile_stages,
+            async_mesh_capture=args.async_mesh_capture)
     except ValueError as error:
         parser.error(str(error))
     trial_configurations = (scheduling_trials(args.schedule_abba, args.batch_frames,
