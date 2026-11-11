@@ -255,7 +255,7 @@ test("pose API requests are capped to a ten-second window with at most 600 frame
     return Response.json(response);
   });
   await client.getPosePreview("pose-job-123", { startMs: 12345.7, durationMs: 999999, sampleLimit: 999999 });
-  assert.equal(requested, "/v1/jobs/pose-job-123/pose-preview?start_ms=12345&duration_ms=10000&sample_limit=600");
+  assert.equal(requested, "/v1/jobs/pose-job-123/pose-preview?start_ms=12345&duration_ms=10000&sample_limit=600&pose_transport=compact-v1");
 });
 
 test("body joints remain visible while trails show only recent observed wrists", () => {

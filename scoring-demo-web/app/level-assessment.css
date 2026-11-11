@@ -1,0 +1,15 @@
+.level-assessment { margin-top: 20px; padding: 20px; border: 1px solid var(--line, #dfe6e0); border-radius: 18px; background: var(--surface, #fff); color: var(--ink, #20382b); }
+.level-assessment-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap; }
+.level-assessment h3, .level-assessment h4 { margin: 0 0 8px; }
+.level-assessment p { margin: 8px 0; line-height: 1.6; }
+.level-assessment select { padding: 6px 10px; border: 1px solid #bccbc0; border-radius: 8px; background: white; color: #20382b; }
+.level-assessment-total { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 16px 0; }
+.level-assessment-total > strong { font-size: 32px; }
+.level-assessment-total > small { margin-left: auto; }
+.level-assessment-domains { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.level-assessment-domains > div { display: grid; gap: 8px; padding: 14px; background: #f4f7f3; border-radius: 10px; }
+.level-assessment-domains strong { font-size: 22px; }
+.level-assessment small, .level-assessment-note { color: #5b6b60; font-size: 12px; }
+.level-assessment summary { cursor: pointer; padding: 10px 0; }
+.level-assessment-gates { margin: 12px 0; max-width: 480px; }
+.level-assessment-gates p { display: flex; justify-content: space-between; gap: 12px; }

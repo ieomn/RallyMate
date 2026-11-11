@@ -321,7 +321,7 @@ class TennisCandidateBindingTests(unittest.TestCase):
                 result = build_tennis_assessment(summary, directory)
                 self.assertEqual(detector.call_count, 1)
                 self.assertEqual(detector.call_args.kwargs['primary_timeline'], timeline)
-                self.assertEqual(detector.call_args.args[0], source_frames(records))
+                self.assertEqual(list(detector.call_args.args[0]), source_frames(records))
             self.assertGreater(result['observation_count'], 0)
             self.assertEqual(summary, saved)
             self.assertEqual(original_hashes, {name:hashlib.sha256((directory/name).read_bytes()).hexdigest() for name in original_hashes})

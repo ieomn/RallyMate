@@ -5,8 +5,18 @@ import ts from "typescript";
 
 const source = fs.readFileSync(new URL("../app/lib/request-diagnostics.ts", import.meta.url), "utf8");
 const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { reportReadStage, safeRequestDiagnostic, safeRequestId, attachRequestDiagnostics, getRequestDiagnostics } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+const { appendRequestDiagnostic, reportReadStage, safeRequestDiagnostic, safeRequestId, attachRequestDiagnostics, getRequestDiagnostics } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 const row = () => ({ operation: "report", stage: "body", outcome: "failure", category: "body_read", requestId: "f67b39de-cf4d-4298-b175-fbc5a0c094f1", httpStatus: 200, startedAt: "2026-10-19T00:00:00.000Z", elapsedMs: 25, bodyComplete: false });
+
+test("background successes do not erase recent pose failure stages or exceed the fixed retention cap", () => {
+  const failure = { ...row(), operation: "pose_preview", category: "timeout" };
+  let rows = appendRequestDiagnostic([], failure);
+  for (let n = 0; n < 200; n++) rows = appendRequestDiagnostic(rows, { ...row(), operation: "other_read", outcome: "success", category: null, elapsedMs: n });
+  assert.equal(rows.length, 48); assert.deepEqual(rows[0], failure);
+  for (let n = 0; n < 20; n++) rows = appendRequestDiagnostic(rows, { ...failure, elapsedMs: n });
+  assert.equal(rows.length, 48); assert.equal(rows.filter(value => value.outcome === "failure").length, 8);
+  assert.ok(rows.every(value => Object.isFrozen(value)));
+});
 
 test("report loading stages distinguish preparation, transfer, decoding and failure without claiming a percentage", () => {
   assert.equal(reportReadStage(), "正在连接报告服务");

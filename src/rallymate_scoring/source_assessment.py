@@ -92,6 +92,39 @@ def canonical_contextual_window(event: dict) -> dict | None:
     return window
 
 
+_CONTEXTUAL_ATOMIC_TYPES = (str, int, float, bool, type(None))
+
+
+def _copy_contextual_inputs(value: Any, memo: dict | None = None) -> Any:
+    """Own JSON containers once; retain immutable leaves without copy dispatch.
+
+    The source frames stay private to each contextual event exactly as before.
+    A shared memo preserves repeated references and cycles; non-JSON values
+    keep deepcopy's established tuple/subclass/custom-object behavior.
+    """
+    if type(value) in _CONTEXTUAL_ATOMIC_TYPES:
+        return value
+    if memo is None:
+        memo = {}
+    identity = id(value)
+    if identity in memo:
+        return memo[identity]
+    if type(value) is list:
+        result = []
+        memo[identity] = result
+        result.extend(item if type(item) in _CONTEXTUAL_ATOMIC_TYPES
+                      else _copy_contextual_inputs(item, memo) for item in value)
+        return result
+    if type(value) is dict:
+        result = {}
+        memo[identity] = result
+        for key, item in value.items():
+            result[key if type(key) in _CONTEXTUAL_ATOMIC_TYPES else _copy_contextual_inputs(key, memo)] = (
+                item if type(item) in _CONTEXTUAL_ATOMIC_TYPES else _copy_contextual_inputs(item, memo))
+        return result
+    return copy.deepcopy(value, memo)
+
+
 def _contextual_hip_result(event: dict, *, video_id: str, source_id: str | None,
                            video_sha256: str | None, input_sha256: dict,
                            cancellation_callback: Callable[[], None] | None = None) -> dict:
@@ -184,7 +217,8 @@ def compute_contextual_hip_measurement(raw_records: list[dict], primary_timeline
     # The adapter receives no writable aliases into legacy records or timeline.
     _check(cancellation_callback)
     try:
-        adapted, diagnostics = adapt_native_primary_timeline(copy.deepcopy(records), copy.deepcopy(timeline),
+        owned_records = _copy_contextual_inputs(records)
+        adapted, diagnostics = adapt_native_primary_timeline(owned_records, _copy_contextual_inputs(timeline),
                                                              video_sha256=video_sha256)
     except NativePrimaryTimelineError:
         return reject("contextual_native_adapter_rejected")
@@ -194,7 +228,7 @@ def compute_contextual_hip_measurement(raw_records: list[dict], primary_timeline
         return reject("contextual_native_adapter_version_mismatch")
     _check(cancellation_callback)
     try:
-        sequence = pose_sequence_from_records(copy.deepcopy(records), adapted)
+        sequence = pose_sequence_from_records(owned_records, adapted)
     except (ValueError, KeyError, TypeError, IndexError, ArithmeticError):
         return reject("contextual_source_loader_rejected")
     if sequence.source_frames.tolist() != window["source_frames"]:
@@ -341,7 +375,8 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
                                     primary_timeline: list[dict] | None = None,
                                     raw_records: list[dict] | None = None,
                                     source_id: str | None = None,
-                                    cancellation_callback: Callable[[], None] | None = None) -> dict:
+                                    cancellation_callback: Callable[[], None] | None = None,
+                                    cpu_pool=None) -> dict:
     # Optional measurements may fail closed, but never consume callback control
     # flow, including caller-defined exceptions outside the known worker types.
     callback_error: Exception | None = None
@@ -383,30 +418,26 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
         artifact["source_id"] = source_id
         inputs = {"frames": artifact["frames_sha256"], "events": artifact["events_sha256"],
                   "primary_timeline": artifact["primary_timeline_sha256"]}
-        for record, event in zip(records, (event for event in events
-                                          if event.get("event_code") in {"FS01", "FS02", "FS09"})):
+        selected_events = [event for event in events
+                           if event.get("event_code") in {"FS01", "FS02", "FS09"}]
+        options = dict(video_id=video_id, source_id=source_id,
+                       video_sha256=video_sha256, input_sha256=inputs)
+        if cpu_pool is not None and cpu_pool.workers > 1:
+            tasks = contextual_window_tasks(raw_records, primary_timeline or [], selected_events,
+                                            options, cancellation_callback=check)
+            results = cpu_pool.ordered_map(_contextual_measurement_safely, tasks)
+        else:
+            results = (_contextual_measurement_safely(raw_records, primary_timeline or [], event,
+                       **options, cancellation_callback=check) for event in selected_events)
+        completed = 0
+        for index, contextual in enumerate(results):
             check()
-            try:
-                contextual = compute_contextual_hip_measurement(
-                    raw_records, primary_timeline or [], event, video_id=video_id,
-                    source_id=source_id, video_sha256=video_sha256, input_sha256=inputs,
-                    cancellation_callback=check)
-            except Exception as error:
-                if error is callback_error or _candidate_failure_must_propagate(error):
-                    raise
-                # Only the optional addition is isolated. Legacy computations,
-                # writes and task cancellation retain their existing behavior.
-                contextual = _contextual_hip_result(event, video_id=video_id, source_id=source_id,
-                                                     video_sha256=video_sha256, input_sha256=inputs,
-                                                     cancellation_callback=check)
-                contextual["reason"] = "contextual_measurement_failed"
-                window = canonical_contextual_window(event)
-                if window is not None:
-                    contextual.update(source_window=window,
-                        measurement_window_video_ms=dict(contextual["parent_window_ms"]),
-                        source_frame_bounds={"start_source_frame": window["source_frames"][0],
-                                             "end_source_frame": window["source_frames"][-1]})
-            record["contextual_measurements"] = [contextual]
+            if index >= len(records):
+                raise RuntimeError("Contextual result count exceeded event count")
+            records[index]["contextual_measurements"] = [contextual]
+            completed += 1
+        if completed != len(records):
+            raise RuntimeError("Contextual result count did not match event count")
     path = output_dir / ARTIFACT_NAME
     temporary = output_dir / (ARTIFACT_NAME + ".tmp")
     try:
@@ -442,3 +473,76 @@ def write_source_aligned_assessment(output_dir: Path, sequence: PoseSequence,
     return {"path": ARTIFACT_NAME, "sha256": file_sha(path, cancellation_callback=check), "event_count": len(records),
             "indicator_window_count": sum(len(r["indicators"]) for r in records),
             "foot_crossing_candidates": crossing_artifact}
+
+
+def _contextual_measurement_safely(raw_records, primary_timeline, event, *, video_id,
+                                  source_id, video_sha256, input_sha256,
+                                  cancellation_callback=None):
+    """Preserve the optional measurement boundary in serial and child execution."""
+    callback_error = None
+
+    def check():
+        nonlocal callback_error
+        try:
+            _check(cancellation_callback)
+        except Exception as error:
+            callback_error = error
+            raise
+
+    try:
+        return compute_contextual_hip_measurement(raw_records, primary_timeline, event,
+            video_id=video_id, source_id=source_id, video_sha256=video_sha256,
+            input_sha256=input_sha256, cancellation_callback=check)
+    except Exception as error:
+        if error is callback_error or _candidate_failure_must_propagate(error):
+            raise
+        contextual = _contextual_hip_result(event, video_id=video_id, source_id=source_id,
+            video_sha256=video_sha256, input_sha256=input_sha256, cancellation_callback=check)
+        contextual["reason"] = "contextual_measurement_failed"
+        window = canonical_contextual_window(event)
+        if window is not None:
+            contextual.update(source_window=window,
+                measurement_window_video_ms=dict(contextual["parent_window_ms"]),
+                source_frame_bounds={"start_source_frame": window["source_frames"][0],
+                                     "end_source_frame": window["source_frames"][-1]})
+        return contextual
+
+
+def contextual_window_tasks(raw_records, primary_timeline, events, options, *,
+                            cancellation_callback=None):
+    """Transfer full event windows, preserving source order and duplicate rows.
+
+    The measurement itself already discards rows outside this exact window.
+    Index once in the parent rather than scan and copy the entire video per
+    child. Nothing inside the selected window is reduced or resampled.
+    """
+    raw_index, timeline_index = {}, {}
+    for index, row in enumerate(raw_records):
+        if index % 64 == 0:
+            _check(cancellation_callback)
+        if (isinstance(row, dict) and isinstance(row.get("frame"), dict)
+                and type(row["frame"].get("index")) is int):
+            raw_index.setdefault(row["frame"]["index"], []).append((index, row))
+    for index, row in enumerate(primary_timeline):
+        if index % 64 == 0:
+            _check(cancellation_callback)
+        if isinstance(row, dict) and type(row.get("source_frame_index")) is int:
+            timeline_index.setdefault(row["source_frame_index"], []).append((index, row))
+    for event in events:
+        _check(cancellation_callback)
+        try:
+            window = canonical_contextual_window(event)
+        except Exception as error:
+            if _candidate_failure_must_propagate(error):
+                raise
+            # Let the unchanged measurement boundary classify malformed input.
+            window = None
+        if window is None:
+            rows, timeline = raw_records, primary_timeline
+        else:
+            wanted = set(window["source_frames"])
+            rows = [row for _, row in sorted(
+                (item for frame in wanted for item in raw_index.get(frame, ())), key=lambda item: item[0])]
+            timeline = [row for _, row in sorted(
+                (item for frame in wanted for item in timeline_index.get(frame, ())), key=lambda item: item[0])]
+        yield ((rows, timeline, event), options)

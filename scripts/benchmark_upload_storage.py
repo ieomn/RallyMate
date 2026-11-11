@@ -21,7 +21,7 @@ import uuid
 from unittest.mock import patch
 
 from rallymate_service import upload_state
-from rallymate_service.uploads import CHUNK_BYTES, DEFAULT_CHUNK_BYTES, UploadStore
+from rallymate_service.uploads import CHUNK_BYTES, MIN_CHUNK_BYTES, UploadStore
 try:
     from scripts.benchmark_idle import IdleJobsGuard, require_idle
 except ModuleNotFoundError as error:
@@ -185,7 +185,7 @@ def main(argv=None):
     if not 1 <= size <= 512 * MIB or not 1 <= args.repeats <= 5:
         parser.error("size must be 1 byte..512 MiB, repeats must be 1..5")
     if (not chunks or len(chunks) != len(set(chunks)) or
-            any(not DEFAULT_CHUNK_BYTES <= value <= CHUNK_BYTES for value in chunks)):
+            any(not MIN_CHUNK_BYTES <= value <= CHUNK_BYTES for value in chunks)):
         parser.error("chunk sizes must be distinct values in 128..4096 KiB")
     if args.output.exists():
         parser.error("output already exists; choose a new report path")

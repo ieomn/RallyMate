@@ -18,7 +18,7 @@ function compiledUrl(file) {
   modules.set(file.href, url);
   return url;
 }
-const { createApiClient, RallyMateApiError } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
+const { createApiClient, RallyMateApiError, POSE_MAX_WIRE_BYTES, POSE_READ_BUDGET_MS } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { getRequestDiagnostics, safeRequestDiagnostic } = await import(compiledUrl(new URL("../app/lib/request-diagnostics.ts", import.meta.url)));
 const { normalizePosePreview } = await import(compiledUrl(new URL("../app/lib/pose-playback.ts", import.meta.url)));
 const configured = { baseUrl: "", jobsPath: "/v1/jobs", scorecardPath: "/api/scorecard", techniquesPath: "/v1/techniques" };
@@ -81,7 +81,7 @@ test("pose success retains raw response and one request ID across headers/body/j
   assert.notDeepEqual(normalizePosePreview(raw, job), raw);
   const client = createApiClient(configured, async (url, init) => {
     calls++; requestId = init.headers["X-Request-ID"];
-    assert.equal(String(url), `/v1/jobs/${job}/pose-preview?start_ms=0&duration_ms=10000&sample_limit=600`);
+    assert.equal(String(url), `/v1/jobs/${job}/pose-preview?start_ms=0&duration_ms=10000&sample_limit=600&pose_transport=compact-v1`);
     assert.equal(init.method, "GET"); assert.equal(init.cache, "no-store");
     return Response.json(raw, { headers: { "X-Request-ID": "UPSTREAM_PRIVATE_ID", "X-Secret": secret } });
   }, undefined, row => rows.push(row));
@@ -167,8 +167,7 @@ test("pose HTTP and JSON errors keep their existing status/category and never re
 
 test("pose body interruption keeps the exact error and body_read category", async () => {
   const rows = [], reason = new TypeError(secret); let calls = 0, requestId;
-  const response = new Response("unused");
-  Object.defineProperty(response, "text", { value: async () => { throw reason; } });
+  const response = new Response(new ReadableStream({ pull(controller) { controller.error(reason); } }, { highWaterMark: 0 }));
   const client = createApiClient(configured, async (_url, init) => {
     calls++; requestId = init.headers["X-Request-ID"]; return response;
   }, undefined, row => rows.push(row));
@@ -185,8 +184,9 @@ test("pose pre-abort avoids fetch and post-body abort wins over valid or invalid
   assert.equal(preCalls, 0);
   for (const raw of [payload(), { invalid: secret }]) {
     const caller = new AbortController(), rows = []; let calls = 0, requestId;
-    const response = new Response("unused");
-    Object.defineProperty(response, "text", { value: async () => { caller.abort(reason); return JSON.stringify(raw); } });
+    const response = new Response(new ReadableStream({ pull(controller) {
+      controller.enqueue(new TextEncoder().encode(JSON.stringify(raw))); controller.close(); caller.abort(reason);
+    } }, { highWaterMark: 0 }));
     const client = createApiClient(configured, async (_url, init) => {
       calls++; requestId = init.headers["X-Request-ID"]; return response;
     }, undefined, row => rows.push(row));
@@ -209,19 +209,67 @@ test("caller cancellation after JSON success suppresses the pending pose validat
 });
 
 test("pose network and local timeout remain distinct original failures with one20s request", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
   for (const timeout of [false, true]) {
-    const deadline = new AbortController(), rows = [], reason = new TypeError(secret); let calls = 0, requestId;
-    const mock = t.mock.method(AbortSignal, "timeout", ms => { assert.equal(ms, 20000); return deadline.signal; });
+    const rows = [], reason = new TypeError(secret); let calls = 0, requestId;
     const client = createApiClient(configured, async (_url, init) => {
       calls++; requestId = init.headers["X-Request-ID"];
-      if (timeout) deadline.abort(new DOMException("private timeout", "TimeoutError"));
+      if (timeout) t.mock.timers.tick(20000);
       throw reason;
     }, undefined, row => rows.push(row));
     await assert.rejects(client.getPosePreview(job), error => error === reason);
     assert.equal(calls, 1); assertSafeRows(rows, requestId, ["headers"]);
     assert.deepEqual([rows[0].category, rows[0].httpStatus, rows[0].bodyComplete], [timeout ? "timeout" : "network", null, false]);
-    assert.deepEqual(getRequestDiagnostics(reason), rows); mock.mock.restore();
+    assert.deepEqual(getRequestDiagnostics(reason), rows);
   }
+});
+
+const flush = async () => { for (let i = 0; i < 16; i++) await Promise.resolve(); };
+function streamingPose(t) {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let stream, transportSignal, cancelled = false, calls = 0; const rows = [];
+  const response = new Response(new ReadableStream({ start(controller) { stream = controller; }, cancel() { cancelled = true; } }));
+  const caller = new AbortController();
+  const client = createApiClient(configured, async (_url, options) => { calls++; transportSignal = options.signal; return response; }, undefined, row => rows.push(row));
+  const work = client.getPosePreview(job, { signal: caller.signal }).then(value => ({ value }), error => ({ error }));
+  return { stream, work, rows, caller, calls: () => calls, cancelled: () => cancelled, signal: () => transportSignal,
+    advance: async ms => { t.mock.timers.tick(ms); await flush(); } };
+}
+test("pose body progresses beyond twenty seconds without another request or reduced frames", async t => {
+  const read = streamingPose(t); await flush();
+  const raw = payload(), bytes = new TextEncoder().encode(JSON.stringify(raw)), step = Math.ceil(bytes.length / 5);
+  for (let offset = 0; offset < bytes.length; offset += step) {
+    await read.advance(9000); assert.equal(read.signal().aborted, false);
+    read.stream.enqueue(bytes.slice(offset, offset + step)); await flush();
+  }
+  read.stream.close(); const result = await read.work;
+  assert.deepEqual(result.value, raw); assert.equal(read.calls(), 1); assert.equal(read.cancelled(), false);
+  await read.advance(POSE_READ_BUDGET_MS); assert.equal(read.signal().aborted, false, "completed timers are cleared");
+});
+test("pose body idle and total budgets are independently enforced with useful diagnostics", async t => {
+  const read = streamingPose(t); await flush();
+  read.stream.enqueue(new TextEncoder().encode(" ")); await flush();
+  await read.advance(15000); read.stream.enqueue(new Uint8Array(0)); await flush();
+  await read.advance(5000); const result = await read.work;
+  assert.equal(result.error.name, "TimeoutError"); assert.equal(read.cancelled(), true); assert.equal(read.calls(), 1);
+  const last = getRequestDiagnostics(result.error).at(-1);
+  assert.deepEqual([last.operation, last.stage, last.category, last.httpStatus, last.bodyComplete], ["pose_preview", "body", "timeout", 200, false]);
+});
+test("continuous pose bytes cannot exceed the fixed total budget", async t => {
+  const read = streamingPose(t); await flush();
+  for (let n = 0; n < 5; n++) { await read.advance(15000); read.stream.enqueue(new TextEncoder().encode(" ")); await flush(); }
+  await read.advance(15000); const result = await read.work;
+  assert.equal(result.error.name, "TimeoutError"); assert.equal(read.cancelled(), true); assert.equal(read.calls(), 1);
+});
+test("pose navigation cancels a progressing stream and oversized windows fail closed", async t => {
+  const read = streamingPose(t); await flush(); read.stream.enqueue(new TextEncoder().encode(" ")); await flush();
+  const count = read.rows.length, reason = new DOMException("navigation", "AbortError");
+  read.caller.abort(reason); const result = await read.work;
+  assert.equal(result.error, reason); assert.equal(read.cancelled(), true); assert.equal(read.rows.length, count);
+  let cancelled = false;
+  const oversized = new Response(new ReadableStream({ cancel() { cancelled = true; } }), { headers: { "content-length": String(POSE_MAX_WIRE_BYTES + 1) } });
+  await assert.rejects(createApiClient(configured, async () => oversized).getPosePreview(job), error => error.status === 422);
+  assert.equal(cancelled, true);
 });
 
 test("an observer exception cannot change successful raw pose delivery or a fixed decode failure", async () => {

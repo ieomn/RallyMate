@@ -40,6 +40,12 @@ class ReportEvidenceTransportError(ValueError):
 class ReportEvidenceLimitError(ReportEvidenceTransportError):
     """Valid evidence is too large for the negotiated delivery contract."""
 
+    def __init__(self, message: str, *, budget: str | None = None,
+                 actual: int | None = None, maximum: int | None = None):
+        super().__init__(message)
+        self.budget, self.actual, self.maximum = budget, actual, maximum
+        self.diagnostics: dict | None = None
+
 
 def _require(condition: bool) -> None:
     if not condition:
@@ -118,7 +124,8 @@ class _Budget:
         # retain the specific exhausted budget in the server-side exception chain.
         if actual > maximum:
             raise ReportEvidenceLimitError(
-                f'Report proof {name} exceeds transport limit ({actual} > {maximum})')
+                f'Report proof {name} exceeds transport limit ({actual} > {maximum})',
+                budget=name, actual=actual, maximum=maximum)
 
     def enter(self, value: Any, depth: int):
         self.nodes += 1
@@ -141,15 +148,28 @@ class _Budget:
         self.add(cost)
 
 
-def pack_report_evidence(value: dict, *, cancellation_callback: Callable[[], None] | None = None) -> dict:
+def pack_report_evidence(value: dict, *, cancellation_callback: Callable[[], None] | None = None,
+                         diagnostics_callback: Callable[[dict], None] | None = None) -> dict:
     """Return a new pool transport, or the native input when no proofs exist."""
     check = cancellation_callback or (lambda: None)
     check()
     _require(isinstance(value, dict))
     entries, content_ids, cache = [], {}, {}
     budget = _Budget()
+    contributions = {}
+    active_field = None
+
+    def counters():
+        return {'base_nodes': budget.nodes, 'expanded_bytes': budget.bytes,
+                'references': budget.references, 'unique_proofs': len(entries)}
+
+    def diagnostic(state):
+        # Counts only: never include evidence, video paths, or user content.
+        return {'state': state, **counters(), 'active_top_level_field': active_field,
+                'top_level_fields': contributions}
 
     def visit(raw, depth):
+        nonlocal active_field
         # Large reports can spend most of their preparation time in this walk.
         # Check during it, not only after the new report and pool are allocated.
         if budget.nodes % 4096 == 0:
@@ -183,8 +203,16 @@ def pack_report_evidence(value: dict, *, cancellation_callback: Callable[[], Non
             remaining = {key: child for key, child in raw.items() if key not in PROOF_KEYS}
         result = {}
         for key, child in remaining.items():
-            budget.key(key)
-            result[key] = visit(child, depth + 1)
+            before = counters() if depth == 0 else None
+            if depth == 0:
+                active_field = key
+            try:
+                budget.key(key)
+                result[key] = visit(child, depth + 1)
+            finally:
+                if before is not None:
+                    after = counters()
+                    contributions[key] = {name: after[name] - before[name] for name in before}
         if identifier is not None:
             # Preflight sees this emitted key/value too. Charge it now so a
             # packed report cannot exceed the same decoder budget at the edge.
@@ -193,8 +221,18 @@ def pack_report_evidence(value: dict, *, cancellation_callback: Callable[[], Non
             result[REF] = identifier
         return result
 
-    packed = visit(value, 0)
+    try:
+        packed = visit(value, 0)
+    except ReportEvidenceLimitError as exc:
+        exc.diagnostics = {**diagnostic('limit_exceeded'), 'budget': exc.budget,
+                           'actual': exc.actual, 'maximum': exc.maximum}
+        if diagnostics_callback is not None:
+            diagnostics_callback(exc.diagnostics)
+        raise
     check()
+    active_field = None
+    if diagnostics_callback is not None:
+        diagnostics_callback(diagnostic('complete'))
     if not entries:
         return value
     return {**packed, TRANSPORT: MODEL_PROOF_CODEC, CODEC: MODEL_PROOF_CODEC, POOL: entries}

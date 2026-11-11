@@ -114,6 +114,58 @@ function video(bytes = Buffer.alloc(CHUNK * 2 + 8192, 7)) {
   return new File([bytes], "tennis.mp4", { type: "video/mp4", lastModified: 1000 });
 }
 
+test("a terminal error waits for already-issued PUTs and never calls complete", async t => {
+  browserStorage(t);
+  let release, arrived, finished = false;
+  const secondArrived = new Promise(resolve => { arrived = resolve; });
+  const held = new Promise(resolve => { release = resolve; });
+  const server = protocol({ chunkSize: 128 * 1024, beforePut: async request => {
+    if (request.index === 0) { await secondArrived; throw new RallyMateApiError("rejected", 422); }
+    arrived(); await held;
+  } });
+  const upload = uploadResumable(video(Buffer.alloc(128 * 1024 * 4)), {}, urlFor, server.fetch, parse);
+  void upload.then(() => { finished = true; }, () => { finished = true; });
+  await secondArrived; await new Promise(resolve => setImmediate(resolve));
+  assert.equal(finished, false);
+  release(); await assert.rejects(upload, /rejected/);
+  assert.deepEqual(server.requests.filter(row => row.method === "PUT").map(row => row.index).sort(), [0, 1]);
+  assert.equal(server.requests.some(row => row.path.endsWith("/complete")), false);
+});
+
+test("cancellation during chunk hashing waits for those hashes and sends no subsequent bytes", async t => {
+  browserStorage(t);
+  const controller = new AbortController(), chunkSize = 128 * 1024;
+  let release, ready, count = 0;
+  const blocked = new Promise(resolve => { release = resolve; });
+  const bothHashing = new Promise(resolve => { ready = resolve; });
+  const nativeDigest = crypto.subtle.digest.bind(crypto.subtle);
+  t.mock.method(crypto.subtle, "digest", async (algorithm, data) => {
+    if (data.byteLength === chunkSize) { if (++count === 2) ready(); await blocked; }
+    return nativeDigest(algorithm, data);
+  });
+  const server = protocol({ chunkSize });
+  const upload = uploadResumable(video(Buffer.alloc(chunkSize * 4)), { signal: controller.signal }, urlFor, server.fetch, parse);
+  const rejected = assert.rejects(upload, error => error.name === "AbortError");
+  await bothHashing; controller.abort(); release(); await rejected;
+  assert.equal(server.requests.some(row => row.method === "PUT" || row.path.endsWith("/complete")), false);
+});
+
+test("invalid server-sized sessions are rejected before hashing or transmitting chunks", async t => {
+  browserStorage(t);
+  for (const mutation of [value => value.chunk_size = 0, value => value.chunk_count++, value => value.upload_id = "other",
+    value => value.received_bytes = 1, value => value.chunk_size = 32 * 1024 * 1024,
+    value => value.received_chunks = [-1]]) {
+    let requests = 0;
+    await assert.rejects(uploadResumable(video(Buffer.alloc(1024)), {}, urlFor, async (_url, init) => {
+      requests++;
+      const payload = JSON.parse(init.body);
+      const value = { ...payload, chunk_size: 128 * 1024, chunk_count: 1, received_chunks: [], chunk_sha256: {}, received_bytes: 0, job_id: null };
+      mutation(value); return Response.json(value);
+    }, parse), /分块配置/);
+    assert.equal(requests, 1);
+  }
+});
+
 test("uploads real 4 MiB chunks with exactly two in flight and acknowledged byte progress", { timeout: 5000 }, async t => {
   const storage = browserStorage(t);
   let firstArrivals = 0, release;

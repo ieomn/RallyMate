@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from pathlib import Path
@@ -47,6 +48,7 @@ from rallymate_scoring.scoring_context import (
 )
 from rallymate_scoring.scoring import score_indicator
 from rallymate_scoring.artifact_evidence import EvidencePoolWriter, iter_artifact_records
+from rallymate_scoring.cpu_parallel import ScoringCpuPool, scoring_cpu_workers
 from rallymate_scoring.source_assessment import write_source_aligned_assessment
 from rallymate_tracking import (
     PRIMARY_PLAYER_ALGORITHM_VERSION,
@@ -59,6 +61,7 @@ from rallymate_tracking import (
 SCORING_LOOP_VERSION = "minimum-scoring-loop-v0.9.0"
 EVENT_CONTRACT_VERSION = "events.1.0.0"
 PRIMARY_PLAYER_VERSION = PRIMARY_PLAYER_ALGORITHM_VERSION
+LOGGER = logging.getLogger(__name__)
 SUPPLEMENTAL_FINE_FOOT_SEMANTICS = (
     "fine_foot_keypoint_evidence_not_A_to_E_threshold"
 )
@@ -598,22 +601,42 @@ def run_minimum_scoring_loop(
             yield row
             write_completed += 1
 
-    with EvidencePoolWriter(
-        output_dir, video_id=canonical_video_id, source_id=source_id,
-        video_sha256=provenance.get("video_sha256"),
-        cancellation_callback=cancellation_callback,
-    ) as evidence_writer:
-        evidence_writer.write_jsonl(output_dir / "features.jsonl", writing_records(feature_records))
-        evidence_writer.write_jsonl(output_dir / "indicator-features.jsonl", writing_records(indicator_records))
-        evidence_writer.write_jsonl(output_dir / "scores.jsonl", writing_records(score_records))
-    source_assessment_artifact = write_source_aligned_assessment(
-        output_dir, sequence, events, video_id=canonical_video_id,
-        video_sha256=provenance.get("video_sha256"),
-        frames_sha256=provenance.get("frames_sha256"), frames_path=frames_path,
-        primary_timeline_path=primary_timeline_path, primary_timeline=timeline,
-        raw_records=records, source_id=source_id,
-        cancellation_callback=cancellation_callback,
-    )
+    # Process startup is worthwhile for full sessions, not tiny fixtures/clips.
+    cpu_workers = scoring_cpu_workers() if len(events) >= 32 else 1
+    LOGGER.info("scoring_cpu workers=%d events=%d", cpu_workers, len(events))
+    with ScoringCpuPool(cpu_workers, cancellation_callback=cancellation_callback) as cpu_pool:
+        with EvidencePoolWriter(
+            output_dir, video_id=canonical_video_id, source_id=source_id,
+            video_sha256=provenance.get("video_sha256"),
+            cancellation_callback=cancellation_callback,
+        ) as evidence_writer:
+            if cpu_workers > 1:
+                def file_written(count):
+                    nonlocal write_completed
+                    write_completed += count
+                    report_progress("writing_results", write_completed, max(1, write_total))
+
+                evidence_writer.write_jsonl_parallel([
+                    (output_dir / "features.jsonl", feature_records),
+                    (output_dir / "indicator-features.jsonl", indicator_records),
+                    (output_dir / "scores.jsonl", score_records),
+                ], cpu_pool=cpu_pool, progress_callback=file_written)
+            else:
+                evidence_writer.write_jsonl(output_dir / "features.jsonl", writing_records(feature_records))
+                evidence_writer.write_jsonl(output_dir / "indicator-features.jsonl", writing_records(indicator_records))
+                evidence_writer.write_jsonl(output_dir / "scores.jsonl", writing_records(score_records))
+        source_assessment_artifact = write_source_aligned_assessment(
+            output_dir, sequence, events, video_id=canonical_video_id,
+            video_sha256=provenance.get("video_sha256"),
+            frames_sha256=provenance.get("frames_sha256"), frames_path=frames_path,
+            primary_timeline_path=primary_timeline_path, primary_timeline=timeline,
+            raw_records=records, source_id=source_id,
+            cancellation_callback=cancellation_callback,
+            cpu_pool=cpu_pool if cpu_workers > 1 else None,
+        )
+    LOGGER.info("scoring_cpu complete workers=%d pids=%s child_peak_mib=%.1f task_peak_mib=%.1f serial_fallbacks=%d",
+                cpu_workers, cpu_pool.worker_pids, cpu_pool.child_memory_peak_bytes / 1024**2,
+                cpu_pool.peak_task_bytes / 1024**2, cpu_pool.serial_fallback_tasks)
 
     # Truth interfaces are executable, but absent truth must never appear as a
     # perfect evaluation. A separate evaluator can replace this artifact after

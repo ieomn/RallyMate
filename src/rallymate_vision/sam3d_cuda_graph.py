@@ -11,6 +11,7 @@ import ast
 import hashlib
 import inspect
 import io
+import os
 from pathlib import Path
 import textwrap
 import threading
@@ -29,6 +30,22 @@ SCRIPT_REPLACEMENTS = {
     "torch.empty(torch.add(_3, [3, 3]), dtype=ops.prim.dtype(r))":
         "torch.empty(torch.add(_3, [3, 3]), dtype=ops.prim.dtype(r), device=ops.prim.device(r))",
 }
+
+
+def _graph_memory_budget(environment_variable):
+    """Resolve a bounded extra-graph pool budget without initializing CUDA.
+
+    This limits retained pool deltas, not transient capture peaks or total GPU
+    memory. Read only at installation; existing handles keep their allocation.
+    """
+    raw = os.environ.get(environment_variable)
+    value = "512" if raw is None else raw.strip()
+    if (not value or not value.isascii() or not value.isdecimal()
+            or len(value) > 4 or not 128 <= int(value) <= 4096):
+        raise ValueError(f"{environment_variable} must be an integer in [128,4096] MiB")
+    return {"limit_bytes": int(value) * 1024 * 1024,
+            "configured_mib": int(value), "environment_variable": environment_variable,
+            "configuration_source": "default" if raw is None else "environment"}
 
 
 def _verify(path, digest):
@@ -205,6 +222,7 @@ class HeadGraphHandle:
         sizes = tuple(additional_batch_sizes)
         if len(sizes) > 2 or len(set(sizes)) != len(sizes) or any(type(n) is not int or not 2 <= n <= 8 for n in sizes):
             raise ValueError("At most two additional head graph batch sizes in 2..8 are supported")
+        budget = _graph_memory_budget("RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB")
         self.batch_slots = {}
         self.additional_batch_sizes = sizes
         self.head, self.torch = head, torch
@@ -223,7 +241,9 @@ class HeadGraphHandle:
             "capture_status": "pending_first_body_head", "replays": 0, "fallback_calls": 0,
             "capture_seconds": None, "maximum_graphs": 1 + len(sizes),
             "additional_batch_sizes": list(sizes), "batch_slots": {},
-            "additional_retained_pool_budget_bytes": 512 * 1024 * 1024,
+            "additional_retained_pool_budget_bytes": budget["limit_bytes"],
+            "additional_retained_pool_budget_configuration": budget,
+            "additional_retained_pool_budget_scope": "extra_head_graph_pool_deltas; capture_peak_not_hard_limited",
             "all_six_decoder_heads_retained": True, "output_tensors_cloned": True,
             "precision_resolution_and_weights_unchanged": True,
             "original_files_unchanged": True, "sparse_indices_verified_sorted_unique": True,
@@ -386,6 +406,8 @@ class HeadGraphHandle:
 
 def apply_head_cuda_graph(model, *, additional_batch_sizes=()):
     """Install only after the validated RoMa instance binding, in body mode."""
+    # Reject invalid configuration before loading a graph-safe MHR or touching CUDA.
+    _graph_memory_budget("RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB")
     import torch
     head = model.head_pose
     if head.training or head.faces.device.type != "cuda":

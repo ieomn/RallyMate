@@ -25,6 +25,49 @@ from rallymate_features.temporal import longest_contiguous_duration
 
 FS09_FEATURE_VERSION = "fs09-pose-proxies-v0.4.0"
 
+
+def braking_phase_candidates_from_series(
+    timestamp_ms: np.ndarray,
+    left_ankle_speed: np.ndarray,
+    right_ankle_speed: np.ndarray,
+    indexes: np.ndarray,
+) -> dict[str, Any]:
+    """Local ankle slowdown anchor for FS09-M02, independent of FS10.
+
+    Three observed adjacent samples are required on the same side. The
+    maximum positive speed drop identifies a candidate foot-strike interval;
+    it does not establish physical contact or pressure from 2D pose.
+    """
+    times = np.asarray(timestamp_ms, dtype=float)
+    indexes = np.asarray(indexes, dtype=int)
+    result = {"braking_foot_strike_index": None, "braking_foot_strike_ms": None,
+              "braking_side": None, "status": "not_observed",
+              "measurement_semantics": "ankle_slowdown_candidate_not_confirmed_contact",
+              "independent_of_recovery_event": True}
+    best = None
+    for side, raw in (("left", left_ankle_speed), ("right", right_ankle_speed)):
+        values = np.asarray(raw, dtype=float)
+        if values.shape != times.shape:
+            raise ValueError("ankle speed and timestamp shapes must match")
+        for before, middle, after in zip(indexes, indexes[1:], indexes[2:]):
+            dt = np.diff(times[[before, middle, after]])
+            sample = values[[before, middle, after]]
+            if (middle != before + 1 or after != middle + 1 or not np.isfinite(sample).all()
+                    or not np.isfinite(dt).all() or np.any(dt <= 0) or np.any(dt > 160)):
+                continue
+            # Require observed continued slowing, not a single-frame spike.
+            if not sample[0] > sample[1] >= sample[2] or sample[2] < 0:
+                continue
+            deceleration = (sample[0] - sample[2]) / ((times[after] - times[before]) / 1000)
+            candidate = (float(deceleration), int(middle), side, (int(before), int(after)))
+            if best is None or candidate[0] > best[0]:
+                best = candidate
+    if best is not None:
+        result.update(braking_foot_strike_index=best[1], braking_foot_strike_ms=float(times[best[1]]),
+                      braking_side=best[2], status="observed_candidate", deceleration=best[0],
+                      source_interval_indexes=list(best[3]))
+    return result
+
 # Several event summary features reuse the same full-video kinematic series.
 # Cache them by sequence identity and body scale so an event loop does not
 # recompute and smooth nine arrays for every FS09 indicator instance.

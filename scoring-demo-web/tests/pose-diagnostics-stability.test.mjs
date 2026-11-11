@@ -25,7 +25,7 @@ function compiledUrl(file) {
   const url = dataUrl(js); modules.set(file.href, url); return url;
 }
 const sessionUrl = compiledUrl(new URL("../app/lib/analysis-session.ts", import.meta.url));
-const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].watch(...args);`);
+const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchSummaryAnalysis } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].watch(...args);`);
 let componentJs = ts.transpileModule(fs.readFileSync(new URL("../app/ScoreLab.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 componentJs = componentJs.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(name === "react" ? hooksUrl : name === "./lib/api-client" ? apiUrl : name === "./lib/analysis-session" ? sessionMockUrl : name === "./ProductWorkspace" ? shellUrl : name === "./TrainingJournal" ? journalUrl : name === "./BallTrajectoryViewer" ? compiledUrl(new URL("../app/BallTrajectoryViewer.tsx", import.meta.url)) : name.startsWith("./lib/") ? compiledUrl(new URL(`../app/${name}.ts`, import.meta.url)) : name.startsWith(".") ? childUrl : import.meta.resolve(name))}`);
 const { default: ScoreLab } = await import(dataUrl(componentJs));
@@ -96,11 +96,20 @@ function mount(t, { realTransport = false } = {}) {
           const request = { jobId: parsed.pathname.split("/").at(-2), options: { startMs: Number(parsed.searchParams.get("start_ms")), signal: init.signal },
             resolve: value => body.resolve(JSON.stringify(value)), reject: body.reject };
           requests.push(request);
-          const response = new Response(null, { status: 200 });
-          response.text = () => body.promise;
+          let cancelled = false;
+          const response = new Response(new ReadableStream({
+            async pull(controller) {
+              try { const value = await body.promise; if (!cancelled) { controller.enqueue(new TextEncoder().encode(value)); controller.close(); } }
+              catch (error) { if (!cancelled) controller.error(error); }
+            }, cancel() { cancelled = true; },
+          }, { highWaterMark: 0 }), { status: 200 });
           return response;
         }, undefined, observer);
         api.getTennisAssessment = noAssessment;
+        // This harness supplies the completed report through its legacy session
+        // stub; only pose HTTP transport is real. Segmented loading has separate
+        // coverage and must not accidentally enter the pose-only fake endpoint.
+        api.getReportSummary = undefined;
         clients.push(api); return api;
       }
       const api = {
@@ -141,6 +150,9 @@ function mount(t, { realTransport = false } = {}) {
     get pending() { return replayProps?.pending ?? true; },
     get focus() { return nodes(viewerTree).find(node => "focus" in node.props)?.props.focus ?? null; },
     get diagnostics() { return nodes(tree).find(node => "diagnostics" in node.props)?.props.diagnostics ?? []; },
+    viewerText: () => text(viewerTree),
+    retryPose() { nodes(viewerTree).find(node => node.type === "button" && text(node) === "重新读取动作标记").props.onClick(); render(); },
+    replaceOriginal(transform) { const scope = scopes.get("score"), i = scope.slots.findIndex(value => value?.result?.original_video); assert.ok(i >= 0); const evidence = scope.slots[i]; scope.slots[i] = { ...evidence, result: { ...evidence.result, original_video: transform(evidence.result.original_video) } }; render(); },
     async flush() { for (let n = 0; n < 8; n++) await Promise.resolve(); render(); },
     async complete() { const watch = watches.at(-1); watch.onProgress({ id: watch.jobId, status: "succeeded" }); watch.resolve({ job: { id: watch.jobId, status: "succeeded" }, result: result(watch.jobId), trajectory: null, assessment: null, warning: null }); await app.flush(); },
     seek(timestampMs) { const event = new Event("rallymate:seek-video"); event.detail = { timestampMs, jobId: replayProps.evidence.jobId }; window.dispatchEvent(event); render(); },
@@ -172,6 +184,50 @@ test("actual parent diagnostics preserve one observed API, stable pose loader an
   const prefetch = app.requests[1]; prefetch.diagnostic("body"); app.render();
   assert.equal(app.loader, loader); assert.equal(prefetch.options.signal.aborted, false);
   assert.equal(app.requests.length, 2); assert.equal(app.clients.length, 1);
+});
+
+test("equivalent overview video bindings preserve a window read but a real source change cancels it", async t => {
+  const app = mount(t); await app.complete();
+  const first = app.requests[0], loader = app.loader;
+  app.replaceOriginal(value => structuredClone(value));
+  assert.equal(app.loader, loader); assert.equal(first.options.signal.aborted, false); assert.equal(app.requests.length, 1);
+  app.replaceOriginal(value => ({ ...value, pose_time_binding: { ...value.pose_time_binding, frames_sha256: "c".repeat(64) } }));
+  assert.notEqual(app.loader, loader); assert.equal(first.options.signal.aborted, true); assert.equal(app.requests.length, 2);
+});
+
+test("a changed source binding cannot reuse an already cached pose window", async t => {
+  const app = mount(t); await app.complete();
+  app.requests[0].resolve(preview(app.requests[0], .4)); await app.flush();
+  assert.equal(app.focus.markers[0].x, .4); assert.equal(app.requests.length, 2);
+  const prefetch = app.requests[1];
+  app.replaceOriginal(value => ({ ...value, pose_time_binding: { ...value.pose_time_binding, frames_sha256: "c".repeat(64) } }));
+  assert.equal(prefetch.options.signal.aborted, true); assert.equal(app.focus, null);
+  assert.equal(app.requests.length, 3); assert.equal(app.requests[2].options.startMs, 0);
+  app.requests[2].resolve(preview(app.requests[2], .7)); await app.flush();
+  assert.equal(app.focus.markers[0].x, .7);
+});
+
+test("a prefetched next window is available on the boundary render without an old-window pose", async t => {
+  const app = mount(t); await app.complete();
+  app.requests[0].resolve(preview(app.requests[0], .4)); await app.flush();
+  app.requests[1].resolve(preview(app.requests[1], .7)); await app.flush();
+  assert.equal(app.requests.length, 2); assert.equal(app.focus.markers[0].x, .4);
+  app.seek(10050);
+  assert.equal(app.focus.markers[0].x, .7, "the render uses its source-matched immutable cache snapshot");
+  assert.equal(app.requests.length, 2, "the completed prefetch is not downloaded again");
+  await app.flush();
+  assert.deepEqual(app.requests.map(row => row.options.startMs), [0, 10000, 20000]);
+});
+
+test("a failed pose window has an explicit retry and clears its old error while reading", async t => {
+  const app = mount(t); await app.complete();
+  app.requests[0].reject(new DOMException("private detail", "TimeoutError")); await app.flush();
+  assert.match(app.viewerText(), /动作标记暂时无法读取/); assert.match(app.viewerText(), /重新读取动作标记/);
+  assert.doesNotMatch(app.viewerText(), /private detail/);
+  app.retryPose(); assert.equal(app.requests.length, 2);
+  assert.match(app.viewerText(), /正在读取动作标记/); assert.doesNotMatch(app.viewerText(), /动作标记暂时无法读取/);
+  app.requests[1].resolve(preview(app.requests[1], .6)); await app.flush();
+  assert.equal(app.focus.markers[0].x, .6); assert.equal(app.requests.length, 3);
 });
 
 test("a window change aborts its pending read and a late response cannot publish or prefetch", async t => {

@@ -7,7 +7,7 @@ import tempfile
 from threading import Event
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from rallymate_service.database import JobDatabase
 from rallymate_service.mesh_render_worker import MeshRenderCoordinator, MeshRenderDeferred, RenderLock
@@ -58,6 +58,63 @@ class MeshRenderWorkerTests(unittest.TestCase):
     def coordinator(self, renderer=None):
         return MeshRenderCoordinator(self.settings, self.database, renderer=renderer or self.renderer)
 
+    def test_empty_and_completed_scans_do_not_emit_render_start(self):
+        starts = []
+        coordinator = MeshRenderCoordinator(self.settings, self.database, renderer=self.renderer,
+            on_render_start=lambda: starts.append("mesh"))
+        self.assertFalse(coordinator.process_one())
+        self.assertEqual(starts, [])
+        self.job()
+        self.assertTrue(coordinator.process_one())
+        self.assertEqual(starts, ["mesh"])
+        self.assertFalse(coordinator.process_one())
+        self.assertEqual(starts, ["mesh"])
+
+    def test_drain_arriving_during_validation_prevents_a_new_render(self):
+        output = self.job()
+        drain, starts = Event(), []
+        coordinator = MeshRenderCoordinator(self.settings, self.database, renderer=self.renderer,
+            on_render_start=lambda: starts.append("mesh"), should_drain=drain.is_set)
+        validate = coordinator._validate
+        def validate_then_drain(path):
+            result = validate(path)
+            drain.set()
+            return result
+        with patch.object(coordinator, "_validate", side_effect=validate_then_drain):
+            self.assertFalse(coordinator.process_one())
+        self.assertEqual(starts, [])
+        self.assertEqual(self.calls, [])
+        self.assertFalse((output / STATE_NAME).exists())
+        drain.clear()
+        self.assertTrue(coordinator.process_one())
+
+    def test_drain_does_not_cancel_already_selected_mesh(self):
+        output = self.job()
+        drain = Event()
+        coordinator = MeshRenderCoordinator(self.settings, self.database, renderer=self.renderer,
+            on_render_start=drain.set, should_drain=drain.is_set)
+        self.assertTrue(coordinator.process_one())
+        self.assertEqual(self.state(output)["status"], "ready")
+        self.assertEqual(self.calls, [output.name])
+
+    def test_worker_idle_scans_do_not_toggle_busy_or_repeat_ready_notifications(self):
+        from rallymate_service import worker
+        stop, states, polls = Event(), [], []
+        def empty_poll(*args, **kwargs):
+            polls.append(1)
+            if len(polls) == 3:
+                stop.set()
+            return False
+        self.settings.validate_license = Mock()
+        self.settings.ensure_directories = Mock()
+        self.settings.device = "cpu"
+        with patch.object(worker, "resolve_device", return_value="cpu"), \
+                patch.object(worker, "PersistentVisionRunner", return_value=SimpleNamespace(close=Mock())), \
+                patch.object(worker, "process_one", side_effect=empty_poll):
+            worker.run_worker(self.settings, self.database, stop_event=stop, poll_seconds=.001,
+                on_state=lambda state, error: states.append(state))
+        self.assertEqual(states, ["loading_models", "ready", "stopped"])
+
     def state(self, output):
         return json.loads((output / STATE_NAME).read_text(encoding="utf-8"))
 
@@ -96,6 +153,105 @@ class MeshRenderWorkerTests(unittest.TestCase):
         self.database.request_cancel("job-2")
         self.assertTrue(self.coordinator().process_one())
         self.assertEqual(self.state(output)["status"], "ready")
+
+    def test_fair_turn_ignores_queued_jobs_but_not_an_active_inference(self):
+        output = self.job()
+        self.job("job-2", completed=False)
+        self.assertTrue(self.coordinator().process_one(allow_queued=True))
+        self.assertEqual(self.state(output)["status"], "ready")
+        self.assertEqual(self.database.get_job("job-2")["status"], "queued")
+        self.job("job-3")
+        self.database.claim_next("external-worker", 60, 1, expected_job_id="job-2")
+        self.assertFalse(self.coordinator().process_one(allow_queued=True))
+        self.assertEqual(self.calls, ["job-1"])
+
+    def test_new_queued_job_does_not_discard_a_fair_render_in_progress(self):
+        output = self.job()
+        def render(**kwargs):
+            self.job("job-2", completed=False)
+            for _ in range(3):
+                kwargs["check_cancelled"]()
+            return self.renderer(**kwargs)
+        self.assertTrue(self.coordinator(render).process_one(allow_queued=True))
+        self.assertEqual(self.state(output)["status"], "ready")
+        self.assertEqual(self.calls, ["job-1"])
+
+    def test_new_running_job_still_preempts_a_fair_render(self):
+        output = self.job()
+        def render(**kwargs):
+            self.job("job-2", completed=False)
+            self.database.claim_next("external-worker", 60, 1, expected_job_id="job-2")
+            kwargs["check_cancelled"]()
+            self.fail("an actual concurrent inference must preempt rendering")
+        self.assertTrue(self.coordinator(render).process_one(allow_queued=True))
+        self.assertEqual(self.state(output)["status"], "pending")
+        self.assertEqual(self.state(output)["reason"], "preempted_for_inference")
+
+    def test_stop_and_cancel_still_interrupt_fair_turn_with_waiting_jobs(self):
+        for cause in ("stop", "cancel"):
+            with self.subTest(cause=cause):
+                identifier = "job-" + cause
+                output = self.job(identifier)
+                self.job(identifier + "-waiting", completed=False)
+                stop = Event()
+                coordinator = self.coordinator()
+                def render(**kwargs):
+                    if cause == "stop":
+                        stop.set()
+                    else:
+                        coordinator.cancel(identifier)
+                    kwargs["check_cancelled"]()
+                    self.fail("explicit cancellation/shutdown must interrupt a fair render")
+                coordinator.renderer = render
+                self.assertTrue(coordinator.process_one(stop, allow_queued=True))
+                self.assertEqual(self.state(output)["reason"],
+                                 "service_stopping" if cause == "stop" else "preview_cancelled_by_request")
+                # Do not let the deferred stop fixture enter the next subcase.
+                if cause == "stop":
+                    coordinator.cancel(identifier)
+
+    def test_managed_worker_does_not_enable_unqualified_rendering_for_fair_turn(self):
+        self.job()
+        self.job("job-2", completed=False)
+        with patch.dict(os.environ, {"RALLYMATE_MANAGED_GPU_UUID": "GPU-managed"}):
+            self.assertFalse(self.coordinator().process_one(allow_queued=True))
+        self.assertEqual(self.calls, [])
+
+    def test_twenty_queued_jobs_alternate_analysis_and_one_mesh_without_starvation(self):
+        from rallymate_service import worker
+        trace = []
+        identifiers = [f"job-{index:02d}" for index in range(20)]
+        for index, identifier in enumerate(identifiers):
+            output = self.job(identifier, completed=False)
+            os.utime(output / TASK_NAME, ns=(1_000_000_000 + index, 1_000_000_000 + index))
+        stop = Event()
+        def analyze(settings, database, worker_id, **kwargs):
+            job = database.claim_next(worker_id, 60, 1)
+            if job is None:
+                stop.set()
+                return False
+            trace.append(("analysis", job["id"]))
+            summary = json.loads((Path(job["output_dir"]) / "summary.json").read_text(encoding="utf8"))
+            database.mark_succeeded(job["id"], summary, worker_id=worker_id, attempts=job["attempts"])
+            return True
+        def render(**kwargs):
+            trace.append(("mesh", kwargs["output_dir"].name))
+            return self.renderer(**kwargs)
+        coordinator = self.coordinator(render)
+        self.settings.validate_license = Mock()
+        self.settings.ensure_directories = Mock()
+        self.settings.device = "cpu"
+        runner = SimpleNamespace(close=Mock())
+        with patch.object(worker, "resolve_device", return_value="cpu"), \
+                patch.object(worker, "PersistentVisionRunner", return_value=runner), \
+                patch.object(worker, "process_one", side_effect=analyze), \
+                patch("rallymate_service.mesh_render_worker.MeshRenderCoordinator", return_value=coordinator):
+            worker.run_worker(self.settings, self.database, stop_event=stop, worker_id="test-fair-loop")
+        self.assertEqual(trace, [(kind, identifier) for identifier in identifiers for kind in ("analysis", "mesh")])
+        self.assertLess(trace.index(("mesh", "job-00")), trace.index(("analysis", "job-01")))
+        self.assertLess(trace.index(("mesh", "job-00")), trace.index(("analysis", "job-19")))
+        self.assertEqual(self.database.count_by_status(), {"succeeded": 20})
+        runner.close.assert_called_once_with()
 
     def test_shutdown_defers_and_new_coordinator_resumes_without_reinference(self):
         output = self.job()

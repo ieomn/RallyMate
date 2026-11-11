@@ -85,6 +85,19 @@ test("report body can make progress beyond 30s and preserves every byte", async 
   assert.equal(time.count(), 0);
 });
 
+test("compact pose uses progress-sensitive forwarding beyond the ordinary 30s GET deadline", async t => {
+  const time = clock(t), origin = streamingOrigin(t, '{"frames":[');
+  const poseUrl = "http://localhost/v1/jobs/report-stream-123/pose-preview?start_ms=0&duration_ms=10000&sample_limit=600&pose_transport=compact-v1";
+  const response = await proxyAnalysis(new Request(poseUrl), env);
+  const reader = response.body.getReader(), parts = [(await reader.read()).value];
+  for (const part of ["0", ",1", ",2", "]}"]) {
+    const reading = reader.read(); await flush(); time.advance(15000); origin.push(part); parts.push((await reading).value);
+  }
+  origin.end(); assert.equal((await reader.read()).done, true);
+  assert.equal(Buffer.concat(parts).toString(), '{"frames":[0,1,2]}');
+  assert.equal(origin.signal().aborted, false); assert.equal(time.count(), 0);
+});
+
 test("downstream backpressure is not charged as upstream no-progress time", async t => {
   const time = clock(t), origin = streamingOrigin(t, "prefix");
   const response = await proxyAnalysis(new Request(url), env);

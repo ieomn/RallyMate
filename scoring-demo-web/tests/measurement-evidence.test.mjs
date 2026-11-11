@@ -226,7 +226,23 @@ test("summary import with zero footwork keeps rotation measurements and exports 
   assert.equal(backup.result.action_recognition.motion_analysis.families.serve.episodes[0].metrics.wrist_path_torso, 1.75);
   assert.equal(backup.result.measurement_update_required, true);
   const screenSource = fs.readFileSync(new URL("../app/ScoreLab.tsx", import.meta.url), "utf8");
-  assert.match(screenSource, /<LiveResults\b[^>]*result=\{evidence\.result\s*\?\?\s*null\}/);
+  // Nested JSX in pagedActions contains its own '>'; inspect the actual result
+  // attribute instead of treating the first tag boundary as LiveResults' end.
+  const screen = ts.createSourceFile("ScoreLab.tsx", screenSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const resultExpressions = [];
+  const visit = node => {
+    if ((ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) && node.tagName.getText(screen) === "LiveResults") {
+      const attribute = node.attributes.properties.find(property => ts.isJsxAttribute(property) && property.name.getText(screen) === "result");
+      resultExpressions.push(attribute?.initializer && ts.isJsxExpression(attribute.initializer) ? attribute.initializer.expression : null);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(screen); assert.equal(resultExpressions.length, 1);
+  const displayedResult = resultExpressions[0];
+  assert.ok(displayedResult && ts.isBinaryExpression(displayedResult));
+  assert.equal(displayedResult.operatorToken.kind, ts.SyntaxKind.QuestionQuestionToken);
+  assert.equal(displayedResult.left.getText(screen), "evidence.result");
+  assert.equal(displayedResult.right.kind, ts.SyntaxKind.NullKeyword);
   assert.match(screenSource, /const importedResult = measurementResultFromSummary\(summary\)/);
 });
 

@@ -126,6 +126,8 @@ class ServiceSettings:
     max_video_duration_seconds: int = 30 * 60
     lease_seconds: int = 60 * 60
     max_attempts: int = 2
+    max_active_jobs: int = 32
+    accept_new_jobs: bool = True
     motion_replay_enabled: bool = False
     motion_replay_auto_generate: bool = False
 
@@ -184,6 +186,10 @@ class ServiceSettings:
         the API can expose a useful ``not_ready`` response instead of failing
         during app construction.
         """
+        if type(self.max_active_jobs) is not int or not 1 <= self.max_active_jobs <= 10000:
+            raise ServiceConfigError("RALLYMATE_MAX_ACTIVE_JOBS must be between 1 and 10000")
+        if type(self.accept_new_jobs) is not bool:
+            raise ServiceConfigError("RALLYMATE_ACCEPT_NEW_JOBS must be boolean")
         accepted = {
             "development",
             "enterprise",
@@ -500,6 +506,8 @@ def load_settings() -> ServiceSettings:
         ),
         lease_seconds=_int_env("RALLYMATE_JOB_LEASE_SECONDS", 60 * 60),
         max_attempts=_int_env("RALLYMATE_MAX_ATTEMPTS", 2),
+        max_active_jobs=_int_env("RALLYMATE_MAX_ACTIVE_JOBS", 32),
+        accept_new_jobs=_bool_env("RALLYMATE_ACCEPT_NEW_JOBS", True),
         # Kept for explicit offline maintenance; the product API no longer
         # creates a replay runtime or mounts generated-replay routes.
         motion_replay_enabled=_bool_env("RALLYMATE_MOTION_REPLAY_ENABLED", False),

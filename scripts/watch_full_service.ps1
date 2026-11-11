@@ -5,7 +5,10 @@ param(
     [int]$IntervalSeconds = 2,
     [switch]$LogsOnly,
     [switch]$IncludeLogs,
-    [switch]$Once
+    [switch]$Once,
+    [string]$Interface = "",
+    [string]$RecordPath = "",
+    [string]$DataRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,7 +22,7 @@ if (-not $Python) { throw "Python executable was not found." }
 $Arguments = @(
     "-u", "-X", "utf8",
     (Join-Path $PSScriptRoot "watch_full_service.py"),
-    "--data-root", (Join-Path $Root "service_data"),
+    "--data-root", $(if ($DataRoot) { $DataRoot } else { Join-Path $Root "service_data" }),
     "--log-root", (Join-Path $Root ".codex_tmp\full-service"),
     "--interval", $IntervalSeconds,
     "--lines", $Lines
@@ -27,6 +30,8 @@ $Arguments = @(
 if ($LogsOnly) { $Arguments += "--logs-only" }
 if ($IncludeLogs) { $Arguments += "--logs" }
 if ($Once) { $Arguments += "--once" }
+if ($Interface) { $Arguments += @("--interface", $Interface) }
+if ($RecordPath) { $Arguments += @("--record", $RecordPath) }
 $PreviousTitle = $null
 if (-not $Once -and -not [Console]::IsOutputRedirected) {
     try {

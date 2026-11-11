@@ -63,20 +63,24 @@ class DeliveryResult:
 class ReportDeliveryCache:
     def __init__(self, *, max_queued: int = 2, max_entries: int = 4,
                  max_bytes: int = 128 * 1024 * 1024, error_ttl_seconds: float = 5.0,
-                 storage_dir: Path | None = None, preparation_timeout_seconds: float = 300.0):
+                 storage_dir: Path | None = None, preparation_timeout_seconds: float = 300.0,
+                 queue_timeout_seconds: float | None = None):
         if (max_queued < 0 or max_entries < 1 or max_bytes < 1 or error_ttl_seconds < 0
-                or preparation_timeout_seconds <= 0):
+                or preparation_timeout_seconds <= 0
+                or (queue_timeout_seconds is not None and queue_timeout_seconds <= 0)):
             raise ValueError("report delivery limits must be positive (queue may be zero)")
         self.max_queued = max_queued
         self.max_entries = max_entries
         self.max_bytes = max_bytes
         self.error_ttl_seconds = error_ttl_seconds
         self.preparation_timeout_seconds = preparation_timeout_seconds
+        self.queue_timeout_seconds = queue_timeout_seconds
         self._lock = Lock()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="report-delivery")
         self._pending: set[Hashable] = set()
         self._pending_scopes: dict[Hashable, Hashable] = {}
         self._pending_started: dict[Hashable, float] = {}
+        self._building_started: dict[Hashable, float] = {}
         self._store = (ReportDeliveryStore(storage_dir, max_body_bytes=max_bytes)
                        if storage_dir is not None else None)
         self._completed: OrderedDict[Hashable, DeliveryResult] = OrderedDict()
@@ -98,7 +102,14 @@ class ReportDeliveryCache:
         return DeliveryError(504, "report_preparation_timeout", "Report preparation exceeded its time limit.")
 
     def _pending_result_locked(self, key: Hashable) -> DeliveryResult:
-        if time.monotonic() - self._pending_started[key] >= self.preparation_timeout_seconds:
+        now = time.monotonic()
+        if self.queue_timeout_seconds is not None and key not in self._building_started:
+            if now - self._pending_started[key] >= self.queue_timeout_seconds:
+                return DeliveryResult("error", error=DeliveryError(503, "report_preparation_queue_timeout",
+                    "Report preparation queue wait exceeded its time limit."))
+            return DeliveryResult("preparing")
+        started = self._building_started.get(key, self._pending_started[key])
+        if now - started >= self.preparation_timeout_seconds:
             # Retain the execution slot until its worker exits. Python threads
             # cannot be safely killed, and timeout must not duplicate work.
             return DeliveryResult("error", error=self._timeout_error())
@@ -112,8 +123,9 @@ class ReportDeliveryCache:
 
     def _check_deadline(self, key: Hashable) -> None:
         with self._lock:
-            if self._pending_result_locked(key).state == "error":
-                raise self._timeout_error()
+            result = self._pending_result_locked(key)
+            if result.error is not None:
+                raise result.error
 
     def request(self, key: Hashable, build: Callable[[], bytes],
                 source_is_current: Callable[[], bool], *, scope: Hashable | None = None,
@@ -177,6 +189,12 @@ class ReportDeliveryCache:
         phase = "checking_source"
         logger.info("report preparation started scope=%s", request_scope)
         try:
+            if self.queue_timeout_seconds is not None:
+                with self._lock:
+                    queued = self._pending_result_locked(key)
+                    if queued.error is not None:
+                        raise queued.error
+                    self._building_started[key] = time.monotonic()
             self._check_deadline(key)
             if not source_is_current():
                 raise DeliveryError(409, "report_source_changed", "Report source changed; request it again.")
@@ -220,6 +238,7 @@ class ReportDeliveryCache:
         with self._lock:
             self._pending.discard(key)
             self._pending_started.pop(key, None)
+            self._building_started.pop(key, None)
             self._pending_scopes.pop(scope, None)
             if self._closed:
                 return
@@ -247,3 +266,4 @@ class ReportDeliveryCache:
             self._pending.clear()
             self._pending_scopes.clear()
             self._pending_started.clear()
+            self._building_started.clear()

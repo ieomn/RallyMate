@@ -23,6 +23,7 @@ from rallymate_features.geometry import (
 from rallymate_features.kinematics import irregular_derivative, scalar_acceleration, speed
 from rallymate_features.fs01_fs02_features import (
     FS01_FS02_EVENT_FEATURE_NAMES,
+    FS_SOURCE_STAGE_FEATURE_NAMES,
     FS01_FS02_FEATURE_DEFINITIONS,
     FS01_FS02_FEATURE_VERSION,
     clear_fs01_fs02_feature_cache,
@@ -39,10 +40,11 @@ from rallymate_features.fs09_features import (
 from rallymate_features.schemas import model_bindings_continuous, model_geometry_evidence, EventInterval, FeatureResult, PoseSequence
 from rallymate_features.smoothing import smooth_series
 from rallymate_features.temporal import longest_contiguous_duration
+from rallymate_features.validity import MIN_VALID_KEYPOINT_FRAME_FRACTION
 
 
 FEATURE_LIBRARY_VERSION = "rallymate-features-v0.3.0"
-MIN_VALID_FRACTION = 0.50
+MIN_VALID_FRACTION = MIN_VALID_KEYPOINT_FRAME_FRACTION
 SCORING_FEATURE_NAMES = (
     "hip_center_y_body",
     "body_center_speed_body_s",
@@ -1118,7 +1120,7 @@ def _compute_feature(
         )
     if feature_name == "stability_duration_ms":
         return _stability_feature(sequence, event, indexes, scale)
-    if feature_name in FS01_FS02_EVENT_FEATURE_NAMES:
+    if feature_name in FS01_FS02_EVENT_FEATURE_NAMES | FS_SOURCE_STAGE_FEATURE_NAMES:
         return _fs01_fs02_event_summary_feature(
             sequence, event, indexes, scale, feature_name
         )

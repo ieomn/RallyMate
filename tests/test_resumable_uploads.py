@@ -19,10 +19,30 @@ from fastapi.testclient import TestClient
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
-from rallymate_service.uploads import CHUNK_BYTES, DEFAULT_CHUNK_BYTES, SESSION_TTL_SECONDS, UploadStore
+from rallymate_service.uploads import CHUNK_BYTES, DEFAULT_CHUNK_BYTES, MIN_CHUNK_BYTES, SESSION_TTL_SECONDS, UploadStore
 
 
 class ResumableUploadTests(unittest.TestCase):
+    def test_default_megabyte_chunks_preserve_explicit_small_and_resumed_sessions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.dict("os.environ", {"RALLYMATE_UPLOAD_CHUNK_BYTES": str(MIN_CHUNK_BYTES)}):
+                old = UploadStore(root, 2 * CHUNK_BYTES)
+            upload_id = str(uuid.uuid4())
+            old.create(upload_id, "old.mp4", 2 * MIN_CHUNK_BYTES, {})
+            part = b"a" * MIN_CHUNK_BYTES
+            old.put(upload_id, 0, part, hashlib.sha256(part).hexdigest(), compact_ack=True)
+            before = old.status(upload_id)
+            with patch.dict("os.environ", {}, clear=True):
+                current = UploadStore(root, 2 * CHUNK_BYTES)
+            resumed = current.create(upload_id, "old.mp4", 2 * MIN_CHUNK_BYTES, {})
+            self.assertEqual(resumed, before)
+            current.put(upload_id, 1, part, hashlib.sha256(part).hexdigest(), compact_ack=True)
+            self.assertEqual(current.status(upload_id)["received_bytes"], 2 * MIN_CHUNK_BYTES)
+            created = current.create(str(uuid.uuid4()), "new.mp4", 2 * 1024 * 1024, {})
+            self.assertEqual(created["chunk_size"], 1024 * 1024)
+            self.assertEqual(created["chunk_count"], 2)
+
     def test_compact_receipts_are_bounded_and_legacy_snapshots_remain_available(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = UploadStore(Path(temporary), 20 * CHUNK_BYTES)
@@ -43,16 +63,16 @@ class ResumableUploadTests(unittest.TestCase):
     def test_configured_chunk_size_only_applies_to_new_sessions(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            old = UploadStore(root, 20 * CHUNK_BYTES, chunk_bytes=DEFAULT_CHUNK_BYTES)
+            old = UploadStore(root, 20 * CHUNK_BYTES, chunk_bytes=MIN_CHUNK_BYTES)
             old_id = str(uuid.uuid4())
             old.create(old_id, "old.mp4", CHUNK_BYTES, {})
             with patch.dict("os.environ", {"RALLYMATE_UPLOAD_CHUNK_BYTES": str(1024 * 1024)}):
                 store = UploadStore(root, 20 * CHUNK_BYTES)
-            self.assertEqual(store.create(old_id, "old.mp4", CHUNK_BYTES, {})["chunk_size"], DEFAULT_CHUNK_BYTES)
+            self.assertEqual(store.create(old_id, "old.mp4", CHUNK_BYTES, {})["chunk_size"], MIN_CHUNK_BYTES)
             created = store.create(str(uuid.uuid4()), "new.mp4", CHUNK_BYTES, {})
             self.assertEqual(created["chunk_size"], 1024 * 1024)
             self.assertEqual(created["chunk_count"], 4)
-            for invalid in [0, DEFAULT_CHUNK_BYTES - 1, CHUNK_BYTES + 1, True]:
+            for invalid in [0, MIN_CHUNK_BYTES - 1, CHUNK_BYTES + 1, True]:
                 with self.assertRaises(ValueError):
                     UploadStore(root, CHUNK_BYTES, chunk_bytes=invalid)
 
@@ -62,7 +82,7 @@ class ResumableUploadTests(unittest.TestCase):
             upload_id = str(uuid.uuid4())
             data = b"a" * DEFAULT_CHUNK_BYTES + b"last chunk"
             created = store.create(upload_id, "mobile.mov", len(data), {})
-            self.assertEqual(created["chunk_size"], 128 * 1024)
+            self.assertEqual(created["chunk_size"], 1024 * 1024)
             self.assertEqual(created["chunk_count"], 2)
             self.assertEqual(store.create(upload_id, "mobile.mov", len(data), {}), created)
             chunks = [data[:DEFAULT_CHUNK_BYTES], data[DEFAULT_CHUNK_BYTES:]]
@@ -197,6 +217,7 @@ class ResumableUploadTests(unittest.TestCase):
                     store.status(upload_id)
             self.assertEqual(expired.exception.status_code, 410)
 
+    @patch.dict("os.environ", {"RALLYMATE_UPLOAD_CHUNK_BYTES": str(MIN_CHUNK_BYTES)})
     def test_http_upload_persists_and_queues_once_without_inference_on_parts(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -212,23 +233,23 @@ class ResumableUploadTests(unittest.TestCase):
                 writer.write(rng.integers(0, 256, (240, 320, 3), dtype=np.uint8))
             writer.release()
             content = video.read_bytes()
-            self.assertGreater(len(content), DEFAULT_CHUNK_BYTES)
+            self.assertGreater(len(content), MIN_CHUNK_BYTES)
             upload_id = str(uuid.uuid4())
             payload = {"upload_id": upload_id, "filename": "phone.mp4", "size": len(content), "options": {"court_mode": "disabled", "write_annotated_video": True}}
             with TestClient(create_app(settings, database)) as client:
                 self.assertEqual(client.post("/v1/uploads", json=payload).status_code, 401)
                 client.headers["Authorization"] = "Bearer test-key"
                 capabilities = client.get("/v1/meta").json()["capabilities"]["resumable_uploads"]
-                self.assertEqual(capabilities["default_chunk_bytes"], DEFAULT_CHUNK_BYTES)
+                self.assertEqual(capabilities["default_chunk_bytes"], MIN_CHUNK_BYTES)
                 self.assertEqual(capabilities["acknowledgement"], "chunk-v1")
                 created = client.post("/v1/uploads", json=payload)
                 self.assertEqual(created.status_code, 201, created.text)
-                self.assertEqual(created.json()["chunk_size"], DEFAULT_CHUNK_BYTES)
-                self.assertEqual(created.json()["chunk_count"], math.ceil(len(content) / DEFAULT_CHUNK_BYTES))
+                self.assertEqual(created.json()["chunk_size"], MIN_CHUNK_BYTES)
+                self.assertEqual(created.json()["chunk_count"], math.ceil(len(content) / MIN_CHUNK_BYTES))
                 url = f"/v1/uploads/{upload_id}"
                 self.assertEqual(client.post(url + "/complete").status_code, 409)
                 for index in reversed(range(created.json()["chunk_count"])):
-                    chunk = content[index * DEFAULT_CHUNK_BYTES:(index + 1) * DEFAULT_CHUNK_BYTES]
+                    chunk = content[index * MIN_CHUNK_BYTES:(index + 1) * MIN_CHUNK_BYTES]
                     checksum = hashlib.sha256(chunk).hexdigest()
                     with patch("rallymate_service.upload_state.chunks", side_effect=AssertionError("HTTP PUT loaded full chunk history")):
                         part = client.put(url + f"/chunks/{index}", content=chunk, headers={"X-Chunk-SHA256": checksum, "X-Upload-Acknowledgement": "chunk-v1"})

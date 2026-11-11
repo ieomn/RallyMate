@@ -3,14 +3,17 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import marshal
 import re
 import sqlite3
+import sys
 import tempfile
 import zlib
-from collections import Counter
+from collections import Counter, OrderedDict
 from collections.abc import Callable, Iterator, MutableMapping
 from contextlib import contextmanager
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 from rallymate_events.schemas import validate_event_record
@@ -64,6 +67,95 @@ LEGACY_SCORING_LOOP_VERSIONS_WITHOUT_CONTEXT_EVIDENCE_IDENTITY = {
 
 class OutputValidationError(ValueError):
     """Raised when a stage-1 artifact violates the handoff invariants."""
+
+
+_MODEL_SOURCE_CACHE_BYTES = 16 * 1024 * 1024
+_MODEL_CONTEXT_CACHE_BYTES = 16 * 1024 * 1024
+
+
+class _ModelContextChecks:
+    """Reuse structural checks of identical, complete geometry contexts.
+
+    Each validation call owns a separate byte-bounded cache. Exact serialized
+    contents, including scalar/container types, are the keys, not identities or
+    digests. Feature values, selected evidence frames and real source bindings
+    are still checked separately for every feature. Nothing is deserialized.
+    """
+
+    def __init__(self, *, max_bytes):
+        self.max_bytes = max_bytes
+        self._checked = OrderedDict()
+        self._key_bytes = 0
+        self.hits = self.misses = self.evictions = 0
+        self.peak_bytes = 0
+
+    @property
+    def cache_bytes(self):
+        return self._key_bytes + sys.getsizeof(self._checked) if self._checked else 0
+
+    def _key(self, record):
+        if self.max_bytes <= 0:
+            return None
+        try:
+            # Version 2 has no object-reference memo: equal JSON values remain
+            # equal keys even if one reader shared strings/containers. Unlike
+            # JSON, marshal also distinguishes tuples/lists and bools/integers.
+            key = marshal.dumps(tuple(record.get(name) for name in (
+                "measurement_provenance", "source_window", "geometry_mask")), 2)
+        except (ValueError, TypeError, RecursionError):
+            # Unsupported Python inputs retain the original validators.
+            return None
+        return key if sys.getsizeof(key) <= self.max_bytes else None
+
+    def validate(self, record, prefix):
+        from rallymate_scoring.model_measurement_contract import (
+            validated_geometry_mask, validated_model_window,
+        )
+        key = self._key(record)
+        if key is not None and key in self._checked:
+            self.hits += 1
+            self._checked.move_to_end(key)
+            # The caller only inspects this record's source frame list. The
+            # cache retains bytes, so callers can never mutate cached evidence.
+            return record["source_window"]
+        self.misses += 1
+        window = validated_model_window(record)
+        _require(window is not None, f"{prefix}.source_window is invalid")
+        masks = validated_geometry_mask(record.get("geometry_mask"), window)
+        _require(masks is not None, f"{prefix}.geometry_mask is invalid")
+        if key is not None:
+            self._checked[key] = None
+            self._key_bytes += sys.getsizeof(key)
+            while self._checked and self.cache_bytes > self.max_bytes:
+                removed, _ = self._checked.popitem(last=False)
+                self._key_bytes -= sys.getsizeof(removed)
+                self.evictions += 1
+            if not self._checked:
+                self._checked.clear()
+            self.peak_bytes = max(self.peak_bytes, self.cache_bytes)
+        return window
+
+
+def _freeze_source_record(value):
+    """Detach and freeze JSON data, counting retained Python objects deeply.
+
+    Shared scalar objects are deliberately counted per occurrence. This is a
+    conservative cache accounting bound, not a process RSS limit.
+    """
+    if isinstance(value, dict):
+        frozen = {}
+        size = 0
+        for key, item in value.items():
+            frozen_item, item_size = _freeze_source_record(item)
+            frozen[key] = frozen_item
+            size += sys.getsizeof(key) + item_size
+        proxy = MappingProxyType(frozen)
+        return proxy, size + sys.getsizeof(frozen) + sys.getsizeof(proxy)
+    if isinstance(value, list):
+        items = [_freeze_source_record(item) for item in value]
+        frozen = tuple(item for item, _ in items)
+        return frozen, sys.getsizeof(frozen) + sum(size for _, size in items)
+    return value, sys.getsizeof(value)
 
 
 class _DiskMap(MutableMapping):
@@ -141,6 +233,69 @@ class _DiskMap(MutableMapping):
         )
         for row in cursor:
             yield json.loads(zlib.decompress(row[0]))
+
+
+class _ReadOnlyModelSources(_DiskMap):
+    """Per-validation LRU of immutable model-source rows, never verdicts.
+
+    The index is completely built before this view is constructed. Only this
+    namespace uses the cache; other joins retain their original disk behavior.
+    The byte budget includes deep values, keys, entry tuples and the measured
+    OrderedDict container. One decoded lookup is still working memory, as in
+    _DiskMap; oversized rows are returned without being retained in the cache.
+    """
+
+    def __init__(self, connection, *, cache_budget_bytes):
+        super().__init__(connection, "model-sources")
+        self._cache_budget_bytes = cache_budget_bytes
+        self._cache = (OrderedDict() if cache_budget_bytes >= sys.getsizeof(OrderedDict())
+                       else None)
+        self._cache_entry_bytes = 0
+        self._cache_peak_bytes = self.cache_bytes
+        self._cache_hits = self._cache_misses = self._cache_evictions = 0
+
+    @property
+    def cache_bytes(self):
+        if self._cache is None:
+            return 0
+        return self._cache_entry_bytes + sys.getsizeof(self._cache)
+
+    def __getitem__(self, key):
+        cache = self._cache
+        if cache is None:
+            # A zero-budget A/B baseline executes the original lookup exactly.
+            self._cache_misses += 1
+            return super().__getitem__(key)
+        cache_key = self._key(key)
+        if cache_key in cache:
+            self._cache_hits += 1
+            cache.move_to_end(cache_key)
+            return cache[cache_key][0]
+        self._cache_misses += 1
+        value, value_bytes = _freeze_source_record(super().__getitem__(key))
+        entry_bytes = (value_bytes + sys.getsizeof(cache_key)
+                       + sys.getsizeof((value, 0)) + sys.getsizeof(value_bytes))
+        if entry_bytes + sys.getsizeof(cache) > self._cache_budget_bytes:
+            # Do not flush useful rows for a single uncacheable source record.
+            if entry_bytes + sys.getsizeof(OrderedDict()) > self._cache_budget_bytes:
+                return value
+        cache[cache_key] = (value, entry_bytes)
+        self._cache_entry_bytes += entry_bytes
+        while cache and self.cache_bytes > self._cache_budget_bytes:
+            _, (_, removed_bytes) = cache.popitem(last=False)
+            self._cache_entry_bytes -= removed_bytes
+            self._cache_evictions += 1
+        if not cache:
+            # OrderedDict may retain an enlarged hash table after popitem.
+            cache.clear()
+        self._cache_peak_bytes = max(self._cache_peak_bytes, self.cache_bytes)
+        return value
+
+    def __setitem__(self, key, value):
+        raise TypeError("model-source validation index is read-only")
+
+    def __delitem__(self, key):
+        raise TypeError("model-source validation index is read-only")
 
 
 @contextmanager
@@ -273,7 +428,8 @@ def _sha256(path: Path, cancellation_callback=None) -> str:
     return digest.hexdigest().upper()
 
 
-def _validate_feature_result(record: dict[str, Any], prefix: str) -> None:
+def _validate_feature_result(record: dict[str, Any], prefix: str, *,
+                             context_checks: _ModelContextChecks | None = None) -> None:
     required = {
         "feature_name",
         "feature_version",
@@ -317,10 +473,13 @@ def _validate_feature_result(record: dict[str, Any], prefix: str) -> None:
                  f"{prefix}.measurement_provenance must preserve the SAM measurement-only contract")
         _require(confidence is None, f"{prefix}.confidence must remain unknown for SAM geometry")
         if "source_window" in record or "geometry_mask" in record:
-            window = validated_model_window(record)
-            _require(window is not None, f"{prefix}.source_window is invalid")
-            masks = validated_geometry_mask(record.get("geometry_mask"), window)
-            _require(masks is not None, f"{prefix}.geometry_mask is invalid")
+            if context_checks is None:
+                window = validated_model_window(record)
+                _require(window is not None, f"{prefix}.source_window is invalid")
+                masks = validated_geometry_mask(record.get("geometry_mask"), window)
+                _require(masks is not None, f"{prefix}.geometry_mask is invalid")
+            else:
+                window = context_checks.validate(record, prefix)
             _require(set(record["source_frames"]).issubset(window["source_frames"]),
                      f"{prefix}.source_frames exceed model source_window")
             _require(not record["valid"] or bool(record["source_frames"]),
@@ -364,7 +523,7 @@ def _model_source_index(frames_path: Path, primary, connection, *, cancellation_
         result[frame["index"]] = {"timestamp_ms": frame["timestamp_ms"],
             "binding": bound[1] if bound is not None else None,
             "joints": sorted(bound[0]) if bound is not None else []}
-    return result
+    return _ReadOnlyModelSources(connection, cache_budget_bytes=_MODEL_SOURCE_CACHE_BYTES)
 
 
 def _validate_model_feature_source(record, event, model_sources, prefix, cancellation_callback=None):
@@ -646,6 +805,7 @@ def _validate_scoring_artifacts_indexed(output_dir, *, frame_count, frame_timest
         has_model_measurement_context, model_measurement_provenance,
     )
     model_sources = None
+    context_checks = _ModelContextChecks(max_bytes=_MODEL_CONTEXT_CACHE_BYTES)
     feature_by_key = _DiskMap(connection, "features")
     for index, item in enumerate(_iter_validation_records(paths["features"],
             cancellation_callback=cancellation_callback, expected_video_id=video_id,
@@ -655,7 +815,7 @@ def _validate_scoring_artifacts_indexed(output_dir, *, frame_count, frame_timest
                                                  cancellation_callback=cancellation_callback)
         feature_count += 1
         prefix = f"features[{index}]"
-        _validate_feature_result(item, prefix)
+        _validate_feature_result(item, prefix, context_checks=context_checks)
         _require(item.get("video_id") == video_id, f"{prefix}.video_id mismatch")
         event = event_by_id.get(item.get("event_id"))
         _require(event is not None, f"{prefix} references unknown event")
@@ -718,7 +878,7 @@ def _validate_scoring_artifacts_indexed(output_dir, *, frame_count, frame_timest
         compact_feature_order: list[str] = []
         for feature_index, feature in enumerate(compact_features):
             feature_prefix = f"{prefix}.features[{feature_index}]"
-            _validate_feature_result(feature, feature_prefix)
+            _validate_feature_result(feature, feature_prefix, context_checks=context_checks)
             feature_name = feature["feature_name"]
             _require(
                 feature_name not in compact_feature_names,
@@ -794,7 +954,7 @@ def _validate_scoring_artifacts_indexed(output_dir, *, frame_count, frame_timest
         scoring_feature_names: list[str] = []
         for feature_index, feature in enumerate(scoring_features):
             feature_prefix = f"{prefix}.scoring_features[{feature_index}]"
-            _validate_feature_result(feature, feature_prefix)
+            _validate_feature_result(feature, feature_prefix, context_checks=context_checks)
             name = feature["feature_name"]
             _require(
                 name not in scoring_feature_names,

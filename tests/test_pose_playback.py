@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 from pathlib import Path
 import tempfile
@@ -9,7 +10,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from rallymate_vision.pose_playback import PosePlaybackError, build_pose_playback
+from rallymate_vision.pose_playback import PosePlaybackError, build_pose_playback, pose_playback_transport
 from tests import test_trajectory_api as fixture
 
 
@@ -76,6 +77,29 @@ class PosePlaybackTests(unittest.TestCase):
         self.assertFalse(any(p["name"] == "left_wrist" for p in result["display_frames"][1]["keypoints"]))
         self.assertEqual(result["display_continuity"]["interpolated_keypoints"], 0)
         self.assertEqual(result["frames"][0]["source_binding"]["video_sha256"], "a" * 64)
+
+    def test_compact_native_transport_preserves_every_frame_and_point_without_mutating_full(self):
+        result = self.build([frame(index, poses=[sam_pose(index)]) for index in range(3)],
+                            timeline=[primary(index) for index in range(3)])
+        before = copy.deepcopy(result)
+        compact = pose_playback_transport(result, "compact-v1")
+        self.assertIsNot(compact, result)
+        self.assertNotIn("display_frames", compact)
+        self.assertEqual(compact, {key: value for key, value in before.items() if key != "display_frames"})
+        self.assertEqual(result, before)
+        self.assertEqual(len(compact["frames"]), 3)
+        self.assertTrue(all(len(row["keypoints"]) == 70 for row in compact["frames"]))
+        self.assertEqual(pose_playback_transport(result), before)
+        self.assertEqual(pose_playback_transport(result, "full"), before)
+
+    def test_compact_transport_retains_ordinary_or_nonidentical_display_frames(self):
+        ordinary = self.build([frame(0), frame(1)])
+        self.assertEqual(pose_playback_transport(ordinary, "compact-v1"), ordinary)
+        self.assertIn("display_frames", pose_playback_transport(ordinary, "compact-v1"))
+        native = self.build([frame(0, poses=[sam_pose(0)])])
+        native["display_frames"] = copy.deepcopy(native["frames"])
+        native["display_frames"][0]["keypoints"][0]["x"] = .5
+        self.assertIn("display_frames", pose_playback_transport(native, "compact-v1"))
 
     def test_sam_preview_rejects_clipped_offscreen_and_missing_original_pixels(self):
         source = sam_pose(0)
@@ -276,6 +300,24 @@ class PosePlaybackTests(unittest.TestCase):
 
 
 class PosePlaybackApiTests(unittest.TestCase):
+    def test_compact_transport_is_opt_in_and_does_not_contaminate_legacy_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            helper = fixture.TrajectoryApiTests()
+            app, settings, database = helper._app(Path(directory))
+            job_id = helper._succeeded_job(settings, database)
+            write_rows(settings.runs_dir / job_id / "frames.jsonl", [frame(0, poses=[sam_pose(0)])])
+            with patch("rallymate_service.api.build_pose_playback", wraps=build_pose_playback) as builder, TestClient(app) as client:
+                url = f"/v1/jobs/{job_id}/pose-preview"
+                full = client.get(url)
+                compact = client.get(url + "?pose_transport=compact-v1")
+                self.assertEqual((full.status_code, compact.status_code), (200, 200))
+                self.assertIn("display_frames", full.json())
+                self.assertNotIn("display_frames", compact.json())
+                self.assertEqual(compact.json(), {key: value for key, value in full.json().items() if key != "display_frames"})
+                self.assertEqual(client.get(url).content, full.content)
+                self.assertEqual(builder.call_count, 1)
+                self.assertEqual(client.get(url + "?pose_transport=unsupported").status_code, 422)
+
     def test_existing_job_endpoint_is_authenticated_read_only_and_bounded(self):
         with tempfile.TemporaryDirectory() as directory:
             helper = fixture.TrajectoryApiTests()

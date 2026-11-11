@@ -6,6 +6,7 @@ import type { TrainingFocusSelection } from "./lib/training-guidance";
 import { productText } from "./lib/presentation-text";
 import { tennisEvidenceReason } from "./lib/tennis-evidence-status";
 import { tennisImprovementFocus } from "./lib/tennis-practice";
+import JointKinematicsDetails from "./JointKinematicsDetails";
 export { tennisImprovementFocus } from "./lib/tennis-practice";
 import "./tennis-assessment.css";
 
@@ -112,6 +113,11 @@ export function TennisAssessmentDetails({ report }: { report: TennisAssessment |
     <p>百分制阈值与权重来自项目试验规则，并非原始技术文档规定的分数换算；未测项目不计入分数，也不代表动作不合格。</p>
     <p>各完整动作先汇总该维度可测项目，再对动作等权平均；总分由已测维度等权平均。下列权重是该项目在维度中的实际贡献。</p>
     <p>屈膝准备、准备站距、准备后半段转体和挥拍手臂空间按实际持续时间计分。平均测量值用于解释动作；发球的屈膝准备使用时间积分。</p>
+    {report.multimodal_assessment && <details><summary>球、球拍与场地观测</summary>
+      <p>共处理 {report.multimodal_assessment.frame_count} 帧：球有观测 {report.multimodal_assessment.summary.ball_observed_frames} 帧，
+        球拍有观测 {report.multimodal_assessment.summary.racket_observed_frames} 帧，场地标定有效 {report.multimodal_assessment.summary.court_calibrated_frames} 帧。</p>
+      <p>球的图像运动与人体动作分别计算。物理球速、转速、过网高度需要相应标定和可见数据；缺少这些数据时，已测动作评分仍然保留。</p>
+    </details>}
     {report.pattern_coverage && <div className="tennis-pattern-evidence"><h3>各段动作与测量项目</h3>
       <p>髋肩腕的先后与人体中心移动采用经过核验的固定画面投影；随挥按连续运动记录。</p>
       {(report.episodes ?? []).map(episode => episode.motion_pattern && <details key={episode.episode_id}>
@@ -126,6 +132,7 @@ export function TennisAssessmentDetails({ report }: { report: TennisAssessment |
         <ul>{episode.motion_pattern.requirements.map(requirement => <li key={requirement.id}>
           <strong>{productText(requirement.label)}</strong><span>{requirement.status === "measured_proxy" ? "已计入可见动作评分" : `未计分：${tennisEvidenceReason(requirement.reason)}`}</span>
         </li>)}</ul>
+        <JointKinematicsDetails episode={episode} jobId={report.source_run_id} />
       </details>)}
     </div>}
     {report.dimensions.map(dimension => <div key={dimension.id}><h3>{dimension.label} · {dimension.score === null ? "—" : scoreText(dimension.score)}</h3>

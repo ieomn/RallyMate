@@ -499,13 +499,14 @@ def run_pipeline(
     runtime_view_evidence_path: Path | None = None,
     registry_lifecycle_manifest_path: Path | None = None,
     cancellation_callback: Callable[[], None] | None = None,
+    mesh_ready_callback: Callable[[dict], None] | None = None,
 ) -> dict:
     """Run with deterministic cleanup; cancellation callback exceptions propagate."""
     with ExitStack() as cleanup:
         return _run_pipeline(
             request, perception, progress_callback, trusted_promotion_ledger_path,
             trusted_runtime_binding_registry_path, runtime_view_evidence_path,
-            registry_lifecycle_manifest_path, cancellation_callback, cleanup,
+            registry_lifecycle_manifest_path, cancellation_callback, cleanup, mesh_ready_callback,
         )
 
 
@@ -519,6 +520,7 @@ def _run_pipeline(
     registry_lifecycle_manifest_path: Path | None,
     cancellation_callback: Callable[[], None] | None,
     cleanup: ExitStack,
+    mesh_ready_callback: Callable[[dict], None] | None = None,
 ) -> dict:
     def check_cancelled() -> None:
         if cancellation_callback is not None:
@@ -689,7 +691,15 @@ def _run_pipeline(
     sam_file = None
     mesh_ledger = None
     mesh_archiver = None
+    prepared_stream = None
     sam3d_mesh = None
+
+    def release_capture():
+        if prepared_stream is not None and prepared_stream.alive:
+            from rallymate_vision.owned_subprocess import ProcessTreeCleanupError
+            raise ProcessTreeCleanupError("Cannot close the decoder while frame preparation still owns it")
+        capture.release()
+
     if sam_enabled:
         from rallymate_vision.sam3d_runner import PrefetchSourcePTSDecoder, SourcePTSDecoder
         from rallymate_vision.sam3d_mesh import (
@@ -706,7 +716,7 @@ def _run_pipeline(
             raise ValueError("RALLYMATE_SAM3D_PREFETCH_FRAMES must be between 0 and 8")
         capture = (PrefetchSourcePTSDecoder(request.video_path, depth=prefetch_depth)
                    if prefetch_depth else SourcePTSDecoder(request.video_path))
-        cleanup.callback(capture.release)
+        cleanup.callback(release_capture)
         backend = getattr(perception, "pose_backend", None)
         if callable(getattr(backend, "reset_sequence", None)):
             backend.reset_sequence()
@@ -715,15 +725,17 @@ def _run_pipeline(
         if archive_mode not in {"0", "1"}:
             raise ValueError("RALLYMATE_SAM3D_ASYNC_MESH_ARCHIVE must be 0 or 1")
         if archive_mode == "1":
-            from rallymate_vision.sam3d_mesh_archive import BoundedMeshArchiver
+            from rallymate_vision.sam3d_mesh_archive import (
+                BoundedMeshArchiver, configured_archive_pending_frames,
+            )
             mesh_archiver = BoundedMeshArchiver(request.output_dir, sam_runtime_dir,
-                                               max_pending_frames=2)
+                                               max_pending_frames=configured_archive_pending_frames())
             # Registered after both output streams: join pending disk work
             # before either stream can close, including failure/cancellation.
             cleanup.callback(mesh_archiver.close)
     else:
         capture = cv2.VideoCapture(str(request.video_path))
-        cleanup.callback(capture.release)
+        cleanup.callback(release_capture)
     start_frame = int(request.processing.start_ms / 1000.0 * metadata.fps)
     end_frame = (
         int(request.processing.end_ms / 1000.0 * metadata.fps)
@@ -772,7 +784,7 @@ def _run_pipeline(
         )
         cleanup.callback(writer.release)
         if not writer.isOpened():
-            capture.release()
+            release_capture()
             raise RuntimeError("could not initialize annotated MP4 writer")
 
     processed = 0
@@ -783,6 +795,8 @@ def _run_pipeline(
     person_frame_count = 0
     quality_samples: list[dict] = []
     timings = Counter()
+    preparation_timings = Counter()
+    preparation_cpu_seconds = Counter()
     court_status_counts: Counter[str] = Counter()
     detection_batch_size = int(os.environ.get("RALLYMATE_DETECT_BATCH_SIZE", "1"))
     if not 1 <= detection_batch_size <= 16:
@@ -792,6 +806,14 @@ def _run_pipeline(
     if not 1 <= sam_batch_frames <= 8:
         raise ValueError("RALLYMATE_SAM3D_BATCH_FRAMES must be between 1 and 8")
     sam_batch_statistics: dict = {}
+    from rallymate_vision.pipeline_overlap import (
+        DetectionStage, PoseStage, PreparedFrameStream, overlap_enabled, require_isolated_sam,
+    )
+    use_overlap = overlap_enabled(os.environ) if sam_enabled else False
+    if use_overlap:
+        require_isolated_sam(perception)
+    detection_stage = DetectionStage(perception, preparation_cpu_seconds) if sam_enabled else perception
+    pose_stage = PoseStage(perception) if sam_enabled else None
 
     def publish_sam_records(records, mesh_records):
         nonlocal sam_has_mesh, sam_first_model_call
@@ -809,15 +831,17 @@ def _run_pipeline(
         for batch in batches:
             publish_sam_records(batch.records, batch.mesh_records)
 
-    def decoded_observations():
+    def decoded_observations(check):
         nonlocal first_processed_source_frame, last_processed_timestamp_ms, last_processed_source_frame
         scan_index, scan_count = 0, 0
         while scan_index < metadata.frame_count:
-            check_cancelled()
+            check()
             stage_started = time.perf_counter()
+            cpu_started = time.thread_time()
             ok, frame = capture.read()
-            timings["decode_seconds"] += time.perf_counter() - stage_started
-            check_cancelled()
+            preparation_timings["decode_seconds"] += time.perf_counter() - stage_started
+            preparation_cpu_seconds["decode_seconds"] += time.thread_time() - cpu_started
+            check()
             if not ok:
                 break
             timestamp_ms, timestamp_source = clock.resolve(
@@ -845,29 +869,33 @@ def _run_pipeline(
             if request.processing.max_frames is not None and scan_count >= request.processing.max_frames:
                 break
 
-    def prepared_frames():
+    def prepared_frames(check=check_cancelled):
         # Only detection is stateless. Tracking, camera and subject selection
         # consume every result in source order, followed by ordered pose calls.
         nonlocal person_frame_count, camera_compensated_frames
         from rallymate_tracking.initial_subject_buffer import InitialSubjectBuffer
         initial_buffer = InitialSubjectBuffer() if sam_enabled else None
         for decoded in detected_observations(
-            decoded_observations(), perception, batch_size=detection_batch_size,
-            check_cancelled=check_cancelled, timings=timings,
+            decoded_observations(check), detection_stage, batch_size=detection_batch_size,
+            check_cancelled=check, timings=preparation_timings,
             statistics=detection_batch_statistics,
         ):
             frame = decoded["image"]
             timestamp_ms, timestamp_source = decoded["timestamp_ms"], decoded["timestamp_source"]
             stage_started = time.perf_counter()
+            cpu_started = time.thread_time()
             quality = analyze_frame(frame)
             quality_samples.append(quality)
-            timings["frame_quality_seconds"] += time.perf_counter() - stage_started
+            preparation_timings["frame_quality_seconds"] += time.perf_counter() - stage_started
+            preparation_cpu_seconds["frame_quality_seconds"] += time.thread_time() - cpu_started
 
             stage_started = time.perf_counter()
+            cpu_started = time.thread_time()
             detections = tracker.update(
                 decoded["detections"], metadata.width, metadata.height, timestamp_ms=timestamp_ms
             )
-            timings["tracking_seconds"] += time.perf_counter() - stage_started
+            preparation_timings["tracking_seconds"] += time.perf_counter() - stage_started
+            preparation_cpu_seconds["tracking_seconds"] += time.thread_time() - cpu_started
 
             players = [
                 detection
@@ -877,10 +905,12 @@ def _run_pipeline(
             if players:
                 person_frame_count += 1
             stage_started = time.perf_counter()
+            cpu_started = time.thread_time()
             camera_motion = camera_guard.update(
                 frame, [player["bbox_px"] for player in players], timestamp_ms
             )
-            timings["camera_motion_seconds"] += time.perf_counter() - stage_started
+            preparation_timings["camera_motion_seconds"] += time.perf_counter() - stage_started
+            preparation_cpu_seconds["camera_motion_seconds"] += time.thread_time() - cpu_started
             if timestamp_source != "decoder_pts":
                 camera_motion.update(status="unavailable", fixed_camera_supported=False,
                                      compensation_valid=False, matrix_to_reference=None,
@@ -889,6 +919,7 @@ def _run_pipeline(
             camera_status_counts[camera_motion["status"]] += 1
             camera_compensated_frames += int(camera_motion["status"] == "moving"
                                              and camera_motion.get("compensation_valid") is True)
+            stage_started, cpu_started = time.perf_counter(), time.thread_time()
             subject_identity = (subject_lock.update(
                 detections, timestamp_ms=timestamp_ms, width=metadata.width,
                 height=metadata.height, image=frame,
@@ -898,15 +929,22 @@ def _run_pipeline(
                 "quality": quality, "camera_motion": camera_motion,
                 "subject_identity": subject_identity}
             ready = initial_buffer.push(observation) if initial_buffer is not None else [observation]
+            preparation_timings["subject_identity_seconds"] += time.perf_counter() - stage_started
+            preparation_cpu_seconds["subject_identity_seconds"] += time.thread_time() - cpu_started
             yield from ready
         if initial_buffer is not None:
             yield from initial_buffer.finish()
 
     observations = prepared_frames()
+    if use_overlap:
+        prepared_stream = PreparedFrameStream(
+            prepared_frames, enabled=True, max_frames=max(2, sam_batch_frames), check_cancelled=check_cancelled)
+        cleanup.callback(prepared_stream.close)
+        observations = prepared_stream
     if sam_enabled:
         from rallymate_vision.sam3d_pipeline_batch import sam_pose_observations
         observations = sam_pose_observations(
-            observations, perception, max_players=request.processing.max_players,
+            observations, pose_stage, max_players=request.processing.max_players,
             video_sha256=input_video_sha256, batch_frames=sam_batch_frames,
             timings=timings, statistics=sam_batch_statistics, check_cancelled=check_cancelled,
             discard_records=lambda records: discard_unarchived_mesh_records(records, sam_runtime_dir),
@@ -935,6 +973,8 @@ def _run_pipeline(
                 frame_sam_records = observation["sam_records"]
                 mesh_started = time.perf_counter()
                 if mesh_archiver is not None:
+                    # submit owns cleanup of this frame's captures even if a
+                    # previous archive fails before this frame can be queued.
                     publish_archived_batches(mesh_archiver.submit(frame_sam_records))
                     timings["mesh_archive_submit_collect_seconds"] += time.perf_counter() - mesh_started
                 else:
@@ -1007,7 +1047,8 @@ def _run_pipeline(
                 ]
             stage_started = time.perf_counter()
             pose_diagnostics = bind_pose_association_diagnostics(
-                getattr(perception, "last_pose_association_diagnostics", None),
+                (pose_stage.last_pose_association_diagnostics if sam_enabled
+                 else getattr(perception, "last_pose_association_diagnostics", None)),
                 record["frame"],
             )
             if pose_diagnostics is not None:
@@ -1060,7 +1101,13 @@ def _run_pipeline(
             ):
                 break
 
-    capture.release()
+    if sam_enabled:
+        observations.close()
+    if prepared_stream is not None:
+        prepared_stream.close()
+    # The producer must relinquish decoder/state/counters before final reads.
+    timings.update(preparation_timings)
+    release_capture()
     decoder_timing = getattr(capture, "timing_seconds", None)
     if isinstance(decoder_timing, dict):
         for key, value in decoder_timing.items():
@@ -1160,6 +1207,11 @@ def _run_pipeline(
             sam3d_mesh = {"status": "failed", "reason": "official_mesh_request_failed",
                           "error_type": type(exc).__name__, "geometry_retained": True}
         timings["official_mesh_request_seconds"] += time.perf_counter() - stage_started
+        # Geometry and its ledger are complete, and all model calls have ended.
+        # A supervised worker can now render while this process scores on CPU.
+        # The public mesh endpoint still requires a successfully validated job.
+        if sam3d_mesh.get("status") == "pending" and mesh_ready_callback is not None:
+            mesh_ready_callback(sam3d_mesh)
 
     primary_timeline_path = request.output_dir / "primary-player.jsonl"
     primary_summary_path = request.output_dir / "primary-player-summary.json"
@@ -1443,7 +1495,13 @@ def _run_pipeline(
             "sam_pose_batch": ({**sam_batch_statistics,
                 "semantics": "ordered_subject_bindings_then_body_forward_microbatches_then_ordered_publication"}
                 if sam_enabled else None),
-            "stage_timing_semantics": "wall_clock; stages are partial and residual orchestration is not separately assigned; component breakdowns must not be added to parent stages; with prefetch decoder producer work overlaps consumer stages; SAM CUDA event spans and IPC waits are retained per native record; first model call may include CUDA warmup while eager model loading precedes this pipeline",
+            "pipeline_overlap": ({**(prepared_stream.receipt if prepared_stream is not None else {"enabled": False}),
+                "preparation_stage_wall_seconds": dict(preparation_timings),
+                "preparation_stage_thread_cpu_seconds": dict(preparation_cpu_seconds),
+                **dict(pose_stage.seconds), "sam_request_calls": pose_stage.calls,
+                "sam_timing_scope": "synchronous adapter/model request including IPC and native capture; excludes preparation queue and consumer archive/publication"}
+                if sam_enabled else None),
+            "stage_timing_semantics": "wall_clock; stages are partial and residual orchestration is not separately assigned; component breakdowns must not be added to parent stages; prefetch and opt-in prepared-frame producer work overlap consumer stages; SAM CUDA event spans and IPC waits are retained per native record; first model call may include CUDA warmup while eager model loading precedes this pipeline",
             "source_prefetch": ({"queue_capacity_frames": prefetch_depth,
                                  "decoded_frames": getattr(capture, "produced_frames", None),
                                  "consumed_frames": getattr(capture, "consumed_frames", None),

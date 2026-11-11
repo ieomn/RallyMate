@@ -1,0 +1,7 @@
+.joint-kinematics { margin-block: 12px; overflow-x: auto; }
+.joint-kinematics summary { cursor: pointer; padding-block: 8px; font-weight: 600; }
+.joint-kinematics table { width: 100%; border-collapse: collapse; font-size: 13px; margin-block: 12px; }
+.joint-kinematics th, .joint-kinematics td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color, #dce3e1); white-space: nowrap; }
+.joint-kinematics p { max-width: 75ch; }
+.joint-kinematics details { padding-inline: 8px; }
+.joint-kinematics button { margin-block: 8px; }

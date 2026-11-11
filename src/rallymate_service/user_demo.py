@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from rallymate_service.training_evaluation import (
-    SCORE_SEMANTICS, build_training_evaluation, validated_training_records,
+    SCORE_SEMANTICS, build_training_evaluation_with_records,
 )
 from rallymate_scoring.technique_assessment import build_technique_assessment
 from rallymate_scoring.indicator_assessment import build_indicator_assessment
@@ -393,8 +393,7 @@ def build_user_demo_result(
     event_counts = event_counts if isinstance(event_counts, Mapping) else {}
     validity = loop.get("indicator_feature_validity")
     validity = validity if isinstance(validity, Mapping) else {}
-    training_evaluation = build_training_evaluation(records)
-    validated_records, _ = validated_training_records(records)
+    training_evaluation, validated_records = build_training_evaluation_with_records(records)
     action_training_evaluations = training_evaluation.get("action_evaluations")
     action_training_evaluations = (
         action_training_evaluations

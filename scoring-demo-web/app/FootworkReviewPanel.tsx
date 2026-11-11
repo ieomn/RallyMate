@@ -18,10 +18,15 @@ export default function FootworkReviewPanel({ review, jobId, sourceAssessment }:
   const hip = contextualHipForEpisode(contextual, episode);
   const hipFrames = hip?.source_window?.source_frames as number[] | undefined;
   const firstBinding = hip?.source_bindings[0], lastBinding = hip?.source_bindings.at(-1);
-  const seek = () => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs: episode.start_ms, jobId } }));
+  const seek = () => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs: episode.start_ms, jobId, preferOriginal: true } }));
   return <section className="motion-analysis-panel footwork-review" aria-label="步伐逐段回放">
     <div className="motion-analysis-heading"><h3>步伐逐段回放</h3><span>画面运动测量</span></div>
     <div className="motion-episode-heading"><div><strong>{productText(episode.name_zh)}</strong><p>{(episode.start_ms / 1000).toFixed(2)}–{(episode.end_ms / 1000).toFixed(2)} 秒</p></div><button type="button" onClick={seek}>定位回放 ↗</button></div>
+    {(episode as unknown as Record<string, unknown>).report_action != null && <p className="replay-caption">本片段的逐项测量按需读取。<button type="button" className="product-secondary" onClick={() => {
+      const target = document.querySelector<HTMLDetailsElement>("#details .replay-segments");
+      if (target) { target.open = true; target.scrollIntoView({ block: "start" }); }
+      window.dispatchEvent(new CustomEvent("rallymate:select-report-action", { detail: { jobId, action: (episode as unknown as Record<string, unknown>).report_action } }));
+    }}>查看此片段测量与髋部路径</button></p>}
     <div className="footwork-evidence-list">{episode.indicators.map(indicator => <article key={indicator.indicator_id}>
       <div><strong>{productText(indicator.name_zh)}</strong>{indicator.scoring_status === "scored" && <span>{footworkScoringStatus(indicator.scoring_status)}</span>}</div>
       {indicator.measurements ? <div className="independent-measurements">{indicator.measurements.map(item => <div key={item.feature_name}><span>{productText(item.name_zh)}</span><strong>{item.status === "measured" ? footworkFeatureText(item.value, item.unit) : "—"}</strong>{item.status === "measured" && <details><summary>测量依据与建议</summary><p>{productText(item.reason_zh)} {productText(item.review_hint_zh)}</p><small>{item.view_semantics === "independent_target_context" ? "独立目标方向" : "二维画面代理"} · {(item.window.start_ms / 1000).toFixed(2)}–{(item.window.end_ms / 1000).toFixed(2)} 秒</small></details>}</div>)}</div> : <p>{indicator.features.length ? indicator.features.map(feature => `${productText(feature.name_zh || feature.feature_name)}：${footworkFeatureText(feature.value, feature.unit)}`).join("；") : "—"}</p>}

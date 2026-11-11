@@ -11,8 +11,11 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
     parser.add_argument("--poll-seconds", type=float, default=0.5)
+    parser.add_argument("--api-only", action="store_true")
     args = parser.parse_args()
     sys.argv = ["rallymate-dev", "--host", args.host, "--port", str(args.port), "--poll-seconds", str(args.poll_seconds)]
+    if args.api_only:
+        sys.argv.append('--api-only')
     dev_main()
 
 

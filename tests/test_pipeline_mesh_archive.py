@@ -172,6 +172,15 @@ class PipelineMeshArchiveTests(unittest.TestCase):
                     self.native_handles.append(handle)
             return handle
         evaluated = []
+        dispatched = []
+        def sealed_mesh_ready(descriptor):
+            self._assert_durable_archives(evaluated)
+            self.assertGreaterEqual(self.capture.released, 1)
+            self.assertTrue(self.archivers[0].receipt["joined"])
+            self.assertEqual(descriptor["ledger_sha256"], sha256_file(self.request.output_dir / LEDGER_NAME))
+            self.assertEqual(descriptor["task_sha256"], sha256_file(self.request.output_dir / mesh_render_task.TASK_NAME))
+            self.assertEqual(len(self.native_by_frame), 2)
+            dispatched.append(descriptor)
         def evaluate(path, **kwargs):
             # Evaluation now consumes the durable JSONL after archive drain,
             # rather than requiring full native rows to stay live in RAM.
@@ -180,6 +189,7 @@ class PipelineMeshArchiveTests(unittest.TestCase):
             evaluated.extend(records)
             return {"runtime": {}, "status": "fixture", "counts": {}}
         def score(*args, **kwargs):
+            self.assertEqual(len(dispatched), 1)
             self._assert_durable_archives(evaluated)
             self.assertTrue((self.request.output_dir / mesh_render_task.TASK_NAME).is_file())
             raise ReachedScoring()
@@ -209,12 +219,14 @@ class PipelineMeshArchiveTests(unittest.TestCase):
             expected = ReachedScoring if mode == "success" else JobCancelled if mode == "cancel" else ValueError
             with self.assertRaises(expected) as caught:
                 pipeline.run_pipeline(self.request, perception=self.perception,
-                    progress_callback=progress, cancellation_callback=cancelled)
+                    progress_callback=progress, cancellation_callback=cancelled,
+                    mesh_ready_callback=sealed_mesh_ready)
             if mode == "success":
                 evaluator.assert_called_once()
                 render_task.assert_called_once()
                 scorer.assert_called_once()
             else:
+                self.assertEqual(dispatched, [])
                 evaluator.assert_not_called()
                 render_task.assert_not_called()
                 scorer.assert_not_called()
@@ -244,9 +256,21 @@ class PipelineMeshArchiveTests(unittest.TestCase):
         self.assertTrue(self.archive_completed.is_set())
         self.assertEqual(self._read_rows("sam3d_frames.jsonl"), [])
         self.assertEqual(self._read_rows(LEDGER_NAME), [])
+        for rows in self.native_by_frame:
+            for row in rows:
+                if "mesh_artifact" in row:
+                    self.assertFalse(Path(row["mesh_artifact"]["path"]).exists())
+                    self.assertTrue(Path(row["mesh_artifact"]["faces_path"]).is_file())
+        self.assertEqual(len(list((self.request.output_dir / "sam3d-mesh-data").glob("*.npz"))), 2)
 
     def test_archive_checksum_failure_cannot_enter_evaluation_scoring_or_publish_preview_task(self):
         self._run("checksum_failure")
+        for rows in self.native_by_frame:
+            for row in rows:
+                if "mesh_artifact" in row:
+                    # A changed checksum deliberately fails safe and is retained.
+                    expected_exists = row["frame_index"] == 0 and row["person_track_id"] == 4
+                    self.assertEqual(Path(row["mesh_artifact"]["path"]).exists(), expected_exists)
 
     def _assert_initialization_failure_releases_decoder(self, *, mode, constructor_failure):
         opened = []

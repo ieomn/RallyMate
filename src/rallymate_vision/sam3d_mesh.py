@@ -16,6 +16,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import types
 from typing import Callable
@@ -32,6 +33,13 @@ PREVIEW_NAME = "sam3d-mesh-preview.jpg"
 MANIFEST_NAME = "sam3d-mesh-manifest.json"
 LEDGER_NAME = "sam3d-mesh-frames.jsonl"
 LIGHT_BLUE = (0.65098039, 0.74117647, 0.85882353)
+# The capture contract permits <=100000 float vertices and <=200000 integer
+# faces. Each native NPY/NPZ is below this bound even with 16-byte floats.
+MAX_GEOMETRY_FILE_BYTES = 8 * 1024 * 1024
+# Only populated on an unconfirmed CPU-thread join. Keep the context alive on
+# its owning process; worker reference release must not trigger GL __del__.
+# No subsequent render is admitted until that isolated process exits.
+_UNJOINED_PREPARATIONS = []
 
 
 def _contained(path: Path, root: Path) -> Path:
@@ -215,6 +223,7 @@ class OfficialMeshRenderer:
         self.timing_seconds = defaultdict(float)
         self.width, self.height = width, height
         self._closed = False
+        self._gl_owner = threading.get_ident()
         owner = self
 
         class BorrowedContext:
@@ -258,20 +267,18 @@ class OfficialMeshRenderer:
         output[y0:y1, x0:x1] = np.clip(color * mask + background * (1 - mask), 0, 255).astype(np.uint8)
         return output
 
-    def render_pair(self, image: np.ndarray, outputs: list[tuple]) -> tuple[np.ndarray, np.ndarray]:
-        """Reuse one official-material mesh/scene for front and rotated views.
+    def prepare_pair(self, image: np.ndarray, outputs: list[tuple]):
+        """Pure CPU construction; each call owns its scene and dynamic normals.
 
-        The first implementation called the official wrapper twice, rebuilding
-        normals and GL buffers and converting two full frames to float64. This
-        keeps its same opaque material, intrinsics, lights and shader, changes
-        only the mesh node/camera between views, and composites the occupied ROI.
+        The arithmetic/process/material/light order matches the serial path.
+        No OffscreenRenderer or GL operation may be introduced in this method.
         """
+        from rallymate_vision.mesh_prepare import PreparedMeshPair
         if self._closed:
             raise RuntimeError("mesh renderer is closed")
         white = np.full_like(image, 255)
         if not outputs:
-            return image.copy(), white
-        started = time.perf_counter()
+            return PreparedMeshPair(image=image, white=white)
         p, t = self.pyrender, self.trimesh
         vertices, faces, offset = [], [], 0
         for v, f, camera, _ in outputs:
@@ -300,7 +307,21 @@ class OfficialMeshRenderer:
         camera_node = scene.add(camera, pose=camera_pose)
         for light in self.create_raymond_lights():
             scene.add_node(light)
-        self.timing_seconds["mesh_and_scene"] += time.perf_counter() - started
+        return PreparedMeshPair(image=image, white=white, scene=scene, mesh_node=mesh_node,
+            camera_node=camera_node, camera_pose=camera_pose, flip=flip, merged=merged, focal=focal)
+
+    def render_prepared_pair(self, prepared) -> tuple[np.ndarray, np.ndarray]:
+        """Only the GL owner renders, changes scene poses and composites BGR."""
+        if threading.get_ident() != self._gl_owner:
+            raise RuntimeError("Mesh GL rendering must retain its creating thread")
+        if self._closed:
+            raise RuntimeError("mesh renderer is closed")
+        image, white = prepared.image, prepared.white
+        if prepared.scene is None:
+            return image.copy(), white
+        p, t = self.pyrender, self.trimesh
+        scene, mesh_node, camera_node = prepared.scene, prepared.mesh_node, prepared.camera_node
+        camera_pose, flip, merged, focal = prepared.camera_pose, prepared.flip, prepared.merged, prepared.focal
         started = time.perf_counter()
         rgba, _ = self.context.render(scene, flags=p.RenderFlags.RGBA)
         self.timing_seconds["front_gl_render_and_readback"] += time.perf_counter() - started
@@ -323,7 +344,18 @@ class OfficialMeshRenderer:
         self.timing_seconds["side_composite"] += time.perf_counter() - started
         return front, side
 
+    def render_pair(self, image: np.ndarray, outputs: list[tuple]) -> tuple[np.ndarray, np.ndarray]:
+        """Compatible serial entry; both paths use the same GL implementation."""
+        if threading.get_ident() != self._gl_owner:
+            raise RuntimeError("Mesh GL rendering must retain its creating thread")
+        started = time.perf_counter()
+        prepared = self.prepare_pair(image, outputs)
+        self.timing_seconds["mesh_and_scene"] += time.perf_counter() - started
+        return self.render_prepared_pair(prepared)
+
     def render(self, image: np.ndarray, outputs: list[tuple], *, side_view: bool = False) -> np.ndarray:
+        if threading.get_ident() != self._gl_owner:
+            raise RuntimeError("Mesh GL rendering must retain its creating thread")
         if self._closed:
             raise RuntimeError("mesh renderer is closed")
         if not outputs:
@@ -349,6 +381,8 @@ class OfficialMeshRenderer:
         return np.clip(rendered * 255, 0, 255).astype(np.uint8)
 
     def close(self):
+        if threading.get_ident() != self._gl_owner:
+            raise RuntimeError("Mesh GL cleanup must retain its creating thread")
         if not self._closed:
             self.context.delete()
             self._closed = True
@@ -367,6 +401,53 @@ def _read_ledger(path: Path, output_dir: Path) -> list[dict]:
     if not rows:
         raise ValueError("no actual SAM mesh geometry was captured")
     return rows
+
+
+def _verified_geometry_bytes(path: Path, digest: str, label: str, timings) -> bytes:
+    """Read once; hashing and decoding must observe the identical byte snapshot."""
+    started = time.perf_counter()
+    with path.open("rb") as stream:
+        # A fixed 8 MiB read allocates that full buffer for every ~222 KiB
+        # native NPZ on Windows. Size the bounded read from the same open fd;
+        # an extra byte detects growth, while a short read detects truncation.
+        size = os.fstat(stream.fileno()).st_size
+        if size > MAX_GEOMETRY_FILE_BYTES:
+            raise ValueError(f"mesh {label} exceeds native geometry file bound")
+        payload = stream.read(size + 1)
+        if len(payload) != size:
+            raise ValueError(f"mesh {label} size changed during verified read")
+    timings["geometry_substage_file_read"] += time.perf_counter() - started
+    if len(payload) > MAX_GEOMETRY_FILE_BYTES:
+        raise ValueError(f"mesh {label} exceeds native geometry file bound")
+    started = time.perf_counter()
+    actual = hashlib.sha256(payload).hexdigest().upper()
+    timings["geometry_substage_sha256"] += time.perf_counter() - started
+    if actual != digest:
+        raise ValueError(f"mesh {label} changed after inference")
+    return payload
+
+
+def _load_verified_geometry(output_dir: Path, artifact: dict, faces_cache: dict, timings) -> tuple:
+    """Keep all geometry/shape checks; avoid hash-read then reopening each NPZ."""
+    root = output_dir / "sam3d-mesh-data"
+    path = _contained(output_dir / artifact["path"], root)
+    topology = _contained(output_dir / artifact["faces_path"], root)
+    payload = _verified_geometry_bytes(path, artifact["sha256"], "geometry", timings)
+    topology_sha = artifact["faces_sha256"]
+    if topology_sha not in faces_cache:
+        topology_bytes = _verified_geometry_bytes(topology, topology_sha, "topology", timings)
+        started = time.perf_counter()
+        faces_cache[topology_sha] = np.load(io.BytesIO(topology_bytes), allow_pickle=False)
+        timings["geometry_substage_array_decode"] += time.perf_counter() - started
+    started = time.perf_counter()
+    with np.load(io.BytesIO(payload), allow_pickle=False) as data:
+        output = {"pred_vertices": data["vertices"], "pred_cam_t": data["camera"],
+                  "focal_length": data["focal"]}
+    timings["geometry_substage_array_decode"] += time.perf_counter() - started
+    started = time.perf_counter()
+    arrays = _arrays(output, faces_cache[topology_sha])
+    timings["geometry_substage_array_validation"] += time.perf_counter() - started
+    return arrays
 
 
 def _open_video_outputs(av, destinations, *, width, height, rate, time_base,
@@ -425,11 +506,22 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
     """Encode actual source PTS with PyAV; missing people remain genuinely empty."""
     import av
     import cv2
+    from rallymate_vision.mesh_prepare import (
+        PreparedMeshFrames, MeshEncodingQueue, prepare_workers, encode_overlap_enabled,
+    )
+    from rallymate_vision.owned_subprocess import ProcessTreeCleanupError
+    if _UNJOINED_PREPARATIONS:
+        raise ProcessTreeCleanupError("Previous mesh CPU preparation is unresolved; process exit is required")
+    cpu_workers = prepare_workers(os.environ)
+    encoding_overlap = encode_overlap_enabled(os.environ)
     started = time.perf_counter()
+    timings = defaultdict(float)
     output_dir = Path(output_dir).resolve()
     rows = _read_ledger(output_dir / LEDGER_NAME, output_dir)
+    identity_started = time.perf_counter()
     if sha256_file(source).lower() != source_sha256.lower():
         raise ValueError("mesh replay source changed")
+    timings["source_identity_validation_before"] += time.perf_counter() - identity_started
     by_frame = defaultdict(list)
     for row in rows:
         if row["video_sha256"].lower() != source_sha256.lower():
@@ -437,6 +529,8 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
         by_frame[row["frame_index"]].append(row)
     faces_cache = {}
     renderer = None
+    preparation = None
+    encoding = None
     containers = []
     pending = [output_dir / f".{name}.partial.mp4" for name in (VIDEO_NAME, SIDE_VIDEO_NAME)]
     first_pts = None
@@ -445,13 +539,33 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
     last_rendered_frame = None
     preview_source_frame = None
     timestamps = []
-    timings = defaultdict(float)
     encoder = None
-    try:
+    time_base = width = height = w0 = h0 = None
+
+    def verified_frames():
+        nonlocal renderer, containers, encoder, first_pts, source_first_pts, time_base, width, height, w0, h0
+        open_started = time.perf_counter()
         with av.open(str(source)) as source_container:
+            timings["source_open"] += time.perf_counter() - open_started
             stream = source_container.streams.video[0]
             time_base = Fraction(stream.time_base)
-            for index, decoded in enumerate(source_container.decode(stream)):
+
+            def timed_decode():
+                iterator = iter(source_container.decode(stream))
+                index = 0
+                while True:
+                    decode_started = time.perf_counter()
+                    try:
+                        decoded = next(iterator)
+                    except StopIteration:
+                        break
+                    key = ("source_prefix_decode" if index < first_frame else
+                           "source_post_interval_decode" if index > last_frame else "selected_source_decode")
+                    timings[key] += time.perf_counter() - decode_started
+                    yield index, decoded
+                    index += 1
+
+            for index, decoded in timed_decode():
                 if check_cancelled:
                     check_cancelled()
                 if decoded.pts is None:
@@ -488,50 +602,71 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
                     if pts != expected or row["image_size"] != [w0, h0]:
                         raise ValueError("mesh source frame/time/dimensions changed")
                     artifact = row["mesh_artifact"]
-                    path = output_dir / artifact["path"]
-                    topology = output_dir / artifact["faces_path"]
-                    if sha256_file(path) != artifact["sha256"]:
-                        raise ValueError("mesh geometry changed after inference")
-                    if artifact["faces_sha256"] not in faces_cache:
-                        if sha256_file(topology) != artifact["faces_sha256"]:
-                            raise ValueError("mesh topology changed after inference")
-                        faces_cache[artifact["faces_sha256"]] = np.load(topology, allow_pickle=False)
-                    with np.load(path, allow_pickle=False) as data:
-                        arrays = _arrays({"pred_vertices": data["vertices"], "pred_cam_t": data["camera"],
-                                          "focal_length": data["focal"]}, faces_cache[artifact["faces_sha256"]])
+                    arrays = _load_verified_geometry(output_dir, artifact, faces_cache, timings)
+                    # The main thread alone verifies/caches geometry. CPU scene
+                    # jobs receive read-only arrays; shared topology never mutates.
+                    for array in arrays[:3]:
+                        array.setflags(write=False)
                     outputs.append((*arrays[:3], arrays[3] * scale))
                 timings["geometry_read_and_validation"] += time.perf_counter() - geometry_started
-                subjects += len(outputs)
-                mesh_frames += bool(outputs)
-                overlay, side = renderer.render_pair(image, outputs)
-                if count == 0 or outputs and preview_source_frame is None:
-                    cv2.imwrite(str(output_dir / PREVIEW_NAME), overlay)
-                    if outputs:
-                        preview_source_frame = index
                 relative_pts = (pts - first_pts) / time_base
                 if relative_pts.denominator != 1:
                     raise ValueError("mesh replay PTS cannot be represented exactly")
-                timestamps.append(int(relative_pts))
-                encode_started = time.perf_counter()
-                for image_out, (container, out_stream) in zip((overlay, side), containers):
-                    encoded = av.VideoFrame.from_ndarray(image_out, format="bgr24")
-                    encoded.pts, encoded.time_base = int(relative_pts), time_base
-                    for packet in out_stream.encode(encoded):
-                        container.mux(packet)
-                timings["video_encode"] += time.perf_counter() - encode_started
-                count += 1
-                last_rendered_frame = index
+                image.setflags(write=False)
+                yield {"index": index, "image": image, "outputs": outputs, "relative_pts": int(relative_pts)}
+
+    def encode_pair(images, relative_pts):
+        # Exactly one codec owner writes both views chronologically. The GL
+        # owner can prepare/render the next frame while this native work runs.
+        for image_out, (container, out_stream) in zip(images, containers):
+            encoded = av.VideoFrame.from_ndarray(image_out, format="bgr24")
+            encoded.pts, encoded.time_base = relative_pts, time_base
+            for packet in out_stream.encode(encoded):
+                container.mux(packet)
+
+    try:
+        encoding = MeshEncodingQueue(encode_pair, enabled=encoding_overlap,
+            check_cancelled=check_cancelled or (lambda: None))
+        preparation = PreparedMeshFrames(verified_frames(),
+            lambda image, outputs: renderer.prepare_pair(image, outputs), workers=cpu_workers,
+            check_cancelled=check_cancelled or (lambda: None))
+        for work, prepared in preparation:
+            index, outputs, relative_pts = work["index"], work["outputs"], work["relative_pts"]
+            subjects += len(outputs)
+            mesh_frames += bool(outputs)
+            overlay, side = renderer.render_prepared_pair(prepared)
+            if count == 0 or outputs and preview_source_frame is None:
+                cv2.imwrite(str(output_dir / PREVIEW_NAME), overlay)
+                if outputs:
+                    preview_source_frame = index
+            timestamps.append(relative_pts)
+            encoding.submit((overlay, side), relative_pts)
+            count += 1
+            last_rendered_frame = index
+        preparation.close()
+        preparation_receipt = preparation.receipt
+        encoding.finish()
+        encoding_receipt = encoding.receipt
+        timings["video_encode"] = encoding_receipt["encode_wall_seconds"]
+        timings["video_encode_foreground_wait"] = encoding_receipt["foreground_backpressure_seconds"]
+        timings["mesh_and_scene"] = (preparation_receipt["prepare_worker_wall_seconds_sum"]
+                                    + preparation_receipt["synchronous_prepare_wall_seconds"])
+        timings["mesh_prepare_foreground_wait"] = preparation_receipt["foreground_wait_seconds"]
         if by_frame:
             raise ValueError("mesh ledger contains frames outside the rendered source interval")
         if not count or not mesh_frames:
             raise ValueError("mesh replay contains no inferred human surface")
+        identity_started = time.perf_counter()
         if sha256_file(source).lower() != source_sha256.lower():
             raise ValueError("mesh replay source changed during rendering")
+        timings["source_identity_validation_after"] += time.perf_counter() - identity_started
+        flush_started = time.perf_counter()
         for container, out_stream in containers:
             for packet in out_stream.encode():
                 container.mux(packet)
             container.close()
         containers.clear()
+        timings["encoder_flush"] += time.perf_counter() - flush_started
         # Decode both deliverables; verify full PTS sequence, not just duration.
         validation_started = time.perf_counter()
         for path in pending:
@@ -563,8 +698,11 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
             "timing_preserved": True, "timebase": "source_pts_relative_to_first_selected_frame",
             "width": width, "height": height, "source_width": w0, "source_height": h0,
             "render_seconds": round(time.perf_counter() - started, 6),
+            "mesh_prepare": preparation_receipt,
+            "mesh_encode": encoding_receipt,
             "stage_seconds": {key: round(value, 6) for key, value in
                               {**timings, **renderer.timing_seconds}.items()},
+            "stage_timing_semantics": "geometry_substage_* are included in geometry_read_and_validation; mesh_and_scene is joined CPU prepare wall sum; video_encode is joined codec worker wall when overlap enabled; prepare/encode can overlap main-thread decode/GL; foreground waits measure only consumer blocking; do not add overlapping/child stages as pipeline wall",
             "ledger": LEDGER_NAME, "ledger_sha256": sha256_file(output_dir / LEDGER_NAME),
             "video": VIDEO_NAME, "side_video": SIDE_VIDEO_NAME, "preview_image": PREVIEW_NAME,
             "preview_source_frame": preview_source_frame,
@@ -577,6 +715,18 @@ def render_mesh_video(source: Path, output_dir: Path, runtime_dir: Path, *,
             json.dumps(manifest, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
         return manifest
     finally:
+        # A failed join deliberately prevents GL/resource teardown. The owning
+        # process must exit or be stopped before its GPU slot can be reused.
+        cleanup_error = None
+        for resource in (preparation, encoding):
+            if resource is not None:
+                try:
+                    resource.close()
+                except ProcessTreeCleanupError as error:
+                    cleanup_error = cleanup_error or error
+        if cleanup_error is not None:
+            _UNJOINED_PREPARATIONS.append((renderer, preparation, encoding, containers))
+            raise cleanup_error
         for container, _ in containers:
             container.close()
         if renderer is not None:

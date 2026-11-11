@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-from threading import Event, Thread
 
 import uvicorn
 
@@ -46,12 +45,13 @@ def worker_main() -> None:
 
 
 def dev_main() -> None:
-    """Run the upload API and one persistent GPU worker in a single process."""
+    """Run the upload API with one independently supervised local GPU worker."""
 
     parser = argparse.ArgumentParser(description="RallyMate local inference server")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--poll-seconds", type=float, default=0.5)
+    parser.add_argument("--api-only", action="store_true", help="Serve reports/uploads without loading a GPU worker")
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO,
@@ -59,31 +59,25 @@ def dev_main() -> None:
     )
     settings = load_settings()
     database = JobDatabase(settings.database_path)
+    from rallymate_service.executor_runtime import LocalExecutorSupervisor
+    executor = None if args.api_only else LocalExecutorSupervisor(
+        settings, database, poll_seconds=max(args.poll_seconds, .1))
     # Bind the listening socket before loading the inference worker.  When a
     # second launcher is started on the same port, uvicorn now fails here and
     # no model thread is created or GPU/CPU resources consumed.
     config = uvicorn.Config(
-        create_app(settings, database),
+        create_app(settings, database, executor_status=executor.snapshot if executor else None,
+                   executor_shutdown=executor.request_idle_shutdown if executor else None),
         host=args.host,
         port=args.port,
         workers=1,
     )
     socket = config.bind_socket()
-    stop_event = Event()
-
-    def worker_target() -> None:
-        run_worker(
-            settings,
-            database,
-            poll_seconds=max(args.poll_seconds, 0.1),
-            stop_event=stop_event,
-        )
-
-    worker = Thread(target=worker_target, name="rallymate-gpu-worker", daemon=True)
-    worker.start()
     try:
+        if executor is not None:
+            executor.start()
         server = uvicorn.Server(config)
         server.run(sockets=[socket])
     finally:
-        stop_event.set()
-        worker.join(timeout=15)
+        if executor is not None:
+            executor.close()

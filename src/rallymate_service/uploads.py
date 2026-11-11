@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import errno
 import json
 import math
 import os
 import shutil
 import time
+import threading
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
@@ -17,39 +19,91 @@ from rallymate_service import upload_state
 
 # Preserve the legacy wire size as the API's maximum accepted chunk size.
 CHUNK_BYTES = 4 * 1024 * 1024
-DEFAULT_CHUNK_BYTES = 128 * 1024
+MIN_CHUNK_BYTES = 128 * 1024
+DEFAULT_CHUNK_BYTES = 1024 * 1024
 SESSION_TTL_SECONDS = 24 * 60 * 60
+UPLOAD_LOCK_TIMEOUT_SECONDS = 10.0
+_local_locks_guard = threading.Lock()
+_local_locks: dict[str, list] = {}
+
+
+@contextmanager
+def _local_file_lock(path: Path, deadline: float):
+    """Wake local waiters directly and retain entries only while in use."""
+    key = os.path.normcase(str(path.resolve()))
+    with _local_locks_guard:
+        entry = _local_locks.setdefault(key, [threading.Lock(), 0])
+        entry[1] += 1
+    acquired = False
+    try:
+        acquired = entry[0].acquire(timeout=max(0.0, deadline - time.monotonic()))
+        if not acquired:
+            raise TimeoutError("Timed out waiting for the upload session lock")
+        yield
+    finally:
+        if acquired:
+            entry[0].release()
+        with _local_locks_guard:
+            entry[1] -= 1
+            if not entry[1]:
+                del _local_locks[key]
+
+
+def _acquire_windows_lock(handle, deadline: float) -> None:
+    import msvcrt
+
+    delay = 0.005
+    while True:
+        try:
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            return
+        except OSError as error:
+            if error.errno not in {errno.EACCES, errno.EAGAIN, errno.EDEADLK}:
+                raise
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(delay, remaining))
+            delay = min(delay * 2, 0.02)
 
 
 @contextmanager
 def exclusive_file(path: Path):
     """Cross-process lock, released by the OS even if the server is killed."""
-    with path.open("a+b") as handle:
-        if os.name == "nt":
-            import msvcrt
-            if path.stat().st_size == 0:
+    if os.name == "nt":
+        import msvcrt
+
+        # LK_LOCK sleeps roughly one second after contention. A local lock
+        # wakes same-process PUTs promptly; nonblocking OS attempts retain
+        # cross-process exclusion without that fixed one-second stall.
+        deadline = time.monotonic() + UPLOAD_LOCK_TIMEOUT_SECONDS
+        with _local_file_lock(path, deadline), path.open("a+b") as handle:
+            if os.fstat(handle.fileno()).st_size == 0:
                 handle.write(b"0")
                 handle.flush()
-            handle.seek(0)
-            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(handle, fcntl.LOCK_EX)
+            _acquire_windows_lock(handle, deadline)
+            try:
+                yield
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        return
+
+    with path.open("a+b") as handle:
+        import fcntl
+        fcntl.flock(handle, fcntl.LOCK_EX)
         try:
             yield
         finally:
-            if os.name == "nt":
-                handle.seek(0)
-                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-            else:
-                fcntl.flock(handle, fcntl.LOCK_UN)
+            fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 class UploadStore:
     def __init__(self, root: Path, max_bytes: int, *, chunk_bytes: int | None = None):
         if chunk_bytes is None:
             chunk_bytes = int(os.environ.get("RALLYMATE_UPLOAD_CHUNK_BYTES", str(DEFAULT_CHUNK_BYTES)))
-        if isinstance(chunk_bytes, bool) or not isinstance(chunk_bytes, int) or not DEFAULT_CHUNK_BYTES <= chunk_bytes <= CHUNK_BYTES:
+        if isinstance(chunk_bytes, bool) or not isinstance(chunk_bytes, int) or not MIN_CHUNK_BYTES <= chunk_bytes <= CHUNK_BYTES:
             raise ValueError("RALLYMATE_UPLOAD_CHUNK_BYTES must be between 131072 and 4194304")
         self.chunk_bytes = chunk_bytes
         self.root = root

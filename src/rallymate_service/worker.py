@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import inspect
+import os
 import socket
+import sys
 import time
 import uuid
 from collections.abc import Callable
@@ -12,6 +14,7 @@ from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
 from rallymate_vision.contracts import load_request
 from rallymate_vision.inference import Yolo26Perception
+from rallymate_vision.owned_subprocess import ProcessTreeCleanupError
 from rallymate_vision.pipeline import run_pipeline
 from rallymate_vision.pose.metadata import sha256_file
 from rallymate_vision.utils import resolve_device
@@ -172,6 +175,10 @@ class PersistentVisionRunner:
             settings.cpu_threads
         )
         device = resolve_device(settings.device)
+        from rallymate_vision.cuda_memory_budget import configure_cuda_memory_budget
+        import torch
+        self.cuda_memory_budget = configure_cuda_memory_budget(
+            torch, device, 'RALLYMATE_DETECTOR_CUDA_MEMORY_MIB')
         self.perception = Yolo26Perception(
             detect_model=settings.detect_model,
             pose_model=settings.pose_model,
@@ -186,6 +193,23 @@ class PersistentVisionRunner:
             pose_config=settings.pose_config,
             pose_native_keypoint_format=settings.pose_native_keypoint_format,
         )
+        try:
+            self._finish_initialization(settings, device, torch)
+        except BaseException:
+            # Constructor assignment in run_worker has not completed yet. Own
+            # and close the already-started SAM process here on later failure.
+            close = getattr(self.perception, "close", None)
+            if callable(close):
+                close()
+            raise
+
+    def _finish_initialization(self, settings, device, torch):
+        if str(device).isdigit() or str(device).startswith("cuda"):
+            # Ultralytics rewrites CUDA_VISIBLE_DEVICES for string devices.
+            # Explicit torch devices preserve the current mapping for default
+            # and managed workers, including subsequent SAM child processes.
+            selected = f"cuda:{device}" if str(device).isdigit() else str(device)
+            self.perception.device = torch.device("cuda:0" if selected == "cuda" else selected)
         # Library imports may change global pools (Ultralytics disables OpenCV
         # parallelism). Preserve both observations; do not reconfigure inter-op
         # after parallel work has started or claim the pre-import values persist.
@@ -218,6 +242,9 @@ class PersistentVisionRunner:
             settings.resolved_scoring_registry_lifecycle_manifest
         )
 
+    def close(self):
+        self.perception.close()
+
     def __call__(
         self,
         request,
@@ -227,7 +254,11 @@ class PersistentVisionRunner:
         runtime_view_evidence_path=None,
         registry_lifecycle_manifest_path=None,
         cancellation_callback=None,
+        mesh_ready_callback=None,
     ):
+        managed = os.environ.get('RALLYMATE_MANAGED_GPU_UUID')
+        if managed and os.environ.get('CUDA_VISIBLE_DEVICES') != managed:
+            raise RuntimeError('Managed GPU visibility changed; refusing inference on an ambiguous card')
         if runtime_view_evidence_path is None and request.scoring.calibration_assets:
             if self.runtime_view_evidence_dir is not None:
                 runtime_view_evidence_path = self.runtime_view_evidence_dir / (
@@ -238,6 +269,7 @@ class PersistentVisionRunner:
             perception=self.perception,
             progress_callback=progress_callback,
             cancellation_callback=cancellation_callback,
+            mesh_ready_callback=mesh_ready_callback,
             trusted_promotion_ledger_path=(
                 trusted_promotion_ledger_path
                 or self.trusted_promotion_ledger_path
@@ -261,6 +293,10 @@ def process_one(
     runner: Callable = run_pipeline,
     *,
     expected_job_id: str | None = None,
+    recover_expired: bool = True,
+    on_state: Callable[[str, str | None], None] | None = None,
+    mesh_coordinator=None,
+    mesh_stop_event: Event | None = None,
 ) -> bool:
     settings.validate_license()
     for name, path in (
@@ -274,14 +310,16 @@ def process_one(
     job = database.claim_next(
         worker_id, settings.lease_seconds, settings.max_attempts,
         expected_job_id=expected_job_id,
+        recover_expired=recover_expired,
     )
     if job is None:
         return False
     LOGGER.info("processing job %s", job["id"])
     owner = {"worker_id": worker_id, "attempts": job["attempts"]}
+    execution_reader = database.execution_reader(job["id"])
 
     def check_cancelled():
-        state = database.execution_state(job["id"])
+        state = execution_reader.read()
         if (state is None or state["status"] != "running"
                 or state["worker_id"] != worker_id or state["attempts"] != job["attempts"]):
             raise JobLeaseLost("job is no longer owned by this worker attempt")
@@ -289,6 +327,8 @@ def process_one(
             raise JobCancelled("job cancellation requested")
 
     try:
+        if on_state is not None:
+            on_state("analysis", None)
         check_cancelled()
         request = load_request(job["request_path"])
         upstream = getattr(request, "upstream_metadata", {})
@@ -347,9 +387,36 @@ def process_one(
             runner_kwargs["registry_lifecycle_manifest_path"] = (
                 settings.resolved_scoring_registry_lifecycle_manifest
             )
+        mesh_work = []
+        if (mesh_coordinator is not None and "mesh_ready_callback" in parameters
+                and not cpu_only and not os.environ.get("RALLYMATE_MANAGED_GPU_UUID")
+                and os.environ.get("RALLYMATE_POSTPROCESS_MESH_OVERLAP", "1") == "1"):
+            def start_prepared_mesh(descriptor):
+                if mesh_work:
+                    raise RuntimeError("Only one sealed mesh request is allowed per analysis")
+                check_cancelled()
+                from rallymate_service.mesh_overlap import PostprocessMesh
+                try:
+                    mesh_work.append(PostprocessMesh(mesh_coordinator, job["id"], descriptor,
+                        worker_id=worker_id, attempts=job["attempts"], stop_event=mesh_stop_event))
+                    LOGGER.info("job %s overlaps sealed mesh rendering with CPU postprocessing", job["id"])
+                except ProcessTreeCleanupError:
+                    raise
+                except Exception:
+                    LOGGER.exception("early mesh dispatch failed; durable idle rendering remains available")
+            runner_kwargs["mesh_ready_callback"] = start_prepared_mesh
         check_cancelled()
-        summary = runner(request, **runner_kwargs)
-        outcome = database.mark_succeeded(job["id"], summary, **owner)
+        outcome = None
+        try:
+            summary = runner(request, **runner_kwargs)
+            outcome = database.mark_succeeded(job["id"], summary, **owner)
+        finally:
+            # Publish scoring as soon as it passes, then join the renderer before
+            # the next inference. Failed/cancelled scoring stops its child tree.
+            for work in mesh_work:
+                if on_state is not None and outcome == "succeeded" and work.thread.is_alive():
+                    on_state("mesh", None)
+                work.finish(cancel=outcome != "succeeded")
         LOGGER.info("job %s finished with state %s", job["id"], outcome or "ownership_lost")
     except JobCancelled:
         database.mark_cancelled(job["id"], **owner)
@@ -357,9 +424,25 @@ def process_one(
     except JobLeaseLost:
         # A stale worker must stop without changing the newer attempt's state.
         LOGGER.warning("job %s worker attempt lost ownership; stopped", job["id"])
+    except ProcessTreeCleanupError:
+        # Leave the attempt owned until the supervisor confirms full tree exit.
+        # Continuing this worker could overlap an unconfirmed inference child.
+        raise
     except Exception as exc:
         LOGGER.exception("job %s failed", job["id"])
         database.mark_failed(job["id"], f"{type(exc).__name__}: {exc}", **owner)
+    finally:
+        active_error = sys.exc_info()[1]
+        try:
+            execution_reader.close()
+        except BaseException as close_error:
+            # Preserve process-tree cleanup errors so the supervisor still
+            # quarantines the GPU instead of starting another attempt.
+            if active_error is not None:
+                raise active_error from close_error
+            raise
+        LOGGER.info("job %s execution state: %d fresh queries across %d read-only connections",
+            job["id"], execution_reader.read_count, execution_reader.connection_count)
     return True
 
 
@@ -370,43 +453,98 @@ def run_worker(
     once: bool = False,
     stop_event: Event | None = None,
     on_state: Callable[[str, str | None], None] | None = None,
+    worker_id: str | None = None,
+    should_drain: Callable[[], bool] | None = None,
 ) -> None:
     settings.validate_license()
     settings.ensure_directories()
     database.initialize()
-    worker_id = default_worker_id()
+    worker_id = worker_id or default_worker_id()
+    runner = None
+    gpu_slot = None
+    gpu_acquired = False
     if on_state is not None:
         on_state("loading_models", None)
     try:
+        device = resolve_device(settings.device)
+        if device != 'cpu':
+            import torch
+            from rallymate_service.gpu_fleet import GPUWorkerSlot
+            selected = f'cuda:{device}' if str(device).isdigit() else device
+            identifier = str(getattr(torch.cuda.get_device_properties(selected), 'uuid', ''))
+            if identifier and not identifier.startswith('GPU-'):
+                identifier = 'GPU-' + identifier
+            gpu_slot = GPUWorkerSlot(settings.data_root, identifier, worker_id=worker_id)
+            if not gpu_slot.acquire():
+                raise RuntimeError('A worker already owns the selected physical GPU')
+            gpu_acquired = True
         runner = PersistentVisionRunner(settings)
         from rallymate_service.mesh_render_worker import MeshRenderCoordinator
-        from rallymate_vision.owned_subprocess import ProcessTreeCleanupError
-        mesh_renderer = MeshRenderCoordinator(settings, database)
+        mesh_started = False
+        def on_render_start():
+            nonlocal mesh_started
+            mesh_started = True
+            if on_state is not None:
+                on_state("mesh", None)
+        mesh_renderer = MeshRenderCoordinator(settings, database,
+            on_render_start=on_render_start, should_drain=should_drain)
         if on_state is not None:
             on_state("ready", None)
         while stop_event is None or not stop_event.is_set():
-            handled = process_one(settings, database, worker_id, runner=runner)
+            if should_drain is not None and should_drain():
+                break
+            handled = process_one(settings, database, worker_id, runner=runner,
+                recover_expired=not bool(os.environ.get('RALLYMATE_MANAGED_GPU_UUID')
+                    or os.environ.get('RALLYMATE_SUPERVISED_LOCAL_WORKER')),
+                on_state=on_state, mesh_coordinator=mesh_renderer, mesh_stop_event=stop_event)
+            if handled and on_state is not None:
+                on_state("ready", None)
             if once:
                 return
+            # Maintenance drains only between complete tasks. Never route it
+            # through stop_event, which can cancel an active mesh renderer.
+            if should_drain is not None and should_drain():
+                break
+            # Give one completed job's mesh a turn before claiming another
+            # analysis. Queued jobs must not starve or repeatedly discard an
+            # in-progress render. Running work and cancellation still preempt;
+            # managed fleets continue to decline unqualified GL/NVENC routing.
+            mesh_started = False
+            try:
+                if mesh_renderer.process_one(stop_event, allow_queued=True):
+                    continue
+            except ProcessTreeCleanupError:
+                # A new inference must not overlap an unconfirmed GPU tree.
+                raise
+            except Exception:
+                LOGGER.exception("optional mesh scheduler failed; inference worker remains available")
+            finally:
+                if mesh_started and on_state is not None:
+                    on_state("ready", None)
             if not handled:
-                # Completed scoring is already durable. Optional rendering only
-                # uses idle time and yields promptly to a new inference request.
-                try:
-                    if mesh_renderer.process_one(stop_event):
-                        continue
-                except ProcessTreeCleanupError:
-                    # A new inference must not overlap an unconfirmed GPU tree.
-                    raise
-                except Exception:
-                    LOGGER.exception("optional mesh scheduler failed; inference worker remains available")
                 if stop_event is not None:
                     stop_event.wait(poll_seconds)
                 else:
                     time.sleep(poll_seconds)
     except Exception as exc:
+        if gpu_acquired and isinstance(exc, ProcessTreeCleanupError):
+            # Constructor failure can leave runner=None while its child cleanup
+            # failed. Persist before the OS mutex can be released or abandoned.
+            gpu_slot.quarantine(f'{type(exc).__name__}: {exc}')
         if on_state is not None:
             on_state("failed", f"{type(exc).__name__}: {exc}")
         raise
     finally:
+        try:
+            close = getattr(runner, "close", None)
+            if callable(close):
+                close()
+        except BaseException as exc:
+            if gpu_acquired:
+                gpu_slot.quarantine(f'{type(exc).__name__}: {exc}')
+            raise
+        finally:
+            if gpu_slot is not None:
+                gpu_slot.close()
         if on_state is not None and stop_event is not None and stop_event.is_set():
             on_state("stopped", None)

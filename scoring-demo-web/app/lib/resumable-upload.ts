@@ -53,6 +53,7 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
   const filename = typeof File !== "undefined" && file instanceof File ? file.name : "rallymate-video.mp4";
   const analysisOptions = { court_mode: options.courtMode ?? "disabled", write_annotated_video: options.writeAnnotatedVideo ?? true, ...options.metadata };
   const signature = await digest(new Blob([JSON.stringify({ name: filename, size: file.size, options: analysisOptions }), file.slice(0, 65536), file.slice(Math.max(0, file.size - 65536))]));
+  options.signal?.throwIfAborted();
   const storageKey = `rallymate.upload.v1.${signature}`;
   let uploadId = crypto.randomUUID();
   try { const saved = localStorage.getItem(storageKey); if (saved && /^[0-9a-f-]{36}$/.test(saved)) uploadId = saved as `${string}-${string}-${string}-${string}-${string}`; } catch { /* Private mode still supports in-tab retries. */ }
@@ -89,7 +90,19 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
       }
     } finally { waiting.delete(token); retrying.delete(token); }
   };
-  const create = () => request<UploadSession>("/v1/uploads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ upload_id: uploadId, filename, size: file.size, options: analysisOptions }) });
+  const create = async () => {
+    const value = await request<UploadSession>("/v1/uploads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ upload_id: uploadId, filename, size: file.size, options: analysisOptions }) });
+    if (!value || value.upload_id !== uploadId || value.size !== file.size
+        || !Number.isSafeInteger(value.chunk_size) || value.chunk_size < 1 || value.chunk_size > 4 * 1024 * 1024
+        || value.chunk_count !== Math.ceil(file.size / value.chunk_size) || !Array.isArray(value.received_chunks)
+        || new Set(value.received_chunks).size !== value.received_chunks.length
+        || !value.received_chunks.every(index => Number.isSafeInteger(index) && index >= 0 && index < value.chunk_count
+          && /^[a-f0-9]{64}$/.test(value.chunk_sha256?.[String(index)] ?? ""))
+        || value.received_bytes !== value.received_chunks.reduce((sum, index) => sum + Math.min(value.chunk_size, file.size - index * value.chunk_size), 0)) {
+      throw new RallyMateApiError("上传分块配置与本次视频不匹配。", 422);
+    }
+    return value;
+  };
   preparationMessage = "正在连接上传服务";
   try { session = await create(); } catch (error) {
     if (!(error instanceof RallyMateApiError) || ![404, 410].includes(error.status ?? 0)) throw error;
@@ -102,6 +115,7 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
   for (const index of session.received_chunks) {
     options.signal?.throwIfAborted();
     const checksum = await digest(file.slice(index * session.chunk_size, Math.min(file.size, (index + 1) * session.chunk_size)));
+    options.signal?.throwIfAborted();
     if (session.chunk_sha256?.[String(index)] !== checksum) {
       uploadId = crypto.randomUUID(); remember(); session = await create(); break;
     }
@@ -137,6 +151,8 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
       const chunk = file.slice(index * activeSession.chunk_size, Math.min(file.size, (index + 1) * activeSession.chunk_size));
       try {
         const checksum = await digest(chunk);
+        options.signal?.throwIfAborted();
+        if (stopped) return;
         knownDigests.set(index, checksum);
         const confirmation = await request<UploadSession | ChunkReceipt>(`/v1/uploads/${uploadId}/chunks/${index}`, { method: "PUT", headers: { "Content-Type": "application/octet-stream", "X-Chunk-SHA256": checksum, "X-Upload-Acknowledgement": "chunk-v1" }, body: chunk }, 90000, async () => {
           // A lost PUT response does not imply lost bytes. Read durable status
@@ -156,6 +172,8 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
   const workers = await Promise.allSettled([send(), send()]);
   const failed = workers.find(r => r.status === "rejected");
   if (failed?.status === "rejected") throw failed.reason;
+  options.signal?.throwIfAborted();
+  if (received.size !== activeSession.chunk_count || uploadedBytes !== file.size) throw new RallyMateApiError("视频分块尚未全部确认，请继续上传。", 502);
   stage = "merging";
   progress();
   const job = await request<JobSubmission>(`/v1/uploads/${uploadId}/complete`, { method: "POST" }, 90000);

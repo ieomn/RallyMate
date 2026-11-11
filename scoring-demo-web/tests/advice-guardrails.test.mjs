@@ -4,19 +4,28 @@ import fs from "node:fs";
 import ts from "typescript";
 import { tennisScopedFixture, tennisHash } from "./fixtures/tennis-assessment.mjs";
 
+const compiledModules = new Map();
+function compiledUrl(file, source) {
+  if (source === undefined && compiledModules.has(file.href)) return compiledModules.get(file.href);
+  let js;
+  if (file.pathname.endsWith(".json")) js = `export default ${fs.readFileSync(file, "utf8")};`;
+  else {
+    js = ts.transpileModule(source ?? fs.readFileSync(file, "utf8"), { fileName: file.pathname,
+      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+    js = js.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(name.startsWith(".")
+      ? compiledUrl(new URL(name.endsWith(".json") ? name : `${name}.ts`, file)) : import.meta.resolve(name))}`);
+  }
+  const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
+  if (source === undefined) compiledModules.set(file.href, url);
+  return url;
+}
+
 async function route() {
-  const evidenceSource = fs.readFileSync(new URL("../app/lib/advice-evidence.ts", import.meta.url), "utf8");
-  const evidenceJs = ts.transpileModule(evidenceSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  const evidenceUrl = `data:text/javascript;base64,${Buffer.from(evidenceJs).toString("base64")}`;
-  const configSource = fs.readFileSync(new URL("../app/lib/mimo-config.ts", import.meta.url), "utf8");
-  const configJs = ts.transpileModule(configSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  const configUrl = `data:text/javascript;base64,${Buffer.from(configJs).toString("base64")}`;
-  const tennisSource = fs.readFileSync(new URL("../app/lib/tennis-assessment.ts", import.meta.url), "utf8");
-  const tennisJs = ts.transpileModule(tennisSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  const tennisUrl = `data:text/javascript;base64,${Buffer.from(tennisJs).toString("base64")}`;
-  const source = fs.readFileSync(new URL("../app/api/advice/route.ts", import.meta.url), "utf8").replace('"../../lib/advice-evidence"', JSON.stringify(evidenceUrl)).replace('"../../lib/mimo-config"', JSON.stringify(configUrl)).replace('"../../lib/tennis-assessment"', JSON.stringify(tennisUrl)) + `\nexport { parseAdvice, providerAdvice, callMimo, loadTrainingFocus }; // ${Math.random()}`;
-  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  return import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+  const file = new URL("../app/api/advice/route.ts", import.meta.url);
+  // Keep each route's rate-limit state isolated, while recursively loading the
+  // actual validation modules and their shared grading JSON.
+  const source = fs.readFileSync(file, "utf8") + `\nexport { parseAdvice, providerAdvice, callMimo, loadTrainingFocus }; // ${Math.random()}`;
+  return import(compiledUrl(file, source));
 }
 const request = (body, headers = {}) => new Request("http://localhost/api/advice", { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
 const input = { technique: "步伐", skillLevel: "业余进阶", sessionGoal: "稳定性", observations: "怎样保持回位平衡？" };

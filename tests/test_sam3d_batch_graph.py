@@ -1,5 +1,6 @@
 """Bounded additional CUDA graph signatures, tested without a CUDA device."""
 from contextlib import ExitStack
+import os
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -162,6 +163,49 @@ class BatchForwardGraphContracts(unittest.TestCase):
         other.restore()
         self.assertEqual(self.budget["retained_bytes"], 0)
         self.assertNotIn("forward", vars(self.model))
+
+    def test_configured_budget_changes_admission_but_remains_shared_and_fixed(self):
+        self.capture_cost = 700 * 1024 ** 2
+        for mib, admitted in (("512", False), ("1024", True)):
+            model = FakeModule()
+            with self.subTest(mib=mib), patch.dict(os.environ,
+                    {"RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB": mib}):
+                handle = module.ModuleForwardGraph(model, self.torch, name="configured",
+                    argument_names=("x", "extra_embed"), device="cuda:0", additional_batch_sizes=(2,))
+            handle._build_graph = Mock(side_effect=self.build)
+            # Installation freezes the budget; later environment changes cannot
+            # mutate a running worker's graph admission.
+            with patch.dict(os.environ, {"RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB": "128"}):
+                result = handle(self.tensor(2))
+            self.assertEqual("output" in result, admitted)
+            self.assertEqual(handle.batch_memory_budget["configured_mib"], int(mib))
+            self.assertEqual(handle.batch_memory_budget["configuration_source"], "environment")
+            if admitted:
+                other = module.ModuleForwardGraph(FakeModule(), self.torch, name="other",
+                    argument_names=("x", "extra_embed"), device="cuda:0", additional_batch_sizes=(4,),
+                    batch_memory_budget=handle.batch_memory_budget)
+                other._build_graph = Mock(side_effect=self.build)
+                self.assertIn("eager", other(self.tensor(4)))
+                self.assertIsNone(other.batch_slots[4]["graph"])
+                self.assertEqual(other.batch_slots[4]["receipt"]["capture_status"],
+                                 "retained_memory_budget_exceeded")
+                other.restore()
+                self.assertEqual(handle.batch_memory_budget["retained_bytes"], self.capture_cost)
+            handle.restore()
+            self.assertEqual(handle.batch_memory_budget["retained_bytes"], 0)
+
+    def test_invalid_environment_budget_does_not_install_forward(self):
+        for value in ("", "127", "4097", "-512", "512.0", "True", "１２８", "9" * 100):
+            model = FakeModule()
+            with self.subTest(value=value), patch.dict(os.environ,
+                    {"RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB": value}):
+                with self.assertRaisesRegex(ValueError, "BUDGET_MIB"):
+                    module.ModuleForwardGraph(model, self.torch, name="invalid",
+                        argument_names=("x", "extra_embed"), device="cuda:0")
+                self.assertNotIn("forward", vars(model))
+                # A bare object has no model attributes; config must fail first.
+                with self.assertRaisesRegex(ValueError, "BUDGET_MIB"):
+                    module.apply_forward_cuda_graph(object())
 
     def test_budget_rejection_eager_failure_is_not_run_twice(self):
         self.capture_cost = 600

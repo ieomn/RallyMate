@@ -42,9 +42,23 @@ def probe_video(path: Path) -> VideoMetadata:
 
 def analyze_frame(frame: np.ndarray) -> dict:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    brightness = float(gray.mean())
-    contrast = float(gray.std())
-    blur_score = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    mean, std = cv2.meanStdDev(gray)
+    brightness = float(mean[0, 0])
+    contrast = float(std[0, 0])
+    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+    _, laplacian_std = cv2.meanStdDev(laplacian)
+    blur_score = float(laplacian_std[0, 0] ** 2)
+    # Use one native reduction per image. Different reduction order can change
+    # the last bits at a published rounding tie or a warning boundary; retain
+    # the original NumPy reduction there rather than changing the result.
+    rounding_edge = any(abs((value * 1000) % 1 - .5) <= 1e-4
+                        for value in (brightness, contrast, blur_score))
+    warning_edge = (min(abs(brightness - 45), abs(brightness - 220)) <= 1e-7
+                    or abs(contrast - 25) <= 1e-7 or abs(blur_score - 45) <= 1e-7)
+    if gray.dtype != np.uint8 or rounding_edge or warning_edge:
+        brightness = float(gray.mean())
+        contrast = float(gray.std())
+        blur_score = float(laplacian.var())
     warnings: list[str] = []
     if brightness < 45:
         warnings.append("too_dark")

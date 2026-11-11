@@ -16,7 +16,7 @@ from rallymate_events.associations import SuccessorEventIndex, event_identity, f
 from rallymate_features.coordinates import COORDINATE_CONTRACT_VERSION, body_scale, point_series, validated_camera_transform
 from rallymate_features.geometry import angle_three_points_deg
 from rallymate_features.schemas import PoseSequence, model_bindings_continuous, model_geometry_evidence, validated_source_time_binding
-from rallymate_features.validity import DEFAULT_KEYPOINT_CONFIDENCE_MIN
+from rallymate_features.validity import DEFAULT_KEYPOINT_CONFIDENCE_MIN, MIN_VALID_KEYPOINT_FRAME_FRACTION, meets_keypoint_frame_coverage
 from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 
 
@@ -72,15 +72,15 @@ class SourceAlignedContext:
             count, total = int(valid.sum()), int(indexes.size)
             rows.append({"joint_names": list(joints), "valid_frame_count": count, "total_frame_count": total,
                          "fraction": count / total if total else None,
-                         "meets_70_percent": bool(total and count * 10 >= total * 7)})
+                         "meets_70_percent": meets_keypoint_frame_coverage(count, total)})
         required_joints = required_joints or tuple(dict.fromkeys(name for group in groups for name in group))
         valid = np.logical_and.reduce([self.masks[name][indexes] for name in required_joints])
         total, count = int(indexes.size), int(valid.sum())
         result = {"scope": "inclusive_window_all_sampled_source_frames", "groups": rows,
                 "required_joint_names": list(required_joints), "valid_frame_count": count,
                 "total_frame_count": total, "fraction": count / total if total else None,
-                "passes": bool(total and count * 10 >= total * 7),
-                "threshold": .7, "operator": ">=", "source_rule": "below_70_percent_is_unavailable",
+                "passes": meets_keypoint_frame_coverage(count, total),
+                "threshold": MIN_VALID_KEYPOINT_FRAME_FRACTION, "operator": ">=", "source_rule": "below_70_percent_is_unavailable",
                 "point_validity": {"minimum_confidence": DEFAULT_KEYPOINT_CONFIDENCE_MIN,
                     "semantics": "existing_engineering_confidence_cutoff_not_specified_by_Word; finite_xy_and_confidence_in_0_to_1"},
                 "group_semantics": "all_named_joints_simultaneously_observed_in_each_counted_frame",
@@ -630,7 +630,10 @@ def _transition(context: SourceAlignedContext, event: Mapping, indicator: str, r
                definition="next observed same-video same-player allowed event start minus current observed phase candidate; no successor means missing evidence, not zero or E",
                evidence={"source_event_id": event["event_id"], "successor_event_id": association["successor_event_id"],
                          "anchor_phase_key": phase_key, "candidates_remain_unvalidated": True})
-    speed_end = min(end, event["end_ms"])
+    # FS01 redistribution and FS09 stable control are local measurements.
+    # A separately associated FS02/FS10 cannot shorten or invalidate them.
+    row["scoring_role"] = "cross_event_diagnostic_only"
+    speed_end = event["end_ms"]
     speed_indexes = context.indexes(start, speed_end)
     speed = _speed_summary(context, speed_indexes, _scale(context, speed_indexes))
     stability = _row(context, event=event, indicator=indicator,
@@ -640,6 +643,7 @@ def _transition(context: SourceAlignedContext, event: Mapping, indicator: str, r
         definition="population standard deviation of adjacent observed body-center interval speeds inside the event after the phase candidate; no grade or stable/unstable cutoff",
         evidence={"speed_observations": speed})
     association["link_measurement_status"] = row["status"]
+    stability["scoring_role"] = "event_local_stability"
     return [row, stability], association
 
 

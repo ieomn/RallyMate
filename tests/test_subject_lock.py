@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 import numpy as np
 
-from rallymate_tracking.subject_lock import SubjectLock, clothing_descriptor, appearance_distance
+from rallymate_tracking.subject_lock import SubjectLock, clothing_descriptor, appearance_distance, foreground_clothing_descriptor
 from rallymate_tracking.primary_player import select_primary_player_timeline
 from tests.test_primary_player import _record
 from tests.test_primary_player import _sam_record
@@ -23,6 +23,31 @@ def image_with_people(people, colors):
 
 
 class SubjectLockTests(unittest.TestCase):
+    def test_shared_court_background_cannot_reidentify_a_different_interval(self):
+        court = np.full((240, 320, 3), (170, 65, 25), dtype=np.uint8)
+        target = person()
+        visible = court.copy()
+        visible[30:180, 40:90] = (160, 150, 190)
+        lock = SubjectLock()
+        first = lock.update([target], timestamp_ms=0, width=320, height=240, image=visible, camera_epoch=0)
+        self.assertEqual(first["status"], "locked")
+        self.assertIsNotNone(foreground_clothing_descriptor(visible, target["bbox_px"]))
+        self.assertIsNone(foreground_clothing_descriptor(court, target["bbox_px"]))
+        # A pose/crop change can gradually fill the old coarse descriptor with
+        # court. It must never authorize another track by the court's color.
+        for step in range(1, 51):
+            image = visible.copy()
+            image[30:180, 40:40 + step] = court[30:180, 40:40 + step]
+            lock.update([target], timestamp_ms=step * 40, width=320, height=240, image=image, camera_epoch=0)
+        for timestamp in (3000, 3040, 3080):
+            changed = lock.update([person(9)], timestamp_ms=timestamp, width=320, height=240, image=court, camera_epoch=1)
+            self.assertIsNone(changed["subject_id"])
+        # Actual apparel re-entry is still supported across a new source track.
+        for timestamp in (4000, 4040, 4080):
+            returned = lock.update([person(10)], timestamp_ms=timestamp, width=320, height=240, image=visible, camera_epoch=2)
+        self.assertEqual(returned["source_track_id"], 10)
+        self.assertEqual(returned["status"], "reidentified")
+
     def test_explicit_source_pixel_failure_cannot_fall_back_to_geometry_identity(self):
         records = [_record(0, [(1, [20, 20, 60, 110], True)])]
         with patch('rallymate_tracking.primary_player._source_images', return_value=iter([None])):

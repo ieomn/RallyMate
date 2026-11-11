@@ -119,7 +119,7 @@ class RealProcessTests(unittest.TestCase):
 
     def test_actual_parent_child_byte_identity_and_reuse(self):
         names = []
-        for shape in ((544, 960, 3), (240, 320, 3), (720, 1280, 3)):
+        for request_id, shape in enumerate(((544, 960, 3), (240, 320, 3), (720, 1280, 3)), start=1):
             pixels = np.arange(np.prod(shape), dtype=np.uint8).reshape(shape)[:, ::-1]
             output = self.process.infer(pixels, [[1., 2., 3., 4.]])[0]
             self.assertEqual(output['sha256'], hashlib.sha256(pixels.tobytes()).hexdigest())
@@ -128,6 +128,8 @@ class RealProcessTests(unittest.TestCase):
             self.assertFalse(output['writeable'])
             self.assertEqual(output['ipc_transport']['kind'], 'shared_memory')
             self.assertIn('copy_source_array_ms', output['ipc_request_timing_ms'])
+            self.assertEqual(output['ipc_request_identity'], {'version': 'sam-ipc-request-v1',
+                'session_id': self.process.session_id, 'request_id': request_id})
             names.append(self.process.shared_writer.mapping.name)
         self.assertEqual(names[0], names[1])
         self.assertNotEqual(names[1], names[2])
@@ -137,6 +139,7 @@ class RealProcessTests(unittest.TestCase):
             shared_memory.SharedMemory(name=names[-1], create=False)
 
     def test_legacy_npy_mode_retains_pixels_and_removes_temporary_file(self):
+        previous_session = self.process.session_id
         self.process.close()
         with patch.dict(os.environ, {'RALLYMATE_SAM3D_IPC_TRANSPORT': 'npy'}):
             self.process = runner.Sam3DProcess(SAM_PYTHON, Path('unused'),
@@ -146,6 +149,9 @@ class RealProcessTests(unittest.TestCase):
         self.assertEqual(output['sha256'], hashlib.sha256(pixels.tobytes()).hexdigest())
         self.assertEqual(output['ipc_transport']['kind'], 'npy')
         self.assertIn('save_source_array_ms', output['ipc_request_timing_ms'])
+        self.assertNotEqual(self.process.session_id, previous_session)
+        self.assertEqual(output['ipc_request_identity'], {'version': 'sam-ipc-request-v1',
+            'session_id': self.process.session_id, 'request_id': 1})
         self.assertIsNone(self.process.shared_writer)
         self.assertEqual(list(self.process.ipc_dir.iterdir()), [])
 

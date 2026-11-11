@@ -12,6 +12,16 @@ export type RequestDiagnostic = Readonly<{
 }>;
 export type RequestDiagnosticObserver = (diagnostic: RequestDiagnostic) => void;
 
+/** Keep recent failures visible when successful background polls continue. */
+export function appendRequestDiagnostic(previous: readonly RequestDiagnostic[], incoming: RequestDiagnostic): readonly RequestDiagnostic[] {
+  const row = safeRequestDiagnostic(incoming);
+  if (!row) return previous;
+  const all = [...previous, row];
+  const failures = all.filter(value => value.outcome === "failure").slice(-8);
+  const selected = new Set([...failures, ...all.filter(value => value.outcome === "success").slice(-(48 - failures.length))]);
+  return all.filter(value => selected.has(value));
+}
+
 /** Describe the next pending step using completed read events, without payloads. */
 export function reportReadStage(diagnostic?: RequestDiagnostic): string {
   if (!diagnostic || diagnostic.operation !== "report") return "正在连接报告服务";

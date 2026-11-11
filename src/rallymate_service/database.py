@@ -6,6 +6,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from threading import RLock, local
 from typing import Iterator
 
 
@@ -13,8 +14,86 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+class QueueCapacityError(RuntimeError):
+    """Admission was rejected before a job became durable."""
+
+    def __init__(self, limit: int):
+        self.limit = limit
+        super().__init__("The analysis queue is full; retry after an active job completes.")
+
+
+class JobExecutionReader:
+    """Reuse read-only connections for one job, never its cancellation state.
+
+    Each calling thread has its own connection. A short shared lock also keeps
+    final cleanup from closing a connection during a query. The runner must
+    finish/join its callbacks before closing this job-scoped reader.
+    """
+
+    def __init__(self, path: Path, job_id: str):
+        self._uri = path.resolve().as_uri() + "?mode=ro"
+        self._job_id = job_id
+        self._local = local()
+        self._lock = RLock()
+        self._connections: list[sqlite3.Connection] = []
+        self._closed = False
+        self.read_count = 0
+        self.connection_count = 0
+
+    def read(self) -> dict | None:
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("job execution reader is closed")
+            connection = getattr(self._local, "connection", None)
+            if connection is None:
+                # Cross-thread use remains prohibited by ownership above; this
+                # setting permits the job's owner to close all joined readers.
+                connection = sqlite3.connect(self._uri, uri=True, timeout=30,
+                    isolation_level=None, check_same_thread=False)
+                connection.row_factory = sqlite3.Row
+                self._local.connection = connection
+                self._connections.append(connection)
+                self.connection_count += 1
+            cursor = connection.execute(
+                "SELECT status, cancel_requested, worker_id, attempts FROM jobs WHERE id = ?",
+                (self._job_id,),
+            )
+            try:
+                row = cursor.fetchone()
+            finally:
+                cursor.close()
+            self.read_count += 1
+            return dict(row) if row is not None else None
+
+    def close(self) -> None:
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            error = None
+            for connection in self._connections:
+                try:
+                    connection.close()
+                except Exception as exc:
+                    error = error or exc
+            self._connections.clear()
+            if error is not None:
+                raise error
+
+    def __enter__(self) -> "JobExecutionReader":
+        return self
+
+    def __exit__(self, exc_type, active_error, traceback) -> None:
+        try:
+            self.close()
+        except BaseException as close_error:
+            if active_error is not None:
+                raise active_error.with_traceback(traceback) from close_error
+            raise
+
+
 class JobDatabase:
-    """A durable SQLite queue suitable for one GPU node and one worker."""
+    """A durable local-node queue with atomic admission and worker claims."""
 
     def __init__(self, path: str | Path):
         self.path = Path(path).resolve()
@@ -122,9 +201,24 @@ class JobDatabase:
         video_path: Path,
         request_path: Path,
         output_dir: Path,
+        *,
+        max_active_jobs: int | None = None,
     ) -> dict:
+        if max_active_jobs is not None and (type(max_active_jobs) is not int or max_active_jobs < 1):
+            raise ValueError("max_active_jobs must be a positive integer")
         now = utc_now()
         with self.connect() as connection:
+            # Serialize capacity checking and insertion: simultaneous upload
+            # completions must not all pass a separate read-only queue check.
+            connection.execute("BEGIN IMMEDIATE")
+            if max_active_jobs is not None:
+                active = connection.execute(
+                    "SELECT COUNT(*) FROM jobs WHERE status IN ('queued', 'running')"
+                ).fetchone()[0]
+                # A running cancellation still owns compute until its runner
+                # acknowledges the stop; it continues to consume admission.
+                if active >= max_active_jobs:
+                    raise QueueCapacityError(max_active_jobs)
             connection.execute(
                 """
                 INSERT INTO jobs (
@@ -184,8 +278,18 @@ class JobDatabase:
         max_attempts: int,
         *,
         expected_job_id: str | None = None,
+        recover_expired: bool = True,
     ) -> dict | None:
-        """Claim eligible work, optionally restricting lease recovery to one job."""
+        """Claim eligible work; managed fleets require verified recovery separately.
+
+        An expired lease alone cannot prove that the old GPU process tree has
+        exited. Managed workers leave those attempts untouched until maintenance
+        confirms their exit; otherwise two attempts could write one output path.
+        The fleet- owner prefix is reserved: even a legacy claimant may not
+        reclaim or fail those attempts based only on their lease timestamp.
+        """
+        if type(recover_expired) is not bool:
+            raise ValueError('recover_expired must be boolean')
         now = datetime.now(timezone.utc)
         lease = (now + timedelta(seconds=lease_seconds)).isoformat()
         now_text = now.isoformat()
@@ -198,9 +302,11 @@ class JobDatabase:
                     updated_at = ?, error = 'worker lease expired; retrying'
                 WHERE status = 'running' AND lease_expires_at < ?
                     AND attempts < ? AND cancel_requested = 0
+                    AND (worker_id IS NULL OR worker_id NOT LIKE 'fleet-%')
                     AND (? IS NULL OR id = ?)
+                    AND ?
                 """,
-                (now_text, now_text, max_attempts, expected_job_id, expected_job_id),
+                (now_text, now_text, max_attempts, expected_job_id, expected_job_id, recover_expired),
             )
             connection.execute(
                 """
@@ -209,16 +315,18 @@ class JobDatabase:
                     error = 'worker lease expired and retry budget was exhausted'
                 WHERE status = 'running' AND lease_expires_at < ?
                     AND attempts >= ? AND cancel_requested = 0
+                    AND (worker_id IS NULL OR worker_id NOT LIKE 'fleet-%')
                     AND (? IS NULL OR id = ?)
+                    AND ?
                 """,
-                (now_text, now_text, now_text, max_attempts, expected_job_id, expected_job_id),
+                (now_text, now_text, now_text, max_attempts, expected_job_id, expected_job_id, recover_expired),
             )
             row = connection.execute(
                 """
                 SELECT id FROM jobs
                 WHERE status = 'queued' AND attempts < ? AND cancel_requested = 0
                     AND (? IS NULL OR id = ?)
-                ORDER BY created_at
+                ORDER BY created_at, id
                 LIMIT 1
                 """,
                 (max_attempts, expected_job_id, expected_job_id),
@@ -334,6 +442,82 @@ class JobDatabase:
                 "SELECT status, cancel_requested, worker_id, attempts FROM jobs WHERE id = ?", (job_id,)
             ).fetchone()
         return dict(row) if row is not None else None
+
+    def execution_reader(self, job_id: str) -> JobExecutionReader:
+        """One attempt's polling scope; all other database access stays unchanged."""
+        return JobExecutionReader(self.path, job_id)
+
+    def running_attempts_for_worker(self, worker_id: str) -> list[dict]:
+        """Snapshot one exact owner's attempts, without lease-based inference."""
+        if not isinstance(worker_id, str) or not worker_id or len(worker_id) > 256:
+            raise ValueError("worker_id must identify one bounded worker owner")
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT id AS job_id, attempts FROM jobs WHERE status = 'running' AND worker_id = ? ORDER BY id",
+                (worker_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def recover_confirmed_worker_attempts(
+        self, worker_id: str, attempts: list[dict], *, max_attempts: int,
+        confirmed_tree_exit: bool = False,
+    ) -> list[dict]:
+        """Recover fenced attempts only after their owned process tree stopped.
+
+        The fleet owner supplies confirmation after OwnedProcess.close returns
+        successfully. This flag is an internal precondition, not an API for
+        asserting process death from a PID, heartbeat, or expired lease.
+        """
+        if confirmed_tree_exit is not True:
+            raise ValueError("Worker process-tree exit must be confirmed before recovery")
+        if (not isinstance(worker_id, str) or not worker_id or len(worker_id) > 256
+                or type(max_attempts) is not int or max_attempts < 1):
+            raise ValueError("Recovery requires an exact worker owner and positive retry budget")
+        if not isinstance(attempts, list):
+            raise ValueError("Recovery requires an explicit attempt snapshot")
+        seen = set()
+        for attempt in attempts:
+            if (not isinstance(attempt, dict) or set(attempt) != {"job_id", "attempts"}
+                    or not isinstance(attempt["job_id"], str) or not attempt["job_id"]
+                    or type(attempt["attempts"]) is not int or attempt["attempts"] < 1
+                    or attempt["job_id"] in seen):
+                raise ValueError("Invalid or duplicate recovery attempt snapshot")
+            seen.add(attempt["job_id"])
+        recovered, now = [], utc_now()
+        with self.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            for attempt in attempts:
+                row = connection.execute(
+                    "SELECT cancel_requested, progress_json FROM jobs "
+                    "WHERE id = ? AND status = 'running' AND worker_id = ? AND attempts = ?",
+                    (attempt["job_id"], worker_id, attempt["attempts"]),
+                ).fetchone()
+                if row is None:
+                    continue  # A completed job, changed owner, or newer attempt is fenced out.
+                if row["cancel_requested"]:
+                    status, failure = "cancelled", None
+                    progress = self._cancelled_progress(row["progress_json"])
+                elif attempt["attempts"] < max_attempts:
+                    status = "queued"
+                    failure = "worker process tree stopped; retrying after confirmed exit"
+                    progress = json.dumps({"phase": "queued", "percent": 0,
+                        "message": "处理进程已停止，任务已重新排队"}, ensure_ascii=False)
+                else:
+                    status = "failed"
+                    failure = "worker process tree stopped; retry budget exhausted after confirmed exit"
+                    progress = json.dumps({"phase": "failed", "percent": 0,
+                        "message": "处理进程已停止，重试次数已用尽"}, ensure_ascii=False)
+                connection.execute(
+                    "UPDATE jobs SET status = ?, worker_id = ?, lease_expires_at = NULL, "
+                    "updated_at = ?, completed_at = ?, cancelled_at = ?, error = ?, progress_json = ? "
+                    "WHERE id = ? AND status = 'running' AND worker_id = ? AND attempts = ?",
+                    (status, None if status == "queued" else worker_id, now,
+                     None if status == "queued" else now, now if status == "cancelled" else None,
+                     failure, progress, attempt["job_id"], worker_id, attempt["attempts"]),
+                )
+                recovered.append({**attempt, "worker_id": worker_id, "status": status})
+            connection.commit()
+        return recovered
 
     def _finish(
         self, job_id: str, status: str, *, summary: dict | None = None,

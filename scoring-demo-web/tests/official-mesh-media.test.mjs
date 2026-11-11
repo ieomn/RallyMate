@@ -83,13 +83,25 @@ test("permanent mesh endpoint errors do not keep retrying", async () => {
   assert.equal(reads, 1);
 });
 
-test("a continuously pending renderer has a total deadline and late readiness is ignored", async t => {
-  const deadline = new AbortController();
-  t.mock.method(AbortSignal, "timeout", ms => { assert.equal(ms, 120000); return deadline.signal; });
+test("healthy pending responses continue beyond two minutes and publish eventual readiness", async t => {
+  let elapsed = 0, calls = 0;
+  t.mock.method(AbortSignal, "timeout", () => assert.fail("healthy render duration is not a network deadline"));
+  t.mock.method(globalThis, "setTimeout", (callback, ms) => { elapsed += ms; queueMicrotask(callback); return 1; });
   const states = [];
-  await assert.rejects(watchMeshPreview(async () => {
-    deadline.abort(new DOMException("mesh wait expired", "TimeoutError"));
-    return { job_id: jobId, status: "ready", sam3d_mesh: media };
-  }, jobId, new AbortController().signal, state => states.push(state), 0), { name: "TimeoutError" });
-  assert.deepEqual(states, []);
+  await watchMeshPreview(async () => {
+    calls++;
+    return elapsed < 240000 ? { job_id: jobId, status: "pending" } : { job_id: jobId, status: "ready", sam3d_mesh: media };
+  }, jobId, new AbortController().signal, state => states.push(state));
+  assert.equal(elapsed, 240000); assert.equal(calls, 25);
+  assert.equal(states.at(-1).status, "ready"); assert.equal(states.filter(row => row.status === "pending").length, 24);
+});
+
+test("successful pending status resets consecutive transport failures", async () => {
+  let calls = 0; const states = [];
+  await watchMeshPreview(async () => {
+    calls++;
+    if ([1, 2, 4, 5].includes(calls)) throw new DOMException("read expired", "TimeoutError");
+    return calls < 6 ? { job_id: jobId, status: "pending" } : { job_id: jobId, status: "ready", sam3d_mesh: media };
+  }, jobId, new AbortController().signal, state => states.push(state), 0);
+  assert.equal(calls, 6); assert.deepEqual(states.map(row => row.status), ["pending", "ready"]);
 });

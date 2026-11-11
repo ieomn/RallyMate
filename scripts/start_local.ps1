@@ -11,7 +11,8 @@ param(
     [int]$SamCpuThreads = 1,
     [ValidateSet("runtime_default", "passive")]
     [string]$SamWaitMode = "passive",
-    [switch]$Build
+    [switch]$Build,
+    [switch]$ApiOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +20,11 @@ if ($Model -eq "sam3d-dinov3" -and -not $PSBoundParameters.ContainsKey("CpuThrea
     $CpuThreads = 2
 }
 $projectRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'local_performance_profile.ps1')
+# Validate before any service is started. This file, not an old launch receipt,
+# is the persistent source of the locally accepted batch configuration.
+$localPerformance = Read-LocalPerformanceProfile -ProjectRoot $projectRoot -Model $Model -Device $Device -ValidateDevice:(-not $ApiOnly)
+Set-LocalPerformanceEnvironment $localPerformance
 $webRoot = Join-Path $projectRoot "scoring-demo-web"
 $pythonExe = Join-Path $projectRoot "runtime\rtmpose\.venv\Scripts\python.exe"
 $varsFile = Join-Path $webRoot ".dev.vars"
@@ -157,4 +163,4 @@ $occupied = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
 if ($occupied.Count -gt 0) {
     throw "A selected local port became occupied during preparation. Inspect it before starting the service."
 }
-& (Join-Path $PSScriptRoot "run_full_service.ps1") -FrontendHost "127.0.0.1" -FrontendPort $FrontendPort -ApiPort $ApiPort
+& (Join-Path $PSScriptRoot "run_full_service.ps1") -FrontendHost "127.0.0.1" -FrontendPort $FrontendPort -ApiPort $ApiPort -ApiOnly:$ApiOnly

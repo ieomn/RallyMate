@@ -10,6 +10,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sqlite3
@@ -25,6 +26,9 @@ EVIDENCE_REFERENCE_KEY = REFERENCE_KEY
 DEFAULT_MAX_RECORD_BYTES = 64 * 1024 * 1024
 DEFAULT_CACHE_BYTES = 64 * 1024 * 1024
 _MIN_POOL_BYTES = 4096
+_JSON_FAST_MAX_BYTES = 1024 * 1024
+_JSON_FAST_MAX_NODES = 16384
+_JSON_FAST_MAX_DEPTH = 64
 _POOL_FIELDS = frozenset({
     "source_pose_person_association", "source_window", "geometry_mask",
     "camera_compensation", "frame_dimensions", "source_time_binding",
@@ -100,9 +104,107 @@ def resident_evidence_bytes(value: Any, limit: int) -> int:
     return total
 
 
+def _bounded_json_snapshot(value: Any, max_bytes: int, allow_nan: bool,
+                           cancellation_callback: Callable[[], None] | None) -> tuple[Any, int] | None:
+    """Prove a small UTF-8 bound while copying only bounded built-in containers.
+
+    Immutable scalars are shared. Private containers prevent a callback or
+    another thread from enlarging an admitted object before the C encoder runs.
+    Unsupported inputs retain the original streaming encoder's error behavior.
+    """
+    if type(max_bytes) is not int or max_bytes <= 0 or type(allow_nan) is not bool:
+        return None
+    limit = min(max_bytes, _JSON_FAST_MAX_BYTES)
+    fallback = object()
+    active: set[int] = set()
+    nodes = size = 0
+
+    def reserve(amount: int) -> bool:
+        nonlocal size
+        size += amount
+        return size <= limit
+
+    def copy(item, depth):
+        nonlocal nodes
+        nodes += 1
+        if nodes % 256 == 0:
+            _check(cancellation_callback)
+        if nodes > _JSON_FAST_MAX_NODES or depth > _JSON_FAST_MAX_DEPTH:
+            return fallback
+        kind = type(item)
+        if item is None:
+            return item if reserve(4) else fallback
+        if kind is bool:
+            return item if reserve(4 if item else 5) else fallback
+        if kind is int:
+            # 0.30103 > log10(2): upper bound decimal digits without converting
+            # an arbitrarily large integer to a temporary decimal string.
+            bound = max(1, (item.bit_length() * 30103) // 100000 + 1) + (item < 0)
+            return item if reserve(bound) else fallback
+        if kind is float:
+            if not allow_nan and not math.isfinite(item):
+                return fallback
+            # CPython's shortest binary64 representation, including signs and
+            # exponents/nonfinite spellings, fits conservatively in 32 bytes.
+            return item if reserve(32) else fallback
+        if kind is str:
+            # Each code point needs at most six JSON/UTF-8 bytes (\u00xx).
+            if not reserve(6 * len(item) + 2):
+                return fallback
+            if not item.isascii():
+                try:
+                    item.encode("utf-8")
+                except UnicodeEncodeError:
+                    return fallback  # Preserve the streaming error location.
+            return item
+        if kind not in (list, tuple, dict) or id(item) in active:
+            return fallback
+        if not reserve(2):
+            return fallback
+        active.add(id(item))
+        try:
+            if kind is dict:
+                result = {}
+                for key, child in item.items():
+                    if type(key) is not str:
+                        return fallback  # Preserve mixed-key sorting semantics.
+                    if not reserve(1 + bool(result)):  # colon and optional comma
+                        return fallback
+                    copied_key, copied_child = copy(key, depth + 1), copy(child, depth + 1)
+                    if copied_key is fallback or copied_child is fallback:
+                        return fallback
+                    result[copied_key] = copied_child
+            else:
+                result = []
+                for child in item:
+                    if result and not reserve(1):
+                        return fallback
+                    copied = copy(child, depth + 1)
+                    if copied is fallback:
+                        return fallback
+                    result.append(copied)
+            return result
+        finally:
+            active.remove(id(item))
+
+    snapshot = copy(value, 0)
+    return None if snapshot is fallback else (snapshot, size)
+
+
 def _json_bytes(value: Any, *, max_bytes: int = DEFAULT_MAX_RECORD_BYTES,
                 allow_nan: bool = True,
                 cancellation_callback: Callable[[], None] | None = None) -> bytes:
+    _check(cancellation_callback)
+    admitted = _bounded_json_snapshot(value, max_bytes, allow_nan, cancellation_callback)
+    if admitted is not None:
+        snapshot, upper_bound = admitted
+        _check(cancellation_callback)
+        encoded = json.dumps(snapshot, ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":"), allow_nan=allow_nan).encode("utf-8")
+        _check(cancellation_callback)
+        if len(encoded) > upper_bound:
+            raise ArtifactEvidenceError("Internal JSON encoding bound was exceeded")
+        return encoded
     output = bytearray()
     size = 0
     encoder = json.JSONEncoder(ensure_ascii=False, sort_keys=True,
@@ -139,6 +241,17 @@ def _file_sha256(path: Path, callback: Callable[[], None] | None = None) -> str:
             _check(callback)
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _write_evidence_file(directory, filename, rows, *, binding, max_record_bytes,
+                         allow_nan, cancellation_callback=None):
+    """Process entry point; uses exactly the serial evidence encoder."""
+    with EvidencePoolWriter(directory, video_id=binding["video_id"],
+            source_id=binding["source_id"], video_sha256=binding["video_sha256"],
+            max_record_bytes=max_record_bytes, allow_nan=allow_nan,
+            cancellation_callback=cancellation_callback) as writer:
+        writer.write_jsonl(Path(directory) / filename, rows)
+    return len(rows)
 
 
 class EvidencePoolWriter:
@@ -206,9 +319,14 @@ class EvidencePoolWriter:
 
     def _encode_children(self, value: Any) -> Any:
         if isinstance(value, dict):
-            return {key: self._encode(item, key) for key, item in value.items()}
+            # Only containers can hold a storage reference or a pooled field.
+            # Native geometry contains millions of scalar coordinates: keep
+            # these immutable leaves in place instead of dispatching twice per
+            # number through _encode and _encode_children.
+            return {key: self._encode(item, key) if isinstance(item, (dict, list)) else item
+                    for key, item in value.items()}
         if isinstance(value, list):
-            return [self._encode(item) for item in value]
+            return [self._encode(item) if isinstance(item, (dict, list)) else item for item in value]
         return value
 
     def write_jsonl(self, path: str | Path, records: Iterable[dict[str, Any]]) -> None:
@@ -228,6 +346,55 @@ class EvidencePoolWriter:
                                          cancellation_callback=self.callback) + b"\n")
             handle.flush()
             os.fsync(handle.fileno())
+
+    def write_jsonl_parallel(self, outputs, *, cpu_pool, progress_callback=None) -> None:
+        """Encode independent files on CPUs, retaining one ordered evidence pool.
+
+        Each child runs the ordinary validating writer in its own staging
+        directory. Only the parent merges evidence and publishes destinations.
+        Original file order and first occurrence of every payload are preserved.
+        """
+        destinations = []
+        for path, rows in outputs:
+            destination = Path(path).resolve()
+            if destination.parent != self.directory or destination.name == POOL_FILENAME:
+                raise ArtifactEvidenceError("evidence JSONL output must be in its run directory")
+            destinations.append((destination, rows))
+        with tempfile.TemporaryDirectory(prefix=".scoring-cpu-", dir=self.directory) as temporary:
+            staging = Path(temporary).resolve()
+            if staging.parent != self.directory:
+                raise ArtifactEvidenceError("CPU evidence staging escaped its run directory")
+            tasks = []
+            for index, (destination, rows) in enumerate(destinations):
+                tasks.append(((str(staging / str(index)), destination.name, rows), {
+                    "binding": self.binding, "max_record_bytes": self.max_record_bytes,
+                    "allow_nan": self.allow_nan,
+                }))
+            for index, count in enumerate(cpu_pool.ordered_map(_write_evidence_file, tasks)):
+                _check(self.callback)
+                child_directory = staging / str(index)
+                connection = sqlite3.connect(child_directory / POOL_FILENAME)
+                try:
+                    binding = connection.execute(
+                        "SELECT value FROM metadata WHERE key='binding'").fetchone()
+                    if binding is None or json.loads(binding[0]) != self.binding:
+                        raise ArtifactEvidenceError("CPU evidence binding changed")
+                    for digest, payload in connection.execute(
+                            "SELECT sha256, payload FROM evidence ORDER BY rowid"):
+                        _check(self.callback)
+                        self.connection.execute("INSERT OR IGNORE INTO evidence VALUES (?, ?)",
+                                                (digest, payload))
+                finally:
+                    connection.close()
+                destination = destinations[index][0]
+                fd, staged_name = tempfile.mkstemp(prefix="." + destination.name + "-",
+                                                   suffix=".tmp", dir=self.directory)
+                os.close(fd)
+                staged = Path(staged_name)
+                self._staged.append((staged, destination))
+                os.replace(child_directory / destination.name, staged)
+                if progress_callback is not None:
+                    progress_callback(count)
 
     def close(self) -> None:
         if self._closed:
@@ -365,9 +532,15 @@ class ArtifactEvidenceReader:
                 self._cached_bytes += resident_bytes
             return unpacked
         if isinstance(value, dict):
-            return {key: self._resolve(item, ancestors=ancestors, depth=depth + 1) for key, item in value.items()}
+            if depth == 128 and value:
+                raise ArtifactEvidenceError("evidence nesting exceeds budget")
+            return {key: self._resolve(item, ancestors=ancestors, depth=depth + 1)
+                    if isinstance(item, (dict, list)) else item for key, item in value.items()}
         if isinstance(value, list):
-            return [self._resolve(item, ancestors=ancestors, depth=depth + 1) for item in value]
+            if depth == 128 and value:
+                raise ArtifactEvidenceError("evidence nesting exceeds budget")
+            return [self._resolve(item, ancestors=ancestors, depth=depth + 1)
+                    if isinstance(item, (dict, list)) else item for item in value]
         return value
 
     def resolve_record(self, record: dict[str, Any]) -> dict[str, Any]:

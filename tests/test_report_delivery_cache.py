@@ -2,6 +2,8 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Event, Lock
 import time
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from rallymate_service.report_delivery_cache import DeliveryError, ReportDeliveryCache
 
@@ -17,6 +19,88 @@ def completed(cache, key, build=lambda: b"unused", check=lambda: True):
 
 
 class ReportDeliveryCacheTests(unittest.TestCase):
+    def test_separate_queue_budget_preserves_actual_preparation_time(self):
+        cache = ReportDeliveryCache(max_queued=1, preparation_timeout_seconds=60, queue_timeout_seconds=120)
+        first_started, release_first, second_started, release_second = Event(), Event(), Event(), Event()
+        now = [0.0]
+        def first():
+            first_started.set()
+            release_first.wait(5)
+            return b"overview"
+        def second():
+            second_started.set()
+            release_second.wait(5)
+            return b"actions"
+        with patch("rallymate_service.report_delivery_cache.time", SimpleNamespace(monotonic=lambda: now[0])):
+            try:
+                cache.request("overview", first, lambda: True)
+                self.assertTrue(first_started.wait(1))
+                cache.request("actions", second, lambda: True, scope="actions")
+                now[0] = 35
+                release_first.set()
+                self.assertTrue(second_started.wait(1))
+                # 70 seconds after enqueue, but only 35 seconds of own work.
+                now[0] = 70
+                self.assertEqual(cache.pending_result("actions").state, "preparing")
+                release_second.set()
+                self.assertEqual(completed(cache, "actions").body, b"actions")
+            finally:
+                release_first.set()
+                release_second.set()
+                cache.close()
+
+    def test_separate_queue_wait_is_bounded_and_expired_work_never_builds(self):
+        cache = ReportDeliveryCache(max_queued=1, preparation_timeout_seconds=60, queue_timeout_seconds=120)
+        entered, release = Event(), Event()
+        now, calls = [0.0], []
+        def first():
+            entered.set()
+            release.wait(5)
+            return b"late"
+        with patch("rallymate_service.report_delivery_cache.time", SimpleNamespace(monotonic=lambda: now[0])):
+            try:
+                cache.request("running", first, lambda: True)
+                self.assertTrue(entered.wait(1))
+                cache.request("queued", lambda: calls.append(1) or b"never", lambda: True, scope="queued")
+                now[0] = 119
+                self.assertEqual(cache.pending_result("queued").state, "preparing")
+                now[0] = 120
+                expired = cache.pending_result("queued")
+                self.assertEqual(expired.error.code, "report_preparation_queue_timeout")
+                self.assertEqual(cache.stats()["pending"], 2)
+                release.set()
+                deadline = time.monotonic() + 2
+                while cache.stats()["pending"] and time.monotonic() < deadline:
+                    time.sleep(.005)
+                self.assertEqual(cache.stats()["pending"], 0)
+                self.assertEqual(completed(cache, "queued").error.code, "report_preparation_queue_timeout")
+                self.assertEqual(calls, [])
+            finally:
+                release.set()
+                cache.close()
+
+    def test_separate_preparation_budget_still_expires_at_sixty_seconds(self):
+        cache = ReportDeliveryCache(preparation_timeout_seconds=60, queue_timeout_seconds=120)
+        entered, release = Event(), Event()
+        now = [0.0]
+        def held():
+            entered.set()
+            release.wait(5)
+            return b"late"
+        with patch("rallymate_service.report_delivery_cache.time", SimpleNamespace(monotonic=lambda: now[0])):
+            try:
+                cache.request("work", held, lambda: True, scope="work")
+                self.assertTrue(entered.wait(1))
+                now[0] = 60
+                self.assertEqual(cache.pending_result("work").error.code, "report_preparation_timeout")
+                release.set()
+                result = completed(cache, "work")
+                self.assertEqual(result.error.code, "report_preparation_timeout")
+                self.assertIsNone(result.body)
+            finally:
+                release.set()
+                cache.close()
+
     def test_original_failure_is_logged_without_exposing_it_to_client(self):
         cache = ReportDeliveryCache()
         def build():

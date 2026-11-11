@@ -132,6 +132,20 @@ SAM body 模式默认启用经过来源与数值核查的提示点和旋转转�
 
 运行期间可在另一个 PowerShell 窗口执行 `powershell -ExecutionPolicy Bypass -File .\scripts\full_service_status.ps1` 查看端口、进程和健康状态；执行 `powershell -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1` 打开固定屏幕监视器。顶部显示准确的上传、分析、排队数量，当前任务优先；已提交上传退出上传区，失败/取消作为历史记录单独显示，不再展示废弃的 MiniMax/白模生成服务。默认只汇总监视期间近 5 分钟的异常，正常 HTTP 200/202 轮询不刷屏；`-IncludeLogs -Lines 6` 展开更多异常摘要，`-LogsOnly` 在固定屏幕查看原始 API/网页日志。历史 Cloudflare 文件不会自动作为当前日志展示，隧道日志请查看当前 `cloudflared` 启动终端。界面适应窗口大小，按 `Ctrl+C` 恢复原终端且不停止服务；非交互输出只显示一次快照，也可显式使用 `-Once`。服务日志位于 `.codex_tmp\full-service\`。
 
+监控同时读取新 SQLite 上传状态与旧 JSON 会话，显示已落盘字节、上传百分比、近 10 秒分块接收估算和待合并状态；它不会遍历大型视频或逐帧结果。网络区逐网卡显示本机接收/发送速率，默认不合计 VPN、虚拟和物理网卡，避免重复计算；这些流量包含其他程序，不代表对方电脑的实际上行带宽。CPU/内存为整机指标，GPU 显示利用率和显存（约 10 秒刷新）；采集不可用时保留“未知/不可用”，不伪装为零负载。主机采集使用服务 Python 中的 `psutil`，GPU 采集使用 `nvidia-smi`。
+
+分析区展示服务记录的累计有效帧率、帧数、任务用时（含排队）及仅针对推理阶段的剩余时间估算；后处理按已完成/总项目数显示。阶段观察时长只从监控开始采样计算，不冒充历史耗时。推理进度可能按多帧批量更新，采样记录里的 `observed_fps` 只是进度计数差分，不是即时 GPU 帧率。上传落盘速率同样不包含尚未提交的在途分块，宜与网卡流量和更新时间一起判断。
+
+```powershell
+# 固定观测物理网卡（名称按本机实际网卡调整）。
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1 -Interface "以太网"
+# 可选：记录每轮全部可见采样数据，便于比较不同运行配置。
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\watch_full_service.ps1 -RecordPath .\.codex_tmp\monitor\session.jsonl
+```
+
+`-RecordPath` 按 JSONL 追加，达到 32 MiB 后停止追加并提示，不覆盖旧文件；请为不同实验指定不同文件。记录仅保留匿名任务/网卡标识、阶段、计数和主机指标，不记录文件名、错误原文或任务消息；禁止写入服务数据目录或追加到其他格式文件。`-DataRoot` 可切换独立服务数据目录。单次 `-Once` 会进行约 1 秒的两次采样以计算速度；运行中的旧监控需要退出后重新启动，前后端和正在分析的任务不需要重启。
+
+
 已有 RTMPose 环境可使用 `scripts/run_rtmpose_service.ps1` 或 `scripts/run_local_inference.ps1` 选择对应模型预设。只有显式设置 `RALLYMATE_POSE_PRESET=yolo-baseline` 或传入同名参数时，才回滚到 YOLO Pose。
 
 ## MiMo 配置与防护

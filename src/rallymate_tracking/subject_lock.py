@@ -21,6 +21,7 @@ APPEARANCE_MATCH_MAX = .30
 APPEARANCE_VETO_MIN = .58
 REIDENTIFICATION_MARGIN = .10
 REIDENTIFICATION_SUPPORT_MS = 80
+APPEARANCE_REVISION = "foreground-clothing-reentry-v2"
 
 
 def valid_subject_identity(value: Any, player_tracks: set[int]) -> bool:
@@ -76,6 +77,53 @@ def appearance_distance(a: list[float] | None, b: list[float] | None) -> float |
     return float(np.sqrt(np.maximum(0., 1. - np.sqrt(left * right).reshape(2, -1).sum(axis=1))).mean())
 
 
+def foreground_clothing_descriptor(image: np.ndarray | None, box: list[float]) -> list[float] | None:
+    """Apparel evidence for re-entry, excluding locally dominant background.
+
+    A raised-arm box may place the nominal chest/shorts bands mostly on court.
+    Shared court color is not identity evidence. Insufficient foreground in
+    either band makes re-entry unknown; continuous same-track motion can still
+    use the ordinary descriptor and never learns this weak crop as apparel.
+    """
+    if image is None:
+        return None
+    import cv2
+    h, w = image.shape[:2]
+    x1, y1, x2, y2 = box
+    bw, bh = x2 - x1, y2 - y1
+    if bw < 12 or bh < 40 or x1 < 0 or y1 < 0 or x2 > w or y2 > h:
+        return None
+    def bins(crop):
+        pixels = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV).reshape(-1, 3).astype(int)
+        result = pixels[:, 0] // 15 * 3 + np.minimum(pixels[:, 1] // 86, 2)
+        neutral = pixels[:, 1] < 45
+        result[neutral] = 36 + np.minimum(pixels[neutral, 2] // 64, 3)
+        return result
+    # Narrow strips outside both sides of the body box observe the local court
+    # or wall, never the reference person's face or an annotated overlay.
+    strips = [image[int(y1 + .18 * bh):int(y1 + .72 * bh),
+                    max(0, int(x1 - .18 * bw)):max(0, int(x1 - .03 * bw))],
+              image[int(y1 + .18 * bh):int(y1 + .72 * bh),
+                    min(w, int(x2 + .03 * bw)):min(w, int(x2 + .18 * bw))]]
+    usable = [bins(strip) for strip in strips if strip.size >= 36]
+    if not usable:
+        return None
+    outside = np.bincount(np.concatenate(usable), minlength=40).astype(float)
+    background = np.flatnonzero(outside / outside.sum() >= .25)
+    parts = []
+    for top, bottom in ((.18, .48), (.50, .72)):
+        crop = image[int(y1 + top * bh):int(y1 + bottom * bh), int(x1 + .28 * bw):int(x1 + .72 * bw)]
+        if crop.size < 36:
+            return None
+        values = bins(crop)
+        foreground = values[~np.isin(values, background)]
+        if len(foreground) < 12 or len(foreground) / len(values) < .35:
+            return None
+        hist = np.bincount(foreground, minlength=40).astype(float)
+        parts.extend((hist / hist.sum()).tolist())
+    return parts
+
+
 def racket_owners(detections: list[dict]) -> set[int]:
     """Only uniquely nearby generic racket boxes support choosing an athlete."""
     players = [d for d in detections if d.get("class_name") == "player"]
@@ -106,6 +154,9 @@ class SubjectLock:
         self.last: dict | None = None
         self.gallery: deque[list[float]] = deque(maxlen=16)
         self.anchor: list[float] | None = None
+        self.foreground_anchor: list[float] | None = None
+        self.foreground_gallery: deque[list[float]] = deque(maxlen=32)
+        self.last_foreground_gallery_ms = -math.inf
         self.pending: tuple[int, float] | None = None
         self.pending_count = 0
         self.pending_last_ms = -math.inf
@@ -126,8 +177,24 @@ class SubjectLock:
         distances = [value for value in distances if value is not None]
         return min(distances) if distances else None
 
+    def _foreground_distance(self, descriptor) -> float | None:
+        distances = [appearance_distance(value, descriptor) for value in [self.foreground_anchor, *self.foreground_gallery]]
+        distances = [value for value in distances if value is not None]
+        return min(distances) if distances else None
+
     def _accept(self, candidate, timestamp, camera_epoch, status, evidence, distance=None):
         descriptor = candidate["descriptor"]
+        foreground = candidate.get("foreground_descriptor")
+        if foreground is not None:
+            if self.foreground_anchor is None:
+                self.foreground_anchor = foreground
+            distance_foreground = self._foreground_distance(foreground)
+            recent_foreground = appearance_distance(self.last.get("foreground_descriptor"), foreground) if self.last else None
+            gradual_foreground = (self.last is not None and self.last["track_id"] == candidate["track_id"]
+                                  and recent_foreground is not None and recent_foreground <= .25)
+            if timestamp - self.last_foreground_gallery_ms >= 200 and (distance_foreground <= .42 or gradual_foreground):
+                self.foreground_gallery.append(foreground)
+                self.last_foreground_gallery_ms = timestamp
         if descriptor is not None:
             if self.anchor is None:
                 self.anchor = descriptor
@@ -149,6 +216,7 @@ class SubjectLock:
                 "status": status, "source_track_id": candidate["track_id"],
                 "evidence": evidence, "reason_code": None,
                 "appearance_distance": round(distance, 6) if distance is not None else None,
+                "appearance_revision": APPEARANCE_REVISION,
                 "semantics": "sequence_local_visual_association_not_verified_person_identity"}
 
     def update(self, detections: list[dict], *, timestamp_ms: float, width: int, height: int,
@@ -172,7 +240,9 @@ class SubjectLock:
             # remaining box lost most of the last unclipped body's height.
             remnant = clipped and self.last_uncropped_height is not None and y2 - y1 < self.last_uncropped_height * .65
             usable = image is None or (descriptor is not None and not remnant)
-            candidates.append({**detection, "descriptor": descriptor, "identity_usable": usable, "clipped": clipped})
+            candidates.append({**detection, "descriptor": descriptor,
+                               "foreground_descriptor": foreground_clothing_descriptor(image, box),
+                               "identity_usable": usable, "clipped": clipped})
         candidates.sort(key=lambda c: c["track_id"])
         if not candidates:
             self.pending = None
@@ -281,7 +351,11 @@ class SubjectLock:
             appearance_limit = APPEARANCE_VETO_MIN if same_track else APPEARANCE_MATCH_MAX
             recent_distance = appearance_distance(self.last["descriptor"], c["descriptor"])
             gradual = same_track and recent_distance is not None and recent_distance <= .25
-            if near and (same_track or fragmented) and (distance is None or distance < appearance_limit or gradual):
+            foreground_distance = self._foreground_distance(c["foreground_descriptor"])
+            foreground_recent = appearance_distance(self.last.get("foreground_descriptor"), c["foreground_descriptor"])
+            foreground_consistent = (foreground_distance is None or foreground_distance < APPEARANCE_VETO_MIN
+                                     or same_track and foreground_recent is not None and foreground_recent <= .25)
+            if near and (same_track or fragmented) and foreground_consistent and (distance is None or distance < appearance_limit or gradual):
                 spatial.append((same_track, -center_step, c))
         spatial.sort(key=lambda v: (-int(v[0]), -v[1], v[2]["track_id"]))
         if len(spatial) == 1:
@@ -292,8 +366,11 @@ class SubjectLock:
         if len(spatial) > 1:
             return self.unknown("overlapping_identity_candidates")
 
-        matches = sorted([(c["appearance_distance"], c) for c in candidates
-                          if c["appearance_distance"] is not None], key=lambda v: (v[0], v[1]["track_id"]))
+        # A different interval/track must match apparel, not the blue/green
+        # court seen through a raised-arm or oblique bounding box.
+        matches = sorted([(distance, c) for c in candidates
+                          if c["identity_usable"] and (distance := self._foreground_distance(c["foreground_descriptor"])) is not None],
+                         key=lambda v: (v[0], v[1]["track_id"]))
         if not matches or matches[0][0] > APPEARANCE_MATCH_MAX:
             self.pending = None
             self.pending_count = 0
@@ -313,4 +390,4 @@ class SubjectLock:
         if timestamp_ms - self.pending[1] < REIDENTIFICATION_SUPPORT_MS or self.pending_count < 3:
             return self.unknown("appearance_match_awaiting_temporal_support", candidate_source_track_id=chosen["track_id"])
         return self._accept(chosen, timestamp_ms, camera_epoch, "reidentified",
-                            ["unique_upper_lower_clothing_match", "temporally_supported_reentry"], distance)
+                            ["unique_foreground_upper_lower_clothing_match", "temporally_supported_reentry"], distance)

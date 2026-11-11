@@ -1,5 +1,6 @@
 from pathlib import Path
 from concurrent.futures import Future
+import os
 import tempfile
 import threading
 import unittest
@@ -8,8 +9,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 from rallymate_vision.pose.metadata import sha256_file
-from rallymate_vision.sam3d_mesh import capture_mesh_output
-from rallymate_vision.sam3d_mesh_archive import BoundedMeshArchiver
+from rallymate_vision.sam3d_mesh import archive_mesh_records, capture_mesh_output
+from rallymate_vision.sam3d_mesh_archive import BoundedMeshArchiver, configured_archive_pending_frames
 from rallymate_vision import sam3d_mesh_archive as archive_module
 
 
@@ -163,9 +164,223 @@ class BoundedMeshArchiveTests(unittest.TestCase):
         archiver.close()
 
     def test_queue_bound_validation_is_strict(self):
-        for value in (0, 3, True, 1.5):
+        for value in (0, 3, 5, 9, True, 1.5, "4"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.archiver(max_pending_frames=value)
+
+    def test_environment_fits_one_batch_retains_scalar_default_and_honors_explicit_caps(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(configured_archive_pending_frames(), 2)
+            for batch, expected in (("1", 2), ("2", 2), ("3", 4), ("4", 4), ("8", 8)):
+                os.environ["RALLYMATE_SAM3D_BATCH_FRAMES"] = batch
+                self.assertEqual(configured_archive_pending_frames(), expected)
+            os.environ["RALLYMATE_SAM3D_BATCH_FRAMES"] = "9"
+            with self.assertRaisesRegex(ValueError, "BATCH_FRAMES"):
+                configured_archive_pending_frames()
+            os.environ["RALLYMATE_SAM3D_BATCH_FRAMES"] = "8"
+            for value in ("2", "4", "8"):
+                os.environ["RALLYMATE_SAM3D_ARCHIVE_PENDING_FRAMES"] = value
+                self.assertEqual(configured_archive_pending_frames(), int(value))
+            for value in ("", "0", "1", "3", "9", "true", "4.0"):
+                os.environ["RALLYMATE_SAM3D_ARCHIVE_PENDING_FRAMES"] = value
+                with self.subTest(value=value), self.assertRaisesRegex(ValueError, "ARCHIVE_PENDING_FRAMES"):
+                    configured_archive_pending_frames()
+
+    def test_batch_sized_queues_preserve_fifo_and_apply_backpressure_at_the_bound(self):
+        for capacity in (4, 8):
+            with self.subTest(capacity=capacity):
+                entered, release, returned = (threading.Event() for _ in range(3))
+                self.addCleanup(release.set)
+                calls, collected, errors = [], [], []
+
+                def archive(records, *_):
+                    index = records[0]["index"]
+                    calls.append(index)
+                    if index == 0:
+                        entered.set()
+                        if not release.wait(5):
+                            raise RuntimeError("test release timeout")
+                    return []
+
+                archiver = self.archiver(max_pending_frames=capacity, _archive=archive)
+                self.assertEqual(archiver.submit([{"index": 0}]), [])
+                self.assertTrue(entered.wait(5))
+                for index in range(1, capacity):
+                    self.assertEqual(archiver.submit([{"index": index}]), [])
+                self.assertEqual(calls, [0])  # One worker owns all topology writes.
+                self.assertEqual(archiver.receipt["pending_frames"], capacity)
+
+                def submit_over_bound():
+                    try:
+                        collected.extend(archiver.submit([{"index": capacity}]))
+                    except BaseException as error:
+                        errors.append(error)
+                    finally:
+                        returned.set()
+
+                control = threading.Thread(target=submit_over_bound)
+                control.start()
+                self.assertFalse(returned.wait(.05))
+                release.set()
+                control.join(5)
+                self.assertFalse(control.is_alive())
+                self.assertEqual(errors, [])
+                collected.extend(archiver.finish())
+                self.assertEqual([batch.sequence for batch in collected], list(range(capacity + 1)))
+                self.assertEqual(calls, list(range(capacity + 1)))
+                self.assertEqual(archiver.receipt["peak_pending_frames"], capacity)
+                self.assertEqual(archiver.receipt["worker_threads"], 1)
+
+    def test_eight_slot_cancellation_joins_active_and_discards_all_queued_publication(self):
+        entered, release, closed = (threading.Event() for _ in range(3))
+        self.addCleanup(release.set)
+        calls, errors = [], []
+
+        def archive(records, *_):
+            calls.append(records[0]["index"])
+            entered.set()
+            if not release.wait(5):
+                raise RuntimeError("test release timeout")
+            return []
+
+        archiver = self.archiver(max_pending_frames=8, _archive=archive)
+        archiver.submit([{"index": 0}])
+        self.assertTrue(entered.wait(5))
+        for index in range(1, 8):
+            archiver.submit([{"index": index}])
+
+        def close():
+            try:
+                archiver.close()
+            except BaseException as error:
+                errors.append(error)
+            finally:
+                closed.set()
+
+        closer = threading.Thread(target=close)
+        closer.start()
+        self.assertFalse(closed.wait(.05))
+        release.set()
+        closer.join(5)
+        self.assertFalse(closer.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(calls, [0])
+        self.assertEqual(archiver.receipt["collected_frames"], 0)
+        self.assertEqual(archiver.receipt["pending_frames"], 0)
+        self.assertTrue(archiver.receipt["joined"])
+
+    def test_cancel_removes_owned_queued_captures_only_after_active_archive_joins(self):
+        records = [self.record(index) for index in range(8)]
+        paths = [Path(row["mesh_artifact"]["path"]) for row in records]
+        unrelated = self.record(99)
+        topology = Path(records[0]["mesh_artifact"]["faces_path"])
+        entered, release, joining = threading.Event(), threading.Event(), threading.Event()
+        errors, calls = [], []
+        self.addCleanup(release.set)
+
+        def archive(rows, *args):
+            calls.append(rows[0]["frame_index"])
+            entered.set()
+            if not release.wait(5):
+                raise TimeoutError("test archive not released")
+            return archive_mesh_records(rows, *args)
+
+        archiver = self.archiver(max_pending_frames=8, _archive=archive)
+        archiver.submit([records[0]])
+        self.assertTrue(entered.wait(5))
+        for row in records[1:]:
+            archiver.submit([row])
+        shutdown = archiver._pool.shutdown
+        def observed_shutdown(**kwargs):
+            joining.set()
+            return shutdown(**kwargs)
+        def close():
+            try:
+                archiver.close()
+            except BaseException as error:
+                errors.append(error)
+        with patch.object(archiver._pool, "shutdown", side_effect=observed_shutdown):
+            closer = threading.Thread(target=close)
+            closer.start()
+            self.assertTrue(joining.wait(5))
+            # Queued files must not be deleted until the active archive stops.
+            self.assertTrue(all(path.is_file() for path in paths))
+            release.set()
+            closer.join(5)
+        self.assertFalse(closer.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(calls, [0])
+        self.assertTrue((self.output / "sam3d-mesh-data" / paths[0].name).is_file())
+        self.assertTrue(all(not path.exists() for path in paths))
+        self.assertTrue(Path(unrelated["mesh_artifact"]["path"]).is_file())
+        self.assertTrue(topology.is_file())
+        self.assertEqual(archiver.receipt["collected_frames"], 0)
+        archiver.close()
+
+    def test_partial_archive_failure_preserves_moved_file_and_discards_remaining_owned_capture(self):
+        records = [self.record(0, track) for track in (4, 7)]
+        paths = [Path(row["mesh_artifact"]["path"]) for row in records]
+        unrelated = self.record(99)
+        def archive(rows, *args):
+            archive_mesh_records(rows[:1], *args)
+            raise ValueError("failure after first subject move")
+        archiver = self.archiver(_archive=archive)
+        archiver.submit(records)
+        with self.assertRaisesRegex(ValueError, "after first subject move"):
+            archiver.finish()
+        self.assertTrue((self.output / "sam3d-mesh-data" / paths[0].name).is_file())
+        self.assertTrue(all(not path.exists() for path in paths))
+        self.assertTrue(Path(unrelated["mesh_artifact"]["path"]).is_file())
+        self.assertTrue(Path(records[0]["mesh_artifact"]["faces_path"]).is_file())
+
+    def test_submit_previous_failure_discards_current_capture_before_future_acceptance(self):
+        previous, current, unrelated = self.record(0), self.record(1), self.record(99)
+        failure = ValueError("previous archive failure")
+        future = Future()
+        future.set_exception(failure)
+        pool = Mock()
+        pool.submit.return_value = future
+        with patch.object(archive_module, "ThreadPoolExecutor", return_value=pool):
+            archiver = self.archiver()
+        archiver.submit([previous])
+        with self.assertRaises(ValueError) as caught:
+            archiver.submit([current])
+        self.assertIs(caught.exception, failure)
+        pool.submit.assert_called_once()  # The current frame never reached executor.
+        self.assertFalse(Path(previous["mesh_artifact"]["path"]).exists())
+        self.assertFalse(Path(current["mesh_artifact"]["path"]).exists())
+        self.assertTrue(Path(unrelated["mesh_artifact"]["path"]).exists())
+        self.assertTrue(Path(current["mesh_artifact"]["faces_path"]).exists())
+
+    def test_executor_rejection_discards_current_capture_after_shutdown(self):
+        current = self.record()
+        path = Path(current["mesh_artifact"]["path"])
+        pool = Mock()
+        pool.submit.side_effect = RuntimeError("executor rejected frame")
+        pool.shutdown.side_effect = lambda **kwargs: self.assertTrue(path.is_file())
+        with patch.object(archive_module, "ThreadPoolExecutor", return_value=pool):
+            archiver = self.archiver()
+        with self.assertRaisesRegex(RuntimeError, "executor rejected frame"):
+            archiver.submit([current])
+        pool.shutdown.assert_called_once_with(wait=True, cancel_futures=True)
+        self.assertFalse(path.exists())
+
+    def test_failed_join_retains_owned_files_until_successful_retry(self):
+        current = self.record()
+        path = Path(current["mesh_artifact"]["path"])
+        pool = Mock()
+        pool.submit.return_value = Future()
+        pool.shutdown.side_effect = [OSError("join failure"), None]
+        with patch.object(archive_module, "ThreadPoolExecutor", return_value=pool):
+            archiver = self.archiver()
+        archiver.submit([current])
+        with self.assertRaisesRegex(OSError, "join failure"):
+            archiver.close()
+        self.assertTrue(path.is_file())
+        self.assertFalse(archiver.receipt["joined"])
+        archiver.close()
+        self.assertFalse(path.exists())
+        self.assertTrue(archiver.receipt["joined"])
 
     def test_failed_shutdown_keeps_archive_exception_and_allows_join_retry(self):
         primary = ValueError("original checksum failure")

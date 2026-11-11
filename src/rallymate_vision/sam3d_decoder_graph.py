@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import ast
 import hashlib
 import inspect
+import os
 from pathlib import Path
 import threading
 import time
@@ -41,6 +42,23 @@ BATCH_KEYS = ("img", "bbox_center", "bbox_scale", "ori_img_size", "cam_int",
               "affine_trans", "img_size", "ray_cond")
 ARGUMENT_NAMES = ("image_embeddings", "init_estimate", "keypoints", "prev_estimate",
                   "condition_info", "batch")
+DECODER_BATCH_SIZES_ENV = "RALLYMATE_SAM3D_DECODER_BATCH_GRAPH_SIZES"
+
+
+def _batch_sizes(values=None):
+    if values is None:
+        raw = os.environ.get(DECODER_BATCH_SIZES_ENV, "").strip()
+        if not raw:
+            return ()
+        pieces = [piece.strip() for piece in raw.split(',')]
+        if any(not piece.isascii() or not piece.isdecimal() for piece in pieces):
+            raise ValueError("Decoder graph sizes must be comma-separated integers")
+        values = tuple(int(piece) for piece in pieces)
+    sizes = tuple(values)
+    if (len(sizes) > 2 or len(set(sizes)) != len(sizes)
+            or any(type(size) is not int or not 2 <= size <= 8 for size in sizes)):
+        raise ValueError("At most two additional decoder graph sizes in [2,8] are supported")
+    return sizes
 
 
 def _identity(method):
@@ -236,7 +254,9 @@ def _temporary_bindings(records):
 
 class DecoderGraphHandle:
     def __init__(self, model, torch, head_handle, layer_handles=(), source_hashes=None,
-                 capture_forward=None, capture_bindings=(), constants=(), index_receipt=None):
+                 capture_forward=None, capture_bindings=(), constants=(), index_receipt=None,
+                 *, additional_batch_sizes=(), batch_memory_budget=None, body_indices=None):
+        sizes = _batch_sizes(additional_batch_sizes)
         self.model, self.torch, self.head_handle = model, torch, head_handle
         self.layer_handles = tuple(layer_handles)
         self.device = model.head_pose.faces.device
@@ -244,6 +264,18 @@ class DecoderGraphHandle:
         self.capture_forward = capture_forward or self.original
         self.capture_bindings = tuple(capture_bindings)
         self.constants = tuple(constants)
+        self.body_indices = dict(body_indices or {})
+        self.additional_batch_sizes = sizes
+        self.batch_memory_budget = batch_memory_budget
+        if sizes and self.batch_memory_budget is None:
+            from .sam3d_cuda_graph import _graph_memory_budget
+            self.batch_memory_budget = {**_graph_memory_budget("RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB"),
+                                        "retained_bytes": 0}
+        self.batch_slots = {size: {"graph": None, "inputs": None, "outputs": None, "key": None,
+                                  "disabled": False, "memory_bytes": 0,
+                                  "receipt": {"batch_size": size, "capture_status": "pending_first_call",
+                                              "replays": 0, "fallback_calls": 0}}
+                            for size in sizes}
         self.constant_state = _constant_signature(self.constants)
         self.signature = inspect.signature(self.original)
         self.had_instance = "forward_decoder" in vars(model)
@@ -253,7 +285,7 @@ class DecoderGraphHandle:
         self.receipt = {
             "candidate": "complete_body_decoder_cuda_graph_v1",
             "candidate_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-            "source_sha256": source_hashes or {}, "maximum_graphs": 1,
+            "source_sha256": source_hashes or {}, "maximum_graphs": 1 + len(sizes),
             "capture_status": "pending_first_call", "replays": 0, "fallback_calls": 0,
             "captured_body_heads": None, "body_head_executions": 0,
             "captured_operations_per_replay": None, "decoder_layer_executions": 0,
@@ -271,6 +303,10 @@ class DecoderGraphHandle:
             "static_advanced_indices": index_receipt or {},
             "advanced_index_rank_order_and_copy_semantics_preserved": True,
         }
+        if sizes:
+            self.receipt["batch_slots"] = {str(size): slot["receipt"] for size, slot in self.batch_slots.items()}
+            self.receipt["batch_graph_memory_budget"] = self.batch_memory_budget
+            self.receipt["batch_graph_opt_in"] = DECODER_BATCH_SIZES_ENV
         try:
             model.forward_decoder = self
             self.state = _decoder_state(model)
@@ -306,24 +342,31 @@ class DecoderGraphHandle:
         inputs = (values["image_embeddings"], values["keypoints"], values["condition_info"],
                   {key: batch[key] for key in BATCH_KEYS})
         tensors = (*inputs[:3], *inputs[3].values())
+        if not isinstance(inputs[0], self.torch.Tensor) or inputs[0].ndim != 4:
+            return None
+        size = inputs[0].shape[0]
+        if size not in (1, *self.additional_batch_sizes):
+            return None
         if any(not isinstance(x, self.torch.Tensor) or not x.is_cuda or x.device != self.device
-               or x.layout != self.torch.strided or x.ndim < 2 or x.shape[0] != 1
+               or x.layout != self.torch.strided or x.ndim < 2 or x.shape[0] != size
                for x in tensors):
             return None
         if (inputs[0].ndim != 4 or inputs[1].ndim != 3 or inputs[1].shape[-1] != 3
-                or batch["img"].ndim != 5 or batch["img"].shape[:2] != (1, 1)
-                or type(self.model.body_batch_idx) is not list or len(self.model.body_batch_idx) != 1
-                or type(self.model.body_batch_idx[0]) is not int or self.model.body_batch_idx[0] != 0
+                or batch["img"].ndim != 5 or batch["img"].shape[:2] != (size, 1)
+                or type(self.model.body_batch_idx) is not list
+                or any(type(index) is not int for index in self.model.body_batch_idx)
+                or self.model.body_batch_idx != list(range(size))
                 or type(self.model.hand_batch_idx) is not list or self.model.hand_batch_idx != []
-                or self.model._batch_size != 1 or self.model._max_num_person != 1):
+                or self.model._batch_size != size or self.model._max_num_person != 1):
             return None
         return inputs
 
-    def _capture(self, values):
+    def _build_graph(self, values):
         torch = self.torch
         started = time.perf_counter()
-        self.inputs = _clone_inputs(values, torch)
-        image, points, condition, batch, prompt = self.inputs
+        inputs = _clone_inputs(values, torch)
+        image, points, condition, batch, prompt = inputs
+        size = image.shape[0]
         head_calls = [0]
         layer_calls, updates_2d, updates_3d = [0], [0], [0]
 
@@ -346,6 +389,8 @@ class DecoderGraphHandle:
             original = next((handle.original for handle in self.layer_handles if handle.module is layer), layer.forward)
             records.append((layer, 'forward', counted(original, layer_calls)))
         for owner, name, value in self.capture_bindings:
+            if owner is self.model and name == 'body_batch_idx' and size != 1:
+                value = self.body_indices[size]
             if name == 'keypoint_token_update_fn':
                 value = counted(value, updates_2d)
             elif name == 'keypoint3d_token_update_fn':
@@ -375,12 +420,76 @@ class DecoderGraphHandle:
             with torch.cuda.graph(graph, stream=stream):
                 outputs = run()
         _clone_outputs(outputs, torch)
-        self.graph, self.outputs = graph, outputs
-        self.receipt.update(capture_status="captured", captured_body_heads=head_calls[0],
-                            captured_operations_per_replay={'body_heads': head_calls[0],
+        metrics = dict(capture_status="captured", captured_body_heads=head_calls[0],
+                       captured_operations_per_replay={'body_heads': head_calls[0],
                                 'decoder_layers': layer_calls[0], 'keypoint_2d_updates': updates_2d[0],
                                 'keypoint_3d_updates': updates_3d[0]},
-                            capture_seconds=time.perf_counter() - started)
+                       capture_seconds=time.perf_counter() - started)
+        return graph, inputs, outputs, metrics
+
+    def _capture(self, values):
+        self.graph, self.inputs, self.outputs, metrics = self._build_graph(values)
+        self.receipt.update(metrics)
+
+    def _additional_forward(self, size, values, args, kwargs):
+        slot = self.batch_slots[size]
+        receipt = slot['receipt']
+
+        def fallback(reason):
+            receipt['fallback_calls'] += 1
+            receipt['last_fallback_reason'] = reason
+            return self._fallback(args, kwargs, 'batch_' + reason)
+
+        if slot['disabled']:
+            return fallback('disabled')
+        key = _tree_key(values, self.torch)
+        if slot['key'] is not None and slot['key'] != key:
+            return fallback('different_input_signature')
+        torch, budget = self.torch, self.batch_memory_budget
+        if slot['graph'] is None:
+            free_bytes, _ = torch.cuda.mem_get_info(self.device)
+            if free_bytes < 256 * 1024 * 1024 or budget['retained_bytes'] >= budget['limit_bytes']:
+                slot['disabled'] = True
+                receipt['capture_status'] = 'memory_admission_rejected'
+                return fallback('memory_admission')
+            before_allocated = torch.cuda.memory_allocated(self.device)
+            before_reserved = torch.cuda.memory_reserved(self.device)
+            graph = inputs = outputs = None
+            try:
+                graph, inputs, outputs, metrics = self._build_graph(values)
+                cost = max(0, torch.cuda.memory_allocated(self.device) - before_allocated,
+                           torch.cuda.memory_reserved(self.device) - before_reserved)
+                if budget['retained_bytes'] + cost > budget['limit_bytes']:
+                    # Preserve all original layer/head handles for fallback;
+                    # this pool is additional and may not bypass their budget.
+                    torch.cuda.synchronize(self.device)
+                    graph = inputs = outputs = None
+                    slot['disabled'] = True
+                    receipt.update(capture_status='retained_memory_budget_exceeded', measured_bytes=cost)
+                else:
+                    slot.update(graph=graph, inputs=inputs, outputs=outputs, key=key, memory_bytes=cost)
+                    budget['retained_bytes'] += cost
+                    receipt.update(metrics, retained_memory_delta_bytes=cost)
+            except Exception as error:
+                slot['disabled'] = True
+                receipt.update(capture_status='fallback_after_capture_error',
+                               capture_error_type=type(error).__name__, capture_error=str(error)[:800])
+                torch.cuda.synchronize(self.device)
+                return fallback('capture_error')
+            if slot['graph'] is None:
+                return fallback('retained_memory_budget')
+        _copy_inputs(slot['inputs'], values, torch)
+        slot['graph'].replay()
+        receipt['replays'] += 1
+        self._record_replay()
+        return _clone_outputs(slot['outputs'], torch)
+
+    def _record_replay(self):
+        self.receipt['replays'] += 1
+        self.receipt['body_head_executions'] += 6
+        self.receipt['decoder_layer_executions'] += 6
+        self.receipt['keypoint_2d_update_executions'] += 5
+        self.receipt['keypoint_3d_update_executions'] += 5
 
     def __call__(self, *args, **kwargs):
         if not self.lock.acquire(blocking=False):
@@ -397,13 +506,15 @@ class DecoderGraphHandle:
                     or self.head_handle.restored):
                 return self._fallback(args, kwargs, "training_grad_autocast_or_prerequisite")
             inputs = self._arguments(args, kwargs)
-            if self.disabled or inputs is None:
+            if inputs is None or (self.disabled and inputs[0].shape[0] == 1):
                 return self._fallback(args, kwargs, "disabled_or_unsupported_contract")
             # Execute the exact current prompt encoder and its original range
             # assertion outside capture. Dynamic prompts are never frozen.
             prompt = self.model.prompt_encoder(keypoints=inputs[1])
             self.receipt["prompt_encoder_calls"] += 1
             values = (*inputs, prompt)
+            if inputs[0].shape[0] != 1:
+                return self._additional_forward(inputs[0].shape[0], values, args, kwargs)
             key = _tree_key(values, torch)
             if self.key is not None and key != self.key:
                 return self._fallback(args, kwargs, "different_input_signature")
@@ -421,11 +532,7 @@ class DecoderGraphHandle:
                     return self._fallback(args, kwargs, "capture_error")
             _copy_inputs(self.inputs, values, torch)
             self.graph.replay()
-            self.receipt["replays"] += 1
-            self.receipt["body_head_executions"] += 6
-            self.receipt["decoder_layer_executions"] += 6
-            self.receipt["keypoint_2d_update_executions"] += 5
-            self.receipt["keypoint_3d_update_executions"] += 5
+            self._record_replay()
             return _clone_outputs(self.outputs, torch)
         finally:
             self.lock.release()
@@ -436,9 +543,13 @@ class DecoderGraphHandle:
         if not self.lock.acquire(blocking=False):
             raise RuntimeError("Cannot restore a running complete SAM decoder graph")
         try:
-            if self.graph is not None:
+            if self.graph is not None or any(slot['graph'] is not None for slot in self.batch_slots.values()):
                 self.torch.cuda.synchronize(self.device)
             self.graph = self.inputs = self.outputs = None
+            for slot in self.batch_slots.values():
+                slot['graph'] = slot['inputs'] = slot['outputs'] = None
+                self.batch_memory_budget['retained_bytes'] -= slot['memory_bytes']
+                slot['memory_bytes'] = 0
             self._restore_method()
             self.restored = True
             self.receipt["restored"] = True
@@ -446,8 +557,9 @@ class DecoderGraphHandle:
             self.lock.release()
 
 
-def apply_decoder_cuda_graph(model, *, head_handle, forward_handle=None):
+def apply_decoder_cuda_graph(model, *, head_handle, forward_handle=None, additional_batch_sizes=None):
     """Install over existing reversible head/layer handles; restore this first."""
+    sizes = _batch_sizes(additional_batch_sizes)
     import torch
     from .sam3d_cuda_graph import HeadGraphHandle
     from .sam3d_forward_graph import ModuleForwardGraph
@@ -516,5 +628,16 @@ def apply_decoder_cuda_graph(model, *, head_handle, forward_handle=None):
         constants.append(tensor)
         bindings.append((model, name, tensor))
         index_receipt[name] = list(values)
+    body_indices = {}
+    for size in sizes:
+        body_indices[size] = torch.tensor(list(range(size)), dtype=torch.long, device=model.head_pose.faces.device)
+        constants.append(body_indices[size])
+    # Share the existing forward budget, including the backbone pool. Installing
+    # a decoder shape must not silently create a second budget for the same GPU.
+    budgets = [handle.batch_memory_budget for handle in available]
+    budget = budgets[0] if sizes and budgets else None
+    if sizes and any(item is not budget for item in budgets):
+        raise ValueError('Complete decoder requires one shared forward graph budget')
     return DecoderGraphHandle(model, torch, head_handle, layer_handles, sources,
-                              capture_forward, bindings, constants, index_receipt)
+                              capture_forward, bindings, constants, index_receipt,
+                              additional_batch_sizes=sizes, batch_memory_budget=budget, body_indices=body_indices)

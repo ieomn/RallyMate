@@ -1,4 +1,5 @@
-export type Domain = "GS" | "FS";
+import { DOMAINS, gradeLevel, moduleWeightsFor, type BackhandStyle, type GateKey, type Level, type LevelAssessment, type ScoringDomain } from "./level-grading";
+export type Domain = ScoringDomain;
 export type Dependency = "pose" | "ball" | "racket" | "court" | "tracking";
 export type Grade = "A" | "B" | "C" | "D" | "E";
 export type EvaluationStatus = "scored" | "ready" | "partial" | "blocked";
@@ -34,7 +35,14 @@ export interface Scenario {
   mode: "demo" | "real";
   description: string;
   source: string;
+  /** Kept for old saved scenario compatibility; never used to generate a score. */
   baseScore: number | null;
+  cardScores?: Record<string, number | null>;
+  cardWeights?: Record<string, number>;
+  techniqueScores?: Record<string, number | null>;
+  targetLevel?: Level;
+  backhandStyle?: BackhandStyle;
+  gates?: Partial<Record<GateKey, boolean | null>>;
   eventConfidence: number;
   dependencyCoverage: Record<Dependency, number>;
   globalCoverage?: Partial<Record<Dependency, number>>;
@@ -90,39 +98,20 @@ export interface ScoreReport {
   overallScore: number | null;
   overallGrade: Grade | null;
   overallEvidence: number;
+  levelAssessment: LevelAssessment;
   acceptanceStatus: "complete-demo" | "provisional" | "evidence-audit";
   domains: Record<Domain, DomainResult>;
   results: CardResult[];
   formula: {
-    dimensionWeights: Record<keyof DimensionScores, number>;
+    dimensionWeights: Partial<Record<keyof DimensionScores, number>>;
     moduleWeights: Record<Domain, number>;
     gradeThresholds: Record<Grade, string>;
     aggregation: string;
   };
 }
 
-export const DIMENSION_WEIGHTS: Record<keyof DimensionScores, number> = {
-  technique: 0.4,
-  timing: 0.25,
-  stability: 0.2,
-  continuity: 0.15,
-};
-
-export const MODULE_WEIGHTS: Record<Domain, number> = { GS: 0.7, FS: 0.3 };
-
-const clamp = (value: number, min = 0, max = 100) =>
-  Math.max(min, Math.min(max, value));
-
 const round1 = (value: number) => Math.round(value * 10) / 10;
-
-function hash01(value: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0) / 4294967295;
-}
+const finiteScore = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100;
 
 export function gradeFor(score: number): Grade {
   if (score >= 90) return "A";
@@ -163,99 +152,39 @@ function evidenceFor(
     : mandatoryCoverage;
   const evidence = mandatoryCoverage * 0.85 + optionalCoverage * 0.15;
   const missing = mandatory.filter(
-    (dependency) => scenario.dependencyCoverage[dependency] < 0.65,
+    (dependency) => scenario.dependencyCoverage[dependency] < 0.70,
   );
   return { evidence, mandatory, optional, missing };
-}
-
-function dimensionScores(card: MetricCard, scenario: Scenario): DimensionScores {
-  const base = scenario.baseScore ?? 0;
-  const emphasisText = `${card.name} ${card.definition} ${card.calculation}`;
-  const emphasis = {
-    timing: /时机|同步|时间|节奏|早|晚/.test(emphasisText) ? 2.5 : 0,
-    stability: /稳定|平衡|波动|对称|重心/.test(emphasisText) ? 2 : 0,
-    continuity: /连续|流畅|轨迹|恢复|衔接/.test(emphasisText) ? 2 : 0,
-  };
-  const jitter = (key: string, span: number) =>
-    (hash01(`${scenario.id}:${card.id}:${key}`) - 0.5) * span;
-  return {
-    technique: round1(clamp(base + jitter("technique", 15))),
-    timing: round1(clamp(base + emphasis.timing + jitter("timing", 18))),
-    stability: round1(clamp(base + emphasis.stability + jitter("stability", 16))),
-    continuity: round1(clamp(base + emphasis.continuity + jitter("continuity", 17))),
-  };
 }
 
 function evaluateCard(card: MetricCard, scenario: Scenario): CardResult {
   const { evidence, mandatory, optional, missing } = evidenceFor(card, scenario);
   const confidence = round1(scenario.eventConfidence * evidence * 100) / 100;
-
-  if (scenario.mode === "real") {
-    const status: EvaluationStatus =
-      missing.length === 0 && evidence >= 0.72
-        ? "ready"
-        : evidence >= 0.4
-          ? "partial"
-          : "blocked";
-    const verdict =
-      status === "ready"
-        ? "一期证据达到事件层接入门槛；完成事件切分与特征标定后才可出技术等级。"
-        : status === "partial"
-          ? "部分证据可用，但连续性或专项目标不足，仅能做预检。"
-          : "关键证据不足，本项不可评价。";
-    return {
-      card,
-      status,
-      score: null,
-      grade: null,
-      evidence: round1(evidence * 100) / 100,
-      confidence,
-      dimensions: null,
-      mandatoryDependencies: mandatory,
-      optionalDependencies: optional,
-      missingDependencies: missing,
-      verdict,
-      feedback: status === "ready" ? "进入事件识别与特征计算队列。" : card.unavailable || verdict,
-    };
-  }
-
-  const dimensions = dimensionScores(card, scenario);
-  const score = round1(
-    Object.entries(DIMENSION_WEIGHTS).reduce(
-      (sum, [key, weight]) => sum + dimensions[key as keyof DimensionScores] * weight,
-      0,
-    ),
-  );
-  const grade = gradeFor(score);
-  return {
-    card,
-    status: "scored",
-    score,
-    grade,
-    evidence: round1(evidence * 100) / 100,
-    confidence,
-    dimensions,
-    mandatoryDependencies: mandatory,
-    optionalDependencies: optional,
-    missingDependencies: [],
-    verdict: card.grades[grade] || `${grade} 级：已按统一阈值完成评价。`,
-    feedback:
-      grade === "A" || grade === "B"
-        ? card.positiveFeedback || "动作表现稳定，保持当前节奏。"
-        : card.improvementFeedback || "优先修正本项最低分维度。",
-  };
+  const measuredScore = scenario.cardScores?.[card.id];
+  // Explicit upstream measurements are independent of scenario identity and
+  // global coverage. Missing unrelated dependencies cannot erase a valid score.
+  const score = finiteScore(measuredScore) ? measuredScore : null;
+  const grade = score === null ? null : gradeFor(score);
+  const status: EvaluationStatus = score !== null ? "scored" : missing.length === 0 && evidence >= 0.70 ? "ready" : evidence >= 0.4 ? "partial" : "blocked";
+  const verdict = grade ? card.grades[grade] || `${grade} 级：按已提供的实测规则评分。` : "尚未收到本项的实测评分；可用测量保留在报告中。";
+  return { card, status, score, grade, evidence: round1(evidence * 100) / 100, confidence, dimensions: null,
+    mandatoryDependencies: mandatory, optionalDependencies: optional, missingDependencies: missing,
+    verdict, feedback: grade === "A" || grade === "B" ? card.positiveFeedback || "保持当前动作节奏。" : grade ? card.improvementFeedback || "优先练习本项动作。" : verdict };
 }
 
 function aggregate(
   code: string,
   name: string,
   results: CardResult[],
+  cardWeights: Record<string, number> = {},
 ): GroupResult {
-  const scoredResults = results.filter((result) => result.score !== null);
+  const weightFor = (id: string) => cardWeights[id] ?? 1;
+  for (const result of results) if (!Number.isFinite(weightFor(result.card.id)) || weightFor(result.card.id) < 0) throw new Error("Card weights must be finite and nonnegative");
+  const scoredResults = results.filter((result) => result.score !== null && weightFor(result.card.id) > 0);
   const score = scoredResults.length
     ? round1(
-        scoredResults.reduce((sum, result) => sum + (result.score ?? 0), 0) /
-          scoredResults.length,
+        scoredResults.reduce((sum, result) => sum + result.score! * weightFor(result.card.id), 0) /
+          scoredResults.reduce((sum, result) => sum + weightFor(result.card.id), 0),
       )
     : null;
   return {
@@ -275,76 +204,33 @@ function aggregate(
   };
 }
 
-function aggregateDomain(domain: Domain, results: CardResult[]): DomainResult {
-  const eventCodes = [...new Set(results.map((result) => result.card.eventCode))];
-  const groups = eventCodes.map((eventCode) => {
-    const eventResults = results.filter((result) => result.card.eventCode === eventCode);
-    const name =
-      domain === "GS"
-        ? eventResults[0]?.card.stageName.split(" ")[0] || eventCode
-        : eventResults[0]?.card.stageName || eventCode;
-    return aggregate(eventCode, name, eventResults);
-  });
-  const scoredGroups = groups.filter((group) => group.score !== null);
-  const base = aggregate(domain, domain === "GS" ? "底线击球" : "步伐事件", results);
-  return {
-    ...base,
-    domain,
-    score: scoredGroups.length
-      ? round1(
-          scoredGroups.reduce((sum, group) => sum + (group.score ?? 0), 0) /
-            scoredGroups.length,
-        )
-      : null,
-    groups,
-  };
-}
+const domainNames: Record<Domain, string> = { GS: "底线基础", FS: "步伐移动", SS: "发球", RS: "接发", NS: "网前", DS: "防守", OS: "高压", TS: "战术" };
 
 export function buildScoreReport(cards: MetricCard[], scenario: Scenario): ScoreReport {
   const results = cards.map((card) => evaluateCard(card, scenario));
-  const gs = aggregateDomain(
-    "GS",
-    results.filter((result) => result.card.domain === "GS"),
-  );
-  const fs = aggregateDomain(
-    "FS",
-    results.filter((result) => result.card.domain === "FS"),
-  );
-  const overallScore =
-    gs.score !== null && fs.score !== null
-      ? round1(gs.score * MODULE_WEIGHTS.GS + fs.score * MODULE_WEIGHTS.FS)
-      : null;
-  const overallEvidence = round1(
-    gs.evidence * MODULE_WEIGHTS.GS + fs.evidence * MODULE_WEIGHTS.FS,
-  );
-  return {
-    reportVersion: "1.0.0",
-    generatedAt: new Date().toISOString(),
-    scenario,
-    overallScore,
-    overallGrade: overallScore === null ? null : gradeFor(overallScore),
-    overallEvidence,
-    acceptanceStatus:
-      scenario.mode === "real"
-        ? "evidence-audit"
-        : overallEvidence >= 90
-          ? "complete-demo"
-          : "provisional",
-    domains: { GS: gs, FS: fs },
-    results,
-    formula: {
-      dimensionWeights: DIMENSION_WEIGHTS,
-      moduleWeights: MODULE_WEIGHTS,
-      gradeThresholds: {
-        A: "90–100",
-        B: "80–89.9",
-        C: "70–79.9",
-        D: "60–69.9",
-        E: "0–59.9",
-      },
-      aggregation: "指标→事件等权平均；GS/FS 模块按 70%/30% 合成。技术得分与证据覆盖率分开呈现。",
-    },
-  };
+  const techniqueScores: Record<string, number | null> = {};
+  const grouped = new Map<string, GroupResult>();
+  for (const eventCode of new Set(cards.map(card => card.eventCode))) {
+    const eventResults = results.filter(result => result.card.eventCode === eventCode);
+    const group = aggregate(eventCode, eventResults[0]?.card.stageName || eventCode, eventResults, scenario.cardWeights);
+    grouped.set(eventCode, group);
+    techniqueScores[eventCode] = group.score;
+  }
+  Object.assign(techniqueScores, scenario.techniqueScores ?? {});
+  const levelAssessment = gradeLevel(techniqueScores, { targetLevel: scenario.targetLevel, backhandStyle: scenario.backhandStyle, gates: scenario.gates });
+  const domains = Object.fromEntries(DOMAINS.map(domain => {
+    const domainResults = results.filter(result => result.card.domain === domain);
+    const groups = [...new Set(domainResults.map(result => result.card.eventCode))].map(code => grouped.get(code)!);
+    return [domain, { ...aggregate(domain, domainNames[domain], domainResults, scenario.cardWeights), domain, score: levelAssessment.domains[domain].score, groups }];
+  })) as Record<Domain, DomainResult>;
+  const moduleWeights = moduleWeightsFor(scenario.targetLevel ?? 1);
+  const overallEvidence = round1(DOMAINS.reduce((sum, domain) => sum + domains[domain].evidence * moduleWeights[domain], 0));
+  const overallScore = levelAssessment.overall_score;
+  return { reportVersion: "1.0.0", generatedAt: new Date().toISOString(), scenario, overallScore,
+    overallGrade: overallScore === null ? null : gradeFor(overallScore), overallEvidence, levelAssessment,
+    acceptanceStatus: overallScore === null ? "evidence-audit" : "provisional", domains, results,
+    formula: { dimensionWeights: {}, moduleWeights, gradeThresholds: { A: "90–100", B: "80–89.9", C: "70–79.9", D: "60–69.9", E: "0–59.9" },
+      aggregation: "实测指标按配置汇总为子技术；当前等级的子技术权重和系统权重分别归一化。单反与双反二选一；缺测影响覆盖率，不作零分。" } };
 }
 
 export function scenarioFromStage1Summary(summary: Record<string, unknown>): Scenario {

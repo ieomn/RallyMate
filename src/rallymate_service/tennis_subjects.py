@@ -41,6 +41,13 @@ def select_report_subject(segments):
     locked = [s for s in summaries if s["identity_basis"] == "target_lock"]
     candidates = locked or summaries
     selected = candidates[0]["subject_id"] if candidates else None
+    # Integer-millisecond native clocks can leave a sub-millisecond residual
+    # against rational decoder PTS. Public video navigation starts at zero;
+    # source ordering and the raw motion clock above remain unchanged.
+    for summary in summaries:
+        if -1.01 <= summary["start_ms"] < 0:
+            summary["source_relative_start_ms"] = summary["start_ms"]
+            summary["start_ms"] = 0.0
     return {"version": "subject-scoped-assessment-v1", "selected_subject_id": selected,
             "selection_basis": "first_locked_target" if locked else "first_unlinked_source_track",
             "cross_subject_aggregation": False, "subjects": summaries}

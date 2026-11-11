@@ -1,0 +1,11 @@
+.training-session-analysis { margin-top: 18px; padding: 20px; border: 1px solid var(--line,#dfe6e0); border-radius: 18px; background: var(--surface,#fff); color: var(--ink,#20382b); }
+.training-session-analysis h3 { margin: 0 0 8px; }
+.training-session-analysis p { line-height: 1.6; }
+.training-session-clips { padding: 0; margin: 12px 0; list-style: none; display: grid; gap: 6px; }
+.training-session-clips li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: #f4f7f3; }
+.training-session-clips li > span:first-child { display: grid; gap: 5px; }
+.training-session-clips button { border: 1px solid #c7d5cb; background: white; color: #20382b; padding: 6px 16px; border-radius: 8px; cursor: pointer; }
+.training-session-analysis summary { cursor: pointer; padding: 10px 0; }
+.training-session-ranges { display: grid; grid-template-columns: repeat(auto-fit,minmax(175px,1fr)); gap: 10px; margin: 12px 0; }
+.training-session-ranges > div { display: grid; gap: 6px; padding: 12px; background: #f4f7f3; border-radius: 10px; }
+.training-session-analysis small,.training-session-note { font-size: 12px; color: #5b6b60; }

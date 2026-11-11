@@ -57,6 +57,9 @@ class Yolo26Perception:
         pose_backend_instance: PoseBackend | None = None,
         ball_refinement_imgsz: int | None = 1536,
     ) -> None:
+        from rallymate_vision.detector_forward_graph import DetectorGraphOptions
+        graph_options = DetectorGraphOptions.from_environment()
+        self._detector_forward_graph = None
         try:
             from ultralytics import YOLO
         except ImportError as exc:
@@ -73,35 +76,50 @@ class Yolo26Perception:
         self.pose_confidence = pose_confidence
         self.ball_refinement_imgsz = ball_refinement_imgsz
         self.detect_model = YOLO(str(detect_model))
-        if pose_backend_name == "sam3d" and pose_backend_instance is None:
-            from rallymate_vision.sam3d_adapter import Sam3DPoseAdapter
-            pose_backend_instance = Sam3DPoseAdapter(
-                pose_model, device=device, runtime=pose_runtime,
-                profile=pose_profile, config_path=pose_config,
-            )
-        self.pose_backend = pose_backend_instance or build_pose_backend(
-            pose_backend_name,
-            model_path=pose_model,
-            device=device,
-            input_size=pose_imgsz,
-            confidence=pose_confidence,
-            runtime=pose_runtime,
-            profile=pose_profile,
-            config_path=pose_config,
-            native_keypoint_format=pose_native_keypoint_format,
-        )
-        self.pose_estimator = (self.pose_backend if pose_backend_name == "sam3d"
-                               else PoseEstimator(self.pose_backend))
-        pose_metadata = self.pose_backend.metadata()
-        self.pose_model_path = Path(pose_metadata.model_path)
-        # Temporary compatibility attribute for tooling that inspected the
-        # combined facade before the backend split.
-        self.pose_model = getattr(self.pose_backend, "model", None)
-        self.target_class_ids = [
-            class_id
-            for class_id, name in self.detect_model.names.items()
-            if name in self.TARGET_ALIASES
-        ]
+        backend = pose_backend_instance
+        try:
+            if pose_backend_name == "sam3d" and backend is None:
+                from rallymate_vision.sam3d_adapter import Sam3DPoseAdapter
+                backend = Sam3DPoseAdapter(
+                    pose_model, device=device, runtime=pose_runtime,
+                    profile=pose_profile, config_path=pose_config,
+                )
+            if backend is None:
+                backend = build_pose_backend(
+                    pose_backend_name,
+                    model_path=pose_model,
+                    device=device,
+                    input_size=pose_imgsz,
+                    confidence=pose_confidence,
+                    runtime=pose_runtime,
+                    profile=pose_profile,
+                    config_path=pose_config,
+                    native_keypoint_format=pose_native_keypoint_format,
+                )
+            self.pose_backend = backend
+            self.pose_estimator = (self.pose_backend if pose_backend_name == "sam3d"
+                                   else PoseEstimator(self.pose_backend))
+            pose_metadata = self.pose_backend.metadata()
+            self.pose_model_path = Path(pose_metadata.model_path)
+            # Temporary compatibility attribute for tooling that inspected the
+            # combined facade before the backend split.
+            self.pose_model = getattr(self.pose_backend, "model", None)
+            self.target_class_ids = [
+                class_id
+                for class_id, name in self.detect_model.names.items()
+                if name in self.TARGET_ALIASES
+            ]
+            if graph_options.enabled:
+                from rallymate_vision.detector_forward_graph import DetectorGraphController
+                self._detector_forward_graph = DetectorGraphController(self.pose_backend, graph_options)
+        except BaseException:
+            # A SAM reader thread retains its process owner. Garbage collection
+            # cannot substitute for explicit shutdown after metadata failure.
+            # Injected backends remain the caller's responsibility on failure.
+            close = getattr(backend, "close", None)
+            if pose_backend_instance is None and callable(close):
+                close()
+            raise
 
     def detect(self, frame: np.ndarray) -> list[dict]:
         return self.detect_batch([frame])[0]
@@ -186,10 +204,15 @@ class Yolo26Perception:
     def _predict_detection_group(self, frames, indexes, *, imgsz, confidence, classes, component):
         started = time.perf_counter()
         source = frames[indexes[0]] if len(indexes) == 1 else [frames[index] for index in indexes]
+        graph = getattr(self, '_detector_forward_graph', None)
+        if graph is not None:
+            graph.before_predict(getattr(self.detect_model, 'predictor', None))
         results = list(self.detect_model.predict(
             source, imgsz=imgsz, conf=confidence, classes=classes,
             device=self.device, verbose=False,
         ))
+        if graph is not None:
+            graph.after_predict(self.detect_model.predictor)
         elapsed_ms = (time.perf_counter() - started) * 1000
         if len(results) != len(indexes):
             raise ValueError("detector must return exactly one result per source frame")
@@ -227,9 +250,20 @@ class Yolo26Perception:
         detections: list[dict] = []
         if result.boxes is None:
             return detections
-        boxes = result.boxes.xyxy.detach().cpu().tolist()
-        classes = result.boxes.cls.detach().cpu().tolist()
-        confidences = result.boxes.conf.detach().cpu().tolist()
+        data = getattr(result.boxes, "data", None)
+        if data is not None and getattr(data, "ndim", None) == 2 and data.shape[-1] in (6, 7):
+            # Ultralytics Boxes stores xyxy[, track_id], confidence, class in
+            # one tensor. Transfer it once; three independent .cpu() calls
+            # otherwise create three host waits for every source frame.
+            rows = data.detach().cpu().tolist()
+            boxes = [row[:4] for row in rows]
+            classes = [row[-1] for row in rows]
+            confidences = [row[-2] for row in rows]
+        else:
+            # Keep non-Ultralytics adapters and older fixture contracts usable.
+            boxes = result.boxes.xyxy.detach().cpu().tolist()
+            classes = result.boxes.cls.detach().cpu().tolist()
+            confidences = result.boxes.conf.detach().cpu().tolist()
         for box, class_id, confidence in zip(boxes, classes, confidences):
             raw_name = str(result.names[int(class_id)])
             alias = cls.TARGET_ALIASES.get(raw_name)
@@ -305,7 +339,10 @@ class Yolo26Perception:
         return kept + balls
 
     def detection_metadata(self) -> dict:
+        graph = getattr(self, '_detector_forward_graph', None)
         return {"policy_version": "adaptive-ball-multiscale-v1.1.0",
+                "forward_graph": (graph.metadata() if graph is not None
+                                  else {"requested": False, "status": "disabled"}),
                 "base_imgsz": self.detect_imgsz,
                 "ball_refinement_imgsz": self.ball_refinement_imgsz,
                 "minimum_source_long_edge": 1280,
@@ -391,6 +428,11 @@ class Yolo26Perception:
         return getattr(self.pose_backend, "last_records", [])
 
     def close(self) -> None:
-        close = getattr(self.pose_backend, "close", None)
-        if callable(close):
-            close()
+        try:
+            graph = getattr(self, '_detector_forward_graph', None)
+            if graph is not None:
+                graph.close()
+        finally:
+            close = getattr(self.pose_backend, "close", None)
+            if callable(close):
+                close()

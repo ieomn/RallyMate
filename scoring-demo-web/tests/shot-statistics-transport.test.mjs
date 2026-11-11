@@ -117,6 +117,9 @@ test("shot GET and POST propagate caller cancellation through their fetch signal
       return new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true }));
     });
     const pending = method === "GET" ? client.getShotStatistics(jobId, caller.signal) : client.saveShotReview(jobId, submission(), caller.signal);
+    // GET first joins the report read queue; exercise cancellation after fetch
+    // has actually started (cancellation while queued is tested separately).
+    await Promise.resolve();
     const reason = new DOMException("Changed video", "AbortError");
     const rejected = assert.rejects(pending, error => error === reason);
     caller.abort(reason);

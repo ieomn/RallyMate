@@ -20,6 +20,7 @@ from rallymate_vision.sam3d_evaluation import _binding_error, _time, COORDINATES
 VERSION = "sam3d-swing-kinematics-v1"
 MAX_FILE_BYTES = 512 * 1024 * 1024
 MAX_RECORDS = 100_000
+MAX_RECORD_BYTES = 1024 * 1024
 TORSO = ("left_shoulder", "right_shoulder", "left_hip", "right_hip")
 METRIC_UNITS = {"shoulder_hip_separation_deg": "deg", "hip_angular_speed_deg_s": "deg/s",
                 "shoulder_angular_speed_deg_s": "deg/s", "wrist_speed_torso_s": "torso/s"}
@@ -78,17 +79,31 @@ def _angle(a, b):
     return math.degrees(math.acos(cosine))
 
 
-def _read_rows(path):
-    if path.stat().st_size > MAX_FILE_BYTES:
+def _read_rows(path, *, max_file_bytes=MAX_FILE_BYTES):
+    """Bound one decoded row, row count and actual bytes, including file growth.
+
+    Larger streams are opt-in for consumers which retain compact projections.
+    The default whole-artifact guard remains unchanged for other consumers.
+    """
+    before = path.stat()
+    if path.is_symlink() or before.st_size > max_file_bytes:
         raise ValueError("swing_input_too_large")
-    with path.open(encoding="utf-8") as stream:
-        for index, line in enumerate(stream):
+    total = 0
+    with path.open("rb") as stream:
+        for index, line in enumerate(iter(lambda: stream.readline(MAX_RECORD_BYTES + 1), b"")):
             if index >= MAX_RECORDS:
                 raise ValueError("swing_record_limit")
+            total += len(line)
+            if len(line) > MAX_RECORD_BYTES or total > max_file_bytes:
+                raise ValueError("swing_stream_limit")
             row = json.loads(line)
             if not isinstance(row, dict):
                 raise ValueError("swing_invalid_record")
             yield row
+    after = path.stat()
+    identity = lambda stat: (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+    if identity(before) != identity(after):
+        raise ValueError("swing_input_changed_during_read")
 
 
 def _motion_episodes(summary):

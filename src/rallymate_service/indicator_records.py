@@ -1,14 +1,17 @@
 """Read-only, bounded working set for repeated report passes over JSONL.
 
 Consumers may retain lightweight Mapping handles; only the small LRU holds
-decoded rows. Complete records and their proof fields are never projected away.
+decoded rows. A bounded scalar index avoids expanding proof for identity/status
+lookups. Complete records and their proof fields are never projected away.
 """
 from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 import json
+import math
 from pathlib import Path
+import sys
 from typing import Any
 
 from rallymate_scoring.artifact_evidence import ArtifactEvidenceReader, resident_evidence_bytes
@@ -17,6 +20,16 @@ MAX_RECORD_BYTES = 64 * 1024 * 1024
 MAX_RECORDS = 65_000
 MAX_CACHED_ROWS = 8
 MAX_CACHE_BYTES = 16 * 1024 * 1024
+MAX_SCALAR_INDEX_BYTES = 4 * 1024 * 1024
+MAX_INDEXED_SCALAR_BYTES = 512
+_SCALAR_FIELDS = (
+    "video_id", "event_id", "indicator_id", "event_code", "person_track_id",
+    "feature_status", "scoring_feature_status", "scoring_status",
+    "supplemental_feature_status", "feasibility_level", "grade", "schema_version",
+)
+_SCALAR_POSITIONS = {key: index for index, key in enumerate(_SCALAR_FIELDS)}
+_MISSING = object()
+_UNINDEXED = object()
 
 
 class IndicatorRecordError(ValueError):
@@ -45,13 +58,23 @@ class _Record(Mapping):
         self.owner, self.index = owner, index
 
     def __getitem__(self, key):
-        return self.owner._row(self.index)[key]
+        return self.owner._value(self.index, key)
 
     def __iter__(self):
         return iter(self.owner._row(self.index))
 
     def __len__(self):
         return len(self.owner._row(self.index))
+
+
+def _record_for_scope(record):
+    """Borrow one complete row for a single consumer call, without a new cache.
+
+    Only our exact lazy handle can use this path; ordinary caller mappings keep
+    their original behavior. Consumers must retain derived scalars, not collect
+    these full rows. _row still checks close/cancellation/file identity.
+    """
+    return record.owner._row(record.index) if type(record) is _Record else record
 
 
 class IndicatorRecords(Sequence):
@@ -63,6 +86,8 @@ class IndicatorRecords(Sequence):
         self.offsets = []
         self.cache = OrderedDict()
         self.cache_bytes = 0
+        self._scalar_index = None
+        self.scalar_index_bytes = 0
         self.document = None
         self.handle = None
         self.reader = None
@@ -72,6 +97,7 @@ class IndicatorRecords(Sequence):
         try:
             self.handle = self.path.open("rb")
             self.identity = self._identity()
+            self._prepare_scalar_index()
             self.reader = ArtifactEvidenceReader(self.path.parent, cancellation_callback=self.check)
             self.reader.__enter__()
             first = True
@@ -108,10 +134,11 @@ class IndicatorRecords(Sequence):
                 if not isinstance(value, dict):
                     raise IndicatorRecordError("indicator feature record is not an object")
                 # Validate even rows later ignored by a particular report view.
-                self.reader.resolve_record(value)
+                resolved = self.reader.resolve_record(value)
                 self.offsets.append((offset, len(raw)))
                 if len(self.offsets) > MAX_RECORDS:
                     raise IndicatorRecordError("指标记录超过报告处理上限，请分段分析视频")
+                self._index_scalars(len(self.offsets) - 1, resolved)
             if not len(self):
                 raise IndicatorRecordError("indicator features are empty")
             if self._identity() != self.identity:
@@ -124,6 +151,58 @@ class IndicatorRecords(Sequence):
     def _identity(self):
         stat = self.path.stat()
         return stat.st_size, stat.st_mtime_ns, stat.st_ino
+
+    def _prepare_scalar_index(self):
+        # Reserve a fixed pointer table, so list growth cannot silently consume
+        # the row budget. Small budgets simply index fewer rows or none.
+        empty_bytes = sys.getsizeof([])
+        slot_bytes = sys.getsizeof([None]) - empty_bytes
+        capacity = min(MAX_RECORDS, max(0, (MAX_SCALAR_INDEX_BYTES // 4 - empty_bytes) // slot_bytes))
+        if capacity:
+            index = [None] * capacity
+            size = sys.getsizeof(index)
+            if size <= MAX_SCALAR_INDEX_BYTES:
+                self._scalar_index, self.scalar_index_bytes = index, size
+
+    def _index_scalars(self, index, resolved):
+        """Index only after the complete record/proof has passed resolution."""
+        if self._scalar_index is None or index >= len(self._scalar_index) or not isinstance(resolved, dict):
+            return
+        values = []
+        for key in _SCALAR_FIELDS:
+            value = resolved.get(key, _MISSING)
+            scalar = (value is None or type(value) in (bool, int)
+                      or type(value) is float and math.isfinite(value)
+                      or type(value) is str and len(value) <= 256)
+            values.append(value if value is _MISSING or scalar and sys.getsizeof(value) <= MAX_INDEXED_SCALAR_BYTES
+                          else _UNINDEXED)
+        values = tuple(values)
+        # Charge each scalar even when Python/other rows share it. No object,
+        # proof, long string or unbounded integer is retained by this index.
+        charge = sys.getsizeof(values) + sum(sys.getsizeof(value) for value in values
+                                            if value is not _MISSING and value is not _UNINDEXED)
+        if self.scalar_index_bytes + charge <= MAX_SCALAR_INDEX_BYTES:
+            self._scalar_index[index] = values
+            self.scalar_index_bytes += charge
+
+    def _check_readable(self):
+        if self.closed:
+            raise IndicatorRecordError("indicator record reader is closed")
+        self.check()
+        if self._identity() != self.identity:
+            raise IndicatorRecordError("indicator features changed during report preparation")
+
+    def _value(self, index, key):
+        position = _SCALAR_POSITIONS.get(key)
+        scalars = (self._scalar_index[index] if self._scalar_index is not None
+                   and index < len(self._scalar_index) else None)
+        if position is not None and scalars is not None and scalars[position] is not _UNINDEXED:
+            self._check_readable()
+            value = scalars[position]
+            if value is _MISSING:
+                raise KeyError(key)
+            return value
+        return self._row(index)[key]
 
     def _regular_document(self):
         if self.path.stat().st_size > MAX_RECORD_BYTES:
@@ -140,15 +219,14 @@ class IndicatorRecords(Sequence):
             raise IndicatorRecordError("invalid or oversized indicator feature document")
         # Keep compact references here too: a small regular JSON export can
         # otherwise expand into many independent large proofs at once.
-        for row in rows:
+        for index, row in enumerate(rows):
             self.check()
-            self.reader.resolve_record(row)
+            resolved = self.reader.resolve_record(row)
+            self._index_scalars(index, resolved)
         self.document = rows
 
     def _row(self, index):
-        if self.closed:
-            raise IndicatorRecordError("indicator record reader is closed")
-        self.check()
+        self._check_readable()
         cached = self.cache.get(index)
         if cached is not None:
             self.cache.move_to_end(index)
@@ -156,8 +234,6 @@ class IndicatorRecords(Sequence):
         if self.document is not None:
             row = self.reader.resolve_record(self.document[index])
         else:
-            if self._identity() != self.identity:
-                raise IndicatorRecordError("indicator features changed during report preparation")
             offset, size = self.offsets[index]
             self.handle.seek(offset)
             raw = self.handle.read(size)
@@ -197,6 +273,8 @@ class IndicatorRecords(Sequence):
             self.handle = None
         self.cache.clear()
         self.cache_bytes = 0
+        self._scalar_index = None
+        self.scalar_index_bytes = 0
         self.document = None
         self.closed = True
 

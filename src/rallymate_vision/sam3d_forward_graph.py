@@ -13,6 +13,8 @@ from pathlib import Path
 import threading
 import time
 
+from rallymate_vision.sam3d_cuda_graph import _graph_memory_budget
+
 
 SOURCE_HASHES = {
     "backbone": "1745546cf57e036706dfef378be589e24cf2a568da0e4781544e2a31e000628a",
@@ -90,7 +92,8 @@ class ModuleForwardGraph:
         self.lock = threading.Lock()
         self.additional_batch_sizes = sizes
         self.batch_memory_budget = (batch_memory_budget if batch_memory_budget is not None
-                                    else {"limit_bytes": 512 * 1024 * 1024, "retained_bytes": 0})
+                                    else {**_graph_memory_budget("RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB"),
+                                          "retained_bytes": 0})
         self.batch_slots = {size: {"graph": None, "inputs": None, "outputs": None, "key": None,
                                   "disabled": False, "memory_bytes": 0,
                                   "receipt": {"batch_size": size, "capture_status": "pending_first_call",
@@ -335,6 +338,9 @@ def apply_forward_cuda_graph(model, *, scope="backbone_decoder_layers", addition
     ``backbone`` allows an isolated ablation. All installation is reversible;
     actual capture/replay status remains in each live module receipt.
     """
+    budget = {**_graph_memory_budget("RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB"),
+              "retained_bytes": 0,
+              "scope": "shared_backbone_and_layer_extra_graph_pool_deltas; capture_peak_not_hard_limited"}
     import torch
     if scope not in {"backbone", "backbone_decoder_layers"}:
         raise ValueError("Unsupported SAM forward graph scope")
@@ -353,8 +359,6 @@ def apply_forward_cuda_graph(model, *, scope="backbone_decoder_layers", addition
             sources["decoder_layer"] = _verify_source(layer, SOURCE_HASHES["decoder_layer"])
             modules.append((f"decoder.layers.{index}", layer, ("x", "context", "x_pe", "context_pe", "x_mask")))
     handles = []
-    budget = {"limit_bytes": 512 * 1024 * 1024, "retained_bytes": 0,
-              "scope": "shared_backbone_and_layer_extra_graph_pool_deltas; capture_peak_not_hard_limited"}
     try:
         for name, module, arguments in modules:
             device = next(module.parameters()).device

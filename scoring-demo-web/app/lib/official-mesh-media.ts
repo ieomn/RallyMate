@@ -52,7 +52,11 @@ export async function watchMeshPreview(
   update: (state: { status: "pending" | "ready" | "failed" | "unavailable"; media: OfficialMeshMedia | null }) => void,
   intervalMs = 10000,
 ): Promise<void> {
-  const readSignal = AbortSignal.any([signal, AbortSignal.timeout(120000)]);
+  // A successful pending response is an active background render, even when a
+  // long video takes several minutes. Bound each HTTP read in the API client
+  // and consecutive failures here; stop a healthy watch only at a terminal
+  // state or when its page/video scope is cancelled.
+  const readSignal = signal;
   let failures = 0;
   for (;;) {
     readSignal.throwIfAborted();

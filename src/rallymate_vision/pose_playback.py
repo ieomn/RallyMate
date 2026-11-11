@@ -11,7 +11,7 @@ import json
 import math
 from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from rallymate_vision.pose.metadata import keypoint_schema
 from rallymate_vision.display_continuity import MAX_DISPLAY_GAP_MS, build_display_frames, display_statistics
@@ -29,6 +29,7 @@ MAX_ARTIFACT_BYTES = 1024 * 1024 * 1024
 MAX_PRIMARY_BYTES = 256 * 1024 * 1024
 MAX_ARTIFACT_LINES = 2_000_000
 MAX_LINE_BYTES = 1024 * 1024
+PosePlaybackTransport = Literal["full", "compact-v1"]
 JOINT_NAMES = tuple(item["name"] for item in keypoint_schema("halpe26")["keypoints"])
 MHR70_DISPLAY = json.loads((Path(__file__).parent / "pose" / "data" / "mhr70_display.json").read_text(encoding="utf-8"))
 SKELETON_EDGES = [
@@ -47,6 +48,19 @@ SKELETON_EDGES = [
 
 class PosePlaybackError(ValueError):
     """An artifact cannot provide a safely aligned pose playback window."""
+
+
+def pose_playback_transport(payload: dict, transport: PosePlaybackTransport = "full") -> dict:
+    """Omit only redundant native display data for explicitly opted-in clients.
+
+    The authoritative frames, keypoints and source bindings remain unchanged.
+    A new envelope protects the shared full-payload cache and legacy clients.
+    """
+    if (transport == "compact-v1" and payload.get("joint_schema") == "mhr70_named"
+            and isinstance(payload.get("frames"), list)
+            and payload.get("display_frames") == payload["frames"]):
+        return {key: value for key, value in payload.items() if key != "display_frames"}
+    return payload
 
 
 def _finite(value: Any) -> float | None:

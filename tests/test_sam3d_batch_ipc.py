@@ -92,6 +92,8 @@ class RealBatchProcessTests(unittest.TestCase):
                 self.assertEqual(row["subject_index"], index)
                 self.assertIn("worker_load_source_array_ms", row["ipc_request_timing_ms"])
                 self.assertIn("do_not_sum_across_frames_or_subjects", row["ipc_timing_scope"])
+                self.assertEqual(row["ipc_request_identity"], {"version": "sam-ipc-request-v1",
+                    "session_id": self.process.session_id, "request_id": self.process.request_id})
 
     def test_mixed_subject_slots_and_variable_shapes_do_not_overwrite_pixels(self):
         inputs = [item(1, subjects=0), item(2, (24, 32, 3), 1), item(3, (33, 45, 3), 2)]

@@ -13,12 +13,13 @@ from copy import deepcopy
 from functools import lru_cache
 import json
 import math
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 
-from rallymate_service.swing_kinematics import _read_rows, _signature
+from rallymate_service.swing_kinematics import _read_rows, _signature, MAX_RECORDS
 from rallymate_service.tennis_coaching import coaching_for_metric, strength_for_metric
 from rallymate_service.tennis_profiles import SERVE_METRICS, SERVE_RUBRIC, apply_serve_profile
 from rallymate_service.tennis_subjects import subject_reference, select_report_subject, reviewed_subject_timeline
@@ -26,8 +27,50 @@ from rallymate_service.tennis_source_motion import source_motion_by_frame, windo
 from rallymate_service.tennis_motion_patterns import analyze_motion_pattern, PATTERN_METRICS, TECHNIQUES, RUBRIC as PATTERN_RUBRIC
 from rallymate_vision.sam3d_evaluation import COORDINATES_3D, _binding_error, _time
 from rallymate_scoring.stroke_candidates import detect_stroke_candidates, _normalization
+from rallymate_events.gs_phase_segmentation import segment_motion_phases
+from rallymate_features.gs_features import measure_joint_kinematics
+from rallymate_service.level_assessment import build_level_assessments
+from rallymate_scoring.modality_features import build_multimodal_assessment
+from rallymate_service.training_session_analysis import build_training_session_analysis
+from rallymate_service.specialist_motion_assessment import assess_specialist_motion, SPECIALIST_METRICS, SPECIALIST_RUBRIC
 
 VERSION = "tennis-action-assessment-v1.4.0"
+# A full 7-minute input is ~714 MiB on disk, but its camera/time projection is
+# small. Bound the stream and retained Python objects separately; do not retain
+# the original per-frame pose/request payload alongside the native archive.
+MAX_SOURCE_STREAM_BYTES = 2 * 1024**3
+MAX_ASSESSMENT_RETAINED_BYTES = 1024**3
+
+
+class _AssessmentRows:
+    """Conservative per-build bound on retained row objects, not an RSS claim."""
+    def __init__(self):
+        self.bytes = 0
+
+    def retain(self, row):
+        # Count repeated references conservatively across rows. Values originate
+        # in JSON, so cycles are impossible. Include list-slot/container margin.
+        pending = [row]
+        size = 64
+        while pending:
+            value = pending.pop()
+            size += sys.getsizeof(value)
+            if self.bytes + size > MAX_ASSESSMENT_RETAINED_BYTES:
+                raise ValueError("tennis_retained_input_limit")
+            if isinstance(value, dict):
+                pending.extend(value.keys())
+                pending.extend(value.values())
+            elif isinstance(value, (list, tuple)):
+                pending.extend(value)
+        self.bytes += size
+        return row
+
+
+def _source_frame_projection(row):
+    # Keep camera and detector evidence, excluding bulky pose/request payloads.
+    # Preserve source PTS, SHA, frame identity and calibration validation inputs.
+    # Parse every original JSON row; never stop after the selected time window.
+    return {key: row[key] for key in ("frame", "camera_motion", "detections", "court") if key in row}
 RUBRIC_VERSION = "tennis-action-rubric-v1.3.0"
 DIMENSIONS = (("movement", "移动支撑"), ("preparation", "准备引拍"),
               ("coordination", "动作协调"), ("striking", "击球姿态"),
@@ -384,7 +427,8 @@ def _source_phase_authority(episode):
     prep, acceleration, follow = (_map(phases.get(name)) for name in ("preparation", "acceleration", "follow_through"))
     return (episode.get("phase_authority") == "source_bound_primary_motion"
             and proof.get("pose_source") == "sam3d" and proof.get("observation_semantics") == "monocular_model_estimate"
-            and proof.get("assessment_status") == "measurement_only" and proof.get("scoring_allowed") is False
+            # Assessment/release labels do not change the measured source
+            # geometry or phase timing. Their provenance remains available.
             and type(proof.get("model_estimate_sample_count")) is int and proof["model_estimate_sample_count"] >= 7
             and _motion_wrist(episode) in {"left", "right"}
             and all(p.get("status") == "measured" for p in (prep, acceleration, follow))
@@ -403,8 +447,8 @@ def _bound_phase_ambiguity(episode, segments, sha):
     if (reason not in ("unresolved_racket_hand_with_competing_arm_sequence", "external_peak_motion_geometry_unverified")
             or episode.get("phase_authority") != "source_bound_primary_motion"
             or episode.get("family") != "baseline" or proof.get("pose_source") != "sam3d"
-            or proof.get("observation_semantics") != "monocular_model_estimate" or proof.get("assessment_status") != "measurement_only"
-            or proof.get("scoring_allowed") is not False or type(proof.get("model_estimate_sample_count")) is not int
+            or proof.get("observation_semantics") != "monocular_model_estimate"
+            or type(proof.get("model_estimate_sample_count")) is not int
             or proof["model_estimate_sample_count"] < 7 or continuity.get("pose_source") != "sam3d"
             or str(continuity.get("video_sha256", "")).lower() != sha
             or ambiguity.get("candidate_wrist") not in ("left", "right")
@@ -1009,9 +1053,28 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
         if replacement in pattern["metrics"]:
             values.pop(previous, None)
     values.update(pattern["metrics"])
+    specialist = assess_specialist_motion(rows, wrist=wrist, prep_end=prep_end, peak=peak, side=side,
+        family=meta["family"], source_context={**context, "source_video_sha256": video_sha256,
+            "native_source_verified": True, "family_source_verified": True, "return_context": meta.get("return_context")},
+        source_observations=observations)
+    replaced = set(specialist["replace_metrics"])
+    for key in replaced:
+        values.pop(key, None)
+    values.update(specialist["metrics"])
+    if replaced:
+        # A short-action profile has different requirements. Do not report an
+        # intentionally replaced full-chain rule as missing athlete evidence.
+        pattern["requirements"] = [r for r in pattern["requirements"] if not replaced.intersection(r["metric_ids"])]
+        measured_count = sum(r["status"] == "measured_proxy" for r in pattern["requirements"])
+        count = len(pattern["requirements"])
+        pattern["coverage"].update(measured_requirements=measured_count, applicable_requirements=count,
+                                   fraction=measured_count / count if count else 0.)
     pattern_public = {key: value for key, value in pattern.items() if key not in {"metrics", "metric_definitions"}}
     pattern_public["classification_provenance"] = provenance
     pattern_public["direction_binding"] = direction["evidence"]
+    phase_windows = segment_motion_phases(rows, wrist=wrist, prep_end=prep_end, peak=peak,
+                                         family=meta["family"], technique=technique, active_side=side)
+    joint_kinematics = measure_joint_kinematics(rows, phase_windows)
     return {"episode_id": meta["episode_id"], "family": meta["family"], "start_ms": round(t[0], 3),
             "peak_ms": round(t[peak], 3), "end_ms": round(t[-1], 3), "person_track_id": rows[0]["track"],
             "primary_player_id": rows[0]["person"],
@@ -1024,6 +1087,8 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
             "phase_refinement": "source_bound_primary_motion_phases" if meta.get("source_phase_authority") else "source_bound_serve_overhead_pivot" if meta["family"] == "serve" else "native_3d_active_arm_in_bounded_candidate_context",
             "anchor_semantics": "source_bound_overhead_extension_not_ball_contact" if meta["family"] == "serve" else "source_bound_image_plane_wrist_motion_peak_not_ball_contact" if meta.get("source_phase_authority") else "body_relative_arm_motion_peak_not_ball_contact",
             "frame_count": len(rows), "metrics": values, "motion_pattern": pattern_public,
+            "joint_kinematics": joint_kinematics,
+            "specialist_motion": {k: v for k, v in specialist.items() if k not in {"metrics", "metric_definitions"}},
             **({"return_context": {**dict(meta["return_context"]), "receiver_peak_ms": meta["candidate_peak_ms"],
                                    "verification_method": "source_bound_opponent_serve_and_incoming_ball"}}
                if meta["family"] == "return" else {})}
@@ -1079,14 +1144,16 @@ def _empty(job_id, sha):
                                                 "angle_semantics": "signed_relative_axis_unwrapped_modulo_180_degrees", "knee_knots": [0, 15]}}}}
 
 
-def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=None, motion_episodes=(), source_frames=(), action_context=None):
+def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=None, motion_episodes=(), source_frames=(), action_context=None,
+                              source_duration_ms=None, point_events=(), shot_events=(), comparison=None):
     """Pure CPU entry point, useful for regression and independent recomputation."""
     result = _empty(source_run_id, video_sha256.lower())
     result["dimensions"] = []
     segments, reasons = _segments(timeline, records, video_sha256.lower())
     sha = video_sha256.lower()
+    source_frames = list(source_frames)
     motion_episodes = [{**e, "verified_action_context": verified_action_context(action_context, e, sha)} for e in motion_episodes]
-    observations = source_motion_by_frame(records, list(source_frames), sha) if motion_episodes else {}
+    observations = source_motion_by_frame(records, source_frames, sha) if motion_episodes else {}
     rejected = Counter()
     outcomes = []
     all_episodes = [_score_window(segment, window, source_observations=observations, video_sha256=sha)
@@ -1131,7 +1198,7 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
         if "serve" in families:
             for row in SERVE_METRICS[identifier]:
                 definitions.setdefault(row[0], row)
-        for row in PATTERN_METRICS[identifier]:
+        for row in (*PATTERN_METRICS[identifier], *SPECIALIST_METRICS[identifier]):
             if any(row[0] in e["metrics"] or any(row[0] in req["metric_ids"] for req in e["motion_pattern"]["requirements"]) for e in episodes):
                 definitions[row[0]] = row
         available_counts = [sum(key in e["metrics"] for key in definitions) for e in episodes]
@@ -1169,36 +1236,58 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
             advice = coaching_for_metric(weak["id"], actual_value, family=example["family"], score=actual_score)
             result["improvements"].append({"dimension_id": d["id"], **advice,
                                            "start_ms": example["start_ms"], "end_ms": example["end_ms"]})
+    result["level_assessments"] = build_level_assessments(result)
+    result["rubric"]["specialist_motion"] = SPECIALIST_RUBRIC
+    if _finite(source_duration_ms) and source_duration_ms > 0:
+        result["source_duration_ms"] = source_duration_ms
+    # Optional object evidence must not cancel already valid joint scores.
+    try:
+        result["multimodal_assessment"] = build_multimodal_assessment(source_frames,
+            [{**e, "source_video_sha256": sha} for e in result["episodes"]],
+            expected_video_sha256=sha, shot_events=shot_events)
+    except (ValueError, TypeError, KeyError, OverflowError):
+        result["multimodal_assessment"] = {"version": "observed-modalities-v1.0.0", "status": "source_evidence_invalid",
+            "source_video_sha256": sha, "missing_modality_disables_pose_score": False}
+    result["training_session"] = build_training_session_analysis(result, point_events=point_events, comparison=comparison)
     return result
 
 
 @lru_cache(maxsize=4)
-def _cached(directory, signatures, sha, job_id, episodes_json):
+def _cached(directory, signatures, sha, job_id, episodes_json, source_duration_ms=None):
     directory = Path(directory)
-    timeline = list(_read_rows(directory / "primary-player.jsonl"))
+    retained = _AssessmentRows()
+    timeline = [retained.retain(row) for row in _read_rows(directory / "primary-player.jsonl")]
     reviewed_selection = directory / "tennis-subject-selection.json"
     if reviewed_selection.is_file():
         timeline = reviewed_subject_timeline(json.loads(reviewed_selection.read_text(encoding="utf-8")),
                                              video_sha256=sha, native_sha256=signatures[1][2] if signatures[1] else None,
                                              frames_sha256=signatures[2][2] if signatures[2] else None)
+        if len(timeline) > MAX_RECORDS:
+            raise ValueError("tennis_selection_record_limit")
+        for row in timeline:
+            retained.retain(row)
     keys = {(r.get("source_frame_index"), r.get("source_track_id")) for r in timeline}
-    records = [r for r in _read_rows(directory / "sam3d_frames.jsonl") if (r.get("frame_index"), r.get("person_track_id")) in keys]
+    records = [retained.retain(r) for r in _read_rows(directory / "sam3d_frames.jsonl") if (r.get("frame_index"), r.get("person_track_id")) in keys]
     candidate_episodes = json.loads(episodes_json)
     # Without any candidate, projected observations cannot contribute a score.
     # Keep native/timeline diagnostics, but avoid materializing the largest
     # artifact merely to return an empty assessment. A reselection sidecar is
     # different: it must redetect candidates from its own target timeline.
     needs_frames = bool(candidate_episodes) or reviewed_selection.is_file()
-    frames = list(_read_rows(directory / "frames.jsonl")) if needs_frames and (directory / "frames.jsonl").is_file() else []
+    frames = [retained.retain(_source_frame_projection(row)) for row in
+              _read_rows(directory / "frames.jsonl", max_file_bytes=MAX_SOURCE_STREAM_BYTES)] \
+        if needs_frames and (directory / "frames.jsonl").is_file() else []
     # A sidecar chooses a different source-bound target timeline. Its motion
     # proposals must use that same timeline instead of the historical summary.
     # The original primary timeline and formal report remain untouched.
     if reviewed_selection.is_file():
-        candidate_episodes = _summary_episodes({"action_recognition": detect_stroke_candidates(frames, primary_timeline=timeline)})
+        candidate_episodes = _summary_episodes({"action_recognition": detect_stroke_candidates(
+            _read_rows(directory / "frames.jsonl", max_file_bytes=MAX_SOURCE_STREAM_BYTES), primary_timeline=timeline)})
     context_path = directory / "action-context.json"
     context = json.loads(context_path.read_text(encoding="utf-8")) if context_path.is_file() else None
     result = analyze_tennis_assessment(timeline, records, video_sha256=sha, source_run_id=job_id,
-                                      motion_episodes=candidate_episodes, source_frames=frames, action_context=context)
+                                      motion_episodes=candidate_episodes, source_frames=frames, action_context=context,
+                                      source_duration_ms=source_duration_ms)
     if signatures != _input_signatures(directory):
         raise ValueError("assessment_inputs_changed_during_read")
     return result
@@ -1224,7 +1313,8 @@ def build_tennis_assessment(summary: Mapping, run_dir: Path | str | None = None,
             result["reason_zh"] = "动作姿态与任务来源不一致。"
             return result
         signatures = _input_signatures(directory)
-        return deepcopy(_cached(str(directory), signatures, sha.lower(), job_id, json.dumps(_summary_episodes(summary), sort_keys=True)))
+        duration = _map(_map(summary.get("input")).get("video")).get("duration_ms")
+        return deepcopy(_cached(str(directory), signatures, sha.lower(), job_id, json.dumps(_summary_episodes(summary), sort_keys=True), duration))
     except (OSError, ValueError, TypeError, KeyError, OverflowError):
         result["reason_zh"] = "动作姿态记录缺失或来源校验未通过。"
         return result

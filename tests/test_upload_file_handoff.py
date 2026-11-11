@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -12,12 +13,12 @@ from unittest.mock import patch
 
 import cv2
 import numpy as np
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, Request, Response
 from fastapi.testclient import TestClient
 
 from rallymate_service.api import _owned_upload_source, _rename_submission_file, _sync_submission_directory, create_app
 from rallymate_service.config import ServiceSettings
-from rallymate_service.database import JobDatabase
+from rallymate_service.database import JobDatabase, QueueCapacityError
 from rallymate_service.uploads import UploadStore
 from rallymate_vision.quality import probe_video
 
@@ -186,12 +187,40 @@ class UploadFileHandoffTests(unittest.TestCase):
         self.assertEqual(response.status_code, 202, response.text)
         self.assertEqual(Path(self.database.get_job(self.upload_id)["video_path"]).read_bytes(), self.content)
 
+    def test_admission_429_preserves_verified_upload_and_can_retry(self):
+        self.prepare()
+        with patch.object(self.database, "create_job", side_effect=QueueCapacityError(32)):
+            response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 429, response.text)
+        self.assertEqual(response.headers["Retry-After"], "30")
+        self.assertEqual(response.json()["detail"]["code"], "analysis_queue_full")
+        self.assertIsNone(self.database.get_job(self.upload_id))
+        self.assertEqual(self.store.status(self.upload_id)["received_bytes"], len(self.content))
+        self.assertEqual(self.client.post(self.url).status_code, 202)
+
+    def test_maintenance_preserves_existing_uploads_and_allows_read_then_resume(self):
+        self.prepare()
+        settings = replace(self.settings, accept_new_jobs=False)
+        with TestClient(create_app(settings, self.database), headers={"Authorization": "Bearer test-key"}) as client:
+            health = client.get("/health/live")
+            self.assertFalse(health.json()["admission"]["accept_new_jobs"])
+            for response in (client.post("/v1/uploads", json={}),
+                             client.post("/v1/jobs", files={"video": ("phone.mp4", self.content, "video/mp4")}),
+                             client.post(self.url)):
+                self.assertEqual(response.status_code, 503, response.text)
+                self.assertEqual(response.headers["Retry-After"], "30")
+                self.assertEqual(response.json()["detail"]["code"], "submissions_paused")
+            self.assertEqual(client.get(f"/v1/uploads/{self.upload_id}").status_code, 200)
+            self.assertEqual(self.store.status(self.upload_id)["received_bytes"], len(self.content))
+            self.assertIsNone(self.database.get_job(self.upload_id))
+        self.assertEqual(self.client.post(self.url).status_code, 202)
+
     def test_lost_response_after_queue_commit_keeps_durable_input(self):
         self.prepare()
         original = self.database.create_job
 
-        def commit_then_fail(*args):
-            original(*args)
+        def commit_then_fail(*args, **kwargs):
+            original(*args, **kwargs)
             raise RuntimeError("response lost after commit")
 
         with patch.object(self.database, "create_job", side_effect=commit_then_fail):
@@ -207,7 +236,7 @@ class UploadFileHandoffTests(unittest.TestCase):
         self.prepare()
         original_get = self.database.get_job
         queue_attempted = False
-        def fail_queue(*args):
+        def fail_queue(*args, **kwargs):
             nonlocal queue_attempted
             queue_attempted = True
             raise RuntimeError("database connection lost")
@@ -271,6 +300,30 @@ class UploadFileHandoffTests(unittest.TestCase):
         self.assertEqual(destination.read_bytes(), b"already queued input")
         self.assertEqual(request_path.read_bytes(), b"already queued request")
 
+    def test_maintenance_during_probe_fences_enqueue_and_preserves_uploaded_bytes(self):
+        self.prepare()
+        app = create_app(self.settings, self.database,
+            executor_status=lambda: {"status": "ready", "available": True, "heartbeat_at": None},
+            executor_shutdown=lambda: {"status": "stopped"})
+        stop = next(route.endpoint for route in app.routes
+                    if getattr(route, 'path', '') == '/internal/maintenance/stop-executor')
+
+        def drain_during_probe(path):
+            metadata = probe_video(path)
+            stop(Request({'type': 'http', 'client': ('127.0.0.1', 50000)}), Response(), None)
+            return metadata
+
+        with TestClient(app, headers={"Authorization": "Bearer test-key"}) as client:
+            with patch('rallymate_service.api.probe_video', side_effect=drain_during_probe):
+                response = client.post(self.url)
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertIsNone(self.database.get_job(self.upload_id))
+        directory = self.store.directory(self.upload_id)
+        parts = sorted(directory.glob('*.part'), key=lambda path: int(path.stem))
+        self.assertEqual(b''.join(part.read_bytes() for part in parts), self.content)
+        self.assertEqual(self.store.status(self.upload_id)['received_bytes'], len(self.content))
+        self.assertEqual(self.client.post(self.url).status_code, 202)
+
     def test_directory_names_are_synced_before_queue_commit(self):
         self.prepare()
         synced = []
@@ -278,11 +331,11 @@ class UploadFileHandoffTests(unittest.TestCase):
         def sync(directory):
             _sync_submission_directory(directory)
             synced.append(directory.resolve())
-        def create(*args):
+        def create(*args, **kwargs):
             for directory in (self.settings.requests_dir, self.settings.uploads_dir,
                               self.store.directory(self.upload_id)):
                 self.assertIn(directory.resolve(), synced)
-            return original_create(*args)
+            return original_create(*args, **kwargs)
         with patch("rallymate_service.api._sync_submission_directory", side_effect=sync), \
                 patch.object(self.database, "create_job", side_effect=create):
             response = self.client.post(self.url)

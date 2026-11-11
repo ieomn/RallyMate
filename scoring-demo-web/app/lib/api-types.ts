@@ -160,6 +160,19 @@ export interface JobSubmission {
 }
 
 export interface JobProgress extends JobSubmission {
+  started_at?: string | null;
+  completed_at?: string | null;
+  updated_at?: string | null;
+  /** One-based position among queued jobs, excluding work already running. */
+  queue_position?: number | null;
+  executor?: {
+    status: "starting" | "ready" | "busy" | "restarting" | "unavailable" | "stopped" | "unmonitored";
+    available: boolean;
+    heartbeat_at: string | null;
+    message?: string;
+  };
+  /** Client read state; never substitutes for the server's task status. */
+  client_connection?: "reconnecting";
   progress?: number | {
     phase?: string;
     percent?: number;

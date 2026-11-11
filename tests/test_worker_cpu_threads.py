@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
@@ -17,6 +18,10 @@ class _FakeTorch:
         self.interop = interop
         self.calls: list[tuple[str, int]] = []
         self.interop_error: Exception | None = None
+
+    @staticmethod
+    def device(value):
+        return f"torch.device({value})"
 
     def get_num_threads(self) -> int:
         return self.intraop
@@ -183,7 +188,7 @@ class WorkerCpuThreadTests(unittest.TestCase):
             patch.object(
                 worker,
                 "Yolo26Perception",
-                side_effect=lambda **kwargs: events.append("model") or object(),
+                side_effect=lambda **kwargs: events.append("model") or SimpleNamespace(),
             ),
             patch.object(
                 worker,
@@ -209,7 +214,7 @@ class WorkerCpuThreadTests(unittest.TestCase):
         def load_models(**_kwargs):
             # Simulate a library changing a process-global pool during import.
             fake_torch.intraop = 2
-            return object()
+            return SimpleNamespace()
 
         with (
             patch.dict(sys.modules, {"torch": fake_torch, "cv2": fake_cv2}),

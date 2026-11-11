@@ -1,6 +1,7 @@
 import type { RallyMateApiClient } from "./api-client";
 import type { DemoResultResponse, JobProgress, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./api-types";
 import { REPORT_READ_BUDGET_MS } from "./report-limits";
+import type { ReportSummary } from "./segmented-report";
 
 export type AnalysisResult = { job: JobProgress; result: DemoResultResponse; trajectory: TrajectoryPreviewResponse | null; assessment: TechniqueAssessmentResponse | null; warning: string | null };
 
@@ -68,6 +69,44 @@ export function reconnectDelay(failures: number, interval = 2000) {
   return Math.min(15000, Math.max(0, interval) * 2 ** Math.min(Math.max(0, failures - 1), 5));
 }
 
+/** Summary delivery has no dependency on the full report or optional replays. */
+export async function watchSummaryAnalysis(client: Pick<RallyMateApiClient, "getJobStatus" | "getReportSummary">, jobId: string, signal: AbortSignal,
+  onProgress: (job: JobProgress) => void, interval = 2000): Promise<{ job: JobProgress; summary: ReportSummary }> {
+  let failures = 0, job: JobProgress = { id: jobId, status: "queued" };
+  for (;;) {
+    signal.throwIfAborted();
+    try {
+      const incoming = await client.getJobStatus(jobId, signal);
+      signal.throwIfAborted();
+      if (incoming.id !== jobId || !["queued", "running", "processing", "succeeded", "completed", "failed", "cancelled"].includes(incoming.status)) throw Object.assign(new Error("任务响应不完整，请重试读取"), { status: 422 });
+      job = incoming; failures = 0;
+    } catch (error) {
+      signal.throwIfAborted();
+      if (!retryable(error) || ++failures >= 30) throw error;
+      onProgress({ ...job, client_connection: "reconnecting", message: "连接暂时中断，正在重新读取任务状态。无需重新上传。" });
+      await pause(reconnectDelay(failures, interval), signal); continue;
+    }
+    onProgress(job);
+    if (job.status === "cancelled") throw new AnalysisCancelledError();
+    if (job.status === "failed") throw new Error(job.error || "视频处理失败，请稍后重试");
+    if (["succeeded", "completed"].includes(job.status)) break;
+    await pause(interval, signal);
+  }
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const summary = await client.getReportSummary(jobId, signal);
+      signal.throwIfAborted();
+      if (summary.job_id !== jobId || summary.status !== "ready") throw Object.assign(new Error("摘要与当前视频任务不匹配，请重新读取"), { status: 422 });
+      return { job, summary };
+    } catch (error) {
+      signal.throwIfAborted();
+      if (!retryable(error) || attempt >= 3) throw error;
+      onProgress({ ...job, message: "分析已完成，正在重新读取训练摘要。无需重新上传。" });
+      await pause(reconnectDelay(attempt, interval), signal);
+    }
+  }
+}
+
 /** Jobs keep running on the analyzer when a tab closes. Only stop watching. */
 export async function watchAnalysis(client: RallyMateApiClient, jobId: string, signal: AbortSignal, onProgress: (job: JobProgress) => void, interval = 2000, onTrajectory?: (trajectory: TrajectoryPreviewResponse) => void, onResult?: (result: DemoResultResponse) => void): Promise<AnalysisResult> {
   let failures = 0;
@@ -90,8 +129,8 @@ export async function watchAnalysis(client: RallyMateApiClient, jobId: string, s
         signal.throwIfAborted();
         if (!retryable(error)) throw error;
         if (++failures >= 30) throw new Error("网络连接暂未恢复。点击“继续读取结果”可重新连接当前任务，无需重新上传。", { cause: error });
-        const message = `连接暂时中断，正在自动重连（${failures}/30）。服务器任务继续运行，无需重新上传。`;
-        onProgress({ ...job, message, progress: typeof job.progress === "object" ? { ...job.progress, message } : job.progress });
+        const message = `连接暂时中断，正在自动重连（${failures}/30）。最新任务状态暂未确认，无需重新上传。`;
+        onProgress({ ...job, client_connection: "reconnecting", message, progress: typeof job.progress === "object" ? { ...job.progress, message } : job.progress });
         await pause(reconnectDelay(failures, interval), signal);
         continue;
       }

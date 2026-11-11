@@ -11,7 +11,8 @@ param(
     [ValidateRange(1, 64)]
     [int]$SamCpuThreads = 1,
     [ValidateSet("runtime_default", "passive")]
-    [string]$SamWaitMode = "passive"
+    [string]$SamWaitMode = "passive",
+    [switch]$ApiOnly
 )
 
 # Manual maintenance entry point: verify the expected idle preview processes before
@@ -22,6 +23,9 @@ if ($Model -eq "sam3d-dinov3" -and -not $PSBoundParameters.ContainsKey("CpuThrea
 }
 $projectRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot "preview_process_ownership.ps1")
+. (Join-Path $PSScriptRoot 'local_performance_profile.ps1')
+# Reject missing/invalid performance configuration before stopping the old API.
+$null = Read-LocalPerformanceProfile -ProjectRoot $projectRoot -Model $Model -Device '0' -ValidateDevice:(-not $ApiOnly)
 if ($FrontendPort -eq $ApiPort) { throw "Frontend and API ports must differ." }
 foreach ($relativePath in @("scripts/start_local.ps1", "runtime/rtmpose/.venv/Scripts/python.exe", "models/yolo26n.pt", "scoring-demo-web/.dev.vars", "scoring-demo-web/dist/server/index.js", "scoring-demo-web/node_modules/vinext/dist/cli.js")) {
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot $relativePath) -PathType Leaf)) {
@@ -64,34 +68,22 @@ foreach ($port in @($FrontendPort, $ApiPort)) {
     }
 }
 
-# Refuse a restart if the latest health check shows an active analysis. Pause
-# new submissions during maintenance; this check is not a queue drain lock.
-# A failed/unreadable health response also prevents a restart.
+# New services freeze admission and gracefully drain the supervised worker
+# before process cleanup. Never force-stop a child that its parent may respawn.
+$maintenanceState = $null
 if (Get-NetTCPConnection -LocalPort $ApiPort -State Listen -ErrorAction SilentlyContinue) {
-    $response = $null
-    $reader = $null
     try {
-        $request = [Net.HttpWebRequest]::Create("http://127.0.0.1:$ApiPort/health/ready")
-        $request.Proxy = $null
-        $request.AllowAutoRedirect = $false
-        $request.Timeout = 5000
-        $request.ReadWriteTimeout = 5000
-        $request.Headers["Authorization"] = "Bearer $internalKey"
-        $response = $request.GetResponse()
-        $reader = New-Object IO.StreamReader($response.GetResponseStream())
-        $health = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
-        if ($health.status -ne "ready" -or $null -eq $health.queue) { throw "API is not ready." }
-        if ([int]$health.queue.running -gt 0 -or [int]$health.queue.queued -gt 0) { throw "An analysis is active or queued." }
-    } catch {
-        throw "Cannot safely restart the API: it is busy or its health could not be verified. No service was stopped."
+        $maintenanceState = Stop-LocalExecutorForRestart -ApiPort $ApiPort -ApiKey $internalKey
     } finally {
-        if ($null -ne $reader) { $reader.Dispose() }
-        if ($null -ne $response) { $response.Close() }
         $internalKey = ""
     }
 }
 
 $processSnapshot = @(Get-CimInstance Win32_Process)
+# Older services have no executor snapshot. An owned mesh subprocess is still
+# active work even after its analysis job has status=succeeded.
+$ownedApiIds = @($listenersToStop | Where-Object Kind -eq 'api' | ForEach-Object { $_.ProcessId })
+Assert-LocalMeshIdle -Snapshot $processSnapshot -ApiProcessIds $ownedApiIds -RequireUnsupervised:($maintenanceState -eq 'legacy_idle')
 $stopPlan = @(New-PreviewProcessStopPlan -Snapshot $processSnapshot -Listeners $listenersToStop -ProjectRoot $projectRoot)
 $cleanupReceipt = Join-Path $projectRoot (".codex_tmp/full-service/restart-cleanup-" + [datetime]::UtcNow.ToString('yyyyMMddTHHmmssfffffffZ') + ".json")
 Stop-PreviewProcessPlan -Plan $stopPlan -ReceiptPath $cleanupReceipt
@@ -108,6 +100,6 @@ do {
     }
     Start-Sleep -Milliseconds 300
 } while ($true)
-& (Join-Path $PSScriptRoot "start_local.ps1") -FrontendPort $FrontendPort -ApiPort $ApiPort -Model $Model -DataRoot $DataRoot -CpuThreads $CpuThreads -SamCpuThreads $SamCpuThreads -SamWaitMode $SamWaitMode
+& (Join-Path $PSScriptRoot "start_local.ps1") -FrontendPort $FrontendPort -ApiPort $ApiPort -Model $Model -DataRoot $DataRoot -CpuThreads $CpuThreads -SamCpuThreads $SamCpuThreads -SamWaitMode $SamWaitMode -ApiOnly:$ApiOnly
 Write-Host "Preview processes launched; allow the API a few seconds to become ready. Keep the existing Cloudflare terminal open."
 Write-Host "Local preview: http://127.0.0.1:$FrontendPort"

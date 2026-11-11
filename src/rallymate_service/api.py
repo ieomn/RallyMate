@@ -9,13 +9,14 @@ import re
 import secrets
 import stat
 import sys
+import time
 import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager, ExitStack
 from importlib.resources import files
 from pathlib import Path
-from threading import Lock
-from typing import Any
+from threading import Lock, Event, BoundedSemaphore, RLock
+from typing import Any, Callable
 
 from fastapi import (
     Depends,
@@ -51,7 +52,12 @@ from rallymate_scoring.technique_assessment import (
     build_technique_assessment,
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
-from rallymate_service.database import JobDatabase
+from rallymate_service.database import JobDatabase, QueueCapacityError
+from rallymate_service.segmented_report import (
+    SegmentedReportStore, SegmentedReportError, build_summary as build_segmented_summary,
+    MAX_SUMMARY_BYTES, MAX_DETAIL_BYTES, MAX_OVERVIEW_BYTES,
+)
+from rallymate_service.segmented_delivery import SegmentedDelivery
 from rallymate_service.live_trajectory import LiveTrajectoryCache
 from rallymate_service.shot_statistics import build_shot_statistics, validate_review
 from rallymate_service.shot_review_store import (
@@ -103,7 +109,7 @@ from rallymate_service.user_demo import (
     load_indicator_feature_records, open_indicator_feature_records,
 )
 from rallymate_vision.quality import probe_video
-from rallymate_vision.pose_playback import PosePlaybackError, build_pose_playback
+from rallymate_vision.pose_playback import PosePlaybackError, PosePlaybackTransport, build_pose_playback, pose_playback_transport
 from rallymate_vision.trajectory import (
     TrajectoryExtractionError,
     build_trajectory_preview,
@@ -302,6 +308,18 @@ def _safe_request_id(raw: str | None) -> str:
     return uuid.uuid4().hex
 
 
+def _public_original_filename(job: dict, *, redact: bool):
+    """Project an upload label without loading or inspecting its report."""
+    original = job.get("original_filename")
+    if not redact:
+        return original
+    # Uploaded filenames can contain a person's name or local directory hints.
+    # Keep the same stable opaque label in lightweight status and full job APIs.
+    original = str(original or "")
+    suffix = Path(original).suffix.lower() if original else ""
+    return f"video-{str(job.get('id', 'job'))[:8]}{suffix}"
+
+
 def _public_job(
     job: dict,
     public_base_url: str | None = None,
@@ -329,12 +347,7 @@ def _public_job(
         )
     }
     if redact_summary:
-        # Uploaded filenames can contain a person's name or local directory
-        # hints.  Keep a stable opaque label for public/prod job lists while
-        # development retains the historical filename for compatibility.
-        original = str(public.get("original_filename") or "")
-        suffix = Path(original).suffix.lower() if original else ""
-        public["original_filename"] = f"video-{str(job.get('id', 'job'))[:8]}{suffix}"
+        public["original_filename"] = _public_original_filename(job, redact=True)
         public["summary"] = _public_summary(job, redact=True)
         if isinstance(public.get("error"), str):
             public["error"] = _redact_readiness_reason(public["error"])
@@ -563,6 +576,9 @@ def _parse_polygon(raw: str | None) -> list[list[float]] | None:
 def create_app(
     settings: ServiceSettings | None = None,
     database: JobDatabase | None = None,
+    *,
+    executor_status: Callable[[], dict] | None = None,
+    executor_shutdown: Callable[[], dict] | None = None,
 ) -> FastAPI:
     service_settings = settings or load_settings()
     # ``create_app`` is also a public factory used by tests, worker wrappers
@@ -575,6 +591,38 @@ def create_app(
     service_settings.ensure_directories()
     deployment_identity = load_deployment_identity(Path(__file__).resolve().parents[2])
     db = database or JobDatabase(service_settings.database_path)
+    admission_lock = RLock()
+    maintenance = Event()
+
+    def execution_status() -> dict:
+        # A report-only API can use an independently managed worker. In that
+        # mode readiness must not pretend that an unobserved executor is alive.
+        if executor_status is None:
+            return {"status": "unmonitored", "available": False, "heartbeat_at": None}
+        try:
+            snapshot = executor_status()
+            state = snapshot.get("status")
+            if state not in {"starting", "ready", "busy", "restarting", "unavailable", "stopped", "unmonitored"}:
+                raise ValueError("invalid executor status")
+            heartbeat = snapshot.get("heartbeat_at")
+            if heartbeat is not None:
+                from datetime import datetime
+                datetime.fromisoformat(heartbeat.replace("Z", "+00:00"))
+            # Never expose worker ids, hostnames, child exceptions or paths.
+            result = {"status": state,
+                      "available": snapshot.get("available") is True and state in {"ready", "busy"},
+                      "heartbeat_at": heartbeat}
+            kind = snapshot.get("work_kind")
+            if kind in {"analysis", "mesh", "idle", "loading"}:
+                result["work_kind"] = kind
+            return result
+        except Exception:
+            return {"status": "unavailable", "available": False, "heartbeat_at": None}
+
+    def execution_admits(snapshot: dict) -> bool:
+        # Preserve externally managed/API-only deployments without claiming
+        # their executor was verified. The supervised local service fails closed.
+        return snapshot["status"] == "unmonitored" or snapshot["available"]
     technical_reviews = TechnicalReviewStore(service_settings.data_root / "technical-reviews.sqlite3")
     shot_reviews = ShotReviewStore(service_settings.data_root / "shot-reviews.sqlite3")
     shot_statistics_cache: OrderedDict[tuple, dict] = OrderedDict()
@@ -591,6 +639,8 @@ def create_app(
     report_builder_version = report_builder_fingerprint(Path(__file__).resolve().parents[1])
     report_process_at_start = REPORT_PROCESS_VERSION
     report_delivery_cache = ReportDeliveryCache(storage_dir=service_settings.data_root / "report-delivery-cache")
+    segmented_reports = SegmentedReportStore()
+    segmented_summary_slots = BoundedSemaphore(4)
 
     def packaged_report_rules_identity() -> tuple:
         resources = sorted((item for item in files("rallymate_scoring").joinpath("data").iterdir()
@@ -609,6 +659,14 @@ def create_app(
             raise DeliveryError(503, "report_rules_changed_restart_required",
                                 "Packaged report rules changed; restart the service before preparing reports.")
         return current
+
+    def segmented_rules_identity():
+        registry = service_settings.resolved_technique_registry
+        return (current_packaged_rules_identity(),
+                artifact_signature(Path(registry), content_hash=True) if registry is not None else None,
+                _should_redact_public(service_settings), service_settings.public_base_url)
+
+    segmented_delivery = SegmentedDelivery(service_settings, db, segmented_rules_identity)
 
     def report_source_key(job: dict, contract: ReportContract, transport: ReportTransport) -> tuple:
         # Numerical report media links are fixed to its own artifact snapshot.
@@ -674,6 +732,7 @@ def create_app(
             yield
         finally:
             live_trajectory_cache.clear()
+            await run_in_threadpool(segmented_delivery.close)
             await run_in_threadpool(report_delivery_cache.close)
 
     app = FastAPI(
@@ -695,6 +754,13 @@ def create_app(
     app.state.database = db
     app.state.technical_reviews = technical_reviews
     app.state.report_delivery_cache = report_delivery_cache
+    app.state.segmented_delivery = segmented_delivery
+
+    @app.exception_handler(QueueCapacityError)
+    async def queue_capacity_handler(request: Request, exc: QueueCapacityError):
+        return JSONResponse(status_code=429, content={"detail": {"code": "analysis_queue_full",
+            "message": "分析队列已满，请稍后重试。", "max_active_jobs": exc.limit}},
+            headers={"Retry-After": "30", "Cache-Control": "no-store"})
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -748,7 +814,8 @@ def create_app(
 
     @app.get("/health/live")
     def liveness() -> dict:
-        return {"status": "ok"}
+        return {"status": "ok", "admission": {"max_active_jobs": service_settings.max_active_jobs,
+            "accept_new_jobs": service_settings.accept_new_jobs and not maintenance.is_set()}}
 
     @app.get("/v1/meta")
     def api_meta(_: None = Depends(authorize)) -> dict:
@@ -816,7 +883,7 @@ def create_app(
         return catalog
 
     @app.get("/health/ready")
-    def readiness(_: None = Depends(authorize)) -> dict:
+    def readiness(response: Response, _: None = Depends(authorize)) -> dict:
         reasons = []
         registry_authority = None
         # Report the credential problem independently of the other startup
@@ -864,13 +931,27 @@ def create_app(
             reasons.append(
                 f"pose_config is missing: {service_settings.pose_config}"
             )
+        executor = execution_status()
+        if not execution_admits(executor):
+            reasons.append("Inference executor is not available; uploads and existing reports are preserved.")
+            response.status_code = 503
+        if maintenance.is_set():
+            reasons.append("Local service maintenance is draining the executor; submissions are paused.")
+            response.status_code = 503
+        response.headers["Cache-Control"] = "no-store"
         return {
             "status": "ready" if not reasons else "not_ready",
+            "executor": executor,
+            "inference_ready": None if executor["status"] == "unmonitored" else executor["available"],
             # Readiness is often queried through a public domain.  Keep config
             # names and remediation text, but never return /app, drive-letter,
             # or other worker-local paths in the JSON response.
             "reasons": [_redact_readiness_reason(reason) for reason in reasons],
             "queue": db.count_by_status(),
+            "admission": {"max_active_jobs": service_settings.max_active_jobs,
+                          "accept_new_jobs": service_settings.accept_new_jobs and not maintenance.is_set()
+                                             and execution_admits(executor)},
+            "maintenance": maintenance.is_set(),
             "environment": service_settings.environment,
             "model_license_ack": service_settings.model_license_ack,
             "pose_preset": service_settings.pose_preset,
@@ -1009,6 +1090,49 @@ def create_app(
             "count": len(jobs),
         }
 
+    def require_submission_open():
+        if not service_settings.accept_new_jobs or maintenance.is_set():
+            raise HTTPException(503, {"code": "submissions_paused",
+                "message": "视频分析提交暂时暂停；已有上传和报告仍保留，请稍后重试。"},
+                headers={"Retry-After": "30", "Cache-Control": "no-store"})
+        if not execution_admits(execution_status()):
+            raise HTTPException(503, {"code": "executor_unavailable",
+                "message": "分析执行器暂不可用；已上传的视频仍保留，请稍后重试提交。"},
+                headers={"Retry-After": "30", "Cache-Control": "no-store"})
+
+    @app.post("/internal/maintenance/stop-executor", include_in_schema=False)
+    def stop_executor_for_maintenance(request: Request, response: Response,
+                                      _: None = Depends(authorize)) -> dict:
+        # This route is not in the public browser gateway allowlist. It is only
+        # for the authenticated, loopback maintenance launcher.
+        if not service_settings.api_key:
+            raise HTTPException(503, {"code": "maintenance_auth_not_configured",
+                                      "message": "Local maintenance requires API authentication."})
+        if request.client is None or request.client.host not in {"127.0.0.1", "::1"}:
+            raise HTTPException(403, "local maintenance only")
+        if executor_shutdown is None:
+            raise HTTPException(404, "supervised executor not configured")
+        with admission_lock:
+            was_paused = maintenance.is_set()
+            maintenance.set()
+            try:
+                queue = db.count_by_status()
+                if queue.get("running", 0) or queue.get("queued", 0):
+                    raise ValueError("Analysis work is active or queued")
+                executor_shutdown()
+            except ValueError:
+                if not was_paused:
+                    maintenance.clear()
+                raise HTTPException(409, {"code": "executor_busy", "message": "Current work must finish before maintenance."})
+            except Exception:
+                # An uncertain stop request must never lead to new work being
+                # admitted or to an unsafe forced replacement by the launcher.
+                raise HTTPException(503, {"code": "executor_stop_unconfirmed", "message": "Executor shutdown could not be confirmed."})
+        executor = execution_status()
+        stopped = executor["status"] == "stopped"
+        response.status_code = 200 if stopped else 202
+        response.headers["Cache-Control"] = "no-store"
+        return {"status": "stopped" if stopped else "draining", "executor_stopped": stopped, "executor": executor}
     async def _submit_video(
         request: Request, video: UploadFile | None, court_mode: str = "disabled",
         manual_polygon_normalized: str | None = None,
@@ -1018,6 +1142,7 @@ def create_app(
         max_frames: int | None = None, job_id: str | None = None,
         *, _owned_upload: tuple[Path, dict] | None = None,
     ) -> dict:
+        require_submission_open()
         if court_mode not in {"auto", "manual", "disabled"}:
             raise HTTPException(422, "court_mode must be auto, manual or disabled")
         if manual_polygon_role not in {
@@ -1216,9 +1341,16 @@ def create_app(
                 request_path.write_text(
                     json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
                 )
-            job = db.create_job(
-                job_id, filename, video_path, request_path, output_dir
-            )
+            with admission_lock:
+                # A submission may have spent time receiving/probing the
+                # video since its first admission check. Fence its actual
+                # enqueue against maintenance, restoring handed-off uploads
+                # through the existing exception path when admission closes.
+                require_submission_open()
+                job = db.create_job(
+                    job_id, filename, video_path, request_path, output_dir,
+                    max_active_jobs=service_settings.max_active_jobs,
+                )
         except Exception:
             # A database error may occur after commit. Never remove a durable
             # input if queue ownership cannot be determined reliably.
@@ -1277,6 +1409,7 @@ def create_app(
 
     @app.post("/v1/uploads", status_code=201)
     def create_upload(payload: dict, _: None = Depends(authorize)) -> dict:
+        require_submission_open()
         filename = _safe_filename(str(payload.get("filename", "")))
         if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
             raise HTTPException(415, "不支持的视频格式")
@@ -1356,6 +1489,37 @@ def create_app(
         result["original_video"] = original_video_descriptor(job, service_settings)
         return result
 
+    @app.get("/v1/jobs/{job_id}/status")
+    def get_job_status(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
+        # Polling must not deserialize or transfer the potentially very large
+        # completed summary, nor recalculate action recognition.
+        with db.connect() as connection:
+            row = connection.execute("SELECT id,status,original_filename,progress_json,cancel_requested,error,"
+                "created_at,updated_at,started_at,completed_at,cancelled_at,cancel_requested_at "
+                "FROM jobs WHERE id=?", (job_id,)).fetchone()
+            queue_position = None
+            if row is not None and row["status"] == "queued" and not row["cancel_requested"]:
+                # Same eligible FIFO population as claim_next; never read summaries.
+                queue_position = connection.execute(
+                    "SELECT COUNT(*) FROM jobs WHERE status='queued' AND cancel_requested=0 "
+                    "AND attempts < ? AND (created_at < ? OR (created_at = ? AND id <= ?))",
+                    (service_settings.max_attempts, row["created_at"], row["created_at"], row["id"]),
+                ).fetchone()[0]
+        if row is None:
+            raise HTTPException(404, "job not found")
+        result = dict(row)
+        result["queue_position"] = queue_position
+        result["executor"] = execution_status()
+        raw = result.pop("progress_json", None)
+        result["progress"] = json.loads(raw) if raw else {"phase": result["status"],
+            "percent": 100 if result["status"] == "succeeded" else 0}
+        result["cancel_requested"] = bool(result["cancel_requested"])
+        result["original_filename"] = _public_original_filename(
+            result, redact=_should_redact_public(service_settings))
+        result["error"] = _public_error_detail(result.get("error"), service_settings)
+        response.headers["Cache-Control"] = "no-store"
+        return result
+
     @app.post("/v1/jobs/{job_id}/cancel")
     def cancel_job(job_id: str, response: Response,
                    report_contract: ReportContract = Query(DEFAULT_REPORT_CONTRACT),
@@ -1412,6 +1576,168 @@ def create_app(
             return result
         except TechnicalReviewError as exc:
             raise HTTPException(exc.status, exc.detail()) from exc
+
+    async def segmented_response(request, job_id, kind, offset=0, limit=20, event_id=None,
+                                 report_delivery: ReportDelivery = "inline"):
+        if kind != "summary":
+            waiting_since = time.monotonic()
+            def build_section(job, check):
+                try:
+                    if kind == "overview":
+                        payload = segmented_reports.overview(job, original_video_descriptor(job, service_settings),
+                            check, registry_path=service_settings.resolved_technique_registry)
+                    elif kind == "motion":
+                        payload = segmented_reports.motion(job, event_id, check)
+                    elif kind == "actions":
+                        payload = segmented_reports.actions(job, offset, limit, check)
+                    else:
+                        payload = segmented_reports.detail(job, event_id, offset, limit, check)
+                    if _should_redact_public(service_settings):
+                        payload = _redact_public_value(payload)
+                    return encode_bounded_json(payload, max_bytes=MAX_DETAIL_BYTES if kind in {"detail", "motion"}
+                        else MAX_OVERVIEW_BYTES if kind == "overview" else MAX_SUMMARY_BYTES,
+                        cancellation_callback=check)
+                except (ReportEvidenceLimitError, PostprocessOutputLimit, PostprocessResourceLimit):
+                    raise
+                except (ArtifactEvidenceError, ValueError, OSError, KeyError, TypeError) as exc:
+                    if isinstance(exc, SegmentedReportError):
+                        raise
+                    raise SegmentedReportError() from exc
+
+            try:
+                delivery = await run_in_threadpool(segmented_delivery.request,
+                    job_id, kind, offset, limit, event_id, build_section)
+                # Old, already-open clients expect a 200 section. They wait on
+                # exactly the same shared build; only explicitly opted-in
+                # clients receive the new 202 polling envelope.
+                while delivery.state == "preparing" and report_delivery == "inline":
+                    if await request.is_disconnected():
+                        raise HTTPException(409, {"code": "report_read_cancelled", "message": "报告读取已取消。"})
+                    if time.monotonic() - waiting_since >= 60:
+                        raise HTTPException(503, {"code": "report_segments_busy", "message": "报告仍在后台准备，请稍后重试。"},
+                            headers={"Retry-After": "2", "Cache-Control": "no-store"})
+                    await asyncio.sleep(.2)
+                    delivery = await run_in_threadpool(segmented_delivery.request,
+                        job_id, kind, offset, limit, event_id, build_section)
+            except DeliveryError as exc:
+                raise HTTPException(exc.status, exc.detail()) from exc
+            if delivery.state == "ready":
+                return Response(delivery.body, media_type="application/json", headers={"Cache-Control": "no-store"})
+            if delivery.state == "preparing":
+                return JSONResponse(status_code=202, content={"schema_version": "segmented-report-v1",
+                    "job_id": job_id, "status": "preparing", "retry_after_ms": 1000,
+                    "delivery": {"state": "preparing"}}, headers={"Retry-After": "1", "Cache-Control": "no-store"})
+            error = delivery.error
+            if error.code in {"report_preparation_queue_full", "report_preparation_queue_timeout", "report_segments_busy"}:
+                raise HTTPException(429, {"code": "report_segments_busy", "message": "动作证据正在准备，请稍后重试。"},
+                    headers={"Retry-After": "2", "Cache-Control": "no-store"})
+            if error.code == "report_preparation_timeout":
+                raise HTTPException(503, {"code": "report_segment_resource_limit",
+                    "message": "报告后处理超过时间预算（60 秒），已停止；原始上传和已生成产物保留"})
+            raise HTTPException(error.status, error.detail(), headers={"Cache-Control": "no-store"})
+        # Heavy evidence reads must not starve the independent first-screen
+        # summary in another tab. Both lanes remain bounded.
+        slots = segmented_summary_slots
+        if not slots.acquire(blocking=False):
+            raise HTTPException(429, {"code": "report_segments_busy", "message": "动作证据正在读取，请稍后重试。"},
+                                headers={"Retry-After": "2", "Cache-Control": "no-store"})
+        disconnected = Event()
+
+        async def watch_disconnect():
+            while not disconnected.is_set():
+                if await request.is_disconnected():
+                    disconnected.set()
+                    return
+                await asyncio.sleep(.1)
+
+        def prepare():
+            initial_state = db.execution_state(job_id)
+            if initial_state is None:
+                raise HTTPException(404, "job not found")
+            if initial_state["status"] != "succeeded" or initial_state.get("cancel_requested"):
+                raise HTTPException(409, "job has not succeeded or was cancelled")
+
+            def revision():
+                # Completed summaries are normally immutable. Hash the stored
+                # text at the two delivery boundaries as well, so an external
+                # same-status edit cannot serve bytes from a stale snapshot.
+                with db.connect() as connection:
+                    row = connection.execute("SELECT updated_at,summary_json FROM jobs WHERE id=?", (job_id,)).fetchone()
+                return None if row is None else (row["updated_at"],
+                    hashlib.sha256((row["summary_json"] or "").encode("utf-8")).hexdigest())
+
+            initial_revision = revision()
+
+            def current():
+                if disconnected.is_set():
+                    raise SegmentedReportError("report_read_cancelled", "报告读取已取消。", 409)
+                state = db.execution_state(job_id)
+                if state != initial_state:
+                    raise SegmentedReportError("report_source_changed", "分析任务已变化，请重新读取报告。", 409)
+
+            budget = PostprocessBudget(max_seconds=60, cancellation_callback=current)
+            budget.check(force=True)
+            job = db.get_job(job_id)
+            if job is None or Path(job["output_dir"]).resolve() != (service_settings.runs_dir / job_id).resolve():
+                raise SegmentedReportError()
+            try:
+                payload = build_segmented_summary(job, original_video_descriptor(job, service_settings))
+                if _should_redact_public(service_settings):
+                    payload = _redact_public_value(payload)
+                body = encode_bounded_json(payload, max_bytes=MAX_SUMMARY_BYTES,
+                                           cancellation_callback=budget.check)
+                if revision() != initial_revision:
+                    raise SegmentedReportError("report_source_changed", "分析摘要已变化，请重新读取报告。", 409)
+                budget.check(force=True)
+                return body
+            except SegmentedReportError:
+                raise
+            except (PostprocessResourceLimit, ReportEvidenceLimitError):
+                raise
+            except (ArtifactEvidenceError, ValueError, OSError, KeyError, TypeError) as exc:
+                raise SegmentedReportError() from exc
+
+        watcher = asyncio.create_task(watch_disconnect())
+        try:
+            body = await run_in_threadpool(prepare)
+            return Response(body, media_type="application/json", headers={"Cache-Control": "no-store"})
+        except SegmentedReportError as exc:
+            raise HTTPException(exc.status, {"code": exc.code, "message": exc.message}) from exc
+        except (PostprocessOutputLimit, ReportEvidenceLimitError) as exc:
+            raise HTTPException(413, {"code": "report_segment_limit",
+                "message": "本页证据超过读取上限，请减少每页条数；原始产物已保留。"}) from exc
+        except PostprocessResourceLimit as exc:
+            raise HTTPException(503, {"code": "report_segment_resource_limit", "message": str(exc)}) from exc
+        finally:
+            disconnected.set()
+            watcher.cancel()
+            slots.release()
+
+    @app.get("/v1/jobs/{job_id}/report-summary")
+    async def get_report_summary(job_id: str, request: Request, _: None = Depends(authorize)):
+        return await segmented_response(request, job_id, "summary")
+
+    @app.get("/v1/jobs/{job_id}/report-overview")
+    async def get_report_overview(job_id: str, request: Request, report_delivery: ReportDelivery = Query("inline"),
+                                  _: None = Depends(authorize)):
+        return await segmented_response(request, job_id, "overview", report_delivery=report_delivery)
+
+    @app.get("/v1/jobs/{job_id}/report-motion/{episode_id}")
+    async def get_report_motion(job_id: str, episode_id: str, request: Request, report_delivery: ReportDelivery = Query("inline"),
+                                _: None = Depends(authorize)):
+        return await segmented_response(request, job_id, "motion", event_id=episode_id, report_delivery=report_delivery)
+
+    @app.get("/v1/jobs/{job_id}/report-actions")
+    async def get_report_actions(job_id: str, request: Request, offset: int = Query(0, ge=0, le=65000),
+                                 limit: int = Query(20, ge=1, le=50), report_delivery: ReportDelivery = Query("inline"),
+                                 _: None = Depends(authorize)):
+        return await segmented_response(request, job_id, "actions", offset, limit, report_delivery=report_delivery)
+
+    @app.get("/v1/jobs/{job_id}/report-actions/{event_id}")
+    async def get_report_action(job_id: str, event_id: str, request: Request, offset: int = Query(0, ge=0, le=65000),
+                                limit: int = Query(4, ge=1, le=8), report_delivery: ReportDelivery = Query("inline"),
+                                _: None = Depends(authorize)):
+        return await segmented_response(request, job_id, "detail", offset, limit, event_id, report_delivery=report_delivery)
 
     def report_records(path, summary, check):
         loop = summary.get("minimum_scoring_loop") or {}
@@ -1857,6 +2183,7 @@ def create_app(
         start_ms: int = Query(0, ge=0, description="Start of the source-video playback window."),
         duration_ms: int = Query(10_000, ge=1, le=10_000),
         sample_limit: int = Query(600, ge=1, le=600),
+        pose_transport: PosePlaybackTransport = Query("full"),
         _: None = Depends(authorize),
     ) -> dict:
         """Read a bounded skeleton window without rerunning pose inference."""
@@ -1894,7 +2221,7 @@ def create_app(
                 pose_cache.move_to_end(cache_key)
             response.headers["Cache-Control"] = "no-store"
             record_pose_phase(request, "route_return")
-            return payload
+            return pose_playback_transport(payload, pose_transport)
         except (PosePlaybackError, OSError) as exc:
             raise HTTPException(422, {"code": "pose_playback_artifact_invalid",
                                       "message": "Pose playback source could not be verified."}) from exc

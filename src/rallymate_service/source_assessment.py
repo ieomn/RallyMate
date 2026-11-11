@@ -653,3 +653,115 @@ def load_source_aligned_assessment(output_dir: Path, *, video_id: str, duration_
                                   video_id, duration_ms, video_sha256, frames_sha256))
     except (OSError, ValueError, TypeError, AttributeError, KeyError):
         return _empty("本次分析暂未生成可核验的逐项测量记录。")
+
+
+def load_source_assessment_event(output_dir: Path, *, event_id: str, video_id: str,
+                                 duration_ms: int, video_sha256: str | None = None,
+                                 frames_sha256: str | None = None,
+                                 cancellation_callback=None) -> dict:
+    """Project one event without building the whole multi-event public report.
+
+    Keep the full selected record and its successor evidence for the existing
+    validator. File contents, not only mtimes, bind each request to its sources.
+    No event-scoped result is cached or presented as a whole-video assessment.
+    """
+    from rallymate_service.artifact_jsonl import EVENT_MAX_LINES
+
+    class Cancelled(Exception):
+        def __init__(self, cause):
+            self.cause = cause
+
+    def check():
+        if cancellation_callback:
+            try:
+                cancellation_callback()
+            except Exception as exc:
+                raise Cancelled(exc) from exc
+
+    def stamp(path):
+        check()
+        if path.is_symlink() or not path.is_file():
+            raise ValueError("source artifact must be a regular file")
+        stat = path.stat()
+        return (str(path.resolve()), stat.st_dev, stat.st_ino, stat.st_size,
+                stat.st_mtime_ns, stat.st_ctime_ns)
+
+    def fingerprint(path):
+        before = stamp(path)
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            while True:
+                check()
+                block = stream.read(1024 * 1024)
+                if not block:
+                    break
+                digest.update(block)
+        if stamp(path) != before:
+            raise ValueError("source artifact changed while reading")
+        return before, digest.hexdigest()
+
+    try:
+        check()
+        if (not isinstance(duration_ms, int) or isinstance(duration_ms, bool) or duration_ms <= 0
+                or not isinstance(event_id, str) or not event_id):
+            return _empty("本次视频缺少有效时长或事件，不能绑定测量窗口。")
+        paths = [output_dir / name for name in
+                 (ARTIFACT_NAME, "events.jsonl", "primary-player.jsonl", "frames.jsonl")]
+        if stamp(paths[0])[3] > MAX_BYTES or stamp(paths[1])[3] > EVENT_FILE_MAX_BYTES:
+            return _empty("来源测量超出复核读取上限。")
+        signatures = [fingerprint(path) for path in paths]
+        with paths[0].open("rb") as stream:
+            raw = stream.read(MAX_BYTES + 1)
+        if len(raw) > MAX_BYTES:
+            raise ValueError("source artifact grew beyond read limit")
+        check()
+        artifact = json.loads(raw, parse_constant=_reject_constant)
+        del raw
+        if (artifact.get("events_sha256") != signatures[1][1]
+                or artifact.get("primary_timeline_sha256") != signatures[2][1]
+                or artifact.get("frames_sha256") != signatures[3][1]
+                or frames_sha256 and artifact.get("frames_sha256") != frames_sha256.lower()):
+            return _empty("来源测量引用的事件、人物或帧记录已改变，需要重新生成。")
+        records = artifact.get("records")
+        if not isinstance(records, list):
+            raise ValueError("source records must be a list")
+        selected = [record for record in records if isinstance(record, dict) and record.get("event_id") == event_id]
+        related = {event_id}
+        for record in selected:
+            for indicator in record.get("indicators", []):
+                successor = (indicator.get("event_association") or {}).get("successor_event_id")
+                if isinstance(successor, str):
+                    related.add(successor)
+        artifact["records"] = selected
+        del records
+        events, seen, consumed = [], set(), 0
+        with paths[1].open("rb") as stream:
+            for number in range(EVENT_MAX_LINES + 1):
+                check()
+                line = stream.readline(EVENT_FILE_MAX_BYTES - consumed + 1)
+                if not line:
+                    break
+                consumed += len(line)
+                if number >= EVENT_MAX_LINES or consumed > EVENT_FILE_MAX_BYTES:
+                    raise ValueError("event source exceeded read limit")
+                if not line.strip():
+                    continue
+                event = json.loads(line, parse_constant=_reject_constant)
+                identifier = event.get("event_id")
+                if not isinstance(identifier, str) or identifier in seen:
+                    raise ValueError("ambiguous event identity")
+                seen.add(identifier)
+                if identifier in related:
+                    events.append(event)
+        check()
+        result = project_source_assessment(artifact, events, video_id=video_id,
+                                          duration_ms=duration_ms, video_sha256=video_sha256)
+        if any(fingerprint(path) != before for path, before in zip(paths, signatures)):
+            return _empty("读取期间来源产物发生变化，请重新加载。")
+        result["detail_scope"] = {"kind": "event", "event_id": event_id, "whole_video": False}
+        check()
+        return result
+    except Cancelled as exc:
+        raise exc.cause
+    except (OSError, ValueError, TypeError, AttributeError, KeyError):
+        return _empty("本次分析暂未生成可核验的逐项测量记录。")

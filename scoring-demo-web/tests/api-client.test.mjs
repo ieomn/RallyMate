@@ -29,6 +29,17 @@ test("separate action-score reads have their own diagnostic category", async () 
   assert.deepEqual(rows.map(row => row.operation), ["tennis_assessment", "tennis_assessment", "tennis_assessment"]);
 });
 
+test("bounded status reads are labeled task status, including executor metadata", async () => {
+  const rows = [], requests = [];
+  const payload = { id: "job-12345678", status: "queued", started_at: null, queue_position: 1,
+    executor: { status: "unavailable", available: false, heartbeat_at: null } };
+  const client = createApiClient({}, async url => { requests.push(String(url)); return Response.json(payload); }, undefined, row => rows.push(row));
+  assert.deepEqual(await client.getJobStatus(payload.id), payload);
+  assert.equal(requests.length, 1); assert.match(requests[0], /\/status$/);
+  assert.deepEqual(rows.map(row => row.operation), ["job", "job", "job"]);
+  assert.ok(rows.every(row => row.httpStatus === 200));
+});
+
 test("report Content-Length is rejected before reading an oversized response", async () => {
   let cancelled = false;
   const body = new ReadableStream({ cancel() { cancelled = true; } });

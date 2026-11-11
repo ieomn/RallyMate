@@ -17,6 +17,7 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 
 import numpy as np
 
@@ -424,6 +425,9 @@ class Sam3DEngine:
                 if requested == "cpu" or not torch.cuda.is_available():
                     raise RuntimeError("Pinned official SAM estimator requires a CUDA device")
                 torch.cuda.set_device(torch.device(requested))
+                from rallymate_vision.cuda_memory_budget import configure_cuda_memory_budget
+                cuda_memory_budget = configure_cuda_memory_budget(
+                    torch, requested, 'RALLYMATE_SAM3D_CUDA_MEMORY_MIB')
                 started = time.perf_counter()
                 model, config = load_sam_3d_body(checkpoint_path=str(checkpoint),
                                                mhr_path=str(mhr_path), device=requested)
@@ -476,6 +480,8 @@ class Sam3DEngine:
             }
             if cuda_wait_policy is not None:
                 self.metadata["cuda_wait_policy"] = cuda_wait_policy
+            if cuda_memory_budget is not None:
+                self.metadata["cuda_memory_budget"] = cuda_memory_budget
         except BaseException:
             try:
                 self.close()
@@ -718,11 +724,18 @@ class Sam3DProcess:
         # Native pools initialize during imports, before the model constructor.
         # Set the isolated worker's budget before Python/NumPy/Torch start.
         env = prepare_sam_worker_environment(os.environ)
+        managed_uuid = env.get('RALLYMATE_MANAGED_GPU_UUID')
+        if managed_uuid and (env.get('CUDA_VISIBLE_DEVICES') != managed_uuid
+                             or str(device) not in ('0', 'cuda:0')):
+            raise ValueError('Managed SAM subprocess lost its physical UUID to logical CUDA 0 binding')
         self.transport = configured_transport(env)
         self.transport_metadata = transport_metadata(self.transport)
         self.shared_writer = SharedFrameWriter() if self.transport == "shared_memory" else None
         self.batch_writers = []
         self.request_id = 0
+        # Request numbers restart with a worker. A random per-launch identity
+        # keeps archived timings distinct across restarts, jobs and processes.
+        self.session_id = uuid.uuid4().hex
         # Timeout handling closes the process from inside infer(). External
         # cancellation terminates it first, then waits for this lock to release.
         self.lock = threading.RLock()
@@ -730,7 +743,7 @@ class Sam3DProcess:
         self.runtime_dir = Path(runtime_dir).resolve()
         self.ipc_dir = Path(os.environ.get("RALLYMATE_SAM3D_IPC_DIR", self.runtime_dir / "cache" / "ipc"))
         self.ipc_dir.mkdir(parents=True, exist_ok=True)
-        log_dir = self.runtime_dir / "logs"
+        log_dir = Path(os.environ.get("RALLYMATE_SAM3D_LOG_DIR", self.runtime_dir / "logs"))
         log_dir.mkdir(parents=True, exist_ok=True)
         self.log = (log_dir / f"sam-worker-{os.getpid()}-{time.time_ns()}.log").open("a", encoding="utf-8")
         env["RALLYMATE_SAM3D_ISOLATED_WORKER"] = "1"
@@ -845,6 +858,8 @@ class Sam3DProcess:
                 timing.update(transport_timing)
                 for output in outputs:
                     output["ipc_request_timing_ms"] = dict(timing)
+                    output["ipc_request_identity"] = {"version": "sam-ipc-request-v1",
+                        "session_id": self.session_id, "request_id": self.request_id}
                     output["ipc_timing_scope"] = "shared_per_request_do_not_sum_across_subjects"
                     output["ipc_transport"] = dict(self.transport_metadata)
                 return outputs
@@ -921,6 +936,8 @@ class Sam3DProcess:
                 for rows in outputs:
                     for output in rows:
                         output["ipc_request_timing_ms"] = dict(timing)
+                        output["ipc_request_identity"] = {"version": "sam-ipc-request-v1",
+                            "session_id": self.session_id, "request_id": self.request_id}
                         output["ipc_timing_scope"] = "shared_per_batch_request_do_not_sum_across_frames_or_subjects"
                         output["ipc_transport"] = dict(self.transport_metadata)
                 return outputs

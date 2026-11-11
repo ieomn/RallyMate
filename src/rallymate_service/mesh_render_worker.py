@@ -1,4 +1,4 @@
-"""One idle-only renderer, with durable requests and inference preemption."""
+"""One owned renderer with durable requests and optional queued-job fairness."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -7,6 +7,7 @@ import logging
 import os
 from pathlib import Path
 from threading import Event
+from typing import Callable
 
 from rallymate_vision.mesh_render_task import TASK_VERSION, TASK_NAME, STATE_NAME, CANCEL_NAME, atomic_json
 from rallymate_vision.pose.metadata import sha256_file
@@ -84,21 +85,25 @@ def _sha(value) -> bool:
 
 
 class MeshRenderCoordinator:
-    def __init__(self, settings, database, *, renderer=None):
+    def __init__(self, settings, database, *, renderer=None,
+                 on_render_start: Callable[[], None] | None = None,
+                 should_drain: Callable[[], bool] | None = None):
         self.settings, self.database, self.renderer = settings, database, renderer
         self.root = settings.runs_dir.resolve()
+        self.on_render_start, self.should_drain = on_render_start, should_drain
 
-    def _busy(self) -> bool:
+    def _busy(self, *, allow_queued: bool = False) -> bool:
         statuses = self.database.count_by_status()
-        return any(statuses.get(status, 0) > 0 for status in ("queued", "running"))
+        return statuses.get("running", 0) > 0 or not allow_queued and statuses.get("queued", 0) > 0
 
     def _job(self, identifier: str):
         with self.database.connect() as connection:
-            row = connection.execute("SELECT id, status, cancel_requested, video_path, output_dir, summary_json "
+            row = connection.execute("SELECT id, status, cancel_requested, video_path, output_dir, summary_json, worker_id, attempts "
                                      "FROM jobs WHERE id = ?", (identifier,)).fetchone()
         return dict(row) if row is not None else None
 
-    def _validate(self, path: Path) -> tuple[dict, dict, str]:
+    def _validate(self, path: Path, *, prepared_descriptor: dict | None = None,
+                  owner: tuple[str, int] | None = None) -> tuple[dict, dict, str]:
         output = path.parent.resolve()
         if output.parent != self.root or path.parent.absolute() != output or path.resolve() != path.absolute() or output.name in {".", ".."}:
             raise ValueError("mesh task escapes owned job directory")
@@ -106,8 +111,13 @@ class MeshRenderCoordinator:
         if task.get("version") != TASK_VERSION or task.get("job_id") != output.name or not _sha(task.get("ledger_sha256")):
             raise ValueError("mesh task identity mismatch")
         job = self._job(output.name)
-        if not job or job["status"] != "succeeded" or job["cancel_requested"]:
+        preparing = (job is not None and job["status"] == "running"
+                     and prepared_descriptor is not None and owner is not None
+                     and (job["worker_id"], job["attempts"]) == owner)
+        if not job or job["cancel_requested"] or not (job["status"] == "succeeded" or preparing):
             raise MeshRenderDeferred("source_job_not_successfully_completed")
+        if owner is not None and (job["worker_id"], job["attempts"]) != owner:
+            raise MeshRenderDeferred("source_job_owner_changed")
         if Path(job["output_dir"]).resolve() != output:
             raise ValueError("mesh job output directory mismatch")
         render = task.get("render")
@@ -123,7 +133,7 @@ class MeshRenderCoordinator:
             raise ValueError("invalid mesh frame selection")
         task_sha = sha256_file(path)
         summary = json.loads(job["summary_json"] or "{}")
-        descriptor = summary.get("artifacts", {}).get("sam3d_mesh", {})
+        descriptor = prepared_descriptor if preparing else summary.get("artifacts", {}).get("sam3d_mesh", {})
         if (not isinstance(descriptor, dict) or descriptor.get("status") != "pending"
                 or descriptor.get("task") != TASK_NAME or descriptor.get("task_sha256") != task_sha
                 or descriptor.get("source_job_id") != job["id"]
@@ -150,14 +160,28 @@ class MeshRenderCoordinator:
         atomic_json(path.parent / CANCEL_NAME, {"source_job_id": job_id, "task_sha256": task_sha})
         self._state(path.parent, task_sha, "cancelled", "preview_cancelled_by_request")
 
-    def process_one(self, stop_event: Event | None = None) -> bool:
-        if stop_event is not None and stop_event.is_set() or self._busy():
+    def process_one(self, stop_event: Event | None = None, *, allow_queued: bool = False) -> bool:
+        """Attempt at most one complete mesh, yielding again to the worker loop.
+
+        A worker's fair turn may ignore queued work, which has not acquired GPU
+        resources. Running inference, cancellation and shutdown always win.
+        This is a complete-job turn, not a resumable render time slice.
+        """
+        # CUDA visibility alone does not route OpenGL/NVENC to a physical card.
+        # Managed inference fleets retain optional requests until a separately
+        # qualified renderer is assigned; the legacy single-card idle renderer
+        # remains unchanged. Never overlap an unbound renderer with fleet work.
+        if os.environ.get('RALLYMATE_MANAGED_GPU_UUID'):
+            return False
+        if self.should_drain is not None and self.should_drain():
+            return False
+        if stop_event is not None and stop_event.is_set() or self._busy(allow_queued=allow_queued):
             return False
         lock = RenderLock(self.root / ".sam3d-mesh-render.lock")
         if not lock.acquire():
             return False
         try:
-            if self._busy():
+            if self._busy(allow_queued=allow_queued):
                 return False
             # Recover all durable requests, including those beyond the API's
             # newest-100-jobs listing. Only direct owned child directories enter.
@@ -165,7 +189,7 @@ class MeshRenderCoordinator:
                             if entry.is_dir() and entry.resolve() == entry.absolute() and entry.resolve().parent == self.root and (entry / TASK_NAME).is_file()),
                            key=lambda item: item.stat().st_mtime_ns)
             for path in paths:
-                if stop_event is not None and stop_event.is_set() or self._busy():
+                if stop_event is not None and stop_event.is_set() or self._busy(allow_queued=allow_queued):
                     return False
                 task_sha = sha256_file(path)
                 state_path = path.parent / STATE_NAME
@@ -196,11 +220,20 @@ class MeshRenderCoordinator:
                     state = self.database.execution_state(output.name)
                     if not state or state["status"] != "succeeded" or state["cancel_requested"]:
                         raise MeshRenderCancelled("source_job_no_longer_succeeded")
-                    if preempt and self._busy():
+                    if preempt and self._busy(allow_queued=allow_queued):
                         raise MeshRenderDeferred("preempted_for_inference")
                 try:
                     check_cancelled()
-                    self._state(output, task_sha, "rendering", "idle_gpu_render")
+                    # A maintenance request may arrive during source/geometry
+                    # validation. Yield before starting another renderer, but
+                    # never include this signal in an active renderer's
+                    # cancellation callback.
+                    if self.should_drain is not None and self.should_drain():
+                        return False
+                    if self.on_render_start is not None:
+                        self.on_render_start()
+                    self._state(output, task_sha, "rendering",
+                                "fair_worker_render_turn" if allow_queued else "idle_gpu_render")
                     if self.renderer is None:
                         from rallymate_vision.sam3d_mesh import render_mesh_subprocess
                         renderer = render_mesh_subprocess

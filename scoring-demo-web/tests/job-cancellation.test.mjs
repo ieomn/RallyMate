@@ -19,7 +19,7 @@ const sessionUrl = compiledUrl(new URL("../app/lib/analysis-session.ts", import.
 const { AnalysisCancelledError } = await import(sessionUrl);
 const hookUrl = dataUrl(["useState", "useRef", "useEffect", "useMemo", "useCallback"].map(name => `export const ${name} = (...args) => globalThis[Symbol.for("rallymate.cancel-test-host")].${name}(...args);`).join("\n"));
 const apiUrl = dataUrl('export class RallyMateApiError extends Error {}; export const createApiClient = () => globalThis[Symbol.for("rallymate.cancel-test-host")].api;');
-const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.cancel-test-host")].watch(...args);`);
+const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchSummaryAnalysis } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.cancel-test-host")].watch(...args);`);
 const shellUrl = dataUrl('export const ProductShell = () => null, TrainingHome = () => null, SessionLibrary = () => null, CaptureGuide = () => null, ProductIcon = () => null;');
 const childUrl = dataUrl("export default function View() { return null; }");
 // Journal persistence is covered independently; keep its callbacks stable so

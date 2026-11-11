@@ -4,6 +4,15 @@ import numpy as np
 
 
 DEFAULT_KEYPOINT_CONFIDENCE_MIN = 0.25
+MIN_VALID_KEYPOINT_FRAME_FRACTION = 0.70
+
+
+def meets_keypoint_frame_coverage(valid_count: int, total_count: int) -> bool:
+    """Inclusive 70% source coverage, separate from per-point confidence."""
+    if (type(valid_count) is not int or type(total_count) is not int
+            or valid_count < 0 or total_count < valid_count):
+        raise ValueError("coverage counts must be nonnegative integers with valid <= total")
+    return total_count > 0 and valid_count * 10 >= total_count * 7
 
 
 def valid_point_mask(

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { measurementResultFromSummary } from "./lib/measurement-evidence";
 import { createApiClient, RallyMateApiError, type JobProgress, type RallyMateApiClient } from "./lib/api-client";
-import { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchAnalysis } from "./lib/analysis-session";
+import { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchAnalysis, watchSummaryAnalysis } from "./lib/analysis-session";
 import { analysisProgress, formatElapsed } from "./lib/analysis-progress";
 import { analysisViewState } from "./lib/analysis-view-state";
 import { recentReports, type RecentReport } from "./lib/training-report";
@@ -28,7 +28,7 @@ import SwingKinematicsPanel from "./SwingKinematicsPanel";
 import { swingVideoDurationMs } from "./lib/swing-kinematics";
 import { verifiedMeshMedia, watchMeshPreview, type OfficialMeshMedia } from "./lib/official-mesh-media";
 import { readReportJson } from "./lib/report-file";
-import { reportReadStage, safeRequestDiagnostic, type RequestDiagnostic } from "./lib/request-diagnostics";
+import { appendRequestDiagnostic, reportReadStage, safeRequestDiagnostic, type RequestDiagnostic } from "./lib/request-diagnostics";
 import RequestReadDetails from "./RequestReadDetails";
 import { useTrainingJournal, TrainingJournalPanel, TrainingJournalLibrary, TrainingFollowUpPicker, journalRecordId } from "./TrainingJournal";
 import { focusSelection, trainingGuidance, type TrainingFocusSelection } from "./lib/training-guidance";
@@ -36,10 +36,14 @@ import { motionAnalysisOf } from "./lib/motion-analysis";
 import { retainTennisAssessment, tennisAssessmentContext, tennisAssessmentOf, validatedTennisAssessment } from "./lib/tennis-assessment";
 import { tennisAssessmentReadMessage } from "./lib/tennis-evidence-status";
 import { tennisImprovementFocus } from "./lib/tennis-practice";
+import SegmentedReport from "./SegmentedReport";
+import type { MotionEpisode } from "./lib/api-types";
+import { resultFromReportSummary, type ReportSummary } from "./lib/segmented-report";
 
 const SUPPORTED_VIDEO_EXTENSION = /\.(mp4|mov|m4v|avi|mkv)$/i;
 type ImportState = { status: "idle" } | { status: "reading"; fileName: string } | { status: "success"; fileName: string } | { status: "error"; message: string };
 type LiveEvidence = { mode: "demo" | "live"; jobId?: string; candidateSource?: "online"; trajectory: TrajectoryPreviewResponse | null; assessment: TechniqueAssessmentResponse | null; result?: DemoResultResponse | null; error: string | null };
+type CompletedReportRead = { scope: string; summary: ReportSummary; replayScope: AbortController; attempt: number; error: string | null };
 const EMPTY_EVIDENCE: LiveEvidence = { mode: "demo", trajectory: null, assessment: null, error: null };
 
 export function candidateOnlineJobId(evidence: Pick<LiveEvidence, "candidateSource" | "jobId" | "result">, pending: boolean): string | null {
@@ -113,7 +117,11 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
     && !originalUrl.search && !originalUrl.hash && !originalUrl.username && !originalUrl.password && /^[a-f0-9]{64}$/i.test(original.sha256)
     && Number.isSafeInteger(original.bytes) && original.bytes > 0 && typeof original.source_job_id === "string" && original.source_job_id
     ? original : null;
-  const originalTimeBinding = serverOriginal ? originalPoseTimeBinding(evidence.result, evidence.jobId, true) : null;
+  const bindingValue = serverOriginal ? originalPoseTimeBinding(evidence.result, evidence.jobId, true) : null;
+  const bindingJson = bindingValue ? JSON.stringify(bindingValue) : null;
+  // Preserve every validated clock/source field while avoiding abort/re-fetch
+  // when an overview merely replaces an equivalent original-video object.
+  const originalTimeBinding = useMemo(() => bindingJson ? JSON.parse(bindingJson) as NonNullable<ReturnType<typeof originalPoseTimeBinding>> : null, [bindingJson]);
   // public_base_url may be stale after migration; media still travels through
   // this site's authenticated gateway, never the origin supplied in the JSON.
   const originalSrc = localVideoSrc || (serverOriginal ? originalPath : null);
@@ -239,6 +247,12 @@ export default function ScoreLab() {
   const [candidateGeneration, setCandidateGeneration] = useState(0);
   const [candidateReplay, setCandidateReplay] = useState<CandidateReplayHandle | null>(null);
   const [evidence, setEvidence] = useState<LiveEvidence>(EMPTY_EVIDENCE);
+  const [reportSummary, setReportSummary] = useState<ReportSummary | null>(null);
+  const [overviewRead, setOverviewRead] = useState<CompletedReportRead | null>(null);
+  const [overviewAttempt, setOverviewAttempt] = useState(0);
+  const [detailScope, setDetailScope] = useState<string | null>(null);
+  const [trajectoryRead, setTrajectoryRead] = useState<CompletedReportRead | null>(null);
+  const [trajectoryAttempt, setTrajectoryAttempt] = useState(0);
   const [assessmentRead, setAssessmentRead] = useState<{ scope: string; error: boolean; message?: string } | null>(null);
   const [assessmentAttempt, setAssessmentAttempt] = useState(0);
   const [savedAdvice, setSavedAdvice] = useState<ScopedAdvice | null>(null);
@@ -273,12 +287,19 @@ export default function ScoreLab() {
   }, []);
   const apiClient = useMemo(() => createApiClient({}, undefined, undefined, diagnostic => {
     const safe = safeRequestDiagnostic(diagnostic);
-    if (safe) setReadDiagnostics(previous => [...previous, safe].slice(-48));
+    if (safe) setReadDiagnostics(previous => appendRequestDiagnostic(previous, safe));
   }), []);
   const busy = uploadState === "uploading" || uploadState === "processing";
   const candidateSessionKey = `${evidence.jobId ?? "none"}:${candidateGeneration}`;
   const actionAssessment = useMemo(() => tennisAssessmentOf(evidence.result ?? null), [evidence.result]);
-  const assessmentContext = useMemo(() => tennisAssessmentContext(evidence.result ?? null), [evidence.result]);
+  const rawAssessmentContext = tennisAssessmentContext(evidence.result ?? null);
+  // Overview merges replace the result object without changing its source.
+  // Preserve the active read unless its actual source/timing identity changes.
+  const assessmentJobId = rawAssessmentContext?.jobId, assessmentSha = rawAssessmentContext?.videoSha256.toLowerCase();
+  const assessmentDuration = rawAssessmentContext?.durationMs;
+  const assessmentContext = useMemo(() => assessmentJobId && assessmentSha
+    ? { jobId: assessmentJobId, videoSha256: assessmentSha, durationMs: assessmentDuration } : null,
+  [assessmentJobId, assessmentSha, assessmentDuration]);
   const assessmentSourceMissing = !busy && evidence.candidateSource === "online" && Boolean(evidence.result)
     && (!assessmentContext || assessmentContext.jobId !== evidence.jobId);
   const assessmentError = assessmentRead?.scope === candidateSessionKey && assessmentRead.error;
@@ -315,7 +336,54 @@ export default function ScoreLab() {
   const hasReport = scoreContext !== "demo";
   const assessedFamily = actionAssessment?.episodes?.[0]?.family;
   const adviceTechnique = coachTechnique || (assessedFamily ? { baseline: "底线击球", serve: "发球", return: "接发" }[assessedFamily] : evidence.assessment?.family_summary?.footwork?.observed_count ? "步伐" : "底线击球");
-  const delivery = analysisViewState({ uploadState, jobStatus: job?.status, hasResult: Boolean(evidence.result || evidence.assessment), hasReplay: Boolean(evidence.trajectory || localVideoSrc && localVideoJobId === evidence.jobId), missingJob, warning: evidence.error });
+  const activeSummary = reportSummary?.job_id === evidence.jobId ? reportSummary : null;
+  // An unmatched request is already pending during its first render. Keep only
+  // completed responses in state, bound to the report source and retry attempt.
+  const currentOverviewRead = overviewRead?.scope === candidateSessionKey && overviewRead.summary === activeSummary && overviewRead.replayScope === replayScope && overviewRead.attempt === overviewAttempt ? overviewRead : null;
+  const currentTrajectoryRead = trajectoryRead?.scope === candidateSessionKey && trajectoryRead.summary === activeSummary && trajectoryRead.replayScope === replayScope && trajectoryRead.attempt === trajectoryAttempt ? trajectoryRead : null;
+  const segmentedDelivery = Boolean(activeSummary || (evidence.result?.report_delivery as Record<string, unknown> | undefined)?.mode === "segmented");
+  const detailsRequested = detailScope === candidateSessionKey;
+  const loadMotionEpisode = useCallback((episode: MotionEpisode, signal: AbortSignal) => {
+    if (!activeSummary) return Promise.resolve(episode);
+    const combined = AbortSignal.any([signal, replayScope.signal]);
+    return apiClient.getReportMotion(activeSummary.job_id, activeSummary.source, episode, combined).then(detail => {
+      if (!combined.aborted && detail.processEvaluation) setEvidence(previous => previous.jobId === activeSummary.job_id && previous.result
+        ? { ...previous, result: { ...previous.result, process_evaluation: detail.processEvaluation, report_delivery: {
+          ...(previous.result.report_delivery as Record<string, unknown>), process_scope: "selected_motion_episode", process_episode_id: episode.episode_id,
+          process_start_ms: episode.start_ms, process_end_ms: episode.end_ms,
+        } } } : previous);
+      return detail.episode;
+    });
+  }, [activeSummary, apiClient, replayScope]);
+  useEffect(() => {
+    if (!activeSummary) return;
+    const controller = new AbortController(), signal = AbortSignal.any([controller.signal, replayScope.signal]);
+    const identity = { scope: candidateSessionKey, summary: activeSummary, replayScope, attempt: overviewAttempt };
+    void apiClient.getReportOverview(activeSummary.job_id, activeSummary.source, signal).then(overview => {
+      if (signal.aborted) return;
+      setEvidence(previous => previous.jobId === activeSummary.job_id && previous.candidateSource === "online"
+        ? { ...previous, result: retainTennisAssessment({ ...previous.result, ...overview.result,
+            // An overview retry must not discard the current source-bound
+            // motion detail that has already been read independently.
+            ...(previous.result?.process_evaluation && (previous.result.report_delivery as Record<string, unknown> | undefined)?.process_scope === "selected_motion_episode"
+              ? { process_evaluation: previous.result.process_evaluation, report_delivery: { ...(overview.result.report_delivery as Record<string, unknown>), ...(previous.result.report_delivery as Record<string, unknown>) } } : {}),
+          }, previous.result ?? null), assessment: overview.assessment } : previous);
+      setOverviewRead({ ...identity, error: null });
+    }).catch(error => { if (!signal.aborted) setOverviewRead({ ...identity, error: error instanceof Error ? error.message : "分析概览暂未读取成功。" }); });
+    return () => controller.abort();
+  }, [activeSummary, apiClient, candidateSessionKey, overviewAttempt, replayScope]);
+  useEffect(() => {
+    if (!activeSummary) return;
+    const controller = new AbortController(), signal = AbortSignal.any([controller.signal, replayScope.signal]);
+    const identity = { scope: candidateSessionKey, summary: activeSummary, replayScope, attempt: trajectoryAttempt };
+    void apiClient.getTrajectory(activeSummary.job_id, { sampleLimit: 300, signal }).then(trajectory => {
+      if (signal.aborted) return;
+      setEvidence(previous => previous.jobId === activeSummary.job_id && previous.candidateSource === "online" ? { ...previous, trajectory } : previous);
+      setTrajectoryRead({ ...identity, error: null });
+    }).catch(error => { if (!signal.aborted) setTrajectoryRead({ ...identity, error: error instanceof Error ? error.message : "场地与球路暂未读取成功。" }); });
+    return () => controller.abort();
+  }, [activeSummary, apiClient, candidateSessionKey, replayScope, trajectoryAttempt]);
+  const delivery = analysisViewState({ uploadState, jobStatus: job?.status, hasResult: Boolean(activeSummary || evidence.result || evidence.assessment), hasReplay: Boolean(evidence.trajectory || localVideoSrc && localVideoJobId === evidence.jobId), missingJob, warning: evidence.error });
   const currentAdviceKey = adviceContextKey(evidence.jobId, adviceTechnique);
   const currentAdvice = adviceForContext(savedAdvice, currentAdviceKey);
   const journalId = currentJournalRecordId || (evidence.jobId && importState.status !== "success" ? journalRecordId("online", evidence.jobId) : undefined);
@@ -339,6 +407,7 @@ export default function ScoreLab() {
   }
   useEffect(() => () => { if (localVideoRef.current) URL.revokeObjectURL(localVideoRef.current); }, []);
   function invalidateAnalysisRun() {
+    setReportSummary(null);
     analysisRunRef.current += 1; analysisAbort.current?.abort(); activeServiceJob.current = null; setImportedSummary(null);
     resetAdvice(); setSupplementingEvidence(false); setReportRetryCount(0);
     resetReplayReads();
@@ -350,6 +419,7 @@ export default function ScoreLab() {
   }
 
   const monitorJob = useCallback(async (id: string) => {
+    setReportSummary(null);
     analysisRunRef.current += 1;
     activeServiceJob.current = id;
     analysisAbort.current?.abort();
@@ -363,6 +433,24 @@ export default function ScoreLab() {
     try { localStorage.setItem("rallymate.activeJob", id); } catch { /* Optional storage. */ }
     setEvidence(previous => previous.jobId === id && previous.candidateSource === "online" ? { ...previous, error: null } : { mode: "live", jobId: id, trajectory: null, assessment: null, error: null });
     try {
+      if (typeof apiClient.getReportSummary === "function") {
+        const completed = await watchSummaryAnalysis(apiClient, id, controller.signal, incoming => {
+          if (controller.signal.aborted || activeServiceJob.current !== id) return;
+          lastProgress.current = mergeAnalysisProgress(lastProgress.current, incoming); setJob(lastProgress.current);
+        });
+        if (controller.signal.aborted || activeServiceJob.current !== id) return;
+        setReportSummary(completed.summary);
+        setEvidence({ mode: "live", candidateSource: "online", jobId: id, trajectory: null, assessment: null, result: resultFromReportSummary(completed.summary), error: null });
+        setScoreContext("live"); setUploadState("complete");
+        const name = typeof completed.job.original_filename === "string" ? completed.job.original_filename.split(/[\\/]/).pop() || "训练视频" : "训练视频";
+        setCurrentJournalRecordId(visitReport({ jobId: id, name, source: "online" }));
+        try {
+          const existing = recentReports(JSON.parse(localStorage.getItem("rallymate.recentReports") || "[]"));
+          const next = recentReports([{ id, name, viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== id)]);
+          localStorage.setItem("rallymate.recentReports", JSON.stringify(next)); setHistory(next);
+        } catch { /* History is optional; the URL restores this report. */ }
+        return;
+      }
       const completed = await watchAnalysis(apiClient, id, controller.signal, incoming => {
         if (controller.signal.aborted || activeServiceJob.current !== id) return;
         if (incoming.message === "推理已完成，正在重试读取动作结果。无需重新上传。") setReportRetryCount(previous => previous + 1);
@@ -611,8 +699,8 @@ export default function ScoreLab() {
 
   const exportInput = { mode: scoreContext, uploadState, job, evidence, summary: importedSummary ?? (job?.summary as Record<string, unknown> | undefined), videoName: currentName };
   const processing = analysisProgress(job, progressNow);
-  const progress = uploadState === "uploading" ? uploadProgress?.percent ?? 0 : processing.percent;
-  const organizingReport = uploadState === "processing" && processing.reportStage;
+  const progress = uploadState === "uploading" ? uploadProgress?.percent ?? 0 : processing.stagePercent;
+  const indeterminateProgress = progress === null;
   const reportDiagnostic = readDiagnostics.findLast(diagnostic => diagnostic.operation === "report");
   const recoveryTitle = uploadError.startsWith("已暂停读取任务状态") ? "已暂停读取任务状态" : delivery.recoveryTitle;
   const stageLabel = uploadState === "uploading" ? uploadProgress?.message ?? "正在准备视频" : delivery.phase === "partial" ? "报告已可查看，正在补充画面证据" : processing.title;
@@ -630,19 +718,20 @@ export default function ScoreLab() {
       {canCancel && <button type="button" aria-describedby="analysis-controls-hint" disabled={Boolean(cancelPending || job.cancel_requested)} onClick={() => void cancelAnalysis()}>{job.cancel_requested ? "正在取消…" : cancelPending ? "正在发送…" : "取消分析"}</button>}
     </div>
   </div>;
-  const openSection = (id: string) => { setReportSection(id); const section = document.getElementById(id); for (let node: HTMLElement | null = section; node; node = node.parentElement) if (node instanceof HTMLDetailsElement) node.open = true; section?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); };
+  const openSection = (id: string) => { setReportSection(id); if (["details", "training-journal"].includes(id)) setDetailScope(candidateSessionKey); const section = document.getElementById(id); for (let node: HTMLElement | null = section; node; node = node.parentElement) if (node instanceof HTMLDetailsElement) node.open = true; section?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); };
   const saveFocus = (focus: TrainingFocusSelection) => { if (journalId && journal.saveFocus(journalId, { ...focus, id: focusId(focus) })) openSection("training-journal"); };
   const journalPanel = <TrainingJournalPanel key={journalId} journal={journal} recordId={journalId} suggestions={focusSuggestions} showSuggestions={false} onSeek={replayAvailable ? timestampMs => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs, jobId: evidence.jobId, preferOriginal: true } })) : undefined} onOpenReport={openReport} />;
   const coachPanel = !busy && (<section className="report-coach coach-section" id="coach" aria-labelledby="coach-heading"><div className="logic-heading"><div><span className="process-eyebrow">结合本次证据</span><h2 id="coach-heading">看懂本次训练问题</h2><p>围绕这次视频，说明哪里值得改、依据在哪、下次怎么练。也可以补充你最困惑的问题。</p></div></div><div className="coach-layout"><form className="coach-form" onSubmit={event => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><div className="coach-question-options" role="group" aria-label="可选复盘问题">{["我最该先改哪个动作问题？", "这个问题会怎样影响我的动作？", "下一次训练具体怎么练和复测？"].map(question => <button key={question} type="button" className="product-secondary" onClick={() => setAdviceNotes(question)}>{question}</button>)}</div><label>你的问题<span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={event => setAdviceNotes(event.target.value)} placeholder="例如：为什么建议我调整引拍？视频哪一秒能看出来？" /></label><button className="primary-button" disabled={adviceLoading || evidence.candidateSource !== "online"}>{adviceLoading ? "正在整理…" : "查看解释与建议"}<ProductIcon name="arrow-right" size={18} /></button>{adviceNotice && savedAdvice?.contextKey === currentAdviceKey && <p className="coach-status" role="status">{adviceNotice}</p>}</form>{evidence.candidateSource === "online" ? <AdviceResult technique={adviceTechnique} response={currentAdvice} jobId={evidence.jobId} /> : <div className="product-notice" role="note">这是离线导入的报告。可根据上方已有观察保存复盘问题；在线问答需要当前服务中的原任务，本页不会把导入的编号当作在线证据。</div>}</div></section>);
   const extraDetails = <>
     {supplementingEvidence && <p role="status">正在补充画面证据，评分与回放可正常使用。</p>}
     <p className="replay-caption">3D 回放根据本次视频重建人体，遮挡处外形为模型估计。片段切换和慢放复用已生成的视频。</p>
-    {assessmentContext && evidence.candidateSource === "online" && !busy && <SwingKinematicsPanel key={`swing:${candidateSessionKey}`}
+    {assessmentContext && evidence.candidateSource === "online" && !busy && (!activeSummary || detailsRequested) && <SwingKinematicsPanel key={`swing:${candidateSessionKey}`}
       context={{ ...assessmentContext, motion: motionAnalysisOf(evidence.result ?? null, evidence.assessment), durationMs: swingVideoDurationMs(evidence.result) }}
       initialData={evidence.result?.swing_kinematics} load={apiClient.getSwingKinematics} signal={replayScope.signal} />}
-    <BallTrajectorySummary trajectory={evidence.trajectory} pending={busy} error={evidence.error} />
+    {currentTrajectoryRead?.error && <div role="alert"><p>{currentTrajectoryRead.error}</p><button type="button" className="product-secondary" onClick={() => setTrajectoryAttempt(value => value + 1)}>重新读取场地与球路</button></div>}
+    <BallTrajectorySummary trajectory={evidence.trajectory} pending={busy || Boolean(activeSummary && !currentTrajectoryRead)} error={evidence.error} />
     {!busy && <>
-      <details className="report-disclosure report-export-disclosure" id="export"><summary>保存完整报告<span>含逐项依据、回放时间与原始数据</span></summary><ReportExportActions input={exportInput} /></details></>}
+      <details className="report-disclosure report-export-disclosure" id="export"><summary>{segmentedDelivery ? "保存已加载报告" : "保存完整报告"}<span>{segmentedDelivery ? "评分与概览；完整片段依据按需读取" : "含逐项依据、回放时间与原始数据"}</span></summary><ReportExportActions input={exportInput} /></details></>}
     <RequestReadDetails diagnostics={readDiagnostics} />
   </>;
   const homeReports = journal.ready ? journal.records.filter(item => item.source === "online" && item.jobId).map(item => ({ id: item.jobId!, name: item.name, viewedAt: item.viewedAt })) : history;
@@ -663,9 +752,9 @@ export default function ScoreLab() {
         <button type="button" className="product-primary product-upload-start" disabled={!videoFile} onClick={() => void submitVideo()}>开始分析<ProductIcon name="arrow-right" size={18} /></button><p className="product-upload-footnote">上传后会显示处理进度。网络中断后可继续读取，无需重复上传。</p>
       </section><aside className="product-capture-checklist"><h2>拍清楚，<br />才看得更明白。</h2><div><ProductIcon name="frame" /><span><strong>全身和双脚入镜</strong><p>保留挥拍空间，尽量减少遮挡。</p></span></div><div><ProductIcon name="camera" /><span><strong>固定相机</strong><p>稳定机位，避免跟随人物频繁移动。</p></span></div><div><ProductIcon name="movement" /><span><strong>保留完整动作</strong><p>从准备到随挥，再到恢复。</p></span></div><button type="button" onClick={() => navigate("guide")}>查看完整拍摄指南<ProductIcon name="arrow-up-right" size={16} /></button></aside></div>}
       {busy && <section className="product-processing" aria-label="当前分析进度">
-        <div className="product-processing-heading"><span className="product-processing-icon"><ProductIcon name="movement" size={22} /></span><div><h2 role="status">{stageLabel}</h2><p>{uploadState === "uploading" ? "保留当前页面，上传完成后将自动开始分析。" : delivery.phase === "partial" ? "下方已有结果可先复盘。其余证据到达后会自动补齐。" : processing.detail}</p></div>{!organizingReport && <strong>{Math.floor(progress)}<small>%</small><span className="processing-percent-scope">{uploadState === "uploading" ? "上传进度" : "当前分析阶段"}</span></strong>}</div>
-        <div className={`product-progress-track${organizingReport ? " is-organizing" : ""}`} role="progressbar" aria-label={stageLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={organizingReport ? undefined : Math.floor(progress)} aria-valuetext={organizingReport ? "报告整理中，尚未全部读取" : undefined}><span style={{ width: organizingReport ? "100%" : `${progress}%` }} /></div>
-        <ol className="product-processing-steps"><li className={uploadState === "uploading" ? "current" : "done"}>上传视频</li><li className={uploadState === "processing" ? processing.reportStage ? "done" : "current" : ""}>分析动作</li><li className={uploadState === "processing" && processing.reportStage ? "current" : ""}>整理报告</li></ol>
+        <div className="product-processing-heading"><span className="product-processing-icon"><ProductIcon name="movement" size={22} /></span><div><h2 role="status">{stageLabel}</h2><p>{uploadState === "uploading" ? "保留当前页面，上传完成后将自动开始分析。" : delivery.phase === "partial" ? "下方已有结果可先复盘。其余证据到达后会自动补齐。" : processing.detail}</p></div>{progress !== null && <strong>{Math.floor(progress)}<small>%</small><span className="processing-percent-scope">{uploadState === "uploading" ? "上传进度" : "当前阶段进度"}</span></strong>}</div>
+        <div className={`product-progress-track${indeterminateProgress ? " is-organizing" : ""}`} role="progressbar" aria-label={stageLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress === null ? undefined : Math.floor(progress)} aria-valuetext={indeterminateProgress ? processing.reportStage ? "报告整理中，尚未全部读取" : stageLabel : undefined}><span style={{ width: indeterminateProgress ? "100%" : `${progress}%` }} /></div>
+        <ol className="product-processing-steps"><li className={uploadState === "uploading" ? "current" : "done"}>上传视频</li><li className={uploadState === "processing" ? processing.reportStage ? "done" : "current" : ""}>{processing.stepLabel}</li><li className={uploadState === "processing" && processing.reportStage ? "current" : ""}>整理报告</li></ol>
         {uploadProgress && uploadState === "uploading" && <p className="product-processing-meta">服务器已收到 {(uploadProgress.uploadedBytes / 1048576).toFixed(1)} / {(uploadProgress.totalBytes / 1048576).toFixed(1)} MB</p>}
         {uploadState === "processing" && <><p className="product-processing-meta"><span>{processing.count}</span><span aria-live="off">{openedAt !== null ? `本次打开已等待 ${formatElapsed((progressNow - openedAt) / 1000)}` : ""}</span></p>{processing.elapsed && <p className="product-processing-meta" aria-live="off">{processing.elapsed}（服务器记录）</p>}{processing.notice && <p className="product-processing-notice" role="status">{processing.notice}</p>}</>}
         {analysisControls}
@@ -675,9 +764,11 @@ export default function ScoreLab() {
       {hasReport && uploadError && <section className="product-recovery" role={delivery.phase === "preparing" ? "status" : "alert"}><div><h2>{recoveryTitle}</h2><p>{delivery.recoveryDetail || uploadError}</p>{delivery.showReport && <p>本页已读取的结果仍可查看。</p>}</div>{missingJob ? <div className="recovery-actions"><button type="button" className="product-secondary" onClick={() => fileInput.current?.click()}>导入报告备份</button><button type="button" className="product-secondary" onClick={() => navigate("sessions")}>返回训练记录</button><button type="button" className="product-secondary" onClick={newAnalysis}>选择新视频</button></div> : <button type="button" className="product-secondary" onClick={() => { if (evidence.jobId && delivery.canResumeRead) void monitorJob(evidence.jobId); else if (videoFile) void submitVideo(); else newAnalysis(); }}>{evidence.jobId && delivery.canResumeRead ? "继续读取结果" : videoFile ? "重试分析" : "选择新视频"}</button>}</section>}
       {delivery.showNavigation && <nav className="product-report-nav" aria-label="报告内容">{[["assessment", "动作评分"], ["recommendations", "训练建议"], ["coach", "训练解读"], ["evidence", "视频回放"], ["details", "详细分析"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
       {delivery.showReplayOnly && <TrainingReplayPanel jobId={evidence.jobId} mediaKind={replayMediaKind}><p className="replay-caption">{busy ? "回放预览已可用，完整观察仍在整理。" : "本次未形成完整报告，已可用的回放保留在这里。"}</p><ReplayPanel api={apiClient} replaySignal={replayScope.signal} evidence={evidence} pending={busy} error={evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} candidateSessionKey={candidateSessionKey} onCandidateReplayHandle={setCandidateReplay} /></TrainingReplayPanel>}
-      {delivery.showReport && <LiveResults result={evidence.result ?? null} details={extraDetails} coaching={coachPanel} assessmentMessage={assessmentSourceMissing ? "原视频来源未读取完整，请重新读取报告。" : assessmentError ? assessmentRead?.message : undefined} assessmentLoading={!actionAssessment && !assessmentError && !assessmentSourceMissing && evidence.candidateSource === "online"} assessmentError={assessmentError} assessmentOffline={evidence.candidateSource !== "online"} onRetryAssessment={() => { if (assessmentSourceMissing && evidence.jobId) { void monitorJob(evidence.jobId); return; } setAssessmentRead(null); setAssessmentAttempt(value => value + 1); }} onSaveFocus={saveFocus} journal={journalPanel} replayAvailable={replayAvailable} key={evidence.jobId ?? "pending"} status={job?.status} error={uploadError || evidence.error} assessment={evidence.assessment} pending={busy} trajectory={evidence.trajectory} summary={importedSummary ?? (job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null)} candidateContext={candidateContext} replay={<TrainingReplayPanel key={evidence.jobId ?? evidence.mode} jobId={evidence.jobId} mediaKind={replayMediaKind}><ReplayPanel api={apiClient} replaySignal={replayScope.signal} evidence={evidence} pending={busy} error={evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} candidateSessionKey={candidateSessionKey} onCandidateReplayHandle={setCandidateReplay} /></TrainingReplayPanel>} />}
+      {activeSummary && !currentOverviewRead && <p className="replay-caption" role="status">正在读取分类与测量概览，评分和视频可先查看。</p>}
+      {activeSummary && currentOverviewRead?.error && <section className="product-recovery" role="alert"><div><h2>部分分析内容尚未读取</h2><p>{currentOverviewRead.error}</p><p>评分和回放仍可使用，详细片段证据可独立读取。</p></div><button type="button" className="product-secondary" onClick={() => setOverviewAttempt(value => value + 1)}>重新读取分析概览</button></section>}
+      {delivery.showReport && <LiveResults loadMotionEpisode={activeSummary && detailsRequested ? loadMotionEpisode : undefined} onOpenDetails={() => setDetailScope(candidateSessionKey)} pagedActions={activeSummary && detailsRequested ? <SegmentedReport key={`${activeSummary.job_id}:${candidateGeneration}`} summary={activeSummary} api={apiClient} signal={replayScope.signal} onRefresh={() => void monitorJob(activeSummary.job_id)} /> : undefined} result={evidence.result ?? null} details={extraDetails} coaching={coachPanel} assessmentMessage={assessmentSourceMissing ? "原视频来源未读取完整，请重新读取报告。" : assessmentError ? assessmentRead?.message : undefined} assessmentLoading={!actionAssessment && !assessmentError && !assessmentSourceMissing && evidence.candidateSource === "online"} assessmentError={assessmentError} assessmentOffline={evidence.candidateSource !== "online"} onRetryAssessment={() => { if (assessmentSourceMissing && evidence.jobId) { void monitorJob(evidence.jobId); return; } setAssessmentRead(null); setAssessmentAttempt(value => value + 1); }} onSaveFocus={saveFocus} journal={journalPanel} replayAvailable={replayAvailable} key={evidence.jobId ?? "pending"} status={job?.status} error={uploadError || evidence.error} assessment={evidence.assessment} pending={busy} trajectory={evidence.trajectory} summary={importedSummary ?? (job?.summary && typeof job.summary === "object" ? job.summary as Record<string, unknown> : null)} candidateContext={candidateContext} replay={<TrainingReplayPanel key={evidence.jobId ?? evidence.mode} jobId={evidence.jobId} mediaKind={replayMediaKind}><ReplayPanel api={apiClient} replaySignal={replayScope.signal} evidence={evidence} pending={busy} error={evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} candidateSessionKey={candidateSessionKey} onCandidateReplayHandle={setCandidateReplay} /></TrainingReplayPanel>} />}
       {hasReport && !delivery.showReport && journalPanel}
-      {hasReport && !delivery.showReport && <div className="report-support-tools"><RequestReadDetails diagnostics={readDiagnostics} /></div>}
+      {hasReport && (!delivery.showReport || readDiagnostics.some(row => row.operation === "pose_preview" && row.outcome === "failure")) && <div className="report-support-tools"><RequestReadDetails diagnostics={readDiagnostics} /></div>}
     </div>}
   </ProductShell>;
 }

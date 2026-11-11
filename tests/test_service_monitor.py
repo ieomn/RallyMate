@@ -223,6 +223,130 @@ class ServiceMonitorTests(unittest.TestCase):
         self.assertIn("已隐藏", cleaned)
 
 
+class MonitorPipelineTests(unittest.TestCase):
+    def host(self):
+        return {"network": {"interfaces": [{"name": "以太网", "is_up": True,
+            "rx_bytes_per_second": 2048, "tx_bytes_per_second": 1024}]},
+            "cpu": {"percent": 25}, "memory": {"used_bytes": 1024, "total_bytes": 2048},
+            "gpu": {"devices": [{"index": 0, "utilization_percent": 70,
+                "memory_used_bytes": 1024, "memory_total_bytes": 2048}], "sample_age_seconds": 2}}
+
+    def test_tiny_windows_preserve_network_upload_rate_and_analysis(self):
+        from scripts.service_monitor_terminal import clip_text
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            create_database(root, [job("running", "running", progress={"phase": "inference",
+                "percent": 25, "processed_frames": 100, "total_frames": 400, "effective_fps": 10})])
+            manifest = upload_manifest(root, "upload", received=20)
+            rates = monitor.ReceiveRates()
+            monitor.collect_snapshot(root, rates, NOW, 0)
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            data["chunks"]["0"]["size"] = 40
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            snapshot = monitor.collect_snapshot(root, rates, NOW + 2, 2, host=self.host())
+            for height in (10, 12, 16, 24, 40):
+                for width in (40, 60, 120):
+                    text = monitor.dashboard(root, rates, now=NOW+2, monotonic=2,
+                        height=height, snapshot=snapshot)
+                    visible = "\n".join(clip_text(line, width-1) for line in text.splitlines())
+                    self.assertLess(len(visible.splitlines()), height)
+                    self.assertIn("2.0 KiB/s", visible)
+                    self.assertIn("10.0 B/s", visible)
+                    self.assertIn("分析", visible)
+                    self.assertIn("Ctrl+C", visible)
+
+    def test_inference_eta_is_not_report_eta_and_stale_rate_is_not_used(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            database = create_database(root, [job("j", "running", created=NOW-100,
+                progress={"phase": "inference", "percent": 25, "processed_frames": 100,
+                          "total_frames": 400, "effective_fps": 10})])
+            samples = monitor.JobSamples()
+            snapshot = monitor.collect_snapshot(root, monitor.ReceiveRates(), NOW, 10, job_samples=samples)
+            self.assertEqual(snapshot["jobs"][0]["eta_seconds"], 30)
+            self.assertEqual(snapshot["jobs"][0]["elapsed_seconds"], 100)
+            stale = monitor.collect_snapshot(root, monitor.ReceiveRates(), NOW+61, 71, job_samples=samples)
+            self.assertIsNone(stale["jobs"][0]["eta_seconds"])
+            progress = json.dumps({"phase": "writing_results", "percent": 90,
+                "processed_frames": 400, "total_frames": 400, "effective_fps": 10,
+                "completed_items": 3, "total_items": 20})
+            with closing(sqlite3.connect(database)) as conn:
+                conn.execute("UPDATE jobs SET progress_json=?, updated_at=?", (progress, iso(NOW+62)))
+                conn.commit()
+            finalizing = monitor.collect_snapshot(root, monitor.ReceiveRates(), NOW+62, 72, job_samples=samples)
+            row = finalizing["jobs"][0]
+            self.assertIsNone(row["eta_seconds"])
+            self.assertIsNone(row["observed_fps"])
+            self.assertEqual(row["observed_phase_seconds"], 0)
+            text = monitor.dashboard(root, monitor.ReceiveRates(), now=NOW+62, snapshot=finalizing, height=40)
+            self.assertIn("本阶段 3/20", text)
+            self.assertNotIn("推理剩余", text)
+
+    def test_recording_is_opt_in_bounded_and_excludes_large_raw_progress(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            create_database(root, [job("j", "running", progress={"phase": "inference", "percent": 1,
+                "unrelated_secret": "never-export", "message": "token=secret-token"})])
+            snapshot = monitor.collect_snapshot(root, monitor.ReceiveRates(), NOW, 0, host=self.host())
+            path = root / "samples/log.jsonl"
+            self.assertFalse(path.parent.exists())
+            recorder = monitor.SnapshotRecorder(path)
+            self.assertIsNone(recorder.write(snapshot))
+            saved = path.read_text(encoding="utf-8")
+            self.assertNotIn("never-export", saved)
+            self.assertNotIn("secret-token", saved)
+            self.assertEqual(json.loads(saved)["version"], "rallymate-monitor-v2")
+            limited = monitor.SnapshotRecorder(path, max_bytes=path.stat().st_size)
+            self.assertIn("停止追加", limited.write(snapshot))
+            self.assertEqual(path.read_text(encoding="utf-8"), saved)
+
+    def test_counter_errors_and_missing_host_never_become_zero_bandwidth(self):
+        self.assertIn("未采样", " ".join(monitor.host_lines(None)))
+        self.assertIn("不可用", " ".join(monitor.host_lines({"network": {"interfaces": []}})))
+        self.assertIsNone(monitor.finite_number(float("nan")))
+        self.assertIsNone(monitor.finite_number(True))
+        self.assertIsNone(monitor.finite_number(-1))
+
+    def test_unknown_interface_state_does_not_hide_valid_traffic(self):
+        host = self.host()
+        host["network"]["interfaces"][0]["is_up"] = None
+        self.assertIn("2.0 KiB/s", monitor.host_lines(host)[0])
+
+    def test_recorder_refuses_service_data_and_unrelated_existing_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            data = root / "service"
+            data.mkdir()
+            original = b'{"private":"keep unchanged"}\n'
+            for path in (data / "manifest.json", data / "frames.jsonl", root / "unrelated.jsonl"):
+                path.write_bytes(original)
+                with self.assertRaises(ValueError):
+                    monitor.SnapshotRecorder(path, data_root=data)
+                self.assertEqual(path.read_bytes(), original)
+
+    def test_record_projection_omits_free_text_and_pseudonymizes_identifiers(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            create_database(root, [job("sensitive-id", "running", progress={"phase": "inference", "percent": 1,
+                "message": "password=private-pw C:/private/location"}),
+                job("past", "failed", error="password=private-error")])
+            snapshot = monitor.collect_snapshot(root, monitor.ReceiveRates(), NOW, 0, host=self.host())
+            recorded = json.dumps(monitor.record_projection(snapshot), ensure_ascii=False)
+            for value in ("sensitive-id", "private-pw", "private-error", "C:/private/location", ".mp4", "以太网"):
+                self.assertNotIn(value, recorded)
+            self.assertIn("rx_bytes_per_second", recorded)
+
+    def test_active_upload_is_shown_ahead_of_newer_completed_sessions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            create_database(root)
+            upload_manifest(root, "completed", received=100)
+            upload_manifest(root, "active", received=20, updated=NOW-1)
+            upload_manifest(root, "stalled", received=20, updated=NOW-200)
+            snapshot = monitor.collect_snapshot(root, monitor.ReceiveRates(), NOW, 0)
+            self.assertEqual([item["id"] for item in snapshot["uploads"]], ["active", "completed", "stalled"])
+
+
 class RecentLogErrorsTests(unittest.TestCase):
     def test_initial_seed_uses_recent_explicit_times_and_ignores_old_undated_and_202(self):
         with tempfile.TemporaryDirectory() as temporary:

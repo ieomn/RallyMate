@@ -132,7 +132,7 @@ export function getReportExportGate(input: ReportExportInput): { allowed: boolea
   if (!hasAnalysis(input)) return { allowed: false, reason: "分析结果尚未读取，不能导出空报告。" };
   const ids = [input.job?.id, input.evidence.jobId, input.evidence.result?.job_id, assessmentOf(input).job_id, input.evidence.trajectory?.job_id].map(idText).filter(Boolean);
   if (new Set(ids).size > 1) return { allowed: false, reason: "任务与结果编号不一致，请重新读取当前任务。" };
-  return { allowed: true, reason: "导出当前已完成分析；缺失证据会在报告中明确说明。" };
+  return { allowed: true, reason: asRecord(input.evidence.result?.report_delivery).mode === "segmented" ? "导出已加载的评分与概览；逐片段原始依据仍在服务端按需读取，不包含在本次备份中。" : "导出当前已完成分析；缺失证据会在报告中明确说明。" };
 }
 
 function requireReady(input: ReportExportInput): void {
@@ -190,6 +190,15 @@ function metricRows(result: RecordValue): string[][] {
 }
 
 export function buildPracticeReport(input: ReportExportInput, exportedAt = new Date().toISOString()): PracticeReport {
+  const report = buildPracticeReportContent(input, exportedAt);
+  if (asRecord(input.evidence.result?.report_delivery).mode === "segmented") {
+    report.sourceLabel += " · 已加载内容";
+    report.sections.unshift({ title: "导出范围", paragraphs: ["本次导出包含已加载的评分、训练建议与分析概览。动作和运动片段的完整原始依据保留在服务端，按需读取，不包含在本次备份中。可在原任务中继续分页查看。"] });
+  }
+  return report;
+}
+
+function buildPracticeReportContent(input: ReportExportInput, exportedAt: string): PracticeReport {
   requireReady(input);
   if (input.evidence.result) input = { ...input, evidence: { ...input.evidence, result: normalizeMeasurementResult(input.evidence.result) } };
   if (input.mode === "demo") {
@@ -225,6 +234,46 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
         text(dimension.label), dimension.score === null ? "画面不足" : numberText(dimension.score, " / 100"),
       ]),
     }];
+    if (tennis.level_assessments?.length) sections.push({ title: "Lv1–Lv5 分级技术评分",
+      paragraphs: ["大类权重按提供的 MD，未列明的子技术权重采用可配置工程规则。晋级条件单独检查，已观测动作的分数保留。"],
+      columns: ["训练等级", "已观测技术得分", "技术覆盖", "晋级检查"],
+      rows: tennis.level_assessments.map(level => [`Lv${level.target_level}`, numberText(level.overall_score, " / 100"),
+        `${(level.weighted_coverage * 100).toFixed(1)}%`,
+        level.gatekeepers.intermediate.status === "pending" ? "中级门槛待补证据" : level.gatekeepers.intermediate.status === "failed"
+          ? "中级门槛尚未满足" : level.gatekeepers.advanced.status === "passed" ? "高级门槛满足" : "高级门槛尚未满足或待补证据"]),
+    });
+    const session = tennis.training_session;
+    if (session?.training.active_clips.length) sections.push({ title: "有效训练动作片段",
+      paragraphs: [`共 ${session.training.active_clips.length} 个片段，动作窗口合计 ${numberText(session.training.active_duration_ms / 1000, " 秒")}。`,
+        "片段按原视频时间定位；完整 JSON 保留原始帧号、动作编号与球员归属。未选中的时间段不自动判为捡球或休息。"],
+      columns: ["片段", "原视频时间", "时长", "包含动作", "原始帧数"],
+      rows: session.training.active_clips.map((clip, index) => [String(index + 1), interval(clip),
+        numberText((clip.end_ms - clip.start_ms) / 1000, " 秒"), String(clip.episode_ids.length), String(clip.source_frames.length)]),
+    });
+    if (session && Object.keys(session.movement_ranges.metrics).length) {
+      const angleNames: Record<string, string> = { left_knee_flexion_deg: "左膝屈曲", right_knee_flexion_deg: "右膝屈曲",
+        left_elbow_flexion_deg: "左肘屈曲", right_elbow_flexion_deg: "右肘屈曲", left_shoulder_elevation_deg: "左肩抬举",
+        right_shoulder_elevation_deg: "右肩抬举", shoulder_hip_separation_deg: "肩髋分离" };
+      sections.push({ title: "本次动作的关节活动范围",
+        paragraphs: ["角度来自视频三维人体模型。典型区间为每段动作 P10/P90 的中位数，活动幅度为每段角度范围的中位数。"],
+        columns: ["关节测量", "观测最小–最大", "典型区间", "活动幅度", "动作数量"],
+        rows: Object.entries(session.movement_ranges.metrics).map(([key, range]) => [text(angleNames[key] ?? key),
+          range.observed_min !== null && range.observed_max !== null ? `${numberText(range.observed_min)}°–${numberText(range.observed_max)}°` : "未提供极值",
+          `${numberText(range.median_episode_p10)}°–${numberText(range.median_episode_p90)}°`, numberText(range.median_episode_range, "°"), String(range.episode_count)]),
+      });
+    }
+    if (session && session.match.confirmed_point_count > 0) {
+      const match = session.match;
+      const rates = [["一发得分率", match.first_serve_points_won], ["二发得分率", match.second_serve_points_won],
+        ["保发率", match.hold_rate], ["破发率", match.break_rate], ["接发直接得分率", match.return_aces]] as const;
+      sections.push({ title: "已确认的比赛统计", paragraphs: [`共 ${match.confirmed_point_count} 个已确认记录；未知结果不作为失分。`],
+        columns: ["项目", "结果", "已确认样本"], rows: [
+          ...rates.filter(([, rate]) => rate.percent !== null).map(([label, rate]) => [label, numberText(rate.percent, "%"), `${rate.numerator} / ${rate.denominator}`]),
+          ...(match.aces.count === null ? [] : [["Ace", String(match.aces.count), String(match.aces.classified_service_points)]]),
+          ...(match.unforced_errors.count === null ? [] : [["非受迫性失误", String(match.unforced_errors.count), String(match.unforced_errors.classified_points)]]),
+        ],
+      });
+    }
     const selected = tennis.subject_scope?.subjects.find(subject => subject.subject_id === tennis.subject_scope?.selected_subject_id);
     if (tennis.subject_scope && tennis.pattern_coverage) {
       const coverage = tennis.pattern_coverage;
@@ -244,6 +293,14 @@ export function buildPracticeReport(input: ReportExportInput, exportedAt = new D
           `尚未测量：${missing.length ? missing.join("、") : "本组要求没有缺测"}。`,
           ...(pattern.classification_provenance.method.includes("agent") ? ["技术类别来自辅助画面复核，尚未经过专家标注确认。"] : []),
         ] });
+        if (episode.joint_kinematics) sections.push({ title: `${interval(episode)} · 关节角度测量`,
+          paragraphs: ["角度来自原视频对应的三维人体估计；阶段定位与原始帧号保留在完整 JSON 报告中。"],
+          columns: ["测量项", "中位数", "10–90% 区间", "角速度 P90"],
+          rows: Object.entries(episode.joint_kinematics.metrics).filter(([, metric]) => metric.status === "measured").map(([key, metric]) => [
+            key, numberText(metric.median, metric.unit === "deg" ? "°" : " 倍肩宽"),
+            `${numberText(metric.p10)}–${numberText(metric.p90)}`, numberText(metric.angular_speed_p90_deg_s, " °/s"),
+          ]),
+        });
       }
     } else {
       sections[0].paragraphs.push("历史版本没有逐目标归属记录，不能据此确认整片始终为同一人。");
@@ -476,6 +533,17 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
     ? validatedSwingKinematicsReport(input.evidence.result.swing_kinematics, { jobId: report.jobId, videoSha256: sourceSha,
       motion: motionAnalysisOf(input.evidence.result, input.evidence.assessment, summaryOf(input)), durationMs: finite(videoMetadata.duration_ms) }) : null;
   const tennisForExport = tennisAssessmentOf(input.evidence.result ?? null);
+  // This measured scalar pair is named after a motion path, not a filesystem
+  // location. Only objects from the fully validated tennis report may bypass
+  // the generic path-name privacy filter below.
+  const trustedTennisPathMetrics = new WeakSet<object>();
+  const trustedSpecialistEvidence = new WeakSet<object>();
+  for (const episode of tennisForExport?.episodes ?? []) {
+    const metric = asRecord(asRecord(episode).metrics).follow_path;
+    if (metric && typeof metric === "object") trustedTennisPathMetrics.add(metric);
+    if (episode.specialist_motion) trustedSpecialistEvidence.add(episode.specialist_motion.evidence);
+  }
+  const specialistRubric = tennisForExport?.rubric.specialist_motion;
   // The ledger's child score rows omit score_semantics. Preserve only these exact
   // objects after the complete ledger has passed arithmetic and parent checks.
   const trustedScoreRows = new WeakSet<object>();
@@ -507,13 +575,25 @@ export function buildReportBackup(input: ReportExportInput, exportedAt = new Dat
     // bypass the path-name filter. Strings/objects never gain an exception.
     return Object.fromEntries(Object.entries(asRecord(value)).filter(([key, item]) => ["hip_path_length_px", "hip_net_displacement_px", "hip_path_over_net_ratio"].includes(key)
       ? item === null || finite(item) !== null && Number(item) >= 0
+      : trustedSpecialistEvidence.has(asRecord(value)) && ["preparation_path_torso", "striking_path_torso", "follow_through_path_torso"].includes(key)
+      ? item === null || finite(item) !== null && Number(item) >= 0
+      : trustedSpecialistEvidence.has(asRecord(value)) && key === "path_scope"
+      ? item === "observed_native_motion_phases_not_complete_recovery"
+      : trustedSpecialistEvidence.has(asRecord(value)) && key === "camera_reference_required_for_local_paths"
+      ? item === false
+      : value === specialistRubric && ["preparation_path_ratio", "follow_path_ratio", "active_striking_path_minimum_torso"].includes(key)
+      ? true
+      : value === specialistRubric && key === "camera_observation_required_for_native_paths"
+      ? item === false
+      : key === "follow_path" && item !== null && typeof item === "object" && trustedTennisPathMetrics.has(item)
+      ? true
       : key === "wrist_path_torso"
       || ["path_length_torso", "moving_ankle_path_length_torso", "both_ankles_max_path_length_torso"].includes(key) && finite(item) !== null && Number(item) >= 0
       || !/(?:path|url|token|secret|password|authorization|cookie|api.?key|__proto__|constructor)/i.test(key)).map(([key, item]) => [key, key === "source_id" ? safeSourceIdentity(item) : /^(?:technical_grade|formal_grade)$/.test(key) ? null : /(?:score_0_to_100|value_0_to_100)$/.test(key) ? key === "score_0_to_100" ? trustedScoreRows.has(asRecord(value)) ? finite(item) : evidenceReferenceScore(value) : key === "reference_score_0_to_100" ? evidenceReferenceScore({ ...asRecord(value), score_0_to_100: item }) : null : scrub(item, depth + 1)]));
   };
   return packReportBackup(scrub({
     schemaVersion: "rallymate-practice-report/1", exportedAt, jobId: report.jobId,
-    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review"]), ...(tennisForExport ? { tennis_assessment: tennisForExport } : {}), ...(swingForExport ? { swing_kinematics: swingForExport } : {}), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
+    result: { ...selected(input.evidence.result, ["job_id", "video_id", "measurement_contract", "measurement_update_required", "measurement_warnings_zh", "training_evaluation", "actions", "hit_statistics", "action_recognition", "footwork_review", "report_delivery"]), ...(tennisForExport ? { tennis_assessment: tennisForExport } : {}), ...(swingForExport ? { swing_kinematics: swingForExport } : {}), process_evaluation: processForExport, indicator_assessment: indicatorAssessmentOf(input.evidence.result?.indicator_assessment), card_execution: cardExecutionOf(input.evidence.result?.card_execution), source_aligned_assessment: sourceAssessmentForExport(input.evidence.result ?? null), input: { video: safeVideoMetadata }, analysis_report: analysisReportOf(input.evidence.result?.analysis_report) },
     assessment: omitDuplicatedMotion(selected(assessmentOf(input), ["assessment_version", "registry_version", "job_id", "overall_evidence_score_0_to_100", "formal_score_available", "formal_score_message_zh", "coverage", "coverage_detail", "family_summary", "techniques", "action_recognition"])),
     summary: omitDuplicatedMotion(selected(summaryOf(input), ["job_id", "input", "processing", "counts", "coverage", "action_recognition"])),
     trajectory: input.evidence.trajectory ? { ...selected(input.evidence.trajectory, ["schema_version", "result_kind", "job_id", "status", "source", "ball", "racket", "limitations"]), court_projection: courtProjectionOf(input.evidence.trajectory) } : null,

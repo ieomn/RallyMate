@@ -129,3 +129,28 @@ test("v1.2 subject boundaries, motion coverage and measured contributions surviv
   assert.deepEqual(tennisAssessmentOf(restored.result), expected);
   assert.equal(trainingScoreOf(restored.result).score, 70);
 });
+
+test("segmented exports retain their loaded-only scope in readable files and JSON round trips", async () => {
+  const value = input();
+  value.evidence.result.report_delivery = { mode: "segmented", evidence: "on_demand", overview: "complete" };
+  const readable = buildPracticeReport(value);
+  assert.match(renderReportMarkdown(readable), /导出范围/);
+  assert.match(renderReportMarkdown(readable), /不包含在本次备份中/);
+  const file = new Blob([JSON.stringify(buildReportBackup(value))], { type: "application/json" });
+  const decoded = await readReportJson(file);
+  assert.equal(decoded.result.report_delivery.mode, "segmented");
+  assert.equal(decoded.result.report_delivery.evidence, "on_demand");
+});
+
+test("validated numeric follow_path metrics survive privacy scrubbing and report reload", async () => {
+  const source = input(), scoped = tennisScopedFixture();
+  source.job.id = source.evidence.jobId = source.evidence.result.job_id = scoped.source_run_id;
+  for (const episode of scoped.episodes) episode.metrics.follow_path = { value: 1.8, score: 80 };
+  source.evidence.result.tennis_assessment = scoped;
+  const expected = tennisAssessmentOf(source.evidence.result);
+  assert.ok(expected);
+  assert.deepEqual(expected.episodes[0].metrics.follow_path,{value:1.8,score:80});
+  const encoded=JSON.stringify(buildReportBackup(source));
+  const saved=await readReportJson({size:Buffer.byteLength(encoded),text:async()=>encoded});
+  assert.deepEqual(tennisAssessmentOf(saved.result),expected);
+});

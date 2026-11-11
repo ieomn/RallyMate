@@ -1,7 +1,10 @@
 from pathlib import Path
+from collections import defaultdict
+import hashlib
 import io
 import json
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -149,6 +152,100 @@ class MeshCaptureTests(unittest.TestCase):
             handle.write(b'corrupted')
         with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
             archive_mesh_records([{'status': 'ok', 'mesh_artifact': artifact}], self.output_dir, self.runtime)
+
+    def archived_artifact(self):
+        artifact = capture_mesh_output(self.output, self.faces, self.runtime)
+        return archive_mesh_records([{'status': 'ok', 'mesh_artifact': artifact}],
+                                    self.output_dir, self.runtime)[0]['mesh_artifact']
+
+    def test_renderer_reads_each_verified_npz_once_and_keeps_exact_arrays(self):
+        artifact = self.archived_artifact()
+        calls, cache, timing = [], {}, defaultdict(float)
+        original_open = Path.open
+        def opened(path, *args, **kwargs):
+            if args and args[0] == 'rb':
+                calls.append(Path(path))
+            return original_open(path, *args, **kwargs)
+        with patch.object(Path, 'open', new=opened):
+            first = mesh_module._load_verified_geometry(self.output_dir, artifact, cache, timing)
+            second = mesh_module._load_verified_geometry(self.output_dir, artifact, cache, timing)
+        self.assertEqual(calls.count((self.output_dir / artifact['path']).resolve()), 2)
+        self.assertEqual(calls.count((self.output_dir / artifact['faces_path']).resolve()), 1)
+        for actual in (first, second):
+            np.testing.assert_array_equal(actual[0], self.output['pred_vertices'])
+            np.testing.assert_array_equal(actual[1], self.faces)
+            np.testing.assert_array_equal(actual[2], self.output['pred_cam_t'])
+            self.assertEqual(actual[0].dtype, self.output['pred_vertices'].dtype)
+            self.assertEqual(actual[1].dtype, self.faces.dtype)
+            self.assertEqual(actual[3], float(self.output['focal_length']))
+        self.assertEqual(set(timing), {'geometry_substage_file_read', 'geometry_substage_sha256',
+            'geometry_substage_array_decode', 'geometry_substage_array_validation'})
+
+    def test_renderer_rejects_geometry_or_topology_full_sha_before_decode(self):
+        for key in ('path', 'faces_path'):
+            with self.subTest(key=key):
+                artifact = self.archived_artifact()
+                path = self.output_dir / artifact[key]
+                original = path.read_bytes()
+                path.write_bytes(original + b'tampered-tail')
+                with patch.object(mesh_module.np, 'load') as load, self.assertRaisesRegex(ValueError, 'changed after inference'):
+                    mesh_module._load_verified_geometry(self.output_dir, artifact, {}, defaultdict(float))
+                load.assert_not_called()
+                path.write_bytes(original)
+
+    def test_renderer_decodes_the_hashed_snapshot_without_reopening_a_replaced_file(self):
+        artifact = self.archived_artifact()
+        path = self.output_dir / artifact['path']
+        original_sha = hashlib.sha256
+        def hash_then_replace(payload):
+            result = original_sha(payload)
+            path.write_bytes(b'changed after the verified read')
+            return result
+        with patch.object(mesh_module.hashlib, 'sha256', side_effect=hash_then_replace):
+            actual = mesh_module._load_verified_geometry(self.output_dir, artifact,
+                {artifact['faces_sha256']: self.faces}, defaultdict(float))
+        np.testing.assert_array_equal(actual[0], self.output['pred_vertices'])
+
+    def test_renderer_keeps_shape_camera_finite_and_topology_checks(self):
+        artifact = self.archived_artifact()
+        path = self.output_dir / artifact['path']
+        cases = [('vertices', np.ones((2, 3), np.float32)), ('vertices', np.ones((3, 2), np.float32)),
+                 ('vertices', np.full((3, 3), np.nan)), ('camera', np.array([0., 0., -1.])),
+                 ('focal', np.array(float('inf')))]
+        for name, value in cases:
+            values = dict(vertices=self.output['pred_vertices'], camera=self.output['pred_cam_t'],
+                          focal=self.output['focal_length'])
+            values[name] = value
+            with path.open('wb') as stream:
+                np.savez(stream, **values)
+            artifact['sha256'] = sha256_file(path)
+            with self.subTest(name=name, shape=value.shape), self.assertRaises(ValueError):
+                mesh_module._load_verified_geometry(self.output_dir, artifact, {}, defaultdict(float))
+        with path.open('wb') as stream:
+            np.savez(stream, vertices=self.output['pred_vertices'], camera=self.output['pred_cam_t'],
+                     focal=self.output['focal_length'])
+        artifact['sha256'] = sha256_file(path)
+        for faces in (np.array([[0, 1, 999]], dtype=np.int64), np.array([[0., 1., 2.]]),
+                      np.array([[0, 1]], dtype=np.int64)):
+            with self.subTest(topology=faces.tolist()), self.assertRaisesRegex(ValueError, 'topology'):
+                mesh_module._load_verified_geometry(self.output_dir, artifact,
+                    {artifact['faces_sha256']: faces}, defaultdict(float))
+
+    def test_renderer_rejects_escape_and_bounded_file_oversize(self):
+        artifact = self.archived_artifact()
+        with self.assertRaisesRegex(ValueError, 'escapes'):
+            mesh_module._load_verified_geometry(self.output_dir,
+                {**artifact, 'path': '../outside.npz'}, {}, defaultdict(float))
+        with patch.object(mesh_module, 'MAX_GEOMETRY_FILE_BYTES', 64), self.assertRaisesRegex(ValueError, 'file bound'):
+            mesh_module._load_verified_geometry(self.output_dir, artifact, {}, defaultdict(float))
+
+    def test_renderer_rejects_growth_or_truncation_on_the_same_open_file(self):
+        artifact = self.archived_artifact()
+        size = (self.output_dir / artifact['path']).stat().st_size
+        for delta in (-1, 1):
+            with self.subTest(delta=delta), patch.object(mesh_module.os, 'fstat',
+                    return_value=SimpleNamespace(st_size=size + delta)), self.assertRaisesRegex(ValueError, 'size changed'):
+                mesh_module._load_verified_geometry(self.output_dir, artifact, {}, defaultdict(float))
 
 
 if __name__ == "__main__":

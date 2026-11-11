@@ -5,6 +5,7 @@ import { uploadResumable } from "./resumable-upload";
 import { parseTechnicalReview, type TechnicalReviewInput, type TechnicalReviewLedger } from "./technical-review";
 import type {
   DemoResultResponse,
+  MotionEpisode,
   Sam3dMeshPreview,
   SwingKinematicsReport,
   JobProgress,
@@ -25,8 +26,15 @@ import { attachRequestDiagnostics, safeRequestDiagnostic, type RequestDiagnostic
 import { normalizePosePreview } from "./pose-playback";
 import { FOOT_CROSSING_RESPONSE_BYTES, parseFootCrossingResponse, type FootCrossingResponse } from "./foot-crossing-candidates";
 import { parseShotStatistics, type ShotStatisticsResponse } from "./shot-statistics";
+import { SUMMARY_BYTES, ACTION_PAGE_BYTES, ACTION_DETAIL_BYTES, parseReportSummary, parseReportActions, parseReportActionDetail, type ReportSummary, type ReportSource, type ReportAction, type ReportActionPage, type ReportActionDetail } from "./segmented-report";
+import { OVERVIEW_BYTES, parseReportOverview, parseReportMotion, type ReportMotion, type ReportOverview } from "./segmented-report";
 
 export type ShotReviewSubmission = { mutation_id: string; expected_revision: number; source_video_sha256: string; event: Record<string, unknown> };
+export const POSE_MAX_WIRE_BYTES = 16 * 1024 * 1024;
+export const POSE_READ_BUDGET_MS = 90000;
+// Cold action scoring recomputes a long video's saved native measurements.
+// Allow the gateway's 120s read to finish, with a small response-delivery margin.
+export const TENNIS_ASSESSMENT_READ_TIMEOUT_MS = 125000;
 
 export { RallyMateApiError } from "./api-types";
 export type { JobProgress } from "./api-types";
@@ -101,6 +109,12 @@ export function getApiConfig(): RallyMateApiConfig {
 }
 
 export interface RallyMateApiClient {
+  getJobStatus(jobId: string, signal?: AbortSignal): Promise<JobProgress>;
+  getReportSummary(jobId: string, signal?: AbortSignal): Promise<ReportSummary>;
+  getReportMotion(jobId: string, source: ReportSource, episode: MotionEpisode, signal?: AbortSignal): Promise<ReportMotion>;
+  getReportOverview(jobId: string, source: ReportSource, signal?: AbortSignal): Promise<ReportOverview>;
+  getReportActions(jobId: string, source: ReportSource, offset?: number, signal?: AbortSignal): Promise<ReportActionPage>;
+  getReportActionDetail(jobId: string, source: ReportSource, action: ReportAction, offset?: number, signal?: AbortSignal): Promise<ReportActionDetail>;
   getShotStatistics(jobId: string, signal?: AbortSignal): Promise<ShotStatisticsResponse>;
   saveShotReview(jobId: string, submission: ShotReviewSubmission, signal?: AbortSignal): Promise<ShotStatisticsResponse>;
   getTennisAssessment(jobId: string, signal?: AbortSignal): Promise<Record<string, unknown>>;
@@ -158,7 +172,7 @@ export function createApiClient(
     if (/\/pose-preview$/.test(pathname)) return "pose_preview";
     if (/\/technical-review(?:\/export)?$/.test(pathname)) return "technical_review";
     if (/\/meta$/.test(pathname)) return "meta";
-    return /\/jobs\/[^/]+$/.test(pathname) ? "job" : "other_read";
+    return /\/jobs\/[^/]+(?:\/status)?$/.test(pathname) ? "job" : "other_read";
   };
   const record = (context: ReadContext | undefined, stage: RequestDiagnostic["stage"], outcome: RequestDiagnostic["outcome"], category: RequestDiagnostic["category"] = null, error?: unknown) => {
     if (!context || context.caller?.aborted) return;
@@ -284,20 +298,23 @@ export function createApiClient(
     // Validate and rewrite analyzer URLs before adding the representation query.
     // Other reads keep their existing contract and query string unchanged.
     let url = urlFor(path);
-    if (reportContract) {
+    if (reportContract || reportDelivery) {
       const fragmentIndex = url.indexOf("#");
       const fragment = fragmentIndex < 0 ? "" : url.slice(fragmentIndex);
       const endpoint = fragmentIndex < 0 ? url : url.slice(0, fragmentIndex);
       const queryIndex = endpoint.indexOf("?");
       const query = new URLSearchParams(queryIndex < 0 ? "" : endpoint.slice(queryIndex + 1));
-      query.set("report_contract", reportContract);
+      if (reportContract) query.set("report_contract", reportContract);
       if (reportTransport) query.set("report_transport", reportTransport);
       if (reportDelivery) query.set("report_delivery", reportDelivery);
       url = `${queryIndex < 0 ? endpoint : endpoint.slice(0, queryIndex)}?${query}${fragment}`;
     }
     const bodyIdleController = reportBudget ? new AbortController() : undefined;
+    const pathname = path.split(/[?#]/, 1)[0];
+    const requestCap = pathname.endsWith("/tennis-assessment") ? TENNIS_ASSESSMENT_READ_TIMEOUT_MS
+      : pathname.endsWith("/report-overview") ? 70000 : 20000;
     const timeout = bodyIdleController ? AbortSignal.any([bodyIdleController.signal, reportBudget!])
-      : AbortSignal.timeout(Math.max(1, Math.min(20000, Math.ceil(timeoutMs))));
+      : AbortSignal.timeout(Math.max(1, Math.min(requestCap, Math.ceil(timeoutMs))));
     // Only reports have separate header and progress-sensitive body budgets.
     // Clearing this timer after headers prevents it from aborting a progressing body.
     const headerTimer = bodyIdleController ? setTimeout(() => bodyIdleController.abort(new DOMException(
@@ -315,8 +332,129 @@ export function createApiClient(
     } catch (error) { readFailure(context, "headers", error); throw error; }
     finally { clearTimeout(headerTimer); }
   };
-  const get = <T,>(path: string, signal?: AbortSignal, reportContract?: "current", reportTransport?: typeof MODEL_PROOF_CODEC) =>
-    requestGet(path, signal, reportContract, reportTransport).then(response => parseResponse<T>(response));
+  const get = <T,>(path: string, signal?: AbortSignal, reportContract?: "current", reportTransport?: typeof MODEL_PROOF_CODEC, timeoutMs?: number) =>
+    requestGet(path, signal, reportContract, reportTransport, undefined, timeoutMs).then(response => parseResponse<T>(response));
+
+  async function segmentedRead<T>(jobId: string, path: string, maxBytes: number, signal: AbortSignal | undefined, parse: (value: unknown) => T, timeoutMs?: number): Promise<T> {
+    // Preparation is a separate, bounded wait. Each HTTP request keeps its
+    // existing deadline; a 202 never authorizes a report without validation.
+    // Backend queue <=120s and computation <=60s; the remaining 30s is for
+    // polling, transfer and contract validation, not more computation.
+    const budgetMs = 210000, deadline = reportTiming.now() + budgetMs;
+    const budget = new AbortController(), combined = signal ? AbortSignal.any([signal, budget.signal]) : budget.signal;
+    const expired = () => new RallyMateApiError("报告仍在整理，本次等待已达到时限。可继续读取结果，无需重新上传。", 425,
+      { detail: { code: "report_still_preparing" } });
+    const timer = setTimeout(() => budget.abort(expired()), budgetMs);
+    try {
+      for (;;) {
+        combined.throwIfAborted();
+        if (reportTiming.now() >= deadline) throw expired();
+        const deferred = path.split(/[?#]/, 1)[0].endsWith("/report-summary") ? undefined : "deferred-v1";
+        const response = await requestGet(path, combined, undefined, undefined, deferred, timeoutMs);
+        let value: unknown;
+        try { value = await parseResponse<unknown>(response, { maxBytes, signal: combined }); }
+        catch (error) {
+          const detail = error instanceof RallyMateApiError && error.payload && typeof error.payload === "object" && "detail" in error.payload ? error.payload.detail : null;
+          if (!(error instanceof RallyMateApiError && [429, 503].includes(error.status) && detail && typeof detail === "object"
+            && "code" in detail && detail.code === "report_segments_busy")) throw error;
+          value = null;
+        }
+        combined.throwIfAborted();
+        const context = responseContexts.get(response);
+        context?.timeout.throwIfAborted();
+        if (response.redirected) throw new RallyMateApiError("片段报告返回了无效的跳转。", 422);
+        if (response.status === 202 || response.status === 429 || response.status === 503) {
+          const preparing = value && typeof value === "object" ? value as Record<string, unknown> : null;
+          if (response.status === 202 && (!preparing || preparing.schema_version !== "segmented-report-v1"
+            || preparing.job_id !== jobId || preparing.status !== "preparing" || !preparing.delivery || typeof preparing.delivery !== "object"
+            || !("state" in preparing.delivery) || preparing.delivery.state !== "preparing"
+            || !Number.isSafeInteger(preparing.retry_after_ms) || Number(preparing.retry_after_ms) < 0)) {
+            throw new RallyMateApiError("报告准备响应与当前任务不匹配，请重新读取。", 422);
+          }
+          const retryHeader = response.headers.get("retry-after");
+          const suggested = retryHeader !== null && /^\d+(?:\.\d+)?$/.test(retryHeader) ? Number(retryHeader) * 1000 : Number(preparing?.retry_after_ms ?? 2000);
+          const remaining = deadline - reportTiming.now();
+          if (remaining <= 0) throw expired();
+          await reportTiming.wait(Math.min(remaining, Math.max(1000, Math.min(5000, suggested))), combined);
+          continue;
+        }
+        if (response.status !== 200) throw new RallyMateApiError("片段报告尚未读取完成，请重试。", 422);
+        try {
+          const parsed = parse(value);
+          combined.throwIfAborted(); context?.timeout.throwIfAborted();
+          if (reportTiming.now() >= deadline) throw expired();
+          record(context, "decode", "success");
+          return parsed;
+        } catch (cause) {
+          combined.throwIfAborted(); context?.timeout.throwIfAborted();
+          if (cause instanceof RallyMateApiError && cause.status === 425) throw cause;
+          const error = new RallyMateApiError("片段证据与当前训练或原视频不匹配，请重新读取摘要。", 422, undefined, { cause });
+          record(context, "decode", "failure", "response_contract", error);
+          throw error;
+        }
+      }
+    } catch (error) { signal?.throwIfAborted(); if (budget.signal.aborted) throw expired(); throw error; }
+    finally { clearTimeout(timer); }
+  }
+
+  type OverviewRead = { sourceKey: string; controller: AbortController; promise: Promise<ReportOverview>; readers: number; settled: boolean };
+  const overviewReads = new Map<string, OverviewRead>();
+  const auxiliaryReads = new Map<string, Promise<unknown>>();
+  function waitForShared<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+    signal?.throwIfAborted();
+    return new Promise((resolve, reject) => {
+      const abort = () => reject(signal?.reason);
+      signal?.addEventListener("abort", abort, { once: true });
+      promise.then(value => { signal?.removeEventListener("abort", abort); resolve(value); }, error => { signal?.removeEventListener("abort", abort); reject(error); });
+    });
+  }
+  async function joinOverview(entry: OverviewRead, signal?: AbortSignal): Promise<ReportOverview> {
+    signal?.throwIfAborted();
+    entry.readers++;
+    try { return await waitForShared(entry.promise, signal); }
+    finally { if (--entry.readers === 0 && !entry.settled) entry.controller.abort(); }
+  }
+  function overviewRead(jobId: string, source: ReportSource, signal?: AbortSignal): Promise<ReportOverview> {
+    signal?.throwIfAborted();
+    const sourceKey = JSON.stringify([source.source_job_id, source.video_id, source.video_sha256, source.frames_sha256, source.evidence_revision]);
+    let entry = overviewReads.get(jobId);
+    if (!entry || entry.sourceKey !== sourceKey || entry.controller.signal.aborted) {
+      const controller = new AbortController();
+      entry = { sourceKey, controller, readers: 0, settled: false,
+        promise: segmentedRead(jobId, reportPath(jobId, "/report-overview"), OVERVIEW_BYTES, controller.signal, value => parseReportOverview(value, jobId, source), 70000) };
+      overviewReads.set(jobId, entry);
+      const created = entry;
+      const finish = () => { created.settled = true; if (overviewReads.get(jobId) === created) overviewReads.delete(jobId); };
+      void entry.promise.then(finish, finish);
+    }
+    return joinOverview(entry, signal);
+  }
+  async function afterOverview<T>(jobId: string, signal: AbortSignal | undefined, read: () => Promise<T>): Promise<T> {
+    // Effects in one render register independently. Yield once so the overview
+    // owns cold preparation even when a child asks for its statistics first.
+    await Promise.resolve();
+    signal?.throwIfAborted();
+    const overview = overviewReads.get(jobId);
+    if (overview) await joinOverview(overview, signal);
+    const previous = auxiliaryReads.get(jobId);
+    const task = (async () => {
+      if (previous) await waitForShared(previous.catch(() => undefined), signal);
+      signal?.throwIfAborted();
+      try { return await read(); }
+      catch (error) {
+        signal?.throwIfAborted();
+        // One transport timeout can leave a completed server-side cache. Retry
+        // only that transient read; never retry evidence/resource failures.
+        if (!(error instanceof Error && error.name === "TimeoutError")) throw error;
+        await reportTiming.wait(2000, signal);
+        signal?.throwIfAborted();
+        return read();
+      }
+    })();
+    auxiliaryReads.set(jobId, task);
+    try { return await task; }
+    finally { if (auxiliaryReads.get(jobId) === task) auxiliaryReads.delete(jobId); }
+  }
 
   async function demoResult(jobId: string, options: { endpoint?: string | null; signal?: AbortSignal; onPrepare?: () => void; maxWaitMs?: number } = {}): Promise<DemoResultResponse> {
     const budgetMs = typeof options.maxWaitMs === "number" && Number.isFinite(options.maxWaitMs)
@@ -391,6 +529,21 @@ export function createApiClient(
 
   return {
     config: resolvedConfig,
+    getJobStatus: (jobId, signal) => get<JobProgress>(reportPath(jobId, "/status"), signal),
+    getReportSummary: (jobId, signal) => segmentedRead(jobId, reportPath(jobId, "/report-summary"), SUMMARY_BYTES, signal, value => parseReportSummary(value, jobId)),
+    getReportMotion: (jobId, source, episode, signal) => segmentedRead(jobId, reportPath(jobId, `/report-motion/${encodeURIComponent(episode.episode_id)}`), ACTION_DETAIL_BYTES, signal, value => parseReportMotion(value, jobId, source, episode)),
+    getReportOverview: overviewRead,
+    getReportActions: (jobId, source, offset = 0, signal) => segmentedRead(jobId, `${reportPath(jobId, "/report-actions")}?offset=${offset}&limit=20`, ACTION_PAGE_BYTES, signal, value => parseReportActions(value, jobId, source, offset)),
+    getReportActionDetail: async (jobId, source, action, offset = 0, signal) => {
+      const read = (limit: number) => segmentedRead(jobId, `${reportPath(jobId, `/report-actions/${encodeURIComponent(action.action_id)}`)}?offset=${offset}&limit=${limit}`, ACTION_DETAIL_BYTES, signal, value => parseReportActionDetail(value, jobId, source, action, offset));
+      try { return await read(4); }
+      catch (error) {
+        signal?.throwIfAborted();
+        const detail = error instanceof RallyMateApiError && error.payload && typeof error.payload === "object" && "detail" in error.payload ? error.payload.detail : null;
+        if (error instanceof RallyMateApiError && error.status === 413 && detail && typeof detail === "object" && "code" in detail && detail.code === "report_segment_limit") return read(1);
+        throw error;
+      }
+    },
     getCapabilities: (signal) => get<ScorecardCapabilities>(resolvedConfig.scorecardPath, signal),
     getMeta: (signal) => get<RallyMateMetaResponse>("/v1/meta", signal),
     getTechniques: (signal) => get<TechniqueCatalogResponse>(resolvedConfig.techniquesPath, signal),
@@ -404,7 +557,7 @@ export function createApiClient(
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(reportPath(jobId), signal, "current"),
     getMeshPreview: (jobId, signal) => get(reportPath(jobId, "/mesh-preview"), signal),
-    getShotStatistics: (jobId, signal) => get<unknown>(reportPath(jobId, "/shot-statistics"), signal).then(value => {
+    getShotStatistics: (jobId, signal) => afterOverview(jobId, signal, () => get<unknown>(reportPath(jobId, "/shot-statistics"), signal)).then(value => {
       const parsed = parseShotStatistics(value, jobId);
       if (!parsed) throw new RallyMateApiError("击球统计与当前任务不匹配。", 422);
       return parsed;
@@ -419,7 +572,7 @@ export function createApiClient(
       return parsed;
     }),
     getSwingKinematics: (jobId, signal) => get(reportPath(jobId, "/swing-kinematics"), signal),
-    getTennisAssessment: (jobId, signal) => get(reportPath(jobId, "/tennis-assessment"), signal),
+    getTennisAssessment: (jobId, signal) => afterOverview(jobId, signal, () => get(reportPath(jobId, "/tennis-assessment"), signal, undefined, undefined, TENNIS_ASSESSMENT_READ_TIMEOUT_MS)),
     cancelJob: (jobId, signal) => fetchImpl(urlFor(reportPath(jobId, "/cancel")), {
       method: "POST", cache: "no-store", headers: { "X-Request-ID": requestId() },
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
@@ -458,22 +611,30 @@ export function createApiClient(
       }
     },
     getPosePreview: async (jobId, options = {}) => {
+      options.signal?.throwIfAborted();
+      const budget = new AbortController();
+      const timer = setTimeout(() => budget.abort(new DOMException("动作标记读取达到本次总时限。", "TimeoutError")), POSE_READ_BUDGET_MS);
+      const readSignal = options.signal ? AbortSignal.any([options.signal, budget.signal]) : budget.signal;
+      try {
       const bounded = (value: number | undefined, fallback: number, max: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(0, Math.floor(value))) : fallback;
       const startMs = bounded(options.startMs, 0, Number.MAX_SAFE_INTEGER);
-      const query = new URLSearchParams({ start_ms: String(startMs), duration_ms: String(Math.max(1, bounded(options.durationMs, 10000, 10000))), sample_limit: String(Math.max(1, bounded(options.sampleLimit, 600, 600))) });
-      const response = await requestGet(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/pose-preview?${query}`, options.signal);
-      const raw = await parseResponse<PosePreviewResponse>(response);
-      options.signal?.throwIfAborted();
+      const query = new URLSearchParams({ start_ms: String(startMs), duration_ms: String(Math.max(1, bounded(options.durationMs, 10000, 10000))), sample_limit: String(Math.max(1, bounded(options.sampleLimit, 600, 600))), pose_transport: "compact-v1" });
+      // Header and body-idle clocks are independent. A progressing multi-MiB
+      // window is bounded by bytes and total elapsed time, not a 20s body cap.
+      const response = await requestGet(`${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/pose-preview?${query}`, options.signal, undefined, undefined, undefined, 20000, budget.signal);
+      const raw = await parseResponse<PosePreviewResponse>(response, { maxBytes: POSE_MAX_WIRE_BYTES, signal: readSignal });
+      readSignal.throwIfAborted();
       const context = responseContexts.get(response);
       let parsed: PosePreviewResponse | null;
       try { parsed = normalizePosePreview(raw, jobId); }
       catch (cause) {
-        options.signal?.throwIfAborted();
+        readSignal.throwIfAborted();
         const error = new RallyMateApiError("动作标记数据无法解析。", 422, undefined, { cause });
         record(context, "decode", "failure", "pose_normalization", error);
         throw error;
       }
-      options.signal?.throwIfAborted();
+      readSignal.throwIfAborted();
+      context?.timeout.throwIfAborted();
       if (!parsed || parsed.source.requested_start_ms !== startMs) {
         const error = new RallyMateApiError("人体姿态数据与当前回放不匹配。", 422);
         record(context, "decode", "failure", parsed ? "pose_window_mismatch" : "pose_normalization", error);
@@ -482,6 +643,7 @@ export function createApiClient(
       record(context, "decode", "success");
       // Keep the loader contract and the hook's independent identity/time guards.
       return raw;
+      } finally { clearTimeout(timer); }
     },
     getTrajectory: (jobId, options = {}) => {
       const endpoint = options.endpoint || `${resolvedConfig.jobsPath}/${encodeURIComponent(jobId)}/trajectory`;
@@ -489,7 +651,7 @@ export function createApiClient(
       if (options.sampleLimit !== undefined) query.set("sample_limit", String(options.sampleLimit));
       if (options.predictionHorizonMs !== undefined) query.set("prediction_horizon_ms", String(options.predictionHorizonMs));
       const suffix = query.toString();
-      return get<TrajectoryPreviewResponse>(suffix ? `${endpoint}${endpoint.includes("?") ? "&" : "?"}${suffix}` : endpoint, options.signal);
+      return afterOverview(jobId, options.signal, () => get<TrajectoryPreviewResponse>(suffix ? `${endpoint}${endpoint.includes("?") ? "&" : "?"}${suffix}` : endpoint, options.signal));
     },
     getTechniqueAssessment: (jobId, options = {}) =>
       get<TechniqueAssessmentResponse>(options.endpoint || reportPath(jobId, "/technique-assessment"), options.signal, "current"),

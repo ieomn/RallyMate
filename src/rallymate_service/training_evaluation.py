@@ -642,6 +642,18 @@ def build_training_evaluation(
     indicator_feature_records: Iterable[Mapping[str, Any]],
 ) -> dict[str, Any]:
     """Build an evidence reference score, never a technical quality grade."""
+    evaluation, _ = build_training_evaluation_with_records(indicator_feature_records)
+    return evaluation
+
+
+def build_training_evaluation_with_records(
+    indicator_feature_records: Iterable[Mapping[str, Any]],
+) -> tuple[dict[str, Any], list[Mapping[str, Any]]]:
+    """Validate once and share the same observations within one report build.
+
+    This entry always validates its input; it accepts no prevalidated override.
+    Returned lazy handles belong to the caller's open record reader, not a cache.
+    """
     validated, validation = validated_training_records(indicator_feature_records)
     by_indicator: dict[str, list[Mapping[str, Any]]] = {
         indicator_id: [] for indicator_id in _INDICATOR_FEATURES
@@ -676,7 +688,7 @@ def build_training_evaluation(
             "total_indicator_count": len(items),
             "indicator_evaluations": items,
         }
-    return {
+    evaluation = {
         "evaluation_version": TRAINING_EVALUATION_VERSION,
         **_technical_score_contract(),
         "input_validation": validation,
@@ -701,3 +713,4 @@ def build_training_evaluation(
         "formal_grade": None,
         "is_formal_coach_score": False,
     }
+    return evaluation, validated

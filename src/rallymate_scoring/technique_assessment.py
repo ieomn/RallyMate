@@ -17,6 +17,7 @@ from typing import Any
 from rallymate_scoring.technique_registry import (
     load_technique_registry_snapshot,
 )
+from rallymate_service.indicator_records import _record_for_scope
 
 
 TECHNIQUE_ASSESSMENT_VERSION = "rallymate-technique-assessment-v1.4.0"
@@ -296,19 +297,18 @@ def _augment_coverage_from_records(
     player track existed for that row; use it as a scoped fallback while
     preserving explicit summary coverage whenever present.
     """
-    measured = False
-    for record in records:
+    def is_measured(record):
         status = record.get("feature_status") or record.get("scoring_feature_status")
         if status == "measured":
-            measured = True
-            break
+            return True
         features = record.get("features") or record.get("scoring_features")
-        if isinstance(features, list) and any(
+        return isinstance(features, list) and any(
             isinstance(item, Mapping) and item.get("valid") is True
             for item in features
-        ):
-            measured = True
-            break
+        )
+    # The borrowed row is released on return, even when it is too large for
+    # the reader's LRU. Never collect complete records/proofs here.
+    measured = any(is_measured(_record_for_scope(record)) for record in records)
     if not measured:
         return
     for key in ("pose", "tracking"):
@@ -343,13 +343,15 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
             code = _canonical_event_code(key)
             if code and _number(value) and float(value) > 0:
                 result.add(code)
-    for record in records:
+    def direct_record_codes(record):
         if _candidate_only(record):
-            continue
+            return
         for key in ("event_code", "event", "action", "action_type", "technique_id", "technique", "label", "name", "name_zh"):
             code = _canonical_event_code(record.get(key))
             if code:
                 result.add(code)
+    for record in records:
+        direct_record_codes(_record_for_scope(record))
     # A future detector can publish a stable list without requiring a new
     # version of this module.
     for key in ("technique_events", "observed_techniques", "detected_techniques"):
@@ -393,7 +395,7 @@ def _event_codes(summary: Mapping[str, Any], records: list[Mapping[str, Any]]) -
 
     visit(summary)
     for record in records:
-        visit(record)
+        visit(_record_for_scope(record))
     return result
 
 
@@ -552,6 +554,48 @@ def _phase_statuses(
                 "evidence_source": "explicit_phase_record" if matched else "event_presence" if observed else None,
             }
         )
+    return result
+
+
+def _explicit_phase_index(records, techniques):
+    """One source-record pass; retain only registry-matching phase aliases."""
+    allowed = {
+        str(technique["id"]): {alias.casefold()
+            for item in technique.get("phases", [])
+            for alias in _PHASE_ALIASES.get(str(item), {str(item)})}
+        for technique in techniques
+    }
+    explicit = {identifier: set() for identifier in allowed}
+
+    def collect(record):
+        if _candidate_only(record):
+            return
+        identifiers = _record_technique_ids(record)
+        if len(identifiers) != 1:
+            return
+        identifier = next(iter(identifiers))
+        if identifier not in allowed:
+            return
+        for key in ("phase_key", "phase", "stage", "stage_code"):
+            value = record.get(key)
+            if isinstance(value, str) and value.casefold() in allowed[identifier]:
+                explicit[identifier].add(value.casefold())
+
+    for record in records:
+        # A function-call scope releases oversized uncached proofs before the
+        # next record is resolved. Unknown IDs/phases never enter the index.
+        collect(_record_for_scope(record))
+    return explicit
+
+
+def _indexed_phase_statuses(technique, explicit, observed):
+    values = explicit.get(str(technique["id"]), set())
+    result = []
+    for phase in (str(item) for item in technique.get("phases", [])):
+        matched = bool({item.casefold() for item in _PHASE_ALIASES.get(phase, {phase})} & values)
+        result.append({"phase": phase,
+                       "status": "measured" if matched else "proxy" if observed else "unavailable",
+                       "evidence_source": "explicit_phase_record" if matched else "event_presence" if observed else None})
     return result
 
 
@@ -725,6 +769,7 @@ def build_technique_assessment(
     _augment_coverage_from_records(coverage, coverage_detail, records)
     events = _event_codes(summary, records)
     action_recognition = _action_recognition(summary)
+    explicit_phases = _explicit_phase_index(records, registry["techniques"])
     observed_ids = {
         _EVENT_TO_TECHNIQUE[event]
         for event in events
@@ -784,7 +829,7 @@ def build_technique_assessment(
                 "evidence_score_0_to_100": evidence_score if observed else 0,
                 "score_0_to_100": None,
                 "formal_grade": None,
-                "phase_statuses": _phase_statuses(technique, records, observed),
+                "phase_statuses": _indexed_phase_statuses(technique, explicit_phases, observed),
                 "evidence": {
                     "required_coverage": {key: round(coverage.get(key, 0.0) * 100) for key in required},
                     "enhanced_coverage": {key: round(coverage.get(key, 0.0) * 100) for key in enhanced},

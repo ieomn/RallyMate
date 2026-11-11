@@ -12,6 +12,7 @@ from rallymate_features.kinematics import irregular_derivative
 from rallymate_features.schemas import PoseSequence
 from rallymate_features.smoothing import smooth_series
 from rallymate_features.temporal import longest_contiguous_duration
+from rallymate_features.validity import meets_keypoint_frame_coverage
 
 
 FS01_FS02_FEATURE_VERSION = "fs01-fs02-pose-proxies-v0.7.0"
@@ -27,6 +28,11 @@ _EVENT_SERIES_CACHE: dict[
         dict[str, Any],
     ],
 ] = {}
+
+FS_SOURCE_STAGE_FEATURE_NAMES = frozenset({
+    "hip_center_y_drop_delta_body", "knee_flexion_increase_deg",
+    "post_landing_forefoot_width_body", "post_landing_forefoot_width_shoulder_ratio",
+})
 
 FS01_FS02_EVENT_FEATURE_NAMES = frozenset(
     {
@@ -74,6 +80,26 @@ def _definition(
 
 
 FS01_FS02_FEATURE_DEFINITIONS: dict[str, dict[str, Any]] = {
+    "hip_center_y_drop_delta_body": _definition(
+        "body", "observation_to_preload_signed_image_down_delta",
+        ["left_hip", "right_hip"],
+        "hip-center image-down change from observation_start_ms (event start when absent) to preload_ms, divided by fixed event body scale; not physical center of mass or height",
+    ),
+    "knee_flexion_increase_deg": _definition(
+        "deg", "mean_bilateral_preload_minus_observation_flexion",
+        ["left_hip", "right_hip", "left_knee", "right_knee", "left_ankle", "right_ankle"],
+        "mean bilateral increase in 180-minus-internal hip-knee-ankle angle from observation_start_ms to preload_ms; signed change, not peak static flexion",
+    ),
+    "post_landing_forefoot_width_body": _definition(
+        "body", "post_landing_median_forefoot_distance_over_body_scale",
+        ["left_big_toe", "left_small_toe", "right_big_toe", "right_small_toe"],
+        "distance between bilateral big/small-toe midpoints after landing_proxy_ms and before initiation_ms, divided by event body scale; no ankle fallback",
+    ),
+    "post_landing_forefoot_width_shoulder_ratio": _definition(
+        "ratio", "post_landing_median_forefoot_distance_over_shoulder_width",
+        ["left_big_toe", "left_small_toe", "right_big_toe", "right_small_toe", "left_shoulder", "right_shoulder"],
+        "same-frame distance between bilateral forefoot midpoints divided by inter-shoulder width after landing_proxy_ms and before initiation_ms; projected image-plane ratio",
+    ),
     "bilateral_foot_rise_min_body": _definition(
         "body",
         "minimum_of_left_and_right_event_local_upward_excursion",
@@ -2213,6 +2239,113 @@ def _event_phase_anchor_index(
     )
 
 
+def source_stage_measurement(
+    feature_name: str,
+    sequence: PoseSequence,
+    indexes: np.ndarray,
+    body_scale: float,
+    key_phases: dict[str, int | None] | None = None,
+) -> FS01FS02EventSummary:
+    """Compute source-requested deltas/forefoot ratios in their own phase.
+
+    Phase anchors must correspond to actual samples. In particular, initiation
+    truncates the landing window, so a later first step cannot improve FS01.
+    """
+    definition = FS01_FS02_FEATURE_DEFINITIONS[feature_name]
+    required = tuple(definition["required_joints"])
+    series = {name: point_series(sequence, name) for name in required}
+    valid = np.logical_and.reduce([item[1] for item in series.values()])
+    indexes = np.asarray(indexes, dtype=np.int64)
+    phases = key_phases or {}
+    scale = _finite_positive_scale(body_scale)
+    times = sequence.timestamp_ms
+    diagnostics = {"stage_contract": "source-fs-phase-measurements-v1", "body_scale": scale,
+                   "coordinate_semantics": "image_plane_isotropic", "height_scale_available": False}
+    value, evidence, reason = None, (), None
+    raw = {name: item[0] for name, item in series.items()}
+    local = indexes
+    preload = feature_name in {"hip_center_y_drop_delta_body", "knee_flexion_increase_deg"}
+    if indexes.size < 2:
+        reason = "insufficient_phase_samples"
+    else:
+        start = phases.get("observation_start_ms", int(times[indexes[0]])) if preload else phases.get("landing_proxy_ms")
+        end = phases.get("preload_ms") if preload else phases.get("initiation_ms")
+        if not preload and end is None:
+            end = int(times[indexes[-1]])
+        if (isinstance(start, bool) or isinstance(end, bool)
+                or not isinstance(start, (int, float, np.integer, np.floating))
+                or not isinstance(end, (int, float, np.integer, np.floating))
+                or not np.isfinite(start) or not np.isfinite(end)
+                or not times[indexes[0]] <= start < end <= times[indexes[-1]]):
+            reason = "phase_anchor_missing_or_outside_event"
+        else:
+            local = indexes[(times[indexes] >= start) & (times[indexes] <= end)]
+            diagnostics.update(window_ms={"start_ms": float(start), "end_ms": float(end)})
+            if local.size < 2 or times[local[0]] != start or times[local[-1]] != end:
+                reason = "phase_endpoint_not_observed"
+            elif np.any(np.diff(times[local]) > FS01_FS02_MAX_TEMPORAL_GAP_MS):
+                reason = "phase_time_gap"
+            elif not meets_keypoint_frame_coverage(int(valid[local].sum()), int(local.size)):
+                reason = "phase_coverage_below_70_percent"
+            elif preload and not valid[[local[0], local[-1]]].all():
+                reason = "phase_endpoint_keypoints_missing"
+            elif preload:
+                first, last = int(local[0]), int(local[-1])
+                evidence = (first, last)
+                if feature_name == "hip_center_y_drop_delta_body":
+                    center = (raw["left_hip"] + raw["right_hip"]) / 2
+                    value = float((center[last, 1] - center[first, 1]) / scale)
+                else:
+                    changes = []
+                    for side in ("left", "right"):
+                        angles = 180 - angle_three_points_deg(raw[f"{side}_hip"], raw[f"{side}_knee"], raw[f"{side}_ankle"])
+                        raw[f"{side}_knee_flexion_deg"] = angles
+                        changes.append(angles[last] - angles[first])
+                    value = float(np.mean(changes))
+            else:
+                left = (raw["left_big_toe"] + raw["left_small_toe"]) / 2
+                right = (raw["right_big_toe"] + raw["right_small_toe"]) / 2
+                width = np.linalg.norm(left - right, axis=1)
+                denominator = np.full(len(times), scale)
+                if feature_name.endswith("shoulder_ratio"):
+                    denominator = np.linalg.norm(raw["left_shoulder"] - raw["right_shoulder"], axis=1)
+                ratio_valid = valid & np.isfinite(denominator) & (denominator > 1e-6)
+                if meets_keypoint_frame_coverage(int(ratio_valid[local].sum()), int(local.size)):
+                    used = local[ratio_valid[local]]
+                    value = float(np.median(width[used] / denominator[used]))
+                    evidence = tuple(int(i) for i in used)
+                else:
+                    reason = "forefoot_or_scale_coverage_below_70_percent"
+    if value is not None and not np.isfinite(value):
+        value, reason = None, "degenerate_geometry"
+    diagnostics.update(valid_frame_count=int(valid[local].sum()), total_frame_count=int(local.size),
+                       forefoot_fallback_used=False, downstream_motion_excluded=True)
+    return _summary(value=value, valid_mask=valid, evidence=evidence, raw=raw,
+                    smoothed={}, diagnostics=diagnostics, required_joints=required, reason=reason)
+
+
+def target_direction_alignment(
+    launch_direction_deg: float | None,
+    observed_target_vector_xy: tuple[float, float] | np.ndarray | None,
+) -> dict[str, Any]:
+    """Compare travel with an observed interception target in the same frame.
+
+    An incoming ball's velocity alone is not an interception target; callers
+    must supply the player-to-target vector from a tracked ball/court model.
+    """
+    result = {"target_direction_alignment_error_deg": None,
+              "proxy_mode": "self_motion_only", "direction_score_applicable": False}
+    if launch_direction_deg is None or not math.isfinite(launch_direction_deg) or observed_target_vector_xy is None:
+        return result
+    target = np.asarray(observed_target_vector_xy, dtype=float)
+    if target.shape != (2,) or not np.isfinite(target).all() or np.linalg.norm(target) <= 1e-12:
+        return result
+    target_deg = float(np.degrees(np.arctan2(-target[1], target[0])))
+    return {"target_direction_alignment_error_deg": abs((float(launch_direction_deg) - target_deg + 180) % 360 - 180),
+            "proxy_mode": "observed_interception_target", "direction_score_applicable": True,
+            "target_direction_deg": target_deg}
+
+
 def summarize_fs01_fs02_event_feature(
     feature_name: str,
     sequence: PoseSequence,
@@ -2222,8 +2355,10 @@ def summarize_fs01_fs02_event_feature(
 ) -> FS01FS02EventSummary:
     """Compute an event-local, non-scoring FS01/FS02 Pose-only proxy."""
 
-    if feature_name not in FS01_FS02_EVENT_FEATURE_NAMES:
+    if feature_name not in FS01_FS02_EVENT_FEATURE_NAMES | FS_SOURCE_STAGE_FEATURE_NAMES:
         raise ValueError(f"unknown FS01/FS02 event feature: {feature_name}")
+    if feature_name in FS_SOURCE_STAGE_FEATURE_NAMES:
+        return source_stage_measurement(feature_name, sequence, indexes, body_scale, key_phases)
     indexes = np.asarray(indexes, dtype=np.int64)
     scale = _finite_positive_scale(body_scale)
     raw, smoothed, modes = _event_series(sequence)

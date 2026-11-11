@@ -1,6 +1,7 @@
 """Graph lifetime/fallback contracts without requiring a CUDA device."""
 from contextlib import ExitStack
 import hashlib
+import os
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -109,6 +110,57 @@ class GraphContractsTest(unittest.TestCase):
                 module.HeadGraphHandle(self.head, object(), self.safe, self.safe_replace,
                                        self.torch, additional_batch_sizes=sizes)
 
+    def test_configured_head_budget_releases_over_limit_graph_without_losing_output(self):
+        self.torch.cuda.mem_get_info = Mock(return_value=(4 * 1024 ** 3, 16 * 1024 ** 3))
+        args = tuple(value.clone() for value in self.args)
+        for value in args:
+            value.shape = (2, value.shape[1])
+        for mib, retained in (("512", False), ("1024", True)):
+            self.handle.restore()
+            with self.subTest(mib=mib), patch.dict(os.environ,
+                    {"RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB": mib}):
+                self.handle = module.HeadGraphHandle(self.head, object(), self.safe, self.safe_replace,
+                    self.torch, additional_batch_sizes=(2,))
+            self.install_fake_capture()
+            self.torch.cuda.memory_reserved = Mock(side_effect=(0, 700 * 1024 ** 2))
+            with patch.dict(os.environ, {"RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB": "128"}):
+                result = self.handle(*args)
+            self.assertEqual(result["vertices"].values, [3])
+            self.assertEqual(self.handle.batch_slots[2]["graph"] is not None, retained)
+            self.assertEqual(self.handle.receipt["additional_retained_pool_budget_bytes"],
+                             int(mib) * 1024 ** 2)
+            if not retained:
+                self.assertEqual(self.handle(*args), {"original": True})
+                self.handle._capture.assert_called_once()
+                self.assertEqual(self.handle.batch_slots[2]["receipt"]["capture_status"],
+                                 "released_memory_budget")
+            # Additional graph eviction must never disable the singleton path.
+            self.assertEqual(self.handle(*self.args)["vertices"].values, [3])
+
+    def test_head_configured_budget_caps_combined_shapes_and_preserves_first(self):
+        self.handle.restore()
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB": "1024"}):
+            self.handle = module.HeadGraphHandle(self.head, object(), self.safe, self.safe_replace,
+                self.torch, additional_batch_sizes=(2, 4))
+        self.install_fake_capture()
+        cost = 600 * 1024 ** 2
+        self.torch.cuda.mem_get_info = Mock(return_value=(4 * 1024 ** 3, 16 * 1024 ** 3))
+        self.torch.cuda.memory_reserved = Mock(side_effect=(0, cost, cost, 2 * cost))
+        for size in (2, 4):
+            args = tuple(value.clone() for value in self.args)
+            for value in args:
+                value.shape = (size, value.shape[1])
+            self.assertEqual(self.handle(*args)["vertices"].values, [3])
+        self.assertIsNotNone(self.handle.batch_slots[2]["graph"])
+        self.assertIsNone(self.handle.batch_slots[4]["graph"])
+        self.assertEqual(self.handle.batch_slots[2]["receipt"]["retained_pool_delta_bytes"], cost)
+        self.assertEqual(self.handle.batch_slots[4]["receipt"]["retained_pool_delta_bytes"], 0)
+        self.original.side_effect = ValueError("eager failure")
+        with self.assertRaisesRegex(ValueError, "eager failure"):
+            self.handle(*args)
+        self.original.assert_called_once()
+        self.assertEqual(self.handle._capture.call_count, 2)
+
     def test_unsupported_shape_uses_original_and_restores_candidate(self):
         current_mhr = self.head.mhr
         self.args[0].shape = (2, 2)
@@ -197,6 +249,29 @@ class GraphContractsTest(unittest.TestCase):
 
 
 class SourceGuardTest(unittest.TestCase):
+    def test_budget_bounds_and_default_are_resolved_without_device_access(self):
+        for variable in ("RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB",
+                         "RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB"):
+            with patch.dict(os.environ, {}, clear=True):
+                budget = module._graph_memory_budget(variable)
+                self.assertEqual(budget["limit_bytes"], 512 * 1024 ** 2)
+                self.assertEqual(budget["configuration_source"], "default")
+            for value in ("128", "4096"):
+                with self.subTest(variable=variable, value=value), patch.dict(os.environ, {variable: value}):
+                    self.assertEqual(module._graph_memory_budget(variable)["limit_bytes"],
+                                     int(value) * 1024 ** 2)
+
+    def test_invalid_head_budget_fails_before_model_or_cuda_access(self):
+        for value in ("", "127", "4097", "-512", "512.0", "True", "１２８", "9" * 100):
+            with self.subTest(value=value), patch.dict(os.environ,
+                    {"RALLYMATE_SAM3D_HEAD_GRAPH_BUDGET_MIB": value}):
+                with self.assertRaisesRegex(ValueError, "BUDGET_MIB"):
+                    module.apply_head_cuda_graph(object())
+                head = SimpleNamespace()
+                with self.assertRaisesRegex(ValueError, "BUDGET_MIB"):
+                    module.HeadGraphHandle(head, None, None, None, None)
+                self.assertEqual(vars(head), {})
+
     def test_script_identity_checked_before_rewrite(self):
         with self.assertRaisesRegex(ValueError, "source differs"):
             module._rewrite_script(b"untrusted new source")

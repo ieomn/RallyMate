@@ -8,6 +8,15 @@ from typing import Any
 
 import numpy as np
 
+from rallymate_features.perception_dictionary import (
+    CANONICAL_PERCEPTION_IDS,
+    PERCEPTION_ALIASES,
+    PERCEPTION_DICTIONARY_VERSION,
+    normalize_perception_values,
+    perception_definition,
+    resolve_perception_ids,
+)
+
 
 SOURCE_TIME_BINDING_FIELDS = frozenset({
     "frame_index", "processed_index", "video_sha256", "pts", "time_base_num", "time_base_den",
@@ -186,6 +195,14 @@ def model_geometry_evidence(sequence: PoseSequence, indexes, joint_names=None) -
     first = bindings[0]
     video_times = [int(sequence.timestamp_ms[i]) for i in indexes]
     names = list(joint_names if joint_names is not None else sequence.model_estimate_masks)
+    geometry_mask = {}
+    for name in names:
+        # dict.get evaluates its default even when the joint exists. Resolve
+        # once per joint so each sample no longer allocates a full-length
+        # unused zero array. Keep missing-joint and independent-list semantics.
+        mask = (sequence.model_estimate_masks[name] if name in sequence.model_estimate_masks
+                else np.zeros(len(sequence.timestamp_ms), dtype=bool))
+        geometry_mask[name] = [bool(mask[i]) for i in indexes]
     result.update(source_window={
         "start_ms": video_times[0], "end_ms": video_times[-1],
         "source_frames": [int(sequence.source_frames[i]) for i in indexes],
@@ -193,8 +210,7 @@ def model_geometry_evidence(sequence: PoseSequence, indexes, joint_names=None) -
         "source_timestamps_ms": [b["pts"] * b["time_base_num"] / b["time_base_den"] * 1000 for b in bindings],
         "source_bindings": bindings,
         **{key: first[key] for key in ("video_sha256", "person_track_id", "selection_epoch", "camera_reference_epoch")},
-    }, geometry_mask={name: [bool(sequence.model_estimate_masks.get(name, np.zeros(len(sequence.timestamp_ms), dtype=bool))[i]) for i in indexes]
-                     for name in names})
+    }, geometry_mask=geometry_mask)
     return result
 
 

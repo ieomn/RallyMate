@@ -4,7 +4,7 @@ const reply = (error: string, status: number) => Response.json({ error }, { stat
 const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024;
 
 /** Separate origin response/read deadlines from a slow downstream report reader. */
-function reportReadDeadline(caller: AbortSignal) {
+function reportReadDeadline(caller: AbortSignal, totalMs = 120000) {
   const started = performance.now();
   const deadline = new AbortController();
   const signal = AbortSignal.any([caller, deadline.signal]);
@@ -18,7 +18,7 @@ function reportReadDeadline(caller: AbortSignal) {
   };
   let headersTimer: ReturnType<typeof setTimeout> | undefined = timer(30000);
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
-  const totalTimer = timer(120000);
+  const totalTimer = timer(totalMs);
   const stopRead = () => { clearTimeout(idleTimer); idleTimer = undefined; };
   const headersReceived = () => { clearTimeout(headersTimer); headersTimer = undefined; };
   const close = () => {
@@ -224,7 +224,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     }
     return response;
   };
-  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
+  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|status|report-summary|report-overview|report-motion/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159}|report-actions(?:/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159})?|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
   const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/(?:technical-review|shot-statistics)$`).test(url.pathname);
   const cancelWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/cancel$`).test(url.pathname);
   const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
@@ -252,11 +252,21 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     const value = request.headers.get(name); if (value) headers.set(name, value);
   }
   if (env.RALLYMATE_API_KEY) headers.set("authorization", `Bearer ${env.RALLYMATE_API_KEY}`);
-  if (demoResultRead) headers.set("accept-encoding", "identity");
-  if (demoResultRead) {
-    reportTiming = reportReadDeadline(request.signal);
+  const compactPoseRead = request.method === "GET" && url.pathname.endsWith("/pose-preview") && url.searchParams.get("pose_transport") === "compact-v1";
+  if (demoResultRead || compactPoseRead) headers.set("accept-encoding", "identity");
+  if (demoResultRead || compactPoseRead) {
+    // The pose client uses 20s header/idle and 90s total budgets. Let it own
+    // those limits without a hidden 30s gateway cap on a progressing body.
+    reportTiming = reportReadDeadline(request.signal, compactPoseRead ? 100000 : 120000);
     getDeadline = reportTiming.deadline;
-  } else if (request.method === "GET" || reportHead) getDeadline = AbortSignal.timeout(30000);
+  } else if (request.method === "GET" || reportHead) {
+    // The bounded overview can validate a long video's saved records for up to
+    // the API's 60-second budget. Let it return its own result/error while the
+    // independent summary, score and video remain available. Cold action-score
+    // recomputation has its own bounded 120s budget; ordinary GETs stay at 30s.
+    getDeadline = AbortSignal.timeout(url.pathname.endsWith("/tennis-assessment") ? 120000
+      : url.pathname.endsWith("/report-overview") ? 65000 : 30000);
+  }
   // The chunk deadline covers both receiving and forwarding, and finishes before
   // the browser's 90-second attempt deadline so its existing retry can continue.
   const signal = chunkWrite
@@ -291,7 +301,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     for (const name of ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified", "content-disposition", "retry-after"]) { const value = response.headers.get(name); if (value) output.set(name, value); }
     // Fetch can return decoded bytes with the origin's encoded length. Never
     // declare that length downstream when report framing was not trusted.
-    if (demoResultRead && trustedReportLength(response.headers) === undefined) output.delete("content-length");
+    if (reportTiming && trustedReportLength(response.headers) === undefined) output.delete("content-length");
     const responseRequestId = response.headers.get("x-request-id");
     if (responseRequestId && responseRequestId === request.headers.get("x-request-id") && responseRequestId.length <= 64 &&
         !/[^A-Za-z0-9-]/.test(responseRequestId) && /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|web-[a-z0-9]{1,16}-[a-z0-9]{1,16})$/i.test(responseRequestId)) output.set("x-request-id", responseRequestId);

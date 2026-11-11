@@ -1,4 +1,10 @@
 import type { DemoResultResponse } from "./api-types";
+import { validatedJointKinematics, type JointKinematics } from "./joint-kinematics";
+import { levelAssessmentsOf } from "./level-assessment";
+import type { LevelAssessment } from "../scoring/level-grading";
+import { trainingSessionAnalysisOf, type TrainingSessionAnalysis } from "./training-session-analysis";
+import { modalityAssessmentOf, type ModalityAssessment } from "./modality-assessment";
+import { hasSpecialistMetrics, specialistMotionOf, specialistRubricOf, type SpecialistMotion } from "./specialist-motion";
 
 export const TENNIS_DIMENSIONS = [
   { id: "movement", label: "移动支撑" }, { id: "preparation", label: "准备引拍" },
@@ -15,7 +21,7 @@ export type TennisMotionPattern = {
   requirements: TennisPatternRequirement[]; coverage: { measured_requirements: number; applicable_requirements: number; fraction: number; full_source_technique_covered: false };
   classification_provenance: { method: string; reviewer?: string | null };
 };
-export type TennisSubject = { subject_id: string; identity_basis: "target_lock" | "unlinked_source_track"; start_ms: number; end_ms: number;
+export type TennisSubject = { subject_id: string; identity_basis: "target_lock" | "unlinked_source_track"; start_ms: number; end_ms: number; source_relative_start_ms?: number;
   observed_frames: number; source_track_ids: number[]; measured_episode_count: number; included_in_report: boolean };
 export type TennisSubjectScope = { version: "subject-scoped-assessment-v1"; selected_subject_id: string | null;
   selection_basis: "first_locked_target" | "first_unlinked_source_track" | "no_verified_subject"; cross_subject_aggregation: false; subjects: TennisSubject[] };
@@ -32,18 +38,21 @@ export type TennisHandRoles = {
   relationship: "motion_only" | "same_side" | "verified_two_hand";
   paired_wrist_evidence: Record<string, unknown> | null;
 };
-export type TennisEpisode = { episode_id: string; family: "baseline" | "serve" | "return"; start_ms: number; peak_ms: number; end_ms: number;
+export type TennisEpisode = { episode_id: string; family: "baseline" | "serve" | "return"; start_ms: number; peak_ms: number; end_ms: number; joint_kinematics?: JointKinematics; specialist_motion?: SpecialistMotion;
   subject_id?: string; person_track_id?: number; source_selection_epoch?: number; camera_reference_epoch?: number; motion_pattern?: TennisMotionPattern; metrics?: Record<string, { value: number; score: number }>; return_context?: TennisReturnContext; quality_reason_codes?: string[]; hand_roles?: TennisHandRoles };
 export type TennisAssessment = {
   version: "tennis-action-assessment-v1.1.0" | "tennis-action-assessment-v1.2.0" | "tennis-action-assessment-v1.3.0" | "tennis-action-assessment-v1.4.0"; status: "scored" | "partial" | "unavailable";
   source_run_id: string; source_video_sha256: string; source_timestamp_semantics: "original_decoder_pts";
   overall_score: number | null; dimensions: TennisDimension[];
+  level_assessments?: LevelAssessment[];
+  training_session?: TrainingSessionAnalysis;
+  multimodal_assessment?: ModalityAssessment;
   reason_zh?: string;
   episodes?: TennisEpisode[];
   subject_scope?: TennisSubjectScope; episode_validity?: TennisEpisodeValidity[]; pattern_coverage?: TennisPatternCoverage;
   strengths: { title: string; observation: string }[]; improvements: TennisImprovement[];
   rubric: { version: "tennis-action-rubric-v1.1.0" | "tennis-action-rubric-v1.2.0" | "tennis-action-rubric-v1.3.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
-    identity_labels_used: false; confidence_used_in_score: false; aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" };
+    identity_labels_used: false; confidence_used_in_score: false; aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean"; specialist_motion?: Record<string, unknown> };
 };
 export type TennisAssessmentContext = { jobId: string; videoSha256: string; durationMs?: number | null };
 const record = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -170,8 +179,11 @@ function scopedAssessment(report: Record<string, unknown>, duration: number | nu
       || !count(item.measured_episode_count) || typeof item.included_in_report !== "boolean"
       || item.included_in_report !== (item.subject_id === scope.selected_subject_id)) return null;
     subjectIds.add(item.subject_id);
+    if (item.source_relative_start_ms !== undefined && (!finite(item.source_relative_start_ms) || item.source_relative_start_ms < -1.01
+      || item.source_relative_start_ms >= 0 || item.start_ms !== 0)) return null;
     subjects.push({ subject_id: item.subject_id, identity_basis: item.identity_basis as TennisSubject["identity_basis"], start_ms: item.start_ms, end_ms: item.end_ms,
-      observed_frames: item.observed_frames, source_track_ids: [...item.source_track_ids], measured_episode_count: item.measured_episode_count, included_in_report: item.included_in_report });
+      observed_frames: item.observed_frames, source_track_ids: [...item.source_track_ids], measured_episode_count: item.measured_episode_count, included_in_report: item.included_in_report,
+      ...(finite(item.source_relative_start_ms) ? { source_relative_start_ms: item.source_relative_start_ms } : {}) });
   }
   const selected = subjects.find(subject => subject.subject_id === scope.selected_subject_id);
   if (scope.selected_subject_id === null ? subjects.length > 0 || report.episodes.length > 0 : !selected) return null;
@@ -223,9 +235,21 @@ function scopedAssessment(report: Record<string, unknown>, duration: number | nu
       } else if (item.return_context !== undefined) return null;
     }
     if (item.quality_reason_codes !== undefined && (!Array.isArray(item.quality_reason_codes) || !item.quality_reason_codes.every(identifier))) return null;
+    const joints = item.joint_kinematics === undefined ? null : validatedJointKinematics(item.joint_kinematics, item.start_ms, item.end_ms);
+    if (item.joint_kinematics !== undefined && !joints) return null;
+    const specialist = specialistMotionOf(item.specialist_motion, { sourceVideoSha256: String(report.source_video_sha256),
+      subjectId: selected.subject_id, personTrackId: item.person_track_id, selectionEpoch: item.source_selection_epoch,
+      cameraEpoch: item.camera_reference_epoch, startMs: item.start_ms, endMs: item.end_ms, family: String(item.family), metrics,
+      sourceFrames: joints ? [...new Set(Object.values(joints.metrics).flatMap(metric => metric.source_frames))] : undefined });
+    // Malformed optional diagnostics do not erase a generic score. A metric
+    // that actually uses the short-swing rubric must retain valid provenance.
+    if (hasSpecialistMetrics(metrics) && !specialist) return null;
     episodeIds.add(item.episode_id);
     episodes.push({ episode_id: item.episode_id, family: item.family as TennisEpisode["family"], start_ms: item.start_ms, peak_ms: item.peak_ms, end_ms: item.end_ms,
       subject_id: selected.subject_id, person_track_id: item.person_track_id, motion_pattern: pattern, metrics,
+      ...(joints ? { joint_kinematics: joints } : {}),
+      ...(specialist ? { specialist_motion: specialist } : {}),
+      ...(specialist && !roles ? { source_selection_epoch: item.source_selection_epoch as number, camera_reference_epoch: item.camera_reference_epoch as number } : {}),
       ...(roles ? { hand_roles: roles, source_selection_epoch: item.source_selection_epoch as number, camera_reference_epoch: item.camera_reference_epoch as number } : {}),
       ...(Array.isArray(item.quality_reason_codes) ? { quality_reason_codes: [...item.quality_reason_codes] } : {}),
       ...(returnContext ? { return_context: returnContext } : {}) });
@@ -376,12 +400,36 @@ export function validatedTennisAssessment(value: unknown, context: TennisAssessm
     improvements.push({ dimension_id: dimension.id, title: item.title as string, observation: item.observation as string, action: item.action as string,
       drill: item.drill as string, retest: item.retest as string, start_ms: hasTime ? start as number : null, end_ms: hasTime ? end as number : null });
   }
+  let levelAssessments: LevelAssessment[] | undefined;
+  if (report.level_assessments !== undefined) {
+    if (!Array.isArray(report.level_assessments) || report.level_assessments.length !== 5) return null;
+    levelAssessments = levelAssessmentsOf(report.level_assessments);
+    if (levelAssessments.length !== 5 || report.level_assessments.some(raw => {
+      const item = record(raw);
+      return !item || item.source_run_id !== context.jobId || item.source_video_sha256 !== report.source_video_sha256
+        || item.subject_id !== scopedFields?.subject_scope.selected_subject_id;
+    })) return null;
+  }
+  const trainingSession = report.training_session === undefined ? null : trainingSessionAnalysisOf(report.training_session, {
+    source_run_id: context.jobId, source_video_sha256: report.source_video_sha256,
+    subject_id: scopedFields?.subject_scope.selected_subject_id,
+  });
+  if (trainingSession && trainingSession.training.active_clips.some(clip => clip.episode_ids.some(id => {
+    const episode = scopedFields?.episodes.find(e => e.episode_id === id);
+    return !episode || episode.person_track_id !== clip.source_track_id || episode.start_ms < clip.start_ms || episode.end_ms > clip.end_ms;
+  }))) return null;
+  const modalities = modalityAssessmentOf(report.multimodal_assessment, report.source_video_sha256, scopedFields?.episodes ?? []);
+  const specialistRubric = specialistRubricOf(rubric.specialist_motion);
   return { version: report.version as TennisAssessment["version"], status: report.status as TennisAssessment["status"], source_run_id: context.jobId,
     source_video_sha256: report.source_video_sha256, source_timestamp_semantics: "original_decoder_pts", overall_score: report.overall_score,
     dimensions, strengths, improvements, ...(typeof report.reason_zh === "string" ? { reason_zh: report.reason_zh } : {}),
+    ...(levelAssessments ? { level_assessments: levelAssessments } : {}),
+    ...(trainingSession ? { training_session: trainingSession } : {}),
+    ...(modalities ? { multimodal_assessment: modalities } : {}),
     ...(scopedFields ?? (report.episodes === undefined ? {} : { episodes: navigationEpisodes(report.episodes, context.durationMs) })),
     rubric: { version: rubric.version as TennisAssessment["rubric"]["version"], semantics: "engineering_action_quality", coach_calibrated: false,
-      identity_labels_used: false, confidence_used_in_score: false, aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean" } };
+      identity_labels_used: false, confidence_used_in_score: false, aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean",
+      ...(specialistRubric ? { specialist_motion: specialistRubric } : {}) } };
 }
 
 export function tennisAssessmentOf(result: DemoResultResponse | null): TennisAssessment | null {

@@ -11,6 +11,8 @@ from rallymate_features.coordinates import body_center, body_scale, hip_center, 
 from rallymate_features.kinematics import irregular_derivative, scalar_acceleration, speed
 from rallymate_features.schemas import PoseSequence, model_bindings_continuous, model_geometry_evidence
 from rallymate_features.smoothing import smooth_series
+from rallymate_features.validity import MIN_VALID_KEYPOINT_FRAME_FRACTION
+from rallymate_features.fs09_features import braking_phase_candidates_from_series
 
 
 EVENT_DETECTOR_VERSION = "pose-motion-bout-v0.5.0"
@@ -28,7 +30,7 @@ MOTION_BOUT_MIN_PERSISTENT_DISPLACEMENT_BODY = 0.10
 MOTION_BOUT_MIN_PATH_EFFICIENCY = 0.20
 MOTION_BOUT_MIN_DIRECTION_COHERENCE = 0.80
 MOTION_BOUT_ENDPOINT_FRACTION = 0.20
-EVENT_KINEMATIC_MIN_COVERAGE = 0.75
+EVENT_KINEMATIC_MIN_COVERAGE = MIN_VALID_KEYPOINT_FRAME_FRACTION
 PHASE_RIGHT_BOUNDARY_CONFIRMATION_MAX_GAP_MS = 160
 ACTIVITY_THRESHOLD_RADIUS_MS = 1500
 
@@ -73,6 +75,8 @@ PHASE_DEFINITIONS = {
         "provisional alias of restabilization onset until manually labelled "
         "stable-control duration is available"
     ),
+    "inertia_direction_observation_ms": "FS09 initial peak-speed observation for incoming inertia direction; image-plane movement only",
+    "braking_foot_strike_ms": "three-sample same-side ankle slowdown candidate; physical foot contact remains unverified",
 }
 
 
@@ -1258,6 +1262,8 @@ def detect_pose_events(
             },
         }
         fs09_indexes = np.arange(fs09_start, post_end + 1)
+        braking_phase = braking_phase_candidates_from_series(
+            timestamps, left_ankle_speed, right_ankle_speed, fs09_indexes)
         deceleration = -acceleration[fs09_indexes]
         max_deceleration = (
             int(fs09_indexes[np.nanargmax(deceleration)])
@@ -1380,6 +1386,8 @@ def detect_pose_events(
                     end=post_end,
                     timestamps=timestamps,
                     phases={
+                        "inertia_direction_observation_ms": peak,
+                        "braking_foot_strike_ms": braking_phase["braking_foot_strike_index"],
                         "peak_speed_ms": peak,
                         "deceleration_peak_ms": max_deceleration,
                         "restabilization_onset_ms": restabilization,
@@ -1395,9 +1403,12 @@ def detect_pose_events(
                     kinematic_coverage=event_coverages["FS09"],
                     motion_reference=event_motion_references["FS09"],
                     phase_metadata={
+                        "braking_foot_strike": braking_phase,
                         "definitions": {
                             name: PHASE_DEFINITIONS[name]
                             for name in (
+                                "inertia_direction_observation_ms",
+                                "braking_foot_strike_ms",
                                 "peak_speed_ms",
                                 "deceleration_peak_ms",
                                 "restabilization_onset_ms",

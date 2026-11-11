@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 import json
 import math
 from pathlib import Path
+import re
 import statistics
 
 from scripts.audit_local_sam_native import native_geometry_errors
@@ -42,7 +43,10 @@ def read_records(path):
 def summarize(path):
     rows, incomplete = read_records(path)
     measurements = defaultdict(list)
-    seen_ipc_requests = set()
+    exact_ipc, legacy_ipc = defaultdict(list), defaultdict(list)
+    seen_exact_requests = {}
+    legacy_requests, previous_ipc_group = 0, None
+    ipc_counts = Counter()
     for row in rows:
         for key in ("inference_ms", "peak_memory_bytes", "peak_reserved_memory_bytes",
                     "current_allocated_memory_bytes", "current_reserved_memory_bytes"):
@@ -50,14 +54,50 @@ def summarize(path):
                 measurements[key].append(row[key])
                 if not row.get("first_model_call"):
                     measurements["steady_" + key].append(row[key])
-        for family in ("stage_timing_ms", "ipc_request_timing_ms"):
-            if family == "ipc_request_timing_ms" and row.get(family):
-                request_key = (row.get("video_sha256"), row.get("frame_index"), row.get("processed_index"))
-                if request_key in seen_ipc_requests:
-                    continue
-                seen_ipc_requests.add(request_key)
-            for key, value in row.get(family, {}).items():
-                measurements[f"{family}.{key}"].append(value)
+        for key, value in row.get("stage_timing_ms", {}).items():
+            measurements[f"stage_timing_ms.{key}"].append(value)
+        timing = row.get("ipc_request_timing_ms")
+        if timing:
+            if (not isinstance(timing, dict) or any(not isinstance(key, str)
+                    or type(value) not in (int, float) or not math.isfinite(value) or value < 0
+                    for key, value in timing.items())):
+                raise ValueError("IPC timing must contain finite nonnegative numeric durations")
+            fingerprint = json.dumps(timing, sort_keys=True, separators=(",", ":"), allow_nan=False)
+            identity = row.get("ipc_request_identity")
+            if identity is not None:
+                if (not isinstance(identity, dict) or identity.get("version") != "sam-ipc-request-v1"
+                        or not isinstance(identity.get("session_id"), str)
+                        or re.fullmatch(r"[0-9a-f]{32}", identity["session_id"]) is None
+                        or type(identity.get("request_id")) is not int or identity["request_id"] < 1):
+                    raise ValueError("Invalid persisted IPC request identity")
+                request_key = (identity["session_id"], identity["request_id"])
+                ipc_counts["exact_timing_records"] += 1
+                previous = seen_exact_requests.get(request_key)
+                if previous is not None and previous != fingerprint:
+                    raise ValueError("One IPC request identity has conflicting timing records")
+                duplicate = previous is not None
+                seen_exact_requests[request_key] = fingerprint
+                previous_ipc_group = ("exact", request_key)
+                target = exact_ipc
+                if duplicate:
+                    ipc_counts["duplicate_exact_records"] += 1
+            else:
+                # Older batches copied one timing object onto multiple frames.
+                # Full timing fingerprints avoid frame-based overcounting, but
+                # coincidentally identical distinct requests remain ambiguous.
+                request_key = (str(row.get("video_sha256", "")).lower(),
+                               row.get("ipc_timing_scope"), fingerprint)
+                ipc_counts["legacy_timing_records"] += 1
+                duplicate = previous_ipc_group == ("legacy", request_key)
+                previous_ipc_group = ("legacy", request_key)
+                legacy_requests += not duplicate
+                target = legacy_ipc
+                if duplicate:
+                    ipc_counts["duplicate_legacy_fingerprint_records"] += 1
+            if not duplicate:
+                for key, value in timing.items():
+                    measurements[f"ipc_request_timing_ms.{key}"].append(value)
+                    target[key].append(value)
         for family in ("wall_ms", "cuda_stream_span_ms"):
             for key, value in row.get("estimator_stage_timing", {}).get(family, {}).items():
                 measurements[f"estimator.{family}.{key}"].append(value)
@@ -73,10 +113,24 @@ def summarize(path):
             "status_counts": dict(Counter(row.get("status") for row in rows)),
             "geometry_invalid_ok_records": sum(bool(native_geometry_errors(row)) for row in rows if row.get("status") == "ok"),
             "frame_range": [rows[0].get("frame_index"), rows[-1].get("frame_index")] if rows else None,
+            "ipc_request_accounting": {
+                "status": ("mixed_estimate" if seen_exact_requests else "legacy_estimate") if legacy_requests
+                          else "exact" if seen_exact_requests else "not_available",
+                "exact_for_saved_timing_records": bool(seen_exact_requests) and not legacy_requests,
+                "exact_requests": len(seen_exact_requests),
+                "legacy_estimated_requests": legacy_requests,
+                **dict(ipc_counts),
+                "exact_key": "worker_session_id_and_acknowledged_request_id",
+                "legacy_method": "source_scope_and_complete_timing_fingerprint_in_contiguous_timing_bearing_records",
+                "legacy_limitations": "Adjacent distinct legacy requests with identical complete timing may be merged; missing identity cannot prove exact request counts.",
+                "scope": "Only requests represented by saved timing records; missing or failed requests without timing are not inferred."},
+            "ipc_request_statistics": {
+                "exact": {key: stats(values) for key, values in exact_ipc.items()},
+                "legacy_estimated": {key: stats(values) for key, values in legacy_ipc.items()}},
             "statistics": {key: stats(values) for key, values in measurements.items()},
             "rolling_500_record_latency_ms": [stats([row["inference_ms"] for row in rows[start:start+500] if "inference_ms" in row])
                                              for start in range(0, len(rows), 500)],
-            "semantics": "Nested stages and request waits overlap; do not sum. CUDA spans include stream idle; not GPU utilization. This is observed completion/geometry, not accuracy truth."}
+            "semantics": "Nested stages and request waits overlap; do not sum. IPC aggregates use session/request identity when present; combined statistics containing legacy records are estimates, with exact and estimated components reported separately. CUDA spans include stream idle; not GPU utilization. This is observed completion/geometry, not accuracy truth."}
 
 
 def compare(first_path, second_path):

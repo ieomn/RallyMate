@@ -16,7 +16,7 @@ from unittest.mock import patch
 from fastapi import HTTPException
 
 from rallymate_service import upload_state
-from rallymate_service.uploads import DEFAULT_CHUNK_BYTES, UploadStore
+from rallymate_service.uploads import DEFAULT_CHUNK_BYTES, MIN_CHUNK_BYTES, UploadStore
 
 
 class IncrementalUploadStateTests(unittest.TestCase):
@@ -36,7 +36,8 @@ class IncrementalUploadStateTests(unittest.TestCase):
         return self.store.put(self.upload_id, index, content, hashlib.sha256(content).hexdigest(), compact_ack=compact)
 
     def test_compact_put_and_metadata_validation_never_load_chunk_history(self):
-        content = b"a" * DEFAULT_CHUNK_BYTES
+        self.store = UploadStore(self.root, 16 * 1024 * 1024, chunk_bytes=MIN_CHUNK_BYTES)
+        content = b"a" * MIN_CHUNK_BYTES
         self.create(content * 32)
         with patch.object(upload_state, "chunks", side_effect=AssertionError("full history on PUT")):
             for index in range(32):
