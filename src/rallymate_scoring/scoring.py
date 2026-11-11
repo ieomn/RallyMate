@@ -9,14 +9,92 @@ from rallymate_scoring.blocker_taxonomy import scoring_block_details
 from rallymate_scoring.quality_policy import evaluate_indicator_event_quality
 
 
+def bind_primary_player_score_trace(trace, event):
+    """Transport the event's independent canonical-to-source identity proof.
+
+    Event ``person_track_id`` is the selected primary-player namespace. Model
+    windows use the detector's source-track namespace. Never infer this mapping
+    from the feature being scored or replace the event's public identity.
+    """
+    from rallymate_scoring.model_measurement_contract import validated_model_window
+
+    bound = dict(trace)
+    bound["identity_namespace"] = "primary_player"
+    bound["primary_player_id"] = event.get("person_track_id")
+    window = validated_model_window(event)
+    diagnostics = event.get("track_diagnostics")
+    if window is None or not isinstance(diagnostics, Mapping):
+        return bound
+    primary = diagnostics.get("primary_player_id")
+    tracks = diagnostics.get("source_track_ids")
+    if (type(primary) is not int or primary < 1 or primary != event.get("person_track_id")
+            or not isinstance(tracks, list) or len(tracks) != 1
+            or type(tracks[0]) is not int or tracks[0] != window["person_track_id"]
+            or diagnostics.get("primary_identity_ambiguous") is True):
+        return bound
+    bound["source_track_id"] = tracks[0]
+    bound["source_identity_binding"] = {
+        "version": "primary-source-identity-v1", "event_id": event.get("event_id"),
+        "video_id": event.get("video_id"), "primary_player_id": primary,
+        "source_track_ids": list(tracks),
+        "measurement_provenance": dict(event["measurement_provenance"]),
+        "source_window": window,
+    }
+    return bound
+
+
+def _primary_trace_binding_error(trace, identity, frames):
+    from rallymate_scoring.model_measurement_contract import validated_model_window
+
+    proof = trace.get("source_identity_binding")
+    primary = trace.get("primary_player_id")
+    source = trace.get("source_track_id")
+    if (not isinstance(proof, Mapping) or proof.get("version") != "primary-source-identity-v1"
+            or type(primary) is not int or primary < 1
+            or type(trace.get("person_track_id")) is not int or trace["person_track_id"] != primary
+            or type(source) is not int or source != identity["person_track_id"]
+            or type(proof.get("primary_player_id")) is not int or proof["primary_player_id"] != primary
+            or not isinstance(proof.get("source_track_ids"), list)
+            or len(proof["source_track_ids"]) != 1 or type(proof["source_track_ids"][0]) is not int
+            or proof["source_track_ids"] != [source]
+            or not isinstance(proof.get("event_id"), str) or not proof["event_id"]
+            or proof["event_id"] != trace.get("event_id")
+            or not isinstance(proof.get("video_id"), str) or not proof["video_id"]
+            or proof["video_id"] != trace.get("video_id")):
+        return "model_primary_source_identity_binding_invalid"
+    window = validated_model_window(proof)
+    if (window is None or window["video_sha256"].lower() != identity["video_sha256"].lower()
+            or any(window[field] != identity[field] for field in ("person_track_id", "selection_epoch", "camera_reference_epoch"))):
+        return "model_primary_source_identity_binding_invalid"
+    independent = {frame: {**binding, "video_sha256": binding["video_sha256"].lower(),
+                          "video_timestamp_ms": local, "source_timestamp_ms": original}
+                   for frame, local, original, binding in zip(window["source_frames"], window["video_timestamps_ms"],
+                       window["source_timestamps_ms"], window["source_bindings"])}
+    if any(frame not in independent or independent[frame] != binding for frame, binding in frames.items()):
+        return "model_primary_source_frame_binding_mismatch"
+    return None
+
+
 def _model_trace_binding_error(trace, identity, frames):
     """Check supplied trace fields against measured geometry, not only peers.
 
     Older traces may omit model-only fields. Once supplied, a field must agree
     with the validated model windows, including the original frame clock.
     """
+    namespace = trace.get("identity_namespace")
+    if namespace not in (None, "source_track", "primary_player"):
+        return "model_source_identity_namespace_invalid"
+    if "source_track_id" in trace and (type(trace["source_track_id"]) is not int
+            or trace["source_track_id"] != identity["person_track_id"]):
+        return "model_source_person_track_id_mismatch"
+    if namespace == "primary_player":
+        reason = _primary_trace_binding_error(trace, identity, frames)
+        if reason:
+            return reason
     for field, expected in identity.items():
         if field not in trace:
+            continue
+        if field == "person_track_id" and namespace == "primary_player":
             continue
         value = trace[field]
         if field == "video_sha256":
