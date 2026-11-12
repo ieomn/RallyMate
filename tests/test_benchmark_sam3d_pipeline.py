@@ -20,6 +20,25 @@ from rallymate_vision.pose.metadata import MHR70_NAMES, sha256_file
 
 
 class PipelineBenchmarkHelperTests(unittest.TestCase):
+    def test_runtime_cli_options_reach_recorded_worker_profile(self):
+        required = ["--" + name + "=unused" for name in
+            ("video", "native-jsonl", "runtime-dir", "sam-python", "idle-jobs-db", "output-root")]
+        args = build_parser().parse_args(required + ["--reuse-cuda-cache=0", "--profile-stages=1",
+                                                   "--async-mesh-capture=0"])
+        with patch.dict("os.environ", {}, clear=True):
+            profile = pipeline_settings(Path("runtime"), Path("python"), 0,
+                reuse_cuda_cache=args.reuse_cuda_cache, profile_stages=args.profile_stages,
+                async_mesh_capture=args.async_mesh_capture)
+        self.assertEqual(profile["RALLYMATE_SAM3D_REUSE_CUDA_CACHE"], "0")
+        self.assertEqual(profile["RALLYMATE_SAM3D_PROFILE_STAGES"], "1")
+        self.assertEqual(profile["RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE"], "0")
+
+    def test_4k_warmup_shapes_match_frame_size_aware_pipeline_staging(self):
+        groups = [[{"image_size": [3840, 2160], "status": "ok", "bbox_px": [1, 2, 30, 40]}]
+                  for _ in range(8)]
+        self.assertEqual(candidate_subject_shapes(groups, 8), [8])
+        self.assertEqual(candidate_subject_shapes(groups, 8, 64 * 1024**2), [2])
+
     def test_batch_preprocess_is_explicit_off_even_when_environment_is_on(self):
         parser = build_parser()
         args = parser.parse_args(["--" + name + "=unused" for name in
@@ -170,7 +189,9 @@ class PipelineBenchmarkHelperTests(unittest.TestCase):
                 prepare_source(Path("video"), Path("native"), 8, lambda **kwargs: None)
 
     def test_prepare_warms_eight_single_person_frames_and_honors_source_byte_limit(self):
-        for width, height, retained, shapes in ((10, 10, 8, [8]), (3840, 2160, 2, [2])):
+        for width, height, retained, shapes, environment in (
+                (10, 10, 8, [8], {}), (3840, 2160, 8, [8], {}),
+                (3840, 2160, 2, [2], {"RALLYMATE_SAM3D_SOURCE_BUFFER_MIB": "64"})):
             with self.subTest(resolution=(width, height)):
                 selected = [[{"frame_index": index, "video_sha256": "a" * 64,
                              "pts": index, "time_base_num": 1, "time_base_den": 30,
@@ -190,7 +211,8 @@ class PipelineBenchmarkHelperTests(unittest.TestCase):
                 decoder = Decoder()
                 with patch("scripts.benchmark_sam3d_pipeline.select_pipeline_records", return_value=selected), \
                         patch("scripts.benchmark_sam3d_pipeline.sha256_file", return_value="a" * 64), \
-                        patch("scripts.benchmark_sam3d_pipeline.SourcePTSDecoder", return_value=decoder):
+                        patch("scripts.benchmark_sam3d_pipeline.SourcePTSDecoder", return_value=decoder), \
+                        patch.dict("os.environ", environment, clear=True):
                     source, images = prepare_source(Path("video"), Path("native"), 8,
                         lambda **kwargs: None, batch_frames=8)
                 self.assertEqual(len(images), retained)

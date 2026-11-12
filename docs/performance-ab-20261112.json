@@ -1,0 +1,331 @@
+{
+  "schema": "same-video-performance-ab-summary-v1",
+  "date": "2026-11-12",
+  "branch": "性能优化",
+  "source": {
+    "filename": "0d6ab5053c602f81bb863071fce4a797.mp4",
+    "sha256": "fee3364086c03392181100379b31e37b3eed4cf332eae5f575543c43e02b677f",
+    "width": 960,
+    "height": 448,
+    "frames": 13116,
+    "duration_seconds": 437.144
+  },
+  "revisions": {
+    "baseline": "73f4ec41bc189f9742e5eadeeb9d9fad8a066c55",
+    "candidate": "6078413b2193fb699ee60914722b82b2670855db",
+    "remux_fix": "14803cbe3a0f5c3238f18cc52c74825a23df8030"
+  },
+  "jobs": {
+    "baseline": "693a5280-d2d7-4336-830b-93c92b469385",
+    "candidate": "b90b2961-bb67-43bc-a087-c8b7fdad374a"
+  },
+  "method": {
+    "full_runs_each_revision": 1,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "fresh_backend_each_revision": true,
+    "model_loaded_before_upload": true,
+    "first_job_graph_capture_included": true,
+    "gateway": "same localhost frontend",
+    "poll_seconds": 3,
+    "batch_frames": 8,
+    "batch_persons": 8,
+    "frame_stride": 1,
+    "baseline_cache_reuse": 0,
+    "candidate_cache_reuse": 1,
+    "baseline_async_capture": 0,
+    "candidate_async_capture": 1,
+    "profile_stages": 0,
+    "precision_configuration_changed": false,
+    "requested_pose_imgsz": 640,
+    "sam_actual_input_size": [
+      512,
+      512
+    ]
+  },
+  "original_comparison_checks": {
+    "source_sha256_equal": true,
+    "all_source_artifact_bindings_valid": true,
+    "request_configuration_equal": true,
+    "model_identity_equal": true,
+    "both_full_analysis_video": true,
+    "compared_analysis_numerical_values_equal": false,
+    "both_full_video": false,
+    "both_original_mesh_deliveries_ready": false,
+    "both_delivery_receipts_passed": false,
+    "both_revision_switch_receipts_bound": true
+  },
+  "timing_comparison_seconds": {
+    "processing_elapsed_seconds": {
+      "baseline": 649.216,
+      "candidate": 639.877,
+      "candidate_minus_baseline": -9.339000000000055,
+      "reduction_percent": 1.4385042882492198,
+      "baseline_divided_by_candidate": 1.0145949924751163
+    },
+    "pose_seconds": {
+      "baseline": 372.366,
+      "candidate": 371.884,
+      "candidate_minus_baseline": -0.4819999999999709,
+      "reduction_percent": 0.12944253771825862,
+      "baseline_divided_by_candidate": 1.0012961030859084
+    },
+    "upload_seconds": {
+      "baseline": 1.567601,
+      "candidate": 1.034111,
+      "candidate_minus_baseline": -0.53349,
+      "reduction_percent": 34.032256932727144,
+      "baseline_divided_by_candidate": 1.515892394530181
+    },
+    "upload_to_analysis_observed_seconds": {
+      "baseline": 654.913375,
+      "candidate": 645.481977,
+      "candidate_minus_baseline": -9.431397999999945,
+      "reduction_percent": 1.4400985473842163,
+      "baseline_divided_by_candidate": 1.0146114040919223
+    },
+    "upload_to_summary_seconds": {
+      "baseline": 655.891982,
+      "candidate": 646.441635,
+      "candidate_minus_baseline": -9.450346999999965,
+      "reduction_percent": 1.440838927651347,
+      "baseline_divided_by_candidate": 1.0146190258924148
+    },
+    "upload_to_report_and_original_seconds": {
+      "baseline": 673.291928,
+      "candidate": 663.112807,
+      "candidate_minus_baseline": -10.17912100000001,
+      "reduction_percent": 1.5118436114683391,
+      "baseline_divided_by_candidate": 1.0153505118473756
+    },
+    "upload_to_selected_detail_seconds": {
+      "baseline": 677.81945,
+      "candidate": 667.639619,
+      "candidate_minus_baseline": -10.179830999999922,
+      "reduction_percent": 1.5018499395377223,
+      "baseline_divided_by_candidate": 1.0152474938728882
+    }
+  },
+  "inference_window_resources": {
+    "baseline": {
+      "gpu_name": "NVIDIA GeForce RTX 5070 Ti",
+      "sample_count": 528,
+      "weighted_seconds": 527.9717359542847,
+      "gpu_utilization_mean_percent": 57.93868378260147,
+      "gpu_memory_mean_mib": 7643.356179044244,
+      "gpu_memory_peak_mib": 8076.0,
+      "sam_process_tree_rss_peak_mib": 3322.1875,
+      "host_cpu_mean_percent": 19.9012510038253
+    },
+    "candidate": {
+      "gpu_name": "NVIDIA GeForce RTX 5070 Ti",
+      "sample_count": 524,
+      "weighted_seconds": 526.2913680076599,
+      "gpu_utilization_mean_percent": 58.697441714002835,
+      "gpu_memory_mean_mib": 7861.826952637719,
+      "gpu_memory_peak_mib": 7952.0,
+      "sam_process_tree_rss_peak_mib": 4153.70703125,
+      "host_cpu_mean_percent": 25.31699770958119
+    }
+  },
+  "resource_scope": "Adjacent-sample duration weighted; physical board includes desktop and other applications; process RSS includes wrappers. Startup/loading excluded.",
+  "original_mesh_delivery": {
+    "baseline": "passed",
+    "candidate": "failed",
+    "baseline_upload_to_playable_seconds": 697.869223,
+    "candidate_upload_to_playable_seconds": null,
+    "candidate_failure": "joined mesh video did not preserve every source presentation time",
+    "candidate_failure_observed_seconds_from_upload": 758.384182,
+    "comparison_status": "No successful candidate full-delivery timing; recovery is separate."
+  },
+  "mesh_encoder_overhead_seconds": {
+    "baseline": {
+      "encoder_setup": 0.203896,
+      "encoder_flush": 0.072998,
+      "encoded_video_pts_validation": 8.08494
+    },
+    "candidate_segments": {
+      "encoder_setup": 39.26771400000001,
+      "encoder_flush": 7.284882,
+      "encoded_video_pts_validation": 14.728364000000003
+    }
+  },
+  "numerical_comparison": {
+    "frames_exact": {
+      "frame": true,
+      "detections": true,
+      "subject_identity": true,
+      "camera_motion": true
+    },
+    "all_subject_meshes_compared": true,
+    "subject_mesh_count": 6439,
+    "all_geometry_arrays_exact": false,
+    "max_coordinate_abs_difference": {
+      "keypoints_2d": 0.00018310546875,
+      "keypoints_3d": 7.361173629760742e-06,
+      "vertices": 7.510185241699219e-06,
+      "camera": 4.57763671875e-05,
+      "focal": 0.0,
+      "faces": 0.0
+    },
+    "units": {
+      "keypoints_2d": "pixels",
+      "keypoints_3d": "model_units",
+      "vertices": "model_units",
+      "camera": "model_units"
+    },
+    "native_angle_max_abs_difference_degrees": 0.000363502163,
+    "reported_kinematics_max_abs_difference_deg_s": 0.007440000000087821,
+    "overall_scores": [
+      88.55,
+      88.55
+    ],
+    "episodes_each": 29,
+    "stored_scores_all_levels": {
+      "counts": {
+        "reference_score_fields": 495,
+        "actual_score_fields": 495,
+        "missing_score_fields": 0,
+        "added_score_fields": 0,
+        "score_fields_checked": 495
+      },
+      "keys": {
+        "family_score": 40,
+        "score": 428,
+        "overall_score": 6,
+        "mean_score": 20,
+        "psychological_score": 1
+      },
+      "differences": {
+        "numeric_changes": 0,
+        "largest_numeric_changes": [],
+        "nonnumeric_changes": 0,
+        "nonnumeric_differences": [],
+        "examples_truncated": false,
+        "diagnostic_values_truncated": false,
+        "nonnumeric_examples_truncated": false,
+        "comparison_scope": "all_values_exact_counts_bounded_examples"
+      },
+      "scope": "every stored score scalar at all nested levels; structural additions/removals in full comparison",
+      "scope_inputs": [
+        "baseline tennis-assessment.json",
+        "candidate tennis-assessment.json"
+      ]
+    }
+  },
+  "mesh_recovery": {
+    "version": "mesh-remux-timebase-recovery-validation-v1",
+    "source_job_id": "b90b2961-bb67-43bc-a087-c8b7fdad374a",
+    "scope": "CPU packet remux and exact decoded PTS comparison; no model or GPU rendering",
+    "source_video_sha256": "FEE3364086C03392181100379B31E37B3EED4CF332EAE5F575543C43E02B677F",
+    "original_checkpoint_sha256": "A473B832A7AD8B2736E5EED49D935D590E5094E19E4C738907653A3CA0824AEC",
+    "original_checkpoint_adapter_sha256": "12E5E6360C30B6F0C851AE59E8B1C838DE7C7C76558FA24CC20DFDE6F4CC5C80",
+    "repair_adapter_sha256": "4C01E5E1CCE956B3EA681367AD2BED97F5B80444218E000CBDEFECCA7B55320D",
+    "segments": 219,
+    "frame_count": 13116,
+    "views": {
+      "sam3d-mesh.mp4": {
+        "remux_and_segment_pts_validation_seconds": 16.525104500000452,
+        "sha256": "12A94547B0A4760EA74DCA44B608C51FEC722646B911033AD726204E6B2AFAC1",
+        "bytes": 78099442
+      },
+      "sam3d-mesh-side.mp4": {
+        "remux_and_segment_pts_validation_seconds": 5.399817400000757,
+        "sha256": "2956A317A5648BC497F93913D4AD035CF152EC7014F69C1A8FB05BD5DEB55B47",
+        "bytes": 9106028
+      }
+    },
+    "source_pts_validation": {
+      "frames_each_view": 13116,
+      "exact_rational_equality": true,
+      "seconds": 14.909162200001447,
+      "front_time_base": "1/90000",
+      "side_time_base": "1/90000"
+    },
+    "original_checkpoint_unchanged": true,
+    "status": "passed"
+  },
+  "browser_validation": {
+    "status": "passed",
+    "url": "http://127.0.0.1:8000/?view=analysis&job=b90b2961-bb67-43bc-a087-c8b7fdad374a",
+    "displayed_score": "88.5",
+    "checks": [
+      {
+        "name": "absent:分级技术评分",
+        "passed": true
+      },
+      {
+        "name": "absent:训练片段与活动角度",
+        "passed": true
+      },
+      {
+        "name": "absent:查看当前动作中的关节角度",
+        "passed": true
+      },
+      {
+        "name": "score_and_29_episodes_visible",
+        "passed": true
+      },
+      {
+        "name": "原片叠加",
+        "passed": true,
+        "video": [
+          {
+            "src": "http://127.0.0.1:8000/v1/jobs/b90b2961-bb67-43bc-a087-c8b7fdad374a/artifacts/sam3d-mesh.mp4",
+            "readyState": 4,
+            "duration": 437.144667,
+            "width": 960,
+            "height": 448,
+            "error": null
+          }
+        ]
+      },
+      {
+        "name": "侧面 90°",
+        "passed": true,
+        "video": [
+          {
+            "src": "http://127.0.0.1:8000/v1/jobs/b90b2961-bb67-43bc-a087-c8b7fdad374a/artifacts/sam3d-mesh-side.mp4",
+            "readyState": 3,
+            "duration": 437.144667,
+            "width": 960,
+            "height": 448,
+            "error": null
+          }
+        ]
+      }
+    ],
+    "page_errors": [],
+    "console_errors": [],
+    "http_errors": [],
+    "aborted_requests_recorded": 6
+  },
+  "tests": {
+    "passed": 99,
+    "failed": 0,
+    "environment": "rtmpose service Python; test_mesh_*.py and test_sam3d_mesh.py"
+  },
+  "evidence_root": ".codex_tmp/performance-ab-20261112",
+  "evidence_files": [
+    "ab-results.json",
+    "resource-ab-results.json",
+    "formal-comparison.json",
+    "candidate/original-failure/delivery-receipt.json",
+    "repair-validation/validation.json",
+    "mesh-recovery/publish-receipt.json",
+    "candidate/full-gateway-run/browser-smoke-receipt.json",
+    "numeric-drift-audit.json"
+  ],
+  "evidence_sha256": {
+    "ab-results.json": "719b808967ad9511cd284749fb65551e03384b15041d77d6acd880dbcd00dea9",
+    "resource-ab-results.json": "1476c295c788e8c3a7e9c678875a34b27e6913041c3842fbe321bcee0e466930",
+    "formal-comparison.json": "3f331a2f2c11a490dcd9089bd82970fff814b7c37317173debf93f3465118e27",
+    "candidate/original-failure/delivery-receipt.json": "41f37de234aefac74ca3efcfa8eabb114157458842d8a987599e7de1ccaa7376",
+    "repair-validation/validation.json": "d6322af45479155e575ce89e6d654e4662fea743b3ce8c898537696069cd5651",
+    "mesh-recovery/publish-receipt.json": "fa19718902c6f51bf1032b95bc6b12cfd25fd556016c665562bb74f757ab5231",
+    "candidate/full-gateway-run/browser-smoke-receipt.json": "7aa001bbeda03dda0b1c12b84a1effd26cade265c07cf46667deb0441d632788",
+    "numeric-drift-audit.json": "ce5a43e04c14cc4e7b3cc119a452fefd3695db6b6c38f11de10599ad86f2ff27"
+  }
+}

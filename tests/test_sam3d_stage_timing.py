@@ -2,6 +2,7 @@
 import os
 import sys
 from types import ModuleType, SimpleNamespace
+import types
 import unittest
 from unittest.mock import patch
 
@@ -90,3 +91,45 @@ class StageTimingTests(unittest.TestCase):
         self.cuda.empty_cache()
         self.assertEqual(self.empty_calls, [True, True])
         self.assertEqual(timer.report()["cuda_cache_policy"], "reuse_between_frames")
+
+    def test_cloned_estimator_globals_compose_cache_and_stage_wrappers(self):
+        original_namespace = dict(vars(self.module))
+        exec('def process(self, value):\n torch.cuda.empty_cache()\n '
+             'return recursive_to(prepare_batch(value), "cpu")', original_namespace)
+        original_recursive = original_namespace["recursive_to"]
+        transfer_calls = []
+
+        def batched_transfer(value, destination):
+            transfer_calls.append(destination)
+            return original_recursive(value, destination)
+
+        cloned_globals = dict(original_namespace, recursive_to=batched_transfer)
+        function = original_namespace["process"]
+        cloned = types.FunctionType(function.__code__, cloned_globals)
+        self.estimator.process_one_image = types.MethodType(cloned, self.estimator)
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_ISOLATED_WORKER": "1"}):
+            with EstimatorStageTiming(self.estimator, self.torch,
+                                      enabled=True, reuse_cuda_cache=True) as timer:
+                self.assertEqual(self.estimator.process_one_image(7), ((7,), "cpu"))
+                self.assertEqual(self.empty_calls, [])
+                self.assertIs(original_namespace["torch"], self.torch)
+                self.assertIs(original_namespace["recursive_to"], original_recursive)
+        self.assertIs(cloned_globals["recursive_to"], batched_transfer)
+        self.assertIs(cloned_globals["torch"], self.torch)
+        self.assertEqual(transfer_calls, ["cpu"])
+        self.assertEqual(timer.report()["calls"]["device_to_host"], 1)
+        self.assertEqual(timer.report()["calls"]["allocator_cache_release"], 1)
+
+    def test_batch_cached_functions_receive_scoped_instrumentation(self):
+        batch = SimpleNamespace(prepare_batch=self.module.prepare_batch,
+                                recursive_to=self.module.recursive_to)
+        original = dict(vars(batch))
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_ISOLATED_WORKER": "1"}):
+            with EstimatorStageTiming(self.estimator, self.torch, enabled=True,
+                                      reuse_cuda_cache=True, batch_executor=batch) as timer:
+                self.assertEqual(batch.prepare_batch(1), (1,))
+                self.assertEqual(batch.recursive_to(2, "cpu"), (2, "cpu"))
+                self.estimator.model.run_inference(3)
+        self.assertEqual(vars(batch), original)
+        self.assertEqual(timer.report()["calls"], {
+            "crop_preprocess": 1, "device_to_host": 1, "model_forward": 1})

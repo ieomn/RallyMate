@@ -943,10 +943,12 @@ def _run_pipeline(
         observations = prepared_stream
     if sam_enabled:
         from rallymate_vision.sam3d_pipeline_batch import sam_pose_observations
+        from rallymate_vision.sam3d_limits import configured_source_buffer_bytes
         observations = sam_pose_observations(
             observations, pose_stage, max_players=request.processing.max_players,
             video_sha256=input_video_sha256, batch_frames=sam_batch_frames,
             timings=timings, statistics=sam_batch_statistics, check_cancelled=check_cancelled,
+            max_buffer_bytes=configured_source_buffer_bytes(os.environ),
             discard_records=lambda records: discard_unarchived_mesh_records(records, sam_runtime_dir),
         )
         cleanup.callback(observations.close)

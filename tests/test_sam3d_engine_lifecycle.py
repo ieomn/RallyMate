@@ -161,6 +161,20 @@ class SamEngineLifecycleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "body inference"):
                 runner.Sam3DEngine("missing.pt", runtime_dir="missing", inference_type="full")
 
+    def test_isolated_worker_reuses_cache_by_default_and_accepts_baseline_override(self):
+        with patch.dict(os.environ, {"RALLYMATE_SAM3D_ISOLATED_WORKER": "1"}):
+            os.environ.pop("RALLYMATE_SAM3D_REUSE_CUDA_CACHE", None)
+            engine, _, _, error, _ = self.initialize()
+            self.assertIsNone(error)
+            self.assertTrue(engine.reuse_cuda_cache)
+            self.assertEqual(engine.metadata["cuda_cache_policy"], "reuse_between_frames")
+            engine.close()
+            os.environ["RALLYMATE_SAM3D_REUSE_CUDA_CACHE"] = "0"
+            engine, _, _, error, _ = self.initialize()
+            self.assertIsNone(error)
+            self.assertFalse(engine.reuse_cuda_cache)
+            engine.close()
+
     def test_executor_closes_before_restoring_transforms_and_only_once(self):
         engine, _, restored, error, _ = self.initialize()
         self.assertIsNone(error)
@@ -194,6 +208,22 @@ class SamEngineLifecycleTests(unittest.TestCase):
         engine.body_batch_executor = SimpleNamespace(infer=Mock())
         engine.close()
         self.assertEqual(restored, ["rotation", "prompt"])
+
+    def test_mesh_writer_drains_before_estimator_teardown_even_if_close_fails(self):
+        engine, torch, restored, error, _ = self.initialize()
+        self.assertIsNone(error)
+        failure = OSError("controlled writer close failure")
+        writer = SimpleNamespace(close=Mock(side_effect=failure))
+        engine.mesh_capture_writer = writer
+        with self.assertRaises(OSError) as caught:
+            engine.close()
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(restored, ["rotation", "prompt"])
+        self.assertIsNone(engine.estimator)
+        self.assertIsNone(engine.mesh_capture_writer)
+        torch.cuda.empty_cache.assert_called_once_with()
+        engine.close()
+        writer.close.assert_called_once_with()
 
     def test_close_attempts_remaining_handles_and_cache_cleanup_before_reraising(self):
         restored = []

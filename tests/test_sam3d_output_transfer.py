@@ -269,7 +269,7 @@ class CPUValueLayoutTests(unittest.TestCase):
         estimator.device = 'cuda:0'
         with patch('rallymate_vision.sam3d_output_transfer._source_sha256',
                    side_effect=[OFFICIAL_ESTIMATOR_SHA256, OFFICIAL_RECURSIVE_TO_SHA256]), \
-             patch.dict(os.environ, {'RALLYMATE_SAM3D_PROFILE_STAGES': '0', 'RALLYMATE_SAM3D_REUSE_CUDA_CACHE': '0'}):
+             patch.dict(os.environ, {'RALLYMATE_SAM3D_PROFILE_STAGES': '1', 'RALLYMATE_SAM3D_REUSE_CUDA_CACHE': '1'}):
             handle = apply_output_transfer(estimator)
         self.assertIs(globals_map['recursive_to'], original_recursive)
         self.assertIn('process_one_image', vars(estimator))

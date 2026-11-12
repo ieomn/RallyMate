@@ -176,6 +176,43 @@ class MeshRenderWorkerTests(unittest.TestCase):
         self.assertEqual(self.state(output)["status"], "ready")
         self.assertEqual(self.calls, ["job-1"])
 
+    def test_fair_time_slice_publishes_progress_and_next_turn_resumes(self):
+        output = self.job()
+        self.job("job-2", completed=False)
+        def partial(**kwargs):
+            kwargs["check_cancelled"]()
+            return {"status": "pending", "source_video_sha256": kwargs["source_sha256"],
+                "ledger_sha256": sha256_file(output / LEDGER_NAME),
+                "completed_frames": 12, "completed_segments": 1, "next_source_frame": 12}
+        self.assertTrue(self.coordinator(partial).process_one(allow_queued=True))
+        state = self.state(output)
+        self.assertEqual(state["status"], "pending")
+        self.assertEqual(state["reason"], "mesh_time_slice_complete")
+        self.assertEqual(state["completed_frames"], 12)
+        self.assertTrue(state["retryable"])
+        self.assertFalse((output / MANIFEST_NAME).exists())
+        self.assertTrue(self.coordinator().process_one(allow_queued=True))
+        self.assertEqual(self.state(output)["status"], "ready")
+        self.assertEqual(self.database.get_job("job-2")["status"], "queued")
+
+    def test_progress_with_wrong_source_cannot_be_published(self):
+        output = self.job()
+        def partial(**kwargs):
+            return {"status": "pending", "source_video_sha256": "f" * 64,
+                    "ledger_sha256": sha256_file(output / LEDGER_NAME), "completed_frames": 12}
+        with self.assertLogs("rallymate.mesh", level="ERROR"):
+            self.assertTrue(self.coordinator(partial).process_one(allow_queued=True))
+        self.assertEqual(self.state(output)["status"], "failed")
+
+    def test_real_renderer_receives_bounded_fair_turn_budget(self):
+        output = self.job()
+        self.job("job-2", completed=False)
+        coordinator = MeshRenderCoordinator(self.settings, self.database)
+        with patch("rallymate_vision.sam3d_mesh.render_mesh_subprocess", side_effect=self.renderer) as render:
+            self.assertTrue(coordinator.process_one(allow_queued=True))
+        self.assertEqual(render.call_args.kwargs["time_slice_seconds"], 15.)
+        self.assertEqual(self.state(output)["status"], "ready")
+
     def test_new_running_job_still_preempts_a_fair_render(self):
         output = self.job()
         def render(**kwargs):
@@ -337,6 +374,22 @@ class MeshRenderWorkerTests(unittest.TestCase):
             render_mesh_subprocess(self.root / "job-1.mp4", output, self.runtime,
                 first_frame=0, last_frame=29, stride=1, source_sha256="a" * 64, model={}, check_cancelled=preempt)
         self.assertTrue(process.terminated)
+
+    def test_subprocess_returns_pending_result_without_a_final_manifest(self):
+        from rallymate_vision.mesh_render_segments import RESULT_NAME
+        output = self.job()
+        result = {"status": "pending", "completed_frames": 12, "completed_segments": 1}
+        (output / RESULT_NAME).write_text(json.dumps(result))
+        process = Mock(returncode=0)
+        process.poll.return_value = 0
+        with patch("rallymate_vision.owned_subprocess.OwnedProcess", return_value=process):
+            actual = render_mesh_subprocess(self.root / "job-1.mp4", output, self.runtime,
+                first_frame=0, last_frame=29, stride=1, source_sha256="a" * 64,
+                model={}, check_cancelled=lambda: None, time_slice_seconds=15.)
+        self.assertEqual(actual, result)
+        self.assertFalse((output / MANIFEST_NAME).exists())
+        self.assertEqual(json.loads((output / "sam3d-mesh-render-request.json").read_text())["time_slice_seconds"], 15.)
+        process.close.assert_called_once_with()
 
 
 if __name__ == "__main__":

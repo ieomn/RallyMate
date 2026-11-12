@@ -20,7 +20,12 @@ function Reject([scriptblock]$Operation, [string]$Message) {
 $original = Read-LocalPerformanceProfile -ProjectRoot $testRoot -Model sam3d-dinov3 -IgnoreEnvironment
 $names = @($original.settings.Keys) + @('RALLYMATE_LOCAL_PERFORMANCE_OVERRIDES','RALLYMATE_POSE_BACKEND','RALLYMATE_POSE_PRESET','RALLYMATE_POSE_MODEL','RALLYMATE_DEVICE')
 $saved = @{}
-foreach ($name in $names) { $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process'); [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+foreach ($name in $names) {
+    $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    # PowerShell 7.6 preserves an empty string passed to the .NET API. Remove
+    # the entry explicitly so this fixture also exercises an unset variable.
+    Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+}
 try {
     $profile = Read-LocalPerformanceProfile -ProjectRoot $testRoot -Model sam3d-dinov3
     Assert ($profile.settings.RALLYMATE_SAM3D_BATCH_FRAMES -eq '8') 'Fresh process must restore batch8.'
@@ -90,7 +95,7 @@ try {
     $receipt = Get-Content -LiteralPath (Join-Path $logRoot 'launch-profile.json') -Raw | ConvertFrom-Json
     Assert ($receipt.api_launcher_pid -eq 1001 -and $receipt.settings.RALLYMATE_SAM3D_BATCH_FRAMES -eq '8') 'Receipt must describe this launch.'
     Assert ((Get-Content -LiteralPath (Join-Path $receipt.log_backup 'api.err.log') -Raw).Trim() -eq 'historical worker exception') 'Archive evidence before log truncation.'
-    foreach ($name in $original.settings.Keys) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    foreach ($name in $original.settings.Keys) { Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue }
     & (Join-Path $testRoot 'scripts/run_full_service.ps1') -ApiOnly | Out-Null
     Assert ($global:PerformanceTestCalls.Count -eq 4 -and $global:PerformanceTestCalls[2].frames -eq '8' -and $global:PerformanceTestCalls[2].overlap -eq '1') 'Second clean startup must restore the same settings.'
     $global:PerformanceTestOccupied = $true
@@ -140,5 +145,8 @@ try {
     }
     Write-Host "$script:assertions assertions passed; fake launch only; evidence: $testRoot"
 } finally {
-    foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process') }
+    foreach ($name in $saved.Keys) {
+        if ($null -eq $saved[$name]) { Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue }
+        else { [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process') }
+    }
 }

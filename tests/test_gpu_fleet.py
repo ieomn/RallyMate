@@ -57,6 +57,7 @@ class GPUFleetTests(unittest.TestCase):
         self.assertEqual(env['RALLYMATE_SAM3D_BATCH_GRAPH_SIZES'], '')
         self.assertEqual(env['RALLYMATE_SAM3D_FORWARD_GRAPH_BUDGET_MIB'], '512')
         self.assertEqual(env['RALLYMATE_SAM3D_ARCHIVE_PENDING_FRAMES'], '2')
+        self.assertEqual(env['RALLYMATE_SAM3D_REUSE_CUDA_CACHE'], '1')
         env['RALLYMATE_SAM3D_BATCH_FRAMES'] = '8'
         with self.assertRaises(ValueError):
             validate_worker_environment(env, self.inventory())

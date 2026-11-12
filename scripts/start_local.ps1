@@ -96,9 +96,6 @@ if ($Model -eq "rtmpose") {
             $samDecoderGraphDefault = "0"
         }
         $samOutputTransferDefault = "1"
-        if ($env:RALLYMATE_SAM3D_PROFILE_STAGES -eq "1" -or $env:RALLYMATE_SAM3D_REUSE_CUDA_CACHE -eq "1") {
-            $samOutputTransferDefault = "0"
-        }
         $samDefaults = @{
             RALLYMATE_SAM3D_IPC_TRANSPORT = "shared_memory"
             RALLYMATE_SAM3D_GPU_PREPROCESS = "1"
@@ -106,6 +103,7 @@ if ($Model -eq "rtmpose") {
             RALLYMATE_SAM3D_PREFETCH_FRAMES = "2"
             RALLYMATE_SAM3D_COMPLETE_DECODER_GRAPH = $samDecoderGraphDefault
             RALLYMATE_SAM3D_BATCH_OUTPUT_TRANSFER = $samOutputTransferDefault
+            RALLYMATE_SAM3D_REUSE_CUDA_CACHE = "1"
             RALLYMATE_SAM3D_ASYNC_MESH_ARCHIVE = "1"
         }
         foreach ($name in $samDefaults.Keys) {

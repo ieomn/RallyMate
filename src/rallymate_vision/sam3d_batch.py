@@ -128,7 +128,7 @@ class BodyBatchInference:
         if self.preprocessor is not None:
             self.receipt["batch_preprocess"] = self.preprocessor.receipt
 
-    def infer(self, requests, *, clear_cuda_cache: bool = True):
+    def infer(self, requests, *, clear_cuda_cache: bool = False):
         """Return official output dictionaries for [(uint8 BGR image, xyxy)].
 
         A failed call raises; the engine decides how to report/retry that batch.

@@ -38,7 +38,8 @@ PROFILE = {
     "RALLYMATE_SAM3D_COMPLETE_DECODER_GRAPH": "1",
     "RALLYMATE_SAM3D_BATCH_OUTPUT_TRANSFER": "1",
     "RALLYMATE_SAM3D_PROFILE_STAGES": "0",
-    "RALLYMATE_SAM3D_REUSE_CUDA_CACHE": "0",
+    "RALLYMATE_SAM3D_REUSE_CUDA_CACHE": "1",
+    "RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE": "1",
     "RALLYMATE_SAM3D_EXPORT_MESH": "1",
     "RALLYMATE_SAM3D_CPU_THREADS": "1",
     "RALLYMATE_SAM3D_INTEROP_THREADS": "1",
@@ -46,7 +47,8 @@ PROFILE = {
 }
 
 
-def build_worker_profile(*, profile, batch_sizes, max_players, batch_preprocess=None, environment=None):
+def build_worker_profile(*, profile, batch_sizes, max_players, batch_preprocess=None, environment=None,
+                         reuse_cuda_cache=None, profile_stages=None, async_mesh_capture=None):
     """Explicit CLI selection wins; otherwise preserve the environment or off."""
     environment = os.environ if environment is None else environment
     selected = environment.get("RALLYMATE_SAM3D_BATCH_PREPROCESS", "0") if batch_preprocess is None else batch_preprocess
@@ -59,6 +61,13 @@ def build_worker_profile(*, profile, batch_sizes, max_players, batch_preprocess=
                 "RALLYMATE_SAM3D_BATCH_PERSONS": str(max(batch_sizes) * max_players),
                 "RALLYMATE_SAM3D_BATCH_PREPROCESS": str(selected),
                 "RALLYMATE_SAM3D_CUDA_WAIT_MODE": cuda_wait}
+    for name, explicit in (("RALLYMATE_SAM3D_REUSE_CUDA_CACHE", reuse_cuda_cache),
+                           ("RALLYMATE_SAM3D_PROFILE_STAGES", profile_stages),
+                           ("RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE", async_mesh_capture)):
+        value = environment.get(name, PROFILE[name]) if explicit is None else explicit
+        if type(value) not in (int, str) or value not in (0, 1, "0", "1"):
+            raise ValueError(f"{name} must be 0 or 1")
+        settings[name] = str(value)
     if "RALLYMATE_SAM3D_BATCH_GRAPH_SIZES" in environment:
         settings["RALLYMATE_SAM3D_BATCH_GRAPH_SIZES"] = environment["RALLYMATE_SAM3D_BATCH_GRAPH_SIZES"]
     if profile == "eager":
@@ -67,6 +76,12 @@ def build_worker_profile(*, profile, batch_sizes, max_players, batch_preprocess=
     elif profile != "production":
         raise ValueError("Unknown SAM benchmark profile")
     return settings
+
+
+def add_runtime_profile_arguments(parser):
+    for name in ("reuse-cuda-cache", "profile-stages", "async-mesh-capture"):
+        parser.add_argument("--" + name, type=int, choices=(0, 1), default=None,
+                            help="Explicit 0/1 overrides environment; selection is saved in worker_profile")
 
 
 def verify_batch_execution(outputs, requested_subjects, *, batch_preprocess):
@@ -310,6 +325,7 @@ def main():
     parser.add_argument("--profile", choices=("production", "eager"), default="production")
     parser.add_argument("--batch-preprocess", type=int, choices=(0, 1), default=None,
                         help="Grouped uint8 crop staging: explicit 0/1 overrides environment; default env or 0")
+    add_runtime_profile_arguments(parser)
     args = parser.parse_args()
     if (not 1 <= args.frames <= 16 or not 1 <= args.max_players <= 2 or args.start_frame < 0
             or not 1 <= args.repeats <= 5 or not 1 <= args.max_decode_frames <= 10000
@@ -317,7 +333,9 @@ def main():
         parser.error("frames 1..16; max-players 1..2; repeats 1..5; batches at most 8 subjects; bounded positive decode required")
     try:
         settings = build_worker_profile(profile=args.profile, batch_sizes=args.batch_sizes,
-                                        max_players=args.max_players, batch_preprocess=args.batch_preprocess)
+            max_players=args.max_players, batch_preprocess=args.batch_preprocess,
+            reuse_cuda_cache=args.reuse_cuda_cache, profile_stages=args.profile_stages,
+            async_mesh_capture=args.async_mesh_capture)
     except ValueError as error:
         parser.error(str(error))
     for path in (args.video, args.native_jsonl, args.python, args.checkpoint, args.idle_jobs_db):

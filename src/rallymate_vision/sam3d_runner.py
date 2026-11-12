@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import contextlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -28,6 +29,7 @@ from rallymate_vision.sam3d_ipc import (
 )
 from rallymate_vision.owned_subprocess import OwnedProcess
 from rallymate_vision.sam3d_cuda_wait import configure_sam_cuda_wait, verify_sam_cuda_wait
+from rallymate_vision.sam3d_limits import MAX_BATCH_FRAMES, MAX_BATCH_SOURCE_BYTES
 
 
 SAM_SOURCE_COMMIT = "b5c765a0d89d789985e186d396315e7590887b94"
@@ -37,8 +39,6 @@ CHECKPOINT_HASHES = {
 }
 MHR_HASH = "352e271a6c42729c68554ceaea0c955e866970160c31e35506d782dc0f7377bc"
 BATCH_PROTOCOL = "sam-body-frames-v1"
-MAX_BATCH_FRAMES = 8
-MAX_BATCH_SOURCE_BYTES = 128 * 1024 * 1024
 
 
 def _validate_frame_requests(requests):
@@ -60,7 +60,7 @@ def _validate_frame_requests(requests):
                 raise ValueError("SAM batch source bbox is invalid")
         total += frame.nbytes
     if total > MAX_BATCH_SOURCE_BYTES:
-        raise ValueError("SAM batch source pixels exceed 128 MiB")
+        raise ValueError("SAM batch source pixels exceed 256 MiB")
 
 
 def _validate_batch_outputs(outputs, requests):
@@ -173,11 +173,18 @@ class EstimatorStageTiming:
     additional per-stage synchronize is introduced. Patches are always restored.
     """
 
-    def __init__(self, estimator, torch, *, enabled: bool, reuse_cuda_cache: bool):
+    def __init__(self, estimator, torch, *, enabled: bool, reuse_cuda_cache: bool,
+                 batch_executor=None):
         self.estimator, self.torch = estimator, torch
         self.enabled, self.reuse_cuda_cache = enabled, reuse_cuda_cache
         self.wall_ms, self.calls, self.events = Counter(), Counter(), []
         self.restores = []
+        self.batch_executor = batch_executor
+
+    def _patch_global(self, namespace, name, replacement):
+        original = namespace[name]
+        namespace[name] = replacement
+        self.restores.append((namespace, name, original, True))
 
     def _patch(self, owner, name, replacement):
         original = getattr(owner, name)
@@ -211,25 +218,35 @@ class EstimatorStageTiming:
             return self
         if os.environ.get("RALLYMATE_SAM3D_ISOLATED_WORKER") != "1":
             raise RuntimeError("SAM stage profiling/cache reuse requires the isolated SAM worker")
-        module = sys.modules[type(self.estimator).__module__]
         try:
             original_empty = self.torch.cuda.empty_cache
             empty = self._wrapper("allocator_cache_release",
                                   (lambda: None) if self.reuse_cuda_cache else original_empty)
-            # Only the official estimator's module reference is shadowed.
-            # Real torch.cuda.empty_cache and close() remain untouched, even
-            # inside this dedicated single-model process.
-            cuda_view = _AttributeOverrides(self.torch.cuda, empty_cache=empty)
-            self._patch(module, "torch", _AttributeOverrides(self.torch, cuda=cuda_view))
+            if self.batch_executor is None:
+                # The output-transfer handle clones process_one_image globals.
+                # Instrument the globals actually used by the active method so
+                # its converter, cache policy and timings compose correctly.
+                method = getattr(self.estimator, "process_one_image", None)
+                namespace = (inspect.unwrap(method).__globals__ if method is not None
+                             else vars(sys.modules[type(self.estimator).__module__]))
+                cuda_view = _AttributeOverrides(self.torch.cuda, empty_cache=empty)
+                self._patch_global(namespace, "torch", _AttributeOverrides(self.torch, cuda=cuda_view))
             if self.enabled:
-                self._patch(module, "prepare_batch", self._wrapper("crop_preprocess", module.prepare_batch))
-                recursive = module.recursive_to
+                if self.batch_executor is None:
+                    self._patch_global(namespace, "prepare_batch", self._wrapper("crop_preprocess", namespace["prepare_batch"]))
+                    recursive = namespace["recursive_to"]
+                else:
+                    self._patch(self.batch_executor, "prepare_batch", self._wrapper("crop_preprocess", self.batch_executor.prepare_batch))
+                    recursive = self.batch_executor.recursive_to
 
                 def transfer(data, destination, *args, **kwargs):
                     name = {"cuda": "host_to_device", "cpu": "device_to_host", "numpy": "tensor_to_numpy"}.get(str(destination), "other_transfer")
                     return self._wrapper(name, recursive, cuda=str(destination) in {"cuda", "cpu"})(data, destination, *args, **kwargs)
 
-                self._patch(module, "recursive_to", transfer)
+                if self.batch_executor is None:
+                    self._patch_global(namespace, "recursive_to", transfer)
+                else:
+                    self._patch(self.batch_executor, "recursive_to", transfer)
                 for name, label in (("_initialize_batch", "initialize_batch"), ("run_inference", "model_forward")):
                     self._patch(self.estimator.model, name, self._wrapper(label, getattr(self.estimator.model, name), cuda=True))
             return self
@@ -239,7 +256,9 @@ class EstimatorStageTiming:
 
     def __exit__(self, *_exc):
         for owner, name, original, had_own in reversed(self.restores):
-            if had_own:
+            if isinstance(owner, dict):
+                owner[name] = original
+            elif had_own:
                 setattr(owner, name, original)
             else:
                 delattr(owner, name)
@@ -383,6 +402,8 @@ class Sam3DEngine:
         self.estimator = None
         self.optimization_handles = []
         self.body_batch_executor = None
+        self.mesh_capture_writer = None
+        self.async_mesh_capture = os.environ.get("RALLYMATE_SAM3D_ASYNC_MESH_CAPTURE", "1") == "1"
         preprocess = os.environ.get("RALLYMATE_SAM3D_BATCH_PREPROCESS", "0")
         if preprocess not in {"0", "1"}:
             raise ValueError("RALLYMATE_SAM3D_BATCH_PREPROCESS must be 0 or 1")
@@ -451,7 +472,8 @@ class Sam3DEngine:
                 verify_sam_cuda_wait(cuda_wait_policy)
             self.torch, self.inference_type = torch, inference_type
             self.profile_stages = os.environ.get("RALLYMATE_SAM3D_PROFILE_STAGES", "0") == "1"
-            self.reuse_cuda_cache = os.environ.get("RALLYMATE_SAM3D_REUSE_CUDA_CACHE", "0") == "1"
+            self.reuse_cuda_cache = os.environ.get("RALLYMATE_SAM3D_REUSE_CUDA_CACHE",
+                os.environ.get("RALLYMATE_SAM3D_ISOLATED_WORKER", "0")) == "1"
             self.inference_calls = 0
             self.metadata = {
                 "backend": "sam3d", "runtime": "pytorch", "model_path": str(checkpoint),
@@ -469,6 +491,8 @@ class Sam3DEngine:
                 "native_keypoint_count": 70, "confidence_semantics": "not_provided_by_sam3d",
                 "camera_intrinsics": "official_default_fov_uncalibrated",
                 "mesh_export_enabled": self.mesh_export_enabled,
+                "mesh_capture_policy": "bounded_cpu_writer_joined_before_reply" if self.async_mesh_capture else "synchronous",
+                "mesh_capture_timing_scope": "worker_wall_can_overlap_later_subjects_in_same_request; request_join_wait_is_separate_from_inference_ms; no_cross_request_overlap",
                 "units_3d": "model_units", "world_metric_calibration": False,
                 "profile_stages": self.profile_stages,
                 "cuda_graph_requested": os.environ.get("RALLYMATE_SAM3D_CUDA_GRAPH", "1") == "1",
@@ -491,7 +515,81 @@ class Sam3DEngine:
             raise
 
 
+    @contextlib.contextmanager
+    def _mesh_capture_scope(self):
+        if getattr(self, "_pending_mesh_captures", None) is not None:
+            yield
+            return
+        pending = self._pending_mesh_captures = []
+        outer_failed, interrupted = False, None
+        completed = []
+        try:
+            yield
+        except BaseException:
+            outer_failed = True
+            raise
+        finally:
+            try:
+                for future, results, failure_reason, enqueue_ms in pending:
+                    started = time.perf_counter()
+                    while True:
+                        try:
+                            artifacts, worker_ms = future.result()
+                            completed.append((results, artifacts, {
+                                "subjects": len(results), "enqueue_and_backpressure_ms": enqueue_ms,
+                                "worker_wall_ms": worker_ms,
+                                "request_join_wait_ms": (time.perf_counter() - started) * 1000,
+                                "scope": "shared_group_wall_do_not_sum_per_subject; overlaps_later_inference_in_same_request",
+                            }))
+                            break
+                        except BaseException as exc:
+                            if not isinstance(exc, Exception):
+                                interrupted = interrupted or exc
+                                # A signal can interrupt Future.result before
+                                # the writer finishes. Drain that same future
+                                # again before releasing its owned artifacts.
+                                if not future.done() or future.exception() is not exc:
+                                    continue
+                            if not outer_failed:
+                                for result in results:
+                                    for key in ("keypoints_2d", "keypoints_3d", "pred_cam_t", "focal_length", "mesh_artifact"):
+                                        result.pop(key, None)
+                                    result.update(status="failed", reason=failure_reason, error_type=type(exc).__name__)
+                                print(f"SAM mesh capture failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+                            break
+                for results, artifacts, timing in completed:
+                    if outer_failed or interrupted is not None:
+                        from rallymate_vision.sam3d_mesh import discard_unarchived_mesh_records
+                        discard_unarchived_mesh_records(
+                            [{"mesh_artifact": artifact} for artifact in artifacts], self.runtime_dir)
+                    else:
+                        for result, artifact in zip(results, artifacts):
+                            result["mesh_artifact"] = artifact
+                            result["mesh_capture_timing"] = dict(timing)
+            finally:
+                self._pending_mesh_captures = None
+            if interrupted is not None and not outer_failed:
+                raise interrupted
+
+    def _capture_mesh_results(self, raw, results, failure_reason):
+        if not self.mesh_export_enabled:
+            return
+        if not getattr(self, "async_mesh_capture", False):
+            from rallymate_vision.sam3d_mesh import capture_mesh_output
+            for output, result in zip(raw, results):
+                result["mesh_artifact"] = capture_mesh_output(output, self.estimator.faces, self.runtime_dir)
+            return
+        if self.mesh_capture_writer is None:
+            from rallymate_vision.sam3d_mesh_capture import BoundedMeshWriter
+            self.mesh_capture_writer = BoundedMeshWriter(self.runtime_dir)
+        future, enqueue_ms = self.mesh_capture_writer.submit(raw, self.estimator.faces)
+        self._pending_mesh_captures.append((future, results, failure_reason, enqueue_ms))
+
     def infer(self, frame_bgr: np.ndarray, boxes: list[list[float]]) -> list[dict]:
+        with self._mesh_capture_scope():
+            return self._infer(frame_bgr, boxes)
+
+    def _infer(self, frame_bgr: np.ndarray, boxes: list[list[float]]) -> list[dict]:
         if frame_bgr.ndim != 3 or frame_bgr.shape[2] != 3 or frame_bgr.dtype != np.uint8:
             raise ValueError("SAM requires exact uint8 source BGR pixels")
         results = []
@@ -537,10 +635,7 @@ class Sam3DEngine:
                 result.update(status="ok", keypoints_2d=xy.tolist(), keypoints_3d=xyz.tolist(),
                               pred_cam_t=np.asarray(output["pred_cam_t"]).tolist(),
                               focal_length=np.asarray(output["focal_length"]).tolist())
-                if self.mesh_export_enabled:
-                    from rallymate_vision.sam3d_mesh import capture_mesh_output
-                    result["mesh_artifact"] = capture_mesh_output(
-                        output, self.estimator.faces, self.runtime_dir)
+                self._capture_mesh_results([output], [result], "sam_inference_error")
                 stage_ms["output_validation_and_serialization"] = (time.perf_counter() - validation_started) * 1000
             except Exception as exc:
                 # Type and a stable code suffice for public reports; raw errors
@@ -597,6 +692,10 @@ class Sam3DEngine:
         return results
 
     def infer_batch(self, requests: list[dict]) -> list[list[dict]]:
+        with self._mesh_capture_scope():
+            return self._infer_batch(requests)
+
+    def _infer_batch(self, requests: list[dict]) -> list[list[dict]]:
         """One ordered result list per source frame; independent crops share a forward.
 
         Frame metadata stays in the adapter. No concurrent calls or singleton
@@ -630,8 +729,11 @@ class Sam3DEngine:
             self.inference_calls += 1
             results = [{"status": "failed", "reason": None,
                         "first_model_call": first_call} for _ in group]
+            profiler = EstimatorStageTiming(getattr(self, "estimator", None), self.torch,
+                enabled=getattr(self, "profile_stages", False), reuse_cuda_cache=self.reuse_cuda_cache,
+                batch_executor=self.body_batch_executor)
             try:
-                with contextlib.redirect_stdout(sys.stderr):
+                with contextlib.redirect_stdout(sys.stderr), profiler:
                     raw = self.body_batch_executor.infer([(item[2], item[3]) for item in group],
                         clear_cuda_cache=not self.reuse_cuda_cache)
                 self.torch.cuda.synchronize()
@@ -651,9 +753,7 @@ class Sam3DEngine:
                     result.update(status="ok", keypoints_2d=xy.tolist(), keypoints_3d=xyz.tolist(),
                                   pred_cam_t=np.asarray(output["pred_cam_t"]).tolist(),
                                   focal_length=np.asarray(output["focal_length"]).tolist())
-                    if self.mesh_export_enabled:
-                        from rallymate_vision.sam3d_mesh import capture_mesh_output
-                        result["mesh_artifact"] = capture_mesh_output(output, self.estimator.faces, self.runtime_dir)
+                self._capture_mesh_results(raw, results, "sam_batch_inference_error")
             except Exception as exc:
                 if self.mesh_export_enabled:
                     from rallymate_vision.sam3d_mesh import discard_unarchived_mesh_records
@@ -670,6 +770,8 @@ class Sam3DEngine:
                 preprocess_receipt = (executor_receipt.get("batch_preprocess", {})
                                       if isinstance(executor_receipt, dict) else {})
                 for (fi, bi, _, _), result in zip(group, results):
+                    if getattr(self, "profile_stages", False) or self.reuse_cuda_cache:
+                        result["estimator_stage_timing"] = profiler.report()
                     result.update(inference_ms=elapsed_ms / len(group),
                         inference_type=self.inference_type,
                         peak_memory_bytes=self.torch.cuda.max_memory_allocated(),
@@ -688,14 +790,22 @@ class Sam3DEngine:
         return outputs
 
     def close(self):
+        failure = None
+        writer = getattr(self, "mesh_capture_writer", None)
+        self.mesh_capture_writer = None
+        if writer is not None:
+            try:
+                writer.close()
+            except BaseException as exc:
+                failure = exc
         executor = getattr(self, "body_batch_executor", None)
         self.body_batch_executor = None
-        failure = None
         if callable(getattr(executor, "close", None)):
             try:
                 executor.close()
             except BaseException as exc:
-                failure = exc
+                if failure is None:
+                    failure = exc
         handles = getattr(self, "optimization_handles", [])
         self.optimization_handles = []
         for handle in reversed(handles):
