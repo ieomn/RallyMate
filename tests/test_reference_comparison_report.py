@@ -39,6 +39,15 @@ class _Scripts(HTMLParser):
 
 
 class ReferenceComparisonReportTests(unittest.TestCase):
+    def test_checked_in_visual_review_matches_pinned_digest_after_checkout(self):
+        directory = renderer.ROOT / "docs/evidence/djokovic-comparison-20261112"
+        manifest = json.loads((directory / "pairs.json").read_text(encoding="utf-8"))
+        source = directory / manifest["selection"]["visual_review_file"]
+        # JSON files use LF in .gitattributes. Hash the checked-out artifact,
+        # including its line endings, just as the real replay command does.
+        self.assertNotIn(b"\r\n", source.read_bytes())
+        self.assertEqual(renderer.sha(source), manifest["selection"]["visual_review_sha256"])
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

@@ -9,7 +9,7 @@
     "execution_styles": "四个保留正手窗均可见准备、前挥和随挥。FULL-TEST三窗属于正手侧短挥拍/前推式收势；reference正手呈更明显的侧转引拍、宽弧前挥与跨体收拍。可按底线正手大类对照可见动作，执行方式并不完全相同。三个双反窗独立保留，避免混入正手样本。",
     "excluded_duplicate_source": "fbf52 repeats c235 actions/times; not counted as independent video",
     "visual_review_file": "source-review.json",
-    "visual_review_sha256": "fc6bd24e3e885705a6f842aeb9a0e66fd057d9800127d27971600732937e6c2d"
+    "visual_review_sha256": "4ba8c5a76b8ba27a1e803846bf207958e238b7ea66edd2f22599190aac3d4720"
   },
   "source_attribution": {
     "title": "2012 US Open Djokovic point",
