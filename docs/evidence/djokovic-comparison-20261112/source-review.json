@@ -1,0 +1,537 @@
+{
+  "version": "source-visual-review-v1",
+  "created_at": "2026-11-12T00:46:56.994298+08:00",
+  "review_method": "assistant_visual_inspection_of_decoded_source_frames",
+  "reviewer_id": "consumer_audit",
+  "score_values_inspected_before_or_during_review": false,
+  "summary": {
+    "reference_forehand_count": 1,
+    "reference_two_hand_backhand_count": 3,
+    "accepted_full_test_forehand_count": 3,
+    "excluded_full_test_candidate_count": 1,
+    "accepted_forehand_review_ids": [
+      "reference-fh",
+      "c235-fh1",
+      "c248-fh1",
+      "c248-fh2"
+    ],
+    "excluded_review_ids": [
+      "c235-fh2"
+    ],
+    "comparison_scope_zh": "四个保留正手窗均可见准备、前挥和随挥。FULL-TEST三窗属于正手侧短挥拍/前推式收势；reference正手呈更明显的侧转引拍、宽弧前挥与跨体收拍。可按底线正手大类对照可见动作，执行方式并不完全相同。三个双反窗独立保留，避免混入正手样本。",
+    "source_capture_conditions_zh": "reference为1280×720、约23.976帧/秒的室外日间机位；c235为960×544、30帧/秒的夜间斜向机位；c248为1280×720、30帧/秒的室内正面机位。接触瞬间、球速和运动员整体水平不由本次源帧复核赋值。"
+  },
+  "sources": [
+    {
+      "source_id": "reference",
+      "video_sha256": "80f91cb924c32026754031b24730b3888c33bd0078dbc3ec3a432f836a86be68",
+      "width": 1280,
+      "height": 720,
+      "fps": 23.976023976023978,
+      "frame_count": 469
+    },
+    {
+      "source_id": "c235",
+      "video_sha256": "41ae2b5c12a92e8883b159f0963741451d42a515bb82f11194dec1f4fb1c05d6",
+      "width": 960,
+      "height": 544,
+      "fps": 30.0,
+      "frame_count": 6523
+    },
+    {
+      "source_id": "c248",
+      "video_sha256": "c384fb160dfbe3dc3d8a560c69aee69404bc885d337473cd0d171ea408a2845f",
+      "width": 1280,
+      "height": 720,
+      "fps": 30.0,
+      "frame_count": 2170
+    }
+  ],
+  "reviews": [
+    {
+      "review_id": "reference-fh",
+      "source_id": "reference",
+      "episode_id": "237ddacc935508b7beb4",
+      "source_window_ms": {
+        "start_ms": 7090.417,
+        "peak_ms": 7424.083,
+        "end_ms": 7799.458
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 1,
+        "source_selection_epoch": 0,
+        "camera_reference_epoch": 0
+      },
+      "visual_technique": "baseline_forehand",
+      "visual_technique_zh": "右手正手",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 170,
+            "decoded_timestamp_s": 7.090417
+          },
+          {
+            "source_frame_index": 175,
+            "decoded_timestamp_s": 7.298958
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 177,
+            "decoded_timestamp_s": 7.382375
+          },
+          {
+            "source_frame_index": 180,
+            "decoded_timestamp_s": 7.5075
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 182,
+            "decoded_timestamp_s": 7.590917
+          },
+          {
+            "source_frame_index": 187,
+            "decoded_timestamp_s": 7.799458
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "可见转体和侧后方引拍，左臂在身前伸展；前挥后球拍跨过身体收至另一侧肩附近，伴随脚步与躯干转动。",
+      "window_coverage_zh": "最早的侧转与引拍从约6.80秒已开始；报告窗包含准备姿态、前挥与随挥，回到下一拍准备姿态在约8.09秒以后。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "reference-fh-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "reference-bh1",
+      "source_id": "reference",
+      "episode_id": "289d186838928e2506c2",
+      "source_window_ms": {
+        "start_ms": 4379.375,
+        "peak_ms": 4713.042,
+        "end_ms": 4963.292
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 1,
+        "source_selection_epoch": 0,
+        "camera_reference_epoch": 0
+      },
+      "visual_technique": "baseline_two_hand_backhand",
+      "visual_technique_zh": "双手反手",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 106,
+            "decoded_timestamp_s": 4.421083
+          },
+          {
+            "source_frame_index": 109,
+            "decoded_timestamp_s": 4.546208
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 111,
+            "decoded_timestamp_s": 4.629625
+          },
+          {
+            "source_frame_index": 115,
+            "decoded_timestamp_s": 4.796458
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 117,
+            "decoded_timestamp_s": 4.879875
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "两手共同持拍在反手侧准备，向前上方挥出后在身体另一侧高位收拍。",
+      "window_coverage_zh": "报告窗覆盖准备、前挥和早期随挥；约5.01至5.17秒的后段收拍在报告窗外。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "reference-bh1-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "reference-bh2",
+      "source_id": "reference",
+      "episode_id": "7edf861a35cc5489ec7e",
+      "source_window_ms": {
+        "start_ms": 12429.083,
+        "peak_ms": 12762.75,
+        "end_ms": 13221.542
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 1,
+        "source_selection_epoch": 0,
+        "camera_reference_epoch": 0
+      },
+      "visual_technique": "baseline_two_hand_backhand",
+      "visual_technique_zh": "双手反手",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 299,
+            "decoded_timestamp_s": 12.470792
+          },
+          {
+            "source_frame_index": 301,
+            "decoded_timestamp_s": 12.554208
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 304,
+            "decoded_timestamp_s": 12.679333
+          },
+          {
+            "source_frame_index": 309,
+            "decoded_timestamp_s": 12.887875
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 311,
+            "decoded_timestamp_s": 12.971292
+          },
+          {
+            "source_frame_index": 316,
+            "decoded_timestamp_s": 13.179833
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "两手在反手侧共同带拍，前挥后双臂与球拍继续向上跨体收拍，身体转向前方。",
+      "window_coverage_zh": "报告窗覆盖三阶段；约12.14秒开始的最早准备及13.39秒后的重新准备在报告窗外。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "reference-bh2-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "reference-bh3",
+      "source_id": "reference",
+      "episode_id": "9e45134e499e77bdfa68",
+      "source_window_ms": {
+        "start_ms": 17475.792,
+        "peak_ms": 17851.167,
+        "end_ms": 18184.833
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 1,
+        "source_selection_epoch": 0,
+        "camera_reference_epoch": 17
+      },
+      "visual_technique": "baseline_two_hand_backhand",
+      "visual_technique_zh": "双手反手",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 421,
+            "decoded_timestamp_s": 17.559208
+          },
+          {
+            "source_frame_index": 424,
+            "decoded_timestamp_s": 17.684333
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 426,
+            "decoded_timestamp_s": 17.76775
+          },
+          {
+            "source_frame_index": 429,
+            "decoded_timestamp_s": 17.892875
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 431,
+            "decoded_timestamp_s": 17.976292
+          },
+          {
+            "source_frame_index": 433,
+            "decoded_timestamp_s": 18.059708
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "两手共同带拍完成反手侧前挥，拍头随后升高并跨体收拍，后脚随转体调整。",
+      "window_coverage_zh": "报告窗覆盖准备、前挥与随挥；更早准备及约18.39秒后的恢复准备在报告窗外。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "reference-bh3-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "c235-fh1",
+      "source_id": "c235",
+      "episode_id": "e357a896340b94097f15",
+      "source_window_ms": {
+        "start_ms": 76466.667,
+        "peak_ms": 76800.0,
+        "end_ms": 77266.667
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 86,
+        "source_selection_epoch": 0,
+        "camera_reference_epoch": 21
+      },
+      "visual_technique": "baseline_forehand",
+      "visual_technique_zh": "正手侧短挥拍",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 2295,
+            "decoded_timestamp_s": 76.5
+          },
+          {
+            "source_frame_index": 2301,
+            "decoded_timestamp_s": 76.7
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 2304,
+            "decoded_timestamp_s": 76.8
+          },
+          {
+            "source_frame_index": 2308,
+            "decoded_timestamp_s": 76.933333
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 2311,
+            "decoded_timestamp_s": 77.033333
+          },
+          {
+            "source_frame_index": 2317,
+            "decoded_timestamp_s": 77.233333
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "来球在目标前方落低后升向持拍侧；右手持拍从身体侧方前挥并抬至身前另一侧。动作以短引拍和身前挥出为主，肩躯干转动小于reference正手的可见转体，双脚大致保持原位。",
+      "window_coverage_zh": "报告窗内有挥拍前持拍准备、前挥和收拍；更早的迎球准备从约76.07秒已有。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "c235-fh1-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "c235-fh2",
+      "source_id": "c235",
+      "episode_id": "a7bc1a7a1b98faddbf32",
+      "source_window_ms": {
+        "start_ms": 124533.333,
+        "peak_ms": 125000.0,
+        "end_ms": 125466.667
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 86,
+        "source_selection_epoch": 3,
+        "camera_reference_epoch": 21
+      },
+      "visual_technique": "racket_reset_not_complete_stroke",
+      "visual_technique_zh": "持拍复位",
+      "comparison_status": "excluded_incomplete_stroke",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 3738,
+            "decoded_timestamp_s": 124.6
+          },
+          {
+            "source_frame_index": 3745,
+            "decoded_timestamp_s": 124.833333
+          }
+        ],
+        "forward_swing": [],
+        "follow_through": []
+      },
+      "complete_stroke_core_visible": false,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "124.50至124.97秒主要为站立、球拍在体侧下垂；125.00至125.23秒把球拍抬回身前，随后维持准备姿态。逐帧检查未见完整正手的独立引拍、前挥和随挥序列。",
+      "window_coverage_zh": "扩大至122.50至127.50秒后，所选窗仍为持拍复位；约126.20至127.50秒出现后续另一轮可辨挥拍，该后续动作不在当前候选窗内。",
+      "ball_observation_zh": "所选窗及逐帧核验中没有看到相应来球经过持拍侧。",
+      "evidence_images": [
+        "c235-fh2-contact-sheet.jpg",
+        "c235-fh2-wide-context.jpg",
+        "c235-fh2-dense.jpg",
+        "c235-fh2-full-frame.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "c248-fh1",
+      "source_id": "c248",
+      "episode_id": "87975245392483dec72e",
+      "source_window_ms": {
+        "start_ms": 60233.333,
+        "peak_ms": 60533.333,
+        "end_ms": 60833.333
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 145,
+        "source_selection_epoch": 1,
+        "camera_reference_epoch": 44
+      },
+      "visual_technique": "baseline_forehand",
+      "visual_technique_zh": "正手侧短挥拍",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 1809,
+            "decoded_timestamp_s": 60.3
+          },
+          {
+            "source_frame_index": 1812,
+            "decoded_timestamp_s": 60.4
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 1815,
+            "decoded_timestamp_s": 60.5
+          },
+          {
+            "source_frame_index": 1817,
+            "decoded_timestamp_s": 60.566667
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 1820,
+            "decoded_timestamp_s": 60.666667
+          },
+          {
+            "source_frame_index": 1823,
+            "decoded_timestamp_s": 60.766667
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "右手在侧方较低位置持拍迎球，然后向前上方短距离挥出，收拍停在身体前方；躯干多保持朝向机位，左手主要在身前。",
+      "window_coverage_zh": "报告窗包含三阶段；初始持拍准备早于60.23秒，报告末端后仍有放下球拍和重新准备。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "c248-fh1-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    },
+    {
+      "review_id": "c248-fh2",
+      "source_id": "c248",
+      "episode_id": "976d272d0867c17da958",
+      "source_window_ms": {
+        "start_ms": 67333.333,
+        "peak_ms": 67800.0,
+        "end_ms": 68166.667
+      },
+      "report_subject_binding": {
+        "subject_id": "subject-1",
+        "person_track_id": 145,
+        "source_selection_epoch": 1,
+        "camera_reference_epoch": 44
+      },
+      "visual_technique": "baseline_forehand",
+      "visual_technique_zh": "正手侧短挥拍",
+      "comparison_status": "three_visible_phases_accepted",
+      "visible_stroke_phase_anchors": {
+        "preparation": [
+          {
+            "source_frame_index": 2021,
+            "decoded_timestamp_s": 67.366667
+          },
+          {
+            "source_frame_index": 2028,
+            "decoded_timestamp_s": 67.6
+          }
+        ],
+        "forward_swing": [
+          {
+            "source_frame_index": 2031,
+            "decoded_timestamp_s": 67.7
+          },
+          {
+            "source_frame_index": 2034,
+            "decoded_timestamp_s": 67.8
+          }
+        ],
+        "follow_through": [
+          {
+            "source_frame_index": 2037,
+            "decoded_timestamp_s": 67.9
+          },
+          {
+            "source_frame_index": 2044,
+            "decoded_timestamp_s": 68.133333
+          }
+        ]
+      },
+      "complete_stroke_core_visible": true,
+      "complete_recovery_cycle_required": false,
+      "full_body_visible_in_original_window": true,
+      "target_continuity_within_window": "same_clothing_and_continuous_body_motion_without_visible_target_switch",
+      "motion_observations_zh": "右手在身体侧方持拍等待来球，然后完成身前的短前挥与抬拍收势；双脚调整幅度小，肩躯干转动不呈reference正手那样的大幅侧转。",
+      "window_coverage_zh": "报告窗包含三阶段；最早准备早于67.33秒，68.23秒以后继续收回球拍。",
+      "ball_observation_zh": "源图可见相关来球或离拍后的球位置；本次复核不定位精确触球帧。",
+      "evidence_images": [
+        "c248-fh2-contact-sheet.jpg"
+      ],
+      "contact_time_label_produced": false,
+      "ball_speed_estimate_produced": false
+    }
+  ]
+}

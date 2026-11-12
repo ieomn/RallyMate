@@ -1,0 +1,229 @@
+{
+  "version": "reference-comparison-pairs-v1",
+  "selection": {
+    "method": "all source-reviewed forehand candidates from two nonduplicate test sources; all Djokovic backhands retained as matching or rejected pair",
+    "prior_results_seen_by_developer": true,
+    "source_reviewer_saw_scores": false,
+    "comparison_unit": "action episode, not athlete or independent repeat",
+    "capture_conditions": "reference为1280×720、约23.976帧/秒的室外日间机位；c235为960×544、30帧/秒的夜间斜向机位；c248为1280×720、30帧/秒的室内正面机位。接触瞬间、球速和运动员整体水平不由本次源帧复核赋值。",
+    "execution_styles": "四个保留正手窗均可见准备、前挥和随挥。FULL-TEST三窗属于正手侧短挥拍/前推式收势；reference正手呈更明显的侧转引拍、宽弧前挥与跨体收拍。可按底线正手大类对照可见动作，执行方式并不完全相同。三个双反窗独立保留，避免混入正手样本。",
+    "excluded_duplicate_source": "fbf52 repeats c235 actions/times; not counted as independent video",
+    "visual_review_file": "source-review.json",
+    "visual_review_sha256": "fc6bd24e3e885705a6f842aeb9a0e66fd057d9800127d27971600732937e6c2d"
+  },
+  "source_attribution": {
+    "title": "2012 US Open Djokovic point",
+    "author": "JC (demiace)",
+    "license": "CC BY-SA 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:2012_US_Open_Djokovic_point.webm",
+    "transformation": "H.264 transcode; original timing and crop preserved"
+  },
+  "pairs": [
+    {
+      "id": "fh-night",
+      "label": "夜间测试正手 · 76.47–77.27 秒",
+      "candidate": {
+        "sample_id": "c235227fffcd3290b60572d0c3f9cc85",
+        "episode_id": "e357a896340b94097f15"
+      },
+      "reference": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "237ddacc935508b7beb4"
+      },
+      "expected_status": "scored",
+      "expected_reason_codes": [],
+      "visual_review": {
+        "candidate_review_id": "c235-fh1",
+        "reference_review_id": "reference-fh",
+        "observation": "来球在目标前方落低后升向持拍侧；右手持拍从身体侧方前挥并抬至身前另一侧。动作以短引拍和身前挥出为主，肩躯干转动小于reference正手的可见转体，双脚大致保持原位。 报告窗内有挥拍前持拍准备、前挥和收拍；更早的迎球准备从约76.07秒已有。",
+        "images": [
+          {
+            "path": "../source-review/c235-fh1-contact-sheet.jpg",
+            "label": "c235-fh1 source frames"
+          },
+          {
+            "path": "../source-review/reference-fh-contact-sheet.jpg",
+            "label": "reference-fh source frames"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fh-indoor-a",
+      "label": "室内测试正手 A · 60.23–60.83 秒",
+      "candidate": {
+        "sample_id": "c2485607c23646e706d9c4aae89e668e",
+        "episode_id": "87975245392483dec72e"
+      },
+      "reference": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "237ddacc935508b7beb4"
+      },
+      "expected_status": "scored",
+      "expected_reason_codes": [],
+      "visual_review": {
+        "candidate_review_id": "c248-fh1",
+        "reference_review_id": "reference-fh",
+        "observation": "右手在侧方较低位置持拍迎球，然后向前上方短距离挥出，收拍停在身体前方；躯干多保持朝向机位，左手主要在身前。 报告窗包含三阶段；初始持拍准备早于60.23秒，报告末端后仍有放下球拍和重新准备。",
+        "images": [
+          {
+            "path": "../source-review/c248-fh1-contact-sheet.jpg",
+            "label": "c248-fh1 source frames"
+          },
+          {
+            "path": "../source-review/reference-fh-contact-sheet.jpg",
+            "label": "reference-fh source frames"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fh-indoor-b",
+      "label": "室内测试正手 B · 67.33–68.17 秒",
+      "candidate": {
+        "sample_id": "c2485607c23646e706d9c4aae89e668e",
+        "episode_id": "976d272d0867c17da958"
+      },
+      "reference": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "237ddacc935508b7beb4"
+      },
+      "expected_status": "scored",
+      "expected_reason_codes": [],
+      "visual_review": {
+        "candidate_review_id": "c248-fh2",
+        "reference_review_id": "reference-fh",
+        "observation": "右手在身体侧方持拍等待来球，然后完成身前的短前挥与抬拍收势；双脚调整幅度小，肩躯干转动不呈reference正手那样的大幅侧转。 报告窗包含三阶段；最早准备早于67.33秒，68.23秒以后继续收回球拍。",
+        "images": [
+          {
+            "path": "../source-review/c248-fh2-contact-sheet.jpg",
+            "label": "c248-fh2 source frames"
+          },
+          {
+            "path": "../source-review/reference-fh-contact-sheet.jpg",
+            "label": "reference-fh source frames"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bh-same-source",
+      "label": "德约双反 · 第三次对照第二次",
+      "candidate": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "9e45134e499e77bdfa68"
+      },
+      "reference": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "7edf861a35cc5489ec7e"
+      },
+      "expected_status": "scored",
+      "expected_reason_codes": [],
+      "visual_review": {
+        "candidate_review_id": "reference-bh3",
+        "reference_review_id": "reference-bh2",
+        "observation": "两手共同带拍完成反手侧前挥，拍头随后升高并跨体收拍，后脚随转体调整。 报告窗覆盖准备、前挥与随挥；更早准备及约18.39秒后的恢复准备在报告窗外。",
+        "images": [
+          {
+            "path": "../source-review/reference-bh3-contact-sheet.jpg",
+            "label": "reference-bh3 source frames"
+          },
+          {
+            "path": "../source-review/reference-bh2-contact-sheet.jpg",
+            "label": "reference-bh2 source frames"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bh-hand-mismatch",
+      "label": "德约第一双反 · 测量手不同，拒绝配分",
+      "candidate": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "289d186838928e2506c2"
+      },
+      "reference": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "7edf861a35cc5489ec7e"
+      },
+      "expected_status": "unavailable",
+      "expected_reason_codes": [
+        "measurement_hand_mismatch"
+      ],
+      "visual_review": {
+        "candidate_review_id": "reference-bh1",
+        "reference_review_id": "reference-bh2",
+        "observation": "两手共同持拍在反手侧准备，向前上方挥出后在身体另一侧高位收拍。 报告窗覆盖准备、前挥和早期随挥；约5.01至5.17秒的后段收拍在报告窗外。",
+        "images": [
+          {
+            "path": "../source-review/reference-bh1-contact-sheet.jpg",
+            "label": "reference-bh1 source frames"
+          },
+          {
+            "path": "../source-review/reference-bh2-contact-sheet.jpg",
+            "label": "reference-bh2 source frames"
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-control",
+      "label": "德约正手自身对照 · 数学一致性检查",
+      "candidate": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "237ddacc935508b7beb4"
+      },
+      "reference": {
+        "sample_id": "djokovic-usopen-2012",
+        "episode_id": "237ddacc935508b7beb4"
+      },
+      "expected_status": "scored",
+      "expected_reason_codes": [
+        "self_reference"
+      ],
+      "visual_review": {
+        "candidate_review_id": "reference-fh",
+        "reference_review_id": "reference-fh",
+        "observation": "可见转体和侧后方引拍，左臂在身前伸展；前挥后球拍跨过身体收至另一侧肩附近，伴随脚步与躯干转动。 最早的侧转与引拍从约6.80秒已开始；报告窗包含准备姿态、前挥与随挥，回到下一拍准备姿态在约8.09秒以后。",
+        "images": [
+          {
+            "path": "../source-review/reference-fh-contact-sheet.jpg",
+            "label": "reference-fh source frames"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_candidates": [
+    {
+      "sample_id": "c235227fffcd3290b60572d0c3f9cc85",
+      "episode_id": "a7bc1a7a1b98faddbf32",
+      "label": "c235 · 124.53–125.47 秒",
+      "reason": "124.50至124.97秒主要为站立、球拍在体侧下垂；125.00至125.23秒把球拍抬回身前，随后维持准备姿态。逐帧检查未见完整正手的独立引拍、前挥和随挥序列。",
+      "source_window_ms": {
+        "start_ms": 124533.333,
+        "peak_ms": 125000.0,
+        "end_ms": 125466.667
+      },
+      "review_id": "c235-fh2",
+      "images": [
+        {
+          "path": "../source-review/c235-fh2-contact-sheet.jpg",
+          "label": "被排除候选的原帧"
+        },
+        {
+          "path": "../source-review/c235-fh2-wide-context.jpg",
+          "label": "被排除候选的原帧"
+        },
+        {
+          "path": "../source-review/c235-fh2-dense.jpg",
+          "label": "被排除候选的原帧"
+        },
+        {
+          "path": "../source-review/c235-fh2-full-frame.jpg",
+          "label": "被排除候选的原帧"
+        }
+      ]
+    }
+  ]
+}

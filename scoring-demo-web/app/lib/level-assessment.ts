@@ -1,4 +1,6 @@
-import { DOMAINS, GATES, moduleWeightsFor, type Level, type LevelAssessment } from "../scoring/level-grading";
+import { DOMAINS, GATES, type LevelAssessment } from "../scoring/level-grading";
+import currentPolicy from "../../../src/rallymate_scoring/data/level_grading_v1.json";
+import legacyPolicy from "../../../src/rallymate_scoring/data/level_grading_legacy_v1.json";
 
 const object = (value: unknown): Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const bounded = (v: unknown, max = 1): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max;
@@ -8,21 +10,38 @@ const close = (a: number, b: number) => Math.abs(a - b) <= 0.0002;
 /** Validate the contract and recompute totals before displaying API values. */
 export function levelAssessmentOf(value: unknown): LevelAssessment | null {
   const row = object(value);
-  if (row.version !== "level-assessment-v1.0.0" || row.policy_version !== "level-grading-policy-v1.0.0" ||
+  // Historical exports keep their original grades and policy. New scoring uses
+  // currentPolicy only; this read path never upgrades or rewrites saved scores.
+  const policy = [currentPolicy, legacyPolicy].find(policy => policy.version === row.policy_version);
+  if (row.version !== "level-assessment-v1.0.0" || !policy ||
       !Number.isInteger(row.target_level) || !bounded(row.target_level, 5) || row.target_level < 1 ||
       !["one_handed", "two_handed"].includes(String(row.backhand_style))) return null;
-  const domains = object(row.domains), major = moduleWeightsFor(row.target_level as Level);
+  const domains = object(row.domains);
+  const level = policy.levels[String(row.target_level) as keyof typeof policy.levels];
+  const major = level.module_weights, configured = level.technique_weights;
+  if (row.weight_source !== policy.internal_weight_source && row.weight_source !== "caller_override"
+      || row.major_weight_source !== policy.major_weight_source
+      || Object.keys(domains).length !== DOMAINS.length) return null;
   let total = 0, mass = 0, coverage = 0;
   for (const domain of DOMAINS) {
     const d = object(domains[domain]);
     if (d.score !== null && !bounded(d.score, 100) || d.family_score !== null && !bounded(d.family_score, 100) ||
         d.module_weight !== major[domain] || !bounded(d.coverage) || !strings(d.measured_techniques) || !strings(d.missing_techniques) || !strings(d.excluded_techniques)) return null;
     if (!["measured_techniques", "observed_family", "unobserved"].includes(String(d.score_source))) return null;
+    if (d.active_weights === null || typeof d.active_weights !== "object" || Array.isArray(d.active_weights)
+      || d.observed_weights === null || typeof d.observed_weights !== "object" || Array.isArray(d.observed_weights)) return null;
     const active = object(d.active_weights), observed = object(d.observed_weights);
     const activeKeys = Object.keys(active), observedKeys = Object.keys(observed);
     const forbidden = row.backhand_style === "two_handed" ? ["GS03", "RS03"] : ["GS02", "RS02"];
-    if (!activeKeys.length || activeKeys.some(code => !new RegExp(`^${domain}\\d{2}$`).test(code) || forbidden.includes(code) || !bounded(active[code]) || active[code] === 0) ||
-        !close(Object.values(active).reduce<number>((sum, w) => sum + Number(w), 0), 1) ||
+    const known = configured[domain];
+    if (d.excluded_techniques.some(code => !Object.hasOwn(known, code) || !forbidden.includes(code))) return null;
+    const expectedActive = Object.entries(known).filter(([code, weight]) => !forbidden.includes(code) && weight > 0);
+    const expectedMass = expectedActive.reduce((sum, [, weight]) => sum + weight, 0);
+    if (activeKeys.some(code => !Object.hasOwn(known, code) || forbidden.includes(code) || !bounded(active[code]) || active[code] === 0) ||
+        !close(Object.values(active).reduce<number>((sum, w) => sum + Number(w), 0), activeKeys.length ? 1 : 0) ||
+        row.weight_source !== "caller_override" && (activeKeys.length !== expectedActive.length
+          || expectedActive.some(([code, weight]) => !Object.hasOwn(active, code) || !close(Number(active[code]), weight / expectedMass))) ||
+        row.weight_source === "caller_override" && !activeKeys.length && expectedActive.length > 0 ||
         observedKeys.some(code => !(code in active) || !bounded(observed[code]) || observed[code] === 0) ||
         d.measured_techniques.length !== observedKeys.length || d.measured_techniques.some(code => !(code in observed))) return null;
     const observedMass = observedKeys.reduce((sum, code) => sum + Number(active[code]), 0);

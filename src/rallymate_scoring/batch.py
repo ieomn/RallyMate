@@ -13,7 +13,7 @@ from rallymate_scoring.quality_policy import (
 from rallymate_scoring.runtime_profile_binding import (
     RuntimeProfileBoundProductionCalibration,
 )
-from rallymate_scoring.scoring import score_indicator
+from rallymate_scoring.scoring import bind_primary_player_score_trace, score_indicator
 from rallymate_scoring.scoring_context import (
     TARGET_DIRECTION_INDICATOR_ID,
     TARGET_DIRECTION_MISSING_FLAG,
@@ -251,6 +251,9 @@ def score_indicator_records(
             for name in ("video_path", "video_sha256", "frames_path", "frames_sha256"):
                 if provenance.get(name) is not None:
                     evidence[name] = provenance[name]
+        if any("source_window" in item or "measurement_provenance" in item for item in scoring_features):
+            identity_event = event_by_id.get(record["event_id"], {}) if event_by_id is not None else record
+            evidence = bind_primary_player_score_trace(evidence, identity_event)
         evidence_items = [evidence]
         if scoring_context is not None:
             evidence_items.append(

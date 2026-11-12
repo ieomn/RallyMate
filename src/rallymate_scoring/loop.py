@@ -46,7 +46,7 @@ from rallymate_scoring.scoring_context import (
     load_scoring_reference_context,
     resolve_target_direction_context,
 )
-from rallymate_scoring.scoring import score_indicator
+from rallymate_scoring.scoring import bind_primary_player_score_trace, score_indicator
 from rallymate_scoring.artifact_evidence import EvidencePoolWriter, iter_artifact_records
 from rallymate_scoring.cpu_parallel import ScoringCpuPool, scoring_cpu_workers
 from rallymate_scoring.source_assessment import write_source_aligned_assessment
@@ -525,6 +525,8 @@ def run_minimum_scoring_loop(
                     "source_frames": source_frames,
                 }
             ]
+            if any("source_window" in item or "measurement_provenance" in item for item in scoring_features):
+                score_evidence[0] = bind_primary_player_score_trace(score_evidence[0], event)
             if scoring_context is not None:
                 score_evidence.append(
                     bind_scoring_context_evidence_to_video(
