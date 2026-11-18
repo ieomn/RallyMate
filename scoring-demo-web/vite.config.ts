@@ -1,9 +1,10 @@
 import vinext from "vinext";
 import { existsSync, readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./sites-vite-plugin";
+import { analysisRequestRejection, internalAnalysisOrigin } from "./worker/gateway";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -42,6 +43,7 @@ export default defineConfig(async ({ mode }) => {
   const workerDevEnv = existsSync(".dev.vars") ? parseEnv(readFileSync(".dev.vars", "utf8")) : {};
   const loadedEnv = { ...workerDevEnv, ...loadEnv(mode, process.cwd(), "") };
   const localApiProxy = (
+    internalAnalysisOrigin(process.env.RALLYMATE_INTERNAL_API_ORIGIN ?? loadedEnv.RALLYMATE_INTERNAL_API_ORIGIN) ||
     process.env.RALLYMATE_API_PROXY ||
     process.env.RALLYMATE_API_ORIGIN ||
     loadedEnv.RALLYMATE_API_PROXY ||
@@ -49,6 +51,35 @@ export default defineConfig(async ({ mode }) => {
     "http://127.0.0.1:8000"
   ).replace(/\/+$/, "");
   const localApiKey = process.env.RALLYMATE_API_KEY || loadedEnv.RALLYMATE_API_KEY;
+  const localTunnel = process.env.RALLYMATE_LOCAL_TUNNEL || loadedEnv.RALLYMATE_LOCAL_TUNNEL;
+  const accountProxy: ProxyOptions = {
+    target: localApiProxy,
+    changeOrigin: true,
+    async bypass(request, response) {
+      const headers = new Headers();
+      for (const [name, value] of Object.entries(request.headers)) {
+        if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(", ") : value);
+      }
+      const origin = `http://${request.headers.host || "localhost"}`;
+      const url = new URL(request.url || "/", origin);
+      if (url.origin !== origin) return false;
+      const rejection = analysisRequestRejection(request.method || "GET", url, headers, { RALLYMATE_LOCAL_TUNNEL: localTunnel });
+      if (!rejection) return;
+      if (!response) return false;
+      response.writeHead(rejection.status, Object.fromEntries(rejection.headers));
+      response.end(await rejection.text());
+      return request.url || "/";
+    },
+    configure(proxy) {
+      proxy.on("proxyReq", (outgoing, request) => {
+        if (request.url?.startsWith("/health/") && localApiKey) outgoing.setHeader("authorization", `Bearer ${localApiKey}`);
+      });
+      proxy.on("proxyRes", response => {
+        response.headers["cache-control"] = "private, no-store";
+        response.headers["x-content-type-options"] = "nosniff";
+      });
+    },
+  };
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -69,8 +100,7 @@ export default defineConfig(async ({ mode }) => {
       // Local development keeps the browser same-origin while the Python API
       // remains independently deployable on AutoDL or behind a domain.
       proxy: {
-        "/v1": { target: localApiProxy, changeOrigin: true, headers: localApiKey ? { Authorization: `Bearer ${localApiKey}` } : undefined },
-        "/health": { target: localApiProxy, changeOrigin: true, headers: localApiKey ? { Authorization: `Bearer ${localApiKey}` } : undefined },
+        "^/(?:v1(?:[/?]|$)|health(?:[/?]|$)|api/(?:auth(?:[/?]|$)|admin(?:[/?]|$)|records(?:[/?]|$)))": accountProxy,
       },
     },
     plugins: [

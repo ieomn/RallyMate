@@ -36,7 +36,7 @@ function mount(t, jobId = id) {
   const slots = [], watches = [], requests = [], storage = new Map(), upload = deferred();
   let index = 0, effects = [], dirty = false, tree;
   const globals = {
-    window: Object.assign(new EventTarget(), { location: { pathname: "/", search: jobId ? `?view=analysis&job=${jobId}` : "?view=analysis", hash: "" }, scrollTo() {}, setInterval: () => 1, clearInterval() {}, history: { pushState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; }, replaceState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; } } }),
+    window: Object.assign(new EventTarget(), { location: { origin: "https://local.test", pathname: "/", search: jobId ? `?view=analysis&job=${jobId}` : "?view=analysis", hash: "" }, scrollTo() {}, setInterval: () => 1, clearInterval() {}, history: { pushState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; }, replaceState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; } } }),
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
   };
   const restore = Object.entries(globals).map(([key, value]) => { const previous = Object.getOwnPropertyDescriptor(globalThis, key); Object.defineProperty(globalThis, key, { configurable: true, writable: true, value }); return () => { if (previous) Object.defineProperty(globalThis, key, previous); else delete globalThis[key]; }; });
@@ -74,7 +74,7 @@ test("queued cancellation deduplicates clicks and stops observation only after s
   assert.equal(app.button("取消分析"), undefined);
   assert.equal(app.find(node => node.props.evidence?.trajectory === preview).props.evidence.trajectory, preview);
   assert.equal(app.find(node => node.props.replay && "result" in node.props), undefined, "cancelled preview must not masquerade as a completed empty report");
-  assert.equal(app.storage.get("rallymate.activeJob"), id);
+  assert.equal(app.storage.get("rallymate.activeJob:account:anonymous"), id);
 });
 
 test("running acknowledgement stays pending through stale polls until the worker confirms cancelled", async t => {
@@ -112,7 +112,7 @@ test("a completed report survives a late running cancellation response", async t
   const report = app.find(node => node.props.replay && "result" in node.props);
   assert.equal(report.props.result, result); assert.equal(report.props.status, "succeeded"); assert.equal(report.props.pending, false);
   assert.equal(app.button("取消分析"), undefined); assert.doesNotMatch(app.text(), /本次分析已取消/);
-  assert.equal(JSON.parse(app.storage.get("rallymate.recentReports"))[0].id, id);
+  assert.equal(JSON.parse(app.storage.get("rallymate.recentReports:account:anonymous"))[0].id, id);
 });
 
 test("poll confirmation supersedes an earlier lost cancellation acknowledgement", async t => {

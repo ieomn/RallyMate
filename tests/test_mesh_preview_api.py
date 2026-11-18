@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from fastapi.testclient import TestClient
+from tests.service_auth import login_test_user
 
 from rallymate_service import api
 from rallymate_service.config import ServiceSettings
@@ -59,6 +60,7 @@ class MeshPreviewApiTests(unittest.TestCase):
             with TestClient(api.create_app(settings, db)) as client:
                 route = f"/v1/jobs/{JOB}/artifacts/sam3d-mesh.mp4"
                 self.assertEqual(client.get(route).status_code, 401)
+                login_test_user(client, job_ids=(JOB,))
                 response = client.get(route, headers={**headers, "Range": "bytes=2-8"})
                 self.assertEqual(response.status_code, 206)
                 self.assertEqual(response.content, BODY[2:9])
@@ -82,6 +84,7 @@ class MeshPreviewApiTests(unittest.TestCase):
             self.assertIsNone(mesh_preview_descriptor(db.get_job(JOB)))
             with TestClient(api.create_app(settings, db)) as client:
                 headers = {"Authorization": f"Bearer {settings.api_key}"}
+                login_test_user(client, job_ids=(JOB,))
                 public = client.get(f"/v1/jobs/{JOB}", headers=headers).json()
                 self.assertIsNone(public["sam3d_mesh"])
                 self.assertFalse(MESH_ARTIFACTS.intersection(public["artifact_urls"]))

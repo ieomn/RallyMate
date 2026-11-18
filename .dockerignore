@@ -48,3 +48,5 @@ training
 *.key
 *.p12
 *.pfx
+**/secrets
+**/*_token

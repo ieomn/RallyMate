@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -37,7 +38,7 @@ function streamingOrigin(t, first = "{") {
   let controller, signal, cancelReason;
   t.mock.method(globalThis, "fetch", async (_url, init) => {
     signal = init.signal;
-    assert.equal(init.headers.get("authorization"), "Bearer test-internal");
+    assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
     return new Response(new ReadableStream({
       start(value) {
         controller = value;
@@ -58,7 +59,7 @@ test("report keeps a 30s response-header deadline and releases all timers on fai
     signal = init.signal;
     return new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true }));
   });
-  const pending = proxyAnalysis(new Request(url), env);
+  const pending = proxyAnalysis(userRequest(url), env);
   assert.deepEqual(time.deadlines(), [30000, 120000]);
   time.advance(30000);
   assert.equal((await pending).status, 502);
@@ -68,7 +69,7 @@ test("report keeps a 30s response-header deadline and releases all timers on fai
 
 test("report body can make progress beyond 30s and preserves every byte", async t => {
   const time = clock(t), origin = streamingOrigin(t, '{"value":');
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "private, no-store");
   assert.equal(response.headers.get("x-private"), null);
@@ -88,7 +89,7 @@ test("report body can make progress beyond 30s and preserves every byte", async 
 test("compact pose uses progress-sensitive forwarding beyond the ordinary 30s GET deadline", async t => {
   const time = clock(t), origin = streamingOrigin(t, '{"frames":[');
   const poseUrl = "http://localhost/v1/jobs/report-stream-123/pose-preview?start_ms=0&duration_ms=10000&sample_limit=600&pose_transport=compact-v1";
-  const response = await proxyAnalysis(new Request(poseUrl), env);
+  const response = await proxyAnalysis(userRequest(poseUrl), env);
   const reader = response.body.getReader(), parts = [(await reader.read()).value];
   for (const part of ["0", ",1", ",2", "]}"]) {
     const reading = reader.read(); await flush(); time.advance(15000); origin.push(part); parts.push((await reading).value);
@@ -100,7 +101,7 @@ test("compact pose uses progress-sensitive forwarding beyond the ordinary 30s GE
 
 test("downstream backpressure is not charged as upstream no-progress time", async t => {
   const time = clock(t), origin = streamingOrigin(t, "prefix");
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   await flush(); // one bounded prefetched chunk, then no downstream demand
   assert.deepEqual(time.deadlines(), [120000]);
   time.advance(45000);
@@ -112,7 +113,7 @@ test("downstream backpressure is not charged as upstream no-progress time", asyn
 
 test("30s stalled outstanding upstream read rejects the report body", async t => {
   const time = clock(t), origin = streamingOrigin(t, "partial");
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   const reader = response.body.getReader(); await reader.read();
   const reading = reader.read(); await flush();
   const rejection = assert.rejects(reading, error => error.name === "TimeoutError");
@@ -124,7 +125,7 @@ test("30s stalled outstanding upstream read rejects the report body", async t =>
 
 test("120s total limit still applies when downstream has stopped consuming", async t => {
   const time = clock(t), origin = streamingOrigin(t, "queued");
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   await flush();
   time.advance(119999); assert.equal(origin.signal().aborted, false);
   time.advance(1);
@@ -134,7 +135,7 @@ test("120s total limit still applies when downstream has stopped consuming", asy
 
 test("report caller abort remains connected after headers and body read", async t => {
   const time = clock(t), origin = streamingOrigin(t, "first"), caller = new AbortController();
-  const response = await proxyAnalysis(new Request(url, { signal: caller.signal }), env);
+  const response = await proxyAnalysis(userRequest(url, { signal: caller.signal }), env);
   const reader = response.body.getReader(); await reader.read();
   const reading = reader.read(); await flush();
   const reason = new DOMException("User changed report", "AbortError");
@@ -146,7 +147,7 @@ test("report caller abort remains connected after headers and body read", async 
 
 test("downstream cancellation aborts the upstream and removes report timers", async t => {
   const time = clock(t), origin = streamingOrigin(t, "first");
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   await response.body.cancel("viewer left");
   assert.equal(origin.signal().aborted, true);
   assert.equal(time.count(), 0);
@@ -156,7 +157,7 @@ test("empty report and upstream redirect do not leak timers", async t => {
   const time = clock(t);
   for (const status of [204, 302]) {
     const fetchMock = t.mock.method(globalThis, "fetch", async () => new Response(null, { status }));
-    const response = await proxyAnalysis(new Request(url), env);
+    const response = await proxyAnalysis(userRequest(url), env);
     assert.equal(response.status, status === 302 ? 502 : 204);
     assert.equal(time.count(), 0);
     fetchMock.mock.restore();
@@ -177,7 +178,7 @@ test("exact identity Content-Length closes before a late upstream socket error",
       cancel() { cancelled = true; },
     }, { highWaterMark: 0 }), { headers: { "Content-Type": "application/json", "Content-Length": String(payload.byteLength) } });
   });
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   assert.equal(response.headers.get("content-length"), String(payload.byteLength));
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()), payload);
   assert.equal(reads, 1);
@@ -193,7 +194,7 @@ test("exact length spans byte chunks and does not wait for a pending cancel prom
     pull(controller) { controller.enqueue(chunks[index++]); },
     cancel() { return new Promise(() => {}); },
   }, { highWaterMark: 0 }), { headers: { "Content-Length": String(expected.byteLength), "Content-Encoding": "identity" } }));
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   assert.equal(await response.text(), expected.toString());
   assert.equal(index, 2);
   assert.equal(time.count(), 0);
@@ -204,7 +205,7 @@ for (const [name, declared, actual] of [["short", 8, "short"], ["overrun", 3, "l
     const time = clock(t), rows = [];
     t.mock.method(console, "warn", line => rows.push(JSON.parse(line)));
     t.mock.method(globalThis, "fetch", async () => new Response(actual, { headers: { "Content-Length": String(declared) } }));
-    const response = await proxyAnalysis(new Request(url, { headers: { "x-request-id": "web-unit123-abc123", "authorization": "secret-not-to-log" } }), env);
+    const response = await proxyAnalysis(userRequest(url, { headers: { "x-request-id": "web-unit123-abc123", "authorization": "secret-not-to-log" } }), env);
     await assert.rejects(response.text(), error => error.name === "ReportBodyLengthError");
     assert.equal(rows.length, 1);
     assert.deepEqual(Object.keys(rows[0]).sort(), ["event", "request_id", "elapsed_ms", "bytes", "expected_bytes", "error_category"].sort());
@@ -236,7 +237,7 @@ for (const [name, headers] of [
         else controller.close();
       }, cancel() { cancelled = true; },
     }, { highWaterMark: 0 }), { headers }));
-    const response = await proxyAnalysis(new Request(url, { headers: { "Accept-Encoding": "identity" } }), env);
+    const response = await proxyAnalysis(userRequest(url, { headers: { "Accept-Encoding": "identity" } }), env);
     assert.equal(response.headers.get("content-length"), null);
     assert.equal(response.headers.get("content-encoding"), null);
     assert.equal(response.headers.get("transfer-encoding"), null);
@@ -253,7 +254,7 @@ test("unknown-length socket error remains a failure and logs no arbitrary error 
   t.mock.method(globalThis, "fetch", async () => new Response(new ReadableStream({
     pull() { throw new TypeError("private credentials or URL", { cause: { code: "UND_ERR_SOCKET" } }); },
   }, { highWaterMark: 0 })));
-  const response = await proxyAnalysis(new Request(url, { headers: { "x-request-id": "untrusted-token" } }), env);
+  const response = await proxyAnalysis(userRequest(url, { headers: { "x-request-id": "untrusted-token" } }), env);
   await assert.rejects(response.text(), TypeError);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].error_category, "upstream_socket");
@@ -269,7 +270,7 @@ test("zero length closes without reading body or leaving request timers", async 
   t.mock.method(globalThis, "fetch", async () => new Response(new ReadableStream({
     pull() { read = true; throw new Error("must not read past HTTP body boundary"); },
   }, { highWaterMark: 0 }), { headers: { "Content-Length": "0" } }));
-  const response = await proxyAnalysis(new Request(url), env);
+  const response = await proxyAnalysis(userRequest(url), env);
   assert.equal(await response.text(), "");
   assert.equal(read, false);
   assert.equal(time.count(), 0);

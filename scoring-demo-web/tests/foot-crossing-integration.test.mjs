@@ -40,7 +40,7 @@ test("candidate discovery is limited to a completed matching online report", () 
 // recorder. Fixtures below are synthetic imports, not online service evidence.
 async function importActual(data) {
   let evidence, importState, monitored = 0, invalidated = 0;
-  const scope = { busy: false, analysisRunRef: { current: 0 }, EMPTY_EVIDENCE: { mode: "demo" },
+  const scope = { ownerUserId: "import-test-user", captureAccountIdentity: () => ({ userId: "import-test-user", generation: 0 }), isAccountIdentityCurrent: () => true, busy: false, analysisRunRef: { current: 0 }, EMPTY_EVIDENCE: { mode: "demo" },
     navigate() {}, invalidateAnalysisRun() { invalidated++; scope.analysisRunRef.current++; },
     readReportJson: async () => data, setVideoFile() {}, setUploadError() {}, setImportedSummary() {},
     setEvidence(value) { evidence = value; }, setImportState(value) { importState = value; },

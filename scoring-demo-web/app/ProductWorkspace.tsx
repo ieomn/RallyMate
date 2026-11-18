@@ -6,6 +6,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { recentReports, type RecentReport } from "./lib/training-report";
 import { AnimatedDisclosure } from "./AnimatedDisclosure";
 import { courtArtworkPath, courtArtworkPoint, COURT_LENGTH, DOUBLES_WIDTH, NET_DISTANCE, SERVICE_DISTANCE, SINGLES_WIDTH } from "./lib/court-artwork";
+import { useAuth } from "./auth/AuthProvider";
 
 export type WorkspaceView = "overview" | "sessions" | "analysis" | "guide";
 type IconName = "home" | "sessions" | "analysis" | "guide" | "plus" | "arrow-left" | "arrow-right" | "arrow-up-right" | "search" | "chevron-right" | "chevron-down" | "clock" | "play" | "check" | "camera" | "frame" | "upload" | "movement" | "close" | "menu" | "tennis";
@@ -62,6 +63,13 @@ function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: R
   return <main ref={contentRef} id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>;
 }
 
+function WorkspaceAccount() {
+  const { user, logout } = useAuth();
+  const [error, setError] = useState("");
+  const leave = async () => { setError(""); try { await logout(); } catch (cause) { setError(cause instanceof Error ? cause.message : "退出未完成，请重试。"); } };
+  return user ? <div className="pw-account"><span>{user.username}</span>{user.role === "ADMIN" && <a href="/admin">账户管理</a>}<button type="button" onClick={() => void leave()}>退出</button>{error && <span role="alert">{error}</span>}</div> : null;
+}
+
 export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, busy = false }: {
   view: WorkspaceView; onNavigate: (view: WorkspaceView) => void; onNewAnalysis: () => void;
   children: ReactNode; currentName?: string; busy?: boolean;
@@ -74,7 +82,7 @@ export function ProductShell({ view, onNavigate, onNewAnalysis, children, curren
       <nav className="pw-desktop-nav" aria-label="主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} /><span>{item.label}</span>{item.view === "analysis" && busy && <i className="pw-busy-dot" aria-label="分析进行中" />}</button>)}</nav>
     </aside>
     <div className="pw-workspace">
-      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
+      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><WorkspaceAccount /><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
       <WorkspaceSurface view={view}>{children}</WorkspaceSurface>
     </div>
     <nav className="pw-mobile-nav" aria-label="移动主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} size={21} /><span>{item.label}</span></button>)}</nav>
@@ -136,23 +144,23 @@ function ReportPreview({ id }: { id: string }) {
   </div>;
 }
 
-function ReportCard({ report, onOpen }: { report: RecentReport; onOpen: (id: string) => void }) {
-  return <button type="button" className="pw-report-card" onClick={() => onOpen(report.id)} aria-label={`打开训练报告：${report.name || "未命名训练"}`}><ReportPreview key={report.id} id={report.id} /><div className="pw-report-card-body"><h3 title={report.name}>{report.name || "未命名训练"}</h3><p><ProductIcon name="clock" size={13} /><span>最近查看 · {dateText(report.viewedAt)}</span></p></div></button>;
+function ReportCard({ report, onOpen, dateLabel = "最近查看" }: { report: RecentReport; onOpen: (id: string) => void; dateLabel?: string }) {
+  return <button type="button" className="pw-report-card" onClick={() => onOpen(report.id)} aria-label={`打开训练报告：${report.name || "未命名训练"}`}><ReportPreview key={report.id} id={report.id} /><div className="pw-report-card-body"><h3 title={report.name}>{report.name || "未命名训练"}</h3><p><ProductIcon name="clock" size={13} /><span>{dateLabel} · {dateText(report.viewedAt)}</span></p></div></button>;
 }
 
 function EmptyTraining({ onNewAnalysis, busy = false }: { onNewAnalysis: () => void; busy?: boolean }) {
   return <div className="pw-empty-training"><span className="pw-empty-icon"><ProductIcon name="sessions" size={30} /></span><div><h3>第一份训练记录，从这里开始</h3><p>上传一段训练视频，把值得回看的动作留在这里。</p></div><button type="button" className="pw-button pw-button-secondary" onClick={onNewAnalysis} disabled={busy}>{busy ? "等待当前分析完成" : "上传训练视频"}<ProductIcon name="arrow-right" size={17} /></button></div>;
 }
 
-export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate, currentName, busy = false }: {
+export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate, currentName, busy = false, dateLabel = "最近查看" }: {
   reports: RecentReport[]; onOpenReport: (id: string) => void; onNewAnalysis: () => void;
-  onNavigate: (view: WorkspaceView) => void; currentName?: string; busy?: boolean;
+  onNavigate: (view: WorkspaceView) => void; currentName?: string; busy?: boolean; dateLabel?: string;
 }) {
   const recent = useMemo(() => orderedReports(reports), [reports]);
   return <div className="pw-home">
     <section className="pw-home-hero"><div className="pw-hero-copy"><h1>把每一拍，<br />练得更明白<span>。</span></h1><p className="pw-hero-description">从一段训练视频开始。回看脚步与挥拍，<br className="pw-desktop-break" />发现值得和教练一起复盘的细节。</p><div className="pw-hero-actions"><button type="button" className="pw-button pw-button-accent pw-button-large" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={20} />{busy ? "视频正在分析中" : "开始新一次分析"}<ProductIcon name="arrow-up-right" size={18} /></button><button type="button" className="pw-text-button" onClick={() => onNavigate("guide")}>怎样拍得更清楚<ProductIcon name="arrow-right" size={17} /></button></div></div><div className="pw-hero-visual"><CourtArtwork /></div></section>
     {busy && <button type="button" className="pw-running-banner" onClick={() => onNavigate("analysis")}><span className="pw-busy-dot" /><span><strong>你的训练视频正在分析</strong><small>{currentName || "可以进入视频分析查看当前进度。"}</small></span><span className="pw-running-link">查看进度<ProductIcon name="arrow-right" size={17} /></span></button>}
-    <section className="pw-recent-section" aria-labelledby="pw-recent-heading"><div className="pw-section-heading"><div><h2 id="pw-recent-heading">最近的训练<span className="pw-count">{recent.length}</span></h2></div><button type="button" className="pw-text-button" onClick={() => onNavigate("sessions")}>全部记录<ProductIcon name="arrow-right" size={17} /></button></div>{recent.length ? <div className="pw-report-grid">{recent.slice(0, 3).map(report => <ReportCard key={report.id} report={report} onOpen={onOpenReport} />)}</div> : <EmptyTraining onNewAnalysis={onNewAnalysis} busy={busy} />}</section>
+    <section className="pw-recent-section" aria-labelledby="pw-recent-heading"><div className="pw-section-heading"><div><h2 id="pw-recent-heading">最近的训练<span className="pw-count">{recent.length}</span></h2></div><button type="button" className="pw-text-button" onClick={() => onNavigate("sessions")}>全部记录<ProductIcon name="arrow-right" size={17} /></button></div>{recent.length ? <div className="pw-report-grid">{recent.slice(0, 3).map(report => <ReportCard key={report.id} report={report} onOpen={onOpenReport} dateLabel={dateLabel} />)}</div> : <EmptyTraining onNewAnalysis={onNewAnalysis} busy={busy} />}</section>
     <section className="pw-home-method" aria-labelledby="pw-method-heading"><div className="pw-method-intro"><h2 id="pw-method-heading">让复盘成为<br />训练的一部分。</h2><button type="button" className="pw-text-button" onClick={() => onNavigate("guide")}>从拍摄开始<ProductIcon name="arrow-right" size={17} /></button></div><div className="pw-method-steps">{[{ n: "01", icon: "camera" as const, title: "留下完整动作", description: "固定机位，让全身和双脚始终留在画面里。" }, { n: "02", icon: "play" as const, title: "回到关键片段", description: "结合原始画面，查看可观察的脚步和挥拍过程。" }, { n: "03", icon: "movement" as const, title: "带着问题再练", description: "把具体片段带给教练，让每次讨论都有画面依据。" }].map(step => <div className="pw-method-step" key={step.n}><ProductIcon name={step.icon} size={23} /><h3>{step.title}</h3><p>{step.description}</p></div>)}</div></section>
   </div>;
 }

@@ -1,0 +1,119 @@
+# Apply after docker-compose.yml; all browser interfaces remain loopback-only.
+services:
+  prometheus:
+    image: prom/prometheus:v3.13.5@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=10GB
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    secrets:
+      - metrics_token
+    # A non-internal attachment permits the explicit loopback host publishing.
+    networks: [backend, egress]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+  alertmanager:
+    image: prom/alertmanager:v0.35.0@sha256:e638797febd034838eca8b98cdbd46f951e9bf7f178777aa8669167406a9946c
+    command:
+      - --config.file=/etc/alertmanager/${ALERTMANAGER_CONFIG_FILE:-alertmanager.yml}
+      - --storage.path=/alertmanager
+      - --cluster.listen-address=
+    ports:
+      - "127.0.0.1:${ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - type: bind
+        source: ${ALERTMANAGER_CONFIG_DIR:-./monitoring/alertmanager}
+        target: /etc/alertmanager
+        read_only: true
+        bind:
+          create_host_path: false
+      - alertmanager_data:/alertmanager
+    # SMTP/webhook egress is separate from the public frontend network.
+    networks: [backend, egress]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+  grafana:
+    image: grafana/grafana:13.3.1@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    secrets:
+      - grafana_admin_password
+    networks: [backend, egress]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      # CPU also reads sysfs topology/online state; these collectors need no rootfs mount.
+      - --collector.disable-defaults
+      - --collector.cpu
+      - --collector.meminfo
+      - --collector.loadavg
+      - --collector.uname
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    expose: ["9100"]
+    networks: [backend]
+    restart: unless-stopped
+    read_only: true
+    security_opt: [no-new-privileges:true]
+
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:4.7.0-4.9.0@sha256:2490e1dfb5baaee6765ef2841813af7d978bb459a566c22c326a8fc27c64eea9
+    command: ["--collectors", "/etc/dcgm-exporter/rallymate.csv", "--collect-interval", "15000"]
+    gpus: all
+    cap_add: [SYS_ADMIN]
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: utility,compute
+      DCGM_EXPORTER_KUBERNETES: "false"
+    volumes:
+      - ./monitoring/dcgm/counters.csv:/etc/dcgm-exporter/rallymate.csv:ro
+    expose: ["9400"]
+    networks: [backend]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.11@sha256:7554dba313c84e44fee921ef3b5626ba1c711e412e82815e8c957517026112a9
+    profiles: [uptime]
+    ports:
+      - "127.0.0.1:${UPTIME_KUMA_PORT:-3002}:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks: [backend, egress]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+  uptime_kuma_data:
+
+secrets:
+  grafana_admin_password:
+    file: ${GRAFANA_ADMIN_PASSWORD_FILE:-./secrets/grafana_admin_password}

@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client, login_test_user, test_auth_config
 
 from rallymate_service import api
 from rallymate_service.config import ServiceSettings
@@ -83,18 +84,18 @@ class OriginalVideoApiTests(unittest.TestCase):
             settings, database, summary, video = self.setup_job(Path(directory), recovered=True)
             summary_before = (settings.runs_dir / JOB / "summary.json").read_bytes()
             url = f"/v1/jobs/{JOB}/original-video"
-            headers = {"Authorization": f"Bearer {settings.api_key}"}
-            with TestClient(api.create_app(settings, database)) as client:
+            with TestClient(api.create_app(settings, database, auth_config=test_auth_config())) as client:
                 self.assertEqual(client.get(url).status_code, 401)
-                response = client.get(url, headers={**headers, "Range": "bytes=4-12"})
+                login_test_user(client, job_ids=(JOB,))
+                response = client.get(url, headers={"Range": "bytes=4-12"})
                 self.assertEqual(response.status_code, 206, response.text)
                 self.assertEqual(response.content, BODY[4:13])
                 self.assertEqual(response.headers["content-range"], f"bytes 4-12/{len(BODY)}")
                 self.assertIn("no-store", response.headers["cache-control"])
                 self.assertIn("inline", response.headers["content-disposition"])
-                self.assertEqual(client.get(url, headers={**headers, "Range": "bytes=900-"}).status_code, 416)
-                self.assertEqual(client.get(url, headers={**headers, "Range": "bytes=-5"}).content, BODY[-5:])
-                result = client.get(f"/v1/jobs/{JOB}", headers=headers).json()
+                self.assertEqual(client.get(url, headers={"Range": "bytes=900-"}).status_code, 416)
+                self.assertEqual(client.get(url, headers={"Range": "bytes=-5"}).content, BODY[-5:])
+                result = client.get(f"/v1/jobs/{JOB}").json()
                 self.assertEqual(result["original_video"], {"url": url, "source_job_id": SOURCE,
                     "sha256": hashlib.sha256(BODY).hexdigest(), "bytes": len(BODY)})
                 self.assertNotIn(str(video), json.dumps(result["original_video"]))
@@ -106,8 +107,7 @@ class OriginalVideoApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings, database, _, _ = self.setup_job(Path(directory), recovered=True)
             url = f"/v1/jobs/{JOB}/original-video"
-            with TestClient(api.create_app(settings, database)) as client:
-                client.headers["Authorization"] = f"Bearer {settings.api_key}"
+            with authenticated_client(api.create_app(settings, database, auth_config=test_auth_config()), job_ids=(JOB,)) as client:
                 full = client.get(url)
                 self.assertEqual(full.status_code, 200)
                 self.assertEqual(full.content, BODY)
@@ -160,8 +160,8 @@ class OriginalVideoApiTests(unittest.TestCase):
                 with database.connect() as connection:
                     connection.execute("UPDATE jobs SET summary_json = ? WHERE id = ?", (json.dumps(job["summary"]), JOB))
                     connection.commit()
-                with TestClient(api.create_app(settings, database)) as client:
-                    response = client.get(f"/v1/jobs/{JOB}", headers={"Authorization": f"Bearer {settings.api_key}"})
+                with authenticated_client(api.create_app(settings, database, auth_config=test_auth_config()), job_ids=(JOB,)) as client:
+                    response = client.get(f"/v1/jobs/{JOB}")
                     self.assertEqual(response.json()["original_video"]["pose_time_binding"], binding)
                 self.assertEqual(frames.read_bytes(), before)
 
@@ -235,9 +235,7 @@ class OriginalVideoApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings, database, _, video = self.setup_job(Path(directory), recovered=True)
             supplied = native_fixture(); supplied["job_id"] = JOB
-            headers = {"Authorization": f"Bearer {settings.api_key}"}
-            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)), TestClient(api.create_app(settings, database)) as client:
-                client.headers.update(headers)
+            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)), authenticated_client(api.create_app(settings, database, auth_config=test_auth_config()), job_ids=(JOB,)) as client:
                 url = f"/v1/jobs/{JOB}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 ready = poll(client, url)
                 self.assertEqual(ready.status_code, 200, ready.text[:200])

@@ -203,9 +203,12 @@ class JobDatabase:
         output_dir: Path,
         *,
         max_active_jobs: int | None = None,
+        user_id: str | None = None,
     ) -> dict:
         if max_active_jobs is not None and (type(max_active_jobs) is not int or max_active_jobs < 1):
             raise ValueError("max_active_jobs must be a positive integer")
+        if user_id is not None and (not isinstance(user_id, str) or not user_id.strip()):
+            raise ValueError("user_id must be a non-empty string")
         now = utc_now()
         with self.connect() as connection:
             # Serialize capacity checking and insertion: simultaneous upload
@@ -219,12 +222,14 @@ class JobDatabase:
                 # acknowledges the stop; it continues to consume admission.
                 if active >= max_active_jobs:
                     raise QueueCapacityError(max_active_jobs)
+            owner_column = ", user_id" if user_id is not None else ""
+            owner_value = ", ?" if user_id is not None else ""
             connection.execute(
-                """
+                f"""
                 INSERT INTO jobs (
                     id, status, original_filename, video_path, request_path,
-                    output_dir, created_at, updated_at
-                ) VALUES (?, 'queued', ?, ?, ?, ?, ?, ?)
+                    output_dir, created_at, updated_at{owner_column}
+                ) VALUES (?, 'queued', ?, ?, ?, ?, ?, ?{owner_value})
                 """,
                 (
                     job_id,
@@ -234,7 +239,7 @@ class JobDatabase:
                     str(output_dir),
                     now,
                     now,
-                ),
+                ) + ((user_id,) if user_id is not None else ()),
             )
             connection.commit()
         return self.get_job(job_id)

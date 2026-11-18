@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from rallymate_scoring.stroke_analysis import ANALYSIS_VERSION
 from rallymate_scoring.stroke_candidates import DETECTOR_VERSION, recognize_strokes_from_artifacts
 from tests import test_trajectory_api as fixture
@@ -26,7 +26,7 @@ class MotionApiTests(unittest.TestCase):
                          "selection_status": "selected"} for row in frames]
             (output / "primary-player.jsonl").write_text("".join(json.dumps(row) + "\n" for row in timeline), encoding="utf-8")
             with patch("rallymate_service.api.recognize_strokes_from_artifacts", wraps=recognize_strokes_from_artifacts) as recognition:
-                with TestClient(app) as client:
+                with authenticated_client(app, job_ids=(job_id,)) as client:
                     job = client.get(f"/v1/jobs/{job_id}").json()
                     analysis = job["summary"]["action_recognition"]
                     self.assertEqual(analysis["detector_version"], DETECTOR_VERSION)

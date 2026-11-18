@@ -54,12 +54,15 @@ def main():
     try:
         # Model import itself can take time; heartbeat starts before it.
         from rallymate_service.config import load_settings
-        from rallymate_service.database import JobDatabase
+        from rallymate_service.database_factory import build_database
         from rallymate_service.worker import run_worker
         settings = load_settings()
-        run_worker(settings, JobDatabase(settings.database_path), poll_seconds=max(.1, args.poll_seconds),
-                   stop_event=stop, worker_id=worker_id, on_state=on_state,
-                   should_drain=args.drain_file.exists)
+        from rallymate_service.observability import observe_worker
+        database = build_database(settings)
+        with observe_worker(settings, database):
+            run_worker(settings, database, poll_seconds=max(.1, args.poll_seconds),
+                       stop_event=stop, worker_id=worker_id, on_state=on_state,
+                       should_drain=args.drain_file.exists)
         on_state("stopped", None)
     except BaseException:
         on_state("failed", None)

@@ -21,6 +21,9 @@ from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase, QueueCapacityError
 from rallymate_service.uploads import UploadStore
 from rallymate_vision.quality import probe_video
+from tests.service_auth import login_test_user
+from rallymate_service.models import upload_owners
+from datetime import datetime, timezone
 
 
 class OwnedUploadPathTests(unittest.TestCase):
@@ -140,10 +143,14 @@ class UploadFileHandoffTests(unittest.TestCase):
             headers={"Authorization": "Bearer test-key"}, raise_server_exceptions=False)
         self.client.__enter__()
         self.addCleanup(self.client.__exit__, None, None, None)
+        self.user = login_test_user(self.client)
 
     def prepare(self, content=None, options=None):
         content = self.content if content is None else content
         self.store.create(self.upload_id, "phone.mp4", len(content), options or {})
+        with self.client.app.state.account_runtime.engine.begin() as connection:
+            connection.execute(upload_owners.insert().values(upload_id=self.upload_id,
+                user_id=self.user["id"], created_at=datetime.now(timezone.utc).isoformat()))
         size = self.store.status(self.upload_id)["chunk_size"]
         for index, start in enumerate(range(0, len(content), size)):
             part = content[start:start + size]
@@ -202,6 +209,7 @@ class UploadFileHandoffTests(unittest.TestCase):
         self.prepare()
         settings = replace(self.settings, accept_new_jobs=False)
         with TestClient(create_app(settings, self.database), headers={"Authorization": "Bearer test-key"}) as client:
+            login_test_user(client)
             health = client.get("/health/live")
             self.assertFalse(health.json()["admission"]["accept_new_jobs"])
             for response in (client.post("/v1/uploads", json={}),
@@ -314,6 +322,7 @@ class UploadFileHandoffTests(unittest.TestCase):
             return metadata
 
         with TestClient(app, headers={"Authorization": "Bearer test-key"}) as client:
+            login_test_user(client)
             with patch('rallymate_service.api.probe_video', side_effect=drain_during_probe):
                 response = client.post(self.url)
         self.assertEqual(response.status_code, 503, response.text)
@@ -393,7 +402,7 @@ class UploadFileHandoffTests(unittest.TestCase):
 
     def test_authorization_and_original_multipart_path_are_preserved(self):
         self.prepare()
-        response = self.client.post(self.url, headers={"Authorization": "Bearer wrong-key"})
+        response = self.client.post(self.url, headers={"Authorization": "Bearer wrong-key", "Cookie": ""})
         self.assertEqual(response.status_code, 401)
         self.assertEqual(self.database.list_jobs(), [])
         with patch("rallymate_service.api._owned_upload_source", side_effect=AssertionError("multipart stays streamed")):

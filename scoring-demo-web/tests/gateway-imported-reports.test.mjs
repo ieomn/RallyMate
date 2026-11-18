@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -17,7 +18,7 @@ const htmlHeaders = {
 };
 
 for (const name of reports) {
-  test(`${name} GET streams only the exact report through internal authentication`, async t => {
+  test(`${name} GET streams only the exact report through user authentication`, async t => {
     const path = `${job}/artifacts/${name}?report_contract=current`;
     const upstream = new Response(html, { headers: {
       ...htmlHeaders, authorization: "Bearer must-not-leak", "set-cookie": "private=must-not-leak",
@@ -25,11 +26,11 @@ for (const name of reports) {
     t.mock.method(globalThis, "fetch", async (url, init) => {
       assert.equal(String(url), `http://127.0.0.1:8001${path}`);
       assert.equal(init.method, "GET"); assert.equal(init.redirect, "manual");
-      assert.equal(init.headers.get("authorization"), "Bearer test-internal-report-key");
-      assert.equal(init.headers.get("cookie"), null);
+      assert.equal(init.headers.get("authorization"), "Bearer browser-value");
+      assert.equal(init.headers.get("cookie"), "browser-cookie=value");
       return upstream;
     });
-    const response = await proxyAnalysis(new Request(`http://localhost:8000${path}`, {
+    const response = await proxyAnalysis(userRequest(`http://localhost:8000${path}`, {
       headers: { authorization: "Bearer browser-value", cookie: "browser-cookie=value" },
     }), env);
     assert.equal(response.status, 200); assert.equal(response.body, upstream.body);
@@ -48,10 +49,10 @@ for (const name of reports) {
       assert.equal(String(url), `http://127.0.0.1:8001${path}`);
       assert.equal(init.method, "GET");
       assert.equal(init.headers.get("range"), null); assert.equal(init.headers.get("if-range"), null);
-      assert.equal(init.headers.get("authorization"), "Bearer test-internal-report-key");
+      assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
       return new Response(body, { headers: htmlHeaders });
     });
-    const response = await proxyAnalysis(new Request(`http://localhost:8000${path}`, {
+    const response = await proxyAnalysis(userRequest(`http://localhost:8000${path}`, {
       method: "HEAD", headers: { range: "bytes=0-1", "if-range": '"fixture-etag"' },
     }), env);
     assert.equal(response.status, 200); assert.equal(response.body, null);
@@ -71,11 +72,11 @@ test("report HEAD preserves upstream errors and returns no body for rejected red
     return new Response(new ReadableStream({ cancel() { cancelled++; } }), { status: outcome });
   });
   for (const status of [404, 502, 502]) {
-    const response = await proxyAnalysis(new Request(`http://localhost:8000${path}`, { method: "HEAD" }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost:8000${path}`, { method: "HEAD" }), env);
     assert.equal(response.status, status); assert.equal(response.body, null);
   }
   assert.ok(cancelled >= 1);
-  const notConfigured = await proxyAnalysis(new Request(`http://localhost:8000${path}`, { method: "HEAD" }), {});
+  const notConfigured = await proxyAnalysis(userRequest(`http://localhost:8000${path}`, { method: "HEAD" }), {});
   assert.equal(notConfigured.status, 503); assert.equal(notConfigured.body, null);
 });
 
@@ -90,7 +91,7 @@ test("report HEAD retains the existing read deadline and caller cancellation", a
     caller.abort(); assert.equal(init.signal.aborted, true);
     throw new Error("fixture caller cancellation");
   });
-  const response = await proxyAnalysis(new Request(`http://localhost:8000${job}/artifacts/scoring-loop-report.html`, {
+  const response = await proxyAnalysis(userRequest(`http://localhost:8000${job}/artifacts/scoring-loop-report.html`, {
     method: "HEAD", signal: caller.signal,
   }), env);
   assert.equal(response.status, 502); assert.equal(response.body, null);
@@ -102,10 +103,10 @@ test("report allowlist rejects other artifact names, path suffixes, invalid job 
   for (const name of reports) {
     const path = `${job}/artifacts/${name}`;
     for (const method of ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
-      assert.equal((await proxyAnalysis(new Request(`http://localhost:8000${path}`, { method }), env)).status, 404);
+      assert.equal((await proxyAnalysis(userRequest(`http://localhost:8000${path}`, { method }), env)).status, 404);
     }
     for (const invalid of [`${path}/`, `${path}.bak`, `${path}/secret`, `${path}%2fsecret`, path.replace(name, name.toUpperCase())]) {
-      for (const method of ["GET", "HEAD"]) assert.equal((await proxyAnalysis(new Request(`http://localhost:8000${invalid}`, { method }), env)).status, 404);
+      for (const method of ["GET", "HEAD"]) assert.equal((await proxyAnalysis(userRequest(`http://localhost:8000${invalid}`, { method }), env)).status, 404);
     }
   }
   for (const invalid of [
@@ -113,10 +114,10 @@ test("report allowlist rejects other artifact names, path suffixes, invalid job 
     `${job}/artifacts/%2e%2e%2fanalysis-report.html`, "/v1/jobs/short/artifacts/analysis-report.html",
     `/v1/jobs/${"a".repeat(81)}/artifacts/scoring-loop-report.html`,
   ]) {
-    for (const method of ["GET", "HEAD"]) assert.equal((await proxyAnalysis(new Request(`http://localhost:8000${invalid}`, { method }), env)).status, 404);
+    for (const method of ["GET", "HEAD"]) assert.equal((await proxyAnalysis(userRequest(`http://localhost:8000${invalid}`, { method }), env)).status, 404);
   }
   for (const path of [`${job}/original-video`, `${job}/demo-result`, `${job}/artifacts/summary.json`, "/health/live"]) {
-    assert.equal((await proxyAnalysis(new Request(`http://localhost:8000${path}`, { method: "HEAD" }), env)).status, 404);
+    assert.equal((await proxyAnalysis(userRequest(`http://localhost:8000${path}`, { method: "HEAD" }), env)).status, 404);
   }
   assert.equal(calls, 0);
 });
@@ -125,9 +126,9 @@ test("existing GET read paths remain available and report origin validation is u
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => { calls++; return new Response("existing read fixture"); });
   const existing = [`${job}/artifacts/summary.json`, `${job}/artifacts/frames.jsonl`, `${job}/artifacts/indicator-features.jsonl`, `${job}/artifacts/annotated.mp4`, `${job}/artifacts/preview.jpg`, `${job}/demo-result`, "/health/live"];
-  for (const path of existing) assert.equal((await proxyAnalysis(new Request(`http://localhost:8000${path}`), env)).status, 200);
+  for (const path of existing) assert.equal((await proxyAnalysis(userRequest(`http://localhost:8000${path}`), env)).status, 200);
   for (const origin of ["http://user:password@127.0.0.1:8001", "http://127.0.0.1:8001/private", "http://127.0.0.1:8001?credential=bad"]) {
-    const response = await proxyAnalysis(new Request(`http://localhost:8000${job}/artifacts/analysis-report.html`), { ...env, RALLYMATE_API_ORIGIN: origin });
+    const response = await proxyAnalysis(userRequest(`http://localhost:8000${job}/artifacts/analysis-report.html`), { ...env, RALLYMATE_API_ORIGIN: origin });
     assert.equal(response.status, 503);
   }
   assert.equal(calls, existing.length);

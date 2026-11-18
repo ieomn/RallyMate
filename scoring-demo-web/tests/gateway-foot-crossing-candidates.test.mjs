@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -27,10 +28,10 @@ test("candidate GET preserves its expected artifact SHA query and existing strea
     assert.equal(init.method, "GET");
     assert.equal(init.redirect, "manual");
     assert.equal(init.signal.aborted, false);
-    assert.equal(init.headers.get("authorization"), "Bearer internal-test-key");
+    assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
     return upstream;
   });
-  const response = await proxyAnalysis(new Request(`http://localhost${path}`), env);
+  const response = await proxyAnalysis(userRequest(`http://localhost${path}`), env);
   assert.equal(calls, 1);
   assert.equal(response.status, 200);
   assert.equal(response.body, upstream.body);
@@ -42,7 +43,7 @@ for (const method of ["POST", "PUT", "PATCH", "DELETE", "HEAD"]) {
   test(`candidate ${method} is rejected before upstream dispatch`, async t => {
     let calls = 0;
     t.mock.method(globalThis, "fetch", async () => { calls++; throw new Error("unexpected upstream call"); });
-    const response = await proxyAnalysis(new Request(`http://localhost${candidatePath}`, { method }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${candidatePath}`, { method }), env);
     assert.equal(response.status, 404);
     assert.deepEqual(await response.json(), { error: "route_not_allowed" });
     assert.equal(calls, 0);
@@ -61,7 +62,7 @@ for (const path of [
   test(`unapproved candidate path is rejected: ${path}`, async t => {
     let calls = 0;
     t.mock.method(globalThis, "fetch", async () => { calls++; throw new Error("unexpected upstream call"); });
-    const response = await proxyAnalysis(new Request(`http://localhost${path}`), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${path}`), env);
     assert.equal(response.status, 404);
     assert.deepEqual(await response.json(), { error: "route_not_allowed" });
     assert.equal(calls, 0);

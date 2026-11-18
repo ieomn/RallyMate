@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.api import create_app
 from rallymate_service.config import load_settings
@@ -27,7 +27,7 @@ class MotionReplayRetirementTests(unittest.TestCase):
                  patch("rallymate_service.motion_replay_store.MotionReplayStore.initialize", side_effect=AssertionError("retired database")) as initialize, \
                  patch("rallymate_service.local_secrets.load_minimax_key", side_effect=AssertionError("retired credential probe")) as credentials:
                 app = create_app(settings, database)
-                with TestClient(app) as client:
+                with authenticated_client(app) as client:
                     self.assertFalse(hasattr(app.state, "motion_replays"))
                     paths = client.get("/openapi.json").json()["paths"]
                     self.assertFalse(any("motion-replays" in path for path in paths))
@@ -59,7 +59,7 @@ class MotionReplayRetirementTests(unittest.TestCase):
             app = create_app(settings, database)
             video = fixture._video(root)
             original = video.read_bytes()
-            with TestClient(app) as client:
+            with authenticated_client(app) as client:
                 with video.open("rb") as handle:
                     response = client.post("/v1/jobs", files={"video": ("tennis.mp4", handle, "video/mp4")})
                 self.assertEqual(response.status_code, 202, response.text)
@@ -87,7 +87,7 @@ class MotionReplayRetirementTests(unittest.TestCase):
             source_bytes = source.read_bytes()
             preview = settings.runs_dir / job_id / "annotated.mp4"
             preview.write_bytes(b"existing original-video preview")
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 media = client.get(f"/v1/jobs/{job_id}/artifacts/annotated.mp4")
                 self.assertEqual(media.status_code, 200)
                 self.assertEqual(media.content, preview.read_bytes())

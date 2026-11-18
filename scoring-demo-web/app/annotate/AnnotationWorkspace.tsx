@@ -1,19 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TechnicalReviewPanel from "../TechnicalReviewPanel";
 import RuleReviewPanel from "../RuleReviewPanel";
 import scoringReference from "../data/scoring-reference.json";
-import { apiClient } from "../lib/api-client";
+import { createApiClient } from "../lib/api-client";
 import { annotationHref, annotationJobId, annotationSeekSeconds, loadAnnotationReport, type AnnotationReport } from "../lib/annotation-navigation";
 import type { RuleReviewCatalog } from "../lib/rule-review";
-import { recentReports, type RecentReport } from "../lib/training-report";
+import type { RecentReport } from "../lib/training-report";
 import { workspaceHref } from "../lib/workspace-navigation";
 import "./annotation-workspace.css";
 
 const catalog = scoringReference as RuleReviewCatalog;
 
 export default function AnnotationWorkspace() {
+  const apiClient = useMemo(() => createApiClient(), []);
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<RecentReport[]>([]);
   const [report, setReport] = useState<AnnotationReport | null>(null);
@@ -43,13 +44,13 @@ export default function AnnotationWorkspace() {
     } finally {
       if (!controller.signal.aborted && version === generation.current) setLoading(false);
     }
-  }, []);
+  }, [apiClient]);
 
   useEffect(() => {
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHistory(recentReports(JSON.parse(localStorage.getItem("rallymate.recentReports") || "[]")));
-    } catch { /* The task field remains available when local storage is disabled. */ }
+    const historyController = new AbortController();
+    apiClient.getRecords(20, 0, historyController.signal).then(page => {
+      if (!historyController.signal.aborted) setHistory(page.items.filter(job => job.status === "succeeded").map(job => ({ id: job.id, name: job.original_filename, viewedAt: job.completed_at || job.created_at })));
+    }).catch(cause => { if (!historyController.signal.aborted) setError(cause instanceof Error ? cause.message : "暂时无法读取账号训练记录。"); });
     const restore = () => {
       const params = new URLSearchParams(window.location.search);
       if (params.has("job")) void load(`${window.location.pathname}${window.location.search}`, false);
@@ -59,8 +60,8 @@ export default function AnnotationWorkspace() {
       }
     };
     restore(); window.addEventListener("popstate", restore);
-    return () => { request.current?.abort(); generation.current += 1; window.removeEventListener("popstate", restore); };
-  }, [load]);
+    return () => { historyController.abort(); request.current?.abort(); generation.current += 1; window.removeEventListener("popstate", restore); };
+  }, [load, apiClient]);
 
   useEffect(() => {
     const seek = (event: Event) => {
@@ -92,7 +93,7 @@ export default function AnnotationWorkspace() {
         <label htmlFor="annotation-job">任务编号或本站报告链接</label>
         <div className="annotation-input-row"><input id="annotation-job" value={input} onChange={event => setInput(event.target.value)} placeholder="粘贴报告链接，或输入任务编号" autoComplete="off" spellCheck={false} /><button type="submit">{loading ? "重新读取" : "读取任务"}</button></div>
       </form>
-      {history.length > 0 && <label className="annotation-recents"><span>从本机最近报告选择</span><select value={taskId ?? ""} onChange={event => { if (event.target.value) void load(event.target.value); }}><option value="">选择一个视频…</option>{history.map(item => <option key={item.id} value={item.id}>{item.name} · {item.id.slice(0, 8)}</option>)}</select></label>}
+      {history.length > 0 && <label className="annotation-recents"><span>从账号最近完成的报告选择</span><select value={taskId ?? ""} onChange={event => { if (event.target.value) void load(event.target.value); }}><option value="">选择一个视频…</option>{history.map(item => <option key={item.id} value={item.id}>{item.name} · {item.id.slice(0, 8)}</option>)}</select></label>}
       {loading && <p className="annotation-message" role="status">正在读取视频和已有报告…</p>}
       {error && <p className="annotation-message annotation-error" role="alert">{error}</p>}
       {!report && !loading && !error && <p className="annotation-hint">先在训练空间完成视频分析，再从报告入口或任务链接打开这里。</p>}

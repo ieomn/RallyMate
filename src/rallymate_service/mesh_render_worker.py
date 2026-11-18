@@ -273,7 +273,12 @@ class MeshRenderCoordinator:
                 except MeshRenderCancelled as exc:
                     self._state(output, task_sha, "cancelled", str(exc))
                 except ProcessTreeCleanupError:
-                    self._state(output, task_sha, "failed", "renderer_tree_cleanup_failed")
+                    try:
+                        self._state(output, task_sha, "failed", "renderer_tree_cleanup_failed")
+                    except Exception:
+                        # A telemetry write must not hide unconfirmed GPU tree
+                        # cleanup and let the worker admit another inference.
+                        LOGGER.exception("could not persist mesh cleanup failure for job %s", output.name)
                     raise
                 except Exception as exc:
                     self._state(output, task_sha, "failed", "official_mesh_render_failed", error_type=type(exc).__name__)

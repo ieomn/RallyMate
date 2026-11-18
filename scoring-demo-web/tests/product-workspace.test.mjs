@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const compiled = new Map();
 function compiledUrl(fileUrl) {
+  if (fileUrl.pathname.endsWith(".mjs")) return fileUrl.href;
   // Keep source JSON imports shared with production, without a generated copy.
   if (fileUrl.pathname.endsWith(".json")) return `data:text/javascript;base64,${Buffer.from(`export default ${fs.readFileSync(fileUrl, "utf8")}`).toString("base64")}`;
   if (compiled.has(fileUrl.href)) return compiled.get(fileUrl.href);
@@ -16,7 +17,7 @@ function compiledUrl(fileUrl) {
   // SSR assertions concern component output; CSS is bundled by the production test.
   js = js.replace(/^import\s+["'][^"']+\.css["'];?\s*$/gm, "");
   js = js.replace(/from "([^"]+)"/g, (_match, name) => {
-    const local = new URL(name.endsWith(".json") ? name : `${name}.ts`, fileUrl);
+    const local = new URL(/\.(?:json|mjs)$/.test(name) ? name : `${name}.ts`, fileUrl);
     return `from ${JSON.stringify(name.startsWith(".") ? compiledUrl(fs.existsSync(local) ? local : new URL(`${name}.tsx`, fileUrl)) : import.meta.resolve(name))}`;
   });
   const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
@@ -24,8 +25,9 @@ function compiledUrl(fileUrl) {
   return url;
 }
 const { ProductShell, TrainingHome, SessionLibrary, CaptureGuide } = await import(compiledUrl(new URL("../app/ProductWorkspace.tsx", import.meta.url)));
+const { AuthProvider } = await import(compiledUrl(new URL("../app/auth/AuthProvider.tsx", import.meta.url)));
 const noop = () => {};
-const render = (Component, props) => renderToStaticMarkup(createElement(Component, props));
+const render = (Component, props) => renderToStaticMarkup(createElement(AuthProvider, null, createElement(Component, props)));
 const textOf = html => html.replace(/<[^>]*>/g, "");
 const reports = [
   { id: "job-one-12345678", name: "底线回看.mp4", viewedAt: "2026-10-02T03:00:00Z" },
@@ -120,7 +122,7 @@ test("every workspace view can return to the public homepage, including while an
       assert.match(textOf(renderToStaticMarkup(returnHome)), /返回首页/);
       const topbar = nodes.find(node => node.type === "header");
       assert.ok(elements(topbar).includes(returnHome), "return link is in the header, outside the desktop-only sidebar");
-      assert.doesNotMatch(textOf(renderToStaticMarkup(topbar)), /更多工具|标注工作台|导入报告备份|查看只读交付样例/);
+      assert.doesNotMatch(textOf(renderToStaticMarkup(createElement(AuthProvider, null, topbar))), /更多工具|标注工作台|导入报告备份|查看只读交付样例/);
       const overview = nodes.filter(node => node.type === "button" && elements(node).some(child => child.type === "span" && child.props.children === "训练总览"));
       assert.equal(overview.length, 2, "returning to the homepage does not remove desktop or mobile overview navigation");
     }

@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -59,7 +60,7 @@ test("retired replay routes reject reads, creation, retries and media before rea
     ["GET", "/v1/motion-replays/replay-original-123/media/generated.mp4"],
   ];
   for (const [method, path] of routes) {
-    const response = await proxyAnalysis(new Request(`http://localhost${path}`, { method }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${path}`, { method }), env);
     assert.equal(response.status, 404, path);
     assert.deepEqual(await response.json(), { error: "route_not_allowed" });
   }
@@ -72,7 +73,7 @@ test("original video range reads and pose evidence continue through the gateway"
     return new Response("source-bytes", { status: 206, headers: { "content-range": "bytes 0-11/100", "accept-ranges": "bytes" } });
   });
   for (const suffix of ["artifacts/annotated.mp4", "pose-preview?start_ms=0&end_ms=1000", "trajectory"]) {
-    const response = await proxyAnalysis(new Request(`http://localhost/v1/jobs/job-original-123/${suffix}`, { headers: { range: "bytes=0-11" } }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost/v1/jobs/job-original-123/${suffix}`, { headers: { range: "bytes=0-11" } }), env);
     assert.equal(response.status, 206);
     assert.equal(response.headers.get("content-range"), "bytes 0-11/100");
     assert.equal(await response.text(), "source-bytes");

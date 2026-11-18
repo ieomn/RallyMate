@@ -4,15 +4,20 @@ import fs from "node:fs";
 import { createHash } from "node:crypto";
 import ts from "typescript";
 
+const compiled = new Map();
 function moduleUrl(path, dependencies = {}) {
-  const source = fs.readFileSync(new URL(path, import.meta.url), "utf8");
+  const file = path instanceof URL ? path : new URL(path, import.meta.url);
+  if (compiled.has(file.href)) return compiled.get(file.href);
+  const source = fs.readFileSync(file, "utf8");
   let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  for (const [specifier, url] of Object.entries(dependencies)) js = js.replaceAll(`from "${specifier}"`, `from "${url}"`);
-  return `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
+  js = js.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(dependencies[name] ?? (name.startsWith(".") ? moduleUrl(new URL(`${name}.ts`, file)) : import.meta.resolve(name)))}`);
+  const url = `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;
+  compiled.set(file.href, url); return url;
 }
 const typesUrl = moduleUrl("../app/lib/api-types.ts");
 const { RallyMateApiError } = await import(typesUrl);
 const { uploadResumable } = await import(moduleUrl("../app/lib/resumable-upload.ts", { "./api-types": typesUrl }));
+const { setAccountRequestState } = await import(moduleUrl("../app/lib/auth-client.ts"));
 const { proxyAnalysis } = await import(moduleUrl("../worker/gateway.ts"));
 const CHUNK = 4 * 1024 * 1024;
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -113,6 +118,43 @@ function protocol(hooks = {}) {
 function video(bytes = Buffer.alloc(CHUNK * 2 + 8192, 7)) {
   return new File([bytes], "tennis.mp4", { type: "video/mp4", lastModified: 1000 });
 }
+
+test("the same video has separate resumable sessions per account and never adopts the shared legacy key", async t => {
+  const entries = browserStorage(t), file = video(Buffer.alloc(4096));
+  t.after(() => setAccountRequestState({ userId: null, csrfToken: null }));
+  let fail = true;
+  const server = protocol({ beforePut: () => { if (fail) throw new RallyMateApiError("leave upload resumable", 422); } });
+  setAccountRequestState({ userId: "account-a", csrfToken: "csrf-a" });
+  await assert.rejects(uploadResumable(file, {}, urlFor, server.fetch, parse), /leave upload resumable/);
+  const keyA = [...entries.keys()][0], uploadA = entries.get(keyA);
+  assert.match(keyA, /:account:account-a$/);
+  const legacyKey = keyA.replace(/:account:account-a$/, ""), legacyValue = crypto.randomUUID();
+  entries.set(legacyKey, legacyValue);
+  setAccountRequestState({ userId: "account-b", csrfToken: "csrf-b" });
+  await assert.rejects(uploadResumable(file, {}, urlFor, server.fetch, parse), /leave upload resumable/);
+  const keyB = [...entries.keys()].find(key => key.endsWith(":account:account-b"));
+  assert.ok(keyB); assert.notEqual(entries.get(keyB), uploadA); assert.notEqual(entries.get(keyB), legacyValue);
+  setAccountRequestState({ userId: "account-a", csrfToken: "csrf-a-new" }); fail = false;
+  await uploadResumable(file, {}, urlFor, server.fetch, parse);
+  assert.equal(server.requests.filter(request => request.path === "/v1/uploads").at(-1).uploadId, uploadA);
+  assert.equal(entries.has(keyA), false); assert.ok(entries.has(keyB)); assert.equal(entries.get(legacyKey), legacyValue);
+});
+
+test("switching accounts during upload preparation stops old requests before any chunks or completion", async t => {
+  const entries = browserStorage(t);
+  t.after(() => setAccountRequestState({ userId: null, csrfToken: null }));
+  let entered, release;
+  const arrived = new Promise(resolve => { entered = resolve; }), held = new Promise(resolve => { release = resolve; });
+  const server = protocol({ beforeCreate: async () => { entered(); await held; } });
+  setAccountRequestState({ userId: "account-a", csrfToken: "csrf-a" });
+  const upload = uploadResumable(video(Buffer.alloc(4096)), {}, urlFor, server.fetch, parse);
+  const rejected = assert.rejects(upload, error => error.name === "AbortError");
+  await arrived;
+  setAccountRequestState({ userId: "account-b", csrfToken: "csrf-b" }); release();
+  await rejected;
+  assert.deepEqual(server.requests.map(request => [request.method, request.path]), [["POST", "/v1/uploads"]]);
+  assert.equal([...entries.keys()].some(key => key.endsWith(":account:account-b")), false);
+});
 
 test("a terminal error waits for already-issued PUTs and never calls complete", async t => {
   browserStorage(t);
@@ -374,7 +416,7 @@ test("a waiting or retrying upload reports its state without inventing received 
   assert.equal(progress.at(-1).percent, 100);
 });
 
-test("gateway forwards PUT bytes and checksum to the loopback API without client credentials", async t => {
+test("gateway forwards PUT bytes, checksum and the user session without injecting a shared key", async t => {
   const bytes = Buffer.from("transport bytes, not a separately decoded video");
   const checksum = sha(bytes), id = "12345678-1234-4234-9234-123456789abc";
   let upstreamCalls = 0;
@@ -385,14 +427,16 @@ test("gateway forwards PUT bytes and checksum to the loopback API without client
     assert.equal(init.headers.get("x-chunk-sha256"), checksum);
     assert.equal(init.headers.get("x-upload-acknowledgement"), "chunk-v1");
     assert.equal(init.headers.get("content-type"), "application/octet-stream");
-    assert.equal(init.headers.get("authorization"), "Bearer server-test-key");
+    assert.equal(init.headers.get("authorization"), "Bearer user-session-token");
+    assert.equal(init.headers.get("cookie"), "rallymate_session=test-cookie");
+    assert.equal(init.headers.get("x-csrf-token"), "test-csrf");
     assert.deepEqual(Buffer.from(await new Response(init.body).arrayBuffer()), bytes);
     return Response.json({ received_chunks: [0] });
   });
   const response = await proxyAnalysis(new Request(`http://test.trycloudflare.com/v1/uploads/${id}/chunks/0`, {
     method: "PUT", body: bytes,
     headers: { origin: "https://test.trycloudflare.com", "sec-fetch-site": "same-origin",
-      "content-type": "application/octet-stream", "x-chunk-sha256": checksum, "x-upload-acknowledgement": "chunk-v1", authorization: "Bearer client-must-not-forward" },
+      "content-type": "application/octet-stream", "x-chunk-sha256": checksum, "x-upload-acknowledgement": "chunk-v1", authorization: "Bearer user-session-token", cookie: "rallymate_session=test-cookie", "x-csrf-token": "test-csrf" },
   }), { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_LOCAL_TUNNEL: "1", RALLYMATE_API_KEY: "server-test-key" });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { received_chunks: [0] });

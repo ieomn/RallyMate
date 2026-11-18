@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
 from rallymate_service.deployment_identity import load_deployment_identity
+from tests.service_auth import authenticated_client
 
 
 UNAVAILABLE = {"source_manifest_sha256": None, "source_files_verified": False,
@@ -117,7 +118,7 @@ class DeploymentIdentityTests(unittest.TestCase):
                                    detect_model=self.root / "detect.pt", pose_model=self.root / "pose.pt")
         with patch("rallymate_service.api.load_deployment_identity", return_value=identity):
             app = create_app(settings)
-        with TestClient(app) as client:
+        with authenticated_client(app) as client:
             self.assertEqual(client.get("/v1/meta").json()["deployment"], identity.public_status())
             self.manifest.unlink()
             response = client.get("/v1/meta")

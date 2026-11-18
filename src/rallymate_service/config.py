@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import SplitResult, urlsplit
 
@@ -130,6 +130,7 @@ class ServiceSettings:
     accept_new_jobs: bool = True
     motion_replay_enabled: bool = False
     motion_replay_auto_generate: bool = False
+    database_url: str | None = field(default=None, repr=False)
 
     @property
     def uploads_dir(self) -> Path:
@@ -405,6 +406,7 @@ def load_settings() -> ServiceSettings:
     settings = ServiceSettings(
         data_root=data_root,
         database_path=database,
+        database_url=os.getenv("DATABASE_URL") or os.getenv("RALLYMATE_DATABASE_URL") or None,
         detect_model=Path(
             os.getenv(
                 "RALLYMATE_DETECT_MODEL", str(workspace / "models" / "yolo26n.pt")

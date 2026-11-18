@@ -189,7 +189,7 @@ test("candidate API performs one ordinary gateway GET and returns parsed data wi
   assert.equal(result.status, "available"); assert.equal(requests.length, 1);
   assert.equal(requests[0].url, `https://gateway.example/v1/jobs/${jobId}/foot-crossing-candidates`);
   assert.equal(requests[0].init.method, "GET"); assert.equal(requests[0].init.cache, "no-store");
-  assert.ok(requests[0].init.signal instanceof AbortSignal); assert.ok(requests[0].init.headers["X-Request-ID"]);
+  assert.ok(requests[0].init.signal instanceof AbortSignal); assert.ok(new Headers(requests[0].init.headers).get("X-Request-ID"));
   for (const status of [201, 202]) {
     let calls = 0; const invalid = createApiClient(configured, async () => { calls++; return Response.json(fixture(), { status }); });
     await assert.rejects(invalid.getFootCrossingCandidates(jobId), error => error.status === 422); assert.equal(calls, 1);

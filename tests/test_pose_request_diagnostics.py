@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client, login_test_user
 from starlette.requests import Request
 
 from rallymate_service import pose_request_diagnostics as diagnostics
@@ -216,7 +217,7 @@ class PoseDiagnosticsAPITests(unittest.TestCase):
                 rows = []
                 with patch.object(diagnostics, "_write_record", side_effect=rows.append), patch(
                     "rallymate_service.api.build_pose_playback", return_value={"frames": [], "private": SECRET}
-                ) as builder, TestClient(app) as client:
+                ) as builder, authenticated_client(app, job_ids=(JOB,)) as client:
                     responses = [client.get(URL, headers={"X-Request-ID": value}) for value in (REQUEST_ID, OTHER_ID)]
                 self.assertEqual(builder.call_count, 1)
                 self.assertEqual([response.headers["x-request-id"] for response in responses], [REQUEST_ID, OTHER_ID])
@@ -237,17 +238,24 @@ class PoseDiagnosticsAPITests(unittest.TestCase):
     def test_auth_missing_job_and_query_rejections_have_status_without_build(self):
         with tempfile.TemporaryDirectory() as directory:
             app, _, _ = self.app(Path(directory), api_key="secret")
-            cases = [(URL, {}, 401), (URL.replace(JOB, OTHER_ID), {"Authorization": "Bearer secret"}, 404),
-                     (URL + "?sample_limit=601", {"Authorization": "Bearer secret"}, 422)]
-            with TestClient(app) as client:
-                for url, headers, status in cases:
+            cases = [(URL, 401), (URL.replace(JOB, OTHER_ID), 404),
+                     (URL + "?sample_limit=601", 422)]
+            with TestClient(app) as client, patch("rallymate_service.api.build_pose_playback") as builder:
+                for url, status in cases:
+                    if status == 404:
+                        login_test_user(client, job_ids=(JOB,))
                     rows = []
                     with patch.object(diagnostics, "_write_record", side_effect=rows.append):
-                        response = client.get(url, headers={"X-Request-ID": REQUEST_ID, **headers})
+                        response = client.get(url, headers={"X-Request-ID": REQUEST_ID})
                     self.assertEqual(response.status_code, status)
-                    self.assertEqual(rows[0]["phase"], "api_entry")
-                    self.assertTrue(any(row["phase"] == "response_start_sent" and row["status"] == status for row in rows))
+                    if status in {401, 404}:
+                        # The account boundary rejects these before entering pose diagnostics.
+                        self.assertEqual(rows, [])
+                    else:
+                        self.assertEqual(rows[0]["phase"], "api_entry")
+                        self.assertTrue(any(row["phase"] == "response_start_sent" and row["status"] == status for row in rows))
                     self.assertFalse(any(row["phase"] in {"build_start", "route_return"} for row in rows))
+                builder.assert_not_called()
 
     def test_build_failure_and_outer_500_are_distinguished(self):
         for failure, status in ((PosePlaybackError(SECRET), 422), (RuntimeError(SECRET), 500)):
@@ -256,7 +264,7 @@ class PoseDiagnosticsAPITests(unittest.TestCase):
                 rows = []
                 with patch.object(diagnostics, "_write_record", side_effect=rows.append), patch(
                     "rallymate_service.api.build_pose_playback", side_effect=failure
-                ), TestClient(app, raise_server_exceptions=False) as client:
+                ), authenticated_client(app, job_ids=(JOB,), raise_server_exceptions=False) as client:
                     response = client.get(URL, headers={"X-Request-ID": REQUEST_ID})
                 self.assertEqual(response.status_code, status)
                 self.assertTrue(any(row["phase"] == "build_end" and row["error"] == "build_error" for row in rows))
@@ -271,7 +279,7 @@ class PoseDiagnosticsAPITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             app, _, db = self.app(Path(directory))
             rows = []
-            with TestClient(app, raise_server_exceptions=False) as client:
+            with authenticated_client(app, job_ids=(JOB,), raise_server_exceptions=False) as client:
                 with patch.object(diagnostics, "_write_record", side_effect=rows.append), patch.object(db, "get_job", side_effect=RuntimeError(SECRET)):
                     response = client.get(URL, headers={"X-Request-ID": REQUEST_ID})
                 self.assertEqual(response.status_code, 500)

@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client, login_test_user
 
 from rallymate_vision.pose_playback import PosePlaybackError, build_pose_playback, pose_playback_transport
 from tests import test_trajectory_api as fixture
@@ -306,7 +307,7 @@ class PosePlaybackApiTests(unittest.TestCase):
             app, settings, database = helper._app(Path(directory))
             job_id = helper._succeeded_job(settings, database)
             write_rows(settings.runs_dir / job_id / "frames.jsonl", [frame(0, poses=[sam_pose(0)])])
-            with patch("rallymate_service.api.build_pose_playback", wraps=build_pose_playback) as builder, TestClient(app) as client:
+            with patch("rallymate_service.api.build_pose_playback", wraps=build_pose_playback) as builder, authenticated_client(app, job_ids=(job_id,)) as client:
                 url = f"/v1/jobs/{job_id}/pose-preview"
                 full = client.get(url)
                 compact = client.get(url + "?pose_transport=compact-v1")
@@ -329,7 +330,8 @@ class PosePlaybackApiTests(unittest.TestCase):
             with TestClient(app) as client:
                 url = f"/v1/jobs/{job_id}/pose-preview"
                 self.assertEqual(client.get(url).status_code, 401)
-                headers = {"Authorization": "Bearer secret"}
+                login_test_user(client, job_ids=(job_id,))
+                headers = {}
                 result = client.get(url + "?start_ms=80&duration_ms=100&sample_limit=2", headers=headers)
                 self.assertEqual(result.status_code, 200, result.text)
                 payload = result.json()
@@ -350,7 +352,7 @@ class PosePlaybackApiTests(unittest.TestCase):
             directory = settings.runs_dir / job_id
             frames, timeline = directory / "frames.jsonl", directory / "primary-player.jsonl"
             write_rows(frames, [frame(0, poses=[pose(1), pose(2)])])
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 url = f"/v1/jobs/{job_id}/pose-preview"
                 self.assertEqual(client.get(url).json()["frames"][0]["keypoints"], [])
                 write_rows(timeline, [primary(0, 2)])
@@ -369,7 +371,7 @@ class PosePlaybackApiTests(unittest.TestCase):
             app, settings, database = helper._app(Path(directory))
             job_id = helper._succeeded_job(settings, database, running=True)
             frames = settings.runs_dir / job_id / "frames.jsonl"
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 url = f"/v1/jobs/{job_id}/pose-preview"
                 frames.unlink()
                 self.assertEqual(client.get(url).status_code, 409)

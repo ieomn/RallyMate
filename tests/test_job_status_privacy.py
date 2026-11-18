@@ -13,6 +13,7 @@ from rallymate_service import api
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
 from rallymate_service.original_video import VerifiedOriginalVideo
+from tests.service_auth import authenticated_client, test_auth_config
 
 
 JOB_ID = "12345678-1234-4234-8234-123456789abc"
@@ -57,8 +58,8 @@ class JobStatusPrivacyTests(unittest.TestCase):
                     )
                     yield connection
 
-            app = api.create_app(settings, database)
-            with TestClient(app) as client:
+            app = api.create_app(settings, database, auth_config=test_auth_config())
+            with authenticated_client(app, job_ids=(JOB_ID,)) as client:
                 with patch.object(database, "connect", deny_summary_reads), \
                      patch.object(database, "get_job", side_effect=AssertionError("status must not load summary")), \
                      patch.object(api, "_public_job", side_effect=AssertionError("status must remain lightweight")):
@@ -84,7 +85,7 @@ class JobStatusPrivacyTests(unittest.TestCase):
             self.assertIs(result["cancel_requested"], False)
             self.assertNotIn("summary", result)
             self.assertNotIn("summary_json", result)
-            self.assertEqual(response.headers["cache-control"], "no-store")
+            self.assertEqual(response.headers["cache-control"], "private, no-store")
             if redacted:
                 self.assertNotIn("Private Person", response.text)
                 self.assertNotIn("Family lesson", response.text)

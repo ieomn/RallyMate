@@ -19,14 +19,16 @@ const viewState = load("../app/lib/analysis-view-state.ts");
 const progress = load("../app/lib/analysis-progress.ts");
 const diagnostics = load("../app/lib/request-diagnostics.ts");
 const segmentedReport = load("../app/lib/segmented-report.ts");
+const trainingRecords = load("../app/lib/training-records.ts");
 const tennisAssessment = load("../app/lib/tennis-assessment.ts");
 const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 const jobId = "lifecycle-job-1234";
 const report = { job_id: jobId, status: "ready", training_evaluation: { score_0_to_100: 77 } };
 function deferred() { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
 
-function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEffects = false } = {}) {
+function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEffects = false, historyEffects = false, journalRecords = [], userId = null } = {}) {
   const slots = []; let cursor = 0, effects = [];
+  const accountState = { userId, generation: 0 };
   const hooks = {
     useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial;
       return [slots[index], value => { slots[index] = typeof value === "function" ? value(slots[index]) : value; }]; },
@@ -38,7 +40,7 @@ function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEff
       // Run the real assessment effect in its focused lifecycle regression;
       // the other page effects remain outside this deterministic harness.
       const source = effect.toString();
-      if (!(assessmentEffects && source.includes(".getTennisAssessment(")) && !(reportEffects && /\.get(?:ReportOverview|Trajectory)\(/.test(source))) return;
+      if (!(assessmentEffects && source.includes(".getTennisAssessment(")) && !(reportEffects && /\.get(?:ReportOverview|Trajectory)\(/.test(source)) && !(historyEffects && source.includes(".getRecords("))) return;
       const index = cursor++, previous = slots[index];
       if (!previous || deps.some((dep, i) => !Object.is(dep, previous.deps[i]))) {
         slots[index] = { deps, cleanup: previous?.cleanup };
@@ -46,7 +48,7 @@ function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEff
       }
     },
   };
-  const journal = { ready: true, records: [], visitReport: () => `online:${jobId}` };
+  const journal = { ready: true, records: journalRecords, visitReport: () => `online:${jobId}` };
   const calls = { jobs: 0, cancel: 0 };
   const client = {
     getJob: async id => { calls.jobs++; return { id, status: "succeeded" }; },
@@ -59,6 +61,9 @@ function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEff
     react: hooks, "react/jsx-runtime": { jsx: (type, props, key) => ({ type, props, key }), jsxs: (type, props, key) => ({ type, props, key }), Fragment: "fragment" },
     "./lib/analysis-session": session, "./lib/analysis-view-state": viewState, "./lib/analysis-progress": progress,
     "./lib/request-diagnostics": diagnostics,
+    "./lib/auth-client": { captureAccountIdentity: () => ({ ...accountState }), isAccountIdentityCurrent: identity => identity.userId === accountState.userId && identity.generation === accountState.generation, accountFetch: (input, init) => fetch(input, init) },
+    "./lib/account-storage": { accountStorageKey: base => `${base}:account:${userId ?? "anonymous"}` },
+    "./lib/training-records": trainingRecords,
     "./lib/tennis-assessment": tennisAssessment,
     "./lib/segmented-report": segmentedReport,
     "./lib/swing-kinematics": { swingVideoDurationMs: value => value?.input?.video?.duration_ms },
@@ -77,7 +82,7 @@ function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEff
   const store = new Map();
   t.mock.method(globalThis, "setInterval", () => 0);
   const oldWindow = globalThis.window, oldStorage = globalThis.localStorage;
-  globalThis.window = { location: { pathname: "/", search: "", hash: "" }, history: { pushState() {}, replaceState() {} }, scrollTo() {} };
+  globalThis.window = { location: { origin: "https://local.test", pathname: "/", search: "", hash: "" }, history: { pushState() {}, replaceState() {} }, confirm: () => true, scrollTo() {} };
   globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
   t.after(() => { slots.forEach(value => value?.cleanup?.()); globalThis.window = oldWindow; globalThis.localStorage = oldStorage; });
   let tree;
@@ -87,10 +92,72 @@ function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEff
   const text = value => value == null || typeof value === "boolean" ? "" : typeof value !== "object" ? String(value) : Array.isArray(value) ? value.map(text).join("") : text(value.props?.children) + text(value.props?.details) + text(value.props?.coaching);
   const open = id => { tree.props.onNavigate("overview"); render(); find(node => node.type === "TrainingHome").props.onOpenReport(id); render(); };
   render();
-  return { calls, render, find, findAll: predicate => nodes(tree).filter(predicate), text: () => text(tree), open,
+  return { calls, render, find, store, accountState, findAll: predicate => nodes(tree).filter(predicate), text: () => text(tree), open,
     replaceResult: transform => { const i = slots.findIndex(value => value?.candidateSource === "online" && value?.result?.job_id); assert.ok(i >= 0); slots[i] = { ...slots[i], result: transform(slots[i].result) }; },
     button: label => find(node => node.type === "button" && text(node) === label), form: () => find(node => node.props?.className === "coach-form") };
 }
+
+test("server history refresh removes deleted online records while preserving local offline imports", async t => {
+  const now = "2026-11-17T00:00:00Z";
+  let rows = [{ id: jobId, status: "succeeded", original_filename: "server.mp4", created_at: now, completed_at: now }], reads = 0;
+  const local = trainingRecords.visitTrainingReport({ version: 1, records: [] }, { source: "online", jobId, name: "private label" }, now);
+  const offline = trainingRecords.visitTrainingReport(local, { source: "imported", sourceId: "offline-copy", name: "offline" }, now);
+  const ui = harness(t, {
+    getRecords: async (limit, offset) => { reads++; return { items: rows, limit, offset, total: rows.length }; },
+    deleteRecord: async id => { assert.equal(id, jobId); rows = []; return { id, deleted: true, deleted_at: now }; },
+  }, { historyEffects: true, journalRecords: offline.records, userId: "account-a" });
+  ui.render().props.onNavigate("sessions"); ui.render(); await tick(); ui.render();
+  const library = () => ui.find(node => node.type === "TrainingJournalLibrary").props;
+  assert.deepEqual(library().journal.records.map(record => record.source), ["online", "imported"]);
+  assert.equal(library().journal.records[0].name, "private label");
+  library().history.onDelete(jobId); await tick(); ui.render(); await tick(); ui.render();
+  assert.deepEqual(library().journal.records.map(record => record.source), ["imported"]);
+  assert.equal(library().history.total, 0); assert.ok(reads >= 2);
+  assert.equal(offline.records.some(record => record.jobId === jobId), true, "retained browser notes cannot resurrect the deleted server row");
+});
+
+test("active-job and recent-report writes stay in the mounting account's storage keys", async t => {
+  const ui = harness(t, {}, { userId: "account-a" });
+  ui.open(jobId);
+  assert.equal(ui.store.get("rallymate.activeJob:account:account-a"), jobId);
+  await tick(); ui.render();
+  assert.equal(JSON.parse(ui.store.get("rallymate.recentReports:account:account-a"))[0].id, jobId);
+  assert.equal(ui.store.has("rallymate.activeJob"), false); assert.equal(ui.store.has("rallymate.recentReports"), false);
+  assert.equal(ui.store.has("rallymate.recentReports:account:account-b"), false);
+});
+
+test("same-account session refresh accepts new history and deletion while rejecting the preceding generation", async t => {
+  const now = "2026-11-17T00:00:00Z", held = deferred();
+  let reads = 0, deleted = 0;
+  const row = { id: jobId, status: "succeeded", original_filename: "server.mp4", created_at: now, completed_at: now };
+  const ui = harness(t, {
+    getRecords: async (limit, offset) => ++reads === 1 ? held.promise : { items: deleted ? [] : [row], limit, offset, total: deleted ? 0 : 1 },
+    deleteRecord: async id => { deleted++; return { id, deleted: true, deleted_at: now }; },
+  }, { historyEffects: true, userId: "account-a" });
+  ui.accountState.generation++;
+  ui.render().props.onNavigate("sessions"); ui.render(); await tick(); ui.render();
+  const library = () => ui.find(node => node.type === "TrainingJournalLibrary").props;
+  assert.equal(library().history.total, 1);
+  held.resolve({ items: [], total: 0, limit: 20, offset: 0 }); await tick(); ui.render();
+  assert.equal(library().history.total, 1, "the previous generation cannot overwrite current history");
+  library().history.onDelete(jobId); await tick(); ui.render(); await tick(); ui.render();
+  assert.equal(deleted, 1); assert.equal(library().history.total, 0);
+});
+
+test("an old mounted workspace refuses a new account before AuthGuard finishes unmounting it", async t => {
+  let reads = 0, writes = 0;
+  const ui = harness(t, {
+    getRecords: async (limit, offset) => { reads++; return { items: [], total: 0, limit, offset }; },
+    deleteRecord: async () => { writes++; },
+  }, { historyEffects: true, userId: "account-a" });
+  ui.render().props.onNavigate("sessions"); ui.render(); await tick(); ui.render();
+  const before = reads;
+  ui.accountState.userId = "account-b"; ui.accountState.generation++;
+  ui.render();
+  ui.find(node => node.type === "TrainingJournalLibrary").props.history.onDelete(jobId);
+  await tick(); ui.render();
+  assert.equal(reads, before); assert.equal(writes, 0);
+});
 
 test("overview object replacement preserves an active score read while source or duration changes restart it", async t => {
   const reads = [];

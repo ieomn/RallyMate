@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from tests import test_trajectory_api as trajectory_fixture
 
 from rallymate_service.swing_kinematics import analyze_swing_kinematics
@@ -48,7 +48,7 @@ class SwingKinematicsTests(unittest.TestCase):
             for filename, rows in (("primary-player.jsonl", timeline), ("sam3d_frames.jsonl", records)):
                 (output / filename).write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             before = {p.name: p.read_bytes() for p in (output / "primary-player.jsonl", output / "sam3d_frames.jsonl")}
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 self.assertEqual(client.get(f"/v1/jobs/{job_id}/swing-kinematics").status_code, 409)
                 database.mark_succeeded(job_id, summary)
                 response = client.get(f"/v1/jobs/{job_id}/swing-kinematics")
@@ -56,7 +56,7 @@ class SwingKinematicsTests(unittest.TestCase):
                 self.assertEqual(response.json()["source_run_id"], job_id)
                 self.assertEqual(response.json()["status"], "available")
                 self.assertEqual(response.json(), client.get(f"/v1/jobs/{job_id}/swing-kinematics").json())
-                self.assertEqual(response.headers["cache-control"], "no-store")
+                self.assertEqual(response.headers["cache-control"], "private, no-store")
             self.assertEqual(before, {p.name: p.read_bytes() for p in (output / "primary-player.jsonl", output / "sam3d_frames.jsonl")})
 
     def test_source_bound_metrics_preserve_zero_and_do_not_create_scores(self):

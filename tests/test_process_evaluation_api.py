@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_scoring.stroke_analysis import ANALYSIS_VERSION
 from rallymate_scoring.stroke_candidates import recognize_strokes_from_artifacts
@@ -40,9 +40,9 @@ class ProcessEvaluationApiTests(unittest.TestCase):
             artifact = output / "summary.json"
             artifact.write_text(json.dumps(summary), encoding="utf-8")
             before_bytes = artifact.read_bytes()
-            before_job = deepcopy(database.get_job(job_id))
             with patch("rallymate_service.api.recognize_strokes_from_artifacts",
-                       wraps=recognize_strokes_from_artifacts) as rebuild, TestClient(app) as client:
+                       wraps=recognize_strokes_from_artifacts) as rebuild, authenticated_client(app, job_ids=(job_id,)) as client:
+                before_job = deepcopy(database.get_job(job_id))
                 response = client.get(f"/v1/jobs/{job_id}/demo-result?report_contract=current")
                 self.assertEqual(response.status_code, 200, response.text)
                 payload = response.json()

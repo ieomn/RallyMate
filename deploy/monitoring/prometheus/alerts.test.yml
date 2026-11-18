@@ -1,0 +1,58 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 1m
+tests:
+  - name: API outage waits two minutes
+    interval: 1m
+    input_series:
+      - series: 'up{job="rallymate-api"}'
+        values: '0+0x5'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: RallyMateAPIDown
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: RallyMateAPIDown
+        exp_alerts:
+          - exp_labels: {job: rallymate-api, severity: critical}
+            exp_annotations:
+              summary: "RallyMate API 指标连续 2 分钟不可达"
+              description: "检查 API 容器、指标密钥文件和 Prometheus Targets。"
+  - name: Healthy API does not alert
+    interval: 1m
+    input_series:
+      - series: 'up{job="rallymate-api"}'
+        values: '1+0x5'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: RallyMateAPIDown
+        exp_alerts: []
+  - name: Per-GPU VRAM alert keeps the UUID
+    interval: 1m
+    input_series:
+      - series: 'DCGM_FI_DEV_FB_USED_BYTES{job="dcgm",UUID="GPU-fixture",gpu="0"}'
+        values: '9500+0x8'
+      - series: 'DCGM_FI_DEV_FB_FREE_BYTES{job="dcgm",UUID="GPU-fixture",gpu="0"}'
+        values: '500+0x8'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: RallyMateGPUVRAMHigh
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: RallyMateGPUVRAMHigh
+        exp_alerts:
+          - exp_labels: {job: dcgm, UUID: GPU-fixture, gpu: "0", severity: warning}
+            exp_annotations:
+              summary: "RallyMate GPU GPU-fixture 显存持续超过 90%"
+              description: "按单卡已用/(已用+空闲)计算；查看模型常驻显存和执行中任务，不自动改变 GPU 调度。"
+  - name: Unsupported DCGM sentinel does not become a VRAM alert
+    interval: 1m
+    input_series:
+      - series: 'DCGM_FI_DEV_FB_USED_BYTES{job="dcgm",UUID="GPU-fixture",gpu="0"}'
+        values: '9223372036854775794+0x8'
+      - series: 'DCGM_FI_DEV_FB_FREE_BYTES{job="dcgm",UUID="GPU-fixture",gpu="0"}'
+        values: '0+0x8'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: RallyMateGPUVRAMHigh
+        exp_alerts: []

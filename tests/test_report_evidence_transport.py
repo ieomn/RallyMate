@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.report_evidence_transport import (
     MODEL_PROOF_CODEC, ReportEvidenceTransportError, ReportEvidenceLimitError,
@@ -192,7 +192,7 @@ class ReportEvidenceTransportApiTests(unittest.TestCase):
             before = path.read_bytes()
             supplied = native_fixture()
             supplied['job_id'] = job
-            with patch('rallymate_service.api.build_user_demo_result', side_effect=lambda *args, **kwargs: copy.deepcopy(supplied)), TestClient(app) as client:
+            with patch('rallymate_service.api.build_user_demo_result', side_effect=lambda *args, **kwargs: copy.deepcopy(supplied)), authenticated_client(app, job_ids=(job,)) as client:
                 url = f'/v1/jobs/{job}/demo-result?report_contract=current'
                 native = client.get(url)
                 self.assertEqual(native.status_code, 200)

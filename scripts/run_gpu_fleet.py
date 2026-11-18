@@ -8,8 +8,9 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
-from rallymate_service.database import JobDatabase
+from rallymate_service.database_factory import build_database, database_url
 from rallymate_service.gpu_fleet import (
     MANAGED_INFERENCE_PROFILE, ManagedWorkerProcess, discover_gpus, fleet_plan,
     new_managed_worker_id, stop_managed_workers, worker_environment,
@@ -72,7 +73,15 @@ def main():
     max_attempts = int(base.get('RALLYMATE_MAX_ATTEMPTS', '2'))
     if max_attempts < 1:
         raise ValueError('RALLYMATE_MAX_ATTEMPTS must be positive')
-    database = JobDatabase(args.data_root.resolve() / 'jobs.sqlite3')
+    database_settings = SimpleNamespace(
+        database_path=Path(base['RALLYMATE_DATABASE_PATH']),
+        database_url=base.get('DATABASE_URL') or base.get('RALLYMATE_DATABASE_URL') or None,
+    )
+    if database_settings.database_url:
+        # Children use ROOT as cwd; resolve relative SQLite URLs in the parent.
+        database_settings.database_url = database_url(database_settings)
+        base['DATABASE_URL'] = database_settings.database_url
+    database = build_database(database_settings)
     database.initialize()
     children, logs = [], []
     log_root = args.data_root.resolve() / 'gpu-worker-logs'

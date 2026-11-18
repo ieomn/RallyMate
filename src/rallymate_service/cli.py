@@ -6,8 +6,7 @@ import logging
 import uvicorn
 
 from rallymate_service.config import load_settings
-from rallymate_service.api import create_app
-from rallymate_service.database import JobDatabase
+from rallymate_service.database_factory import build_database
 from rallymate_service.worker import run_worker
 
 
@@ -36,16 +35,16 @@ def worker_main() -> None:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     settings = load_settings()
-    run_worker(
-        settings,
-        JobDatabase(settings.database_path),
-        poll_seconds=max(args.poll_seconds, 0.1),
-        once=args.once,
-    )
+    from rallymate_service.observability import observe_worker
+    database = build_database(settings)
+    with observe_worker(settings, database):
+        run_worker(settings, database, poll_seconds=max(args.poll_seconds, 0.1), once=args.once)
 
 
 def dev_main() -> None:
     """Run the upload API with one independently supervised local GPU worker."""
+
+    from rallymate_service.api import create_app
 
     parser = argparse.ArgumentParser(description="RallyMate local inference server")
     parser.add_argument("--host", default="127.0.0.1")
@@ -58,7 +57,7 @@ def dev_main() -> None:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     settings = load_settings()
-    database = JobDatabase(settings.database_path)
+    database = build_database(settings)
     from rallymate_service.executor_runtime import LocalExecutorSupervisor
     executor = None if args.api_only else LocalExecutorSupervisor(
         settings, database, poll_seconds=max(args.poll_seconds, .1))

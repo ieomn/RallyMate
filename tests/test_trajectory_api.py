@@ -7,6 +7,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
+from tests.service_auth import authenticated_client, login_test_user, test_auth_config
 
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
@@ -55,7 +56,7 @@ class TrajectoryApiTests(unittest.TestCase):
         )
         settings.ensure_directories()
         database = JobDatabase(settings.database_path)
-        app = create_app(settings, database)
+        app = create_app(settings, database, auth_config=test_auth_config())
         return app, settings, database
 
     def _succeeded_job(self, settings: ServiceSettings, database: JobDatabase, *, running: bool = False) -> str:
@@ -96,7 +97,7 @@ class TrajectoryApiTests(unittest.TestCase):
             root = Path(directory)
             app, settings, database = self._app(root)
             job_id = self._succeeded_job(settings, database)
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 job = client.get(f"/v1/jobs/{job_id}")
                 self.assertEqual(job.status_code, 200, job.text)
                 self.assertEqual(
@@ -155,14 +156,14 @@ class TrajectoryApiTests(unittest.TestCase):
                 "test-worker", settings.lease_seconds, settings.max_attempts
             )
             database.mark_succeeded(job_id, {"status": "completed", "job_id": job_id})
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 response = client.get(f"/v1/jobs/{job_id}/trajectory")
         self.assertEqual(response.status_code, 409)
         self.assertEqual(
             response.json()["detail"]["code"], "trajectory_requires_frames_artifact"
         )
 
-    def test_trajectory_route_keeps_bearer_auth(self) -> None:
+    def test_trajectory_route_requires_user_session_and_rejects_shared_key(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             app, settings, database = self._app(root, api_key="secret")
@@ -175,6 +176,9 @@ class TrajectoryApiTests(unittest.TestCase):
                     f"/v1/jobs/{job_id}/trajectory",
                     headers={"Authorization": "Bearer secret"},
                 )
+                self.assertEqual(response.status_code, 401, response.text)
+                login_test_user(client, job_ids=(job_id,))
+                response = client.get(f"/v1/jobs/{job_id}/trajectory")
                 self.assertEqual(response.status_code, 200, response.text)
 
     def test_trajectory_rejects_duplicate_artifact_keys_with_structured_422(self) -> None:
@@ -183,7 +187,7 @@ class TrajectoryApiTests(unittest.TestCase):
             job_id = self._succeeded_job(settings, database)
             frames = settings.runs_dir / job_id / 'frames.jsonl'
             frames.write_text('{"frame":{},"frame":{}}\n', encoding='utf-8')
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 response = client.get(f'/v1/jobs/{job_id}/trajectory')
             self.assertEqual(response.status_code, 422)
             self.assertEqual(response.json()['detail']['code'], 'trajectory_artifact_invalid')
@@ -196,7 +200,7 @@ class TrajectoryApiTests(unittest.TestCase):
             prefix = frames.read_bytes()
             with frames.open("ab") as stream:
                 stream.write(b'{"frame":')
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 job = client.get(f"/v1/jobs/{job_id}").json()
                 self.assertEqual(job["status"], "running")
                 self.assertEqual(job["trajectory_url"], f"/v1/jobs/{job_id}/trajectory")
@@ -226,7 +230,7 @@ class TrajectoryApiTests(unittest.TestCase):
             job_id = self._succeeded_job(settings, database, running=True)
             with (settings.runs_dir / job_id / "frames.jsonl").open("ab") as stream:
                 stream.write(b'{"broken":\n')
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 response = client.get(f"/v1/jobs/{job_id}/trajectory")
                 self.assertEqual(response.status_code, 422, response.text)
 
@@ -235,7 +239,7 @@ class TrajectoryApiTests(unittest.TestCase):
             app, settings, database = self._app(Path(directory))
             job_id = self._succeeded_job(settings, database, running=True)
             database.mark_failed(job_id, "test failure")
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 self.assertEqual(client.get(f"/v1/jobs/{job_id}/trajectory").status_code, 409)
 
 

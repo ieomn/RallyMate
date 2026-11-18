@@ -133,3 +133,4 @@ _review_tmp/
 /tmp/
 /scoring-demo-web/dist.*.backup/
 /1014.txt
+/deploy/secrets/

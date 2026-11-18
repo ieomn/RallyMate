@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import unittest
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_scoring.stroke_candidates import detect_stroke_candidates
 from rallymate_service.footwork_review import build_footwork_review
@@ -95,9 +95,9 @@ class ReportCompatibilityTests(unittest.TestCase):
             artifact = output / "summary.json"
             artifact.write_text(json.dumps(summary, indent=2), encoding="utf-8")
             artifact_bytes = artifact.read_bytes()
-            database_before = deepcopy(database.get_job(job_id))
             base = f"/v1/jobs/{job_id}"
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
+                database_before = deepcopy(database.get_job(job_id))
                 responses = {}
                 for name, path in {"demo": base + "/demo-result", "assessment": base + "/technique-assessment",
                                    "job": base, "list": "/v1/jobs"}.items():

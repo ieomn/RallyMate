@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { measurementResultFromSummary } from "./lib/measurement-evidence";
-import { createApiClient, RallyMateApiError, type JobProgress, type RallyMateApiClient } from "./lib/api-client";
+import { createApiClient, RallyMateApiError, type JobProgress, type RallyMateApiClient, type PersonalRecordsPage } from "./lib/api-client";
 import { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchAnalysis, watchSummaryAnalysis } from "./lib/analysis-session";
 import { analysisProgress, formatElapsed } from "./lib/analysis-progress";
 import { analysisViewState } from "./lib/analysis-view-state";
 import { recentReports, type RecentReport } from "./lib/training-report";
+import { accountStorageKey } from "./lib/account-storage";
+import { accountFetch, captureAccountIdentity, isAccountIdentityCurrent } from "./lib/auth-client";
+import { personalHistoryRecords } from "./lib/training-records";
 import { readWorkspaceLocation, workspaceHref } from "./lib/workspace-navigation";
 import { originalPoseTimeBinding, poseWindowMatchesOriginal } from "./lib/original-video-timing";
 import { adviceContextKey, adviceForContext, adviceNotice as describeAdvice, type AdviceResponse, type ScopedAdvice } from "./lib/advice-display";
@@ -221,11 +224,20 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
 }
 
 export default function ScoreLab() {
-  const journal = useTrainingJournal();
+  const ownerUserId = useMemo(() => captureAccountIdentity().userId, []);
+  const accountGeneration = captureAccountIdentity().generation;
+  const recentReportsKey = accountStorageKey("rallymate.recentReports", ownerUserId);
+  const activeJobKey = accountStorageKey("rallymate.activeJob", ownerUserId);
+  const journal = useTrainingJournal(ownerUserId);
   const { visitReport } = journal;
   const [currentJournalRecordId, setCurrentJournalRecordId] = useState<string | undefined>(undefined);
   const [view, setView] = useState<WorkspaceView>("overview");
   const [history, setHistory] = useState<RecentReport[]>([]);
+  const [recordPage, setRecordPage] = useState<PersonalRecordsPage>({ items: [], total: 0, limit: 20, offset: 0 });
+  const [recordOffset, setRecordOffset] = useState(0), [recordRefresh, setRecordRefresh] = useState(0);
+  const [recordsLoading, setRecordsLoading] = useState(false), [recordsError, setRecordsError] = useState("");
+  const [deletingRecord, setDeletingRecord] = useState<string | null>(null);
+  const refreshRecords = useCallback(() => setRecordRefresh(value => value + 1), []);
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
   const [importedSummary, setImportedSummary] = useState<Record<string, unknown> | null>(null);
   const [scoreContext, setScoreContext] = useState<"demo" | "live-pending" | "live">("demo");
@@ -289,6 +301,34 @@ export default function ScoreLab() {
     const safe = safeRequestDiagnostic(diagnostic);
     if (safe) setReadDiagnostics(previous => appendRequestDiagnostic(previous, safe));
   }), []);
+  useEffect(() => {
+    if (typeof apiClient.getRecords !== "function") return;
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
+    const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRecordsLoading(true); setRecordsError("");
+    apiClient.getRecords(20, recordOffset, controller.signal).then(page => {
+      if (controller.signal.aborted || !isAccountIdentityCurrent(accountIdentity)) return;
+      if (page.total > 0 && page.offset >= page.total) { setRecordOffset(Math.floor((page.total - 1) / 20) * 20); return; }
+      setRecordPage(page);
+    }).catch(error => { if (!controller.signal.aborted && isAccountIdentityCurrent(accountIdentity)) setRecordsError(error instanceof Error ? error.message : "暂时无法读取训练记录。"); })
+      .finally(() => { if (!controller.signal.aborted) setRecordsLoading(false); });
+    return () => controller.abort();
+  }, [apiClient, ownerUserId, accountGeneration, recordOffset, recordRefresh, view, job?.status]);
+  async function deleteRecord(id: string) {
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
+    if (deletingRecord || !window.confirm("删除这条在线训练记录？删除后将无法从账号中打开报告。")) return;
+    setDeletingRecord(id); setRecordsError("");
+    try {
+      await apiClient.deleteRecord(id);
+      if (!isAccountIdentityCurrent(accountIdentity)) return;
+      if (activeServiceJob.current === id) newAnalysis();
+      refreshRecords();
+    } catch (error) { if (isAccountIdentityCurrent(accountIdentity)) setRecordsError(error instanceof RallyMateApiError && error.status === 409 ? "请先取消任务，等待任务停止后再删除。" : error instanceof Error ? error.message : "删除未完成，请重试。"); }
+    finally { if (captureAccountIdentity().userId === ownerUserId) setDeletingRecord(null); }
+  }
   const busy = uploadState === "uploading" || uploadState === "processing";
   const candidateSessionKey = `${evidence.jobId ?? "none"}:${candidateGeneration}`;
   const actionAssessment = useMemo(() => tennisAssessmentOf(evidence.result ?? null), [evidence.result]);
@@ -395,6 +435,7 @@ export default function ScoreLab() {
 
   const navigate = useCallback((next: WorkspaceView, jobId?: string) => {
     setView(next);
+    if (next === "overview") setRecordOffset(0);
     const href = workspaceHref(next, jobId);
     if (window.location.pathname + window.location.search + window.location.hash !== href) window.history.pushState(null, "", href);
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -415,10 +456,12 @@ export default function ScoreLab() {
     lastProgress.current = null; cancelInFlight.current = null; setCancelRequest(null);
     setMissingJob(false); setOpenedAt(null);
     setCurrentJournalRecordId(undefined);
-    try { localStorage.removeItem("rallymate.activeJob"); } catch { /* Optional storage. */ }
+    try { localStorage.removeItem(activeJobKey); } catch { /* Optional storage. */ }
   }
 
   const monitorJob = useCallback(async (id: string) => {
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
     setReportSummary(null);
     analysisRunRef.current += 1;
     activeServiceJob.current = id;
@@ -430,29 +473,29 @@ export default function ScoreLab() {
     setCurrentJournalRecordId(journalRecordId("online", id));
     lastProgress.current = { id, status: "queued" }; cancelInFlight.current = null; setCancelRequest(null);
     setImportedSummary(null); setUploadState("processing"); setUploadError(""); setMissingJob(false); setOpenedAt(Date.now()); setScoreContext("live-pending"); setJob({ id, status: "queued" });
-    try { localStorage.setItem("rallymate.activeJob", id); } catch { /* Optional storage. */ }
+    try { localStorage.setItem(activeJobKey, id); } catch { /* Optional storage. */ }
     setEvidence(previous => previous.jobId === id && previous.candidateSource === "online" ? { ...previous, error: null } : { mode: "live", jobId: id, trajectory: null, assessment: null, error: null });
     try {
       if (typeof apiClient.getReportSummary === "function") {
         const completed = await watchSummaryAnalysis(apiClient, id, controller.signal, incoming => {
-          if (controller.signal.aborted || activeServiceJob.current !== id) return;
+          if (controller.signal.aborted || activeServiceJob.current !== id || !isAccountIdentityCurrent(accountIdentity)) return;
           lastProgress.current = mergeAnalysisProgress(lastProgress.current, incoming); setJob(lastProgress.current);
         });
-        if (controller.signal.aborted || activeServiceJob.current !== id) return;
+        if (controller.signal.aborted || activeServiceJob.current !== id || !isAccountIdentityCurrent(accountIdentity)) return;
         setReportSummary(completed.summary);
         setEvidence({ mode: "live", candidateSource: "online", jobId: id, trajectory: null, assessment: null, result: resultFromReportSummary(completed.summary), error: null });
         setScoreContext("live"); setUploadState("complete");
         const name = typeof completed.job.original_filename === "string" ? completed.job.original_filename.split(/[\\/]/).pop() || "训练视频" : "训练视频";
         setCurrentJournalRecordId(visitReport({ jobId: id, name, source: "online" }));
         try {
-          const existing = recentReports(JSON.parse(localStorage.getItem("rallymate.recentReports") || "[]"));
+          const existing = recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]"));
           const next = recentReports([{ id, name, viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== id)]);
-          localStorage.setItem("rallymate.recentReports", JSON.stringify(next)); setHistory(next);
+          localStorage.setItem(recentReportsKey, JSON.stringify(next)); setHistory(next);
         } catch { /* History is optional; the URL restores this report. */ }
         return;
       }
       const completed = await watchAnalysis(apiClient, id, controller.signal, incoming => {
-        if (controller.signal.aborted || activeServiceJob.current !== id) return;
+        if (controller.signal.aborted || activeServiceJob.current !== id || !isAccountIdentityCurrent(accountIdentity)) return;
         if (incoming.message === "推理已完成，正在重试读取动作结果。无需重新上传。") setReportRetryCount(previous => previous + 1);
         lastProgress.current = mergeAnalysisProgress(lastProgress.current, incoming);
         setJob(lastProgress.current);
@@ -471,9 +514,9 @@ export default function ScoreLab() {
       setScoreContext("live"); setUploadState("complete");
       setCurrentJournalRecordId(visitReport({ jobId: id, name: typeof completed.job.original_filename === "string" ? completed.job.original_filename : "训练视频", source: "online", result: completed.result, trajectory: completed.trajectory }));
       try {
-        const existing = recentReports(JSON.parse(localStorage.getItem("rallymate.recentReports") || "[]"));
+        const existing = recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]"));
         const next = recentReports([{ id, name: (typeof completed.job.original_filename === "string" ? completed.job.original_filename.split(/[\\/]/).pop() : undefined) || existing.find(item => item.id === id)?.name || "训练视频", viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== id)]);
-        localStorage.setItem("rallymate.recentReports", JSON.stringify(next)); setHistory(next);
+        localStorage.setItem(recentReportsKey, JSON.stringify(next)); setHistory(next);
       } catch { /* History remains optional in private browsing. */ }
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -487,7 +530,7 @@ export default function ScoreLab() {
     } finally {
       if (analysisAbort.current === controller) setSupplementingEvidence(false);
     }
-  }, [apiClient, resetAdvice, resetReplayReads, visitReport]);
+  }, [apiClient, resetAdvice, resetReplayReads, visitReport, recentReportsKey, activeJobKey, ownerUserId]);
 
   function stopAnalysisRead() {
     if (uploadState !== "processing") return;
@@ -498,10 +541,12 @@ export default function ScoreLab() {
   }
 
   async function cancelAnalysis() {
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
     if (!job || activeServiceJob.current !== job.id || !["queued", "running", "processing"].includes(job.status) || job.cancel_requested || cancelInFlight.current) return;
     const request = { jobId: job.id, runId: analysisRunRef.current };
     cancelInFlight.current = request; setCancelRequest({ jobId: job.id, pending: true });
-    const current = () => cancelInFlight.current === request && analysisRunRef.current === request.runId && activeServiceJob.current === request.jobId && !analysisAbort.current?.signal.aborted;
+    const current = () => isAccountIdentityCurrent(accountIdentity) && cancelInFlight.current === request && analysisRunRef.current === request.runId && activeServiceJob.current === request.jobId && !analysisAbort.current?.signal.aborted;
     try {
       const response = await apiClient.cancelJob(request.jobId);
       if (!current()) return;
@@ -521,7 +566,7 @@ export default function ScoreLab() {
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHistory(recentReports(JSON.parse(localStorage.getItem("rallymate.recentReports") || "[]")));
+      setHistory(recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]")));
     } catch { /* Deep links also work when browser storage is unavailable. */ }
     const restore = () => {
       const location = readWorkspaceLocation(window.location.search);
@@ -532,7 +577,7 @@ export default function ScoreLab() {
     };
     restore(); window.addEventListener("popstate", restore);
     return () => { window.removeEventListener("popstate", restore); analysisAbort.current?.abort(); adviceAbort.current?.abort(); replayAbort.current.abort(); };
-  }, [monitorJob]);
+  }, [monitorJob, recentReportsKey]);
 
   function openReport(id: string) {
     if (id === activeServiceJob.current) {
@@ -556,30 +601,34 @@ export default function ScoreLab() {
   function chooseVideo(event: ChangeEvent<HTMLInputElement>) { acceptVideoFile(event.target.files?.[0]); event.target.value = ""; }
 
   async function submitVideo() {
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
     if (!videoFile || busy) return;
     invalidateAnalysisRun(); const runId = analysisRunRef.current;
     const controller = new AbortController(); analysisAbort.current = controller;
     setUploadState("uploading"); setUploadProgress(null); setUploadError(""); setJob(null); setScoreContext("live-pending"); setEvidence({ mode: "live", trajectory: null, assessment: null, error: null });
     try {
       const submitted = await apiClient.submitVideo(videoFile, { courtMode: "auto", writeAnnotatedVideo: true, signal: controller.signal, onUploadProgress: progress => { if (!controller.signal.aborted) setUploadProgress(progress); } });
-      if (analysisRunRef.current !== runId) return;
+      if (analysisRunRef.current !== runId || !isAccountIdentityCurrent(accountIdentity)) return;
       if (typeof submitted.id !== "string" || !/^[a-zA-Z0-9_-]{8,80}$/.test(submitted.id)) throw new Error("服务没有返回有效任务，请稍后重试。");
-      setJob(submitted); setLocalVideoJobId(submitted.id);
+      setJob(submitted); setLocalVideoJobId(submitted.id); refreshRecords();
       setCurrentJournalRecordId(visitReport({ jobId: submitted.id, name: videoFile.name, source: "online", linkPending: true }));
       try {
-        const existing = recentReports(JSON.parse(localStorage.getItem("rallymate.recentReports") || "[]"));
+        const existing = recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]"));
         const next = recentReports([{ id: submitted.id, name: videoFile.name, viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== submitted.id)]);
-        localStorage.setItem("rallymate.recentReports", JSON.stringify(next)); setHistory(next);
+        localStorage.setItem(recentReportsKey, JSON.stringify(next)); setHistory(next);
       } catch { /* Optional history. */ }
       if (readWorkspaceLocation(window.location.search).view === "analysis") window.history.replaceState(null, "", workspaceHref("analysis", submitted.id));
       await monitorJob(submitted.id);
     } catch (error) {
-      if (analysisRunRef.current !== runId || controller.signal.aborted) return;
+      if (analysisRunRef.current !== runId || controller.signal.aborted || !isAccountIdentityCurrent(accountIdentity)) return;
       setUploadState("error"); setUploadError(error instanceof RallyMateApiError ? `${error.message}（${error.status}）` : error instanceof Error ? error.message : "上传失败，请稍后重试。");
     }
   }
 
   async function askCoach() {
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
     if (evidence.candidateSource !== "online" || adviceAbort.current) return;
     const controller = new AbortController(); adviceAbort.current = controller;
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(55000)]);
@@ -587,9 +636,10 @@ export default function ScoreLab() {
     const contextKey = currentAdviceKey;
     setSavedAdvice({ contextKey, response: {} });
     try {
-      const response = await fetch("/api/advice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ technique: adviceTechnique, skillLevel: "业余进阶", sessionGoal: "稳定性", observations: adviceNotes, ...(evidence.jobId ? { jobId: evidence.jobId } : {}) }), signal });
+      const response = await accountFetch("/api/advice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ technique: adviceTechnique, skillLevel: "业余进阶", sessionGoal: "稳定性", observations: adviceNotes, ...(evidence.jobId ? { jobId: evidence.jobId } : {}) }), signal });
       const payload = await response.json() as AdviceResponse;
       signal.throwIfAborted();
+      if (!isAccountIdentityCurrent(accountIdentity)) return;
       if (!response.ok) throw new Error(response.status === 429 ? "提问较频繁，请稍后再试。" : response.status === 400 ? "请用 600 字以内描述网球练习问题，避免填写私人信息。" : "建议服务暂时不可用，请稍后重试。");
       if (!payload.advice) throw new Error("建议返回不完整，当前没有可展示的建议；请稍后重试。");
       setSavedAdvice({ contextKey, response: payload });
@@ -602,6 +652,8 @@ export default function ScoreLab() {
   }
 
   async function importSummary(event: ChangeEvent<HTMLInputElement>) {
+    const accountIdentity = captureAccountIdentity();
+    if (accountIdentity.userId !== ownerUserId) return;
     const file = event.target.files?.[0];
     if (!file || busy) return;
     navigate("analysis");
@@ -613,7 +665,7 @@ export default function ScoreLab() {
     setUploadError("");
     try {
       const imported = await readReportJson(file);
-      if (importRun !== analysisRunRef.current) return;
+      if (importRun !== analysisRunRef.current || !isAccountIdentityCurrent(accountIdentity)) return;
       const data = imported && typeof imported === "object" ? imported as Record<string, unknown> : {};
       const candidateTrajectory = data.trajectory && typeof data.trajectory === "object" ? data.trajectory as Partial<TrajectoryPreviewResponse> : null;
       const importedTrajectory = candidateTrajectory?.source && candidateTrajectory.ball && Array.isArray(candidateTrajectory.ball.observed) && typeof candidateTrajectory.status === "string" ? candidateTrajectory as TrajectoryPreviewResponse : null;
@@ -637,7 +689,7 @@ export default function ScoreLab() {
           setCurrentJournalRecordId(visitReport({ jobId: data.jobId, name: file.name, source: "imported", sourceId: `${file.name}:${file.size}`, result: embeddedResult ?? fallbackResult }));
           return;
         }
-        try { localStorage.setItem("rallymate.activeJob", data.jobId); } catch { /* Optional storage. */ }
+        try { localStorage.setItem(activeJobKey, data.jobId); } catch { /* Optional storage. */ }
         setImportState({ status: "success", fileName: file.name });
         navigate("analysis", data.jobId);
         setImportState({ status: "idle" });
@@ -680,7 +732,7 @@ export default function ScoreLab() {
       setImportState({ status: "success", fileName: file.name });
       setCurrentJournalRecordId(visitReport({ jobId: importedResult.job_id, name: file.name, source: "imported", sourceId: `${file.name}:${file.size}`, result: importedResult }));
     } catch (error) {
-      if (importRun !== analysisRunRef.current) return;
+      if (importRun !== analysisRunRef.current || !isAccountIdentityCurrent(accountIdentity)) return;
       setJob(null);
       setVideoFile(null);
       setUploadState("idle");
@@ -734,12 +786,14 @@ export default function ScoreLab() {
       <details className="report-disclosure report-export-disclosure" id="export"><summary>{segmentedDelivery ? "保存已加载报告" : "保存完整报告"}<span>{segmentedDelivery ? "评分与概览；完整片段依据按需读取" : "含逐项依据、回放时间与原始数据"}</span></summary><ReportExportActions input={exportInput} /></details></>}
     <RequestReadDetails diagnostics={readDiagnostics} />
   </>;
-  const homeReports = journal.ready ? journal.records.filter(item => item.source === "online" && item.jobId).map(item => ({ id: item.jobId!, name: item.name, viewedAt: item.viewedAt })) : history;
+  const visibleRecords = personalHistoryRecords(journal.records, recordPage.items);
+  const visibleJournal = { ...journal, records: visibleRecords };
+  const homeReports = visibleRecords.filter(item => item.source === "online" && item.jobId).map(item => ({ id: item.jobId!, name: item.name, viewedAt: item.submittedAt || item.viewedAt }));
   return <ProductShell view={view} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} onNewAnalysis={newAnalysis} currentName={hasReport || videoFile ? currentName : undefined} busy={busy}>
     <input ref={videoInput} type="file" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.mov,.m4v,.avi,.mkv" hidden onChange={chooseVideo} />
     <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={importSummary} />
-    {view === "overview" && <TrainingHome reports={homeReports} onOpenReport={openReport} onNewAnalysis={newAnalysis} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} currentName={hasReport ? currentName : undefined} busy={busy} />}
-    {view === "sessions" && <><TrainingJournalLibrary journal={journal} onOpenReport={openReport} onNewAnalysis={newAnalysis} /><div className="product-library-import"><p>已有分析报告？导入备份文件继续查看。</p><button type="button" className="product-secondary" disabled={busy} onClick={() => fileInput.current?.click()}><ProductIcon name="upload" size={16} />导入报告</button></div></>}
+    {view === "overview" && <TrainingHome reports={homeReports} dateLabel="提交时间" onOpenReport={openReport} onNewAnalysis={newAnalysis} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} currentName={hasReport ? currentName : undefined} busy={busy} />}
+    {view === "sessions" && <><TrainingJournalLibrary journal={visibleJournal} onOpenReport={openReport} onNewAnalysis={newAnalysis} history={{ total: recordPage.total, offset: recordOffset, limit: 20, loading: recordsLoading, error: recordsError, deleting: deletingRecord, onPage: setRecordOffset, onRefresh: refreshRecords, onDelete: id => void deleteRecord(id) }} /><div className="product-library-import"><p>已有分析报告？导入备份文件继续查看。</p><button type="button" className="product-secondary" disabled={busy} onClick={() => fileInput.current?.click()}><ProductIcon name="upload" size={16} />导入报告</button></div></>}
     {view === "guide" && <CaptureGuide onNewAnalysis={newAnalysis} />}
     {view === "analysis" && <div className={`product-analysis ${hasReport ? "has-report" : ""}`} aria-busy={importState.status === "reading"}>
       <div className="product-page-heading"><div><h1>{delivery.showReport ? "本次训练" : hasReport ? missingJob ? "找回这次训练" : uploadState === "cancelled" ? "本次分析已取消" : uploadState === "report-preparing" ? "本次报告仍在整理" : uploadState === "error" ? "本次分析需要处理" : "正在准备本次复盘" : "开始一次新的训练分析"}</h1><p>{hasReport ? currentName : "上传训练视频，把值得回看的动作留下来。"}</p></div></div>

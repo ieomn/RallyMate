@@ -17,6 +17,14 @@ dependencies = [
 
 [project.optional-dependencies]
 service = [
+  "SQLAlchemy>=2.0.40,<2.1",
+  "alembic>=1.16,<2",
+  "psycopg[binary]>=3.2,<4",
+  "argon2-cffi>=23.1,<26",
+  "PyJWT>=2.10,<3",
+  "email-validator>=2.2,<3",
+  "prometheus-client==0.26.0",
+  "sentry-sdk==2.75.0",
   "fastapi>=0.115",
   "imageio-ffmpeg>=0.6; platform_system == 'Windows'",
   "python-multipart>=0.0.9",
@@ -33,6 +41,7 @@ rtmpose = [
   "mmdet==3.3.0",
 ]
 dev = [
+  "pytest>=8,<10",
   "httpx>=0.27",
   "jsonschema[format]>=4.23",
   "rfc3339-validator>=0.1.4",
@@ -44,6 +53,9 @@ rallymate-train = "rallymate_training.cli:main"
 rallymate-api = "rallymate_service.cli:api_main"
 rallymate-worker = "rallymate_service.cli:worker_main"
 rallymate-dev = "rallymate_service.cli:dev_main"
+rallymate-migrate = "rallymate_service.migrations:main"
+rallymate-import-database = "rallymate_service.import_database:main"
+rallymate-account-maintenance = "rallymate_service.account_maintenance:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -52,6 +64,6 @@ where = ["src"]
 rallymate_scoring = ["data/*.json"]
 rallymate_annotation = ["assets/*.html", "assets/*.js", "assets/*.css"]
 rallymate_evaluation = ["assets/*.js", "assets/*.css"]
-rallymate_service = ["assets/*.html", "assets/*.js", "assets/*.css"]
+rallymate_service = ["assets/*.html", "assets/*.js", "assets/*.css", "alembic/*.py", "alembic/*.mako", "alembic/versions/*.py"]
 rallymate_vision = ["pose/data/*.json"]
 rallymate_visualization = ["assets/*.html", "assets/*.js", "assets/*.css"]

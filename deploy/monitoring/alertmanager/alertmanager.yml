@@ -1,0 +1,11 @@
+global:
+  resolve_timeout: 5m
+route:
+  receiver: local-only
+  group_by: [alertname, job, instance, UUID]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+receivers:
+  # Prometheus and Alertmanager retain alert state without contacting anyone.
+  - name: local-only

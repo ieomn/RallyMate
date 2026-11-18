@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.user_demo import build_user_demo_result
 from tests.test_stroke_analysis import swing
@@ -48,7 +48,7 @@ class IndicatorAssessmentApiTests(unittest.TestCase):
             database.mark_succeeded(job, summary)
             saved = json.dumps(summary).encode()
             (output / "summary.json").write_bytes(saved)
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job,)) as client:
                 result = client.get(f"/v1/jobs/{job}/demo-result?report_contract=current")
                 self.assertEqual(result.status_code, 200)
                 payload = result.json()
@@ -70,7 +70,7 @@ class IndicatorAssessmentApiTests(unittest.TestCase):
             database.mark_succeeded(job, summary)
             (settings.runs_dir / job / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
             with patch("rallymate_service.api.build_card_execution_report", side_effect=ValueError("invalid raw evidence")), \
-                    TestClient(app) as client:
+                    authenticated_client(app, job_ids=(job,)) as client:
                 response = client.get(f"/v1/jobs/{job}/demo-result?report_contract=current")
             self.assertEqual(response.status_code, 200)
             self.assertCompleteExplanations(response.json())

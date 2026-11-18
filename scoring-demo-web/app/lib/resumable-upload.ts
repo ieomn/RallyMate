@@ -1,4 +1,6 @@
 import { RallyMateApiError, type JobSubmission, type SubmitVideoOptions } from "./api-types";
+import { accountStorageKey } from "./account-storage";
+import { captureAccountIdentity, isAccountIdentityCurrent } from "./auth-client";
 
 export type UploadProgress = {
   uploadedBytes: number; totalBytes: number; percent: number; bytesPerSecond: number;
@@ -23,6 +25,7 @@ function pause(ms: number, signal?: AbortSignal) {
 
 /** Persisted server-sized byte chunks, two in flight. Progress counts confirmed bytes. */
 export async function uploadResumable(file: File | Blob, options: SubmitVideoOptions, urlFor: (path: string) => string, fetchImpl: typeof fetch, parse: <T>(r: Response) => Promise<T>): Promise<JobSubmission> {
+  const identity = captureAccountIdentity();
   const received = new Set<number>();
   const knownDigests = new Map<number, string>();
   const waiting = new Set<symbol>();
@@ -54,20 +57,27 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
   const analysisOptions = { court_mode: options.courtMode ?? "disabled", write_annotated_video: options.writeAnnotatedVideo ?? true, ...options.metadata };
   const signature = await digest(new Blob([JSON.stringify({ name: filename, size: file.size, options: analysisOptions }), file.slice(0, 65536), file.slice(Math.max(0, file.size - 65536))]));
   options.signal?.throwIfAborted();
-  const storageKey = `rallymate.upload.v1.${signature}`;
+  if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
+  const storageKey = accountStorageKey(`rallymate.upload.v1.${signature}`, identity.userId);
   let uploadId = crypto.randomUUID();
   try { const saved = localStorage.getItem(storageKey); if (saved && /^[0-9a-f-]{36}$/.test(saved)) uploadId = saved as `${string}-${string}-${string}-${string}-${string}`; } catch { /* Private mode still supports in-tab retries. */ }
-  const remember = () => { try { localStorage.setItem(storageKey, uploadId); } catch { /* Optional storage. */ } };
+  const remember = () => { if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError"); try { localStorage.setItem(storageKey, uploadId); } catch { /* Optional storage. */ } };
   remember();
-  const perform = async <T>(path: string, init: RequestInit, timeout: number): Promise<T> => parse<T>(await fetchImpl(urlFor(path), {
-    ...init, cache: "no-store", headers: { "X-Request-ID": crypto.randomUUID(), ...init.headers },
-    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout),
-  }));
+  const perform = async <T>(path: string, init: RequestInit, timeout: number): Promise<T> => {
+    if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
+    const result = await parse<T>(await fetchImpl(urlFor(path), {
+      ...init, cache: "no-store", headers: { "X-Request-ID": crypto.randomUUID(), ...init.headers },
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout),
+    }));
+    if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
+    return result;
+  };
   const request = async <T>(path: string, init: RequestInit = {}, timeout = 90000, recover?: () => Promise<T | undefined>): Promise<T> => {
     const token = Symbol();
     try {
       for (let attempt = 0; ; attempt++) {
         options.signal?.throwIfAborted();
+        if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
         retrying.delete(token);
         progress();
         try {
@@ -76,6 +86,7 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
           finally { clearTimeout(timer); waiting.delete(token); }
         } catch (error) {
           options.signal?.throwIfAborted();
+          if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
           const retryable = !(error instanceof RallyMateApiError) || [408, 425, 429, 500, 502, 503, 504].includes(error.status ?? 0);
           if (!retryable) throw error;
           retrying.set(token, attempt + 1);
@@ -177,6 +188,7 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
   stage = "merging";
   progress();
   const job = await request<JobSubmission>(`/v1/uploads/${uploadId}/complete`, { method: "POST" }, 90000);
+  if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
   try { localStorage.removeItem(storageKey); } catch { /* Optional storage. */ }
   return job;
 }

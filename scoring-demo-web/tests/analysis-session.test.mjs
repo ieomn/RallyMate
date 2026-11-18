@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -64,16 +65,16 @@ test("late poll/cancel replies cannot regress terminal reports or undo accepted 
   assert.equal(mergeAnalysisProgress(requested, other), other);
 });
 
-test("cancel gateway permits only same-origin POST and uses server authentication", async t => {
+test("cancel gateway permits only same-origin POST and forwards user authentication", async t => {
   const calls = [];
   t.mock.method(globalThis, "fetch", async (url, init) => { calls.push({ url: String(url), init }); return Response.json({ id, status: "cancelled" }); });
   const env = { RALLYMATE_API_ORIGIN: "https://analyzer.example", RALLYMATE_API_KEY: "server-test-key" };
-  const response = await proxyAnalysis(new Request(`https://app.example/v1/jobs/${id}/cancel`, { method: "POST", headers: { origin: "https://app.example", authorization: "Bearer browser", cookie: "private=1" } }), env);
+  const response = await proxyAnalysis(userRequest(`https://app.example/v1/jobs/${id}/cancel`, { method: "POST", headers: { origin: "https://app.example", authorization: "Bearer browser", cookie: "private=1" } }), env);
   assert.equal(response.status, 200); assert.equal((await response.json()).status, "cancelled");
   assert.equal(calls[0].url, `https://analyzer.example/v1/jobs/${id}/cancel`);
-  assert.equal(calls[0].init.method, "POST"); assert.equal(calls[0].init.headers.get("authorization"), "Bearer server-test-key"); assert.equal(calls[0].init.headers.get("cookie"), null);
-  for (const headers of [{ origin: "https://other.example" }, { "sec-fetch-site": "cross-site" }]) assert.equal((await proxyAnalysis(new Request(`https://app.example/v1/jobs/${id}/cancel`, { method: "POST", headers }), env)).status, 403);
-  for (const method of ["GET", "PUT", "DELETE"]) assert.equal((await proxyAnalysis(new Request(`https://app.example/v1/jobs/${id}/cancel`, { method }), env)).status, 404);
+  assert.equal(calls[0].init.method, "POST"); assert.equal(calls[0].init.headers.get("authorization"), "Bearer browser"); assert.equal(calls[0].init.headers.get("cookie"), "private=1");
+  for (const headers of [{ origin: "https://other.example" }, { "sec-fetch-site": "cross-site" }]) assert.equal((await proxyAnalysis(userRequest(`https://app.example/v1/jobs/${id}/cancel`, { method: "POST", headers }), env)).status, 403);
+  for (const method of ["GET", "PUT", "DELETE"]) assert.equal((await proxyAnalysis(userRequest(`https://app.example/v1/jobs/${id}/cancel`, { method }), env)).status, 404);
   assert.equal(calls.length, 1);
 });
 
@@ -228,12 +229,12 @@ test("a slow preview never blocks progress and cannot overwrite the final result
   assert.equal(observed.length, 0);
 });
 test("proxy rejects unknown paths and cross-site uploads", async () => {
-  assert.equal((await proxyAnalysis(new Request("http://localhost/v1/admin"), {})).status, 404);
-  assert.equal((await proxyAnalysis(new Request("http://localhost/v1/jobs", { method: "POST", headers: { origin: "https://other.example" } }), {})).status, 403);
+  assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/admin"), {})).status, 404);
+  assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/jobs", { method: "POST", headers: { origin: "https://other.example" } }), {})).status, 403);
 });
 test("local tunnel permits same-host HTTPS uploads to a loopback API only when enabled", async () => {
   const original = globalThis.fetch;
-  const request = () => new Request("http://private.example/v1/jobs", { method: "POST", headers: { origin: "https://private.example" } });
+  const request = () => userRequest("http://private.example/v1/jobs", { method: "POST", headers: { origin: "https://private.example" } });
   const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001" };
   try {
     globalThis.fetch = async (url) => {
@@ -242,19 +243,19 @@ test("local tunnel permits same-host HTTPS uploads to a loopback API only when e
     };
     assert.equal((await proxyAnalysis(request(), env)).status, 403);
     assert.equal((await proxyAnalysis(request(), { ...env, RALLYMATE_LOCAL_TUNNEL: "1" })).status, 202);
-    assert.equal((await proxyAnalysis(new Request("http://private.example/v1/jobs", { method: "POST", headers: { origin: "https://other.example" } }), { ...env, RALLYMATE_LOCAL_TUNNEL: "1" })).status, 403);
+    assert.equal((await proxyAnalysis(userRequest("http://private.example/v1/jobs", { method: "POST", headers: { origin: "https://other.example" } }), { ...env, RALLYMATE_LOCAL_TUNNEL: "1" })).status, 403);
   } finally { globalThis.fetch = original; }
 });
-test("proxy strips browser credentials and preserves video range", async () => {
+test("proxy forwards user credentials and preserves video range", async () => {
   const original = globalThis.fetch;
   try {
     globalThis.fetch = async (url, init) => {
       assert.equal(String(url), `https://analyzer.example/v1/jobs/${id}/artifacts/annotated.mp4`);
-      assert.equal(init.headers.get("authorization"), "Bearer backend-test");
-      assert.equal(init.headers.get("cookie"), null); assert.equal(init.headers.get("range"), "bytes=0-9"); assert.equal(init.redirect, "manual");
+      assert.equal(init.headers.get("authorization"), "Bearer browser-user-jwt");
+      assert.equal(init.headers.get("cookie"), "private=1"); assert.equal(init.headers.get("range"), "bytes=0-9"); assert.equal(init.redirect, "manual");
       return new Response("0123456789", { status: 206, headers: { "content-range": "bytes 0-9/100", "content-type": "video/mp4" } });
     };
-    const response = await proxyAnalysis(new Request(`http://localhost/v1/jobs/${id}/artifacts/annotated.mp4`, { headers: { cookie: "private=1", authorization: "Basic browser", range: "bytes=0-9" } }), { RALLYMATE_API_ORIGIN: "https://analyzer.example", RALLYMATE_API_KEY: "backend-test" });
+    const response = await proxyAnalysis(userRequest(`http://localhost/v1/jobs/${id}/artifacts/annotated.mp4`, { headers: { cookie: "private=1", authorization: "Bearer browser-user-jwt", range: "bytes=0-9" } }), { RALLYMATE_API_ORIGIN: "https://analyzer.example", RALLYMATE_API_KEY: "backend-test" });
     assert.equal(response.status, 206); assert.equal(response.headers.get("content-range"), "bytes 0-9/100");
   } finally { globalThis.fetch = original; }
 });

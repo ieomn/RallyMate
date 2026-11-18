@@ -2,6 +2,7 @@ import { normalizeMeasurementResult } from "./measurement-evidence";
 import { MODEL_PROOF_CODEC, unpackApiReport } from "./report-backup-codec";
 import { MAX_REPORT_WIRE_BYTES, REPORT_READ_BUDGET_MS } from "./report-limits";
 import { uploadResumable } from "./resumable-upload";
+import { accountFetch, captureAccountIdentity, isAccountIdentityCurrent } from "./auth-client";
 import { parseTechnicalReview, type TechnicalReviewInput, type TechnicalReviewLedger } from "./technical-review";
 import type {
   DemoResultResponse,
@@ -40,6 +41,13 @@ export { RallyMateApiError } from "./api-types";
 export type { JobProgress } from "./api-types";
 
 export type ReportPreparationTiming = { now(): number; wait(ms: number, signal?: AbortSignal): Promise<void> };
+export type PersonalJobRecord = {
+  id: string; status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  original_filename: string; created_at: string; updated_at: string;
+  started_at?: string | null; completed_at?: string | null; attempts: number;
+  cancel_requested: boolean; cancel_requested_at?: string | null; cancelled_at?: string | null;
+};
+export type PersonalRecordsPage = { items: PersonalJobRecord[]; total: number; limit: number; offset: number };
 function waitForReport(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     signal?.throwIfAborted();
@@ -109,6 +117,8 @@ export function getApiConfig(): RallyMateApiConfig {
 }
 
 export interface RallyMateApiClient {
+  getRecords(limit?: number, offset?: number, signal?: AbortSignal): Promise<PersonalRecordsPage>;
+  deleteRecord(jobId: string, signal?: AbortSignal): Promise<{ id: string; deleted: boolean; deleted_at: string }>;
   getJobStatus(jobId: string, signal?: AbortSignal): Promise<JobProgress>;
   getReportSummary(jobId: string, signal?: AbortSignal): Promise<ReportSummary>;
   getReportMotion(jobId: string, source: ReportSource, episode: MotionEpisode, signal?: AbortSignal): Promise<ReportMotion>;
@@ -155,6 +165,15 @@ export function createApiClient(
   reportTiming: ReportPreparationTiming = { now: () => performance.now(), wait: waitForReport },
   onDiagnostic?: RequestDiagnosticObserver,
 ): RallyMateApiClient {
+  const rawFetch = fetchImpl;
+  const accountResponses = new WeakMap<Response, ReturnType<typeof captureAccountIdentity>>();
+  fetchImpl = async (input, init) => {
+    const identity = captureAccountIdentity();
+    const response = await accountFetch(input, init, rawFetch);
+    if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
+    accountResponses.set(response, identity);
+    return response;
+  };
   const resolvedConfig = { ...getApiConfig(), ...config };
   type ReadContext = {
     operation: RequestDiagnostic["operation"]; requestId: string; httpStatus: number | null;
@@ -243,6 +262,8 @@ export function createApiClient(
     const readSignal = signals.length ? AbortSignal.any(signals) : undefined;
     try { text = bounds ? await boundedResponseText(response, bounds.maxBytes, readSignal, context?.bodyIdleController) : await response.text(); }
     catch (error) { readFailure(context, "body", error); throw error; }
+    const identity = accountResponses.get(response);
+    if (identity && !isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
     if (context) context.bodyComplete = true;
     record(context, "body", "success");
     let payload: unknown = undefined;
@@ -529,6 +550,23 @@ export function createApiClient(
 
   return {
     config: resolvedConfig,
+    getRecords: async (limit = 20, offset = 0, signal) => {
+      const response = await requestGet(`/api/records?limit=${limit}&offset=${offset}`, signal);
+      const page = await parseResponse<PersonalRecordsPage>(response, { maxBytes: 1024 * 1024, signal });
+      if (!page || !Array.isArray(page.items) || !Number.isSafeInteger(page.total) || page.total < 0
+          || page.limit !== limit || page.offset !== offset || page.items.length > limit
+          || page.items.some(row => !row || typeof row.id !== "string" || !/^[a-zA-Z0-9_-]{8,80}$/.test(row.id)
+            || !["queued", "running", "succeeded", "failed", "cancelled"].includes(row.status)
+            || typeof row.original_filename !== "string" || !Number.isFinite(Date.parse(row.created_at)))) {
+        throw new RallyMateApiError("训练记录响应格式不正确，请重试。", 502);
+      }
+      return page;
+    },
+    deleteRecord: (jobId, signal) => fetchImpl(urlFor(reportPath(jobId)), { method: "DELETE", cache: "no-store", signal })
+      .then(parseResponse<{ id: string; deleted: boolean; deleted_at: string }>).then(result => {
+        if (result.id !== jobId || result.deleted !== true) throw new RallyMateApiError("删除结果未确认，请刷新训练记录。", 502);
+        return result;
+      }),
     getJobStatus: (jobId, signal) => get<JobProgress>(reportPath(jobId, "/status"), signal),
     getReportSummary: (jobId, signal) => segmentedRead(jobId, reportPath(jobId, "/report-summary"), SUMMARY_BYTES, signal, value => parseReportSummary(value, jobId)),
     getReportMotion: (jobId, source, episode, signal) => segmentedRead(jobId, reportPath(jobId, `/report-motion/${encodeURIComponent(episode.episode_id)}`), ACTION_DETAIL_BYTES, signal, value => parseReportMotion(value, jobId, source, episode)),

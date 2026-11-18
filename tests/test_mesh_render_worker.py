@@ -13,6 +13,7 @@ from rallymate_service.database import JobDatabase
 from rallymate_service.mesh_render_worker import MeshRenderCoordinator, MeshRenderDeferred, RenderLock
 from rallymate_vision.mesh_render_task import TASK_NAME, STATE_NAME, CANCEL_NAME, create_mesh_render_task
 from rallymate_vision.pose.metadata import sha256_file
+from rallymate_vision.owned_subprocess import ProcessTreeCleanupError
 from rallymate_vision.sam3d_mesh import LEDGER_NAME, MANIFEST_NAME, render_mesh_subprocess
 
 
@@ -341,6 +342,40 @@ class MeshRenderWorkerTests(unittest.TestCase):
         self.assertEqual(self.state(output)["status"], "failed")
         self.assertEqual(self.database.get_job("job-1")["status"], "succeeded")
         self.assertFalse(self.coordinator().process_one())
+
+    def test_cleanup_failure_stops_worker_even_when_failed_state_cannot_be_written(self):
+        from rallymate_service import worker
+        self.job()
+        cleanup_error = ProcessTreeCleanupError("renderer tree exit is unconfirmed")
+        coordinator = self.coordinator(Mock(side_effect=cleanup_error))
+        state = coordinator._state
+        def fail_error_publication(output, task_sha, status, reason, **extra):
+            if status == "failed":
+                raise OSError("state disk is full")
+            return state(output, task_sha, status, reason, **extra)
+        stop = Event()
+        def idle(*args, **kwargs):
+            # Bound the old behavior if the worker accidentally swallows the
+            # cleanup error and tries to claim a second inference task.
+            if analyze.call_count > 1:
+                stop.set()
+            return False
+        self.settings.validate_license = Mock()
+        self.settings.ensure_directories = Mock()
+        self.settings.device = "cpu"
+        runner = SimpleNamespace(close=Mock())
+        with patch.object(worker, "resolve_device", return_value="cpu"), \
+                patch.object(worker, "PersistentVisionRunner", return_value=runner), \
+                patch.object(worker, "process_one", side_effect=idle) as analyze, \
+                patch.object(coordinator, "_state", side_effect=fail_error_publication), \
+                patch("rallymate_service.mesh_render_worker.MeshRenderCoordinator", return_value=coordinator), \
+                self.assertLogs("rallymate.mesh", level="ERROR"), \
+                self.assertRaises(ProcessTreeCleanupError) as raised:
+            worker.run_worker(self.settings, self.database, stop_event=stop, poll_seconds=.001)
+        self.assertIs(raised.exception, cleanup_error)
+        self.assertEqual(analyze.call_count, 1)
+        runner.close.assert_called_once_with()
+        self.assertEqual(self.database.get_job("job-1")["status"], "succeeded")
 
     def test_mutated_task_source_and_ledger_fail_before_renderer(self):
         for defect in ("task", "source", "ledger"):

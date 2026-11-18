@@ -1,0 +1,781 @@
+{
+  "id": null,
+  "uid": "rallymate-operations",
+  "title": "RallyMate 运行监控",
+  "tags": [
+    "rallymate"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "refresh": "15s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "API / Worker / Database 可用性",
+      "description": "1 为可用，0 为不可用；缺失序列需查看 Prometheus Targets。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"rallymate-api\"}",
+          "legendFormat": "API scrape",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "up{job=\"rallymate-worker\"} * rallymate_worker_up{job=\"rallymate-worker\"}",
+          "legendFormat": "Worker",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        },
+        {
+          "refId": "C",
+          "expr": "rallymate_database_available{job=\"rallymate-api\"}",
+          "legendFormat": "Database",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "任务状态与排队数量",
+      "description": "数据库中各状态任务数量；queued 为等待执行任务。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (rallymate_jobs{job=\"rallymate-api\"})",
+          "legendFormat": "{{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "业务请求 QPS",
+      "description": "排除指标采集及健康探测，按 HTTP 方法聚合。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (method) (rate(rallymate_http_requests_total{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval]))",
+          "legendFormat": "{{method}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "HTTP 状态码 QPS",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (rate(rallymate_http_requests_total{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval]))",
+          "legendFormat": "{{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "HTTP 完整响应 P95 / P99",
+      "description": "从请求开始到响应体结束，包含流式报告及视频传输；不是纯服务器计算时间。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(rallymate_http_request_duration_seconds_bucket{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval])))",
+          "legendFormat": "P95",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(rallymate_http_request_duration_seconds_bucket{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval])))",
+          "legendFormat": "P99",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "HTTP 首响应 P95 / P99",
+      "description": "到响应头的耗时；延迟告警使用这个口径，避免持续视频传输放大告警。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(rallymate_http_time_to_headers_seconds_bucket{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval])))",
+          "legendFormat": "P95",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(rallymate_http_time_to_headers_seconds_bucket{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval])))",
+          "legendFormat": "P99",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "业务 HTTP 5xx 比例",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum(rate(rallymate_http_requests_total{job=\"rallymate-api\",route!~\"/metrics|/health/.*\",status=~\"5..\"}[$__rate_interval])) / clamp_min(sum(rate(rallymate_http_requests_total{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval])), 0.001)",
+          "legendFormat": "5xx",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "路由请求 QPS",
+      "description": "使用后端归一化路由标签，不以用户 ID、任务 ID 或文件名作为标签。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (route) (rate(rallymate_http_requests_total{job=\"rallymate-api\",route!~\"/metrics|/health/.*\"}[$__rate_interval]))",
+          "legendFormat": "{{route}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Linux 主机 CPU 使用率",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job=\"node\",mode=\"idle\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Linux 主机 RAM 使用率",
+      "description": "使用 MemAvailable，包含可回收缓存的可用内存口径。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{job=\"node\"} / node_memory_MemTotal_bytes{job=\"node\"})",
+          "legendFormat": "{{instance}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "每卡 GPU 利用率",
+      "description": "DCGM 的设备利用率；不是峰值算力或实际 FLOPS，采集不改变调度。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (DCGM_FI_DEV_GPU_UTIL_RATIO{job=\"dcgm\",UUID=~\"$gpu\"} < 1.01)",
+          "legendFormat": "{{UUID}} · GPU {{gpu}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "每卡显存使用率",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (DCGM_FI_DEV_FB_USED_BYTES{job=\"dcgm\",UUID=~\"$gpu\"} < 1e18) / (DCGM_FI_DEV_FB_USED_BYTES{job=\"dcgm\",UUID=~\"$gpu\"} + DCGM_FI_DEV_FB_FREE_BYTES{job=\"dcgm\",UUID=~\"$gpu\"})",
+          "legendFormat": "{{UUID}} · GPU {{gpu}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "每卡已用显存",
+      "description": "DCGM 4.9 原始单位为字节；UUID 保持跨设备索引变化后的卡身份。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(DCGM_FI_DEV_FB_USED_BYTES{job=\"dcgm\",UUID=~\"$gpu\"} < 1e18)",
+          "legendFormat": "{{UUID}} · GPU {{gpu}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "每卡温度",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "DCGM_FI_DEV_GPU_TEMP_CELSIUS{job=\"dcgm\",UUID=~\"$gpu\"} < 1000",
+          "legendFormat": "{{UUID}} · GPU {{gpu}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "执行尝试平均耗时",
+      "description": "现有 Worker 日志观测的执行尝试总耗时，包含 CPU 与后处理，不等于纯 GPU 内核耗时。无新完成尝试时不生成均值。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (rate(rallymate_inference_attempt_duration_seconds_sum{job=\"rallymate-worker\"}[$__rate_interval])) / sum by (status) (rate(rallymate_inference_attempt_duration_seconds_count{job=\"rallymate-worker\"}[$__rate_interval]))",
+          "legendFormat": "{{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "执行尝试累计与近期速率",
+      "description": "数据库累计尝试与 Worker 近 1 小时完成尝试并列；排队后取消不计执行尝试。",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "rallymate-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rallymate_job_attempts_total{job=\"rallymate-api\"}",
+          "legendFormat": "Database cumulative attempts",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (status) (increase(rallymate_inference_attempts_total{job=\"rallymate-worker\"}[1h]))",
+          "legendFormat": "Last hour {{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "rallymate-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "gpu",
+        "label": "GPU UUID",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "rallymate-prometheus"
+        },
+        "query": {
+          "query": "label_values(DCGM_FI_DEV_GPU_UTIL_RATIO{job=\"dcgm\"}, UUID)",
+          "refId": "gpu-uuid"
+        },
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "sort": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  }
+}

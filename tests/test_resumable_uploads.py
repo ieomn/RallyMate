@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
+from tests.service_auth import authenticated_client, login_test_user, test_auth_config
 from rallymate_service.uploads import CHUNK_BYTES, DEFAULT_CHUNK_BYTES, MIN_CHUNK_BYTES, SESSION_TTL_SECONDS, UploadStore
 
 
@@ -236,9 +237,11 @@ class ResumableUploadTests(unittest.TestCase):
             self.assertGreater(len(content), MIN_CHUNK_BYTES)
             upload_id = str(uuid.uuid4())
             payload = {"upload_id": upload_id, "filename": "phone.mp4", "size": len(content), "options": {"court_mode": "disabled", "write_annotated_video": True}}
-            with TestClient(create_app(settings, database)) as client:
+            with TestClient(create_app(settings, database, auth_config=test_auth_config())) as client:
                 self.assertEqual(client.post("/v1/uploads", json=payload).status_code, 401)
                 client.headers["Authorization"] = "Bearer test-key"
+                self.assertEqual(client.post("/v1/uploads", json=payload).status_code, 401)
+                user = login_test_user(client)
                 capabilities = client.get("/v1/meta").json()["capabilities"]["resumable_uploads"]
                 self.assertEqual(capabilities["default_chunk_bytes"], MIN_CHUNK_BYTES)
                 self.assertEqual(capabilities["acknowledgement"], "chunk-v1")
@@ -260,13 +263,15 @@ class ResumableUploadTests(unittest.TestCase):
                     self.assertNotIn("received_chunks", part.json())
                     self.assertEqual(database.list_jobs(), [])
             # Restart API before finalizing.
-            with TestClient(create_app(settings, database), headers={"Authorization": "Bearer test-key"}) as client:
+            with authenticated_client(create_app(settings, database, auth_config=test_auth_config()),
+                                      headers={"Authorization": "Bearer test-key"}) as client:
                 self.assertEqual(client.get(url).json()["received_bytes"], len(content))
                 submitted = client.post(url + "/complete")
                 self.assertEqual(submitted.status_code, 202, submitted.text)
                 self.assertEqual(submitted.json()["id"], upload_id)
                 self.assertEqual(client.post(url + "/complete").json()["id"], upload_id)
                 self.assertEqual(len(database.list_jobs()), 1)
+                self.assertEqual(database.get_job(upload_id)["user_id"], user["id"])
                 self.assertEqual(Path(database.get_job(upload_id)["video_path"]).read_bytes(), content)
 
 

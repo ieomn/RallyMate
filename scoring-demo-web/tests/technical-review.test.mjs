@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -285,17 +286,17 @@ test("API client binds read, idempotent write and export to the same job", async
 test("gateway scopes review writes and rejects cross-site review mutations", async t => {
   let calls = 0;
   t.mock.method(globalThis, "fetch", async (url, init) => {
-    calls++; assert.equal(init.headers.get("authorization"), "Bearer server-key");
+    calls++; assert.equal(init.headers.get("authorization"), "Bearer client-secret");
     assert.equal(String(url), `http://127.0.0.1:8001/v1/jobs/${jobId}/technical-review`);
     assert.deepEqual(JSON.parse(await new Response(init.body).text()), inputOf());
     return Response.json(ledgerOf());
   });
   const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: "server-key" };
   const url = `http://127.0.0.1:8003/v1/jobs/${jobId}/technical-review`;
-  const response = await proxyAnalysis(new Request(url, { method: "POST", headers: { origin: "http://127.0.0.1:8003", "content-type": "application/json", authorization: "Bearer client-secret" }, body: JSON.stringify(inputOf()) }), env);
+  const response = await proxyAnalysis(userRequest(url, { method: "POST", headers: { origin: "http://127.0.0.1:8003", "content-type": "application/json", authorization: "Bearer client-secret" }, body: JSON.stringify(inputOf()) }), env);
   assert.equal(response.status, 200); assert.equal(calls, 1);
   for (const [target, method, headers] of [[url, "POST", { origin: "https://other.test" }], [url, "POST", { "sec-fetch-site": "cross-site" }], [`${url}/export`, "POST", {}], [url, "DELETE", {}], [url, "PUT", {}]]) {
-    const rejected = await proxyAnalysis(new Request(target, { method, headers }), env);
+    const rejected = await proxyAnalysis(userRequest(target, { method, headers }), env);
     assert.ok([403, 404].includes(rejected.status));
   }
   assert.equal(calls, 1);

@@ -15,7 +15,7 @@ import time
 import unittest
 from unittest.mock import PropertyMock, patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.report_delivery_cache import ReportDeliveryCache, artifact_signature
 from tests import test_trajectory_api as trajectory_fixture
@@ -289,7 +289,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
             app, settings, database, job, folder, marker = self.setup_case(Path(directory))
             calls = []
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
-            with self.lightweight_builders(marker, calls), TestClient(app) as client:
+            with self.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 first = self.ready(client, url)
                 self.assertEqual(first.json()["source_marker"], '{"marker":"A"}')
                 original_stat, original_signature = marker.stat(), artifact_signature(marker)
@@ -311,7 +311,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
             app, settings, database, job, folder, marker = self.setup_case(Path(directory))
             calls = []
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
-            with self.lightweight_builders(marker, calls), TestClient(app) as client:
+            with self.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 self.ready(client, url)
                 for index, filename in enumerate(("summary.json", "frames.jsonl", "primary-player.jsonl", "events.jsonl",
                         "indicator-features.jsonl", "source-aligned-measurements.json", "preview.jpg"), start=2):
@@ -338,7 +338,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
                 return {"job_id": summary["job_id"], "source_marker": value}
 
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
-            with self.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}), TestClient(app) as client:
+            with self.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}), authenticated_client(app, job_ids=(job,)) as client:
                 try:
                     self.assertEqual(client.get(url).status_code, 202)
                     self.assertTrue(started.wait(1))
@@ -358,7 +358,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
             app, settings, database, job, folder, marker = self.setup_case(Path(directory))
             calls = []
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
-            with self.lightweight_builders(marker, calls), TestClient(app) as client:
+            with self.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 self.ready(client, url)
                 original = database.get_job(job)
                 summary = {**original["summary"], "independent_revision": "changed"}
@@ -379,7 +379,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
             with self.lightweight_builders(marker, calls), patch(
                     "rallymate_service.config.ServiceSettings.resolved_technique_registry",
-                    new_callable=PropertyMock, return_value=registry), TestClient(app) as client:
+                    new_callable=PropertyMock, return_value=registry), authenticated_client(app, job_ids=(job,)) as client:
                 self.ready(client, url)
                 original = registry.stat()
                 with registry.open("r+b") as handle:
@@ -392,7 +392,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             app, settings, database, job, folder, marker = self.setup_case(Path(directory))
             calls = []
-            with self.lightweight_builders(marker, calls), TestClient(app) as client:
+            with self.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 self.assertEqual(client.get(f"/v1/jobs/{job}/demo-result?report_delivery=deferred-v1").status_code, 422)
                 with database.connect() as connection:
                     connection.execute("UPDATE jobs SET status = 'running' WHERE id = ?", (job,))
@@ -420,7 +420,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
 
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
             with self.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build,
-                    "recognize_strokes_from_artifacts": recognize}), TestClient(app) as client:
+                    "recognize_strokes_from_artifacts": recognize}), authenticated_client(app, job_ids=(job,)) as client:
                 self.ready(client, url)
                 for index, path in enumerate(paths, start=2):
                     with self.subTest(dependency=path.name):
@@ -453,7 +453,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
                 calls = []
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 with self.lightweight_builders(marker, calls, overrides={
-                        "load_source_aligned_assessment": source_assessment.load_source_aligned_assessment}), TestClient(app) as client:
+                        "load_source_aligned_assessment": source_assessment.load_source_aligned_assessment}), authenticated_client(app, job_ids=(job,)) as client:
                     first = self.ready(client, url).json()["source_aligned_assessment"]
                     self.assertEqual(first["status"], "available")
                     original = inputs[changed]
@@ -474,7 +474,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
             app, settings, database, job, folder, marker = self.setup_case(Path(directory))
             calls = []
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
-            with self.lightweight_builders(marker, calls), TestClient(app) as client:
+            with self.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 self.ready(client, url)
                 with patch("rallymate_service.api.REPORT_PROCESS_VERSION", "independent-new-process-version"):
                     self.ready(client, url)
@@ -505,7 +505,7 @@ class IndependentReportDeliveryApiTests(unittest.TestCase):
 
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 with self.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build,
-                        "build_indicator_assessment": indicator_assessment.build_indicator_assessment}), TestClient(app) as client:
+                        "build_indicator_assessment": indicator_assessment.build_indicator_assessment}), authenticated_client(app, job_ids=(job,)) as client:
                     first = self.ready(client, url).json()
                     self.assertEqual(first["indicator_assessment"]["source_binding"]["reference_version"], "independent-version-A")
                     self.assertEqual(first["dimension_source"]["source_reference_version"], "independent-version-A")

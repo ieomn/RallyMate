@@ -7,7 +7,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client, test_auth_config
 
 from rallymate_service.api import create_app
 from rallymate_service.report_delivery_cache import ReportDeliveryCache
@@ -228,7 +228,7 @@ class ReportDeliveryPendingApiTests(unittest.TestCase):
                     return {"job_id": summary["job_id"], "policy": json.loads(policy.read_bytes())}
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 with fixture.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}):
-                    with TestClient(app) as client:
+                    with authenticated_client(app, job_ids=(job,)) as client:
                         first = fixture.ready(client, url)
                         self.assertEqual(first.json()["policy"]["prior_sample_weight"], 3)
                         independent_fixture.rewrite_same_size_preserving_mtime(policy, b'{"prior_sample_weight":4}')
@@ -236,7 +236,7 @@ class ReportDeliveryPendingApiTests(unittest.TestCase):
                         self.assertEqual(changed.status_code, 503)
                         self.assertEqual(changed.json()["detail"]["code"], "report_rules_changed_restart_required")
                         self.assertEqual(calls, [1])
-                    with TestClient(create_app(settings, database)) as restarted:
+                    with authenticated_client(create_app(settings, database, auth_config=test_auth_config()), job_ids=(job,)) as restarted:
                         second = fixture.ready(restarted, url)
                         self.assertEqual(second.json()["policy"]["prior_sample_weight"], 4)
                         self.assertEqual(calls, [1, 1])
@@ -248,10 +248,10 @@ class ReportDeliveryPendingApiTests(unittest.TestCase):
             calls = []
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
             with fixture.lightweight_builders(marker, calls):
-                with TestClient(app) as client:
+                with authenticated_client(app, job_ids=(job,)) as client:
                     first = fixture.ready(client, url).content
-                restarted = create_app(settings, database)
-                with TestClient(restarted) as client:
+                restarted = create_app(settings, database, auth_config=test_auth_config())
+                with authenticated_client(restarted, job_ids=(job,)) as client:
                     self.assertEqual(fixture.ready(client, url).content, first)
                     self.assertEqual(calls, [1])
                     independent_fixture.rewrite_same_size_preserving_mtime(marker, b'{"marker":"B"}')
@@ -273,7 +273,7 @@ class ReportDeliveryPendingApiTests(unittest.TestCase):
                     raise RuntimeError("release not received")
                 return {"job_id": job, "score": None}
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
-            with fixture.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}), TestClient(app) as client:
+            with fixture.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}), authenticated_client(app, job_ids=(job,)) as client:
                 try:
                     self.assertEqual(client.get(url).status_code, 202)
                     self.assertTrue(started.wait(1))
@@ -304,9 +304,9 @@ class ReportDeliveryPendingApiTests(unittest.TestCase):
                 return {"job_id": job, "native_pose_marker": native.read_text()}
             url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
             with fixture.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}):
-                with TestClient(app) as client:
+                with authenticated_client(app, job_ids=(job,)) as client:
                     first = fixture.ready(client, url).content
-                with TestClient(create_app(settings, database)) as client:
+                with authenticated_client(create_app(settings, database, auth_config=test_auth_config()), job_ids=(job,)) as client:
                     self.assertEqual(fixture.ready(client, url).content, first)
                     self.assertEqual(calls, [1])
                     independent_fixture.rewrite_same_size_preserving_mtime(native, b'{"pose":"B"}\n')

@@ -14,6 +14,7 @@ from rallymate_service.api import create_app
 from rallymate_service.config import ServiceConfigError, ServiceSettings
 from rallymate_service.database import JobDatabase
 from rallymate_service.worker import process_one
+from tests.service_auth import authenticated_client, login_test_user, test_auth_config
 
 
 class ServiceTests(unittest.TestCase):
@@ -50,9 +51,9 @@ class ServiceTests(unittest.TestCase):
             root = Path(directory)
             settings = self._settings(root)
             database = JobDatabase(settings.database_path)
-            app = create_app(settings, database)
+            app = create_app(settings, database, auth_config=test_auth_config())
             video = self._video(root)
-            with TestClient(app) as client:
+            with authenticated_client(app) as client:
                 console = client.get("/")
                 self.assertEqual(console.status_code, 200)
                 self.assertEqual(console.json()["service"], "RallyMate Vision API")
@@ -320,18 +321,20 @@ class ServiceTests(unittest.TestCase):
             root = Path(directory)
             settings = self._settings(root)
             database = JobDatabase(settings.database_path)
-            app = create_app(settings, database)
+            app = create_app(settings, database, auth_config=test_auth_config())
             job_id = "11111111-1111-4111-8111-111111111111"
             output_dir = settings.runs_dir / job_id
             output_dir.mkdir(parents=True)
 
             with TestClient(app) as client:
+                user = login_test_user(client)
                 database.create_job(
                     job_id,
                     "old-video.mp4",
                     settings.uploads_dir / "old-video.mp4",
                     settings.requests_dir / f"{job_id}.json",
                     output_dir,
+                    user_id=user["id"],
                 )
                 claimed = database.claim_next(
                     "test-worker",
@@ -371,7 +374,7 @@ class ServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             settings = self._settings(root, api_key="secret")
-            app = create_app(settings, JobDatabase(settings.database_path))
+            app = create_app(settings, JobDatabase(settings.database_path), auth_config=test_auth_config())
             with TestClient(app) as client:
                 self.assertEqual(client.get("/health/ready").status_code, 401)
                 response = client.get(
@@ -482,8 +485,8 @@ class ServiceTests(unittest.TestCase):
                     / "metric-feasibility.json",
                 }
             )
-            app = create_app(settings, JobDatabase(settings.database_path))
-            with TestClient(app, raise_server_exceptions=False) as client:
+            app = create_app(settings, JobDatabase(settings.database_path), auth_config=test_auth_config())
+            with authenticated_client(app, raise_server_exceptions=False) as client:
                 ready = client.get("/health/ready")
                 self.assertEqual(ready.status_code, 200)
                 self.assertEqual(ready.json()["status"], "ready")

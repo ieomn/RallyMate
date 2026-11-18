@@ -21,6 +21,50 @@ function compiledUrl(file) {
 const { createApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));
 const { getRequestDiagnostics } = await import(compiledUrl(new URL("../app/lib/request-diagnostics.ts", import.meta.url)));
 const { MAX_REPORT_WIRE_BYTES } = await import(compiledUrl(new URL("../app/lib/report-limits.ts", import.meta.url)));
+const { setAccountRequestState } = await import(compiledUrl(new URL("../app/lib/auth-client.ts", import.meta.url)));
+
+test("personal history paginates without report bodies and terminal deletion carries the account CSRF token", async t => {
+  setAccountRequestState({ userId: "account-a", csrfToken: "csrf-for-a" });
+  t.after(() => setAccountRequestState({ userId: null, csrfToken: null }));
+  const requests = [], id = "history-job-1234";
+  const client = createApiClient({}, async (url, init) => {
+    requests.push({ url, init });
+    assert.equal(init.credentials, "same-origin");
+    if (init.method === "DELETE") {
+      assert.equal(url, `/v1/jobs/${id}`);
+      assert.equal(new Headers(init.headers).get("x-csrf-token"), "csrf-for-a");
+      return Response.json({ id, deleted: true, deleted_at: "2026-11-17T00:00:00Z" });
+    }
+    assert.equal(url, "/api/records?limit=20&offset=20");
+    return Response.json({ items: [{ id, status: "succeeded", original_filename: "training.mp4", created_at: "2026-11-17T00:00:00Z", completed_at: null }], total: 21, offset: 20, limit: 20 });
+  });
+  assert.equal((await client.getRecords(20, 20)).items[0].id, id);
+  assert.equal((await client.deleteRecord(id)).deleted, true);
+  assert.deepEqual(requests.map(item => item.init.method), ["GET", "DELETE"]);
+  assert.ok(requests.every(item => !item.url.includes("demo-result")));
+});
+
+test("personal history rejects a late previous-account response even when injected fetch ignores abort", async t => {
+  setAccountRequestState({ userId: "account-a", csrfToken: "csrf-for-a" });
+  t.after(() => setAccountRequestState({ userId: null, csrfToken: null }));
+  let resolve, signal;
+  const pending = new Promise(done => { resolve = done; });
+  const client = createApiClient({}, async (_url, init) => { signal = init.signal; return pending; });
+  const read = client.getRecords();
+  const rejected = assert.rejects(read, error => error.name === "AbortError");
+  setAccountRequestState({ userId: "account-b", csrfToken: "csrf-for-b" });
+  assert.equal(signal.aborted, true);
+  resolve(Response.json({ items: [], total: 0, offset: 0, limit: 20 }));
+  await rejected;
+});
+
+test("record deletion preserves conflict responses and requires matching deletion confirmation", async () => {
+  const id = "history-job-1234";
+  await assert.rejects(createApiClient({}, async () => Response.json({ detail: "Cancel first" }, { status: 409 })).deleteRecord(id), error => error.status === 409);
+  for (const body of [{ id: "other-job-1234", deleted: true }, { id, deleted: false }]) {
+    await assert.rejects(createApiClient({}, async () => Response.json(body)).deleteRecord(id), /删除结果未确认/);
+  }
+});
 
 test("separate action-score reads have their own diagnostic category", async () => {
   const rows = [];
@@ -174,7 +218,7 @@ test("cancel uses an explicit POST and accepts only a matching confirmed job res
     const client = createApiClient(configured, async (url, init) => { requests.push({ url, init }); return Response.json(job); });
     assert.deepEqual(await client.cancelJob(id), job);
   }
-  assert.ok(requests.every(({ url, init }) => url === `/v1/jobs/${id}/cancel` && init.method === "POST" && init.cache === "no-store" && init.headers["X-Request-ID"] && init.signal && !init.body));
+  assert.ok(requests.every(({ url, init }) => url === `/v1/jobs/${id}/cancel` && init.method === "POST" && init.cache === "no-store" && new Headers(init.headers).get("X-Request-ID") && init.signal && !init.body));
   for (const job of [{ id: "other-job", status: "cancelled" }, { id, status: "running", cancel_requested: false }, { id, status: "unknown", cancel_requested: true }]) {
     await assert.rejects(createApiClient(configured, async () => Response.json(job)).cancelJob(id), /取消响应未确认当前任务/);
   }
@@ -214,7 +258,7 @@ test("only the three report reads opt into current and preserve complete 1.1 evi
     "/v1/jobs/job-12345678/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1",
     "/v1/jobs/job-12345678/technique-assessment?report_contract=current",
   ]);
-  assert.ok(requests.every(({ init }) => init.method === "GET" && init.cache === "no-store" && init.headers["X-Request-ID"]));
+  assert.ok(requests.every(({ init }) => init.method === "GET" && init.cache === "no-store" && new Headers(init.headers).get("X-Request-ID")));
   assert.deepEqual(job.summary, source.summary);
   for (const result of [demo, assessment]) {
     assert.deepEqual(result.action_recognition, source.action_recognition);
@@ -298,7 +342,7 @@ test("metadata, catalogs, pose, trajectory and technical review export do not ac
 test("read diagnostics retain four success stages without URL, response data or upstream IDs", async () => {
   const rows = []; let sentId;
   const client = createApiClient(configured, async (_url, init) => {
-    sentId = init.headers["X-Request-ID"];
+    sentId = new Headers(init.headers).get("X-Request-ID");
     return Response.json({ ...nativeReport(), private_fixture: "BODY_SECRET" }, { headers: { "X-Request-ID": "UPSTREAM_SECRET" } });
   }, undefined, row => rows.push(row));
   const result = await client.getDemoResult("job-12345678", { endpoint: "/v1/jobs/job-12345678/demo-result?token=QUERY_SECRET" });
@@ -535,7 +579,7 @@ test("a final in-flight failure never inherits the preceding preparation respons
   const timing = { now: () => now, wait: async ms => { now += ms; } };
   const original = new TypeError("controlled failure");
   const client = createApiClient(configured, async (_url, init) => {
-    requestIds.push(init.headers["X-Request-ID"]);
+    requestIds.push(new Headers(init.headers).get("X-Request-ID"));
     if (++calls === 1) return Response.json(preparing(), { status: 202 });
     now = 360000; throw original;
   }, timing);

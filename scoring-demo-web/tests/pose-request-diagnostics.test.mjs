@@ -80,7 +80,7 @@ test("pose success retains raw response and one request ID across headers/body/j
   assert.ok(normalizePosePreview(raw, job));
   assert.notDeepEqual(normalizePosePreview(raw, job), raw);
   const client = createApiClient(configured, async (url, init) => {
-    calls++; requestId = init.headers["X-Request-ID"];
+    calls++; requestId = new Headers(init.headers).get("X-Request-ID");
     assert.equal(String(url), `/v1/jobs/${job}/pose-preview?start_ms=0&duration_ms=10000&sample_limit=600&pose_transport=compact-v1`);
     assert.equal(init.method, "GET"); assert.equal(init.cache, "no-store");
     return Response.json(raw, { headers: { "X-Request-ID": "UPSTREAM_PRIVATE_ID", "X-Secret": secret } });
@@ -121,7 +121,7 @@ test("HTTP200 invalid pose and foreign job fail safely at pose_normalization wit
     const rows = []; let calls = 0, requestId;
     assert.equal(normalizePosePreview(raw, job), null);
     const client = createApiClient(configured, async (_url, init) => {
-      calls++; requestId = init.headers["X-Request-ID"]; return Response.json(raw);
+      calls++; requestId = new Headers(init.headers).get("X-Request-ID"); return Response.json(raw);
     }, undefined, row => rows.push(row));
     await assert.rejects(client.getPosePreview(job), error => {
       assertDecodeFailure(error, rows, "pose_normalization"); messages.push(error.message); return true;
@@ -136,7 +136,7 @@ test("a valid foreign pose window has its own fixed decode category and no respo
   const raw = payload(10000), rows = []; let calls = 0, requestId;
   assert.ok(normalizePosePreview(raw, job));
   const client = createApiClient(configured, async (_url, init) => {
-    calls++; requestId = init.headers["X-Request-ID"]; return Response.json(raw);
+    calls++; requestId = new Headers(init.headers).get("X-Request-ID"); return Response.json(raw);
   }, undefined, row => rows.push(row));
   await assert.rejects(client.getPosePreview(job, { startMs: 0 }), error => {
     assertDecodeFailure(error, rows, "pose_window_mismatch"); return true;
@@ -152,7 +152,7 @@ test("pose HTTP and JSON errors keep their existing status/category and never re
   ]) {
     const rows = []; let calls = 0, requestId;
     const client = createApiClient(configured, async (_url, init) => {
-      calls++; requestId = init.headers["X-Request-ID"]; return new Response(body, { status });
+      calls++; requestId = new Headers(init.headers).get("X-Request-ID"); return new Response(body, { status });
     }, undefined, row => rows.push(row));
     await assert.rejects(client.getPosePreview(job), error => {
       assert.equal(error.status, expectedStatus);
@@ -169,7 +169,7 @@ test("pose body interruption keeps the exact error and body_read category", asyn
   const rows = [], reason = new TypeError(secret); let calls = 0, requestId;
   const response = new Response(new ReadableStream({ pull(controller) { controller.error(reason); } }, { highWaterMark: 0 }));
   const client = createApiClient(configured, async (_url, init) => {
-    calls++; requestId = init.headers["X-Request-ID"]; return response;
+    calls++; requestId = new Headers(init.headers).get("X-Request-ID"); return response;
   }, undefined, row => rows.push(row));
   await assert.rejects(client.getPosePreview(job), error => error === reason);
   assert.equal(calls, 1); assertSafeRows(rows, requestId, ["headers", "body"]);
@@ -188,7 +188,7 @@ test("pose pre-abort avoids fetch and post-body abort wins over valid or invalid
       controller.enqueue(new TextEncoder().encode(JSON.stringify(raw))); controller.close(); caller.abort(reason);
     } }, { highWaterMark: 0 }));
     const client = createApiClient(configured, async (_url, init) => {
-      calls++; requestId = init.headers["X-Request-ID"]; return response;
+      calls++; requestId = new Headers(init.headers).get("X-Request-ID"); return response;
     }, undefined, row => rows.push(row));
     await assert.rejects(client.getPosePreview(job, { signal: caller.signal }), error => error === reason);
     assert.equal(calls, 1); assertSafeRows(rows, requestId, ["headers"]);
@@ -200,7 +200,7 @@ test("caller cancellation after JSON success suppresses the pending pose validat
   const caller = new AbortController(), reason = new DOMException(secret, "AbortError"), rows = [];
   let requestId, calls = 0;
   const client = createApiClient(configured, async (_url, init) => {
-    calls++; requestId = init.headers["X-Request-ID"]; return Response.json({ invalid: secret });
+    calls++; requestId = new Headers(init.headers).get("X-Request-ID"); return Response.json({ invalid: secret });
   }, undefined, row => { rows.push(row); if (row.stage === "json") caller.abort(reason); });
   await assert.rejects(client.getPosePreview(job, { signal: caller.signal }), error => error === reason);
   assert.equal(calls, 1); assertSafeRows(rows, requestId, ["headers", "body", "json"]);
@@ -213,7 +213,7 @@ test("pose network and local timeout remain distinct original failures with one2
   for (const timeout of [false, true]) {
     const rows = [], reason = new TypeError(secret); let calls = 0, requestId;
     const client = createApiClient(configured, async (_url, init) => {
-      calls++; requestId = init.headers["X-Request-ID"];
+      calls++; requestId = new Headers(init.headers).get("X-Request-ID");
       if (timeout) t.mock.timers.tick(20000);
       throw reason;
     }, undefined, row => rows.push(row));

@@ -1,5 +1,6 @@
 """HTTP review persistence uses real candidate generation and source binding."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
@@ -11,6 +12,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client, login_test_user
 
 from rallymate_service import api
 from rallymate_service.database import JobDatabase
@@ -29,7 +31,7 @@ class ShotStatisticsApiTests(unittest.TestCase):
         self.digest = hashlib.sha256(BODY).hexdigest()
         self.frames_path = self.settings.runs_dir / JOB / "frames.jsonl"
         self.url = f"/v1/jobs/{JOB}/shot-statistics"
-        self.headers = {"Authorization": f"Bearer {self.settings.api_key}"}
+        self.headers = {}
         self.write_frames()
 
     def write_frames(self, *, racket=False, calibrated=True):
@@ -39,8 +41,9 @@ class ShotStatisticsApiTests(unittest.TestCase):
             row["frame"]["video_sha256"] = self.digest
         self.frames_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
-    def client(self):
-        return TestClient(api.create_app(self.settings, self.database))
+    def client(self, *, authenticated=True):
+        app = api.create_app(self.settings, self.database)
+        return authenticated_client(app, job_ids=(JOB,)) if authenticated else TestClient(app)
 
     def submission(self, event, *, revision=0, mutation=None, digest=None):
         return {"mutation_id": mutation or str(uuid4()), "expected_revision": revision,
@@ -60,20 +63,21 @@ class ShotStatisticsApiTests(unittest.TestCase):
         return client.post(self.url, headers=self.headers, json=self.submission(event, **options))
 
     def test_authentication_completed_job_and_source_file_integrity(self):
-        with self.client() as client:
+        with self.client(authenticated=False) as client:
             self.assertEqual(client.get(self.url).status_code, 401)
             self.assertEqual(client.post(self.url, json=self.submission(self.manual())).status_code, 401)
+            login_test_user(client, job_ids=(JOB,))
             response = client.get(self.url, headers=self.headers)
             self.assertEqual(response.status_code, 200, response.text)
             self.assertIn("no-store", response.headers["cache-control"])
             self.assertEqual(response.json()["source"]["video_sha256"], self.digest)
             self.assertEqual(client.get(self.url.replace(JOB, str(uuid4())), headers=self.headers).status_code, 404)
             for status in ("queued", "running", "failed", "cancelled"):
-                with sqlite3.connect(self.settings.database_path) as connection:
+                with closing(sqlite3.connect(self.settings.database_path)) as connection, connection:
                     connection.execute("UPDATE jobs SET status=? WHERE id=?", (status, JOB))
                 self.assertEqual(client.get(self.url, headers=self.headers).status_code, 409, status)
                 self.assertEqual(self.post(client, self.manual()).status_code, 409, status)
-            with sqlite3.connect(self.settings.database_path) as connection:
+            with closing(sqlite3.connect(self.settings.database_path)) as connection, connection:
                 connection.execute("UPDATE jobs SET status='succeeded' WHERE id=?", (JOB,))
             self.video.write_bytes(BODY + b"changed")
             self.assertEqual(client.get(self.url, headers=self.headers).status_code, 409)
@@ -176,7 +180,7 @@ class ShotStatisticsApiTests(unittest.TestCase):
                 responses = [future.result(timeout=10) for future in futures]
             self.assertEqual(sorted(r.status_code for r in responses), [200, 409])
         # New app and JobDatabase instances share only the durable SQLite state.
-        with TestClient(api.create_app(self.settings, JobDatabase(self.settings.database_path))) as fresh:
+        with authenticated_client(api.create_app(self.settings, JobDatabase(self.settings.database_path)), job_ids=(JOB,)) as fresh:
             result = fresh.get(self.url, headers=self.headers).json()
             self.assertEqual(result["revision"], 1)
             self.assertEqual(result["summary"]["confirmed_hit_count"], 1)

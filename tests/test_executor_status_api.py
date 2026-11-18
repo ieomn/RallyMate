@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
+from tests.service_auth import login_test_user
 
 
 class ExecutorStatusApiTests(unittest.TestCase):
@@ -32,10 +33,12 @@ class ExecutorStatusApiTests(unittest.TestCase):
                                  headers={'Authorization': 'Bearer executor-test-key'})
         self.client.__enter__()
         self.addCleanup(self.client.__exit__, None, None, None)
+        self.user = login_test_user(self.client)
 
     def job(self, identifier):
         return self.db.create_job(identifier, 'video.mp4', self.settings.uploads_dir / (identifier + '.mp4'),
-            self.settings.requests_dir / (identifier + '.json'), self.settings.runs_dir / identifier)
+            self.settings.requests_dir / (identifier + '.json'), self.settings.runs_dir / identifier,
+            user_id=self.user['id'])
 
     def test_dead_executor_is_not_ready_but_queued_job_remains_readable(self):
         self.job('waiting')
@@ -57,7 +60,7 @@ class ExecutorStatusApiTests(unittest.TestCase):
         self.assertNotIn('Private', response.text)
         self.assertNotIn('secret-host', response.text)
         self.assertNotIn('summary', status)
-        self.assertEqual(response.headers['cache-control'], 'no-store')
+        self.assertEqual(response.headers['cache-control'], 'private, no-store')
         rejected = self.client.post('/v1/uploads', json={'upload_id': 'new-upload', 'filename': 'video.mp4', 'size': 1})
         self.assertEqual(rejected.status_code, 503)
         self.assertEqual(rejected.json()['detail']['code'], 'executor_unavailable')

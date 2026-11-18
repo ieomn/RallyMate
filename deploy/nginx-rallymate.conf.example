@@ -1,153 +1,53 @@
-# Replace the domains and certificate paths before enabling this file.
-# Keep the FastAPI container bound to a private interface; expose only Nginx.
-
-upstream rallymate_api {
-    server 127.0.0.1:8000;
-    keepalive 16;
-}
-
-upstream rallymate_web {
-    # Run `npm run build && npm run start` in scoring-demo-web on this host.
-    server 127.0.0.1:3000;
-    keepalive 16;
-}
-
-# Include these directives inside the Nginx `http { ... }` block. They are a
-# coarse edge limit; retain tenant/session quotas in the application gateway.
-limit_req_zone $binary_remote_addr zone=rallymate_api_rate:10m rate=30r/m;
-limit_req_zone $binary_remote_addr zone=rallymate_api_read:10m rate=120r/m;
-limit_req_zone $binary_remote_addr zone=rallymate_upload_rate:10m rate=2r/m;
-limit_conn_zone $binary_remote_addr zone=rallymate_api_conn:10m;
-limit_req_status 429;
-
-# Same-origin browser gateway (recommended for the promotion frontend):
-# create this root-readable, mode-600 file before loading the config:
-#   /etc/nginx/snippets/rallymate-api-auth.conf
-# It must contain only a server-side variable assignment, for example:
-#   set $rallymate_api_authorization "Bearer <the-RALLYMATE_API_KEY>";
-# Never put that value in NEXT_PUBLIC_* / VITE_* or in this repository.
+# Mounted as the official nginx image's default.conf.template.
+# The edge owns forwarded identity; API and Node have no published host ports.
+log_format rallymate '$remote_addr $request_method $uri $status $body_bytes_sent $request_time';
+upstream rallymate_api { server api:8000; keepalive 16; }
+upstream rallymate_web { server frontend:3000; keepalive 16; }
 
 server {
-    listen 443 ssl http2;
-    server_name api.example.com;
+    listen 80;
+    server_name ${PUBLIC_HOST};
+    return 308 https://${PUBLIC_HOST}$request_uri;
+}
 
-    ssl_certificate     /etc/letsencrypt/live/api.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${PUBLIC_HOST};
+    ssl_certificate /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    if ($host != '${PUBLIC_HOST}') { return 444; }
+    access_log /var/log/nginx/access.log rallymate;
 
-    # Must be <= RALLYMATE_MAX_UPLOAD_BYTES (2 GiB in the example env).
-    client_max_body_size 2g;
-    proxy_request_buffering off;
+    client_max_body_size 2G;
+    client_body_timeout 3600s;
+    send_timeout 3600s;
     proxy_read_timeout 3600s;
     proxy_send_timeout 3600s;
-    client_body_timeout 60s;
-    send_timeout 60s;
+    proxy_request_buffering off;
+    proxy_buffering off;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Host $http_host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header CF-Connecting-IP $remote_addr;
+    proxy_set_header Authorization $http_authorization;
+    proxy_set_header Cookie $http_cookie;
+    proxy_set_header Origin $http_origin;
+    proxy_set_header X-CSRF-Token $http_x_csrf_token;
+    proxy_set_header X-Request-ID $http_x_request_id;
 
-    location / {
-        limit_req zone=rallymate_api_rate burst=12 nodelay;
-        limit_conn rallymate_api_conn 8;
-        proxy_pass http://rallymate_api;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Request-ID $http_x_request_id;
-    }
-}
-
-# Promotion frontend (vinext SSR). The current App Router build includes the
-# local compatibility route handler, so `dist/client` is an asset directory,
-# not a standalone index.html. Proxy the Node server unless you deliberately
-# add and verify a separate static-export build.
-server {
-    listen 443 ssl http2;
-    server_name app.example.com;
-
-    ssl_certificate     /etc/letsencrypt/live/app.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.example.com/privkey.pem;
-
-    # Website access needs no username or password. Anyone with the app URL
-    # can submit videos and read the corresponding jobs. The server-side
-    # API Bearer key below and the request limits remain enabled.
-
-    # These paths are proxied from the browser's same-origin app domain to the
-    # private API. The include injects the long-lived key server-side, so the
-    # browser never receives it. Keep the direct api.example.com server above
-    # protected by its normal Bearer check for operators and non-browser jobs.
-    include /etc/nginx/snippets/rallymate-api-auth.conf;
-
-    # Keep upload size and idle-client limits aligned with the API settings.
-    client_max_body_size 2g;
-    client_body_timeout 60s;
-    send_timeout 60s;
-
-    location = /v1 {
-        limit_req zone=rallymate_api_rate burst=12 nodelay;
-        limit_conn rallymate_api_conn 8;
-        proxy_pass http://rallymate_api;
-        proxy_http_version 1.1;
-        proxy_set_header Authorization $rallymate_api_authorization;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Request-ID $http_x_request_id;
-    }
-
-    # Uploads are expensive GPU work: keep a separate low rate at the edge.
-    # Polling and metadata use the higher read limit below.
-    location = /v1/jobs {
-        limit_req zone=rallymate_upload_rate burst=1 nodelay;
-        limit_conn rallymate_api_conn 4;
-        proxy_pass http://rallymate_api;
-        proxy_http_version 1.1;
-        proxy_request_buffering off;
-        proxy_set_header Authorization $rallymate_api_authorization;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Request-ID $http_x_request_id;
-    }
-
-    location /v1/ {
-        limit_req zone=rallymate_api_read burst=30 nodelay;
-        limit_conn rallymate_api_conn 8;
-        proxy_pass http://rallymate_api;
-        proxy_http_version 1.1;
-        proxy_request_buffering off;
-        proxy_set_header Authorization $rallymate_api_authorization;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Request-ID $http_x_request_id;
-    }
-
-    location /health/ {
-        limit_req zone=rallymate_api_rate burst=30 nodelay;
-        proxy_pass http://rallymate_api;
-        proxy_http_version 1.1;
-        proxy_set_header Authorization $rallymate_api_authorization;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Request-ID $http_x_request_id;
-    }
-
-    # vinext produces a client bundle under dist/client. The server bundle
-    # stays private; use `vinext start` instead when deploying SSR rather than
-    # exposing dist/server as static files.
-    location / {
-        proxy_pass http://rallymate_web;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
+    location ~ ^/(?:internal|metrics)(?:/|$) { return 404; }
+    location ^~ /v1/ { proxy_pass http://rallymate_api; }
+    location ^~ /api/auth/ { proxy_pass http://rallymate_api; }
+    location ^~ /api/admin/ { proxy_pass http://rallymate_api; }
+    location = /api/records { proxy_pass http://rallymate_api; }
+    location = /health/live { proxy_pass http://rallymate_api; }
+    # Operators supply their maintenance Bearer; user credentials are never replaced.
+    location = /health/ready { proxy_pass http://rallymate_api; }
+    location / { proxy_pass http://rallymate_web; }
 }

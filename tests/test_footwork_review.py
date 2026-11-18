@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.footwork_review import build_footwork_review, load_footwork_review
 from tests import test_trajectory_api as fixture
@@ -291,7 +291,7 @@ class FootworkReviewApiTests(unittest.TestCase):
             job_id = helper._succeeded_job(settings, database)
             output = settings.runs_dir / job_id
             (output / "indicator-features.jsonl").write_text(json.dumps(record(video_id=job_id)) + "\n", encoding="utf-8")
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 url = f"/v1/jobs/{job_id}/demo-result"
                 response = client.get(url)
                 self.assertEqual(response.status_code, 200, response.text)
@@ -318,7 +318,7 @@ class FootworkReviewApiTests(unittest.TestCase):
             output = settings.runs_dir / job_id
             (output / "indicator-features.jsonl").write_text(json.dumps(record()) + "\n", encoding="utf-8")
             (output / "events.jsonl").write_text(json.dumps(event()) + "\n", encoding="utf-8")
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 response = client.get(f"/v1/jobs/{job_id}/demo-result")
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertEqual(response.json()["footwork_review"]["episodes"], [])

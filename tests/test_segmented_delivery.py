@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from starlette.requests import Request
 from rallymate_service import segmented_report as segments
 from rallymate_service.report_delivery_cache import DeliveryError
@@ -43,7 +43,7 @@ class SegmentedDeliveryTests(unittest.TestCase):
             return original(store, *args, **kwargs)
         with patch.object(segments.SegmentedReportStore, "actions", blocked), \
                 patch.object(self.delivery, "_snapshot", wraps=self.delivery._snapshot) as identities, \
-                TestClient(self.app) as client:
+                authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             deferred = self.base + "/report-actions?report_delivery=deferred-v1"
             first = client.get(deferred)
             self.assertEqual(first.status_code, 202)
@@ -70,7 +70,7 @@ class SegmentedDeliveryTests(unittest.TestCase):
             entered.set()
             release.wait(5)
             return original(store, *args, **kwargs)
-        with patch.object(segments.SegmentedReportStore, "actions", blocked), TestClient(self.app) as client, \
+        with patch.object(segments.SegmentedReportStore, "actions", blocked), authenticated_client(self.app, job_ids=(self.job["id"],)) as client, \
                 ThreadPoolExecutor(max_workers=1) as readers:
             inline = readers.submit(client.get, self.base + "/report-actions")
             try:
@@ -92,7 +92,7 @@ class SegmentedDeliveryTests(unittest.TestCase):
             entered.set()
             release.wait(5)
             return original(store, *args, **kwargs)
-        with patch.object(segments.SegmentedReportStore, "actions", blocked), TestClient(self.app) as client:
+        with patch.object(segments.SegmentedReportStore, "actions", blocked), authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             self.assertEqual(client.get(self.base + "/report-actions?report_delivery=deferred-v1").status_code, 202)
             self.assertTrue(entered.wait(5))
             try:
@@ -106,7 +106,7 @@ class SegmentedDeliveryTests(unittest.TestCase):
             self.assertEqual(prepared_get(client, self.base + "/report-actions").status_code, 200)
 
     def test_ready_cache_does_not_hide_same_size_restored_time_tampering(self):
-        with TestClient(self.app) as client:
+        with authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             first = prepared_get(client, self.base + "/report-actions")
             self.assertEqual(first.status_code, 200)
             path = Path(self.job["output_dir"]) / "indicator-features.jsonl"
@@ -118,7 +118,7 @@ class SegmentedDeliveryTests(unittest.TestCase):
             self.assertEqual(rejected.json()["detail"]["code"], "report_evidence_invalid")
 
     def test_pages_and_event_identity_are_separate_cache_scopes(self):
-        with TestClient(self.app) as client:
+        with authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             one = prepared_get(client, self.base + "/report-actions/event-1?offset=0&limit=1")
             two = prepared_get(client, self.base + "/report-actions/event-1?offset=1&limit=1")
             missing = prepared_get(client, self.base + "/report-actions/no-event?offset=0&limit=1")
@@ -127,7 +127,7 @@ class SegmentedDeliveryTests(unittest.TestCase):
 
     def test_proof_output_limit_remains_413_in_shared_preparation(self):
         with patch.object(segments.SegmentedReportStore, "detail", side_effect=ReportEvidenceLimitError("limit")), \
-                TestClient(self.app) as client:
+                authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             rejected = prepared_get(client, self.base + "/report-actions/event-1")
             self.assertEqual(rejected.status_code, 413, rejected.text)
             self.assertEqual(rejected.json()["detail"]["code"], "report_segment_limit")

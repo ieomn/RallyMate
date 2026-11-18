@@ -1,0 +1,6 @@
+# Only observe device health/utilization; no profiling or scheduling actions.
+DCGM_FI_DEV_GPU_UTIL_RATIO, gauge, GPU utilization ratio from zero to one.
+DCGM_FI_DEV_FB_USED_BYTES, gauge, Framebuffer memory used in bytes.
+DCGM_FI_DEV_FB_FREE_BYTES, gauge, Framebuffer memory free in bytes.
+DCGM_FI_DEV_GPU_TEMP_CELSIUS, gauge, GPU temperature in degrees C.
+DCGM_FI_DEV_BOARD_POWER_WATTS, gauge, GPU power usage in watts.

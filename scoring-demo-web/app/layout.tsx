@@ -12,6 +12,9 @@ import "./training-summary.css";
 import "./welcome/marketing.css";
 import "./welcome/training-experience.css";
 import "./product-refinements.css";
+import "./account.css";
+import { AuthProvider } from "./auth/AuthProvider";
+import FrontendMonitoring from "./FrontendMonitoring";
 
 export const metadata: Metadata = {
   title: "RallyMate · 网球训练空间",
@@ -20,5 +23,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body>{children}</body></html>;
+  return <html lang="zh-CN"><body><FrontendMonitoring><AuthProvider>{children}</AuthProvider></FrontendMonitoring></body></html>;
 }

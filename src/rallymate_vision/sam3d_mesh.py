@@ -41,6 +41,9 @@ MAX_GEOMETRY_FILE_BYTES = 8 * 1024 * 1024
 # its owning process; worker reference release must not trigger GL __del__.
 # No subsequent render is admitted until that isolated process exits.
 _UNJOINED_PREPARATIONS = []
+# Expected NPY digests only; retain no mesh arrays between captures. The key
+# includes dtype, shape and exact values, so changed model topology is checked.
+_CAPTURE_TOPOLOGY_DIGESTS = {}
 
 
 def _contained(path: Path, root: Path) -> Path:
@@ -86,6 +89,21 @@ def capture_mesh_output(output: dict, faces: np.ndarray, runtime_dir: Path) -> d
         finally:
             temporary.unlink(missing_ok=True)
     faces_sha256 = sha256_file(topology)
+    expected_digests = _CAPTURE_TOPOLOGY_DIGESTS.get(topology_hash)
+    if expected_digests is None:
+        expected_digests = set()
+        # Historical caches can use either NPY memory order. Both encode the
+        # same topology; verify against model values without trusting a cache
+        # file's array header or re-reading its bytes on every frame.
+        for ordered in (np.ascontiguousarray(faces), np.asfortranarray(faces)):
+            with io.BytesIO() as buffer:
+                np.save(buffer, ordered, allow_pickle=False)
+                expected_digests.add(hashlib.sha256(buffer.getvalue()).hexdigest().upper())
+        if len(_CAPTURE_TOPOLOGY_DIGESTS) >= 8:
+            _CAPTURE_TOPOLOGY_DIGESTS.clear()
+        _CAPTURE_TOPOLOGY_DIGESTS[topology_hash] = expected_digests
+    if faces_sha256 not in expected_digests:
+        raise ValueError("cached SAM topology differs from model topology")
     # Hash the exact NPZ bytes before publishing them. Reopening a freshly
     # written file for this self-check is expensive on the local filesystem;
     # the parent still verifies the actual disk bytes at the archive boundary.

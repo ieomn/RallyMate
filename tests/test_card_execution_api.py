@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client, login_test_user, test_auth_config
 
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
@@ -40,7 +41,7 @@ class CardExecutionApiTests(unittest.TestCase):
         # test settings for that initialization so no deployment weights are needed.
         with patch("rallymate_service.config.load_settings", return_value=settings):
             from rallymate_service.api import create_app
-        return create_app(settings, database), settings, database
+        return create_app(settings, database, auth_config=test_auth_config()), settings, database
 
     def job(self, settings, database, *, identifier=None, output=None, write_inputs=True):
         identifier = identifier or self.job_id
@@ -77,7 +78,7 @@ class CardExecutionApiTests(unittest.TestCase):
             app, settings, database = self.app(Path(directory))
             output, _ = self.job(settings, database)
             before = (output / "summary.json").read_bytes()
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(self.job_id,)) as client:
                 reports = []
                 for contract in ("current", "legacy-v1"):
                     response = client.get(f"/v1/jobs/{self.job_id}/demo-result?report_contract={contract}")
@@ -100,7 +101,7 @@ class CardExecutionApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             app, settings, database = self.app(Path(directory))
             output, summary = self.job(settings, database)
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(self.job_id,)) as client:
                 before = client.get(f"/v1/jobs/{self.job_id}/demo-result?report_contract=current").json()
                 (output / "frames.jsonl").write_text('{"frame":broken}\n', encoding="utf-8")
                 response = client.get(f"/v1/jobs/{self.job_id}/demo-result?report_contract=current")
@@ -122,7 +123,7 @@ class CardExecutionApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             app, settings, database = self.app(Path(directory))
             output, _ = self.job(settings, database)
-            with patch.object(execution, "_read_records", wraps=execution._read_records) as read, TestClient(app) as client:
+            with patch.object(execution, "_read_records", wraps=execution._read_records) as read, authenticated_client(app, job_ids=(self.job_id,)) as client:
                 url = f"/v1/jobs/{self.job_id}/demo-result?report_contract=current"
                 first = client.get(url).json()["card_execution"]
                 expected = execution.build_card_execution_from_records(
@@ -150,7 +151,7 @@ class CardExecutionApiTests(unittest.TestCase):
             output, _ = self.job(settings, database)
             foreign_id = "22222222-2222-4222-8222-222222222222"
             self.job(settings, database, identifier=foreign_id, output=output, write_inputs=False)
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(self.job_id, foreign_id)) as client:
                 first = client.get(f"/v1/jobs/{self.job_id}/demo-result").json()["card_execution"]
                 foreign = client.get(f"/v1/jobs/{foreign_id}/demo-result").json()["card_execution"]
                 repeated = client.get(f"/v1/jobs/{self.job_id}/demo-result").json()["card_execution"]
@@ -159,7 +160,7 @@ class CardExecutionApiTests(unittest.TestCase):
             self.assertEqual(foreign["cards"], [])
             self.assertEqual(first, repeated)
 
-    def test_new_report_stays_behind_existing_bearer_authorization(self):
+    def test_new_report_requires_user_session_before_building(self):
         with tempfile.TemporaryDirectory() as directory:
             app, settings, database = self.app(Path(directory), api_key="real-test-secret")
             self.job(settings, database)
@@ -168,7 +169,10 @@ class CardExecutionApiTests(unittest.TestCase):
                 self.assertEqual(client.get(url).status_code, 401)
                 self.assertEqual(client.get(url, headers={"Authorization": "Bearer wrong"}).status_code, 401)
                 build.assert_not_called()
-                response = client.get(url, headers={"Authorization": "Bearer real-test-secret"})
+                self.assertEqual(client.get(url, headers={"Authorization": "Bearer real-test-secret"}).status_code, 401)
+                build.assert_not_called()
+                login_test_user(client, job_ids=(self.job_id,))
+                response = client.get(url)
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertEqual(build.call_count, 1)
 

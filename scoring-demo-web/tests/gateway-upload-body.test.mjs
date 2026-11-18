@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -12,7 +13,7 @@ const { proxyAnalysis } = await import(`data:text/javascript;base64,${Buffer.fro
 const CHUNK_BYTES = 4 * 1024 * 1024;
 const path = "/v1/uploads/buffered-upload-123/chunks/0";
 const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: "internal-test-key" };
-const request = (body, headers = {}, signal) => new Request(`http://localhost${path}`, {
+const request = (body, headers = {}, signal) => userRequest(`http://localhost${path}`, {
   method: "PUT", body, duplex: "half", signal,
   headers: { origin: "http://localhost", "content-type": "application/octet-stream", ...headers },
 });
@@ -36,12 +37,12 @@ test("fragmented slow upload reaches real upstream only when complete, with exac
   t.after(() => { upstream.closeAllConnections(); upstream.close(); });
   let controller;
   const body = new ReadableStream({ start(value) { controller = value; } });
-  const output = proxyAnalysis(request(body, { "content-length": "1", "x-chunk-sha256": sha(expected), authorization: "Bearer browser-must-not-forward" }), { ...env, RALLYMATE_API_ORIGIN: `http://127.0.0.1:${upstream.address().port}` });
+  const output = proxyAnalysis(request(body, { "content-length": "1", "x-chunk-sha256": sha(expected), authorization: "Bearer browser-user-jwt" }), { ...env, RALLYMATE_API_ORIGIN: `http://127.0.0.1:${upstream.address().port}` });
   for (const part of parts) { controller.enqueue(part); await tick(); assert.equal(calls, 0); }
   controller.close();
   const response = await output;
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { bytes: expected.length, digest: sha(expected), declared: String(expected.length), transferEncoding: null, checksum: sha(expected), authorization: "Bearer internal-test-key" });
+  assert.deepEqual(await response.json(), { bytes: expected.length, digest: sha(expected), declared: String(expected.length), transferEncoding: null, checksum: sha(expected), authorization: "Bearer browser-user-jwt" });
   assert.equal(calls, 1);
 });
 

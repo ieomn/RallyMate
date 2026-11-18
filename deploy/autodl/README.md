@@ -6,13 +6,15 @@
 
 ```text
 浏览器 → Cloudflare HTTPS → AutoDL cloudflared → 127.0.0.1:8000 网页
-                                                  ↓ 内部 Bearer key
+                                                  ↓ 当前用户 Cookie / JWT
                                             127.0.0.1:8001 API
                                                   ↓ 本地任务队列
                                                GPU Worker
 ```
 
-网页直接打开，无登录账号和密码。API key 只在 AutoDL 网页服务与 API 之间使用，保存在未提交的 `runtime.env` 中；不要把它放进前端构建变量或公开日志。拥有临时网址的人可以使用网页并提交推理任务。
+网页使用用户注册、管理员审批与登录会话。业务代理传递当前用户的 Cookie / JWT；API key 只用于内部运维，保存在未提交的 `runtime.env` 中。完整账户配置、PostgreSQL 迁移和 Linux Compose 部署见[主部署文档](../README.md)。
+
+已有 AutoDL 环境升级时，在原模型配置上增加 `JWT_SECRET`、`PUBLIC_ORIGIN`、`AUTH_COOKIE_SECURE=true`、`ADMIN_EMAIL` 和 `ADMIN_PASSWORD`。`PUBLIC_ORIGIN` 使用实际 HTTPS 网页地址；随机 Tunnel 域名变化后同步更新并重启 API/网页，保证登录与 CSRF 校验使用同一来源。默认 SQLite 升级会新增账户表并保留历史空归属。
 
 ## 运行前准备
 
@@ -121,7 +123,7 @@ chmod 600 deploy/autodl/runtime.env
 chmod +x deploy/autodl/manage.sh deploy/autodl/run-process.sh
 ```
 
-用随机值替换 `runtime.env` 中的 API key。配置使用 shell 赋值格式，包含空格或特殊字符时必须正确引用；仅将可信配置写入该文件。API 与 Worker 读取同一个环境文件，确保模型预设和数据目录一致。启动前应核对当前项目使用的模型预设，不应为了运行而静默更换模型。
+为 `runtime.env` 设置独立随机的 API key 与 JWT secret，并填写首次管理员邮箱、强密码和当前 HTTPS Origin。配置使用 shell 赋值格式，特殊字符必须正确引用。API 与 Worker 读取同一环境文件，保持现有模型预设和数据目录。管理员已存在时启动不会覆盖其密码。
 
 ## 启停与日志
 

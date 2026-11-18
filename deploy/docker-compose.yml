@@ -1,75 +1,217 @@
+x-runtime: &runtime
+  DATABASE_URL: ${DATABASE_URL:?set the private PostgreSQL DATABASE_URL}
+  RALLYMATE_DATA_ROOT: /app/service_data
+  RALLYMATE_DETECT_MODEL: /app/models/yolo26n.pt
+  RALLYMATE_POSE_PRESET: ${RALLYMATE_POSE_PRESET-rtmpose-m-halpe26-online}
+  RALLYMATE_POSE_BACKEND: ${RALLYMATE_POSE_BACKEND:-rtmpose}
+  RALLYMATE_POSE_RUNTIME: pytorch
+  RALLYMATE_POSE_PROFILE: ${RALLYMATE_POSE_PROFILE:-realtime}
+  RALLYMATE_POSE_NATIVE_KEYPOINT_FORMAT: ${RALLYMATE_POSE_NATIVE_KEYPOINT_FORMAT:-halpe26}
+  RALLYMATE_POSE_MODEL: ${RALLYMATE_POSE_MODEL:-/app/models/rtmpose/rtmpose-m_halpe26_256x192.pth}
+  RALLYMATE_POSE_CONFIG: ${RALLYMATE_POSE_CONFIG:-}
+  RALLYMATE_ENVIRONMENT: ${RALLYMATE_ENVIRONMENT:-production}
+  RALLYMATE_MODEL_LICENSE_ACK: ${RALLYMATE_MODEL_LICENSE_ACK:?set the reviewed model license acknowledgement}
+  RALLYMATE_MAX_UPLOAD_BYTES: ${RALLYMATE_MAX_UPLOAD_BYTES:-2147483648}
+  RALLYMATE_TECHNIQUE_REGISTRY: ${RALLYMATE_TECHNIQUE_REGISTRY:-}
+  RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST: ${RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST:-/app/registry-lifecycle.json}
+  RALLYMATE_SCORING_FEASIBILITY_REGISTRY: ${RALLYMATE_SCORING_FEASIBILITY_REGISTRY:-/app/metric-feasibility-pose-wave-v3.json}
+  RALLYMATE_SCORING_CALIBRATION_ASSETS: ${RALLYMATE_SCORING_CALIBRATION_ASSETS:-}
+  RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER: ${RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER:-/app/calibration/trusted-calibration-promotion-ledger.json}
+  RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS: ${RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS:-/app/calibration/trusted-runtime-profile-bindings.json}
+  RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR: ${RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR:-/app/calibration/runtime-view-evidence}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+  SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+  SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.05}
+
+x-app-volumes: &app-volumes
+  - ${RALLYMATE_DATA_DIR:-../service_data}:/app/service_data
+  - ${RALLYMATE_MODELS_DIR:-../models}:/app/models:ro
+  - ${RALLYMATE_CALIBRATION_DIR:-../calibration}:/app/calibration:ro
+  - ${RALLYMATE_SAM3D_RUNTIME_DIR:-../runtime/sam3d}:/app/runtime/sam3d:ro
+
 services:
-  api:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-    command: ["rallymate-api", "--host", "0.0.0.0", "--port", "8000"]
-    environment: &rallymate_environment
-      RALLYMATE_DATA_ROOT: /app/service_data
-      RALLYMATE_DATABASE_PATH: /app/service_data/jobs.sqlite3
-      RALLYMATE_DETECT_MODEL: /app/models/yolo26n.pt
-      # Halpe26 is the F2 measurement default. Set yolo-baseline explicitly
-      # for rollback; neither preset bypasses calibration/F4 scoring gates.
-      RALLYMATE_POSE_PRESET: ${RALLYMATE_POSE_PRESET:-rtmpose-m-halpe26-online}
-      RALLYMATE_DEVICE: "0"
-      # Fail closed when this compose file is used without an explicit
-      # operator-created .env.  Local development can opt in with
-      # RALLYMATE_ENVIRONMENT=development and a separate random key.
-      RALLYMATE_ENVIRONMENT: ${RALLYMATE_ENVIRONMENT:-production}
-      RALLYMATE_MODEL_LICENSE_ACK: ${RALLYMATE_MODEL_LICENSE_ACK:?set RALLYMATE_MODEL_LICENSE_ACK after reviewing the model license}
-      RALLYMATE_API_KEY: ${RALLYMATE_API_KEY:?set a long random RALLYMATE_API_KEY}
-      # Frontend may be hosted on a separate domain/CDN. Keep origins explicit.
-      RALLYMATE_CORS_ORIGINS: ${RALLYMATE_CORS_ORIGINS:-http://localhost:3000}
-      RALLYMATE_PUBLIC_BASE_URL: ${RALLYMATE_PUBLIC_BASE_URL:-}
-      RALLYMATE_TECHNIQUE_REGISTRY: ${RALLYMATE_TECHNIQUE_REGISTRY:-}
-      RALLYMATE_MAX_UPLOAD_BYTES: ${RALLYMATE_MAX_UPLOAD_BYTES:-2147483648}
-      RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST: ${RALLYMATE_SCORING_REGISTRY_LIFECYCLE_MANIFEST:-/app/registry-lifecycle.json}
-      RALLYMATE_SCORING_FEASIBILITY_REGISTRY: ${RALLYMATE_SCORING_FEASIBILITY_REGISTRY:-/app/metric-feasibility-pose-wave-v3.json}
-      RALLYMATE_SCORING_CALIBRATION_ASSETS: ${RALLYMATE_SCORING_CALIBRATION_ASSETS:-}
-      RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER: ${RALLYMATE_SCORING_TRUSTED_PROMOTION_LEDGER:-/app/calibration/trusted-calibration-promotion-ledger.json}
-      RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS: ${RALLYMATE_SCORING_TRUSTED_RUNTIME_PROFILE_BINDINGS:-/app/calibration/trusted-runtime-profile-bindings.json}
-      RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR: ${RALLYMATE_SCORING_RUNTIME_VIEW_EVIDENCE_DIR:-/app/calibration/runtime-view-evidence}
-    ports:
-      # Bind to loopback by default; put Nginx/Caddy in front for public HTTPS.
-      - "${RALLYMATE_BIND_ADDR:-127.0.0.1}:${RALLYMATE_PORT:-8000}:8000"
-    volumes:
-      - ../service_data:/app/service_data
-      - ../models:/app/models:ro
-      - ../calibration:/app/calibration:ro
-      # Optional audited qualitative registry override; keep commented when
-      # using the packaged registry.  Mirror the mount in the worker below.
-      # - ../config/technique-metrics-audited.json:/app/technique-metrics-audited.json:ro
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rallymate}
+      POSTGRES_USER: ${POSTGRES_USER:-rallymate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set a random PostgreSQL password}
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8000/health/live"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [backend]
+    restart: unless-stopped
+
+  # Run explicitly: docker compose --profile tools run --rm migrate
+  migrate:
+    image: ${RALLYMATE_API_IMAGE:-rallymate-api:local}
+    build: {context: .., dockerfile: deploy/Dockerfile.api}
+    command: ["rallymate-migrate"]
+    profiles: [tools]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set the private PostgreSQL DATABASE_URL}
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [backend]
+    restart: "no"
+    security_opt: ["no-new-privileges:true"]
+
+  api:
+    image: ${RALLYMATE_API_IMAGE:-rallymate-api:local}
+    build: {context: .., dockerfile: deploy/Dockerfile.api}
+    command: ["rallymate-api", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      <<: *runtime
+      RALLYMATE_DEVICE: cpu
+      RALLYMATE_API_KEY: ${RALLYMATE_API_KEY:?set a random maintenance key}
+      JWT_SECRET: ${JWT_SECRET:?set a random JWT signing secret}
+      JWT_SESSION_DAYS: 7
+      AUTH_COOKIE_SECURE: "true"
+      PUBLIC_ORIGIN: https://${PUBLIC_HOST:?set the public HTTPS host}
+      RALLYMATE_PUBLIC_BASE_URL: https://${PUBLIC_HOST:?set the public HTTPS host}
+      RALLYMATE_CORS_ORIGINS: https://${PUBLIC_HOST:?set the public HTTPS host}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      METRICS_TOKEN_FILE: /run/secrets/metrics_token
+      FORWARDED_ALLOW_IPS: ${RALLYMATE_NGINX_IP:-172.29.71.2}
+    secrets: [metrics_token]
+    volumes: *app-volumes
+    expose: ["8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=4).read()"]
       interval: 15s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
-    init: true
-    security_opt:
-      - no-new-privileges:true
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=256m
-
-  worker:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-    command: ["rallymate-worker", "--poll-seconds", "2"]
-    environment: *rallymate_environment
-    volumes:
-      - ../service_data:/app/service_data
-      - ../models:/app/models:ro
-      - ../calibration:/app/calibration:ro
-      # Optional audited qualitative registry override (see api volume above).
-      # - ../config/technique-metrics-audited.json:/app/technique-metrics-audited.json:ro
-    gpus: all
+      start_period: 30s
     depends_on:
-      api:
-        condition: service_healthy
+      postgres: {condition: service_healthy}
+    networks: [backend, egress]
     restart: unless-stopped
     init: true
-    security_opt:
-      - no-new-privileges:true
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=256m"]
+
+  frontend:
+    image: ${RALLYMATE_FRONTEND_IMAGE:-rallymate-frontend:local}
+    build:
+      context: ../scoring-demo-web
+      dockerfile: Dockerfile
+      additional_contexts:
+        scoring_assets: ../src/rallymate_scoring/data
+        pose_assets: ../src/rallymate_vision/pose/data
+      args:
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-${SENTRY_ENVIRONMENT:-production}}
+        VITE_SENTRY_RELEASE: ${VITE_SENTRY_RELEASE:-${SENTRY_RELEASE:-}}
+        VITE_SENTRY_TRACES_SAMPLE_RATE: ${VITE_SENTRY_TRACES_SAMPLE_RATE:-0.05}
+    environment:
+      NODE_ENV: production
+      RALLYMATE_INTERNAL_API_ORIGIN: http://api:8000
+      VINEXT_TRUSTED_HOSTS: ${PUBLIC_HOST:?set the public HTTPS host}
+      MIMO_ALLOWED_ORIGIN: https://${PUBLIC_HOST:?set the public HTTPS host}
+      MIMO_ADVICE_ENABLED: ${MIMO_ADVICE_ENABLED:-0}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_PROVIDER: ${MIMO_PROVIDER:-openai}
+      MIMO_MODEL: ${MIMO_MODEL:-mimo-v2.6-pro}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      SENTRY_FRONTEND_DSN: ${SENTRY_FRONTEND_DSN:-}
+      SENTRY_FRONTEND_ENVIRONMENT: ${SENTRY_FRONTEND_ENVIRONMENT:-${SENTRY_ENVIRONMENT:-production}}
+      SENTRY_FRONTEND_RELEASE: ${SENTRY_FRONTEND_RELEASE:-${SENTRY_RELEASE:-}}
+      SENTRY_FRONTEND_TRACES_SAMPLE_RATE: ${SENTRY_FRONTEND_TRACES_SAMPLE_RATE:-0.05}
+    expose: ["3000"]
+    depends_on:
+      api: {condition: service_healthy}
+    networks: [edge, backend]
+    restart: unless-stopped
+    init: true
+    security_opt: ["no-new-privileges:true"]
+
+  nginx:
+    image: nginx:1.28-bookworm
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?set the public HTTPS host}
+      NGINX_ENVSUBST_FILTER: ^PUBLIC_HOST$
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./nginx-rallymate.conf.example:/etc/nginx/templates/default.conf.template:ro
+      - ${RALLYMATE_TLS_DIR:?set the directory containing fullchain.pem and privkey.pem}:/etc/nginx/tls:ro
+    depends_on:
+      api: {condition: service_healthy}
+      frontend: {condition: service_started}
+    networks:
+      edge: {}
+      backend:
+        ipv4_address: ${RALLYMATE_NGINX_IP:-172.29.71.2}
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+  # Build deploy/Dockerfile separately; a supplied SAM image is never overwritten.
+  worker:
+    image: ${RALLYMATE_WORKER_IMAGE:-rallymate-worker-rtmpose:local}
+    command: ["rallymate-worker", "--poll-seconds", "2"]
+    environment:
+      <<: *runtime
+      RALLYMATE_DEVICE: "0"
+      RALLYMATE_CPU_THREADS: ${RALLYMATE_CPU_THREADS:-4}
+      RALLYMATE_WORKER_METRICS_HOST: 0.0.0.0
+      RALLYMATE_WORKER_METRICS_PORT: 9101
+      RALLYMATE_SAM3D_RUNTIME: /app/runtime/sam3d
+      RALLYMATE_SAM3D_LOG_DIR: /app/service_data/sam3d-logs
+      RALLYMATE_SAM3D_MODE: ${RALLYMATE_SAM3D_MODE:-body}
+      RALLYMATE_SAM3D_PYTHON: ${RALLYMATE_SAM3D_PYTHON:-}
+    volumes:
+      - ${RALLYMATE_DATA_DIR:-../service_data}:/app/service_data
+      - ${RALLYMATE_MODELS_DIR:-../models}:/app/models:ro
+      - ${RALLYMATE_CALIBRATION_DIR:-../calibration}:/app/calibration:ro
+      - ${RALLYMATE_SAM3D_RUNTIME_DIR:-../runtime/sam3d}:/app/runtime/sam3d:ro
+      - ${RALLYMATE_SAM3D_CACHE_DIR:-../service_data/sam3d-cache}:/app/runtime/sam3d/cache
+      - ${RALLYMATE_GPU_STATE_DIR:-/var/lib/rallymate/gpu-state}:/var/lib/rallymate/gpu-state
+    expose: ["9101"]
+    deploy:
+      replicas: 1
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${RALLYMATE_GPU_DEVICE_ID:-0}"]
+              capabilities: [gpu]
+    depends_on:
+      api: {condition: service_healthy}
+    networks: [backend, egress]
+    restart: unless-stopped
+    init: true
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=1g"]
+    shm_size: 1g
+
+  adminer:
+    image: adminer:5-standalone
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [backend, egress]
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+networks:
+  edge: {}
+  egress: {}
+  backend:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${RALLYMATE_BACKEND_SUBNET:-172.29.71.0/24}
+          ip_range: ${RALLYMATE_BACKEND_IP_RANGE:-172.29.71.128/25}
+
+volumes:
+  postgres_data: {}
+
+secrets:
+  metrics_token:
+    file: ${METRICS_TOKEN_FILE:-./secrets/metrics_token}

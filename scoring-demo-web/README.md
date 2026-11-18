@@ -24,7 +24,7 @@
 
 ## 本机启动
 
-先从仓库根目录启动 Python 分析服务，详情见根 README，再运行 `npm ci`、`npm run dev`。浏览器访问终端打印的地址（默认 localhost:3000）。Vite 将 /v1 与 /health 转发到本机 8000 端口。
+先按[账户与部署说明](../deploy/README.md)配置并启动 Python 服务，再运行 `npm ci`、`npm run dev`。浏览器地址（默认 localhost:3000）须与 API 的 `PUBLIC_ORIGIN` 一致。Vite 同源代理转发 `/v1`、`/health`、账户、审批和个人历史接口。用户注册后由 `/admin` 审核；登录与审核通过后进入工作台，本地缓存按账户隔离。
 
 在本目录新建 `.dev.vars`（已被 Git 忽略），仅放服务端配置：
 
@@ -59,7 +59,7 @@ MiMo 默认不调用；识别依据与补充拍摄建议由服务端生成。真
 
 ## 云端 Worker
 
-在 Worker 的服务端 Secrets 中配置 `RALLYMATE_API_ORIGIN`（可达的 HTTPS 分析服务）、`RALLYMATE_API_KEY`。MiMo 保持默认关闭，启用条件见上文。网站访问无需账号或密码；分析服务与模型密钥仍仅保存在服务端。独立部署的 Worker 不得把 localhost 配成云端分析地址。
+在 Worker 的服务端 Secrets 中配置 `RALLYMATE_API_ORIGIN`（可达的 HTTPS 分析服务）；`RALLYMATE_API_KEY` 只用于运维。业务代理传递当前用户的 Cookie / JWT、Origin 和 CSRF，MiMo 保持默认关闭。模型密钥仍只保存在服务端；独立部署 Worker 不把 localhost 配成云端分析地址。
 
 Worker 仅代理明确列出的任务、结果、媒体与健康路径；隔离浏览器 Cookie/Authorization，支持媒体 Range、超时和明确错误。持有网站链接即可上传、推理及查看对应任务结果。自行托管的 Nginx 方案见 `../deploy/README.md`。
 
@@ -71,7 +71,7 @@ npm run typecheck
 npm run lint
 ```
 
-测试覆盖长任务恢复、断网重试、错任务结果、回放 Range、免登录访问、服务端 API 鉴权、代理路径与来源限制、提示注入、响应约束、限流与 SSR 初始结果列表。浏览器扩展自动选文件需要启用“允许访问文件网址”；这不影响用户自己通过网页文件选择器上传。
+测试覆盖长任务恢复、断网重试、错任务结果、回放 Range、注册审批、会话撤销、跨账户隔离、代理路径与来源限制、提示注入、响应约束、限流与 SSR 页面。浏览器扩展自动选文件需要启用“允许访问文件网址”；这不影响用户自己通过网页文件选择器上传。
 
 ## 本机生产模式验收
 
@@ -82,4 +82,4 @@ node --env-file=.dev.vars node_modules/vinext/dist/cli.js start --port 3001 --ho
 
 此模式直接运行构建产物，通过 Worker 的代理读取分析服务，不依赖 Vite 开发代理。线上使用 Node.js 22.13 或更高版本，并由进程管理器注入 Secrets，不能携带本机 `.dev.vars` 发布。
 
-若前端、Python 分析服务与 `cloudflared` 同在 AutoDL 等服务器上，配置 `RALLYMATE_API_ORIGIN=http://127.0.0.1:8000`、`RALLYMATE_LOCAL_TUNNEL=1`，使 Cloudflare HTTPS 入口能通过前端访问回环分析服务。保留 `RALLYMATE_API_KEY` 与后端配置一致。启动前端后运行 `cloudflared tunnel --url http://127.0.0.1:3001`，浏览器通过隧道地址免登录访问；上传请求仍限定同源。
+若前端、Python 服务和 `cloudflared` 同机，配置 `RALLYMATE_API_ORIGIN=http://127.0.0.1:8000`、`RALLYMATE_LOCAL_TUNNEL=1`。运维密钥与后端保持一致。启动隧道后，把 API 的 `PUBLIC_ORIGIN` 设置为实际 HTTPS 隧道地址并开启 Secure Cookie，再重启 API/网页；用户通过账号登录。隧道域名变化时同步更新 Origin。

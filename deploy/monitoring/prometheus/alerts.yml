@@ -1,0 +1,70 @@
+groups:
+  - name: rallymate-availability
+    rules:
+      - alert: RallyMateAPIDown
+        expr: up{job="rallymate-api"} == 0 or absent(up{job="rallymate-api"})
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "RallyMate API 指标连续 2 分钟不可达"
+          description: "检查 API 容器、指标密钥文件和 Prometheus Targets。"
+      - alert: RallyMateWorkerDown
+        expr: up{job="rallymate-worker"} == 0 or rallymate_worker_up{job="rallymate-worker"} != 1 or absent(up{job="rallymate-worker"})
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "RallyMate Worker 连续 2 分钟不可达"
+          description: "检查 Worker 和私网 9101 指标端点；运行中任务按既有恢复流程处理。"
+      - alert: RallyMateDatabaseDown
+        expr: rallymate_database_available{job="rallymate-api"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "RallyMate 数据库连接检查失败"
+          description: "检查 PostgreSQL 容器、磁盘、连接配置和 API 日志。"
+      - alert: RallyMateExporterDown
+        expr: up{job=~"node|dcgm"} == 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "RallyMate 主机或 GPU 采集器不可达"
+          description: "检查 {{ $labels.job }}；GPU 采集需要 Linux NVIDIA 驱动和 Container Toolkit。"
+  - name: rallymate-capacity
+    rules:
+      - alert: RallyMateCPUHigh
+        expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job="node",mode="idle"}[5m]))) > 90
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "RallyMate 主机 CPU 使用率持续超过 90%"
+          description: "检查同时执行的任务、视频解码及后处理负载。"
+      - alert: RallyMateRAMHigh
+        expr: 100 * (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"}) > 85
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "RallyMate 主机 RAM 使用率持续超过 85%"
+          description: "按 MemAvailable 计算；检查进程内存和系统交换活动。"
+      - alert: RallyMateGPUVRAMHigh
+        expr: 100 * (DCGM_FI_DEV_FB_USED_BYTES{job="dcgm"} < 1e18) / (DCGM_FI_DEV_FB_USED_BYTES{job="dcgm"} + DCGM_FI_DEV_FB_FREE_BYTES{job="dcgm"}) > 90
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "RallyMate GPU {{ $labels.UUID }} 显存持续超过 90%"
+          description: "按单卡已用/(已用+空闲)计算；查看模型常驻显存和执行中任务，不自动改变 GPU 调度。"
+  - name: rallymate-http
+    rules:
+      - alert: RallyMateHTTP5xxHigh
+        expr: sum(rate(rallymate_http_requests_total{job="rallymate-api",status=~"5..",route!~"/metrics|/health/.*"}[5m])) / clamp_min(sum(rate(rallymate_http_requests_total{job="rallymate-api",route!~"/metrics|/health/.*"}[5m])), 0.001) > 0.05 and sum(increase(rallymate_http_requests_total{job="rallymate-api",route!~"/metrics|/health/.*"}[5m])) >= 20
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "RallyMate HTTP 5xx 比例持续超过 5%"
+          description: "5 分钟内至少 20 个业务请求；查看按路由和状态码分组的请求曲线。"
+      - alert: RallyMateHTTPHeadersSlow
+        expr: histogram_quantile(0.95, sum by (le) (rate(rallymate_http_time_to_headers_seconds_bucket{job="rallymate-api",route!~"/metrics|/health/.*"}[5m]))) > 5
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "RallyMate HTTP 首响应 P95 持续超过 5 秒"
+          description: "使用响应头耗时，避免把用户持续观看视频的时间当成服务器响应迟缓；完整响应 P95/P99 仍在看板展示。"

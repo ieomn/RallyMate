@@ -1,4 +1,6 @@
 import type { DemoResultResponse, TrajectoryPreviewResponse } from "./api-types";
+import { accountStorageKey } from "./account-storage";
+import type { PersonalJobRecord } from "./api-client";
 
 export const TRAINING_JOURNAL_KEY = "rallymate.trainingJournal.v1";
 export const LEGACY_REPORTS_KEY = "rallymate.recentReports";
@@ -9,6 +11,7 @@ export type TrainingRecord = {
   id: string; jobId?: string; source: "online" | "imported"; name: string; originalName: string;
   theme: string; notes: string; createdAt: string; viewedAt: string; focuses: TrainingFocus[];
   followUp?: TrainingFollowUp; replay?: TrainingReplay;
+  status?: PersonalJobRecord["status"]; submittedAt?: string; completedAt?: string | null;
 };
 export type TrainingJournal = { version: 1; records: TrainingRecord[]; pendingFocus?: TrainingFollowUp };
 export type TrainingVisit = {
@@ -88,16 +91,23 @@ export function migrateTrainingHistory(journal: TrainingJournal, legacy: unknown
   return { ...journal, records };
 }
 
-export function readTrainingJournal(storage: JournalStorage): TrainingJournal {
-  const saved = storage.getItem(TRAINING_JOURNAL_KEY);
-  const journal = saved ? trainingJournalOf(JSON.parse(saved)) : { version: 1 as const, records: [] };
-  // A broken legacy list must not hide the newer journal or be overwritten.
-  let legacy: unknown = [];
-  try { legacy = JSON.parse(storage.getItem(LEGACY_REPORTS_KEY) || "[]"); } catch { /* Preserve legacy bytes; the valid newer journal remains usable. */ }
-  return migrateTrainingHistory(journal, legacy);
+export function readTrainingJournal(storage: JournalStorage, userId?: string | null): TrainingJournal {
+  const saved = storage.getItem(accountStorageKey(TRAINING_JOURNAL_KEY, userId));
+  return saved ? trainingJournalOf(JSON.parse(saved)) : { version: 1, records: [] };
 }
-export function writeTrainingJournal(storage: JournalStorage, journal: TrainingJournal): void {
-  storage.setItem(TRAINING_JOURNAL_KEY, JSON.stringify(journal));
+export function writeTrainingJournal(storage: JournalStorage, journal: TrainingJournal, userId?: string | null): void {
+  storage.setItem(accountStorageKey(TRAINING_JOURNAL_KEY, userId), JSON.stringify(journal));
+}
+
+/** Server rows determine online visibility; browser notes never resurrect removed jobs. */
+export function personalHistoryRecords(local: TrainingRecord[], rows: PersonalJobRecord[]): TrainingRecord[] {
+  return [...rows.map(job => {
+    const id = journalRecordId("online", job.id), existing = local.find(record => record.id === id);
+    const originalName = basename(job.original_filename), createdAt = job.created_at;
+    return { id, jobId: job.id, source: "online" as const, name: defaultName(originalName, createdAt),
+      originalName, theme: "", notes: "", focuses: [], createdAt, viewedAt: createdAt, ...existing,
+      status: job.status, submittedAt: job.created_at, completedAt: job.completed_at };
+  }), ...local.filter(record => record.source === "imported")];
 }
 
 export function visitTrainingReport(journal: TrainingJournal, visit: TrainingVisit, now = new Date().toISOString()): TrainingJournal {

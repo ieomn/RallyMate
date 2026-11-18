@@ -1,5 +1,3 @@
-# Copy this file to /etc/nginx/snippets/rallymate-api-auth.conf, replace the
-# placeholder with the same secret configured as RALLYMATE_API_KEY, and chmod
-# 600. The promotion-domain server in nginx-rallymate.conf.example includes it
-# to inject authentication server-side; it is never sent to the browser.
-set $rallymate_api_authorization "Bearer REPLACE_WITH_RALLYMATE_API_KEY";
+# Account-enabled deployments forward each user's Cookie/Authorization unchanged.
+# This former shared-key include is deliberately empty and is no longer included.
+# Operators authenticate private readiness/maintenance calls with their own key.

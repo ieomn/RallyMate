@@ -1,4 +1,5 @@
 import AnnotationWorkspace from "./AnnotationWorkspace";
+import AuthGuard from "../auth/AuthGuard";
 
 export const metadata = {
   title: "标注工作台 · RallyMate",
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function AnnotationPage() {
-  return <AnnotationWorkspace />;
+  return <AuthGuard><AnnotationWorkspace /></AuthGuard>;
 }

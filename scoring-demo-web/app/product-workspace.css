@@ -301,3 +301,4 @@
 .product-app .pw-capture-visuals .is-bad strong { color: #efc2ac; }
 @media (max-width: 960px) { .product-app .pw-capture-visuals { gap: 10px; } .product-app .pw-capture-visuals figcaption { padding: 0 12px 17px; } }
 @media (max-width: 600px) { .product-app .pw-capture-visuals { grid-template-columns: 1fr; } .product-app .pw-capture-visuals svg { max-height: 215px; } .product-app .pw-capture-visuals figcaption { padding: 0 20px 20px; } .product-app .pw-topbar-action { min-height: 44px; } }
+.pw-account{display:flex;align-items:center;gap:.65rem;font-size:.85rem}.pw-account button,.pw-account a{border:0;background:transparent;color:inherit;cursor:pointer}.pw-account span{max-width:8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:640px){.pw-topbar-actions{flex-wrap:wrap;justify-content:flex-end}.pw-account{font-size:.75rem;gap:.4rem}}

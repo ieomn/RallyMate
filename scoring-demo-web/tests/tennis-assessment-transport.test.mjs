@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -26,13 +27,13 @@ function deadlines(t) {
   });
   return { timers, now: () => now, advance(ms) { now += ms; for (const timer of timers) if (timer.at <= now && !timer.controller.signal.aborted) timer.controller.abort(new DOMException("Bounded request expired", "TimeoutError")); } };
 }
-const gatewayFetch = (url, init) => proxyAnalysis(new Request(new URL(url, "http://localhost"), init), env);
+const gatewayFetch = (url, init) => proxyAnalysis(userRequest(new URL(url, "http://localhost"), init), env);
 
 test("a 46-second cold tennis read survives both browser and gateway without changing its score", async t => {
   const clock = deadlines(t), cold = deferred(); let upstream, calls = 0;
   t.mock.method(globalThis, "fetch", (_url, init) => {
     calls++; upstream = init;
-    assert.equal(init.headers.get("authorization"), "Bearer test-server-key");
+    assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
     return cold.promise;
   });
   const client = createApiClient({}, gatewayFetch);
@@ -67,7 +68,7 @@ for (const phase of ["headers", "body"]) test(`caller cancellation remains conne
 test("gateway tennis reads still terminate at their explicit 120-second deadline", async t => {
   const clock = deadlines(t); let upstream;
   t.mock.method(globalThis, "fetch", (_url, init) => { upstream = init; return new Promise((_resolve, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true })); });
-  const result = proxyAnalysis(new Request(`http://localhost/v1/jobs/${jobId}/tennis-assessment`), env);
+  const result = proxyAnalysis(userRequest(`http://localhost/v1/jobs/${jobId}/tennis-assessment`), env);
   clock.advance(119999); assert.equal(upstream.signal.aborted, false);
   clock.advance(1); assert.equal(upstream.signal.aborted, true);
   const response = await result; assert.equal(response.status, 502);

@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.service_auth import login_test_user
 from rallymate_service import api
 from tests import test_trajectory_api
 
@@ -22,7 +23,8 @@ class FootCrossingCandidatesApiTests(unittest.TestCase):
         contexts = ExitStack()
         self.addCleanup(contexts.close)
         self.client = contexts.enter_context(TestClient(self.app))
-        self.headers = {"Authorization": "Bearer fixture-token"}
+        self.user = login_test_user(self.client, job_ids=(self.job_id,))
+        self.headers = {}
         self.url = f"/v1/jobs/{self.job_id}/foot-crossing-candidates"
 
     def test_old_job_without_reference_is_not_computed_and_history_stays_unchanged(self):
@@ -40,7 +42,9 @@ class FootCrossingCandidatesApiTests(unittest.TestCase):
 
     def test_authentication_job_success_and_cancel_gate_precede_reader(self):
         with patch.object(api, "load_foot_crossing_candidates") as reader:
-            self.assertEqual(self.client.get(self.url).status_code, 401)
+            anonymous = self.client.build_request("GET", self.url)
+            anonymous.headers.pop("cookie")
+            self.assertEqual(self.client.send(anonymous).status_code, 401)
             self.assertEqual(self.client.get("/v1/jobs/missing123/foot-crossing-candidates", headers=self.headers).status_code, 404)
             job = self.database.get_job(self.job_id)
             for changed in ({**job, "status": "running"}, {**job, "cancel_requested": True}):
@@ -73,8 +77,12 @@ class FootCrossingCandidatesApiTests(unittest.TestCase):
     def test_available_projection_traverses_real_reader_and_json_response(self):
         from tests import test_foot_crossing_candidates_service as fixtures
         job, manifest, _ = fixtures.fixture(self.settings.data_root)
-        with patch.object(self.database, "get_job", return_value=job):
-            response = self.client.get(f"/v1/jobs/{job['id']}/foot-crossing-candidates", headers=self.headers)
+        self.database.create_job(job["id"], "input.mp4", self.settings.uploads_dir / "input.mp4",
+                                 self.settings.requests_dir / f"{job['id']}.json", Path(job["output_dir"]),
+                                 user_id=self.user["id"])
+        self.database.claim_next("candidate-fixture", self.settings.lease_seconds, self.settings.max_attempts)
+        self.database.mark_succeeded(job["id"], job["summary"])
+        response = self.client.get(f"/v1/jobs/{job['id']}/foot-crossing-candidates", headers=self.headers)
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
         self.assertEqual(payload["status"], "available", payload)

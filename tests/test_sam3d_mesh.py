@@ -153,6 +153,36 @@ class MeshCaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
             archive_mesh_records([{'status': 'ok', 'mesh_artifact': artifact}], self.output_dir, self.runtime)
 
+    def test_capture_rejects_cached_topology_changed_before_next_inference(self):
+        artifact = capture_mesh_output(self.output, self.faces, self.runtime)
+        topology = Path(artifact['faces_path'])
+        np.save(topology, self.faces[:, ::-1], allow_pickle=False)
+        existing = set(topology.parent.iterdir())
+        corrupted = topology.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'topology.*model'):
+            capture_mesh_output(self.output, self.faces, self.runtime)
+        with patch.dict(mesh_module._CAPTURE_TOPOLOGY_DIGESTS, {}, clear=True):
+            with self.assertRaisesRegex(ValueError, 'topology.*model'):
+                capture_mesh_output(self.output, self.faces, self.runtime)
+        self.assertEqual(set(topology.parent.iterdir()), existing)
+        self.assertEqual(topology.read_bytes(), corrupted)
+
+    def test_capture_accepts_equivalent_cached_topology_with_different_layout(self):
+        faces = np.array([[0, 1, 2], [2, 1, 0]], dtype=np.int32)
+        artifact = capture_mesh_output(self.output, faces, self.runtime)
+        topology = Path(artifact['faces_path'])
+        np.save(topology, np.asfortranarray(faces), allow_pickle=False)
+        second = capture_mesh_output(self.output, faces, self.runtime)
+        self.assertEqual(second['faces_sha256'], sha256_file(topology))
+        rows = archive_mesh_records([{'status': 'ok', 'mesh_artifact': second}], self.output_dir, self.runtime)
+        np.testing.assert_array_equal(np.load(self.output_dir / rows[0]['mesh_artifact']['faces_path']), faces)
+
+    def test_repeated_capture_reuses_topology_validation_without_serializing_again(self):
+        with patch.dict(mesh_module._CAPTURE_TOPOLOGY_DIGESTS, {}, clear=True):
+            capture_mesh_output(self.output, self.faces, self.runtime)
+            with patch.object(mesh_module.np, 'save', side_effect=AssertionError('repeated topology serialization')):
+                capture_mesh_output(self.output, self.faces, self.runtime)
+
     def archived_artifact(self):
         artifact = capture_mesh_output(self.output, self.faces, self.runtime)
         return archive_mesh_records([{'status': 'ok', 'mesh_artifact': artifact}],

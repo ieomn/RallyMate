@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from functools import partial
 import json
 import tempfile
 import unittest
@@ -12,10 +13,15 @@ from rallymate_scoring.technique_registry import technique_catalog
 from rallymate_service.api import (
     _public_error_detail,
     _redact_readiness_reason,
-    create_app,
+    create_app as service_app,
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings
 from rallymate_service.database import JobDatabase
+from tests.service_auth import test_auth_config
+
+
+# Readiness fixtures exercise service settings independently of HTTPS deployment settings.
+create_app = partial(service_app, auth_config=test_auth_config())
 
 
 class ServiceBoundaryTests(unittest.TestCase):
@@ -177,7 +183,7 @@ class ServiceBoundaryTests(unittest.TestCase):
             )
             self.assertNotIn("private", json.dumps(detail))
 
-    def test_public_production_api_fails_closed_without_key(self) -> None:
+    def test_public_production_api_fails_closed_without_user_session(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             settings = self._settings(
@@ -188,10 +194,10 @@ class ServiceBoundaryTests(unittest.TestCase):
             )
             app = create_app(settings, JobDatabase(settings.database_path))
             with TestClient(app) as client:
-                self.assertEqual(client.get("/v1/meta").status_code, 200)
+                self.assertEqual(client.get("/v1/meta").status_code, 401)
                 response = client.get("/v1/model-capabilities")
-            self.assertEqual(response.status_code, 503)
-            self.assertEqual(response.json()["detail"]["code"], "authentication_not_configured")
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.json()["detail"]["code"], "authentication_required")
 
     def test_create_app_validates_injected_web_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

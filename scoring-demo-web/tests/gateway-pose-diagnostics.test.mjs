@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,7 +12,7 @@ const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: 
 const path = "/v1/jobs/private-job-123/pose-preview?start_ms=0&duration_ms=10000&sample_limit=600&secret=private-query";
 const uuid = "d1eb9434-8e3a-49d3-9870-e1c1fc4d1d90";
 const webId = "web-mgj31234-ab123456";
-const request = (id = uuid, signal) => new Request(`http://localhost${path}`, {
+const request = (id = uuid, signal) => userRequest(`http://localhost${path}`, {
   signal, headers: { "x-request-id": id, authorization: "Bearer private-browser-key", cookie: "private-cookie", "x-private-header": "private-header" },
 });
 const phases = rows => rows.map(row => row.phase);
@@ -86,7 +87,7 @@ test("real Node entry can enable the flag absent from its allowlist, while expli
   const response = await runtime.testWorker.fetch(request(), {}, {});
   assert.equal(response.status, 200);
   assert.equal(await response.text(), "unchanged");
-  assert.equal(runtime.forwarded[0].init.headers.get("authorization"), "Bearer private-node-key");
+  assert.equal(runtime.forwarded[0].init.headers.get("authorization"), "Bearer private-browser-key");
   assert.equal(runtime.__env.RALLYMATE_POSE_REQUEST_DIAGNOSTICS, undefined, "entry still has its original fixed allowlist");
   assert.deepEqual(phases(runtime.rows), ["gateway_ingress", "upstream_start", "upstream_headers", "gateway_return"]);
   safeRows(runtime.rows);
@@ -122,12 +123,12 @@ test("enabled logging only covers allowed pose GETs, leaving route and origin pe
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => { calls++; return new Response("ok"); });
   for (const suffix of ["demo-result", "trajectory", "technical-review", "artifacts/frames.jsonl"]) {
-    assert.equal((await proxyAnalysis(new Request(`http://localhost/v1/jobs/private-job-123/${suffix}`), env)).status, 200);
+    assert.equal((await proxyAnalysis(userRequest(`http://localhost/v1/jobs/private-job-123/${suffix}`), env)).status, 200);
   }
-  assert.equal((await proxyAnalysis(new Request("http://localhost/v1/meta"), env)).status, 200);
-  assert.equal((await proxyAnalysis(new Request(`http://localhost${path}`, { method: "POST" }), env)).status, 404);
-  assert.equal((await proxyAnalysis(new Request("http://localhost/v1/jobs/private-job-123/pose-preview/extra"), env)).status, 404);
-  assert.equal((await proxyAnalysis(new Request("http://localhost/v1/jobs", { method: "POST", headers: { origin: "https://cross-site.example" } }), env)).status, 403);
+  assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/meta"), env)).status, 200);
+  assert.equal((await proxyAnalysis(userRequest(`http://localhost${path}`, { method: "POST" }), env)).status, 404);
+  assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/jobs/private-job-123/pose-preview/extra"), env)).status, 404);
+  assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/jobs", { method: "POST", headers: { origin: "https://cross-site.example" } }), env)).status, 403);
   assert.equal(calls, 5);
   assert.deepEqual(rows, []);
 });
@@ -142,8 +143,8 @@ test("success logs safe phases and returns exactly the same unconsumed body and 
     assert.equal(String(url), `http://127.0.0.1:8001${path}`);
     assert.equal(init.method, "GET");
     assert.equal(init.redirect, "manual");
-    assert.equal(init.headers.get("authorization"), "Bearer private-upstream-key");
-    assert.equal(init.headers.get("cookie"), null);
+    assert.equal(init.headers.get("authorization"), "Bearer private-browser-key");
+    assert.equal(init.headers.get("cookie"), "private-cookie");
     assert.equal(init.headers.get("x-private-header"), null);
     assert.equal(init.headers.get("x-request-id"), uuid);
     assert.equal(init.signal.aborted, false);

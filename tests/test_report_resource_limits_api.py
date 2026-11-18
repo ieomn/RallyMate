@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from rallymate_service import api
 from rallymate_vision.postprocess_resources import (
     encode_bounded_json, PostprocessOutputLimit, PostprocessResourceLimit,
@@ -46,7 +46,7 @@ class ReportResourceLimitTests(unittest.TestCase):
                 with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)), \
                      patch.object(api, "build_analysis_report", side_effect=exhausted), \
                      patch("rallymate_vision.postprocess_resources.process_memory_bytes", side_effect=lambda: memory[0]), \
-                     TestClient(app) as client:
+                     authenticated_client(app, job_ids=(job,)) as client:
                     url = (f"/v1/jobs/{job}/demo-result?report_contract=current"
                            f"&report_transport=model-proof-pool-v1&report_delivery={delivery}")
                     result = poll(client, url)
@@ -63,7 +63,7 @@ class ReportResourceLimitTests(unittest.TestCase):
                 supplied["job_id"] = job
                 with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)), \
                      patch('rallymate_service.report_evidence_transport.MAX_MODEL_PROOFS', 0), \
-                     TestClient(app) as client:
+                     authenticated_client(app, job_ids=(job,)) as client:
                     url = (f"/v1/jobs/{job}/demo-result?report_contract=current"
                            f"&report_transport=model-proof-pool-v1&report_delivery={delivery}")
                     result = poll(client, url)
@@ -78,7 +78,7 @@ class ReportResourceLimitTests(unittest.TestCase):
             supplied['job_id'] = job
             app.state.report_delivery_cache.max_bytes = 16
             with patch.object(api, 'build_user_demo_result', side_effect=lambda *a, **kw: copy.deepcopy(supplied)), \
-                 TestClient(app) as client:
+                 authenticated_client(app, job_ids=(job,)) as client:
                 result = poll(client, f'/v1/jobs/{job}/demo-result?report_contract=current'
                                      '&report_transport=model-proof-pool-v1&report_delivery=deferred-v1')
                 self.assertEqual(result.status_code, 413, result.text[:300])
@@ -100,7 +100,7 @@ class ReportResourceLimitTests(unittest.TestCase):
             with patch.object(api, 'build_user_demo_result', side_effect=lambda *a, **kw: copy.deepcopy(supplied)), \
                  patch.object(api, 'pack_report_evidence', side_effect=pack), \
                  patch('rallymate_vision.postprocess_resources.process_memory_bytes', side_effect=lambda: memory[0]), \
-                 TestClient(app) as client:
+                 authenticated_client(app, job_ids=(job,)) as client:
                 # Force an immediate sample at the first cooperative pack check.
                 with patch('rallymate_vision.postprocess_resources.PostprocessBudget.check', autospec=True) as checked:
                     def check(budget, *, force=False):

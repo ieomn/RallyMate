@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.mesh_preview import MESH_ARTIFACTS
 from tests import test_report_delivery_independent as delivery
@@ -58,7 +59,7 @@ class MeshReportCacheIsolationTests(unittest.TestCase):
                     raise AssertionError("fixture report builder timed out")
                 return {"job_id": job, "training_evaluation": {"score_0_to_100": 68}}
 
-            with helper.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}), TestClient(app) as client:
+            with helper.lightweight_builders(marker, calls, overrides={"build_user_demo_result": build}), authenticated_client(app, job_ids=(job,)) as client:
                 try:
                     self.assertEqual(client.get(url).status_code, 202)
                     self.assertTrue(entered.wait(1))
@@ -81,7 +82,7 @@ class MeshReportCacheIsolationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             helper, app, _, job, folder, marker, url = self.setup_case(Path(directory))
             calls = []
-            with helper.lightweight_builders(marker, calls), TestClient(app) as client:
+            with helper.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 before = helper.ready(client, url)
                 self.publish_mesh(folder, job)
                 cached = helper.ready(client, url)
@@ -97,7 +98,7 @@ class MeshReportCacheIsolationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             helper, app, _, job, folder, marker, url = self.setup_case(Path(directory))
             calls = []
-            with helper.lightweight_builders(marker, calls), TestClient(app) as client:
+            with helper.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 before = helper.ready(client, url)
                 (folder / "sam3d-mesh-state.json").write_text(
                     json.dumps({"status": "failed", "source_job_id": job, "task_sha256": "c" * 64}),
@@ -110,7 +111,7 @@ class MeshReportCacheIsolationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             helper, app, _, job, folder, marker, url = self.setup_case(Path(directory))
             calls = []
-            with helper.lightweight_builders(marker, calls), TestClient(app) as client:
+            with helper.lightweight_builders(marker, calls), authenticated_client(app, job_ids=(job,)) as client:
                 helper.ready(client, url)
                 self.publish_mesh(folder, job)
                 for count, name in enumerate(("frames.jsonl", "scores.jsonl"), start=2):

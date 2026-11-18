@@ -20,6 +20,8 @@ function compiledUrl(fileUrl) {
 }
 const lib = await import(compiledUrl(new URL("../app/lib/training-records.ts", import.meta.url)));
 const { TrainingJournalLibrary, TrainingJournalPanel, TrainingFollowUpPicker } = await import(compiledUrl(new URL("../app/TrainingJournal.tsx", import.meta.url)));
+const { accountStorageKey } = await import(compiledUrl(new URL("../app/lib/account-storage.ts", import.meta.url)));
+const journalKey = accountStorageKey(lib.TRAINING_JOURNAL_KEY);
 const now = "2026-10-21T04:00:00.000Z", nextDay = "2026-10-22T04:00:00.000Z";
 const empty = () => ({ version: 1, records: [] });
 const visit = (jobId = "training-job-1234", rest = {}) => ({ source: "online", jobId, name: "周三底线.mp4", ...rest });
@@ -35,7 +37,8 @@ test("migrates all valid legacy history without deleting or truncating old bytes
   const legacy = Array.from({ length: 25 }, (_, index) => ({ id: `training-job-${index}`, name: `练习${index}.mp4`, viewedAt: now }));
   legacy.push({ id: "../invalid", name: "坏记录", viewedAt: now });
   const oldBytes = JSON.stringify(legacy), disk = storage({ [lib.LEGACY_REPORTS_KEY]: oldBytes });
-  const journal = lib.readTrainingJournal(disk);
+  const journal = lib.migrateTrainingHistory(empty(), legacy);
+  assert.equal(lib.readTrainingJournal(disk).records.length, 0, "shared legacy data is not automatically assigned to an account");
   assert.equal(journal.records.length, 25);
   assert.equal(journal.records[0].name, "练习0");
   lib.writeTrainingJournal(disk, journal);
@@ -109,11 +112,11 @@ test("storage failure is surfaced and never changes legacy or last successful sa
   const disk = storage({ [lib.LEGACY_REPORTS_KEY]: oldBytes });
   const journal = lib.readTrainingJournal(disk);
   lib.writeTrainingJournal(disk, journal);
-  const successful = disk.getItem(lib.TRAINING_JOURNAL_KEY);
+  const successful = disk.getItem(journalKey);
   const failing = { getItem: disk.getItem, setItem() { throw new Error("QuotaExceededError"); } };
   const modified = lib.saveTrainingFocus(journal, id, focus);
   assert.throws(() => lib.writeTrainingJournal(failing, modified), /QuotaExceededError/);
-  assert.equal(disk.getItem(lib.TRAINING_JOURNAL_KEY), successful);
+  assert.equal(disk.getItem(journalKey), successful);
   assert.equal(disk.getItem(lib.LEGACY_REPORTS_KEY), oldBytes);
   const html = renderToStaticMarkup(createElement(TrainingJournalPanel, { journal: { ...controller(modified), error: "尚未保存：浏览器存储不可用。" }, recordId: id, suggestions: [focus] }));
   assert.match(html, /role="alert"/); assert.match(html, /重试保存/); assert.match(html, /尚未保存/);
@@ -121,10 +124,10 @@ test("storage failure is surfaced and never changes legacy or last successful sa
 });
 
 test("unknown versions and malformed modern storage are not replaced with an empty journal", () => {
-  const future = storage({ [lib.TRAINING_JOURNAL_KEY]: '{"version":99,"records":[]}' });
+  const future = storage({ [journalKey]: '{"version":99,"records":[]}' });
   assert.throws(() => lib.readTrainingJournal(future), /无法识别/);
-  assert.equal(future.getItem(lib.TRAINING_JOURNAL_KEY), '{"version":99,"records":[]}');
-  assert.throws(() => lib.readTrainingJournal(storage({ [lib.TRAINING_JOURNAL_KEY]: "broken-json" })));
+  assert.equal(future.getItem(journalKey), '{"version":99,"records":[]}');
+  assert.throws(() => lib.readTrainingJournal(storage({ [journalKey]: "broken-json" })));
 });
 
 test("journal shows saved questions and scope, and offers a new-analysis association", () => {
@@ -173,12 +176,12 @@ test("the actual hook retains a failed save and successfully retries without dro
     journal.visitReport(visit()); journal = renderHook();
     assert.equal(journal.visitReport, visitMethod, "visit callback remains stable after changing records");
     journal.updateRecord(id, { name: "用户编辑的名称", theme: "启动", notes: "保存前的笔记" });
-    const savedBytes = disk.getItem(lib.TRAINING_JOURNAL_KEY);
+    const savedBytes = disk.getItem(journalKey);
     failWrites = true;
     assert.equal(journal.saveFocus(id, focus), false); journal = renderHook();
     assert.match(journal.error, /尚未保存/); assert.equal(journal.notice, "");
     assert.equal(journal.records[0].focuses[0].question, focus.question);
-    assert.equal(disk.getItem(lib.TRAINING_JOURNAL_KEY), savedBytes);
+    assert.equal(disk.getItem(journalKey), savedBytes);
     failWrites = false; journal.retrySave(); journal = renderHook();
     assert.equal(journal.error, ""); assert.match(journal.notice, /已保存在此浏览器/);
     const persisted = lib.readTrainingJournal(disk);
@@ -190,14 +193,50 @@ test("the actual hook retains a failed save and successfully retries without dro
 
 test("the actual hook blocks mutations when existing journal bytes cannot be read", () => {
   const previousWindow = globalThis.window;
-  const disk = storage({ [lib.TRAINING_JOURNAL_KEY]: "unreadable-but-preserved" });
+  const disk = storage({ [journalKey]: "unreadable-but-preserved" });
   globalThis.window = { localStorage: disk, addEventListener() {}, removeEventListener() {} };
   try {
     resetHook(); renderHook(); let journal = renderHook();
     assert.match(journal.error, /无法读取/);
     journal.visitReport(visit()); journal = renderHook();
     assert.match(journal.error, /没有写入/);
-    assert.equal(disk.getItem(lib.TRAINING_JOURNAL_KEY), "unreadable-but-preserved");
+    assert.equal(disk.getItem(journalKey), "unreadable-but-preserved");
     assert.equal(journal.records.length, 0);
   } finally { globalThis.window = previousWindow; }
+});
+
+test("account journals never read shared or another account's notes and imported reports", () => {
+  const legacy = JSON.stringify(lib.visitTrainingReport(empty(), visit("legacy-job-1234"), now));
+  const disk = storage({ [lib.TRAINING_JOURNAL_KEY]: legacy, [lib.LEGACY_REPORTS_KEY]: "old-browser-history" });
+  const alice = lib.updateTrainingRecord(lib.visitTrainingReport(empty(), visit(), now), id, { name: "Alice private", theme: "Feet", notes: "private notes" });
+  alice.records.push(lib.visitTrainingReport(empty(), visit(undefined, { source: "imported", sourceId: "backup-A" }), now).records[0]);
+  lib.writeTrainingJournal(disk, alice, "alice");
+  assert.equal(lib.readTrainingJournal(disk, "alice").records.length, 2);
+  assert.deepEqual(lib.readTrainingJournal(disk, "bob").records, []);
+  assert.deepEqual(lib.readTrainingJournal(disk, null).records, []);
+  lib.writeTrainingJournal(disk, lib.visitTrainingReport(empty(), visit("bob-job-1234"), now), "bob");
+  assert.equal(lib.readTrainingJournal(disk, "alice").records[0].notes, "private notes");
+  assert.equal(lib.readTrainingJournal(disk, "bob").records[0].jobId, "bob-job-1234");
+  assert.equal(disk.getItem(lib.TRAINING_JOURNAL_KEY), legacy);
+  assert.equal(disk.getItem(lib.LEGACY_REPORTS_KEY), "old-browser-history");
+});
+
+test("server history controls online visibility while local edits and offline imports remain", () => {
+  let journal = lib.visitTrainingReport(empty(), visit(), now);
+  journal = lib.updateTrainingRecord(journal, id, { name: "My edited name", theme: "Footwork", notes: "My note" });
+  journal = lib.visitTrainingReport(journal, visit("deleted-job-1234"), now);
+  journal = lib.visitTrainingReport(journal, visit(undefined, { source: "imported", sourceId: "offline-copy" }), now);
+  const statuses = ["queued", "running", "succeeded", "failed", "cancelled"];
+  const rows = statuses.map((status, index) => ({ id: index ? `new-task-${index}` : "training-job-1234", status, original_filename: "server-name.mp4", created_at: now, completed_at: index > 1 ? nextDay : null }));
+  const records = lib.personalHistoryRecords(journal.records, rows);
+  assert.deepEqual(records.filter(record => record.source === "online").map(record => record.status), statuses);
+  assert.equal(records[0].name, "My edited name"); assert.equal(records[0].notes, "My note");
+  assert.equal(records[0].submittedAt, now); assert.equal(records[0].completedAt, null);
+  assert.ok(!records.some(record => record.jobId === "deleted-job-1234"));
+  assert.equal(records.filter(record => record.source === "imported").length, 1);
+  assert.deepEqual(lib.personalHistoryRecords(journal.records, []).map(record => record.source), ["imported"]);
+  const html = renderToStaticMarkup(createElement(TrainingJournalLibrary, { journal: controller({ records }), onOpenReport() {}, onNewAnalysis() {}, history: { total: 25, offset: 0, limit: 20, loading: false, error: "", deleting: null, onPage() {}, onRefresh() {}, onDelete() {} } }));
+  assert.equal((html.match(/删除在线记录/g) ?? []).length, 3, "only terminal records offer deletion");
+  assert.equal((html.match(/查看分析进度/g) ?? []).length, 2);
+  assert.match(html, /共 25 条在线任务/); assert.match(html, /下一页/);
 });

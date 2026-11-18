@@ -137,7 +137,7 @@ class DirectionalRealUnifiedIntegration(unittest.TestCase):
         if not video.is_file() or not all((original/name).is_file() for name in data["provenance"]["input_artifact_sha256"]):
             self.skipTest("optional native e420 media/API integration needs original artifacts")
         from tests.test_card_execution_api import CardExecutionApiTests
-        from fastapi.testclient import TestClient
+        from tests.service_auth import authenticated_client
         execution.clear_card_execution_cache()
         self.addCleanup(execution.clear_card_execution_cache)
         with tempfile.TemporaryDirectory() as temporary:
@@ -167,7 +167,7 @@ class DirectionalRealUnifiedIntegration(unittest.TestCase):
             database.create_job(identity, video.name, video, request, directory)
             database.claim_next("test-worker", settings.lease_seconds, settings.max_attempts)
             database.mark_succeeded(identity, summary)
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(identity,)) as client:
                 for contract in ("current", "legacy-v1"):
                     response = client.get(f"/v1/jobs/{identity}/demo-result?report_contract={contract}")
                     self.assertEqual(response.status_code, 200, response.text[:1000])

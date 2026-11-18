@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -124,14 +125,14 @@ test("status read failures are distinct from executor unavailability and clear a
   assert.deepEqual(updates.map(state => analysisProgress(state).title), ["分析执行服务暂不可用", "正在重新连接分析服务", "分析执行服务暂不可用"]);
   assert.equal(updates[2].client_connection, undefined);
 });
-test("gateway permits bounded report routes with internal auth and rejects arbitrary children", async t => {
+test("gateway permits bounded report routes with user auth and rejects arbitrary children", async t => {
   for (const suffix of ["status", "report-summary", "report-actions?offset=20&limit=20", "report-actions/event-1?offset=4&limit=4"]) {
     let auth;
     t.mock.method(globalThis, "fetch", async (_url, options) => { auth = new Headers(options.headers).get("authorization"); return Response.json({ ok: true }); });
-    const response = await proxyAnalysis(new Request(`http://localhost:8000/v1/jobs/${job}/${suffix}`), { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: "internal" });
-    assert.equal(response.status, 200); assert.equal(auth, "Bearer internal");
+    const response = await proxyAnalysis(userRequest(`http://localhost:8000/v1/jobs/${job}/${suffix}`), { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: "internal" });
+    assert.equal(response.status, 200); assert.equal(auth, "Bearer gateway-user-jwt");
   }
-  assert.equal((await proxyAnalysis(new Request(`http://localhost:8000/v1/jobs/${job}/report-actions/event-1/arbitrary`), {}, () => assert.fail())).status, 404);
+  assert.equal((await proxyAnalysis(userRequest(`http://localhost:8000/v1/jobs/${job}/report-actions/event-1/arbitrary`), {}, () => assert.fail())).status, 404);
 });
 
 test("overview retains original timing and binds the video source before restoring complete UI", () => {

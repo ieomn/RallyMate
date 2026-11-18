@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -20,10 +21,10 @@ for (const suffix of ["report-overview", "report-motion/motion-baseline-0001"]) 
     t.mock.method(globalThis, "fetch", async (url, init) => {
       calls++;
       assert.equal(String(url), `http://127.0.0.1:8001${job}/${suffix}`);
-      assert.equal(init.headers.get("authorization"), "Bearer test-report-key");
+      assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
       return Response.json({ status: "complete" });
     });
-    const response = await proxyAnalysis(new Request(`http://localhost${job}/${suffix}`), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${job}/${suffix}`), env);
     assert.equal(response.status, 200);
     assert.equal(calls, 1);
     assert.equal(response.headers.get("cache-control"), "private, no-store");
@@ -38,7 +39,7 @@ test("motion section allowlist does not expose writes or arbitrary nested paths"
     [`${job}/report-motion/a/extra`, "GET"], [`${job}/report-motion/`, "GET"],
     [`${job}/report-motion/${"a".repeat(161)}`, "GET"],
   ]) {
-    const response = await proxyAnalysis(new Request(`http://localhost${path}`, { method }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${path}`, { method }), env);
     assert.equal(response.status, 404, `${method} ${path}`);
     assert.deepEqual(await response.json(), { error: "route_not_allowed" });
   }
@@ -47,7 +48,7 @@ test("motion section allowlist does not expose writes or arbitrary nested paths"
 test("public gateway cannot invoke local executor maintenance", async t => {
   t.mock.method(globalThis, "fetch", () => { throw new Error("maintenance must never be proxied"); });
   for (const method of ["GET", "POST", "DELETE"]) {
-    const response = await proxyAnalysis(new Request("https://public.example/internal/maintenance/stop-executor", { method }), env);
+    const response = await proxyAnalysis(userRequest("https://public.example/internal/maintenance/stop-executor", { method }), env);
     assert.equal(response.status, 404);
     assert.deepEqual(await response.json(), { error: "route_not_allowed" });
   }

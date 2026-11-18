@@ -31,6 +31,10 @@ from fastapi import (
     UploadFile,
 )
 from starlette.concurrency import run_in_threadpool
+from starlette._utils import get_route_path
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.formparsers import MultiPartException
+from fastapi.routing import APIRoute
 from rallymate_service.uploads import CHUNK_BYTES, UploadStore
 from rallymate_vision.postprocess_resources import (
     PostprocessBudget, PostprocessOutputLimit, PostprocessResourceLimit, encode_bounded_json,
@@ -53,6 +57,7 @@ from rallymate_scoring.technique_assessment import (
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
 from rallymate_service.database import JobDatabase, QueueCapacityError
+from rallymate_service.database_factory import build_database
 from rallymate_service.segmented_report import (
     SegmentedReportStore, SegmentedReportError, build_summary as build_segmented_summary,
     MAX_SUMMARY_BYTES, MAX_DETAIL_BYTES, MAX_OVERVIEW_BYTES,
@@ -349,6 +354,7 @@ def _public_job(
     if redact_summary:
         public["original_filename"] = _public_original_filename(job, redact=True)
         public["summary"] = _public_summary(job, redact=True)
+        public["progress"] = _redact_public_value(public.get("progress"))
         if isinstance(public.get("error"), str):
             public["error"] = _redact_readiness_reason(public["error"])
     if job.get("status") == "succeeded":
@@ -579,6 +585,7 @@ def create_app(
     *,
     executor_status: Callable[[], dict] | None = None,
     executor_shutdown: Callable[[], dict] | None = None,
+    auth_config=None,
 ) -> FastAPI:
     service_settings = settings or load_settings()
     # ``create_app`` is also a public factory used by tests, worker wrappers
@@ -590,7 +597,7 @@ def create_app(
     service_settings.validate_license(check_registry_authority=False)
     service_settings.ensure_directories()
     deployment_identity = load_deployment_identity(Path(__file__).resolve().parents[2])
-    db = database or JobDatabase(service_settings.database_path)
+    db = database or build_database(service_settings)
     admission_lock = RLock()
     maintenance = Event()
 
@@ -771,23 +778,17 @@ def create_app(
         response.headers["X-Request-ID"] = request_id
         return response
 
-    # The browser client can be hosted on a separate domain (or behind a CDN)
-    # while the GPU worker remains on AutoDL.  Origins are explicit and
-    # operator-configured; credentials are not enabled for this token-based API.
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=list(service_settings.cors_origins),
-        allow_credentials=False,
-        allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Chunk-SHA256", "X-Upload-Acknowledgement", "Idempotency-Key"],
-        expose_headers=["X-Request-ID"],
-    )
     if pose_request_diagnostics_enabled():
         app.add_middleware(PoseRequestDiagnosticsMiddleware)
     def authorize(
         request: Request,
         authorization: str | None = Header(default=None),
     ) -> None:
+        route_path = get_route_path(request.scope)
+        if route_path.startswith("/v1/"):
+            if getattr(request.state, "account_session", None) is None:
+                raise HTTPException(401, "请先登录。")
+            return
         if service_settings.api_key is None:
             # Keep liveness/readiness and the two non-sensitive discovery
             # documents queryable during bootstrap, but fail closed for jobs,
@@ -795,7 +796,7 @@ def create_app(
             # marked production.  Otherwise a deployment could ignore a
             # not_ready response and expose uploaded data anonymously.
             public_discovery_paths = {"/health/live", "/health/ready", "/v1/meta", "/v1/techniques"}
-            if _should_redact_public(service_settings) and request.url.path not in public_discovery_paths:
+            if _should_redact_public(service_settings) and route_path not in public_discovery_paths:
                 raise HTTPException(
                     503,
                     {
@@ -805,7 +806,8 @@ def create_app(
                 )
             return
         expected = f"Bearer {service_settings.api_key}"
-        if authorization is None or not secrets.compare_digest(authorization, expected):
+        if (authorization is None or not authorization.isascii()
+                or not expected.isascii() or not secrets.compare_digest(authorization, expected)):
             raise HTTPException(
                 401,
                 "missing or invalid bearer token",
@@ -1383,7 +1385,53 @@ def create_app(
         )
 
 
-    @app.post("/v1/jobs", status_code=202)
+    class BoundedUploadRoute(APIRoute):
+        def get_route_handler(self):
+            handler = super().get_route_handler()
+
+            async def bounded(request: Request):
+                # FastAPI parses declared bodies before dependency resolution.
+                # Authenticate before it buffers JSON or spools uploaded bytes.
+                authorize(request, request.headers.get("Authorization"))
+                # Match the parser's 1 MiB field allowance for JSON metadata;
+                # multipart also needs room for its permitted video bytes.
+                limit = 1024 * 1024
+                if self.path == "/v1/jobs":
+                    limit += service_settings.max_upload_bytes
+                content_length = request.headers.get("Content-Length")
+                if content_length is not None:
+                    try:
+                        length = int(content_length)
+                    except ValueError:
+                        raise HTTPException(400, "invalid Content-Length") from None
+                    if length < 0:
+                        raise HTTPException(400, "invalid Content-Length")
+                    if length > limit:
+                        raise HTTPException(413, "upload request exceeds the configured size limit")
+                received = 0
+                oversized = False
+
+                async def receive():
+                    nonlocal received, oversized
+                    message = await request.receive()
+                    if message["type"] == "http.request":
+                        received += len(message.get("body", b""))
+                        if received > limit:
+                            oversized = True
+                            # The multipart parser closes its temporary files
+                            # on this exception, including an incomplete upload.
+                            raise MultiPartException("upload request exceeds the configured size limit")
+                    return message
+
+                try:
+                    return await handler(Request(request.scope, receive=receive))
+                except StarletteHTTPException:
+                    if oversized:
+                        raise HTTPException(413, "upload request exceeds the configured size limit") from None
+                    raise
+
+            return bounded
+
     async def submit_job(
         request: Request,
         video: UploadFile = File(...),
@@ -1405,9 +1453,11 @@ def create_app(
             start_ms, end_ms, max_frames,
         )
 
+    app.router.add_api_route("/v1/jobs", submit_job, methods=["POST"], status_code=202,
+                             route_class_override=BoundedUploadRoute)
+
     uploads = UploadStore(service_settings.uploads_dir / ".chunks", service_settings.max_upload_bytes)
 
-    @app.post("/v1/uploads", status_code=201)
     def create_upload(payload: dict, _: None = Depends(authorize)) -> dict:
         require_submission_open()
         filename = _safe_filename(str(payload.get("filename", "")))
@@ -1439,6 +1489,9 @@ def create_app(
         if options.get("court_mode") == "manual" and polygon is None:
             raise HTTPException(422, "手工场地模式需要标定点")
         return uploads.create(str(payload.get("upload_id", "")), filename, payload.get("size"), options)
+
+    app.router.add_api_route("/v1/uploads", create_upload, methods=["POST"], status_code=201,
+                             route_class_override=BoundedUploadRoute)
 
     @app.get("/v1/uploads/{upload_id}")
     def upload_status(upload_id: str, _: None = Depends(authorize)) -> dict:
@@ -1513,6 +1566,8 @@ def create_app(
         raw = result.pop("progress_json", None)
         result["progress"] = json.loads(raw) if raw else {"phase": result["status"],
             "percent": 100 if result["status"] == "succeeded" else 0}
+        if _should_redact_public(service_settings):
+            result["progress"] = _redact_public_value(result["progress"])
         result["cancel_requested"] = bool(result["cancel_requested"])
         result["original_filename"] = _public_original_filename(
             result, redact=_should_redact_public(service_settings))
@@ -2376,6 +2431,22 @@ def create_app(
             headers={"Cache-Control": "private, no-store"},
         )
 
+    from rallymate_service.auth_runtime import install_account_system
+    from rallymate_service.records_api import install_record_routes
+    db, uploads = install_account_system(app, service_settings, db, uploads, config=auth_config)
+    app.state.database = db
+    install_record_routes(app, db)
+    # Keep CORS outside the account boundary so allowed clients can read 401/403 responses.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(service_settings.cors_origins),
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID", "X-Chunk-SHA256", "X-Upload-Acknowledgement", "Idempotency-Key"],
+        expose_headers=["X-Request-ID"],
+    )
+    from rallymate_service.observability import install_api_observability
+    install_api_observability(app, service_settings)
     return app
 
 

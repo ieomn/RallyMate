@@ -26,7 +26,7 @@ def main():
     if observed.lower() != identifier.lower():
         raise RuntimeError('CUDA logical device does not match the requested physical GPU UUID')
     from rallymate_service.config import load_settings
-    from rallymate_service.database import JobDatabase
+    from rallymate_service.database_factory import build_database
     from rallymate_service.worker import run_worker
     settings = load_settings()
     if settings.pose_backend != 'sam3d':
@@ -38,10 +38,13 @@ def main():
         signal.signal(getattr(signal, name), lambda *_: stop.set())
     # The shared run_worker entry point owns the physical slot for both managed
     # and development workers, including descendants and cleanup.
-    run_worker(settings, JobDatabase(settings.database_path), poll_seconds=.5, stop_event=stop, worker_id=worker_id,
-               on_state=lambda state, error: print(json.dumps({
-                   'event': 'worker_state', 'gpu_uuid': identifier, 'worker_id': worker_id,
-                   'state': state, 'error': error}), flush=True))
+    from rallymate_service.observability import observe_worker
+    database = build_database(settings)
+    with observe_worker(settings, database):
+        run_worker(settings, database, poll_seconds=.5, stop_event=stop, worker_id=worker_id,
+                   on_state=lambda state, error: print(json.dumps({
+                       'event': 'worker_state', 'gpu_uuid': identifier, 'worker_id': worker_id,
+                       'state': state, 'error': error}), flush=True))
 
 
 if __name__ == '__main__':

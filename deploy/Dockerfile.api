@@ -1,0 +1,39 @@
+FROM python:3.12-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0 build-essential \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+# MMPose's legacy chumpy metadata imports pip; build against this prepared environment.
+RUN python -m pip install --upgrade pip \
+    && python -m pip install setuptools==69.5.1 wheel Cython numpy==1.26.4 \
+    && python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0 torchvision==0.26.0
+COPY pyproject.toml /app/
+# Resolve the existing extras before copying source so application fixes reuse dependencies.
+RUN python - <<'PY'
+import subprocess
+import sys
+import tomllib
+with open("pyproject.toml", "rb") as source:
+    project = tomllib.load(source)["project"]
+requirements = project["dependencies"] + [
+    requirement for extra in ("service", "training", "rtmpose")
+    for requirement in project["optional-dependencies"][extra]
+]
+subprocess.run([sys.executable, "-m", "pip", "install", "--no-build-isolation", *requirements], check=True)
+PY
+COPY README.md /app/
+COPY src /app/src
+COPY registry-lifecycle.json metric-feasibility.json metric-measurement-plans.json \
+     metric-feasibility-pose-wave-v2.json indicator-scoring-requirements-pose-wave-v1.json \
+     metric-feasibility-pose-wave-v3.json indicator-scoring-requirements-pose-wave-v2.json /app/
+
+# CPU wheels keep CUDA out of the API; RTMPose package data resolves preset configs.
+RUN python -m pip install --no-deps --no-build-isolation -e .
+RUN useradd --create-home --uid 10001 rallymate \
+    && mkdir -p /app/service_data /app/models /app/calibration \
+    && chown -R rallymate:rallymate /app/service_data /app/models
+USER rallymate
+EXPOSE 8000
+CMD ["rallymate-api", "--host", "0.0.0.0", "--port", "8000"]

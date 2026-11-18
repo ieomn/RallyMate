@@ -27,12 +27,14 @@ COPY registry-lifecycle.json \
 
 RUN python3.10 -m pip install --upgrade pip \
     && python3.10 -m pip install --break-system-packages \
-        --index-url https://download.pytorch.org/whl/cu128 torch==2.11.0 \
-    && python3.10 -m pip install --break-system-packages -e ".[service,training,rtmpose]"
+        setuptools==69.5.1 wheel Cython numpy==1.26.4 \
+    && python3.10 -m pip install --break-system-packages \
+        --index-url https://download.pytorch.org/whl/cu128 torch==2.11.0 torchvision==0.26.0 \
+    && python3.10 -m pip install --break-system-packages --no-build-isolation -e ".[service,training,rtmpose]"
 
 RUN useradd --create-home --uid 10001 rallymate \
-    && mkdir -p /app/service_data /app/models \
-    && chown -R rallymate:rallymate /app/service_data /app/models
+    && mkdir -p /app/service_data /app/models /var/lib/rallymate/gpu-state \
+    && chown -R rallymate:rallymate /app/service_data /app/models /var/lib/rallymate/gpu-state
 
 USER rallymate
 EXPOSE 8000

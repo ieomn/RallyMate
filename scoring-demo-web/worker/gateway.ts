@@ -1,7 +1,38 @@
-export type GatewayEnv = Record<string, unknown> & { RALLYMATE_API_ORIGIN?: string; RALLYMATE_API_KEY?: string; MIMO_API_KEY?: string; RALLYMATE_LOCAL_TUNNEL?: string; RALLYMATE_POSE_REQUEST_DIAGNOSTICS?: string };
+export type GatewayEnv = Record<string, unknown> & { RALLYMATE_API_ORIGIN?: string; RALLYMATE_INTERNAL_API_ORIGIN?: string; RALLYMATE_API_KEY?: string; MIMO_API_KEY?: string; RALLYMATE_LOCAL_TUNNEL?: string; RALLYMATE_POSE_REQUEST_DIAGNOSTICS?: string };
 export const isLoopback = (host: string) => ["localhost", "127.0.0.1", "[::1]"].includes(host);
-const reply = (error: string, status: number) => Response.json({ error }, { status, headers: { "cache-control": "no-store" } });
+const reply = (error: string, status: number) => Response.json({ error }, { status, headers: { "cache-control": "private, no-store" } });
 const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024;
+
+export function internalAnalysisOrigin(value: unknown): string | undefined {
+  if (value === undefined || value === "") return;
+  // The private Compose service is an explicit deployment setting, never a request target.
+  if (value !== "http://api:8000" && value !== "http://api:8000/") throw new Error("invalid_internal_analysis_origin");
+  return "http://api:8000";
+}
+
+export function isAnalysisRoute(pathname: string, method: string): boolean {
+  const id = "[a-zA-Z0-9_-]{8,80}";
+  if (method === "GET" && ["/health/live", "/health/ready", "/v1/meta", "/v1/techniques", "/v1/model-capabilities", "/v1/jobs", "/api/records", "/api/auth/me", "/api/admin/users", "/api/admin/stats"].includes(pathname)) return true;
+  if (method === "POST" && ["/v1/jobs", "/v1/uploads", "/api/auth/register", "/api/auth/login", "/api/auth/logout", "/api/auth/change-password"].includes(pathname)) return true;
+  if (method === "GET" && new RegExp(`^/v1/(?:uploads/${id}|jobs/${id}(?:/(?:demo-result|status|report-summary|report-overview|report-motion/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159}|report-actions(?:/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159})?|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?)$`).test(pathname)) return true;
+  if (["GET", "HEAD"].includes(method) && new RegExp(`^/v1/jobs/${id}/artifacts/(?:analysis-report\\.html|scoring-loop-report\\.html)$`).test(pathname)) return true;
+  if (method === "POST" && new RegExp(`^/(?:v1/jobs/${id}/(?:cancel|technical-review|shot-statistics)|v1/uploads/${id}/complete|api/admin/users/${id}/reset-password)$`).test(pathname)) return true;
+  if (method === "PUT" && new RegExp(`^/v1/uploads/${id}/chunks/[0-9]{1,6}$`).test(pathname)) return true;
+  if (method === "PATCH" && new RegExp(`^/api/admin/users/${id}/status$`).test(pathname)) return true;
+  return method === "DELETE" && new RegExp(`^/(?:v1/jobs|api/admin/users)/${id}$`).test(pathname);
+}
+
+export function analysisRequestRejection(method: string, url: URL, headers: Headers, env: GatewayEnv = {}): Response | undefined {
+  if (!isAnalysisRoute(url.pathname, method)) return reply("route_not_allowed", 404);
+  const origin = headers.get("origin");
+  const tunnelOrigin = env.RALLYMATE_LOCAL_TUNNEL === "1" ? `https://${url.host}` : null;
+  const sessionCookie = /(?:^|;\s*)rallymate_session=[^;\s]+/.test(headers.get("cookie") ?? "");
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)
+      && (headers.get("sec-fetch-site") === "cross-site" || (sessionCookie && !origin)
+          || (origin && origin !== url.origin && origin !== tunnelOrigin))) return reply("origin_not_allowed", 403);
+  const publicRoute = url.pathname.startsWith("/health/") || ["/api/auth/register", "/api/auth/login"].includes(url.pathname);
+  if (!publicRoute && !sessionCookie && !headers.get("authorization")) return reply("authentication_required", 401);
+}
 
 /** Separate origin response/read deadlines from a slow downstream report reader. */
 function reportReadDeadline(caller: AbortSignal, totalMs = 120000) {
@@ -207,7 +238,6 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
   const url = new URL(request.url);
   const id = "[a-zA-Z0-9_-]{8,80}";
   const reportPath = new RegExp(`^/v1/jobs/${id}/artifacts/(?:analysis-report\\.html|scoring-loop-report\\.html)$`).test(url.pathname);
-  const reportRead = reportPath && ["GET", "HEAD"].includes(request.method);
   const reportHead = reportPath && request.method === "HEAD";
   const demoResultRead = request.method === "GET" && new RegExp(`^/v1/jobs/${id}/demo-result$`).test(url.pathname);
   const diagnostic = poseRequestDiagnostics(request, env, url.pathname);
@@ -224,34 +254,27 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     }
     return response;
   };
-  const readPath = new RegExp(`^/(?:health/(?:live|ready)|v1/(?:meta|techniques|jobs/${id}(?:/(?:demo-result|status|report-summary|report-overview|report-motion/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159}|report-actions(?:/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,159})?|trajectory|shot-statistics|pose-preview|mesh-preview|swing-kinematics|tennis-assessment|original-video|foot-crossing-candidates|technique-assessment|technical-review(?:/export)?|artifacts/(?:summary\\.json|frames\\.jsonl|indicator-features\\.jsonl|annotated\\.mp4|preview\\.jpg|sam3d-mesh(?:-side)?\\.mp4|sam3d-mesh-preview\\.jpg|sam3d-mesh-manifest\\.json)))?))$`);
-  const reviewWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/(?:technical-review|shot-statistics)$`).test(url.pathname);
-  const cancelWrite = request.method === "POST" && new RegExp(`^/v1/jobs/${id}/cancel$`).test(url.pathname);
-  const uploadRead = new RegExp(`^/v1/uploads/${id}$`);
-  const uploadWrite = new RegExp(`^/v1/uploads/${id}/(?:complete|chunks/[0-9]{1,6})$`);
-  const chunkWrite = request.method === "PUT" && uploadWrite.test(url.pathname) && /\/chunks\/[0-9]+$/.test(url.pathname);
-  const uploadAllowed = (request.method === "GET" && uploadRead.test(url.pathname)) ||
-    (request.method === "POST" && (url.pathname === "/v1/uploads" || (uploadWrite.test(url.pathname) && url.pathname.endsWith("/complete")))) ||
-    chunkWrite;
-  if (!reportRead && !uploadAllowed && !reviewWrite && !cancelWrite && !(request.method === "GET" && readPath.test(url.pathname)) && !(request.method === "POST" && url.pathname === "/v1/jobs")) return finish(reply("route_not_allowed", 404), "gateway_rejected");
-  const browserOrigin = request.headers.get("origin");
-  const tunnelOrigin = env.RALLYMATE_LOCAL_TUNNEL === "1" ? `https://${url.host}` : null;
-  if (["POST", "PUT"].includes(request.method) && (request.headers.get("sec-fetch-site") === "cross-site" || (browserOrigin && browserOrigin !== url.origin && browserOrigin !== tunnelOrigin))) return finish(reply("origin_not_allowed", 403), "gateway_rejected");
-  const origin = env.RALLYMATE_API_ORIGIN;
+  const chunkWrite = request.method === "PUT" && new RegExp(`^/v1/uploads/${id}/chunks/[0-9]{1,6}$`).test(url.pathname);
+  const rejection = analysisRequestRejection(request.method, url, request.headers, env);
+  if (rejection) return finish(rejection, "gateway_rejected");
+  let internal: string | undefined;
+  try { internal = internalAnalysisOrigin(env.RALLYMATE_INTERNAL_API_ORIGIN); }
+  catch { return finish(reply("invalid_internal_analysis_origin", 503), "gateway_rejected"); }
+  const origin = internal ?? env.RALLYMATE_API_ORIGIN;
   if (!origin) return finish(reply("analysis_service_not_configured", 503), "gateway_rejected");
   let base: URL;
   try {
     base = new URL(origin);
     if (base.username || base.password || base.search || base.hash || !["", "/"].includes(base.pathname) || !["https:", "http:"].includes(base.protocol)) throw new Error();
     const localTunnel = env.RALLYMATE_LOCAL_TUNNEL === "1" && base.protocol === "http:" && isLoopback(base.hostname);
-    if (!isLoopback(url.hostname) && !localTunnel && (base.protocol !== "https:" || isLoopback(base.hostname))) throw new Error();
+    if (!internal && !isLoopback(url.hostname) && !localTunnel && (base.protocol !== "https:" || isLoopback(base.hostname))) throw new Error();
   } catch { return finish(reply("invalid_analysis_origin", 503), "gateway_rejected"); }
   const headers = new Headers();
-  for (const name of ["content-type", "accept", "range", "if-range", "x-request-id", "x-chunk-sha256", "x-upload-acknowledgement", "idempotency-key"]) {
+  for (const name of ["content-type", "accept", "range", "if-range", "x-request-id", "x-chunk-sha256", "x-upload-acknowledgement", "idempotency-key", "cookie", "authorization", "origin", "x-csrf-token", "sec-fetch-site"]) {
     if (reportHead && ["range", "if-range"].includes(name)) continue;
     const value = request.headers.get(name); if (value) headers.set(name, value);
   }
-  if (env.RALLYMATE_API_KEY) headers.set("authorization", `Bearer ${env.RALLYMATE_API_KEY}`);
+  if (url.pathname.startsWith("/health/") && env.RALLYMATE_API_KEY) headers.set("authorization", `Bearer ${env.RALLYMATE_API_KEY}`);
   const compactPoseRead = request.method === "GET" && url.pathname.endsWith("/pose-preview") && url.searchParams.get("pose_transport") === "compact-v1";
   if (demoResultRead || compactPoseRead) headers.set("accept-encoding", "identity");
   if (demoResultRead || compactPoseRead) {
@@ -274,7 +297,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     // Keep caller cancellation active while fetch streams the response body too.
     : reportTiming ? reportTiming.signal : getDeadline
       ? AbortSignal.any([request.signal, getDeadline])
-      : AbortSignal.timeout(["POST", "PUT"].includes(request.method) ? 100000 : 30000);
+      : AbortSignal.timeout(["POST", "PUT", "PATCH", "DELETE"].includes(request.method) ? 100000 : 30000);
   upstreamSignal = signal;
   try {
     // The artifact API is GET-only. Report HEAD reuses its authenticated headers
@@ -285,7 +308,7 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
       if (body instanceof Response) return finish(body);
       headers.set("content-length", String(body.byteLength));
       init.body = body;
-    } else if (["POST", "PUT"].includes(request.method)) { init.body = request.body; init.duplex = "half"; }
+    } else if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) { init.body = request.body; init.duplex = "half"; }
     diagnostic?.("upstream_start", null, "none", signal, getDeadline);
     const response = await fetch(new URL(url.pathname + url.search, base), init);
     reportTiming?.headersReceived();
@@ -299,6 +322,11 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     }
     const output = new Headers({ "cache-control": "private, no-store", "x-content-type-options": "nosniff" });
     for (const name of ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified", "content-disposition", "retry-after"]) { const value = response.headers.get(name); if (value) output.set(name, value); }
+    if (url.pathname.startsWith("/api/auth/")) {
+      const cookieHeaders = response.headers as Headers & { getSetCookie?: () => string[]; getAll?: (name: string) => string[] };
+      const cookies = cookieHeaders.getSetCookie?.() ?? cookieHeaders.getAll?.("Set-Cookie") ?? [];
+      for (const cookie of cookies) output.append("set-cookie", cookie);
+    }
     // Fetch can return decoded bytes with the origin's encoded length. Never
     // declare that length downstream when report framing was not trusted.
     if (reportTiming && trustedReportLength(response.headers) === undefined) output.delete("content-length");

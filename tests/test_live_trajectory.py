@@ -166,7 +166,7 @@ class LiveTrajectoryTests(unittest.TestCase):
                 self.preview()
 
     def test_api_uses_incremental_cache_redacts_paths_and_cancel_only_clears_cache(self):
-        from fastapi.testclient import TestClient
+        from tests.service_auth import authenticated_client
         from tests.test_trajectory_api import TrajectoryApiTests
         helper = TrajectoryApiTests()
         with patch("rallymate_service.api.LiveTrajectoryCache", return_value=self.cache):
@@ -174,7 +174,7 @@ class LiveTrajectoryTests(unittest.TestCase):
         job_id = helper._succeeded_job(settings, database, running=True)
         source = settings.runs_dir / job_id / "frames.jsonl"
         before = source.read_bytes()
-        with TestClient(app) as client, \
+        with authenticated_client(app, job_ids=(job_id,)) as client, \
                 patch("rallymate_service.live_trajectory.parse_trajectory_line", wraps=parse_trajectory_line) as parse:
             url = f"/v1/jobs/{job_id}/trajectory"
             first = client.get(url)

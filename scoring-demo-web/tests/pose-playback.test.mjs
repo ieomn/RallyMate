@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -324,15 +325,15 @@ test("motion markers respect declared sub-millisecond source-PTS rounding but ne
   assert.equal(motionFocusAt(parsed, 1000 / 24).markers.length, 3);
 });
 
-test("gateway adds only the bounded pose-preview read endpoint without forwarding browser credentials", async () => {
+test("gateway permits the bounded pose-preview read endpoint with user credentials", async () => {
   const saved = globalThis.fetch; let called = 0;
-  globalThis.fetch = async (url, init) => { called++; assert.match(String(url), /\/pose-preview\?start_ms=0$/); assert.equal(init.headers.get("authorization"), "Bearer server-key"); assert.equal(init.headers.get("cookie"), null); return Response.json(payload()); };
+  globalThis.fetch = async (url, init) => { called++; assert.match(String(url), /\/pose-preview\?start_ms=0$/); assert.equal(init.headers.get("authorization"), "Bearer browser-key"); assert.equal(init.headers.get("cookie"), "session=private"); return Response.json(payload()); };
   const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: "server-key" };
   try {
-    const response = await proxyAnalysis(new Request("http://localhost/v1/jobs/pose-job-123/pose-preview?start_ms=0", { headers: { authorization: "Bearer browser-key", cookie: "session=private" } }), env);
+    const response = await proxyAnalysis(userRequest("http://localhost/v1/jobs/pose-job-123/pose-preview?start_ms=0", { headers: { authorization: "Bearer browser-key", cookie: "session=private" } }), env);
     assert.equal(response.status, 200);
-    assert.equal((await proxyAnalysis(new Request("http://localhost/v1/jobs/pose-job-123/pose-preview", { method: "POST" }), env)).status, 404);
-    assert.equal((await proxyAnalysis(new Request("http://localhost/v1/jobs/pose-job-123/pose-private"), env)).status, 404);
+    assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/jobs/pose-job-123/pose-preview", { method: "POST" }), env)).status, 404);
+    assert.equal((await proxyAnalysis(userRequest("http://localhost/v1/jobs/pose-job-123/pose-private"), env)).status, 404);
     assert.equal(called, 1);
   } finally { globalThis.fetch = saved; }
 });

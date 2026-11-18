@@ -1,0 +1,26 @@
+# Alertmanager 0.35 custom payload forwards to a Feishu custom bot webhook.
+# Configure the bot keyword as RallyMate; a signing-enabled bot needs a signing relay.
+global:
+  resolve_timeout: 5m
+route:
+  receiver: feishu
+  group_by: [alertname, job, instance, UUID]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+receivers:
+  - name: feishu
+    webhook_configs:
+      - url_file: /etc/alertmanager/secrets/feishu_webhook_url
+        send_resolved: true
+        timeout: 10s
+        max_alerts: 20
+        payload:
+          msg_type: text
+          content:
+            text: >-
+              RallyMate {{ .Status | toUpper }}
+              {{ range .Alerts }}
+              {{ .Annotations.summary }}
+              {{ .Annotations.description }}
+              {{ end }}

@@ -73,7 +73,7 @@ function mount(t, { realTransport = false } = {}) {
     effects.forEach(effect => effect()); return output;
   };
   const globals = {
-    window: Object.assign(new EventTarget(), { location: { pathname: "/", search: `?view=analysis&job=${jobId}`, hash: "" }, scrollTo() {}, setInterval: () => 1, clearInterval() {}, history: { pushState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; }, replaceState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; } } }),
+    window: Object.assign(new EventTarget(), { location: { origin: "https://local.test", pathname: "/", search: `?view=analysis&job=${jobId}`, hash: "" }, scrollTo() {}, setInterval: () => 1, clearInterval() {}, history: { pushState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; }, replaceState: (_a, _b, url) => { window.location.search = new URL(url, "https://local.test").search; } } }),
     document: new EventTarget(), requestAnimationFrame: () => 1, cancelAnimationFrame() {},
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
   };
@@ -110,6 +110,7 @@ function mount(t, { realTransport = false } = {}) {
         // stub; only pose HTTP transport is real. Segmented loading has separate
         // coverage and must not accidentally enter the pose-only fake endpoint.
         api.getReportSummary = undefined;
+        api.getRecords = undefined;
         clients.push(api); return api;
       }
       const api = {
@@ -153,7 +154,7 @@ function mount(t, { realTransport = false } = {}) {
     viewerText: () => text(viewerTree),
     retryPose() { nodes(viewerTree).find(node => node.type === "button" && text(node) === "重新读取动作标记").props.onClick(); render(); },
     replaceOriginal(transform) { const scope = scopes.get("score"), i = scope.slots.findIndex(value => value?.result?.original_video); assert.ok(i >= 0); const evidence = scope.slots[i]; scope.slots[i] = { ...evidence, result: { ...evidence.result, original_video: transform(evidence.result.original_video) } }; render(); },
-    async flush() { for (let n = 0; n < 8; n++) await Promise.resolve(); render(); },
+    async flush() { await new Promise(resolve => setImmediate(resolve)); render(); },
     async complete() { const watch = watches.at(-1); watch.onProgress({ id: watch.jobId, status: "succeeded" }); watch.resolve({ job: { id: watch.jobId, status: "succeeded" }, result: result(watch.jobId), trajectory: null, assessment: null, warning: null }); await app.flush(); },
     seek(timestampMs) { const event = new Event("rallymate:seek-video"); event.detail = { timestampMs, jobId: replayProps.evidence.jobId }; window.dispatchEvent(event); render(); },
     togglePose(enabled) { const label = nodes(viewerTree).find(node => node.type === "label" && text(node) === "动作标记"); const input = nodes(label).find(node => node.type === "input"); input.props.onChange({ target: { checked: enabled } }); render(); },
@@ -268,7 +269,7 @@ test("disabling pose aborts a pending window and ignores its late completion", a
 test("same-job offline import clears the active job and cannot fetch online pose windows", async t => {
   const app = mount(t); await app.complete(); const old = app.requests[0];
   app.togglePose(false); await app.importSameJob();
-  assert.equal(app.pending, false); assert.equal(app.storage.has("rallymate.activeJob"), false);
+  assert.equal(app.pending, false); assert.equal(app.storage.has("rallymate.activeJob:account:anonymous"), false);
   assert.equal(window.location.search.includes("job="), false); assert.equal(app.watches.length, 1);
   assert.equal(app.watches[0].signal.aborted, true); assert.equal(old.options.signal.aborted, true);
   app.togglePose(true);
@@ -303,7 +304,7 @@ test("direct same-job import invalidates pose reads and reopening online starts 
   assert.equal(app.requests.length, 1);
   await app.importSameJob();
   assert.equal(app.pending, false); assert.equal(app.watches.length, 1);
-  assert.equal(app.storage.has("rallymate.activeJob"), false);
+  assert.equal(app.storage.has("rallymate.activeJob:account:anonymous"), false);
   assert.equal(old.options.signal.aborted, true);
   assert.equal(app.loader, undefined, "offline evidence must not inherit the previous online loader");
   old.resolve(preview(old, .2)); await app.flush();

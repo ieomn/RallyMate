@@ -11,6 +11,7 @@ from contextlib import closing
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from tests.service_auth import login_test_user
 
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
@@ -248,12 +249,13 @@ class TechnicalReviewTests(unittest.TestCase):
         database.mark_succeeded(self.job["id"], self.job["summary"])
         app = create_app(settings, database)
         route = f"/v1/jobs/{self.job['id']}/technical-review"
-        headers = {"Authorization": "Bearer unit-test-secret-not-a-real-key"}
+        headers = {}
         with TestClient(app) as client:
             self.assertEqual(client.get(route).status_code, 401)
+            login_test_user(client, job_ids=(self.job["id"],))
             initial = client.get(route, headers=headers)
             self.assertEqual(initial.status_code, 200, initial.text[:500])
-            self.assertEqual(initial.headers["cache-control"], "no-store")
+            self.assertEqual(initial.headers["cache-control"], "private, no-store")
             self.assertEqual(initial.json()["entries"], [])
             payload = self.submission()
             saved = client.post(route, headers=headers, json=payload)

@@ -16,11 +16,27 @@ function compiledUrl(fileUrl) {
 }
 const { courtHomography, projectCourtPoint, courtProjectionOf, courtPaths, courtPlaybackFrame, courtReferenceRegions, calibrationWindowAt } = await import(compiledUrl(new URL("../app/lib/court-simulation.ts", import.meta.url)));
 const { courtCalibrationKey, parseCourtCalibration } = await import(compiledUrl(new URL("../app/lib/court-calibration.ts", import.meta.url)));
+const { setAccountRequestState } = await import(compiledUrl(new URL("../app/lib/auth-client.ts", import.meta.url)));
 const { default: CourtSimulationPanel } = await import(compiledUrl(new URL("../app/CourtSimulationPanel.tsx", import.meta.url)));
 const corners = [{ x: .3, y: .2 }, { x: .7, y: .2 }, { x: .9, y: .9 }, { x: .1, y: .9 }];
 const point = overrides => ({ x: .5, y: .5, timestamp_ms: 1000, source: "observed", segment_id: "one", ...overrides });
 const trajectory = overrides => ({ source: { coordinate_space: "normalized_frame_0_1" }, ball: { observed: [point()] }, ...overrides });
 const stableWindow = { start_timestamp_ms: 0, end_timestamp_ms: 2000 };
+
+test("court calibration is scoped by account as well as immutable video identity", t => {
+  t.after(() => setAccountRequestState({ userId: null, csrfToken: null }));
+  const data = trajectory({ job_id: "court-job-1234", source: { frames_path: "frames.json", width: 1280, height: 720 } });
+  setAccountRequestState({ userId: "account-a", csrfToken: "csrf-a" });
+  const keyA = courtCalibrationKey(data);
+  const saved = JSON.stringify({ version: 1, sourceKey: keyA, fixedCamera: true, region: "service", corners, timestampMs: 1000 });
+  assert.ok(parseCourtCalibration(saved, keyA));
+  setAccountRequestState({ userId: "account-b", csrfToken: "csrf-b" });
+  const keyB = courtCalibrationKey(data);
+  assert.notEqual(keyA, keyB); assert.equal(parseCourtCalibration(saved, keyB), null);
+  assert.match(keyA, /:account:account-a$/); assert.match(keyB, /:account:account-b$/);
+  const legacyKey = keyA.replace(/:account:account-a$/, "");
+  assert.equal(parseCourtCalibration(JSON.stringify({ ...JSON.parse(saved), sourceKey: legacyKey }), keyA), null);
+});
 
 // Exercise the panel's real event handlers and rendered props without a browser DOM.
 // The hook host only supplies state/effect scheduling; projection and playback stay real.

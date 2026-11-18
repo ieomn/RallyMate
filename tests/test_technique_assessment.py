@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from jsonschema import Draft202012Validator
 
 from rallymate_scoring.technique_assessment import build_technique_assessment
@@ -216,7 +216,7 @@ class TechniqueAssessmentTests(unittest.TestCase):
             (output_dir / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
             (output_dir / "indicator-features.jsonl").write_text("", encoding="utf-8")
             db.mark_succeeded(job_id, summary)
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(job_id,)) as client:
                 self.assertEqual(client.get("/v1/meta").status_code, 200)
                 catalog_response = client.get("/v1/techniques")
                 self.assertEqual(catalog_response.status_code, 200)

@@ -20,8 +20,11 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
+from sqlalchemy.engine import make_url
+
 from rallymate_service.config import load_settings
 from rallymate_service.database import JobDatabase, utc_now
+from rallymate_service.database_factory import build_database, database_url
 from rallymate_vision.contracts import load_request
 
 
@@ -225,9 +228,12 @@ def recover_failed_finalization(settings, *, failed_job_id: str, worker_paused: 
         raise ValueError("explicit worker-paused confirmation and operator note are required")
     if "expected_job_id" not in inspect.signature(process_one).parameters:
         raise RuntimeError("worker lacks atomic expected_job_id support")
-    if not settings.database_path.is_file():
+    storage_url = make_url(database_url(settings))
+    if storage_url.get_backend_name() == "sqlite" and not Path(storage_url.database).is_file():
         raise FileNotFoundError("existing service database is required")
-    database = JobDatabase(settings.database_path)
+    database = build_database(settings)
+    if storage_url.get_backend_name() == "postgresql":
+        database.initialize()
     workspace = workspace_root.resolve()
     evidence = {
         "source": _manifest(source_manifest, source_manifest_sha256),

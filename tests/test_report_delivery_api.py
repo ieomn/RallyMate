@@ -8,7 +8,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from rallymate_service import api, user_demo
 from tests import test_trajectory_api, test_user_demo
 from tests.test_report_evidence_transport import native_fixture
@@ -47,7 +47,7 @@ class ReportDeliveryApiTests(unittest.TestCase):
                 entered.set()
                 if not release.wait(5): raise RuntimeError("test builder timed out")
                 return copy.deepcopy(supplied)
-            with patch.object(api, "build_user_demo_result", side_effect=build), TestClient(app) as client:
+            with patch.object(api, "build_user_demo_result", side_effect=build), authenticated_client(app, job_ids=(job,)) as client:
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1"
                 deferred = url + "&report_delivery=deferred-v1"
                 try:
@@ -78,7 +78,7 @@ class ReportDeliveryApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             app, settings, database, job = setup_report(Path(directory))
             supplied = native_fixture(); supplied["job_id"] = job
-            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)) as build, TestClient(app) as client:
+            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)) as build, authenticated_client(app, job_ids=(job,)) as client:
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 self.assertEqual(poll(client, url).status_code, 200)
                 self.assertEqual(build.call_count, 1)
@@ -99,7 +99,7 @@ class ReportDeliveryApiTests(unittest.TestCase):
             def build(*args, **kwargs):
                 (settings.runs_dir / job / "preview.jpg").write_bytes(b"changed during build")
                 return copy.deepcopy(supplied)
-            with patch.object(api, "build_user_demo_result", side_effect=build), TestClient(app) as client:
+            with patch.object(api, "build_user_demo_result", side_effect=build), authenticated_client(app, job_ids=(job,)) as client:
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 self.assertEqual(client.get(url).status_code, 202)
                 deadline = time.monotonic() + 3
@@ -113,7 +113,7 @@ class ReportDeliveryApiTests(unittest.TestCase):
             app, settings, database, job = setup_report(Path(directory))
             supplied = native_fixture(); supplied["job_id"] = job
             context = settings.runs_dir / job / "action-context.json"
-            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)) as build, TestClient(app) as client:
+            with patch.object(api, "build_user_demo_result", side_effect=lambda *a, **kw: copy.deepcopy(supplied)) as build, authenticated_client(app, job_ids=(job,)) as client:
                 url = f"/v1/jobs/{job}/demo-result?report_contract=current&report_transport=model-proof-pool-v1&report_delivery=deferred-v1"
                 self.assertEqual(poll(client, url).status_code, 200)
                 context.write_text('{"review":1}', encoding="utf-8")

@@ -10,7 +10,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from rallymate_scoring.artifact_evidence import EvidencePoolWriter
 from rallymate_service import api, segmented_report as segments
 from rallymate_service.report_evidence_transport import unpack_report_evidence
@@ -80,7 +80,7 @@ class SegmentedReportTests(unittest.TestCase):
         with patch.object(api, "original_video_descriptor", return_value=original), \
              patch.object(api, "build_user_demo_result", side_effect=AssertionError("full report must stay lazy")), \
              patch.object(segments.SegmentedReportStore, "index", side_effect=AssertionError("no index on summary")), \
-             TestClient(self.app) as client:
+             authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             response = client.get(f"/v1/jobs/{self.job['id']}/report-summary")
         self.assertEqual(response.status_code, 200, response.text)
         result = response.json()
@@ -145,7 +145,7 @@ class SegmentedReportTests(unittest.TestCase):
             segments._validate_nested_proofs(bad, segments.source_identity(self.job), self.event["source_window"], self.check)
 
     def test_api_200_limits_and_cancelled_cache_hits(self):
-        with TestClient(self.app) as client:
+        with authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             base = f"/v1/jobs/{self.job['id']}"
             with patch.object(self.db, "get_job", side_effect=AssertionError("poll must not load summary")):
                 status = client.get(base + "/status")
@@ -178,7 +178,7 @@ class SegmentedReportTests(unittest.TestCase):
                 connection.execute("UPDATE jobs SET summary_json=summary_json || ' ' WHERE id=?", (self.job["id"],))
                 connection.commit()
             return result
-        with patch.object(segments.SegmentedReportStore, "actions", changed), TestClient(self.app) as client:
+        with patch.object(segments.SegmentedReportStore, "actions", changed), authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             response = client.get(f"/v1/jobs/{self.job['id']}/report-actions?report_delivery=deferred-v1")
             self.assertEqual(response.status_code, 202)
             cache = self.app.state.segmented_delivery.cache

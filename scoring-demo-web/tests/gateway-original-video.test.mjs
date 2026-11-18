@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -19,10 +20,10 @@ test("original video GET preserves byte-range requests, streamed partial bodies 
     assert.equal(init.method, "GET"); assert.equal(init.redirect, "manual");
     assert.equal(init.headers.get("range"), "bytes=2-4");
     assert.equal(init.headers.get("if-range"), '"source-hash"');
-    assert.equal(init.headers.get("authorization"), "Bearer test-private-key");
+    assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
     return upstream;
   });
-  const response = await proxyAnalysis(new Request(`http://localhost${path}`, { headers: { range: "bytes=2-4", "if-range": '"source-hash"' } }), env);
+  const response = await proxyAnalysis(userRequest(`http://localhost${path}`, { headers: { range: "bytes=2-4", "if-range": '"source-hash"' } }), env);
   assert.equal(response.status, 206); assert.equal(response.body, upstream.body);
   for (const name of ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified"]) assert.equal(response.headers.get(name), upstream.headers.get(name));
   assert.equal(response.headers.get("authorization"), null);
@@ -32,7 +33,7 @@ test("original video GET preserves byte-range requests, streamed partial bodies 
 
 test("unsatisfied original video ranges retain the upstream size", async t => {
   t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 416, headers: { "content-range": "bytes */10" } }));
-  const response = await proxyAnalysis(new Request(`http://localhost${path}`, { headers: { range: "bytes=30-" } }), env);
+  const response = await proxyAnalysis(userRequest(`http://localhost${path}`, { headers: { range: "bytes=30-" } }), env);
   assert.equal(response.status, 416); assert.equal(response.headers.get("content-range"), "bytes */10");
 });
 
@@ -40,10 +41,10 @@ test("original video permits only its exact GET endpoint", async t => {
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => { calls++; throw new Error("unexpected upstream call"); });
   for (const method of ["HEAD", "POST", "PUT", "PATCH", "DELETE"]) {
-    assert.equal((await proxyAnalysis(new Request(`http://localhost${path}`, { method }), env)).status, 404);
+    assert.equal((await proxyAnalysis(userRequest(`http://localhost${path}`, { method }), env)).status, 404);
   }
   for (const invalid of [`${path}/`, `${path}/extra`, `${path}.mp4`, path.replace("original-video", "artifacts/original.mp4"), path.replace("original-video", "original-video%2f..%2fsecret")]) {
-    assert.equal((await proxyAnalysis(new Request(`http://localhost${invalid}`), env)).status, 404);
+    assert.equal((await proxyAnalysis(userRequest(`http://localhost${invalid}`), env)).status, 404);
   }
   assert.equal(calls, 0);
 });

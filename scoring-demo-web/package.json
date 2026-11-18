@@ -9,16 +9,18 @@
     "postinstall": "node scripts/patch-vinext-disconnected-response.mjs",
     "dev": "vinext dev",
     "build": "vinext build",
-    "start": "vinext start",
+    "start": "node --import ./instrument.server.mjs ./node_modules/vinext/dist/cli.js start",
     "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sentry/node": "11.13.0",
+    "@sentry/react": "11.13.0",
     "drizzle-orm": "0.45.2",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react": "19.2.9",
+    "react-dom": "19.2.9"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -37,7 +39,7 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "16.4.0",
-    "react-server-dom-webpack": "19.2.6",
+    "react-server-dom-webpack": "19.2.9",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",

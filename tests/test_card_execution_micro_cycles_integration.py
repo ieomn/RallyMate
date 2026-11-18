@@ -204,7 +204,7 @@ class MicroCycleActualUnifiedIntegration(unittest.TestCase):
         if not video.is_file() or not all((original/name).is_file() for name in names):
             self.skipTest("native e420 actual-media integration requires the original raw files and video")
         from tests.test_card_execution_api import CardExecutionApiTests
-        from fastapi.testclient import TestClient
+        from tests.service_auth import authenticated_client
         before = {name: _sha(original/name) for name in names}
         self.assertEqual(before, names)
         video_sha = _sha(video)
@@ -243,7 +243,7 @@ class MicroCycleActualUnifiedIntegration(unittest.TestCase):
             database.claim_next("test-worker", settings.lease_seconds, settings.max_attempts)
             database.mark_succeeded(identity, summary)
             http = {}
-            with TestClient(app) as client:
+            with authenticated_client(app, job_ids=(identity,)) as client:
                 for contract in ("current", "legacy-v1"):
                     response = client.get(f"/v1/jobs/{identity}/demo-result?report_contract={contract}")
                     self.assertEqual(response.status_code, 200, response.text[:500])

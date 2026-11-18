@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 
 from rallymate_service.advice_context import (
     ADVICE_CONTEXT_MAX_BYTES, AdviceContextTooLarge, project_advice_context,
@@ -88,7 +88,7 @@ class AdviceContextTests(unittest.TestCase):
             app, settings, database = helper._app(Path(directory))
             job_id = helper._succeeded_job(settings, database)
             with patch("rallymate_service.api.build_user_demo_result", side_effect=AssertionError("full report must not be built")):
-                with TestClient(app) as client:
+                with authenticated_client(app, job_ids=(job_id,)) as client:
                     native = client.get(f"/v1/jobs/{job_id}/technique-assessment?report_contract=current")
                     response = client.get(f"/v1/jobs/{job_id}/advice-evidence", params={"technique": "步伐"})
                     self.assertEqual(response.status_code, 200, response.text)

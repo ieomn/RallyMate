@@ -13,10 +13,10 @@ const steps = [
 ];
 
 const questions = [
-  { title: "第一次使用，需要准备什么？", text: "一段正常速度的网球训练原视频就可以开始。固定手机，尽量让全身和双脚始终入镜，保留动作前后的过程。可以先查看拍摄指南，再上传视频。" },
+  { title: "第一次使用，需要准备什么？", text: "先注册账号并填写申请理由，管理员审核通过后即可进入训练空间。准备一段正常速度的网球训练原视频，固定手机，让全身和双脚始终入镜，保留动作前后的过程。" },
   { title: "上传后可以查看哪些内容？", text: "可以查看五维动作评分、关键片段、原视频与人体三维回放，以及已识别的球路轨迹和击球统计。报告还会结合动作测量给出练习建议，帮助你确定下一次训练的重点。" },
   { title: "怎么把分析结果用到训练中？", text: "从报告里选择一个练习重点，回看对应动作，按照建议进行练习。保存关注点，下一次用相近机位记录同类动作，再结合报告和教练反馈比较变化。" },
-  { title: "训练结束后，可以留下什么？", text: "可以下载 HTML 报告和 JSON 备份，之后导入备份继续查看。当前训练记录保存在此浏览器中；备份本身不包含原视频，建议同时保留原片。" },
+  { title: "训练结束后，可以留下什么？", text: "上传和分析记录保存在你的账号中，登录后可继续回看。训练备注与导入的备份保存在当前浏览器的个人空间；还可以下载 HTML 报告和 JSON 备份。备份不包含原视频，请同时保留原片。" },
 ];
 
 export default function MarketingLanding() {
@@ -96,6 +96,7 @@ export default function MarketingLanding() {
       <nav id="marketing-nav" className={`mk-nav${menuOpen ? " is-open" : ""}`} aria-label="品牌导航">
         {[{ id: "experience", title: "功能介绍" }, { id: "workflow", title: "如何开始" }, { id: "questions", title: "常见问题" }].map(item => <a key={item.id} href={`#${item.id}`} aria-current={activeSection === item.id ? "location" : undefined} onClick={() => setMenuOpen(false)}>{item.title}</a>)}
         <a className="mk-nav-workspace" href="/?view=overview">训练空间<ProductIcon name="arrow-up-right" size={15} /></a>
+        <a href="/login">登录</a><a href="/register">申请账号</a>
       </nav>
       <div className="mk-header-actions"><a href="/?view=analysis" className="mk-button mk-button-lime mk-header-cta">开始体验<ProductIcon name="arrow-up-right" size={16} /></a><button className="mk-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="marketing-nav" aria-label={menuOpen ? "收起导航" : "展开导航"} onClick={() => setMenuOpen(value => !value)}><ProductIcon name={menuOpen ? "close" : "menu"} /></button></div>
       <div className="mk-reading-progress" aria-hidden="true" />

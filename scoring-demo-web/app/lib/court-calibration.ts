@@ -1,12 +1,13 @@
 import type { TrajectoryPreviewResponse } from "./api-types";
 import { courtHomography, type Corner, type CourtReferenceRegion } from "./court-simulation";
+import { accountStorageKey } from "./account-storage";
 
 export type SavedCourtCalibration = { version: 1; sourceKey: string; region: CourtReferenceRegion; corners: Corner[]; timestampMs: number; fixedCamera: true };
 
 /** A result's immutable job and source identity prevent reuse on a different upload. */
 export function courtCalibrationKey(trajectory: TrajectoryPreviewResponse | null): string | null {
   if (!trajectory?.job_id || !trajectory.source.frames_path || !trajectory.source.width || !trajectory.source.height) return null;
-  return `rallymate:court:v1:${JSON.stringify([trajectory.job_id, trajectory.source.frames_path, trajectory.source.width, trajectory.source.height])}`;
+  return accountStorageKey(`rallymate:court:v1:${JSON.stringify([trajectory.job_id, trajectory.source.frames_path, trajectory.source.width, trajectory.source.height])}`);
 }
 
 export function parseCourtCalibration(raw: string | null, sourceKey: string): SavedCourtCalibration | null {

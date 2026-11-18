@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -128,18 +129,18 @@ test("shot GET and POST propagate caller cancellation through their fetch signal
   }
 });
 
-test("shot gateway forwards GET with server authentication and uncached statistics", async t => {
+test("shot gateway forwards GET with user authentication and uncached statistics", async t => {
   let calls = 0;
   t.mock.method(globalThis, "fetch", async (url, init) => {
     calls++;
     assert.equal(String(url), `${env.RALLYMATE_API_ORIGIN}${path}?view=compact`);
     assert.equal(init.method, "GET");
     assert.equal(init.redirect, "manual");
-    assert.equal(init.headers.get("authorization"), "Bearer internal-test-key");
-    assert.equal(init.headers.get("cookie"), null);
+    assert.equal(init.headers.get("authorization"), "Bearer browser-value");
+    assert.equal(init.headers.get("cookie"), "browser=private");
     return Response.json(report(7), { headers: { "set-cookie": "upstream=private" } });
   });
-  const response = await proxyAnalysis(new Request(`http://localhost${path}?view=compact`, {
+  const response = await proxyAnalysis(userRequest(`http://localhost${path}?view=compact`, {
     headers: { authorization: "Bearer browser-value", cookie: "browser=private" },
   }), env);
   assert.equal(response.status, 200);
@@ -157,7 +158,7 @@ test("shot client and gateway carry a same-origin review to the backend without 
     assert.equal(String(url), `${env.RALLYMATE_API_ORIGIN}${path}`);
     assert.equal(init.method, "POST");
     assert.equal(init.redirect, "manual");
-    assert.equal(init.headers.get("authorization"), "Bearer internal-test-key");
+    assert.equal(init.headers.get("authorization"), "Bearer gateway-user-jwt");
     assert.equal(init.headers.get("content-type"), "application/json");
     assert.ok(init.headers.get("x-request-id"));
     assert.deepEqual(await new Response(init.body).json(), body);
@@ -167,7 +168,7 @@ test("shot client and gateway carry a same-origin review to the backend without 
     const headers = new Headers(init.headers);
     headers.set("origin", "http://localhost");
     headers.set("sec-fetch-site", "same-origin");
-    return proxyAnalysis(new Request(`http://localhost${url}`, { ...init, headers }), env);
+    return proxyAnalysis(userRequest(`http://localhost${url}`, { ...init, headers }), env);
   });
   assert.deepEqual(await client.saveShotReview(jobId, body), report(8));
   assert.equal(calls, 1);
@@ -181,7 +182,7 @@ test("shot gateway rejects cross-site review writes before contacting the backen
     { origin: "http://localhost", "sec-fetch-site": "cross-site" },
     { "sec-fetch-site": "cross-site" },
   ]) {
-    const response = await proxyAnalysis(new Request(`http://localhost${path}`, { method: "POST", headers, body: JSON.stringify(submission()) }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${path}`, { method: "POST", headers, body: JSON.stringify(submission()) }), env);
     assert.equal(response.status, 403);
     assert.deepEqual(await response.json(), { error: "origin_not_allowed" });
   }
@@ -192,11 +193,11 @@ test("shot tunnel writes accept only the tunnel browser origin", async t => {
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => { calls++; return Response.json(report(8)); });
   const tunnelEnv = { ...env, RALLYMATE_LOCAL_TUNNEL: "1" };
-  const accepted = await proxyAnalysis(new Request(`http://tennis.example${path}`, {
+  const accepted = await proxyAnalysis(userRequest(`http://tennis.example${path}`, {
     method: "POST", headers: { origin: "https://tennis.example", "sec-fetch-site": "same-origin" }, body: JSON.stringify(submission()),
   }), tunnelEnv);
   assert.equal(accepted.status, 200);
-  const rejected = await proxyAnalysis(new Request(`http://tennis.example${path}`, {
+  const rejected = await proxyAnalysis(userRequest(`http://tennis.example${path}`, {
     method: "POST", headers: { origin: "https://other.example" }, body: JSON.stringify(submission()),
   }), tunnelEnv);
   assert.equal(rejected.status, 403);
@@ -213,7 +214,7 @@ test("shot gateway allowlist permits no other methods or adjacent artifact paths
       "/v1/jobs/short/shot-statistics", "/v1/jobs/job%2fescape/shot-statistics"].flatMap(url => [["GET", url], ["POST", url]]),
   ];
   for (const [method, url] of cases) {
-    const response = await proxyAnalysis(new Request(`http://localhost${url}`, { method }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${url}`, { method }), env);
     assert.equal(response.status, 404, `${method} ${url}`);
     assert.deepEqual(await response.json(), { error: "route_not_allowed" });
   }
@@ -225,7 +226,7 @@ test("shot gateway preserves backend conflicts and rejects upstream redirects", 
   const responses = [Response.json(conflict, { status: 409 }), new Response(null, { status: 307, headers: { location: "https://other.invalid" } })];
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => responses[calls++]);
-  const request = () => new Request(`http://localhost${path}`, { method: "POST", headers: { origin: "http://localhost" }, body: JSON.stringify(submission()) });
+  const request = () => userRequest(`http://localhost${path}`, { method: "POST", headers: { origin: "http://localhost" }, body: JSON.stringify(submission()) });
   const rejected = await proxyAnalysis(request(), env);
   assert.equal(rejected.status, 409);
   assert.equal(rejected.headers.get("cache-control"), "private, no-store");

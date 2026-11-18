@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from rallymate_service.api import create_app
 from rallymate_service.config import ServiceSettings
 from rallymate_service.database import JobDatabase
+from tests.service_auth import authenticated_client, login_test_user, test_auth_config
 from rallymate_service import worker
 
 
@@ -258,10 +259,13 @@ class JobCancellationWorkerTests(CancellationFixture):
 class JobCancellationApiTests(CancellationFixture):
     def test_cancel_public_contract_authorization_and_idempotence(self):
         self.create()
-        with TestClient(create_app(self.settings(api_key='test-key'), self.database)) as client:
+        with TestClient(create_app(self.settings(api_key='test-key'), self.database,
+                                   auth_config=test_auth_config())) as client:
             url = '/v1/jobs/job/cancel'
             self.assertEqual(client.post(url).status_code, 401)
             headers = {'Authorization': 'Bearer test-key'}
+            self.assertEqual(client.post(url, headers=headers).status_code, 401)
+            login_test_user(client, job_ids=['job'])
             response = client.post(url, headers=headers)
             self.assertEqual(response.status_code, 200, response.text)
             payload = response.json()
@@ -278,7 +282,8 @@ class JobCancellationApiTests(CancellationFixture):
 
     def test_running_cancel_response_does_not_claim_stopped(self):
         self.claim()
-        with TestClient(create_app(self.settings(), self.database)) as client:
+        with authenticated_client(create_app(self.settings(), self.database,
+                                             auth_config=test_auth_config()), job_ids=['job']) as client:
             response = client.post('/v1/jobs/job/cancel')
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(response.json()['status'], 'running')

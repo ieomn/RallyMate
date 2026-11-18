@@ -9,7 +9,7 @@ from pathlib import Path
 from threading import Barrier, Event
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+from tests.service_auth import authenticated_client
 from rallymate_service import api, segmented_report as segments
 from rallymate_service.report_overview import build_motion_detail, motion_navigation
 from rallymate_service.training_evaluation import build_training_evaluation
@@ -28,7 +28,7 @@ class ReportOverviewTests(unittest.TestCase):
     def test_overview_keeps_legacy_aggregates_and_navigation_without_full_report(self):
         with patch.object(api, "original_video_descriptor", return_value=self.original), \
              patch.object(api, "build_user_demo_result", side_effect=AssertionError("no monolith")), \
-             TestClient(self.app) as client:
+             authenticated_client(self.app, job_ids=(self.job["id"],)) as client:
             response = prepared_get(client, f"/v1/jobs/{self.job['id']}/report-overview")
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
@@ -90,7 +90,7 @@ class ReportOverviewTests(unittest.TestCase):
             return original(store, *args, **kwargs)
         with patch.object(api, "original_video_descriptor", return_value=self.original), \
              patch.object(segments.SegmentedReportStore, "actions", blocked), \
-             TestClient(self.app) as client, ThreadPoolExecutor(max_workers=2) as executor:
+             authenticated_client(self.app, job_ids=(self.job["id"],)) as client, ThreadPoolExecutor(max_workers=2) as executor:
             base = f"/v1/jobs/{self.job['id']}"
             deferred = base + "/report-actions?report_delivery=deferred-v1"
             futures = [executor.submit(client.get, deferred) for _ in range(2)]

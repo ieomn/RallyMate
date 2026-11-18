@@ -1,3 +1,4 @@
+import { userRequest } from "./fixtures/gateway-auth.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -8,7 +9,7 @@ const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind
 const { proxyAnalysis } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 const env = { RALLYMATE_API_ORIGIN: "http://127.0.0.1:8001", RALLYMATE_API_KEY: "internal-test-key" };
 const path = "/v1/jobs/cancelled-read-123/pose-preview?start_ms=80000&duration_ms=10000";
-const request = signal => new Request(`http://localhost${path}`, { signal });
+const request = signal => userRequest(`http://localhost${path}`, { signal });
 
 test("GET already cancelled before dispatch reaches fetch with the same abort reason", async t => {
   const caller = new AbortController();
@@ -88,12 +89,12 @@ test("normal GET preserves its 30-second deadline, query, server authentication 
     assert.equal(init.method, "GET");
     assert.equal(init.redirect, "manual");
     assert.equal(init.signal.aborted, false);
-    assert.equal(init.headers.get("authorization"), "Bearer internal-test-key");
+    assert.equal(init.headers.get("authorization"), "Bearer browser-user-jwt");
     assert.equal(init.headers.get("x-request-id"), "bounded-read-test");
     return Response.json({ frames: [0, 1] });
   });
-  const response = await proxyAnalysis(new Request(`http://localhost${path}`, {
-    headers: { authorization: "Bearer browser-must-not-forward", "x-request-id": "bounded-read-test" },
+  const response = await proxyAnalysis(userRequest(`http://localhost${path}`, {
+    headers: { authorization: "Bearer browser-user-jwt", "x-request-id": "bounded-read-test" },
   }), env);
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "private, no-store");
@@ -113,7 +114,7 @@ test("non-chunk POST retains its existing independent 100-second deadline", asyn
     assert.equal(init.signal.aborted, false);
     return Response.json({ accepted: true });
   });
-  const response = await proxyAnalysis(new Request("http://localhost/v1/uploads", {
+  const response = await proxyAnalysis(userRequest("http://localhost/v1/uploads", {
     method: "POST", body: "{}", signal: caller.signal,
     headers: { origin: "http://localhost", "content-type": "application/json" },
   }), env);
@@ -126,7 +127,7 @@ test("gateway only returns an upstream request ID matching a generated-format in
   const valid = "f67b39de-cf4d-4298-b175-fbc5a0c094f1";
   for (const [incoming, returned, expected] of [[valid, valid, valid], ["web-mgj31234-ab123456", "web-mgj31234-ab123456", "web-mgj31234-ab123456"], [valid, "UPSTREAM_SECRET", null], [valid, "a67b39de-cf4d-4298-b175-fbc5a0c094f1", null], ["unsafe_token", "unsafe_token", null]]) {
     const mock = t.mock.method(globalThis, "fetch", async () => Response.json({ ok: true }, { headers: { "X-Request-ID": returned } }));
-    const response = await proxyAnalysis(new Request(`http://localhost${path}`, { headers: { "X-Request-ID": incoming } }), env);
+    const response = await proxyAnalysis(userRequest(`http://localhost${path}`, { headers: { "X-Request-ID": incoming } }), env);
     assert.equal(response.headers.get("x-request-id"), expected);
     assert.equal(response.status, 200);
     mock.mock.restore();
