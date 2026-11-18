@@ -1,11 +1,11 @@
-export type WorkspaceView = "overview" | "sessions" | "analysis" | "guide";
+export type WorkspaceView = "overview" | "sessions" | "analysis";
 
 export type WorkspaceLocation = {
   view: WorkspaceView;
   jobId: string | null;
 };
 
-const VIEWS: readonly WorkspaceView[] = ["overview", "sessions", "analysis", "guide"];
+const VIEWS: readonly WorkspaceView[] = ["overview", "sessions", "analysis"];
 const JOB_ID = /^[a-zA-Z0-9_-]{8,80}$/;
 
 function validJobId(value: unknown): string | null {
@@ -17,6 +17,7 @@ export function readWorkspaceLocation(search: string): WorkspaceLocation {
   const params = new URLSearchParams(search);
   const jobId = validJobId(params.get("job"));
   const requestedView = params.get("view");
+  if (requestedView === "guide") return { view: "overview", jobId: null };
   const view = VIEWS.includes(requestedView as WorkspaceView)
     ? requestedView as WorkspaceView
     : jobId ? "analysis" : "overview";

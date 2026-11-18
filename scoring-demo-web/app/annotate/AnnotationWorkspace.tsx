@@ -87,7 +87,7 @@ export default function AnnotationWorkspace() {
   const title = typeof report?.job.original_filename === "string" ? report.job.original_filename.split(/[\\/]/).pop() : history.find(item => item.id === taskId)?.name;
   const seekAvailable = report && annotationSeekSeconds(report, report.job.id, report.videoTimeOriginMs) !== null;
   return <main className="annotation-workspace">
-    <header className="annotation-header"><a className="annotation-brand" href="/welcome">RallyMate</a><a className="annotation-return" href={workspaceHref(taskId ? "analysis" : "overview", taskId)}>返回训练空间 ↗</a></header>
+    <header className="annotation-header"><a className="annotation-brand" href="/welcome">RallyMate</a><a className="annotation-return" href={workspaceHref(taskId ? "analysis" : "overview", taskId)}>返回训练空间</a></header>
     <div className="annotation-setup">
     <div className="annotation-intro"><h1>标注工作台</h1><p>对照视频录入技术等级，并标记做出判断的时段。</p></div>
     <section className="annotation-selector" aria-labelledby="annotation-source-title">
@@ -103,8 +103,8 @@ export default function AnnotationWorkspace() {
     </div>
     {!report && !loading && <section className="annotation-history" aria-label="已完成的训练">
       <h2>已完成的训练</h2>
-      {historyLoading ? <p role="status">正在读取训练记录…</p> : history.length ? <ul>{history.map(item => <li key={item.id}><button type="button" onClick={() => void load(item.id)}><strong>{item.name}</strong><time>{formatReportDate(item.viewedAt)}</time><span aria-hidden="true">↗</span></button></li>)}</ul>
-        : !error && <p>完成分析的视频会出现在这里。<a href={workspaceHref("analysis")}>选择训练视频 ↗</a></p>}
+      {historyLoading ? <p role="status">正在读取训练记录…</p> : history.length ? <ul>{history.map(item => <li key={item.id}><button type="button" onClick={() => void load(item.id)}><strong>{item.name}</strong><time>{formatReportDate(item.viewedAt)}</time></button></li>)}</ul>
+        : !error && <p>完成分析的视频会出现在这里。<a href={workspaceHref("analysis")}>选择训练视频</a></p>}
     </section>}
     {report && <>
       <div className="annotation-bench">

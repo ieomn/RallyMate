@@ -48,7 +48,6 @@ function ProfileDock({ user, logout, workspace }: { user: AccountUser; logout: (
       aria-expanded={open} aria-label={`打开个人中心，${user.username}`} onClick={showProfile}>
       <Image src="/player-portrait.jpg" width={40} height={40} alt="" unoptimized />
       <span className="profile-trigger-text"><strong>{user.username}</strong><small>个人中心</small></span>
-      <span className="profile-trigger-arrow" aria-hidden="true">↗</span>
     </button>
     <dialog ref={dialog} id={dialogId} aria-labelledby={titleId} className="profile-sheet"
       onClose={() => { setOpen(false); trigger.current?.focus({ preventScroll: true }); }}
@@ -70,9 +69,9 @@ function ProfileDock({ user, logout, workspace }: { user: AccountUser; logout: (
         <div><dt>账户状态</dt><dd className={`account-state-${user.status.toLowerCase()}`}>{accountStatusLabels[user.status]}</dd></div>
       </dl>
       <nav className="profile-actions" aria-label="个人中心操作">
-        {canTrain && <a href={workspaceHref("sessions")}>我的训练记录 <span aria-hidden="true">↗</span></a>}
-        {canTrain && user.role === "ADMIN" && <a href="/admin">账户与审核 <span aria-hidden="true">↗</span></a>}
-        <a href="/change-password">{user.must_change_password ? "设置新密码" : "修改密码"} <span aria-hidden="true">↗</span></a>
+        {canTrain && <a href={workspaceHref("sessions")}>我的训练记录</a>}
+        {canTrain && user.role === "ADMIN" && <a href="/admin">账户与审核</a>}
+        <a href="/change-password">{user.must_change_password ? "设置新密码" : "修改密码"}</a>
       </nav>
       <AccountErrorMessage message={error} />
       <button className="profile-signout" type="button" disabled={busy} onClick={() => void signOut()}>{busy ? "正在退出…" : "退出登录"}</button>

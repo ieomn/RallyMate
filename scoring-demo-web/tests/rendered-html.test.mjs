@@ -36,6 +36,18 @@ test("server rendering keeps the workspace private until the account guard resol
   assert.doesNotMatch(html, /没有匹配的指标/);
 });
 
+test("retired capture-guide links redirect to the canonical overview before loading a job", async () => {
+  const app = await worker();
+  for (const path of ["/?view=guide", "/?view=guide&job=retired-job-1234"]) {
+    const response = await app.fetch(new Request(`https://app.example.com${path}`, { headers: { accept: "text/html" } }), env, ctx);
+    assert.equal(response.status, 307);
+    assert.equal(response.headers.get("location"), "/?view=overview");
+  }
+  const landing = await app.fetch(new Request("https://app.example.com/welcome", { headers: { accept: "text/html" } }), env, ctx);
+  assert.equal(landing.status, 200);
+  assert.doesNotMatch(await landing.text(), /href="[^"]*view=guide|查看(?:完整)?拍摄指南/);
+});
+
 test("catalog API exposes the five practice categories", async () => {
   const app = await worker(); const response = await app.fetch(new Request("http://localhost/api/scorecard"), env, ctx);
   assert.equal(response.status, 200); const catalog = await response.json();

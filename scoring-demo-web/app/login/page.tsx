@@ -34,7 +34,7 @@ export default function LoginPage() {
       <label htmlFor="login-email">邮箱<input disabled={auth.loading || busy} id="login-email" name="email" type="email" autoComplete="username" inputMode="email" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
       <label htmlFor="login-password">密码<input disabled={auth.loading || busy} id="login-password" name="password" type="password" autoComplete="current-password" maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
       <AccountErrorMessage message={error ?? auth.error} />
-      <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在登录…" : "登录训练空间"}<span aria-hidden="true">↗</span></button>
+      <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在登录…" : "登录训练空间"}</button>
     </form>
     <p className="account-form-footer">还没有账户？<a href="/register">申请注册</a></p>
     <p className="account-hint">忘记密码时，请联系管理员重置。</p>

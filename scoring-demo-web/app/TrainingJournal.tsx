@@ -10,6 +10,7 @@ import "./training-journal.css";
 import { useMediaReadiness } from "./lib/use-media-readiness";
 import { accountStorageKey } from "./lib/account-storage";
 import { getAccountRequestState } from "./lib/auth-client";
+import { workspaceHref } from "./lib/workspace-navigation";
 
 export { journalRecordId } from "./lib/training-records";
 export type { TrainingFocus } from "./lib/training-records";
@@ -160,7 +161,10 @@ export function TrainingJournalPanel({ journal, recordId, suggestions = [], show
 export type PersonalHistoryControls = { total: number; offset: number; limit: number; loading: boolean; error: string;
   deleting: string | null; onPage: (offset: number) => void; onRefresh: () => void; onDelete: (id: string) => void };
 const JOB_STATUS = { queued: "排队中", running: "分析中", succeeded: "分析完成", failed: "分析失败", cancelled: "已取消" };
-export function TrainingJournalLibrary({ journal, onOpenReport, onNewAnalysis, history }: { journal: TrainingJournalController; onOpenReport: (id: string) => void; onNewAnalysis: () => void; history?: PersonalHistoryControls }) {
+export function TrainingJournalLibrary({ journal, onOpenReport, onNewAnalysis, history, activeJobId, protectCurrent = false, loadedImportId }: {
+  journal: TrainingJournalController; onOpenReport: (id: string) => void; onNewAnalysis: () => void; history?: PersonalHistoryControls;
+  activeJobId?: string | null; protectCurrent?: boolean; loadedImportId?: string;
+}) {
   const [search, setSearch] = useState("");
   const id = useId();
   const matching = useMemo(() => journal.records.filter(record => `${record.name} ${record.theme} ${record.notes} ${record.focuses.map(item => `${item.title} ${item.question}`).join(" ")}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).sort((a, b) => Date.parse(b.viewedAt) - Date.parse(a.viewedAt)), [journal.records, search]);
@@ -181,14 +185,19 @@ export function TrainingJournalLibrary({ journal, onOpenReport, onNewAnalysis, h
         const time = record.completedAt || record.submittedAt || record.viewedAt;
         const label = record.completedAt ? "分析完成" : record.submittedAt ? "提交时间" : "最近查看";
         const inProgress = record.status === "queued" || record.status === "running";
+        const actionLabel = inProgress ? "查看分析进度" : record.status === "failed" || record.status === "cancelled" ? "查看任务" : "打开训练报告";
         return <article className="studio-record" key={record.id}>
           <div className="studio-record-line">
             <div className="studio-record-name"><h2>{record.name}</h2>{record.theme && <p>{record.theme}</p>}</div>
             <time dateTime={time}><small>{label}</small>{dateText(time)}</time>
             <span className="studio-record-state">{record.status ? JOB_STATUS[record.status] : record.source === "imported" ? "离线导入" : "在线记录"}</span>
-            {record.source === "online" && record.jobId ?
-              <button type="button" className="studio-record-open" onClick={() => onOpenReport(record.jobId!)}>{inProgress ? "查看分析进度" : "打开训练报告"}<span aria-hidden="true"> ↗</span></button> :
-              <span className="studio-record-offline">可导入原备份</span>}
+            {record.source === "online" && record.jobId ? (
+              protectCurrent && record.jobId !== activeJobId
+                ? <a className="studio-record-open" href={workspaceHref("analysis", record.jobId)} target="_blank" rel="noopener noreferrer">在新标签页查看</a>
+                : <button type="button" className="studio-record-open" onClick={() => onOpenReport(record.jobId!)}>{actionLabel}</button>
+            ) : <button type="button" className="studio-record-open" disabled={protectCurrent} onClick={() => onOpenReport(record.id)}>
+              {loadedImportId === record.id ? "继续复盘" : "选择报告备份"}
+            </button>}
           </div>
           <details className="studio-record-details"><summary>备注与管理{record.focuses.length > 0 && <span>{record.focuses.length} 个关注点</span>}</summary>
             {record.source === "imported" && <p className="tj-subtle">离线记录保存在此浏览器，不会自动连接在线任务。</p>}
@@ -204,8 +213,8 @@ export function TrainingJournalLibrary({ journal, onOpenReport, onNewAnalysis, h
     </div>
     {journal.ready && !history?.loading && !history?.error && !matching.length && <div className="tj-empty">
       <h2>{search ? "没有找到匹配的训练" : "还没有训练记录"}</h2>
-      <p>{search ? "可以换个关键词，或查看本页全部记录。" : "上传第一段视频后，可以在这里跟踪进度、回看报告。"}</p>
-      {search ? <button type="button" onClick={() => setSearch("")}>清除搜索</button> : <button type="button" onClick={onNewAnalysis}>上传训练视频</button>}
+      <p>{search ? "可以换个关键词，或查看本页全部记录。" : protectCurrent ? "提交的视频会出现在这里。" : "上传第一段视频后，可以在这里跟踪进度、回看报告。"}</p>
+      {search ? <button type="button" onClick={() => setSearch("")}>清除搜索</button> : <button type="button" onClick={onNewAnalysis}>{protectCurrent ? "返回视频分析" : "选择训练视频"}</button>}
     </div>}
     {history && history.total > history.limit && <nav className="tj-history-controls" aria-label="训练记录分页"><button type="button" disabled={history.loading || history.offset === 0} onClick={() => history.onPage(Math.max(0, history.offset - history.limit))}>上一页</button><span>第 {Math.floor(history.offset / history.limit) + 1} 页</span><button type="button" disabled={history.loading || history.offset + history.limit >= history.total} onClick={() => history.onPage(history.offset + history.limit)}>下一页</button></nav>}
     <p className="tj-scope">在线任务随账号同步。名称、备注与关注点保存在当前浏览器，清除浏览器数据会移除本地记录。</p>

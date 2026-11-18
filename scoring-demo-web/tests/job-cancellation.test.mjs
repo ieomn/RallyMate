@@ -20,12 +20,13 @@ const { AnalysisCancelledError } = await import(sessionUrl);
 const hookUrl = dataUrl(["useState", "useRef", "useEffect", "useMemo", "useCallback"].map(name => `export const ${name} = (...args) => globalThis[Symbol.for("rallymate.cancel-test-host")].${name}(...args);`).join("\n"));
 const apiUrl = dataUrl('export class RallyMateApiError extends Error {}; export const createApiClient = () => globalThis[Symbol.for("rallymate.cancel-test-host")].api;');
 const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchSummaryAnalysis } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.cancel-test-host")].watch(...args);`);
-const shellUrl = dataUrl('export const ProductShell = () => null, TrainingHome = () => null, SessionLibrary = () => null, CaptureGuide = () => null, ProductIcon = () => null;');
+const shellUrl = dataUrl('export const ProductShell = () => null, TrainingHome = () => null, VideoSelectionHint = () => null;');
 const childUrl = dataUrl("export default function View() { return null; }");
 // Journal persistence is covered independently; keep its callbacks stable so
 // cancellation tests still exercise ScoreLab's real observation lifetimes.
 const journalUrl = dataUrl(`export const journalRecordId=(source,id,sourceId)=>source+':'+(id||sourceId||'offline'); const journal={records:[],ready:true,error:'',notice:'',visitReport:visit=>journalRecordId(visit.source,visit.jobId,visit.sourceId),saveFocus:()=>true,updateRecord:()=>true,selectFollowUp:()=>true,retrySave:()=>{}}; export const useTrainingJournal=()=>journal; export const TrainingJournalPanel=()=>null,TrainingJournalLibrary=()=>null,TrainingFollowUpPicker=()=>null;`);
 let componentJs = ts.transpileModule(fs.readFileSync(new URL("../app/ScoreLab.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+componentJs = componentJs.replace(/^import "[^"]+\.css";\s*$/gm, "");
 componentJs = componentJs.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(name === "react" ? hookUrl : name === "./lib/api-client" ? apiUrl : name === "./lib/analysis-session" ? sessionMockUrl : name === "./ProductWorkspace" ? shellUrl : name === "./TrainingJournal" ? journalUrl : name.startsWith("./lib/") ? compiledUrl(new URL(`../app/${name}.ts`, import.meta.url)) : name.startsWith(".") ? childUrl : import.meta.resolve(name))}`);
 const { default: ScoreLab } = await import(dataUrl(componentJs));
 const id = "cancel-job-123456";

@@ -8,7 +8,7 @@ const dataUrl = source => `data:text/javascript;base64,${Buffer.from(source).toS
 const hooksUrl = dataUrl(["useState", "useRef", "useEffect", "useMemo", "useCallback"].map(name => `export const ${name} = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].${name}(...args);`).join("\n"));
 const apiUrl = dataUrl('export class RallyMateApiError extends Error {}; export const createApiClient = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].createApi(...args);');
 const childUrl = dataUrl("export default function View() { return null; }");
-const shellUrl = dataUrl("export const ProductShell = () => null, TrainingHome = () => null, SessionLibrary = () => null, CaptureGuide = () => null, ProductIcon = () => null;");
+const shellUrl = dataUrl("export const ProductShell = () => null, TrainingHome = () => null, VideoSelectionHint = () => null;");
 // Persistence has separate coverage. This stable journal preserves the parent
 // memoization contract while this harness exercises actual pose read effects.
 const journalUrl = dataUrl(`export const journalRecordId=(source,id,sourceId)=>source+':'+(id||sourceId||'offline'); const journal={records:[],ready:true,error:'',notice:'',visitReport:visit=>journalRecordId(visit.source,visit.jobId,visit.sourceId),saveFocus:()=>true,updateRecord:()=>true,selectFollowUp:()=>true,retrySave:()=>{}}; export const useTrainingJournal=()=>journal; export const TrainingJournalPanel=()=>null,TrainingJournalLibrary=()=>null,TrainingFollowUpPicker=()=>null;`);
@@ -27,6 +27,7 @@ function compiledUrl(file) {
 const sessionUrl = compiledUrl(new URL("../app/lib/analysis-session.ts", import.meta.url));
 const sessionMockUrl = dataUrl(`export { AnalysisCancelledError, ReportStillPreparingError, mergeAnalysisProgress, watchSummaryAnalysis } from ${JSON.stringify(sessionUrl)}; export const watchAnalysis = (...args) => globalThis[Symbol.for("rallymate.pose-diagnostics-test-host")].watch(...args);`);
 let componentJs = ts.transpileModule(fs.readFileSync(new URL("../app/ScoreLab.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+componentJs = componentJs.replace(/^import "[^"]+\.css";\s*$/gm, "");
 componentJs = componentJs.replace(/from "([^"]+)"/g, (_match, name) => `from ${JSON.stringify(name === "react" ? hooksUrl : name === "./lib/api-client" ? apiUrl : name === "./lib/analysis-session" ? sessionMockUrl : name === "./ProductWorkspace" ? shellUrl : name === "./TrainingJournal" ? journalUrl : name === "./BallTrajectoryViewer" ? compiledUrl(new URL("../app/BallTrajectoryViewer.tsx", import.meta.url)) : name.startsWith("./lib/") ? compiledUrl(new URL(`../app/${name}.ts`, import.meta.url)) : name.startsWith(".") ? childUrl : import.meta.resolve(name))}`);
 const { default: ScoreLab } = await import(dataUrl(componentJs));
 const { createApiClient: realCreateApiClient } = await import(compiledUrl(new URL("../app/lib/api-client.ts", import.meta.url)));

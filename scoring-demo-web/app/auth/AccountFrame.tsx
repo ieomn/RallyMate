@@ -10,7 +10,7 @@ export function AccountFrame({ title, description, children, wide = false }: { t
   return <main className={`account-app${wide ? " account-app-wide" : ""}`}>
     <header className="account-header">
       <a className="account-brand" href="/welcome"><Image src="/tennis-mark.svg" alt="" width={30} height={30} unoptimized />RallyMate</a>
-      <a href={wide ? "/?view=overview" : "/welcome"}>{wide ? "返回训练空间" : "返回首页"} <span aria-hidden="true">↗</span></a>
+      <a href={wide ? "/?view=overview" : "/welcome"}>{wide ? "返回训练空间" : "返回首页"}</a>
     </header>
     <div className="account-layout">
       <section className="account-panel" aria-labelledby="account-heading">

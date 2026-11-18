@@ -20,8 +20,16 @@ test("empty locations start at overview while legacy job links open analysis", (
 });
 
 test("every explicit view wins over a job query, without deciding to resume it", () => {
-  for (const view of ["overview", "sessions", "analysis", "guide"]) {
+  for (const view of ["overview", "sessions", "analysis"]) {
     assert.deepEqual(readWorkspaceLocation(`?view=${view}&job=${jobId}`), { view, jobId });
+  }
+});
+
+test("bookmarked capture guide links land on overview without opening an unrelated job", () => {
+  for (const search of ["?view=guide", `?view=guide&job=${jobId}`]) {
+    const location = readWorkspaceLocation(search);
+    assert.deepEqual(location, { view: "overview", jobId: null });
+    assert.equal(workspaceHref(location.view, location.jobId), "/?view=overview");
   }
 });
 
@@ -34,7 +42,7 @@ test("invalid views use valid legacy job navigation and invalid jobs cannot beco
 });
 
 test("leaving analysis removes job deep links and overview remains stable on refresh", () => {
-  for (const view of ["overview", "sessions", "guide"]) {
+  for (const view of ["overview", "sessions"]) {
     const href = workspaceHref(view, jobId);
     assert.equal(href, `/?view=${view}`);
     assert.deepEqual(readWorkspaceLocation(new URL(href, "https://example.test").search), { view, jobId: null });

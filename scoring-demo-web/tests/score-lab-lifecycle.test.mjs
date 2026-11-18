@@ -81,18 +81,26 @@ function harness(t, clientOverrides = {}, { assessmentEffects = false, reportEff
   }).default;
   const store = new Map();
   t.mock.method(globalThis, "setInterval", () => 0);
-  const oldWindow = globalThis.window, oldStorage = globalThis.localStorage;
-  globalThis.window = { location: { origin: "https://local.test", pathname: "/", search: "", hash: "" }, history: { pushState() {}, replaceState() {} }, confirm: () => true, scrollTo() {} };
+  const oldWindow = globalThis.window, oldDocument = globalThis.document, oldStorage = globalThis.localStorage;
+  globalThis.window = Object.assign(new EventTarget(), { location: { origin: "https://local.test", pathname: "/", search: "", hash: "" }, history: { pushState() {}, replaceState() {} }, confirm: () => true, scrollTo() {} });
+  globalThis.document = Object.assign(new EventTarget(), { hidden: false });
   globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
-  t.after(() => { slots.forEach(value => value?.cleanup?.()); globalThis.window = oldWindow; globalThis.localStorage = oldStorage; });
+  t.after(() => { slots.forEach(value => value?.cleanup?.()); globalThis.window = oldWindow; globalThis.document = oldDocument; globalThis.localStorage = oldStorage; });
   let tree;
   const render = () => { cursor = 0; effects = []; tree = component(); effects.forEach(effect => effect()); return tree; };
   const nodes = value => !value || typeof value !== "object" ? [] : Array.isArray(value) ? value.flatMap(nodes) : [value, ...nodes(value.props?.children), ...nodes(value.props?.details), ...nodes(value.props?.coaching), ...nodes(value.props?.pagedActions)];
   const find = predicate => nodes(tree).find(predicate);
   const text = value => value == null || typeof value === "boolean" ? "" : typeof value !== "object" ? String(value) : Array.isArray(value) ? value.map(text).join("") : text(value.props?.children) + text(value.props?.details) + text(value.props?.coaching);
   const open = id => { tree.props.onNavigate("overview"); render(); find(node => node.type === "TrainingHome").props.onOpenReport(id); render(); };
+  function chooseVideo(file) {
+    const input = find(node => node.type === "input" && node.props.accept?.startsWith("video/"));
+    assert.ok(input, "the file picker remains mounted in all workspace views");
+    input.props.onChange({ target: { files: file ? [file] : [], value: file?.name || "" } });
+    render();
+  }
+  const processing = () => { render(); return Boolean(find(node => node.props?.role === "progressbar")); };
   render();
-  return { calls, render, find, store, accountState, findAll: predicate => nodes(tree).filter(predicate), text: () => text(tree), open,
+  return { calls, render, chooseVideo, processing, find, store, accountState, findAll: predicate => nodes(tree).filter(predicate), text: () => text(tree), open,
     replaceResult: transform => { const i = slots.findIndex(value => value?.candidateSource === "online" && value?.result?.job_id); assert.ok(i >= 0); slots[i] = { ...slots[i], result: transform(slots[i].result) }; },
     button: label => find(node => node.type === "button" && text(node) === label), form: () => find(node => node.props?.className === "coach-form") };
 }
@@ -114,6 +122,87 @@ test("server history refresh removes deleted online records while preserving loc
   assert.deepEqual(library().journal.records.map(record => record.source), ["imported"]);
   assert.equal(library().history.total, 0); assert.ok(reads >= 2);
   assert.equal(offline.records.some(record => record.jobId === jobId), true, "retained browser notes cannot resurrect the deleted server row");
+});
+
+test("overview refreshes on return and polls visible active records until completion without replacing the list", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const requests = [];
+  const ui = harness(t, {
+    getRecords: () => { const request = deferred(); requests.push(request); return request.promise; },
+  }, { historyEffects: true, userId: "account-a" });
+  const home = () => { ui.render(); return ui.find(node => node.type === "TrainingHome").props; };
+  const show = hidden => { document.hidden = hidden; document.dispatchEvent(new Event("visibilitychange")); };
+  async function finish(status) {
+    const items = status ? [{ id: jobId, status, original_filename: "外场训练.mp4", created_at: "2026-11-17T00:00:00Z" }] : [];
+    requests.at(-1).resolve({ items, total: items.length, offset: 0, limit: 20 });
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  await finish();
+  t.mock.timers.tick(120_000);
+  assert.equal(requests.length, 1, "an idle overview does not poll");
+
+  show(true); show(false);
+  window.dispatchEvent(new Event("focus"));
+  assert.equal(requests.length, 2, "one read on return even if both events fire");
+  await finish("queued");
+  assert.equal(home().reports[0].status, "queued");
+  show(true);
+  t.mock.timers.tick(120_000);
+  assert.equal(requests.length, 2, "active records do not poll in a background tab");
+
+  show(false);
+  assert.equal(requests.length, 3);
+  assert.equal(home().loading, false);
+  assert.equal(home().reports[0].status, "queued", "keep the previous list during revalidation");
+  await finish("running");
+  t.mock.timers.tick(5_000);
+  assert.equal(requests.length, 3, "avoid frequent reads");
+  t.mock.timers.tick(55_000);
+  assert.equal(requests.length, 4);
+  window.dispatchEvent(new Event("focus"));
+  assert.equal(requests.length, 4, "a pending poll also coalesces focus events");
+  await finish("succeeded");
+  assert.equal(home().reports[0].status, "succeeded");
+  t.mock.timers.tick(120_000);
+  assert.equal(requests.length, 4, "terminal rows stop polling");
+});
+
+test("opening the overview file picker and cancelling preserves the report, as does an unsupported selection", async t => {
+  const ui = harness(t);
+  ui.open(jobId);
+  await tick();
+  ui.render().props.onNavigate("overview"); ui.render();
+  const home = () => ui.find(node => node.type === "TrainingHome");
+  const input = ui.find(node => node.type === "input" && node.props.accept?.startsWith("video/"));
+  let picks = 0;
+  input.props.ref.current = { click() { picks++; } };
+  home().props.onNewAnalysis();
+  assert.equal(picks, 1);
+  ui.chooseVideo(undefined);
+  assert.ok(home(), "cancelling the chooser keeps the original destination");
+  ui.chooseVideo(new File(["text"], "notes.txt", { type: "text/plain" }));
+  assert.ok(home(), "an unsupported selection keeps the original destination");
+  assert.ok(ui.find(node => node.props?.role === "alert"), "the user can correct an unsupported selection");
+  ui.render().props.onNavigate("analysis"); ui.render();
+  assert.equal(ui.find(node => node.type === "LiveResults").props.result.job_id, jobId);
+  assert.equal(ui.calls.jobs, 1, "the previously loaded report remains available without restarting it");
+});
+
+test("a selected video returns to the overview as a resumable draft without submitting or replacing the file", t => {
+  const ui = harness(t, { submitVideo: () => assert.fail("selecting or resuming a draft must not submit it") });
+  const file = new File(["training video"], "草地练习.mp4", { type: "video/mp4" });
+  ui.chooseVideo(file);
+  assert.match(ui.text(), /草地练习\.mp4/);
+  ui.render().props.onNavigate("overview"); ui.render();
+  const home = ui.find(node => node.type === "TrainingHome");
+  assert.equal(home.props.draftName, file.name);
+  ui.chooseVideo(undefined);
+  assert.equal(ui.find(node => node.type === "TrainingHome").props.draftName, file.name);
+  ui.chooseVideo(new File(["text"], "notes.txt", { type: "text/plain" }));
+  assert.equal(ui.find(node => node.type === "TrainingHome").props.draftName, file.name);
+  home.props.onNavigate("analysis"); ui.render();
+  assert.match(ui.text(), /草地练习\.mp4/);
+  assert.ok(!ui.button("开始分析").props.disabled);
 });
 
 test("active-job and recent-report writes stay in the mounting account's storage keys", async t => {
@@ -224,30 +313,30 @@ test("a ready report unlocks report actions while evidence is pending, and switc
   const optional = deferred(); let signal;
   const ui = harness(t, { getTrajectory: (_id, options) => { signal = options.signal; return optional.promise; } });
   ui.open(jobId); await tick();
-  const tree = ui.render();
-  assert.equal(tree.props.busy, false); assert.match(ui.text(), /正在补充画面证据/);
+  ui.render();
+  assert.equal(ui.processing(), false); assert.match(ui.text(), /正在补充画面证据/);
   assert.ok(ui.form()); assert.ok(ui.find(node => node.type === "ReportExportActions"));
-  tree.props.onNewAnalysis(); ui.render();
+  ui.chooseVideo(new File(["video"], "下一次训练.mp4", { type: "video/mp4" }));
   assert.equal(signal.aborted, true);
   optional.resolve({ job_id: jobId }); await tick(); ui.render();
-  assert.match(ui.text(), /新建视频分析/); assert.equal(ui.find(node => node.type === "LiveResults"), undefined);
+  assert.match(ui.text(), /下一次训练.mp4/); assert.equal(ui.find(node => node.type === "LiveResults"), undefined);
 });
 
 test("primary report waits alone then unlocks the UI before supplementary requests finish", async t => {
   const primary = deferred(), optional = deferred(); let reads = 0;
   const ui = harness(t, {
     getDemoResult: () => primary.promise,
-    getTrajectory: () => { reads++; assert.equal(ui.render().props.busy, false); return optional.promise; },
-    getTechniqueAssessment: async () => { reads++; assert.equal(ui.render().props.busy, false); return { job_id: jobId }; },
+    getTrajectory: () => { reads++; assert.equal(ui.processing(), false); return optional.promise; },
+    getTechniqueAssessment: async () => { reads++; assert.equal(ui.processing(), false); return { job_id: jobId }; },
   });
   ui.open(jobId); await tick();
-  assert.equal(ui.render().props.busy, true); assert.equal(reads, 0);
+  assert.equal(ui.processing(), true); assert.equal(reads, 0);
   primary.resolve(report); await tick();
-  assert.equal(reads, 2); assert.equal(ui.render().props.busy, false);
+  assert.equal(reads, 2); assert.equal(ui.processing(), false);
   assert.ok(ui.form()); assert.ok(ui.find(node => node.type === "ReportExportActions"));
   assert.match(ui.text(), /正在补充画面证据/);
   optional.resolve({ job_id: jobId }); await tick();
-  assert.equal(ui.render().props.busy, false);
+  assert.equal(ui.processing(), false);
 });
 
 test("reopening a failed same report reconnects; duplicate clicks while waiting do not duplicate requests", async t => {
@@ -257,7 +346,7 @@ test("reopening a failed same report reconnects; duplicate clicks while waiting 
   assert.match(ui.text(), /继续读取结果/);
   ui.open(jobId); await tick(); ui.render(); assert.equal(reads, 2); assert.equal(ui.calls.jobs, 2);
   ui.open(jobId); await tick(); assert.equal(reads, 2); assert.equal(ui.calls.jobs, 2);
-  pending.resolve(report); await tick(); ui.render(); assert.equal(ui.render().props.busy, false);
+  pending.resolve(report); await tick(); ui.render(); assert.equal(ui.processing(), false);
 });
 
 test("an expired preparation wait offers the same report again without an interruption warning or upload", async t => {
@@ -271,7 +360,7 @@ test("an expired preparation wait offers the same report again without an interr
     submitVideo: async () => { submissions++; assert.fail("resuming must not submit the video again"); },
   });
   ui.open(jobId); await tick(); ui.render();
-  assert.equal(ui.render().props.busy, false);
+  assert.equal(ui.processing(), false);
   assert.match(ui.text(), /分析已完成，报告仍在整理/); assert.match(ui.text(), /无需重新上传/);
   assert.doesNotMatch(ui.text(), /读取中断|本次分析需要处理/);
   assert.equal(ui.find(node => node.props?.className === "product-recovery").props.role, "status");
@@ -299,7 +388,7 @@ test("stopping report waiting preserves the job and can resume without cancellin
     return new Promise((_resolve, reject) => options.signal.addEventListener("abort", () => reject(options.signal.reason), { once: true }));
   } });
   ui.open(jobId); await tick(); ui.render(); ui.button("停止等待").props.onClick(); await tick();
-  assert.equal(firstSignal.aborted, true); assert.equal(ui.calls.cancel, 0); assert.equal(ui.render().props.busy, false);
+  assert.equal(firstSignal.aborted, true); assert.equal(ui.calls.cancel, 0); assert.equal(ui.processing(), false);
   assert.match(ui.text(), /服务器报告已保留/);
   ui.button("继续读取结果").props.onClick(); await tick(); ui.render();
   assert.equal(reads, 2); assert.equal(ui.calls.cancel, 0); assert.ok(ui.find(node => node.type === "LiveResults"));
@@ -309,7 +398,7 @@ test("a stalled initial status read can be stopped without pretending the server
   let signal;
   const ui = harness(t, { getJob: (_id, input) => { signal = input; return new Promise((_resolve, reject) => input.addEventListener("abort", () => reject(input.reason), { once: true })); } });
   ui.open(jobId); await tick(); ui.render(); ui.button("停止等待").props.onClick(); await tick(); ui.render();
-  assert.equal(signal.aborted, true); assert.equal(ui.calls.cancel, 0); assert.equal(ui.render().props.busy, false);
+  assert.equal(signal.aborted, true); assert.equal(ui.calls.cancel, 0); assert.equal(ui.processing(), false);
   assert.match(ui.text(), /服务器任务继续运行/); assert.ok(ui.button("继续读取结果"));
 });
 
@@ -326,7 +415,7 @@ test("advice timeout unlocks retry, and changing the report cancels stale advice
   assert.equal(ui.button("正在整理…").props.disabled, true);
   deadlines.findLast(row => row.ms === 55000).controller.abort(new DOMException("deadline", "TimeoutError"));
   await tick(); ui.render(); assert.match(ui.text(), /建议读取超时/); assert.equal(ui.button("查看解释与建议").props.disabled, false);
-  ui.form().props.onSubmit({ preventDefault() {} }); await tick(); ui.render().props.onNewAnalysis(); await tick();
+  ui.form().props.onSubmit({ preventDefault() {} }); await tick(); ui.chooseVideo(new File(["video"], "下一次训练.mp4", { type: "video/mp4" })); await tick();
   assert.equal(requests[1].signal.aborted, true); ui.render(); assert.doesNotMatch(ui.text(), /建议读取超时/);
 });
 
@@ -371,7 +460,7 @@ test("online summary restores full results and replay while fragment evidence st
   const ui = harness(t, { getReportSummary: async () => summary, getDemoResult: () => assert.fail("full report read"),
     getTrajectory: () => assert.fail("unrequested trajectory"), getTechniqueAssessment: () => assert.fail("full assessment read") });
   ui.open(jobId); await tick(); ui.render();
-  assert.equal(ui.render().props.busy, false);
+  assert.equal(ui.processing(), false);
   const results = ui.find(node => node.type === "LiveResults");
   assert.ok(results);
   assert.ok(ui.find(node => node.props?.className === "product-report-nav"));

@@ -90,8 +90,14 @@ test("an imported report cannot acquire online media or silently open its embedd
   assert.equal(journal.records[0].replay, undefined);
   journal = lib.saveTrainingFocus(journal, journal.records[0].id, focus);
   assert.equal(lib.replayTarget(journal.records[0], focus), null);
-  const html = renderToStaticMarkup(createElement(TrainingJournalLibrary, { journal: controller(journal), onOpenReport() {}, onNewAnalysis() {} }));
+  const library = extra => renderToStaticMarkup(createElement(TrainingJournalLibrary, {
+    journal: controller(journal), onOpenReport() {}, onNewAnalysis() {}, ...extra,
+  }));
+  const html = library({});
   assert.match(html, /离线导入/); assert.match(html, /不会自动连接在线任务/);
+  assert.match(html, /<button[^>]*>选择报告备份<\/button>/);
+  assert.match(library({ loadedImportId: journal.records[0].id }), /<button[^>]*>继续复盘<\/button>/);
+  assert.match(library({ protectCurrent: true }), /<button[^>]*disabled=""[^>]*>选择报告备份<\/button>/);
   assert.doesNotMatch(html, /打开训练报告|<video|\/v1\/jobs\//);
 });
 

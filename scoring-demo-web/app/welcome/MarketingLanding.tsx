@@ -7,7 +7,7 @@ import { ProductIcon } from "../ProductWorkspace";
 import { TrainingExperience } from "./TrainingExperience";
 
 const steps = [
-  { label: "留住这一拍", tag: "CAPTURE", title: "带上手机。\n也带上完整的动作。", text: "固定机位，把全身、双脚和挥拍空间留在画面里。从准备到恢复，保留一拍的完整过程。", link: "查看拍摄指南", href: "/?view=guide", icon: "camera" as const },
+  { label: "留住这一拍", tag: "CAPTURE", title: "带上手机。\n也带上完整的动作。", text: "固定机位，把全身、双脚和挥拍空间留在画面里。从准备到恢复，保留一拍的完整过程。", link: "上传训练视频", href: "/?view=analysis", icon: "camera" as const },
   { label: "回到关键处", tag: "REVIEW", title: "慢一点看。\n多一点发现。", text: "上传原视频，沿时间线回到值得复核的片段。拖动、慢放，把当时来不及留意的细节再看一遍。", link: "开始视频分析", href: "/?view=analysis", icon: "play" as const },
   { label: "带向下一场", tag: "REFINE", title: "把具体问题，\n带给下一次训练。", text: "保存训练报告，把片段与观察带给教练。让每一次讨论，都从看得见的画面开始。", link: "进入训练空间", href: "/?view=overview", icon: "movement" as const },
 ];
@@ -135,7 +135,7 @@ export default function MarketingLanding() {
 
       <section className="mk-belief" aria-labelledby="mk-belief-title"><div className="mk-wrap mk-reveal"><h2 id="mk-belief-title">不止看一拍。<br />是为了，<em>更懂自己的球。</em></h2><div className="mk-belief-bottom"><span><ProductIcon name="tennis" size={30} />RallyMate</span><p>把画面留下，把问题说清。<br />和教练一起，让复盘回到训练里。</p><a href="/?view=analysis" className="mk-button mk-button-dark">从我的视频开始<ProductIcon name="arrow-up-right" size={18} /></a></div></div></section>
 
-      <section id="questions" className="mk-faq mk-wrap" aria-labelledby="mk-faq-title"><div className="mk-faq-heading mk-reveal"><h2 id="mk-faq-title">还有些问题？</h2><a className="mk-text-link" href="/?view=guide">查看完整拍摄指南<ProductIcon name="arrow-up-right" size={17} /></a></div><div className="mk-faq-list mk-reveal">{questions.map((question) => <AnimatedDisclosure key={question.title} className="mk-faq-item" bodyClassName="mk-faq-answer" summary={<><strong>{question.title}</strong><ProductIcon name="plus" size={18} /></>}><p>{question.text}</p></AnimatedDisclosure>)}</div></section>
+      <section id="questions" className="mk-faq mk-wrap" aria-labelledby="mk-faq-title"><div className="mk-faq-heading mk-reveal"><h2 id="mk-faq-title">还有些问题？</h2><a className="mk-text-link" href="/?view=overview">进入训练空间<ProductIcon name="arrow-up-right" size={17} /></a></div><div className="mk-faq-list mk-reveal">{questions.map((question) => <AnimatedDisclosure key={question.title} className="mk-faq-item" bodyClassName="mk-faq-answer" summary={<><strong>{question.title}</strong><ProductIcon name="plus" size={18} /></>}><p>{question.text}</p></AnimatedDisclosure>)}</div></section>
 
       <section className="mk-last-call mk-wrap mk-reveal" aria-labelledby="mk-last-title"><div><h2 id="mk-last-title">下一拍，<span>从这里开始。</span></h2></div><a href="/?view=analysis" className="mk-round-cta" aria-label="上传视频，开始我的复盘"><ProductIcon name="arrow-up-right" size={48} /></a><div className="mk-last-line"><a href="/?view=overview">进入训练空间<ProductIcon name="arrow-up-right" size={15} /></a></div></section>
     </main>

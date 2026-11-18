@@ -35,7 +35,7 @@ export default function RegisterPage() {
       <label htmlFor="register-password">密码<input disabled={auth.loading || busy} id="register-password" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={128} required aria-describedby="password-rule" value={password} onChange={(event) => setPassword(event.target.value)} /><small id="password-rule">12至128个字符，包含字母和数字。</small></label>
       <label htmlFor="register-reason">申请理由<span className="account-optional">选填</span><textarea disabled={auth.loading || busy} id="register-reason" name="application_reason" maxLength={2000} rows={3} placeholder="例如：记录每周的正手训练，复盘动作与击球表现。" value={reason} onChange={(event) => setReason(event.target.value)} /></label>
       <AccountErrorMessage message={error ?? auth.error} />
-      <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在提交…" : "提交注册申请"}<span aria-hidden="true">↗</span></button>
+      <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在提交…" : "提交注册申请"}</button>
     </form>}
     <p className="account-form-footer">已有账户？<a href="/login">登录</a></p>
   </AccountFrame>;

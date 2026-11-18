@@ -33,13 +33,7 @@ body { margin:0; background:#0b0d10; }
 .product-file-actions button { border:0; background:transparent; color:var(--product-muted); cursor:pointer; padding:6px; font-size:14px; }
 .product-upload-start { width:100%; margin-top:22px; min-height:48px; }
 .product-upload-footnote { font-size:14px; color:var(--product-muted); line-height:1.8; text-align:center; margin:16px 0 0; }
-.product-capture-checklist { padding:32px 28px; border:1px solid var(--product-border); border-radius:14px; background:linear-gradient(145deg,#1b2120,#14181c 70%); }
-.product-capture-checklist h2 { font-size:28px; font-weight:600; letter-spacing:-.5px; line-height:1.5; margin:17px 0 32px; }
-.product-capture-checklist > div { display:flex; gap:14px; margin:24px 0; }
-.product-capture-checklist > div > svg { color:var(--product-accent); flex-shrink:0; margin-top:2px; }
-.product-capture-checklist strong { font-size:14px; font-weight:550; }
-.product-capture-checklist p { font-size:14px; color:var(--product-muted); line-height:1.8; margin:6px 0 0; }
-.product-capture-checklist > button { display:flex; align-items:center; gap:9px; border:0; border-top:1px solid var(--product-border); padding:23px 0 0; width:100%; margin-top:30px; background:none; color:var(--product-accent); cursor:pointer; font-size:14px; text-align:left; }
+
 .product-notice { padding:14px 18px; margin:0 0 22px; font-size:14px; line-height:1.8; border:1px solid var(--product-border); border-radius:8px; background:var(--product-panel-soft); overflow-wrap:anywhere; }
 .product-notice.is-error,.product-notice.import-error { color:#ffbbb0; border-color:#6a3d38; background:#301c1c; }
 .product-notice.import-success { color:#c5e594; }
@@ -102,14 +96,10 @@ body { margin:0; background:#0b0d10; }
 .product-app .report-system-copy h3:not(:first-child) { margin-top:22px; }
 .product-app .report-system-copy > details { padding-top:18px; margin-top:22px; border-top:1px solid var(--product-border); font-size:14px; }
 .product-app .report-system-copy > details summary { cursor:pointer; }
-@media(max-width:1100px) { .product-upload-layout { grid-template-columns:minmax(0,1.3fr) minmax(245px,.8fr); gap:18px; }.product-upload-panel { padding:24px; }.product-capture-checklist { padding:26px 22px; }.product-capture-checklist h2 { font-size:25px; } }
-@media(max-width:850px) { .product-upload-layout { grid-template-columns:1fr; }.product-capture-checklist { display:none; }.product-page-heading h1 { font-size:28px; }.product-page-heading { gap:16px; }.product-recovery { align-items:flex-start; flex-direction:column; }.product-report-nav { gap:22px; } }
+@media(max-width:1100px) { .product-upload-layout { grid-template-columns:minmax(0,1.3fr) minmax(245px,.8fr); gap:18px; }.product-upload-panel { padding:24px; } }
+@media(max-width:850px) { .product-upload-layout { grid-template-columns:1fr; }.product-page-heading h1 { font-size:28px; }.product-page-heading { gap:16px; }.product-recovery { align-items:flex-start; flex-direction:column; }.product-report-nav { gap:22px; } }
 @media(max-width:560px) { .product-page-heading { align-items:flex-start; padding-bottom:24px; }.product-page-heading h1 { font-size:23px; letter-spacing:-.5px; }.product-page-heading p { font-size:14px; }.product-page-heading > button { min-height:36px; padding:0 11px; font-size:14px; }.product-page-heading > button svg { display:none; }.product-upload-panel { padding:22px 18px; }.product-dropzone { min-height:270px; padding:24px 16px; }.product-dropzone strong { font-size:16px; }.product-dropzone small { font-size:14px; }.product-processing { padding:20px 18px; }.product-processing-icon { display:none; }.product-processing-heading h2 { font-size:15px; }.product-processing-heading p { font-size:14px; }.product-processing-heading > strong { font-size:26px; }.product-report-nav { gap:19px; margin-bottom:20px; }.product-report-nav button { font-size:14px; }.product-library-import { flex-wrap:wrap; justify-content:flex-start; gap:12px; }.product-app .report-coach .coach-section { padding:20px 16px; }.product-app .coach-layout { display:block; }.product-app .coach-form,.product-app .coach-response { padding:20px 16px; }.product-app .report-actions { padding:20px 16px; }.product-app .report-system-copy { padding:20px 16px; }.product-app #rules,.product-app #coach,.product-app #export,.product-app #timeline { scroll-margin-top:70px; } }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; }.product-app * { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; } }
 @media(max-width:600px) {
-  .product-app .pw-guide-detail-body p,.product-app .pw-method-step p,.product-app .pw-checklist-intro,.product-app .pw-checklist-items label { font-size:14px; line-height:1.9; }
-  .product-app .pw-guide-detail summary strong { font-size:14px; }
-  .product-app .pw-page-heading p,.product-app .pw-empty-training p { font-size:14px; }
-  .product-app .pw-report-card-body p,.product-app .pw-library-note { font-size:14px; }
   .product-app .report-focus-item p,.product-app .replay-caption,.product-app .report-system-copy { font-size:14px; }
 }

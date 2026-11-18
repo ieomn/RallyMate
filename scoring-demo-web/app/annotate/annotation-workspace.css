@@ -37,7 +37,7 @@
 .annotation-history { padding: 32px 0; }
 .annotation-history ul { list-style: none; padding: 0; margin: 0; }
 .annotation-history li { border-bottom: 1px solid var(--product-border); }
-.annotation-history button { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 16px; width: 100%; min-height: 58px; padding: 8px; background: transparent; color: inherit; border: none; text-align: left; cursor: pointer; }
+.annotation-history button { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 16px; width: 100%; min-height: 58px; padding: 8px; background: transparent; color: inherit; border: none; text-align: left; cursor: pointer; }
 .annotation-history button:hover { background: var(--product-panel); }
 .annotation-history strong { overflow-wrap: anywhere; font: 500 15px var(--rm-body); }
 .annotation-history time { color: var(--product-muted); font: 13px var(--rm-mono); }
