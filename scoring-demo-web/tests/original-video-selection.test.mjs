@@ -101,15 +101,18 @@ test("SHA alone, stale jobs, wrong PTS origin and imported time claims never aut
   assert.equal(imported.viewer.loadPoseWindow, undefined);
 });
 
-test("a ready official surface is selected first and the original remains switchable", () => {
+test("the original opens first and verified 3D remains available when the original is missing", () => {
   const meshMedia = { video_url: `/v1/jobs/${jobId}/artifacts/sam3d-mesh.mp4`, source_relative_origin_ms: 0 };
   const app = mount({ meshMedia });
-  assert.equal(app.mesh.media, meshMedia);
-  app.button("原片与关键点").props.onClick(); app.render();
   assert.equal(app.mesh, undefined); assert.equal(app.viewer.videoKind, "original");
   assert.equal(app.viewer.candidateReplayBinding.mappingVerified, false);
   app.button("3D 动作").props.onClick(); app.render();
   assert.equal(app.mesh.media, meshMedia);
+  app.button("原片与关键点").props.onClick(); app.render();
+  assert.equal(app.viewer.videoKind, "original");
+  const onlyMesh = mount({ meshMedia, evidence: { result: { job_id: jobId } } });
+  assert.equal(onlyMesh.mesh.media, meshMedia);
+  assert.equal(onlyMesh.button("原片与关键点").props.disabled, true);
 });
 
 test("a local upload object URL is preferred even when annotated playback already exists", () => {

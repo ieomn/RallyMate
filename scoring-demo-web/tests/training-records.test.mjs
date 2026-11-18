@@ -48,10 +48,32 @@ test("migrates all valid legacy history without deleting or truncating old bytes
 
 test("machine file names receive an editable human label while original names are retained", () => {
   const record = lib.visitTrainingReport(empty(), visit(undefined, { name: "abcdef1234567890.mp4" }), now).records[0];
-  assert.equal(record.name, "10月21日训练复盘");
+  assert.equal(record.name, "训练复盘");
   assert.equal(record.originalName, "abcdef1234567890.mp4");
   const named = lib.visitTrainingReport(empty(), visit(undefined, { name: "正手启动.mp4" }), now).records[0];
   assert.equal(named.name, "正手启动");
+});
+
+test("opening a hash-named report before and after midnight never uses the visit date as its title", () => {
+  const hash = "abcdef1234567890.mp4", before = "2026-11-18T15:59:59.000Z", after = "2026-11-18T16:00:01.000Z";
+  const job = { id: "training-job-1234", created_at: "2026-10-20T18:00:00Z", original_filename: hash };
+  for (const viewedAt of [before, after]) {
+    const named = metadata => lib.visitTrainingReport(empty(), visit(undefined, { name: hash, job: metadata }), viewedAt).records[0];
+    assert.equal(named(job).name, "10月21日训练复盘");
+    assert.equal(named({ ...job, completed_at: "2026-10-21T17:00:00Z" }).name, "10月22日训练复盘");
+    assert.equal(named({ ...job, created_at: "2026-10-21 12:00" }).name, "训练复盘");
+    assert.equal(named().name, "训练复盘"); assert.equal(named().viewedAt, viewedAt);
+  }
+  const pending = lib.visitTrainingReport(empty(), visit(undefined, { name: hash }), before);
+  const restored = lib.trainingJournalOf(JSON.parse(JSON.stringify(pending)));
+  const completed = lib.visitTrainingReport(restored, visit(undefined, { name: hash, job }), after);
+  assert.equal(completed.records[0].name, "10月21日训练复盘");
+  assert.equal(completed.records[0].viewedAt, after);
+  assert.equal(lib.personalHistoryRecords(restored.records, [job])[0].name, "10月21日训练复盘");
+  const renamed = lib.updateTrainingRecord(restored, id, { name: "我的正手", theme: "", notes: "" });
+  assert.equal(lib.visitTrainingReport(renamed, visit(undefined, { name: hash, job }), after).records[0].name, "我的正手");
+  assert.equal(lib.personalHistoryRecords(renamed.records, [job])[0].name, "我的正手");
+  assert.equal(lib.migrateTrainingHistory(empty(), [{ id: job.id, name: hash, viewedAt: before }]).records[0].name, "训练复盘");
 });
 
 test("revisit and legacy migration preserve edited names, theme, notes, and saved questions", () => {

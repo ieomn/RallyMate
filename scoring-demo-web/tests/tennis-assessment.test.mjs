@@ -21,11 +21,13 @@ function compiledUrl(url) {
 }
 const { validatedTennisAssessment, tennisAssessmentOf, retainTennisAssessment } = await import(compiledUrl(new URL("../app/lib/tennis-assessment.ts", import.meta.url)));
 const { tennisAssessmentReadMessage } = await import(compiledUrl(new URL("../app/lib/tennis-evidence-status.ts", import.meta.url)));
-const { default: Summary, ClipMeasurements, TennisAssessmentDetails, tennisImprovementFocus } = await import(compiledUrl(new URL("../app/TennisAssessmentSummary.tsx", import.meta.url)));
+const { default: Summary, ClipMeasurements, TennisAssessmentDetails, TennisScoreDetails, tennisImprovementFocus } = await import(compiledUrl(new URL("../app/TennisAssessmentSummary.tsx", import.meta.url)));
 const { default: LiveResults } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
 const context = { jobId: "tennis-test", videoSha256: tennisHash, durationMs: 9000 };
 const parse = report => validatedTennisAssessment(report, context);
-const render = (report, extra = {}) => renderToStaticMarkup(createElement(Summary, { report, ...extra }));
+const renderFocus = (report, extra = {}) => renderToStaticMarkup(createElement(Summary, { report, ...extra }));
+const renderScores = (report, extra = {}) => renderToStaticMarkup(createElement(TennisScoreDetails, { report, ...extra }));
+const render = (report, extra = {}) => renderFocus(report, extra) + (report ? renderScores(report, extra) : "");
 function currentFixture() {
   const report = tennisScopedFixture();
   report.version = "tennis-action-assessment-v1.3.0";
@@ -187,6 +189,10 @@ test("partial radar keeps missing dimensions empty while genuine zero remains ze
   report.dimensions[0].score = null; report.dimensions[0].metrics[0].score = null; report.dimensions[0].metrics[0].value = null;
   report.overall_score = 75;
   const parsed = parse(report); assert.equal(parsed.dimensions[0].score, null);
+  const primary = renderFocus(parsed);
+  const supported = parsed.improvements.find(item => item.dimension_id !== parsed.dimensions[0].id);
+  assert.ok(primary.includes(supported.title));
+  assert.ok(!primary.includes(parsed.improvements[0].title));
   const html = render(parsed); assert.match(html, />—<\/text>/); assert.doesNotMatch(html, /class="tennis-radar-shape"/);
   assert.match(html, /已测 4 \/ 5 项/);
   report.status = "scored"; report.dimensions[0].score = 0; report.dimensions[0].metrics[0].score = 0; report.dimensions[0].metrics[0].value = 0; report.overall_score = 60;
@@ -200,33 +206,40 @@ test("practice timestamps must fit the source video and an untimed drill never i
   const report = tennisFixture(); report.improvements.forEach(item => { item.start_ms = null; item.end_ms = null; });
   const parsed = parse(report); assert.doesNotMatch(render(parsed), /回看这段动作/);
   assert.equal(tennisImprovementFocus(parsed.improvements[0]).timestampMs, undefined);
-  const focus = tennisImprovementFocus(tennisFixture().improvements[0]); assert.equal(focus.timestampMs, 1000); assert.match(focus.question, /复测/);
+  const item = tennisFixture().improvements[0], focus = tennisImprovementFocus(item);
+  assert.equal(focus.timestampMs, 1000); assert.ok(focus.question.includes(item.drill)); assert.match(focus.question, /复测/);
 });
 
-test("summary shows the overall score and keeps extra drills and the five-dimension chart expandable", () => {
-  const html = render(parse(tennisFixture()), { onSaveFocus() {} });
-  assert.match(html, /<strong>70\.0<\/strong>/); assert.match(html, /五维动作评分图/);
-  assert.equal((html.match(/class="tennis-radar-value"/g) ?? []).length, 5);
-  assert.equal((html.match(/class="tennis-drill"/g) ?? []).length, 2);
-  assert.equal((html.match(/怎么练/g) ?? []).length, 2); assert.equal((html.match(/复测目标/g) ?? []).length, 2);
-  assert.match(html, /本次分析了 2 段挥拍/);
-  assert.match(html, /可见动作的试验评分/);
-  assert.match(html, /继续保持/); assert.match(html, /随挥后能恢复准备姿势/);
-  assert.match(html, /回看片段 <time>1\.0–2\.2 秒<\/time>/);
-  assert.doesNotMatch(html, /置信|算法|规则未实现|P0080|Word|technical|coach_calibrated|触球质量/);
+test("the first screen gives one measured improvement and its concrete exercise before any scores", () => {
+  const result = tennisResult();
+  result.tennis_assessment.improvements[1].drill = "下一组再练回位。";
+  const report = parse(result.tennis_assessment), first = report.improvements[0];
+  const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, pending: false, trajectory: null,
+    replay: createElement("video", { id: "original" }), onSaveFocus: () => true }));
+  const [primary, details] = html.split('<details class="report-all-details" id="details">');
+  assert.ok(details && primary.includes('id="original"'));
+  for (const text of ["这次先改什么", first.title, "下一次怎么练", first.drill, "保存练习"]) assert.ok(primary.includes(text), text);
+  assert.doesNotMatch(primary, /tennis-radar|tennis-score-number|复测目标|测量依据/);
+  assert(!primary.includes(report.improvements[1].drill));
+  assert.match(details, /<strong>70\.0<\/strong>/); assert.match(details, /五维动作评分图/);
+  assert.equal((details.match(/class="tennis-radar-value"/g) ?? []).length, 5);
+  assert.match(details, /本次分析了 2 段挥拍/); assert.match(details, /可见动作的试验评分/);
+  assert.match(details, /继续保持/); assert.match(details, /随挥后能恢复准备姿势/);
+  assert.match(primary, /回看片段 <time>1\.00–2\.20 秒<\/time>/);
+  assert.ok(details.includes(report.improvements[1].drill));
 });
 
-test("the first drill appears once and the additional observations are folded", () => {
+test("measurement details and retest instructions stay outside the lead observation", () => {
   const report = tennisScopedFixture();
   report.improvements[0].observation = "这段准备时双脚间距较窄。姿态估计：准备时段平均站距约为髋宽的 0.80 倍。";
-  const html = render(parse(report));
-  assert.equal(html.split("这段准备时双脚间距较窄。").length - 1, 1);
-  for (const text of ["本次训练重点", "测量依据", "0.80 倍", "下次先练", "怎么练", "复测目标"]) assert.ok(html.includes(text), text);
-  assert.match(html, /<details class="tennis-scope-details"><summary>/);
-  assert.match(html, /<details class="review-more"><summary>其他练习与优势/);
-  assert.match(html, /<details class="review-drill-steps"><summary>练习步骤与复测/);
+  const primary = renderFocus(parse(report)), detailed = renderScores(parse(report));
+  assert.equal(primary.split("这段准备时双脚间距较窄。").length - 1, 1);
+  assert.doesNotMatch(primary, /0.80 倍|复测目标|测量依据/);
+  for (const text of ["测量依据", "0.80 倍", "动作提示", "复测目标"]) assert.ok(detailed.includes(text), text);
+  assert.match(detailed, /<details class="tennis-scope-details"><summary>/);
+  assert.match(detailed, /<details class="review-more"><summary>其他练习与优势/);
+  assert.match(detailed, /<details class="review-drill-steps"><summary>动作提示与复测目标/);
 });
-
 test("selected clip readout uses only measurements from the exact scored episode", () => {
   const report = parse(tennisScopedFixture());
   const episode = report.episodes[0];
@@ -245,24 +258,24 @@ test("legacy report has one neutral placeholder and older measurement panels sta
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, pending: false, trajectory: null,
     journal: createElement("div", { id: "journal-test" }, "关注点"), details: createElement("div", { id: "tools-test" }, "工具"), replay: createElement("video", { id: "video-test" }) }));
   const details = html.indexOf('id="details"'), primary = html.slice(0, details);
-  assert.equal((primary.match(/暂无可展示的结果/g) ?? []).length, 1);
+  assert.equal((primary.match(/这份报告没有定位到需要优先调整的动作/g) ?? []).length, 1);
   assert.doesNotMatch(primary, /process-overall-reference|>99|待观察|0 \/ 5/);
   assert.ok(html.indexOf('id="video-test"') < details); assert.ok(html.indexOf('id="journal-test"') > details); assert.ok(html.indexOf('id="tools-test"') > details);
   assert.match(html, /<details class="report-all-details" id="details">/); assert.doesNotMatch(html, /<details[^>]*\bopen(?:=|>)/);
 });
 
 test("unavailable and offline states use one clear action instead of a page of empty scores", () => {
-  assert.match(render(null, { offline: true }), /暂无可展示的结果/);
+  assert.match(render(null, { offline: true }), /未包含可核验的动作评分/);
   assert.match(render(null, { error: true, onRetry() {} }), /重新读取/);
   const missingSource = render(null, { message: "原视频来源未读取完整，请重新读取报告。", onRetry() {} });
-  assert.match(missingSource, /暂无可展示的结果/); assert.match(missingSource, /原视频来源未读取完整/); assert.match(missingSource, /重新读取<\/button>/);
+  assert.match(missingSource, /原视频来源未读取完整/); assert.match(missingSource, /重新读取<\/button>/);
   assert.doesNotMatch(missingSource, /正在生成动作评分|tennis-loading-dot/);
   const report = tennisFixture(); report.status = "unavailable"; report.overall_score = null;
   report.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics.forEach(m => { m.score = null; m.value = null; m.observation_count = 0; }); });
-  const html = render(parse(report)); assert.match(html, /先完成移动/); assert.doesNotMatch(html, /tennis-radar|tennis-score-number|正在生成/);
+  const html = render(parse(report)); assert.match(html, /选一个熟悉的动作/); assert.doesNotMatch(renderFocus(parse(report)), /先完成移动/); assert.doesNotMatch(html, /tennis-radar|tennis-score-number|正在生成/);
   report.reason_zh = "动作姿态记录缺失或来源校验未通过。";
   assert.match(render(parse(report)), /来源校验未通过/);
-  assert.match(render(parse(report)), /未测项目不按零分或动作错误处理/);
+  assert.match(renderScores(parse(report)), /本次没有可计分的动作测量/);
   assert.doesNotMatch(render(parse(report)), /未完整入镜/);
   report.reason_zh = { unsafe: true }; assert.equal(parse(report), null);
 });
@@ -364,7 +377,7 @@ test("v1.2 empty measurement retains a subject scope without manufacturing episo
   report.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics = []; });
   report.subject_scope.subjects.forEach(s => { s.measured_episode_count = 0; });
   report.pattern_coverage = { measured_requirements: 0, applicable_requirements: 0, fraction: null, verified_technique_episodes: 0, generic_episodes: 0, full_source_technique_covered: false, profiles: [] };
-  assert.ok(parse(report)); assert.match(render(parse(report)), /暂无可展示的结果/);
+  assert.ok(parse(report)); assert.match(render(parse(report)), /没有定位到需要优先调整的动作/);
   assert.doesNotMatch(render(parse(report)), /tennis-radar|tennis-score-number/);
 });
 

@@ -107,6 +107,39 @@ test("a superseded play rejection cannot overwrite feedback for the current clip
   controller.dispose();
 });
 
+test("opening a report cues its measured window without autoplay, including before metadata", async () => {
+  const { controller } = session(), media = new Media();
+  media.readyState = 0;
+  controller.attach(media, 500, "original");
+  controller.select(clip(1000, 2400), "action", false);
+  controller.select(clip(3000, 4100), "action", false);
+  media.readyState = 1; media.dispatchEvent(new Event("loadedmetadata")); await Promise.resolve();
+  assert.deepEqual(media.writes, [2.5]);
+  assert.equal(media.paused, true);
+  media.playbackRate = .5; await media.play();
+  media.pause = () => assert.fail("a playing video must not be paused to switch clips");
+  controller.select(clip(5000, 6200), "action", true);
+  assert.equal(media.currentTime, 4.5);
+  assert.equal(media.playbackRate, .5);
+  assert.equal(media.paused, false);
+  controller.dispose();
+});
+
+test("scrubbing outside the selected window releases its loop and selecting full video cancels a buffered cue", () => {
+  const { controller, states } = session(), media = new Media();
+  controller.attach(media, 0, "original");
+  controller.select(clip(), "action", false);
+  controller.setLoop(true); media.at(6, "seeking"); media.at(6, "seeked");
+  assert.equal(states.at(-1).selectedId, null); assert.equal(states.at(-1).looping, false);
+  assert.equal(media.currentTime, 6);
+  media.ranges = [[0, .1]];
+  controller.select(clip(), "action", false);
+  controller.select(null);
+  media.ranges = [[0, 10]]; media.dispatchEvent(new Event("progress"));
+  assert.equal(media.currentTime, 6);
+  controller.dispose();
+});
+
 test("selected clips stop at their context end and loop only when explicitly enabled", () => {
   const { controller } = session(), media = new Media(); controller.attach(media, 0, "video");
   controller.select(clip()); assert.equal(media.currentTime, .65); assert.equal(media.paused, false);

@@ -213,10 +213,10 @@ export function TrainingJournalLibrary({ journal, onOpenReport, onNewAnalysis, h
     </div>
     {journal.ready && !history?.loading && !history?.error && !matching.length && <div className="tj-empty">
       <h2>{search ? "没有找到匹配的训练" : "还没有训练记录"}</h2>
-      <p>{search ? "可以换个关键词，或查看本页全部记录。" : protectCurrent ? "提交的视频会出现在这里。" : "上传第一段视频后，可以在这里跟踪进度、回看报告。"}</p>
+      <p>{search ? "换个关键词，或清除搜索。" : protectCurrent ? "提交的视频会出现在这里。" : "提交一段视频后，在这里看进度和报告。"}</p>
       {search ? <button type="button" onClick={() => setSearch("")}>清除搜索</button> : <button type="button" onClick={onNewAnalysis}>{protectCurrent ? "返回视频分析" : "选择训练视频"}</button>}
     </div>}
     {history && history.total > history.limit && <nav className="tj-history-controls" aria-label="训练记录分页"><button type="button" disabled={history.loading || history.offset === 0} onClick={() => history.onPage(Math.max(0, history.offset - history.limit))}>上一页</button><span>第 {Math.floor(history.offset / history.limit) + 1} 页</span><button type="button" disabled={history.loading || history.offset + history.limit >= history.total} onClick={() => history.onPage(history.offset + history.limit)}>下一页</button></nav>}
-    <p className="tj-scope">在线任务随账号同步。名称、备注与关注点保存在当前浏览器，清除浏览器数据会移除本地记录。</p>
+    <p className="tj-scope">训练任务随账号同步。自定义名称、备注和关注点存于此浏览器。清除浏览器数据会删除这些内容。</p>
   </section>;
 }

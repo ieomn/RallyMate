@@ -10,7 +10,7 @@ import { analysisViewState } from "./lib/analysis-view-state";
 import { recentReports, type RecentReport } from "./lib/training-report";
 import { accountStorageKey } from "./lib/account-storage";
 import { accountFetch, captureAccountIdentity, isAccountIdentityCurrent } from "./lib/auth-client";
-import { personalHistoryRecords } from "./lib/training-records";
+import { personalHistoryRecords, trainingTitleFromFile } from "./lib/training-records";
 import { readWorkspaceLocation, workspaceHref } from "./lib/workspace-navigation";
 import { originalPoseTimeBinding, poseWindowMatchesOriginal } from "./lib/original-video-timing";
 import { adviceContextKey, adviceForContext, adviceNotice as describeAdvice, type AdviceResponse, type ScopedAdvice } from "./lib/advice-display";
@@ -145,7 +145,8 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
   const meshMedia = verifiedMeshMedia(evidence.result?.sam3d_mesh, evidence.jobId, meshOnline) ?? currentMeshUpdate?.media ?? null;
   const meshStatus = meshMedia ? "ready" : currentMeshUpdate?.status ?? initialMeshStatus;
   const meshAvailable = Boolean(meshMedia);
-  const [showSurface, setShowSurface] = useState(true);
+  const [preferSurface, setShowSurface] = useState<boolean | null>(null);
+  const showSurface = preferSurface ?? !originalSrc;
   useEffect(() => {
     if (!meshOnline || !evidence.jobId || initialMeshStatus !== "pending" && meshReadAttempt === 0) return;
     const controller = new AbortController();
@@ -204,7 +205,7 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
     {meshOnline && ["failed", "read-error"].includes(String(meshStatus)) && <button type="button" className="product-secondary" onClick={() => { setMeshUpdate({ scope: candidateSessionKey, status: "pending", media: null }); setMeshReadAttempt(attempt => attempt + 1); }}>重新检查官方预览</button>}
     {meshMedia && <div className="replay-overlay-switches" role="group" aria-label="动作回放显示方式">
       <button type="button" className="product-secondary" aria-pressed={showSurface} onClick={() => setShowSurface(true)}>3D 动作</button>
-      <button type="button" className="product-secondary" aria-pressed={!showSurface} onClick={() => setShowSurface(false)}>原片与关键点</button>
+      <button type="button" className="product-secondary" disabled={!originalSrc} aria-pressed={!showSurface} onClick={() => setShowSurface(false)}>原片与关键点</button>
     </div>}
     {meshMedia && showSurface ? <OfficialMeshReplay media={meshMedia} jobId={evidence.jobId!} /> : <>
     <BallTrajectoryViewer key={selectedVideoSrc ?? "coordinates"} trajectory={trajectory} pending={pending} error={error}
@@ -474,7 +475,9 @@ export default function ScoreLab() {
   const currentAdviceKey = adviceContextKey(evidence.jobId, adviceTechnique);
   const currentAdvice = adviceForContext(savedAdvice, currentAdviceKey);
   const journalId = currentJournalRecordId || (evidence.jobId && importState.status !== "success" ? journalRecordId("online", evidence.jobId) : undefined);
-  const currentName = journal.records.find(item => item.id === journalId)?.name || videoFile?.name || (importState.status === "success" ? importState.fileName : job && job.id === evidence.jobId && typeof job.original_filename === "string" ? job.original_filename.split(/[\\/]/).pop() : undefined) || history.find(item => item.id === evidence.jobId)?.name || "训练视频";
+  const currentRecord = journal.records.find(item => item.id === journalId);
+  const currentName = currentRecord?.name || videoFile?.name || (importState.status === "success" ? importState.fileName : job && job.id === evidence.jobId && typeof job.original_filename === "string" ? job.original_filename.split(/[\\/]/).pop() : undefined) || history.find(item => item.id === evidence.jobId)?.name || "训练视频";
+  const reportTitle = currentRecord?.name || trainingTitleFromFile(currentName, job?.id === evidence.jobId ? job : undefined).name;
   const guidance = useMemo(() => trainingGuidance(evidence.result ?? null, motionAnalysisOf(evidence.result ?? null, evidence.assessment, importedSummary)), [evidence.result, evidence.assessment, importedSummary]);
   const focusId = (focus: TrainingFocusSelection) => `review:${focus.title}:${focus.timestampMs ?? "untimed"}`;
   const focusSuggestions = (actionAssessment ? actionAssessment.improvements.map(tennisImprovementFocus) : guidance.slice(0, 2).map(focusSelection)).map(focus => ({ ...focus, id: focusId(focus) }));
@@ -533,7 +536,7 @@ export default function ScoreLab() {
         setEvidence({ mode: "live", candidateSource: "online", jobId: id, trajectory: null, assessment: null, result: resultFromReportSummary(completed.summary), error: null });
         setScoreContext("live"); setUploadState("complete");
         const name = typeof completed.job.original_filename === "string" ? completed.job.original_filename.split(/[\\/]/).pop() || "训练视频" : "训练视频";
-        setCurrentJournalRecordId(visitReport({ jobId: id, name, source: "online" }));
+        setCurrentJournalRecordId(visitReport({ jobId: id, name, source: "online", job: completed.job }));
         try {
           const existing = recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]"));
           const next = recentReports([{ id, name, viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== id)]);
@@ -550,7 +553,7 @@ export default function ScoreLab() {
         if (!controller.signal.aborted) setEvidence(previous => previous.jobId === id ? { ...previous, trajectory: preview } : previous);
       }, result => {
         if (!controller.signal.aborted && activeServiceJob.current === id) {
-          visitReport({ jobId: id, name: typeof lastProgress.current?.original_filename === "string" ? lastProgress.current.original_filename : "训练视频", source: "online", result });
+          visitReport({ jobId: id, name: typeof lastProgress.current?.original_filename === "string" ? lastProgress.current.original_filename : "训练视频", source: "online", job: lastProgress.current, result });
           setEvidence(previous => previous.jobId === id ? { ...previous, candidateSource: "online", result: retainTennisAssessment(result, previous.result ?? null), assessment: result.technique_assessment ?? null } : previous);
           // Supplemental evidence must not keep unrelated report actions locked.
           setScoreContext("live"); setUploadState("complete"); setSupplementingEvidence(true);
@@ -559,7 +562,7 @@ export default function ScoreLab() {
       if (controller.signal.aborted) return;
       setEvidence(previous => ({ mode: "live", candidateSource: "online", jobId: id, trajectory: completed.trajectory, assessment: completed.assessment ?? completed.result.technique_assessment ?? null, result: retainTennisAssessment(completed.result, previous.result ?? null), error: completed.warning }));
       setScoreContext("live"); setUploadState("complete");
-      setCurrentJournalRecordId(visitReport({ jobId: id, name: typeof completed.job.original_filename === "string" ? completed.job.original_filename : "训练视频", source: "online", result: completed.result, trajectory: completed.trajectory }));
+      setCurrentJournalRecordId(visitReport({ jobId: id, name: typeof completed.job.original_filename === "string" ? completed.job.original_filename : "训练视频", source: "online", job: completed.job, result: completed.result, trajectory: completed.trajectory }));
       try {
         const existing = recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]"));
         const next = recentReports([{ id, name: (typeof completed.job.original_filename === "string" ? completed.job.original_filename.split(/[\\/]/).pop() : undefined) || existing.find(item => item.id === id)?.name || "训练视频", viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== id)]);
@@ -681,7 +684,7 @@ export default function ScoreLab() {
       if (analysisRunRef.current !== runId || !isAccountIdentityCurrent(accountIdentity)) return;
       if (typeof submitted.id !== "string" || !/^[a-zA-Z0-9_-]{8,80}$/.test(submitted.id)) throw new Error("服务没有返回有效任务，请稍后重试。");
       setJob(submitted); setLocalVideoJobId(submitted.id); refreshRecords();
-      setCurrentJournalRecordId(visitReport({ jobId: submitted.id, name: videoFile.name, source: "online", linkPending: true }));
+      setCurrentJournalRecordId(visitReport({ jobId: submitted.id, name: videoFile.name, source: "online", job: submitted, linkPending: true }));
       try {
         const existing = recentReports(JSON.parse(localStorage.getItem(recentReportsKey) || "[]"));
         const next = recentReports([{ id: submitted.id, name: videoFile.name, viewedAt: new Date().toISOString() }, ...existing.filter(item => item.id !== submitted.id)]);
@@ -843,7 +846,8 @@ export default function ScoreLab() {
     </div>
   </div>;
   const openSection = (id: string) => { setReportSection(id); if (["details", "training-journal"].includes(id)) setDetailScope(candidateSessionKey); const section = document.getElementById(id); for (let node: HTMLElement | null = section; node; node = node.parentElement) if (node instanceof HTMLDetailsElement) node.open = true; section?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); };
-  const saveFocus = (focus: TrainingFocusSelection) => { if (journalId && journal.saveFocus(journalId, { ...focus, id: focusId(focus) })) openSection("training-journal"); };
+  const saveFocus = journalId && journal.records.some(record => record.id === journalId)
+    ? (focus: TrainingFocusSelection) => journal.saveFocus(journalId, { ...focus, id: focusId(focus) }) : undefined;
   const journalPanel = <TrainingJournalPanel key={journalId} journal={journal} recordId={journalId} suggestions={focusSuggestions} showSuggestions={false} onSeek={replayAvailable ? timestampMs => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs, jobId: evidence.jobId, preferOriginal: true } })) : undefined} onOpenReport={openReport} />;
   const coachPanel = !busy && (<details className="report-coach coach-section review-coach" id="coach"><summary>追问这次训练</summary><div className="coach-layout"><form className="coach-form" onSubmit={event => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><div className="coach-question-options" role="group" aria-label="可选复盘问题">{["我最该先改哪个动作问题？", "这个问题会怎样影响我的动作？", "下一次训练具体怎么练和复测？"].map(question => <button key={question} type="button" className="product-secondary" onClick={() => setAdviceNotes(question)}>{question}</button>)}</div><label>你的问题<span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={event => setAdviceNotes(event.target.value)} placeholder="例如：为什么建议我调整引拍？视频哪一秒能看出来？" /></label><button className="primary-button" disabled={adviceLoading || evidence.candidateSource !== "online"}>{adviceLoading ? "正在整理…" : "查看解释与建议"}</button>{adviceNotice && savedAdvice?.contextKey === currentAdviceKey && <p className="coach-status" role="status">{adviceNotice}</p>}</form>{evidence.candidateSource === "online" ? <AdviceResult technique={adviceTechnique} response={currentAdvice} jobId={evidence.jobId} /> : <div className="product-notice" role="note">这是离线导入的报告，可保存练习目标。在线问答请打开原任务。</div>}</div></details>);
   const extraDetails = <>
@@ -888,8 +892,8 @@ export default function ScoreLab() {
       history={{ total: recordPage?.total ?? 0, offset: recordOffset, limit: 20, loading: readingRecords, error: recordsError, deleting: deletingRecord, onPage: setRecordOffset, onRefresh: refreshRecords, onDelete: id => void deleteRecord(id) }} />
       <div className="product-library-import"><button type="button" disabled={busy} onClick={() => chooseReportBackup()}>从备份导入报告</button></div></>}
     {view === "analysis" && <div className={`product-analysis ${hasReport ? "has-report" : ""}`} aria-busy={importState.status === "reading"}>
-      <div className="product-page-heading"><div><h1>{delivery.showReport ? "本次训练" : hasReport ? missingJob ? "找回这次训练" : uploadState === "cancelled" ? "本次分析已取消" : uploadState === "report-preparing" ? "本次报告仍在整理" : uploadState === "error" ? "本次分析需要处理" : "正在准备本次复盘" : draftName ? "准备分析" : "新建视频分析"}</h1>{hasReport && <p>{currentName}</p>}</div>{hasReport && !busy && !uploadError && job?.status !== "cancelled" && <button type="button" className="intake-next" onClick={chooseNewVideo}>选择新视频</button>}</div>
-      {importState.status !== "idle" && <div className={`product-notice import-${importState.status}`} role="status">{importState.status === "reading" ? `正在读取 ${importState.fileName}…` : importState.status === "success" ? `已载入 ${importState.fileName}` : importState.message}</div>}
+      <div className="product-page-heading"><div><h1>{delivery.showReport ? reportTitle : hasReport ? missingJob ? "找回这次训练" : uploadState === "cancelled" ? "本次分析已取消" : uploadState === "report-preparing" ? "本次报告仍在整理" : uploadState === "error" ? "本次分析需要处理" : "正在准备本次复盘" : draftName ? "准备分析" : "新建视频分析"}</h1>{hasReport && !delivery.showReport && <p>{currentName}</p>}</div>{hasReport && !busy && !uploadError && job?.status !== "cancelled" && <button type="button" className="intake-next" onClick={chooseNewVideo}>选择新视频</button>}</div>
+      {importState.status !== "idle" && <div className={importState.status === "success" && delivery.showReport ? "sr-only" : `product-notice import-${importState.status}`} role="status">{importState.status === "reading" ? `正在读取 ${importState.fileName}…` : importState.status === "success" ? `已载入 ${importState.fileName}` : importState.message}</div>}
       {!hasReport && importState.status !== "reading" && <section className="video-intake" aria-labelledby="upload-title">
         {videoFile ? <div className="intake-preparation">
           <div className="intake-preview">{localVideoSrc && <LocalVideoPreview key={localVideoSrc} src={localVideoSrc} />}</div>
@@ -904,8 +908,13 @@ export default function ScoreLab() {
             </div>
           </div>
         </div> : <button type="button" className={`intake-drop${dragging ? " is-dragging" : ""}`}
-          onClick={chooseNewVideo} onDragOver={event => { event.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
+          onClick={chooseNewVideo} onDragOver={event => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true);
+          }}
+          onDragLeave={event => {
+            if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) setDragging(false);
+          }}
           onDrop={event => {
             event.preventDefault(); setDragging(false);
             const files = event.dataTransfer.files;
@@ -929,7 +938,7 @@ export default function ScoreLab() {
       {!busy && analysisControls}
       {job?.status === "cancelled" && <section className="product-recovery" role="status"><div><h2>分析已停止</h2><p>已生成的回放仍可查看。</p></div><button type="button" className="product-secondary" onClick={chooseNewVideo}>选择新视频</button></section>}
       {hasReport && uploadError && <section className="product-recovery" role={delivery.phase === "preparing" ? "status" : "alert"}><div><h2>{recoveryTitle}</h2><p>{delivery.recoveryDetail || uploadError}</p>{delivery.showReport && <p>本页已读取的结果仍可查看。</p>}</div>{missingJob ? <div className="recovery-actions"><button type="button" className="product-secondary" onClick={() => chooseReportBackup()}>导入报告备份</button><button type="button" className="product-secondary" onClick={() => navigate("sessions")}>返回训练记录</button><button type="button" className="product-secondary" onClick={chooseNewVideo}>选择新视频</button></div> : <button type="button" className="product-secondary" onClick={() => { if (evidence.jobId && delivery.canResumeRead) void monitorJob(evidence.jobId); else if (videoFile) void submitVideo(); else chooseNewVideo(); }}>{evidence.jobId && delivery.canResumeRead ? "继续读取结果" : videoFile ? "重试分析" : "选择新视频"}</button>}</section>}
-      {delivery.showNavigation && <nav className="product-report-nav" aria-label="报告内容">{[["evidence", "视频回放"], ["assessment", "动作评分"], ["details", "详细依据"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
+      {delivery.showNavigation && <nav className="product-report-nav" aria-label="报告内容">{[["evidence", "关键片段"], ["recommendations", "训练重点"], ["details", "详细数据"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
       {delivery.showReplayOnly && <TrainingReplayPanel jobId={evidence.jobId} mediaKind={replayMediaKind}><p className="replay-caption">{busy ? "回放预览已可用，完整观察仍在整理。" : "本次未形成完整报告，已可用的回放保留在这里。"}</p><ReplayPanel api={apiClient} replaySignal={replayScope.signal} evidence={evidence} pending={busy} error={evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} candidateSessionKey={candidateSessionKey} onCandidateReplayHandle={setCandidateReplay} /></TrainingReplayPanel>}
       {activeSummary && !currentOverviewRead && <p className="replay-caption" role="status">正在读取分类与测量概览，评分和视频可先查看。</p>}
       {activeSummary && currentOverviewRead?.error && <section className="product-recovery" role="alert"><div><h2>部分分析内容尚未读取</h2><p>{currentOverviewRead.error}</p><p>评分和回放仍可使用，详细片段证据可独立读取。</p></div><button type="button" className="product-secondary" onClick={() => setOverviewAttempt(value => value + 1)}>重新读取分析概览</button></section>}

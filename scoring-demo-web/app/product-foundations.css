@@ -40,13 +40,13 @@
 :where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button, a, summary, input, select, textarea) {
   transition: background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out, transform 220ms cubic-bezier(.24,1.45,.36,1);
 }
-:where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button:enabled, a, summary):active {
+:where(.account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button:enabled, a, summary):active {
   transform: scale(.985);
 }
 :is(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button,a,input,textarea,select,summary):focus-visible {
-  outline: 2px solid #c4f469;
+  outline: 2px solid var(--product-accent, #c4f469);
   outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
-  :where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button:enabled, a, summary):active { transform: none; }
+  :where(.account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button:enabled, a, summary):active { transform: none; }
 }

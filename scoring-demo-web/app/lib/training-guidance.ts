@@ -139,7 +139,7 @@ function fallbackGuidance(focus: ReportFocus, duration: number | null, motion?: 
 }
 
 export function focusSelection(item: TrainingGuidance): TrainingFocusSelection {
-  return { title: item.title, question: `${item.goal} 复测：${item.retest}`, ...(item.moment ? { timestampMs: item.moment.startMs } : {}) };
+  return { title: item.title, question: `${item.drill} ${item.goal} 复测：${item.retest}`, ...(item.moment ? { timestampMs: item.moment.startMs } : {}) };
 }
 
 function conditionDifference(condition: CardCondition): string | null {

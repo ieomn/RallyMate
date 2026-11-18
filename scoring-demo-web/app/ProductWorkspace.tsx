@@ -2,7 +2,7 @@
 
 // Native links avoid the current vinext client-router error when returning to the homepage.
 
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { recentReports, type RecentReport } from "./lib/training-report";
 import { playPressFeedback } from "./lib/press-feedback";
 import { workspaceHref, type WorkspaceView } from "./lib/workspace-navigation";
@@ -39,36 +39,13 @@ const navigation: ReadonlyArray<{ view: WorkspaceView; label: string }> = [
   { view: "analysis", label: "视频分析" },
 ];
 
-function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: ReactNode }) {
-  const contentRef = useRef<HTMLElement>(null);
-  const previousView = useRef(view);
-  useLayoutEffect(() => {
-    const previous = previousView.current;
-    previousView.current = view;
-    if (previous === view) return;
-    const content = contentRef.current;
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!content?.animate || motion.matches) return;
-    const order = navigation.findIndex(item => item.view === view) - navigation.findIndex(item => item.view === previous);
-    const travel = Math.sign(order) * 22;
-    const entry = content.animate([
-      { opacity: .38, transform: `translateX(${travel}px)` },
-      { opacity: 1, transform: "translateX(0)" },
-    ], { id: "workspace-entry", duration: 330, easing: "cubic-bezier(.16,1,.3,1)" });
-    const stop = () => { if (motion.matches) entry.cancel(); };
-    motion.addEventListener("change", stop);
-    return () => { entry.cancel(); motion.removeEventListener("change", stop); };
-  }, [view]);
-  return <main ref={contentRef} id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>;
-}
-
 export function ProductShell({ view, onNavigate, analysisJobId, children }: {
   view: WorkspaceView;
   onNavigate: (view: WorkspaceView) => void;
   analysisJobId?: string | null;
   children: ReactNode;
 }) {
-  return <div className="product-app pw-studio" onClickCapture={playPressFeedback}>
+  return <div className="product-app pw-studio">
     <a className="pw-skip-link" href="#workspace-content">跳到主要内容</a>
     <aside className="pw-sidebar">
       <a className="pw-brand" href="/welcome" aria-label="RallyMate 首页">
@@ -91,7 +68,7 @@ export function ProductShell({ view, onNavigate, analysisJobId, children }: {
       </nav>
     </aside>
     <div className="pw-workspace">
-      <WorkspaceSurface view={view}>{children}</WorkspaceSurface>
+      <main id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>
     </div>
   </div>;
 }
@@ -128,7 +105,7 @@ function isActiveReport(report: HomeReport) {
 }
 
 export function VideoSelectionHint() {
-  return <><span className="file-drag-hint">也可以把视频拖到这里。</span>选好后可先预览。</>;
+  return <><span className="file-drag-hint">可将视频拖到这里。</span>先预览，再提交分析。</>;
 }
 
 function OverviewRecord({ report, loadedImportId, protectCurrent, dateLabel, onOpen }: {
@@ -200,7 +177,7 @@ export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate,
       <div className="home-upload-copy">
         <h2 id="home-upload-title">添加训练视频</h2>
         <p>{busy ? "当前任务完成后，可添加下一段视频。" : dragging ? "松开即可预览这段视频。" : <VideoSelectionHint />}</p>
-        <button type="button" className="home-pick" disabled={busy} onClick={() => { setDropError(""); onNewAnalysis(); }}>选择视频</button>
+        <button type="button" className="home-pick" onClickCapture={playPressFeedback} disabled={busy} onClick={() => { setDropError(""); onNewAnalysis(); }}>选择视频</button>
         {dropError && <p className="home-drop-error" role="alert">{dropError}</p>}
       </div>
       <div className="home-court-crop" aria-hidden="true" />
@@ -228,7 +205,7 @@ export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate,
       {completed.length > 0 && <ol>{completed.slice(0, 6).map(renderRecord)}</ol>}
       {error && <div className="home-feedback" role="alert"><p>{error}</p>{onRetry && <button type="button" onClick={onRetry}>重新读取</button>}</div>}
       {loading && !error && <p className="home-feedback" role="status">正在读取训练记录…</p>}
-      {!loading && !error && completed.length === 0 && <p className="home-feedback">{protectCurrent || inProgress.length ? "分析结束后，可在这里回看结果。" : "还没有训练记录。完成第一次分析后，可在这里打开报告。"}</p>}
+      {!loading && !error && completed.length === 0 && <p className="home-feedback">{protectCurrent || inProgress.length ? "分析完成后，报告会出现在这里。" : "还没有训练记录。提交第一段视频后，可在这里回看。"}</p>}
     </section>
   </div>;
 }

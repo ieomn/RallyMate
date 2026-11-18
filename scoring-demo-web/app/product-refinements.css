@@ -7,7 +7,7 @@
 .coach-question-options .product-secondary { white-space: normal; text-align: left; font-size: 13px; }
 .report-support-tools { margin-block: 28px; color: #b7c3ba; }
 .product-app :is(button, a, input, select, textarea, summary):focus-visible,
-.product-shell :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid #b9ec70; outline-offset: 4px; }
+.product-shell :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--product-accent, #b9ec70); outline-offset: 4px; }
 .product-processing-meta, .replay-caption, .product-upload-footnote { color: #b6c4ba; }
 .product-report-nav button, .product-secondary, .report-disclosure > summary, .report-replay-details > summary { min-height: 44px; }
 @media (max-width: 640px) {

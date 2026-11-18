@@ -186,6 +186,33 @@ export function formatReplayTime(milliseconds: number) {
   return `${minutes >= 60 ? `${Math.floor(minutes / 60)}:` : ""}${String(minutes % 60).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+function ReplayScrubber({ progress, startMs, endMs, completeVideo, disabled, valueText, onSeek }: {
+  progress: number; startMs: number; endMs: number; completeVideo: boolean;
+  disabled: boolean; valueText: string; onSeek: (ratio: number) => void;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
+  const mark = hover ?? progress;
+  const ms = Math.max(0, Math.round(startMs + (endMs - startMs) * mark));
+  const timestamp = `${formatReplayTime(ms)}.${String(Math.floor((ms % 1000) / 10)).padStart(2, "0")}`;
+  return <div className="replay-seek" data-full-video={completeVideo} data-preview={hover !== null && !disabled}
+    style={{ "--played": `${progress * 100}%`, "--preview-at": `${mark * 100}%` } as CSSProperties}>
+    <div className="replay-seek-rail" aria-hidden="true">
+      <span className="replay-seek-fill" /><span className="replay-seek-window" />
+      <span className="replay-seek-time">{timestamp}</span>
+    </div>
+    <input className="replay-scrubber" type="range" min="0" max="1" step="0.001" value={progress} disabled={disabled}
+      aria-label="视频回放时间轴" aria-valuetext={valueText} onChange={event => onSeek(Number(event.target.value))}
+      onPointerMove={event => {
+        if (event.pointerType !== "mouse" || event.buttons !== 0) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        // Native range thumbs travel between the two half-thumb insets.
+        setHover(clamp((event.clientX - bounds.left - 7) / Math.max(1, bounds.width - 14)));
+      }}
+      onPointerLeave={() => setHover(null)} onPointerDown={() => setHover(null)}
+      onBlur={() => setHover(null)} onKeyDown={() => setHover(null)} />
+  </div>;
+}
+
 export function setReplayRate(video: Pick<HTMLVideoElement, "playbackRate"> | null, rate: number) {
   if (!video || !PLAYBACK_RATES.some(value => value === rate)) return false;
   video.playbackRate = rate;
@@ -444,7 +471,9 @@ export default function BallTrajectoryViewer({
         {canPlayVideo && !playing && <button type="button" className="replay-stage-play" aria-label="播放视频" onClick={togglePlayback}><PlaybackIcon playing={false} /></button>}
       </div>
       <div className="ball-trajectory-controls">
-        <input className="replay-scrubber" type="range" min="0" max="1" step="0.001" value={progress} disabled={!canPlayVideo && !hasData} onChange={(event) => seek(Number(event.target.value))} aria-label="视频回放时间轴" aria-valuetext={`${currentTimeLabel}，总时长 ${durationLabel}`} style={{ backgroundSize: `${progress * 100}% 100%` }} />
+        <ReplayScrubber progress={progress} startMs={activeRange.start - videoTimeOriginMs} endMs={activeRange.end - videoTimeOriginMs}
+          completeVideo={canPlayVideo && durationMs > 0 && activeRange.start === videoTimeOriginMs && Math.abs(activeRange.end - videoTimeOriginMs - durationMs) < 1}
+          disabled={!canPlayVideo && !hasData} valueText={`${currentTimeLabel}，总时长 ${durationLabel}`} onSeek={seek} />
         <div className="replay-control-row">
           <button className="replay-play-toggle" type="button" onClick={togglePlayback} disabled={!canPlayVideo} aria-label={playing ? "暂停视频" : "播放视频"} title={playing ? "暂停视频" : "播放视频"}><PlaybackIcon playing={playing} /></button>
           <span className="replay-clock"><time>{currentTimeLabel}</time><span aria-hidden="true">/</span><time>{durationLabel}</time></span>

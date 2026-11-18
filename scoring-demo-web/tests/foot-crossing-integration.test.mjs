@@ -130,9 +130,9 @@ test("only FS03-M03 gains a collapsed independent entry without changing grade o
 
 test("the replay container labels original or unavailable media while retaining old callers", () => {
   const original = renderToStaticMarkup(createElement(TrainingReplayPanel, { jobId: "job-live", mediaKind: "original" }, "player"));
-  assert.match(original, /原视频 · 动作识别/); assert.doesNotMatch(original, /标注回放/);
+  assert.match(original, /关键动作片段/); assert.doesNotMatch(original, /标注回放/);
   const unknown = renderToStaticMarkup(createElement(TrainingReplayPanel, { mediaKind: null }, "player"));
   assert.match(unknown, /训练回放/); assert.doesNotMatch(unknown, /原视频|原片|标注回放/);
   const legacy = renderToStaticMarkup(createElement(TrainingReplayPanel, null, "player"));
-  assert.match(legacy, /原视频 · 动作识别/);
+  assert.match(legacy, /关键动作片段/);
 });

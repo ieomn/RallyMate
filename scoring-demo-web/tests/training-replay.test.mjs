@@ -32,7 +32,7 @@ test("original replay remains visible with the job-scoped calibration target and
   const html = renderToStaticMarkup(createElement(TrainingReplayPanel, { jobId: "job-original-123" },
     createElement("video", { src: "/source.mp4", "data-replay-role": "original", controls: true })));
   assert.match(html, /id="evidence"[^>]*data-job-id="job-original-123"/);
-  assert.match(html, /原视频 · 动作识别/);
+  assert.match(html, /关键动作片段/);
   assert.match(html, /<div id="replay-view-original"><video[^>]*data-replay-role="original"/);
   assert.doesNotMatch(html, /hidden|tablist|tabpanel|白模|AI|创建|重试|replay-view-motion/);
 });

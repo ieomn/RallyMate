@@ -32,10 +32,10 @@ const result = () => ({ job_id: "review-test-job", input: { video: { duration_ms
 } });
 const recommendations = (value, props = {}) => renderToStaticMarkup(createElement(TrainingRecommendations, { result: value, motion: null, pending: false, ...props }));
 
-test("a legacy report waits for the new score while replay stays above folded measurements", () => {
+test("a legacy report shows its supported training focus while replay stays above folded measurements", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, status: "succeeded", journal: createElement("div", { id: "test-journal" }, "journal"), replay: createElement("div", { id: "test-replay" }, "replay") }));
   const primary = html.slice(0, html.indexOf('id="details"'));
-  assert.equal((primary.match(/暂无可展示的结果/g) ?? []).length, 1);
+  assert.match(primary, /这次先看什么/); assert.match(primary, /下一次怎么练/); assert.doesNotMatch(primary, /暂无可展示的结果/);
   assert.ok(primary.includes('id="test-replay"'));
   assert.doesNotMatch(primary, /process-overall-reference|0 \/ 5|中性先验|298.*评分卡/);
   assert.ok(html.indexOf('id="details"') < html.indexOf('id="test-journal"'));
@@ -50,7 +50,7 @@ test("height and speed observations produce distinct practice goals with visible
   assert.equal(rows.filter(row => row.evidenceState !== "unavailable").length, 2);
   assert.notEqual(rows[0].question, rows[1].question);
   assert.match(rows[0].goal, /膝髋/); assert.match(rows[1].goal, /来球方向/);
-  assert.deepEqual(focusSelection(rows[0]), { title: rows[0].title, question: `${rows[0].goal} 复测：${rows[0].retest}`, timestampMs: 1000 });
+  assert.deepEqual(focusSelection(rows[0]), { title: rows[0].title, question: `${rows[0].drill} ${rows[0].goal} 复测：${rows[0].retest}`, timestampMs: 1000 });
   const html = recommendations(result());
   const visible = html.replace(/<details class="focus-evidence-detail">[\s\S]*?<\/details>/g, "");
   assert.match(visible, /本次观察/);
@@ -92,7 +92,7 @@ test("valid model estimates are identified once and never become confirmed visib
 
 test("continuous playback stays above the saved training journal and folded technical details", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, journal: createElement("section", { id: "test-journal" }, "训练记录"), replay: createElement("video", { id: "test-original" }) }));
-  assert.ok(html.indexOf('id="test-original"') < html.indexOf('id="assessment"'));
+  assert.ok(html.indexOf('id="test-original"') < html.indexOf('id="recommendations"'));
   assert.ok(html.indexOf('id="test-original"') < html.indexOf('id="details"'));
   assert.ok(html.indexOf('id="details"') < html.indexOf('id="test-journal"'));
   assert.doesNotMatch(html, /<details[^>]*open=/);

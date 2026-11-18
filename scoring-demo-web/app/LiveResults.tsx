@@ -4,12 +4,12 @@ import { productText } from "./lib/presentation-text";
 
 import { useState, type ReactNode } from "react";
 import TrainingReportOverview from "./TrainingReportOverview";
-import TennisAssessmentSummary, { ClipMeasurements, TennisAssessmentDetails } from "./TennisAssessmentSummary";
+import TennisAssessmentSummary, { ClipMeasurements, SavePractice, TennisAssessmentDetails, TennisScoreDetails } from "./TennisAssessmentSummary";
 import { tennisAssessmentOf } from "./lib/tennis-assessment";
 import CourtSimulationPanel from "./CourtSimulationPanel";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
 import ActionTimeline from "./ActionTimeline";
-import { analysisReportOf } from "./lib/training-report";
+import { analysisReportOf, replayMoment } from "./lib/training-report";
 import type { DemoResultResponse, MotionEpisode, MotionFamily, TechniqueAssessmentItem, TechniqueAssessmentResponse, TrajectoryPreviewResponse } from "./lib/api-types";
 import { analysisPresentation, summarizeActionCandidates, summarizeLiveStats } from "./lib/live-stats";
 import { motionAnalysisOf } from "./lib/motion-analysis";
@@ -93,8 +93,8 @@ function LiveStats({ result, trajectory, summary }: { result: DemoResultResponse
   </section>;
 }
 
-export default function LiveResults({ result, assessment, pending, trajectory, summary, status, error, replay, journal, details, coaching, assessmentLoading, assessmentError, assessmentMessage, assessmentOffline, onRetryAssessment, candidateContext, onSaveFocus, replayAvailable = true, pagedActions, onOpenDetails, loadMotionEpisode }: { loadMotionEpisode?: (episode: MotionEpisode, signal: AbortSignal) => Promise<MotionEpisode>; pagedActions?: ReactNode; onOpenDetails?: () => void; result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode; journal?: ReactNode; details?: ReactNode; coaching?: ReactNode; assessmentLoading?: boolean; assessmentError?: boolean; assessmentMessage?: string; assessmentOffline?: boolean; onRetryAssessment?: () => void; candidateContext?: FootCrossingPanelContext; onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean }) {
-  result = result ? normalizeMeasurementResult(result) : null;
+export default function LiveResults({ result: rawResult, assessment, pending, trajectory, summary, status, error, replay, journal, details, coaching, assessmentLoading, assessmentError, assessmentMessage, assessmentOffline, onRetryAssessment, candidateContext, onSaveFocus, replayAvailable = true, pagedActions, onOpenDetails, loadMotionEpisode }: { loadMotionEpisode?: (episode: MotionEpisode, signal: AbortSignal) => Promise<MotionEpisode>; pagedActions?: ReactNode; onOpenDetails?: () => void; result: DemoResultResponse | null; assessment: TechniqueAssessmentResponse | null; pending: boolean; trajectory: TrajectoryPreviewResponse | null; summary?: Record<string, unknown> | null; status?: string; error?: string | null; replay?: ReactNode; journal?: ReactNode; details?: ReactNode; coaching?: ReactNode; assessmentLoading?: boolean; assessmentError?: boolean; assessmentMessage?: string; assessmentOffline?: boolean; onRetryAssessment?: () => void; candidateContext?: FootCrossingPanelContext; onSaveFocus?: (focus: TrainingFocusSelection) => boolean; replayAvailable?: boolean }) {
+  const result = rawResult ? normalizeMeasurementResult(rawResult) : null;
   const [chosenFamily, setFamily] = useState("");
   const [selected, setSelected] = useState("");
   const [query, setQuery] = useState("");
@@ -132,18 +132,26 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
 
   return <div className="live-results" data-status={presentation.state}>
     <div className="review-spread">
-      {replay && <ReportClipSelection.Provider value={setClip}><div className="report-replay-area">{replay}</div></ReportClipSelection.Provider>}
-      <aside className="review-rail" aria-label="动作观察与训练重点">
-      {clip && <ClipMeasurements clip={clip} report={tennis} />}
-      <TennisAssessmentSummary report={tennis} loading={assessmentLoading || pending} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
-      {legacyFocus && <section className="review-legacy" id="recommendations"><span className="review-label">本次观察</span><h3>{legacyFocus.title}</h3>
-        <p>{legacyFocus.observation}</p><p className="review-next"><span className="review-label">下次先练</span>{legacyFocus.drill}</p>
-        <details><summary>练习依据与复测</summary><p>{legacyFocus.limitation}</p><p>{legacyFocus.retest}</p></details>
-        {onSaveFocus && <button className="product-secondary" type="button" onClick={() => onSaveFocus(focusSelection(legacyFocus))}>保存练习</button>}</section>}
+      {replay && <ReportClipSelection.Provider value={{ clip, onSelect: setClip }}><div className="report-replay-area">{replay}</div></ReportClipSelection.Provider>}
+      <aside className="review-rail" id="recommendations" aria-label="训练重点">
+        {legacyFocus ? <section className="review-legacy">
+          <span className="review-label">{legacyFocus.label === "本次评分重点" ? "这次先改什么" : "这次先看什么"}</span>
+          <h3>{legacyFocus.title}</h3>
+          <p className="tennis-observation">{legacyFocus.goal}</p>
+          <p className="review-next"><span className="review-label">下一次怎么练</span>{legacyFocus.drill}</p>
+          <div className="tennis-drill-actions">
+            {legacyFocus.moment && replayAvailable && <button type="button" onClick={() => replayMoment(legacyFocus.moment!, result?.job_id)}>回看片段</button>}
+            <SavePractice key={legacyFocus.id} focus={focusSelection(legacyFocus)} onSaveFocus={onSaveFocus} />
+          </div>
+        </section> : <TennisAssessmentSummary report={tennis} loading={assessmentLoading || pending} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />}
       </aside>
     </div>
-    {coaching}
-    {(result || assessment || trajectory) && <details className="report-all-details" id="details" onToggle={event => { if (event.currentTarget.open) onOpenDetails?.(); }}><summary>详细分析<span>测量依据与训练记录</span></summary><div className="report-all-details-content">
+    {(result || assessment || trajectory) && <details className="report-all-details" id="details" onToggle={event => { if (event.currentTarget === event.target && event.currentTarget.open) onOpenDetails?.(); }}><summary>详细数据<span>评分、测量与训练记录</span></summary><div className="report-all-details-content">
+    {tennis && <TennisScoreDetails report={tennis} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />}
+    {clip && <ClipMeasurements clip={clip} report={tennis} />}
+    {legacyFocus && <section className="review-legacy-evidence"><h3>练习依据与复测</h3><p>{legacyFocus.observation}</p><p>{legacyFocus.limitation}</p><p>{legacyFocus.retest}</p>
+      {(assessmentError || assessmentMessage || assessmentLoading) && <TennisAssessmentSummary report={null} loading={assessmentLoading} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} />}
+    </section>}
     {tennis && <details className="review-evidence-group"><summary>逐项评分与测量</summary><TennisAssessmentDetails report={tennis} /></details>}
     {journal}{details}
     <details className="replay-segments"><summary>全部动作片段</summary><ActionTimeline result={result} motion={motionAnalysis} />{pagedActions}</details>
@@ -173,5 +181,6 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
     </section>
     </details>
     </TrainingReportOverview></div></div></details>}
+    {coaching}
   </div>;
 }

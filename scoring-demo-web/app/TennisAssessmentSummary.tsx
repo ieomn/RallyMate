@@ -1,11 +1,11 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { TENNIS_PATTERN_NAMES, type TennisAssessment, type TennisImprovement } from "./lib/tennis-assessment";
 import type { TrainingFocusSelection } from "./lib/training-guidance";
 import { productText } from "./lib/presentation-text";
 import { tennisEvidenceReason } from "./lib/tennis-evidence-status";
-import { tennisImprovementFocus } from "./lib/tennis-practice";
+import { primaryTennisPractice, tennisImprovementFocus } from "./lib/tennis-practice";
 import { footworkUnitText } from "./lib/footwork-review";
 import type { ReplayClip } from "./lib/replay-clips";
 import JointKinematicsDetails from "./JointKinematicsDetails";
@@ -14,7 +14,7 @@ import "./tennis-assessment.css";
 
 const scoreText = (value: number) => value.toFixed(1);
 const metricUnit = (unit: string) => unit === "hip_width" ? "倍髋宽" : footworkUnitText(unit);
-const seconds = (value: number) => (value / 1000).toFixed(1);
+const seconds = (value: number) => (value / 1000).toFixed(2);
 const observationParts = (value: string) => {
   const text = productText(value);
   const marker = text.search(/(?:姿态估计|测量汇总)：/);
@@ -55,28 +55,41 @@ function TennisRadar({ report }: { report: TennisAssessment }) {
   </svg>;
 }
 
-type PracticeActions = { onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean };
+type PracticeActions = { onSaveFocus?: (focus: TrainingFocusSelection) => boolean; replayAvailable?: boolean };
+
+export function SavePractice({ focus, onSaveFocus }: PracticeActions & { focus: TrainingFocusSelection }) {
+  const [saved, setSaved] = useState<boolean | null>(null);
+  if (!onSaveFocus) return null;
+  return <><button type="button" disabled={saved === true} onClick={() => setSaved(onSaveFocus(focus))}>
+    {saved ? "已保存练习" : "保存练习"}
+  </button><span role="status" className="practice-save-status">{saved === false ? "保存失败，请检查浏览器存储权限后重试。" : saved ? "已记入此浏览器的训练记录。" : ""}</span></>;
+}
 
 function Practice({ item, report, priority, replayAvailable, onSaveFocus }: PracticeActions & {
   item: TennisImprovement; report: TennisAssessment; priority: boolean;
 }) {
   const detail = observationParts(item.observation);
   return <article className="tennis-drill">
-    {priority && <span className="review-label">本次训练重点</span>}
+    {priority && <span className="review-label">这次先改什么</span>}
     <h3>{productText(item.title)}</h3>
     {detail.observation && <p className="tennis-observation">{detail.observation}</p>}
-    <p className="review-next"><span className="review-label">下次先练</span>{productText(item.action)}</p>
-    <details className="review-drill-steps"><summary>练习步骤与复测</summary>
-      <dl><div><dt>怎么练</dt><dd>{productText(item.drill)}</dd></div><div><dt>复测目标</dt><dd>{productText(item.retest)}</dd></div></dl>
-      {detail.measurement && <p className="tennis-observation-measurement"><span>测量依据</span>{detail.measurement}</p>}
-    </details>
+    <p className="review-next"><span className="review-label">下一次怎么练</span>{productText(item.drill)}</p>
+    {!priority && <PracticeEvidence item={item} />}
     <div className="tennis-drill-actions">
       {item.start_ms !== null && item.end_ms !== null && (replayAvailable
         ? <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { jobId: report.source_run_id, timestampMs: item.start_ms, preferOriginal: true } }))}>回看片段 <time>{seconds(item.start_ms)}–{seconds(item.end_ms)} 秒</time></button>
         : <time>对应片段 {seconds(item.start_ms)}–{seconds(item.end_ms)} 秒</time>)}
-      {onSaveFocus && <button type="button" onClick={() => onSaveFocus(tennisImprovementFocus(item))}>保存练习</button>}
+      <SavePractice key={`${item.dimension_id}:${item.start_ms}:${item.title}`} focus={tennisImprovementFocus(item)} onSaveFocus={onSaveFocus} />
     </div>
   </article>;
+}
+
+function PracticeEvidence({ item }: { item: TennisImprovement }) {
+  const { measurement } = observationParts(item.observation);
+  return <details className="review-drill-steps"><summary>动作提示与复测目标</summary>
+    <dl><div><dt>动作提示</dt><dd>{productText(item.action)}</dd></div><div><dt>复测目标</dt><dd>{productText(item.retest)}</dd></div></dl>
+    {measurement && <p className="tennis-observation-measurement"><span>测量依据</span>{measurement}</p>}
+  </details>;
 }
 
 export function ClipMeasurements({ clip, report }: { clip: ReplayClip; report: TennisAssessment | null }) {
@@ -96,20 +109,33 @@ export function ClipMeasurements({ clip, report }: { clip: ReplayClip; report: T
 export default function TennisAssessmentSummary({ report, loading, error, message, offline = false, onRetry, onSaveFocus, replayAvailable = true }: PracticeActions & {
   report: TennisAssessment | null; loading?: boolean; error?: boolean; message?: string; offline?: boolean; onRetry?: () => void;
 }) {
-  if (!report) return <section className="tennis-assessment-wait" id="assessment" role="status">
-    <h2>动作评分</h2><p>{loading && !error && !message && !offline ? "正在生成动作评分" : "暂无可展示的结果"}</p>
-    {message ? <p>{productText(message)}</p> : error ? <p>动作评分读取失败，可重试。</p>
-      : offline ? <p>这份导入报告未包含可核验的动作评分。</p> : null}
-    {!loading && onRetry && !offline && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
+  const priority = primaryTennisPractice(report);
+  if (report && priority) return <div className="tennis-training-result">
+    <Practice item={priority} report={report} priority onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
+  </div>;
+  const waiting = !report && loading && !offline && !error && !message;
+  return <section className="tennis-assessment-wait" role="status">
+    <h2>{waiting ? "正在整理训练重点" : "本次训练重点"}</h2>
+    <p>{message ? productText(message) : error ? "暂时无法读取动作观察。" : waiting ? "动作测量完成后，这里会显示练习建议。" :
+      report?.reason_zh ? productText(report.reason_zh) : !report && offline ? "这份导入报告未包含可核验的动作评分。" : "这份报告没有定位到需要优先调整的动作。"}</p>
+    {!waiting && !error && !message && <p className="review-next"><span className="review-label">下一次怎么练</span>选一个熟悉的动作，以舒适的速度重复一组，保留完整的准备、挥拍和回位，供下次对照。</p>}
+    {!waiting && !offline && onRetry && (!report || report.status === "unavailable") && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
   </section>;
+}
+
+export function TennisScoreDetails({ report, onSaveFocus, replayAvailable = true }: PracticeActions & { report: TennisAssessment }) {
+  const generalPractice = report.improvements.filter(item =>
+    report.dimensions.some(dimension => dimension.id === item.dimension_id && dimension.score === null));
+  const reference = generalPractice.length > 0 && <details className="review-more"><summary>基础练习参考</summary>
+    {generalPractice.map(item => <section key={item.dimension_id}><p>{productText(item.action)}</p><p>{productText(item.drill)}</p><p>{productText(item.retest)}</p></section>)}
+  </details>;
   if (report.status === "unavailable") return <section className="tennis-assessment-wait" id="assessment">
-    <h2>动作评分</h2><p>暂无可展示的结果</p><p>{productText(report.reason_zh) || "当前没有连续可测的动作。"} 未测项目不按零分或动作错误处理。</p>
-    <p>{productText(report.improvements[0]?.action) || "下次拍摄时，请把全身、双脚和完整挥拍留在画面内。"}</p>
-    {onRetry && !offline && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
+    <h2>动作评分</h2><p>本次没有可计分的动作测量。</p>{reference}
   </section>;
-  const [priority, ...otherDrills] = report.improvements;
+  const priority = primaryTennisPractice(report);
+  const otherDrills = report.improvements.filter(item => item !== priority && !generalPractice.includes(item));
   const measured = report.dimensions.filter(item => item.score !== null).length;
-  return <div className="tennis-training-result">
+  return <div className="tennis-training-result review-score-details">
     <section className="tennis-score-card" id="assessment" aria-labelledby="tennis-score-title">
       <div className="review-score-heading"><h2 id="tennis-score-title">动作评分</h2><span className="review-label">全片 · 已测 {measured} / 5 项</span></div>
       <div className="tennis-score-number"><strong>{report.overall_score === null ? "—" : scoreText(report.overall_score)}</strong><span>/ 100</span></div>
@@ -121,7 +147,8 @@ export default function TennisAssessmentSummary({ report, loading, error, messag
         <SubjectAndPatternScope report={report} />
       </details>
     </section>
-    {priority && <section id="recommendations" aria-label="本次训练重点"><Practice item={priority} report={report} priority onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} /></section>}
+    {priority && <PracticeEvidence item={priority} />}
+    {reference}
     {(otherDrills.length > 0 || report.strengths.length > 0) && <details className="review-more"><summary>其他练习与优势</summary>
       {otherDrills.map(item => <Practice key={item.dimension_id} item={item} report={report} priority={false} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />)}
       {!!report.strengths.length && <section className="review-strengths"><h3>继续保持</h3><ul>{report.strengths.map((item, index) => <li key={index}><strong>{productText(item.title)}</strong><p>{productText(item.observation)}</p></li>)}</ul></section>}

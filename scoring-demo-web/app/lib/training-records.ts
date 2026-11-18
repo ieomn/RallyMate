@@ -1,6 +1,7 @@
-import type { DemoResultResponse, TrajectoryPreviewResponse } from "./api-types";
+import type { DemoResultResponse, JobSubmission, TrajectoryPreviewResponse } from "./api-types";
 import { accountStorageKey } from "./account-storage";
 import type { PersonalJobRecord } from "./api-client";
+import { reportDateOf } from "./workspace-navigation";
 
 export const TRAINING_JOURNAL_KEY = "rallymate.trainingJournal.v1";
 export const LEGACY_REPORTS_KEY = "rallymate.recentReports";
@@ -8,7 +9,7 @@ export type TrainingFocus = { id: string; title: string; question: string; times
 export type TrainingReplay = { kind: "annotated"; originMs: number; endMs: number; timingPreserved: true };
 export type TrainingFollowUp = { recordId: string; focus: TrainingFocus };
 export type TrainingRecord = {
-  id: string; jobId?: string; source: "online" | "imported"; name: string; originalName: string;
+  id: string; jobId?: string; source: "online" | "imported"; name: string; originalName: string; pendingDefaultName?: true;
   theme: string; notes: string; createdAt: string; viewedAt: string; focuses: TrainingFocus[];
   followUp?: TrainingFollowUp; replay?: TrainingReplay;
   status?: PersonalJobRecord["status"]; submittedAt?: string; completedAt?: string | null;
@@ -16,7 +17,7 @@ export type TrainingRecord = {
 export type TrainingJournal = { version: 1; records: TrainingRecord[]; pendingFocus?: TrainingFollowUp };
 export type TrainingVisit = {
   jobId?: string; name: string; source: "online" | "imported"; sourceId?: string; linkPending?: boolean;
-  result?: DemoResultResponse | null; trajectory?: TrajectoryPreviewResponse | null;
+  result?: DemoResultResponse | null; trajectory?: TrajectoryPreviewResponse | null; job?: JobSubmission | null;
 };
 export type TrainingRecordPatch = Pick<TrainingRecord, "name" | "theme" | "notes">;
 export type JournalStorage = Pick<Storage, "getItem" | "setItem">;
@@ -26,13 +27,13 @@ const jobIdOf = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9_-]
 const time = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const date = (value: unknown) => typeof value === "string" && Number.isFinite(Date.parse(value)) ? value : "";
 const basename = (name: string) => name.split(/[\\/]/).pop() || "训练视频";
-function defaultName(originalName: string, viewedAt: string) {
+export function trainingTitleFromFile(originalName: string, job?: unknown): Pick<TrainingRecord, "name" | "pendingDefaultName"> {
   const stem = originalName.replace(/\.[a-z0-9]{2,5}$/i, "");
-  if (/^[a-f\d-]{16,}$/i.test(stem)) {
-    const parts = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric" }).formatToParts(new Date(viewedAt));
-    return `${parts.find(part => part.type === "month")?.value}月${parts.find(part => part.type === "day")?.value}日训练复盘`;
-  }
-  return stem || "未命名训练";
+  if (stem && originalName !== "训练视频" && !/^[a-f\d-]{16,}$/i.test(stem)) return { name: stem };
+  const recorded = reportDateOf(job);
+  if (!recorded) return { name: "训练复盘", pendingDefaultName: true };
+  const day = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "long", day: "numeric" }).format(new Date(recorded.iso));
+  return { name: `${day}训练复盘` };
 }
 
 export function journalRecordId(source: "online" | "imported", jobId?: string, sourceId?: string): string {
@@ -71,7 +72,7 @@ export function trainingJournalOf(value: unknown): TrainingJournal {
     if (item.source !== "online" && item.source !== "imported" || typeof item.id !== "string" || ids.has(item.id) || !date(item.createdAt) || !date(item.viewedAt)) continue;
     if (item.source === "online" ? !jobId || item.id !== journalRecordId("online", jobId) : !item.id.startsWith("imported:")) continue;
     const focuses = (Array.isArray(item.focuses) ? item.focuses : []).map(trainingFocusOf).filter((focus): focus is TrainingFocus => Boolean(focus));
-    records.push({ id: item.id, source: item.source, ...(jobId ? { jobId } : {}), name: text(item.name, 160) || "未命名训练", originalName: text(item.originalName, 160), theme: text(item.theme, 120), notes: text(item.notes, 2000), createdAt: date(item.createdAt), viewedAt: date(item.viewedAt), focuses: [...new Map(focuses.map(focus => [focus.id, focus])).values()], followUp: followUpOf(item.followUp), replay: item.source === "online" ? replayOf(item.replay) : undefined });
+    records.push({ id: item.id, source: item.source, ...(jobId ? { jobId } : {}), name: text(item.name, 160) || "未命名训练", ...(item.pendingDefaultName === true && item.name === "训练复盘" ? { pendingDefaultName: true as const } : {}), originalName: text(item.originalName, 160), theme: text(item.theme, 120), notes: text(item.notes, 2000), createdAt: date(item.createdAt), viewedAt: date(item.viewedAt), focuses: [...new Map(focuses.map(focus => [focus.id, focus])).values()], followUp: followUpOf(item.followUp), replay: item.source === "online" ? replayOf(item.replay) : undefined });
     ids.add(item.id);
   }
   return { version: 1, records, pendingFocus: followUpOf(input.pendingFocus) };
@@ -86,7 +87,7 @@ export function migrateTrainingHistory(journal: TrainingJournal, legacy: unknown
     const id = journalRecordId("online", jobId);
     if (ids.has(id)) continue;
     const originalName = basename(text(item.name, 160));
-    records.push({ id, jobId, source: "online", name: defaultName(originalName, viewedAt), originalName, theme: "", notes: "", createdAt: viewedAt, viewedAt, focuses: [] }); ids.add(id);
+    records.push({ id, jobId, source: "online", ...trainingTitleFromFile(originalName), originalName, theme: "", notes: "", createdAt: viewedAt, viewedAt, focuses: [] }); ids.add(id);
   }
   return { ...journal, records };
 }
@@ -104,8 +105,10 @@ export function personalHistoryRecords(local: TrainingRecord[], rows: PersonalJo
   return [...rows.map(job => {
     const id = journalRecordId("online", job.id), existing = local.find(record => record.id === id);
     const originalName = basename(job.original_filename), createdAt = job.created_at;
-    return { id, jobId: job.id, source: "online" as const, name: defaultName(originalName, createdAt),
+    const title = existing && !existing.pendingDefaultName ? { name: existing.name } : trainingTitleFromFile(originalName, job);
+    return { id, jobId: job.id, source: "online" as const,
       originalName, theme: "", notes: "", focuses: [], createdAt, viewedAt: createdAt, ...existing,
+      name: title.name, pendingDefaultName: title.pendingDefaultName,
       status: job.status, submittedAt: job.created_at, completedAt: job.completed_at };
   }), ...local.filter(record => record.source === "imported")];
 }
@@ -116,13 +119,14 @@ export function visitTrainingReport(journal: TrainingJournal, visit: TrainingVis
   const existing = journal.records.find(item => item.id === id), originalName = basename(visit.name).slice(0, 160);
   const linked = visit.linkPending && journal.pendingFocus?.recordId !== id ? journal.pendingFocus : undefined;
   const replay = trainingReplayOf(visit);
+  const title = trainingTitleFromFile(originalName, visit.job);
   const record: TrainingRecord = existing
-    ? { ...existing, viewedAt: now, ...(replay ? { replay } : {}), ...(linked && !existing.followUp ? { followUp: linked } : {}) }
-    : { id, source: visit.source, ...(jobIdOf(visit.jobId) ? { jobId: visit.jobId } : {}), name: defaultName(originalName, now), originalName, theme: "", notes: "", createdAt: now, viewedAt: now, focuses: [], ...(linked ? { followUp: linked } : {}), ...(replay ? { replay } : {}) };
+    ? { ...existing, ...(existing.pendingDefaultName && !title.pendingDefaultName ? { name: title.name, originalName, pendingDefaultName: undefined } : {}), viewedAt: now, ...(replay ? { replay } : {}), ...(linked && !existing.followUp ? { followUp: linked } : {}) }
+    : { id, source: visit.source, ...(jobIdOf(visit.jobId) ? { jobId: visit.jobId } : {}), ...title, originalName, theme: "", notes: "", createdAt: now, viewedAt: now, focuses: [], ...(linked ? { followUp: linked } : {}), ...(replay ? { replay } : {}) };
   return { ...journal, records: [record, ...journal.records.filter(item => item.id !== id)], ...(visit.linkPending ? { pendingFocus: undefined } : {}) };
 }
 export function updateTrainingRecord(journal: TrainingJournal, id: string, patch: TrainingRecordPatch): TrainingJournal {
-  return { ...journal, records: journal.records.map(item => item.id === id ? { ...item, name: text(patch.name, 160) || "未命名训练", theme: text(patch.theme, 120), notes: text(patch.notes, 2000) } : item) };
+  return { ...journal, records: journal.records.map(item => item.id === id ? { ...item, name: text(patch.name, 160) || "未命名训练", ...(text(patch.name, 160) !== item.name ? { pendingDefaultName: undefined } : {}), theme: text(patch.theme, 120), notes: text(patch.notes, 2000) } : item) };
 }
 export function saveTrainingFocus(journal: TrainingJournal, id: string, value: TrainingFocus): TrainingJournal {
   const focus = trainingFocusOf(value);

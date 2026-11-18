@@ -17,4 +17,44 @@
 .replay-clips-anchors span, .replay-clips-anchors time { display:block; }
 .replay-clips-anchors time { margin-top:3px; color:var(--product-muted,#637166); font-size:11px; font-variant-numeric:tabular-nums; }
 .replay-clips-notice { color:var(--product-text,#1b2920); }
+.product-analysis .replay-clips .review-timeline-cursor {
+  inset-block: 0;
+  height: auto;
+  border-top: 2px solid var(--product-accent);
+  background: color-mix(in srgb, var(--product-accent) 10%, transparent);
+  transition: transform 340ms cubic-bezier(.23,.9,.27,1), width 340ms cubic-bezier(.23,.9,.27,1), opacity 140ms ease-out;
+}
+.product-analysis .replay-clips .review-timeline button {
+  position: relative;
+  background: transparent;
+  border-top-color: color-mix(in srgb, var(--product-border) 65%, transparent);
+}
+.product-analysis .replay-clips .review-timeline button[aria-pressed="true"] { border-top-color: transparent; }
+.replay-anchor-detail { margin-top: 4px; }
+.replay-anchor-detail > summary { width: fit-content; min-height: 40px; align-content: center; cursor: pointer; color: var(--product-muted); font-size: .8rem; }
+.replay-anchor-detail .replay-clips-anchors { margin: 0 0 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports selector(details::details-content) and (not (interpolate-size: allow-keywords)) {
+    .product-analysis :is(.report-all-details, .replay-anchor-detail)::details-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 280ms cubic-bezier(.22,.8,.28,1), content-visibility 280ms allow-discrete;
+    }
+    .product-analysis :is(.report-all-details, .replay-anchor-detail)[open]::details-content { grid-template-rows: 1fr; }
+    .product-analysis :is(.report-all-details-content, .replay-clips-anchors) { min-height: 0; overflow: clip; }
+  }
+  @supports (interpolate-size: allow-keywords) and selector(details::details-content) {
+    .product-analysis :is(.replay-anchor-detail, .report-all-details, .review-drill-steps, .review-evidence-group, .review-shot-statistics, .review-coach)::details-content {
+      interpolate-size: allow-keywords;
+      block-size: 0;
+      overflow: clip;
+      overflow-clip-margin: 3px;
+      transition: block-size 280ms cubic-bezier(.22,.8,.28,1), content-visibility 280ms allow-discrete;
+    }
+    .product-analysis :is(.replay-anchor-detail, .report-all-details, .review-drill-steps, .review-evidence-group, .review-shot-statistics, .review-coach)[open]::details-content { block-size: auto; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-analysis .replay-clips .review-timeline-cursor { transition: none; }
+}
 @media (max-width:640px) { .replay-clips { padding:14px; } .replay-clips-controls label { flex-basis:100%; } .replay-clips-controls > button { flex:1; } }

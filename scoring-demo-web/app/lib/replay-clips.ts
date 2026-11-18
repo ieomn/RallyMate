@@ -13,8 +13,7 @@ const validRange = (start: unknown, end: unknown): boolean => finite(start) && f
 const phaseNames: Record<string, string> = { preparation: "准备", acceleration: "加速挥拍", swing: "挥拍", follow_through: "随挥", recovery: "恢复", loading: "蓄势" };
 
 /** Retain source boundaries; context is added only when a particular video is played. */
-export function replayClipsOf(result: DemoResultResponse | null, motion: MotionAnalysis | null): ReplayClip[] {
-  const assessment = tennisAssessmentOf(result);
+export function replayClipsOf(result: DemoResultResponse | null, motion: MotionAnalysis | null, assessment = tennisAssessmentOf(result)): ReplayClip[] {
   if (assessment?.episodes !== undefined) return assessment.episodes.map(episode => ({
     id: `tennis:${episode.episode_id}`, label: episode.family === "serve" ? "发球动作" : episode.family === "return" ? "接发动作" : "挥拍动作",
     kind: "motion", startMs: episode.start_ms, endMs: episode.end_ms,
@@ -83,7 +82,7 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
   let pending: { sourceMs: number; play: boolean } | null = null;
   let last: { sourceMs: number; play: boolean; rate: number } | null = null;
   let explicitSwitchTarget: { sourceMs: number; play: boolean } | null = null;
-  let deferredClipStart: "context" | "action" | null = null;
+  let deferredClipStart: { position: "context" | "action"; play: boolean } | null = null;
   let awaitingMetadata = false, attachment = 0, playbackRequest = 0;
   let metadataRestore: { sourceMs: number; play: boolean; rate: number } | null = null;
   let remove = () => {};
@@ -103,9 +102,9 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
     }
     const request = pending, current = media, ticket = ++playbackRequest;
     pending = null; notice = "";
-    current.pause();
+    if (!request.play && !current.paused) current.pause();
     current.currentTime = seconds;
-    if (request.play) void current.play().catch(() => { if (media === current && ticket === playbackRequest && current.paused) { notice = "视频已定位，请按播放继续。"; emit(); } });
+    if (request.play && current.paused) void current.play().catch(() => { if (media === current && ticket === playbackRequest && current.paused) { notice = "视频已定位，请按播放继续。"; emit(); } });
     last = { sourceMs: request.sourceMs, play: request.play, rate: current.playbackRate };
     emit();
   };
@@ -119,9 +118,9 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
   const onProgress = (ended = false) => {
     if (deferredClipStart && clip && media && ready() && !awaitingMetadata) {
       const range = replayRangeForMedia(clip, origin, media.duration);
-      const position = deferredClipStart;
+      const { position, play } = deferredClipStart;
       deferredClipStart = null;
-      if (range) pending = { sourceMs: position === "action" ? clip.startMs : range.startMs, play: true };
+      if (range) pending = { sourceMs: position === "action" ? clip.startMs : range.startMs, play };
     }
     flush();
     if (media && ready() && clip && !media.seeking && (!media.paused || ended) && !pending && !awaitingMetadata) {
@@ -147,6 +146,14 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
       explicitSwitchTarget = null;
       const metadata = (event?: Event) => {
         if (clip && ready() && !replayRangeForMedia(clip, origin, next.duration)) { clip = null; looping = false; deferredClipStart = null; }
+        // A drag on the full-video scrubber leaves the clip; its end boundary
+        // must not pull the viewer back after they choose a different moment.
+        if (event?.type === "seeking" && clip && !awaitingMetadata && !pending) {
+          const range = replayRangeForMedia(clip, origin, next.duration);
+          if (range && (sourceTime() < range.startMs - 1 || sourceTime() > range.endMs + 1)) {
+            clip = null; looping = false;
+          }
+        }
         // durationchange may expose a seekable range before loadedmetadata.
         // Keep the transfer target until React's view-local metadata handler
         // has finished restoring its default time/rate, even if an eager
@@ -166,20 +173,23 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
         }
         else onProgress(event?.type === "ended");
       };
-      const events = ["loadedmetadata", "loadeddata", "durationchange", "canplay", "progress", "timeupdate", "seeked", "play", "pause", "ended"];
+      const events = ["loadedmetadata", "loadeddata", "durationchange", "canplay", "progress", "timeupdate", "seeking", "seeked", "play", "pause", "ended"];
       for (const name of events) next.addEventListener(name, metadata);
       remove = () => { for (const name of events) next.removeEventListener(name, metadata); };
       metadata();
     },
-    select(next: ReplayClip | null, position: "context" | "action" | "preserve" = "context") {
+    select(next: ReplayClip | null, position: "context" | "action" | "preserve" = "context", play = true) {
+      if (!next && position !== "preserve" && pending) {
+        pending = null; metadataRestore = null; explicitSwitchTarget = null;
+      }
       clip = next; looping = next ? looping : false; notice = "";
       deferredClipStart = null;
       if (next && position !== "preserve" && (!ready() || awaitingMetadata)) {
-        deferredClipStart = position;
+        deferredClipStart = { position, play };
       } else if (next && media && ready()) {
         const range = replayRangeForMedia(next, origin, media.duration);
         if (!range) { clip = null; looping = false; notice = "当前视频未包含这段完整动作，请切换原视频查看。"; emit(); return; }
-        if (position !== "preserve") seek(position === "action" ? next.startMs : range.startMs, true);
+        if (position !== "preserve") seek(position === "action" ? next.startMs : range.startMs, play);
       }
       emit();
     },

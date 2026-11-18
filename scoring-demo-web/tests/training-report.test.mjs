@@ -71,7 +71,7 @@ test("server focus keeps its evidence semantics and only links a validated repla
 test("legacy report measurements and timeline remain accessible inside the single details area", () => {
   const result = { ...motionResult(), analysis_report: serverReport(), footwork_review: footwork() };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /暂无可展示的结果/);
+  assert.match(html, /这次先看什么/);
   assert.match(html, /训练时间线/);
   assert.match(html, /class="report-timeline" id="timeline"/);
   assert.ok(html.indexOf('id="details"') < html.indexOf('id="timeline"'));
@@ -84,7 +84,7 @@ test("legacy report measurements and timeline remain accessible inside the singl
 
 test("an empty report shows one loading state without an empty timeline or old score cards", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /暂无可展示的结果/);
+  assert.match(html, /没有定位到需要优先调整的动作/);
   assert.doesNotMatch(html, /report-timeline|process-overall-reference|id="details"/);
 });
 
@@ -116,7 +116,7 @@ test("legacy 298-card evidence stays out of the primary score and survives compl
   // isolation. It is not a claim that these two source runs describe one video.
   const result = { status: "ready", job_id: rawCards.source_run_id, card_execution: rawCards, process_evaluation: process };
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /暂无可展示的结果/);
+  assert.match(html, /这次先改什么/);
   assert.ok(Number.isFinite(expected.overall_score));
   assert.doesNotMatch(html.slice(0, html.indexOf('id="details"')), /process-overall-reference|步伐动作得分/);
   assert.doesNotMatch(html, /card-execution-panel|逐卡计算|正式逐卡|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}|全部原文指标/);
