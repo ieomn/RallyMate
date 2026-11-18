@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "../auth/AuthProvider";
 import { AccountFrame, AccountErrorMessage, readableAccountError } from "../auth/AccountFrame";
 import { accountDestination, replaceAccountLocation, safeNextPath } from "../lib/auth-client";
@@ -11,23 +12,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const params = useSearchParams();
+  const next = params?.get("next");
+  const notice = params?.has("reset") ? "请使用刚才保存的临时密码登录，并设置新密码。"
+    : params?.has("password-changed") ? "密码已更新，请使用新密码登录。" : null;
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("password-changed")) setNotice("密码已更新，请使用新密码登录。");
-    if (params.has("reset")) setNotice("请使用刚才保存的临时密码登录，并设置新密码。");
-    if (!auth.loading && auth.user) replaceAccountLocation(accountDestination(auth.user, params.get("next")));
-  }, [auth.user, auth.loading]);
+    if (!auth.loading && auth.user) replaceAccountLocation(accountDestination(auth.user, next));
+  }, [auth.user, auth.loading, next]);
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError(null);
     try {
       const user = await auth.login(email.trim(), password);
       setPassword("");
-      replaceAccountLocation(accountDestination(user, safeNextPath(new URLSearchParams(window.location.search).get("next"))));
+      replaceAccountLocation(accountDestination(user, safeNextPath(next)));
     } catch (cause) { setError(readableAccountError(cause)); }
     finally { setBusy(false); }
   }
-  return <AccountFrame title="欢迎回来" description="登录后，继续查看你的训练记录与动作分析。">
+  return <AccountFrame title="登录训练空间">
     {notice && <p className="account-notice" role="status">{notice}</p>}
     <form className="account-form" onSubmit={submit}>
       <label htmlFor="login-email">邮箱<input disabled={auth.loading || busy} id="login-email" name="email" type="email" autoComplete="username" inputMode="email" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>

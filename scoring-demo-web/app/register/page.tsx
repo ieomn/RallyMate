@@ -28,7 +28,7 @@ export default function RegisterPage() {
     } catch (cause) { setError(readableAccountError(cause)); }
     finally { setBusy(false); setPassword(""); }
   }
-  return <AccountFrame title="开始记录你的练习" description="提交注册申请后，管理员会审核你的账户。">
+  return <AccountFrame title="申请账户" description="管理员审核通过后，即可上传训练视频。">
     {created ? <div className="account-status-card"><h3>注册申请已提交</h3><p>账户已创建，请登录查看审核进度。</p><AccountErrorMessage message={error} /><a className="account-button account-primary" href="/login">前往登录</a></div> : <form className="account-form" onSubmit={submit}>
       <label htmlFor="register-email">邮箱<input disabled={auth.loading || busy} id="register-email" name="email" type="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
       <label htmlFor="register-username">显示名称<input disabled={auth.loading || busy} id="register-username" name="username" autoComplete="nickname" maxLength={80} required value={username} onChange={(event) => setUsername(event.target.value)} /></label>

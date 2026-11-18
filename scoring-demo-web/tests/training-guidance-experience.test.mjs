@@ -92,7 +92,7 @@ test("valid model estimates are identified once and never become confirmed visib
 
 test("continuous playback stays above the saved training journal and folded technical details", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: result(), assessment: null, pending: false, trajectory: null, journal: createElement("section", { id: "test-journal" }, "训练记录"), replay: createElement("video", { id: "test-original" }) }));
-  assert.ok(html.indexOf('id="assessment"') < html.indexOf('id="test-original"'));
+  assert.ok(html.indexOf('id="test-original"') < html.indexOf('id="assessment"'));
   assert.ok(html.indexOf('id="test-original"') < html.indexOf('id="details"'));
   assert.ok(html.indexOf('id="details"') < html.indexOf('id="test-journal"'));
   assert.doesNotMatch(html, /<details[^>]*open=/);

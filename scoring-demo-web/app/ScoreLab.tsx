@@ -16,7 +16,7 @@ import { originalPoseTimeBinding, poseWindowMatchesOriginal } from "./lib/origin
 import { adviceContextKey, adviceForContext, adviceNotice as describeAdvice, type AdviceResponse, type ScopedAdvice } from "./lib/advice-display";
 import type { UploadProgress } from "./lib/resumable-upload";
 import type { TechniqueAssessmentResponse, DemoResultResponse, TrajectoryPreviewResponse } from "./lib/api-types";
-import { ProductShell, TrainingHome, CaptureGuide, ProductIcon, type WorkspaceView } from "./ProductWorkspace";
+import { ProductShell, TrainingHome, CaptureGuide, ProductIcon, type HomeReport, type WorkspaceView } from "./ProductWorkspace";
 import LiveResults from "./LiveResults";
 import ReportExportActions from "./ReportExportActions";
 import BallTrajectoryViewer, { type CandidateReplayHandle } from "./BallTrajectoryViewer";
@@ -44,7 +44,7 @@ import type { MotionEpisode } from "./lib/api-types";
 import { resultFromReportSummary, type ReportSummary } from "./lib/segmented-report";
 
 const SUPPORTED_VIDEO_EXTENSION = /\.(mp4|mov|m4v|avi|mkv)$/i;
-type ImportState = { status: "idle" } | { status: "reading"; fileName: string } | { status: "success"; fileName: string } | { status: "error"; message: string };
+type ImportState = { status: "idle" } | { status: "reading"; fileName: string } | { status: "success"; fileName: string; sourceId: string } | { status: "error"; message: string };
 type LiveEvidence = { mode: "demo" | "live"; jobId?: string; candidateSource?: "online"; trajectory: TrajectoryPreviewResponse | null; assessment: TechniqueAssessmentResponse | null; result?: DemoResultResponse | null; error: string | null };
 type CompletedReportRead = { scope: string; summary: ReportSummary; replayScope: AbortController; attempt: number; error: string | null };
 const EMPTY_EVIDENCE: LiveEvidence = { mode: "demo", trajectory: null, assessment: null, error: null };
@@ -210,16 +210,16 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
       videoTimeOriginMs={0}
       candidateReplayBinding={candidateReplayBinding} onCandidateReplayHandle={onCandidateReplayHandle}
       onVideoError={() => setVideoFailed(selectedVideoSrc ?? "unknown")} />
-    {!selectedVideoSrc && <p className="replay-caption">本次报告暂未提供可验证的原视频。</p>}
     {selectedVideoSrc && videoFailed === selectedVideoSrc && <div className="replay-caption" role="status"><p>原视频暂未读取成功。</p><button type="button" className="product-secondary" onClick={() => setVideoFailed(null)}>重新加载原视频</button></div>}
     </>}
     <ReplayClipNavigator key={candidateSessionKey} containerRef={replayContainer} result={evidence.result ?? null} motion={clipMotion}
       jobId={evidence.jobId}
       mediaKey={meshMedia && showSurface ? meshMedia.video_url : selectedVideoSrc ?? "no-video"} />
   </div>
+  <details className="review-shot-statistics"><summary>击球与落点记录</summary>
   <ShotStatisticsSidebar key={candidateSessionKey} api={api} jobId={evidence.jobId} sourceSha={serverOriginal?.sha256}
     enabled={Boolean(onlineEvidence && evidence.jobId && serverOriginal && !pending)} scope={candidateSessionKey}
-    signal={replaySignal} containerRef={replayContainer} />
+    signal={replaySignal} containerRef={replayContainer} /></details>
   </div>;
 }
 
@@ -233,12 +233,17 @@ export default function ScoreLab() {
   const [currentJournalRecordId, setCurrentJournalRecordId] = useState<string | undefined>(undefined);
   const [view, setView] = useState<WorkspaceView>("overview");
   const [history, setHistory] = useState<RecentReport[]>([]);
-  const [recordPage, setRecordPage] = useState<PersonalRecordsPage>({ items: [], total: 0, limit: 20, offset: 0 });
+  const [lastRecordPage, setRecordPage] = useState<PersonalRecordsPage | null>(null);
   const [recordOffset, setRecordOffset] = useState(0), [recordRefresh, setRecordRefresh] = useState(0);
-  const [recordsLoading, setRecordsLoading] = useState(false), [recordsError, setRecordsError] = useState("");
+  const requestedOffset = view === "sessions" ? recordOffset : 0;
+  const recordPage = lastRecordPage?.offset === requestedOffset ? lastRecordPage : null;
+  const [recordsLoading, setRecordsLoading] = useState(true);
+  const [recordFailure, setRecordFailure] = useState<{ offset: number; message: string } | null>(null);
+  const recordsError = recordFailure?.offset === requestedOffset ? recordFailure.message : "";
   const [deletingRecord, setDeletingRecord] = useState<string | null>(null);
   const refreshRecords = useCallback(() => setRecordRefresh(value => value + 1), []);
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
+  const offlineImportOnly = useRef(false);
   const [importedSummary, setImportedSummary] = useState<Record<string, unknown> | null>(null);
   const [scoreContext, setScoreContext] = useState<"demo" | "live-pending" | "live">("demo");
   const [videoFile, updateVideoFile] = useState<File | null>(null);
@@ -273,7 +278,7 @@ export default function ScoreLab() {
   const [adviceNotes, setAdviceNotes] = useState("");
   const [coachTechnique, setCoachTechnique] = useState("");
   const [dragging, setDragging] = useState(false);
-  const [reportSection, setReportSection] = useState("assessment");
+  const [reportSection, setReportSection] = useState("evidence");
   const fileInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<string | null>(null);
@@ -302,31 +307,31 @@ export default function ScoreLab() {
     if (safe) setReadDiagnostics(previous => appendRequestDiagnostic(previous, safe));
   }), []);
   useEffect(() => {
-    if (typeof apiClient.getRecords !== "function") return;
+    if ((view !== "sessions" && view !== "overview") || typeof apiClient.getRecords !== "function") return;
     const accountIdentity = captureAccountIdentity();
     if (accountIdentity.userId !== ownerUserId) return;
     const controller = new AbortController();
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRecordsLoading(true); setRecordsError("");
-    apiClient.getRecords(20, recordOffset, controller.signal).then(page => {
+    setRecordsLoading(true); setRecordFailure(null);
+    apiClient.getRecords(20, requestedOffset, controller.signal).then(page => {
       if (controller.signal.aborted || !isAccountIdentityCurrent(accountIdentity)) return;
-      if (page.total > 0 && page.offset >= page.total) { setRecordOffset(Math.floor((page.total - 1) / 20) * 20); return; }
+      if (requestedOffset > 0 && page.offset >= page.total) { setRecordOffset(Math.max(0, Math.floor((page.total - 1) / 20) * 20)); return; }
       setRecordPage(page);
-    }).catch(error => { if (!controller.signal.aborted && isAccountIdentityCurrent(accountIdentity)) setRecordsError(error instanceof Error ? error.message : "暂时无法读取训练记录。"); })
+    }).catch(error => { if (!controller.signal.aborted && isAccountIdentityCurrent(accountIdentity)) setRecordFailure({ offset: requestedOffset, message: error instanceof Error ? error.message : "暂时无法读取训练记录。" }); })
       .finally(() => { if (!controller.signal.aborted) setRecordsLoading(false); });
     return () => controller.abort();
-  }, [apiClient, ownerUserId, accountGeneration, recordOffset, recordRefresh, view, job?.status]);
+  }, [apiClient, ownerUserId, accountGeneration, requestedOffset, recordRefresh, view, job?.status]);
   async function deleteRecord(id: string) {
     const accountIdentity = captureAccountIdentity();
     if (accountIdentity.userId !== ownerUserId) return;
     if (deletingRecord || !window.confirm("删除这条在线训练记录？删除后将无法从账号中打开报告。")) return;
-    setDeletingRecord(id); setRecordsError("");
+    setDeletingRecord(id); setRecordFailure(null);
     try {
       await apiClient.deleteRecord(id);
       if (!isAccountIdentityCurrent(accountIdentity)) return;
       if (activeServiceJob.current === id) newAnalysis();
       refreshRecords();
-    } catch (error) { if (isAccountIdentityCurrent(accountIdentity)) setRecordsError(error instanceof RallyMateApiError && error.status === 409 ? "请先取消任务，等待任务停止后再删除。" : error instanceof Error ? error.message : "删除未完成，请重试。"); }
+    } catch (error) { if (isAccountIdentityCurrent(accountIdentity)) setRecordFailure({ offset: requestedOffset, message: error instanceof RallyMateApiError && error.status === 409 ? "请先取消任务，等待任务停止后再删除。" : error instanceof Error ? error.message : "删除未完成，请重试。" }); }
     finally { if (captureAccountIdentity().userId === ownerUserId) setDeletingRecord(null); }
   }
   const busy = uploadState === "uploading" || uploadState === "processing";
@@ -435,7 +440,6 @@ export default function ScoreLab() {
 
   const navigate = useCallback((next: WorkspaceView, jobId?: string) => {
     setView(next);
-    if (next === "overview") setRecordOffset(0);
     const href = workspaceHref(next, jobId);
     if (window.location.pathname + window.location.search + window.location.hash !== href) window.history.pushState(null, "", href);
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -588,6 +592,18 @@ export default function ScoreLab() {
     if (uploadState === "uploading") { navigate("analysis", activeServiceJob.current ?? undefined); return; }
     setVideoFile(null); setImportState({ status: "idle" }); navigate("analysis", id); void monitorJob(id);
   }
+  function chooseReportBackup(offlineOnly = false) {
+    offlineImportOnly.current = offlineOnly;
+    fileInput.current?.click();
+  }
+  function openHomeReport(id: string) {
+    if (!id.startsWith("imported:")) { openReport(id); return; }
+    if (busy) return;
+    if (importState.status === "success" && currentJournalRecordId === id) {
+      visitReport({ source: "imported", jobId: evidence.jobId, sourceId: importState.sourceId, name: importState.fileName });
+      navigate("analysis");
+    } else chooseReportBackup(true);
+  }
   function newAnalysis() {
     if (busy) { navigate("analysis", evidence.jobId); return; }
     invalidateAnalysisRun(); setVideoFile(null); setJob(null); setUploadState("idle"); setUploadError(""); setEvidence(EMPTY_EVIDENCE); setScoreContext("demo"); setImportState({ status: "idle" }); navigate("analysis");
@@ -656,6 +672,9 @@ export default function ScoreLab() {
     if (accountIdentity.userId !== ownerUserId) return;
     const file = event.target.files?.[0];
     if (!file || busy) return;
+    const sourceId = `${file.name}:${file.size}`;
+    const requireEmbeddedReport = offlineImportOnly.current;
+    offlineImportOnly.current = false;
     navigate("analysis");
     invalidateAnalysisRun();
     const importRun = analysisRunRef.current;
@@ -685,12 +704,12 @@ export default function ScoreLab() {
           setEvidence({ mode: "live", jobId: data.jobId, trajectory: importedTrajectory, assessment: embeddedAssessment, result: embeddedResult ?? fallbackResult, error: null });
           setJob({ id: data.jobId, status: "completed" });
           setUploadState("complete"); setScoreContext("live");
-          setImportState({ status: "success", fileName: file.name });
-          setCurrentJournalRecordId(visitReport({ jobId: data.jobId, name: file.name, source: "imported", sourceId: `${file.name}:${file.size}`, result: embeddedResult ?? fallbackResult }));
+          setImportState({ status: "success", fileName: file.name, sourceId });
+          setCurrentJournalRecordId(visitReport({ jobId: data.jobId, name: file.name, source: "imported", sourceId, result: embeddedResult ?? fallbackResult }));
           return;
         }
+        if (requireEmbeddedReport) throw new Error("这份文件只包含在线任务编号。请选择包含分析结果的报告备份。");
         try { localStorage.setItem(activeJobKey, data.jobId); } catch { /* Optional storage. */ }
-        setImportState({ status: "success", fileName: file.name });
         navigate("analysis", data.jobId);
         setImportState({ status: "idle" });
         await monitorJob(data.jobId);
@@ -714,8 +733,8 @@ export default function ScoreLab() {
         setUploadState("complete");
         setEvidence({ mode: "live", jobId, trajectory: importedTrajectory, assessment: importedAssessment, result: rawResult ?? { technique_assessment: importedAssessment, ...(jobId ? { job_id: jobId } : {}) }, error: null });
         setScoreContext("live");
-        setImportState({ status: "success", fileName: file.name });
-        setCurrentJournalRecordId(visitReport({ jobId, name: file.name, source: "imported", sourceId: `${file.name}:${file.size}`, result: rawResult }));
+        setImportState({ status: "success", fileName: file.name, sourceId });
+        setCurrentJournalRecordId(visitReport({ jobId, name: file.name, source: "imported", sourceId, result: rawResult }));
         return;
       }
       const summary = data.summary ?? data;
@@ -729,8 +748,8 @@ export default function ScoreLab() {
       setVideoFile(null);
       setEvidence({ mode: "live", jobId: importedResult.job_id, result: importedResult, trajectory: null, assessment: null, error: null });
       setScoreContext("live");
-      setImportState({ status: "success", fileName: file.name });
-      setCurrentJournalRecordId(visitReport({ jobId: importedResult.job_id, name: file.name, source: "imported", sourceId: `${file.name}:${file.size}`, result: importedResult }));
+      setImportState({ status: "success", fileName: file.name, sourceId });
+      setCurrentJournalRecordId(visitReport({ jobId: importedResult.job_id, name: file.name, source: "imported", sourceId, result: importedResult }));
     } catch (error) {
       if (importRun !== analysisRunRef.current || !isAccountIdentityCurrent(accountIdentity)) return;
       setJob(null);
@@ -773,7 +792,7 @@ export default function ScoreLab() {
   const openSection = (id: string) => { setReportSection(id); if (["details", "training-journal"].includes(id)) setDetailScope(candidateSessionKey); const section = document.getElementById(id); for (let node: HTMLElement | null = section; node; node = node.parentElement) if (node instanceof HTMLDetailsElement) node.open = true; section?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); };
   const saveFocus = (focus: TrainingFocusSelection) => { if (journalId && journal.saveFocus(journalId, { ...focus, id: focusId(focus) })) openSection("training-journal"); };
   const journalPanel = <TrainingJournalPanel key={journalId} journal={journal} recordId={journalId} suggestions={focusSuggestions} showSuggestions={false} onSeek={replayAvailable ? timestampMs => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { timestampMs, jobId: evidence.jobId, preferOriginal: true } })) : undefined} onOpenReport={openReport} />;
-  const coachPanel = !busy && (<section className="report-coach coach-section" id="coach" aria-labelledby="coach-heading"><div className="logic-heading"><div><span className="process-eyebrow">结合本次证据</span><h2 id="coach-heading">看懂本次训练问题</h2><p>围绕这次视频，说明哪里值得改、依据在哪、下次怎么练。也可以补充你最困惑的问题。</p></div></div><div className="coach-layout"><form className="coach-form" onSubmit={event => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><div className="coach-question-options" role="group" aria-label="可选复盘问题">{["我最该先改哪个动作问题？", "这个问题会怎样影响我的动作？", "下一次训练具体怎么练和复测？"].map(question => <button key={question} type="button" className="product-secondary" onClick={() => setAdviceNotes(question)}>{question}</button>)}</div><label>你的问题<span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={event => setAdviceNotes(event.target.value)} placeholder="例如：为什么建议我调整引拍？视频哪一秒能看出来？" /></label><button className="primary-button" disabled={adviceLoading || evidence.candidateSource !== "online"}>{adviceLoading ? "正在整理…" : "查看解释与建议"}<ProductIcon name="arrow-right" size={18} /></button>{adviceNotice && savedAdvice?.contextKey === currentAdviceKey && <p className="coach-status" role="status">{adviceNotice}</p>}</form>{evidence.candidateSource === "online" ? <AdviceResult technique={adviceTechnique} response={currentAdvice} jobId={evidence.jobId} /> : <div className="product-notice" role="note">这是离线导入的报告。可根据上方已有观察保存复盘问题；在线问答需要当前服务中的原任务，本页不会把导入的编号当作在线证据。</div>}</div></section>);
+  const coachPanel = !busy && (<details className="report-coach coach-section review-coach" id="coach"><summary>追问这次训练</summary><div className="coach-layout"><form className="coach-form" onSubmit={event => { event.preventDefault(); void askCoach(); }}><label>练习主题<select aria-label="练习主题" value={adviceTechnique} onChange={event => setCoachTechnique(event.target.value)}>{["底线击球", "发球", "接发", "网前进攻", "步伐"].map(name => <option key={name}>{name}</option>)}</select></label><div className="coach-question-options" role="group" aria-label="可选复盘问题">{["我最该先改哪个动作问题？", "这个问题会怎样影响我的动作？", "下一次训练具体怎么练和复测？"].map(question => <button key={question} type="button" className="product-secondary" onClick={() => setAdviceNotes(question)}>{question}</button>)}</div><label>你的问题<span>{adviceNotes.length}/600</span><textarea value={adviceNotes} maxLength={600} onChange={event => setAdviceNotes(event.target.value)} placeholder="例如：为什么建议我调整引拍？视频哪一秒能看出来？" /></label><button className="primary-button" disabled={adviceLoading || evidence.candidateSource !== "online"}>{adviceLoading ? "正在整理…" : "查看解释与建议"}<ProductIcon name="arrow-right" size={18} /></button>{adviceNotice && savedAdvice?.contextKey === currentAdviceKey && <p className="coach-status" role="status">{adviceNotice}</p>}</form>{evidence.candidateSource === "online" ? <AdviceResult technique={adviceTechnique} response={currentAdvice} jobId={evidence.jobId} /> : <div className="product-notice" role="note">这是离线导入的报告，可保存练习目标。在线问答请打开原任务。</div>}</div></details>);
   const extraDetails = <>
     {supplementingEvidence && <p role="status">正在补充画面证据，评分与回放可正常使用。</p>}
     <p className="replay-caption">3D 回放根据本次视频重建人体，遮挡处外形为模型估计。片段切换和慢放复用已生成的视频。</p>
@@ -786,25 +805,31 @@ export default function ScoreLab() {
       <details className="report-disclosure report-export-disclosure" id="export"><summary>{segmentedDelivery ? "保存已加载报告" : "保存完整报告"}<span>{segmentedDelivery ? "评分与概览；完整片段依据按需读取" : "含逐项依据、回放时间与原始数据"}</span></summary><ReportExportActions input={exportInput} /></details></>}
     <RequestReadDetails diagnostics={readDiagnostics} />
   </>;
-  const visibleRecords = personalHistoryRecords(journal.records, recordPage.items);
+  const visibleRecords = personalHistoryRecords(journal.records, recordPage?.items ?? []);
   const visibleJournal = { ...journal, records: visibleRecords };
-  const homeReports = visibleRecords.filter(item => item.source === "online" && item.jobId).map(item => ({ id: item.jobId!, name: item.name, viewedAt: item.submittedAt || item.viewedAt }));
+  const viewedRecordIds = new Set(journal.records.map(record => record.id));
+  const homeReports: HomeReport[] = visibleRecords.map(record => ({
+    id: record.source === "imported" ? record.id : record.jobId ?? "",
+    source: record.source, name: record.name, status: record.status, viewedAt: record.viewedAt,
+    dateLabel: viewedRecordIds.has(record.id) ? "最近查看" : "提交时间",
+  }));
+  const readingRecords = recordsLoading || (!recordPage && !recordsError);
   return <ProductShell view={view} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} onNewAnalysis={newAnalysis} currentName={hasReport || videoFile ? currentName : undefined} busy={busy}>
     <input ref={videoInput} type="file" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.mov,.m4v,.avi,.mkv" hidden onChange={chooseVideo} />
     <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={importSummary} />
-    {view === "overview" && <TrainingHome reports={homeReports} dateLabel="提交时间" onOpenReport={openReport} onNewAnalysis={newAnalysis} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} currentName={hasReport ? currentName : undefined} busy={busy} />}
-    {view === "sessions" && <><TrainingJournalLibrary journal={visibleJournal} onOpenReport={openReport} onNewAnalysis={newAnalysis} history={{ total: recordPage.total, offset: recordOffset, limit: 20, loading: recordsLoading, error: recordsError, deleting: deletingRecord, onPage: setRecordOffset, onRefresh: refreshRecords, onDelete: id => void deleteRecord(id) }} /><div className="product-library-import"><p>已有分析报告？导入备份文件继续查看。</p><button type="button" className="product-secondary" disabled={busy} onClick={() => fileInput.current?.click()}><ProductIcon name="upload" size={16} />导入报告</button></div></>}
+    {view === "overview" && <TrainingHome reports={homeReports} loadedImportId={importState.status === "success" ? currentJournalRecordId : undefined} loading={readingRecords || !journal.ready} error={recordsError || journal.error} onRetry={() => { if (journal.error) journal.retrySave(); refreshRecords(); }} onOpenReport={openHomeReport} onNewAnalysis={() => videoInput.current?.click()} onNavigate={next => navigate(next, next === "analysis" ? activeServiceJob.current ?? undefined : undefined)} currentName={hasReport || videoFile ? currentName : undefined} busy={busy} />}
+    {view === "sessions" && <><TrainingJournalLibrary journal={visibleJournal} onOpenReport={openReport} onNewAnalysis={newAnalysis} history={{ total: recordPage?.total ?? 0, offset: recordOffset, limit: 20, loading: readingRecords, error: recordsError, deleting: deletingRecord, onPage: setRecordOffset, onRefresh: refreshRecords, onDelete: id => void deleteRecord(id) }} /><div className="product-library-import"><p>从报告备份恢复训练</p><button type="button" className="product-secondary" disabled={busy} onClick={() => chooseReportBackup()}><ProductIcon name="upload" size={16} />导入报告</button></div></>}
     {view === "guide" && <CaptureGuide onNewAnalysis={newAnalysis} />}
     {view === "analysis" && <div className={`product-analysis ${hasReport ? "has-report" : ""}`} aria-busy={importState.status === "reading"}>
-      <div className="product-page-heading"><div><h1>{delivery.showReport ? "本次训练" : hasReport ? missingJob ? "找回这次训练" : uploadState === "cancelled" ? "本次分析已取消" : uploadState === "report-preparing" ? "本次报告仍在整理" : uploadState === "error" ? "本次分析需要处理" : "正在准备本次复盘" : "开始一次新的训练分析"}</h1><p>{hasReport ? currentName : "上传训练视频，把值得回看的动作留下来。"}</p></div></div>
+      <div className="product-page-heading"><div><h1>{delivery.showReport ? "本次训练" : hasReport ? missingJob ? "找回这次训练" : uploadState === "cancelled" ? "本次分析已取消" : uploadState === "report-preparing" ? "本次报告仍在整理" : uploadState === "error" ? "本次分析需要处理" : "正在准备本次复盘" : "新建视频分析"}</h1>{hasReport && <p>{currentName}</p>}</div></div>
       {importState.status !== "idle" && <div className={`product-notice import-${importState.status}`} role="status">{importState.status === "reading" ? `正在读取 ${importState.fileName}…` : importState.status === "success" ? `已载入 ${importState.fileName}` : importState.message}</div>}
       {!hasReport && importState.status !== "reading" && <div className="product-upload-layout"><section className="product-upload-panel" aria-labelledby="upload-title"><div className="product-panel-title"><div><h2 id="upload-title">选择训练视频</h2></div></div>
-        <button type="button" className={`product-dropzone ${dragging ? "is-dragging" : ""} ${videoFile ? "has-file" : ""}`} onClick={() => videoInput.current?.click()} onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); acceptVideoFile(event.dataTransfer.files?.[0]); }} aria-label="选择或拖入视频文件"><span className="product-upload-symbol"><ProductIcon name={videoFile ? "check" : "upload"} size={28} /></span><strong>{videoFile ? videoFile.name : "把视频拖到这里"}</strong><span>{videoFile ? `${formatBytes(videoFile.size)} · 已准备好` : "或点击选择本地视频"}</span><small>MP4、MOV、M4V、AVI、MKV · 建议 200 MB 以内</small></button>
-        {videoFile && <div className="product-file-actions"><span><ProductIcon name="check" size={15} />视频已选择</span><button type="button" onClick={() => { setVideoFile(null); setUploadState("idle"); setUploadError(""); }}>移除视频</button></div>}
+        <button type="button" className={`product-dropzone ${dragging ? "is-dragging" : ""} ${videoFile ? "has-file" : ""}`} onClick={() => videoInput.current?.click()} onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); acceptVideoFile(event.dataTransfer.files?.[0]); }} aria-label="选择或拖入视频文件"><span className="product-upload-symbol"><ProductIcon name={videoFile ? "check" : "upload"} size={28} /></span><strong>{videoFile ? videoFile.name : "拖入视频，或选择文件"}</strong><span>{videoFile ? `${formatBytes(videoFile.size)} · 可开始分析` : "选择相机或手机拍摄的原视频"}</span><small>MP4、MOV、M4V、AVI、MKV · 建议 200 MB 以内</small></button>
+        {videoFile && <div className="product-file-actions"><span/><button type="button" onClick={() => { setVideoFile(null); setUploadState("idle"); setUploadError(""); }}>移除视频</button></div>}
         <TrainingFollowUpPicker journal={journal} />
         {uploadError && <p className="product-notice is-error" role="alert">{uploadError}</p>}
-        <button type="button" className="product-primary product-upload-start" disabled={!videoFile} onClick={() => void submitVideo()}>开始分析<ProductIcon name="arrow-right" size={18} /></button><p className="product-upload-footnote">上传后会显示处理进度。网络中断后可继续读取，无需重复上传。</p>
-      </section><aside className="product-capture-checklist"><h2>拍清楚，<br />才看得更明白。</h2><div><ProductIcon name="frame" /><span><strong>全身和双脚入镜</strong><p>保留挥拍空间，尽量减少遮挡。</p></span></div><div><ProductIcon name="camera" /><span><strong>固定相机</strong><p>稳定机位，避免跟随人物频繁移动。</p></span></div><div><ProductIcon name="movement" /><span><strong>保留完整动作</strong><p>从准备到随挥，再到恢复。</p></span></div><button type="button" onClick={() => navigate("guide")}>查看完整拍摄指南<ProductIcon name="arrow-up-right" size={16} /></button></aside></div>}
+        <button type="button" className="product-primary product-upload-start" disabled={!videoFile} onClick={() => void submitVideo()}>开始分析<ProductIcon name="arrow-right" size={18} /></button>
+      </section><aside className="product-capture-checklist"><h2>上传前检查</h2><div><ProductIcon name="frame" /><span><strong>全身和双脚入镜</strong><p>试挥一拍，确认球拍和双脚都在画面内。</p></span></div><div><ProductIcon name="camera" /><span><strong>固定相机</strong><p>稳定机位，避免跟随人物频繁移动。</p></span></div><div><ProductIcon name="movement" /><span><strong>保留完整动作</strong><p>从准备到随挥，再到恢复。</p></span></div><button type="button" onClick={() => navigate("guide")}>查看完整拍摄指南<ProductIcon name="arrow-up-right" size={16} /></button></aside></div>}
       {busy && <section className="product-processing" aria-label="当前分析进度">
         <div className="product-processing-heading"><span className="product-processing-icon"><ProductIcon name="movement" size={22} /></span><div><h2 role="status">{stageLabel}</h2><p>{uploadState === "uploading" ? "保留当前页面，上传完成后将自动开始分析。" : delivery.phase === "partial" ? "下方已有结果可先复盘。其余证据到达后会自动补齐。" : processing.detail}</p></div>{progress !== null && <strong>{Math.floor(progress)}<small>%</small><span className="processing-percent-scope">{uploadState === "uploading" ? "上传进度" : "当前阶段进度"}</span></strong>}</div>
         <div className={`product-progress-track${indeterminateProgress ? " is-organizing" : ""}`} role="progressbar" aria-label={stageLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress === null ? undefined : Math.floor(progress)} aria-valuetext={indeterminateProgress ? processing.reportStage ? "报告整理中，尚未全部读取" : stageLabel : undefined}><span style={{ width: indeterminateProgress ? "100%" : `${progress}%` }} /></div>
@@ -814,9 +839,9 @@ export default function ScoreLab() {
         {analysisControls}
       </section>}
       {!busy && analysisControls}
-      {job?.status === "cancelled" && <section className="product-recovery" role="status"><div><h2>本次分析已取消</h2><p>服务器已确认停止处理。已保留本页已有的原视频与回放证据。</p></div><button type="button" className="product-secondary" onClick={newAnalysis}>选择新视频</button></section>}
-      {hasReport && uploadError && <section className="product-recovery" role={delivery.phase === "preparing" ? "status" : "alert"}><div><h2>{recoveryTitle}</h2><p>{delivery.recoveryDetail || uploadError}</p>{delivery.showReport && <p>本页已读取的结果仍可查看。</p>}</div>{missingJob ? <div className="recovery-actions"><button type="button" className="product-secondary" onClick={() => fileInput.current?.click()}>导入报告备份</button><button type="button" className="product-secondary" onClick={() => navigate("sessions")}>返回训练记录</button><button type="button" className="product-secondary" onClick={newAnalysis}>选择新视频</button></div> : <button type="button" className="product-secondary" onClick={() => { if (evidence.jobId && delivery.canResumeRead) void monitorJob(evidence.jobId); else if (videoFile) void submitVideo(); else newAnalysis(); }}>{evidence.jobId && delivery.canResumeRead ? "继续读取结果" : videoFile ? "重试分析" : "选择新视频"}</button>}</section>}
-      {delivery.showNavigation && <nav className="product-report-nav" aria-label="报告内容">{[["assessment", "动作评分"], ["recommendations", "训练建议"], ["coach", "训练解读"], ["evidence", "视频回放"], ["details", "详细分析"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
+      {job?.status === "cancelled" && <section className="product-recovery" role="status"><div><h2>分析已停止</h2><p>已生成的回放仍可查看。</p></div><button type="button" className="product-secondary" onClick={newAnalysis}>选择新视频</button></section>}
+      {hasReport && uploadError && <section className="product-recovery" role={delivery.phase === "preparing" ? "status" : "alert"}><div><h2>{recoveryTitle}</h2><p>{delivery.recoveryDetail || uploadError}</p>{delivery.showReport && <p>本页已读取的结果仍可查看。</p>}</div>{missingJob ? <div className="recovery-actions"><button type="button" className="product-secondary" onClick={() => chooseReportBackup()}>导入报告备份</button><button type="button" className="product-secondary" onClick={() => navigate("sessions")}>返回训练记录</button><button type="button" className="product-secondary" onClick={newAnalysis}>选择新视频</button></div> : <button type="button" className="product-secondary" onClick={() => { if (evidence.jobId && delivery.canResumeRead) void monitorJob(evidence.jobId); else if (videoFile) void submitVideo(); else newAnalysis(); }}>{evidence.jobId && delivery.canResumeRead ? "继续读取结果" : videoFile ? "重试分析" : "选择新视频"}</button>}</section>}
+      {delivery.showNavigation && <nav className="product-report-nav" aria-label="报告内容">{[["evidence", "视频回放"], ["assessment", "动作评分"], ["details", "详细依据"]].map(([id, label]) => <button key={id} type="button" aria-current={reportSection === id ? "location" : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav>}
       {delivery.showReplayOnly && <TrainingReplayPanel jobId={evidence.jobId} mediaKind={replayMediaKind}><p className="replay-caption">{busy ? "回放预览已可用，完整观察仍在整理。" : "本次未形成完整报告，已可用的回放保留在这里。"}</p><ReplayPanel api={apiClient} replaySignal={replayScope.signal} evidence={evidence} pending={busy} error={evidence.error} localVideoSrc={localVideoJobId === evidence.jobId ? localVideoSrc : null} candidateSessionKey={candidateSessionKey} onCandidateReplayHandle={setCandidateReplay} /></TrainingReplayPanel>}
       {activeSummary && !currentOverviewRead && <p className="replay-caption" role="status">正在读取分类与测量概览，评分和视频可先查看。</p>}
       {activeSummary && currentOverviewRead?.error && <section className="product-recovery" role="alert"><div><h2>部分分析内容尚未读取</h2><p>{currentOverviewRead.error}</p><p>评分和回放仍可使用，详细片段证据可独立读取。</p></div><button type="button" className="product-secondary" onClick={() => setOverviewAttempt(value => value + 1)}>重新读取分析概览</button></section>}

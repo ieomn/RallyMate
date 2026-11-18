@@ -53,7 +53,7 @@ test("candidate and empty evidence never become a claimed zero-shot video", () =
   const html = render(data);
   assert.match(html, /已确认击球<\/span><strong>—<\/strong>/);
   assert.match(html, /候选不计入次数/);
-  assert.match(html, /待确认 2/);
+  assert.match(html, /候选 2/);
   assert.doesNotMatch(html, /class="shot-statistics-dot/);
 });
 

@@ -1,0 +1,52 @@
+@font-face {
+  font-family: "Rally Display";
+  src: local("Noto Serif SC SemiBold"), url("/fonts/training-serif-sc.woff2") format("woff2");
+  font-weight: 600 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Rally Text";
+  src: local("Noto Sans SC"), url("/fonts/training-sans-sc.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Rally Digits";
+  src: local("IBM Plex Mono Medium"), url("/fonts/ibm-plex-mono-latin-500.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Rally Mono SC";
+  src: local("Sarasa Mono SC"), url("/fonts/training-mono-sc.woff2") format("woff2");
+  font-display: swap;
+}
+:root {
+  --rm-display: "Rally Display", "Source Han Serif SC", "Noto Serif SC", "Songti SC", SimSun, serif;
+  --rm-body: "Rally Text", "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --rm-mono: "Rally Digits", "Rally Mono SC", "Sarasa Mono SC", Consolas, monospace;
+}
+:is(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) {
+  font-family: var(--rm-body);
+  font-variant-numeric: tabular-nums;
+}
+:where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(h1,h2) {
+  font-family: var(--rm-display);
+}
+:where(.product-app, .account-app, .annotation-workspace, .profile-dock) :is(label, time, kbd, code, output, th, dt, .status-pill, .result-score, .score-value, .tr-summary strong) {
+  font-family: var(--rm-mono);
+  font-variant-numeric: tabular-nums;
+}
+:where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button, a, summary, input, select, textarea) {
+  transition: background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out, transform 220ms cubic-bezier(.24,1.45,.36,1);
+}
+:where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button:enabled, a, summary):active {
+  transform: scale(.985);
+}
+:is(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button,a,input,textarea,select,summary):focus-visible {
+  outline: 2px solid #c4f469;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock) :is(button:enabled, a, summary):active { transform: none; }
+}

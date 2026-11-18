@@ -130,21 +130,21 @@ export function ShotStatisticsContent({ data, jobId, pending = false, error, sav
     <div className="shot-statistics-event-section">
       <div className="shot-statistics-filter" role="group" aria-label="筛选击球与落地记录">
         <button type="button" aria-pressed={filter === "active"} onClick={() => setFilter("active")}>全部记录</button>
-        <button type="button" aria-pressed={filter === "candidate"} onClick={() => setFilter("candidate")}>待确认 {candidates || ""}</button>
+        <button type="button" aria-pressed={filter === "candidate"} onClick={() => setFilter("candidate")}>候选 {candidates || ""}</button>
         {!!scoped?.summary.dismissed_count && <button type="button" aria-pressed={filter === "dismissed"} onClick={() => setFilter("dismissed")}>已排除</button>}
       </div>
       <ol className="shot-statistics-events" aria-label="按视频时间排列的击球与落地记录">
         {events.map(event => <li key={event.id} data-shot-event-id={event.id} data-shot-status={event.status}>
-          <div className="shot-statistics-event-main"><button type="button" className="shot-statistics-event-seek" onClick={() => seek(event)} aria-label={`回看 ${formatShotTime(event.timestamp_ms)} 的${label(event)}`}><time>{formatShotTime(event.timestamp_ms)}</time><span>{label(event)}</span></button><span className={`shot-statistics-status is-${event.status}`}>{event.status === "confirmed" ? "已确认" : event.status === "dismissed" ? "已排除" : "待确认"}</span></div>
+          <div className="shot-statistics-event-main"><button type="button" className="shot-statistics-event-seek" onClick={() => seek(event)} aria-label={`回看 ${formatShotTime(event.timestamp_ms)} 的${label(event)}`}><time>{formatShotTime(event.timestamp_ms)}</time><span>{label(event)}</span></button><span className={`shot-statistics-status is-${event.status}`}>{event.status === "confirmed" ? "已确认" : event.status === "dismissed" ? "已排除" : "候选"}</span></div>
           {event.kind === "bounce" && event.status === "confirmed" && <span className="shot-statistics-event-location">{event.position_court ? event.position_court.source === "manual" ? "人工标记位置" : "由球场标定定位" : "位置尚未标记"}</span>}
           <div className="shot-statistics-event-actions">
             {event.status === "candidate" && <><button type="button" disabled={!writable} onClick={() => void review({ operation: "confirm", event_id: event.id })}>确认{label(event)}</button>{event.kind === "bounce" && <button type="button" disabled={!writable} onClick={() => startMarking(event)}>确认并标点</button>}<button type="button" disabled={!writable} onClick={() => void review({ operation: "dismiss", event_id: event.id })}>排除</button></>}
             {event.status === "confirmed" && <>{event.kind === "bounce" && <button type="button" disabled={!writable} onClick={() => startMarking(event)}>{event.position_court ? "调整落点" : "补标落点"}</button>}<button type="button" disabled={!writable} onClick={() => void review({ operation: event.source === "manual" ? "remove" : "restore", event_id: event.id })}>{event.source === "manual" ? "删除记录" : "撤回确认"}</button></>}
-            {event.status === "dismissed" && <button type="button" disabled={!writable} onClick={() => void review({ operation: "restore", event_id: event.id })}>恢复待确认</button>}
+            {event.status === "dismissed" && <button type="button" disabled={!writable} onClick={() => void review({ operation: "restore", event_id: event.id })}>恢复为候选</button>}
           </div>
         </li>)}
       </ol>
-      {!events.length && <p className="shot-statistics-state">{pending ? "候选正在整理。" : filter === "candidate" ? "暂无待确认候选，可在清晰画面补记。" : filter === "dismissed" ? "暂无已排除记录。" : "暂无记录。先回看原视频，再补记清晰击球或落地。"}</p>}
+      {!events.length && <p className="shot-statistics-state">{pending ? "候选正在整理。" : filter === "candidate" ? "暂无候选记录，可在清晰画面补记。" : filter === "dismissed" ? "暂无已排除记录。" : "暂无记录。先回看原视频，再补记清晰击球或落地。"}</p>}
     </div>
     <details><summary>统计说明</summary><p>自动候选用于定位复核，不直接计数。清晰看到球拍触球或球接触地面后再确认；挥拍动作、轨迹转折和球检测点不直接等同于击球或落地。</p><p>人工落点是你在俯视球场上的标记；标定映射来自已确认落地时的球场坐标，不用于毫米级压线判定。</p>{scoped?.limitations_zh.map((text, index) => <p key={`${index}:${text}`}>{text}</p>)}</details>
   </aside>;

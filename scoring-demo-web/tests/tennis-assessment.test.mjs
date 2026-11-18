@@ -21,7 +21,7 @@ function compiledUrl(url) {
 }
 const { validatedTennisAssessment, tennisAssessmentOf, retainTennisAssessment } = await import(compiledUrl(new URL("../app/lib/tennis-assessment.ts", import.meta.url)));
 const { tennisAssessmentReadMessage } = await import(compiledUrl(new URL("../app/lib/tennis-evidence-status.ts", import.meta.url)));
-const { default: Summary, TennisAssessmentDetails, tennisImprovementFocus } = await import(compiledUrl(new URL("../app/TennisAssessmentSummary.tsx", import.meta.url)));
+const { default: Summary, ClipMeasurements, TennisAssessmentDetails, tennisImprovementFocus } = await import(compiledUrl(new URL("../app/TennisAssessmentSummary.tsx", import.meta.url)));
 const { default: LiveResults } = await import(compiledUrl(new URL("../app/LiveResults.tsx", import.meta.url)));
 const context = { jobId: "tennis-test", videoSha256: tennisHash, durationMs: 9000 };
 const parse = report => validatedTennisAssessment(report, context);
@@ -188,7 +188,7 @@ test("partial radar keeps missing dimensions empty while genuine zero remains ze
   report.overall_score = 75;
   const parsed = parse(report); assert.equal(parsed.dimensions[0].score, null);
   const html = render(parsed); assert.match(html, />—<\/text>/); assert.doesNotMatch(html, /class="tennis-radar-shape"/);
-  assert.match(html, /本次已测 4 个动作环节/);
+  assert.match(html, /已测 4 \/ 5 项/);
   report.status = "scored"; report.dimensions[0].score = 0; report.dimensions[0].metrics[0].score = 0; report.dimensions[0].metrics[0].value = 0; report.overall_score = 60;
   assert.equal(parse(report).dimensions[0].score, 0); assert.match(render(parse(report)), />0\.0<\/text>/);
 });
@@ -203,7 +203,7 @@ test("practice timestamps must fit the source video and an untimed drill never i
   const focus = tennisImprovementFocus(tennisFixture().improvements[0]); assert.equal(focus.timestampMs, 1000); assert.match(focus.question, /复测/);
 });
 
-test("default summary shows one score, five dimensions and two actionable drills without technical copy", () => {
+test("summary shows the overall score and keeps extra drills and the five-dimension chart expandable", () => {
   const html = render(parse(tennisFixture()), { onSaveFocus() {} });
   assert.match(html, /<strong>70\.0<\/strong>/); assert.match(html, /五维动作评分图/);
   assert.equal((html.match(/class="tennis-radar-value"/g) ?? []).length, 5);
@@ -212,19 +212,32 @@ test("default summary shows one score, five dimensions and two actionable drills
   assert.match(html, /本次分析了 2 段挥拍/);
   assert.match(html, /可见动作的试验评分/);
   assert.match(html, /继续保持/); assert.match(html, /随挥后能恢复准备姿势/);
-  assert.match(html, /对应片段 1\.0–2\.2 秒/);
+  assert.match(html, /回看片段 <time>1\.0–2\.2 秒<\/time>/);
   assert.doesNotMatch(html, /置信|算法|规则未实现|P0080|Word|technical|coach_calibrated|触球质量/);
 });
 
-test("practice priority precedes the score and separates observation from measurement", () => {
+test("the first drill appears once and the additional observations are folded", () => {
   const report = tennisScopedFixture();
   report.improvements[0].observation = "这段准备时双脚间距较窄。姿态估计：准备时段平均站距约为髋宽的 0.80 倍。";
   const html = render(parse(report));
-  assert.ok(html.indexOf("本次优先练什么") < html.indexOf("tennis-score-card"));
-  for (const text of ["这段动作的表现", "测量依据", "0.80 倍", "调整方法", "怎么练", "复测目标"]) assert.ok(html.includes(text), text);
-  assert.match(html, /<details class="tennis-scope-details">/);
-  assert.doesNotMatch(html, /<details class="tennis-scope-details" open/);
-  assert.match(html, /先回看对应片段，再选一项练习/);
+  assert.equal(html.split("这段准备时双脚间距较窄。").length - 1, 1);
+  for (const text of ["本次训练重点", "测量依据", "0.80 倍", "下次先练", "怎么练", "复测目标"]) assert.ok(html.includes(text), text);
+  assert.match(html, /<details class="tennis-scope-details"><summary>/);
+  assert.match(html, /<details class="review-more"><summary>其他练习与优势/);
+  assert.match(html, /<details class="review-drill-steps"><summary>练习步骤与复测/);
+});
+
+test("selected clip readout uses only measurements from the exact scored episode", () => {
+  const report = parse(tennisScopedFixture());
+  const episode = report.episodes[0];
+  const metric = report.dimensions[0].metrics[0];
+  episode.metrics = { [metric.id]: { value: 12.34, score: 56 } };
+  const clip = { id: `tennis:${episode.episode_id}`, label: "挥拍动作", startMs: episode.start_ms, endMs: episode.end_ms,
+    anchors: [{ id: "peak", sourceMs: episode.peak_ms }] };
+  const readout = selected => renderToStaticMarkup(createElement(ClipMeasurements, { clip: selected, report }));
+  assert.match(readout(clip), /12\.34/);
+  assert.match(readout(clip), /运动峰值/);
+  assert.doesNotMatch(readout({ ...clip, id: "motion:other-source" }), /12\.34/);
 });
 
 test("legacy report has one neutral placeholder and older measurement panels start folded after playback", () => {

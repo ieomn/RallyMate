@@ -84,9 +84,9 @@ test("ball overlay preserves the source aspect inside a height-limited video sta
   assert.match(html, /points="10,40 20,40"/);
 });
 
-test("report observations lead, source replay remains visible and the court starts folded", () => {
+test("source replay leads, followed by observations and folded court evidence", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: { job_id: "review-test-job", status: "ready" }, assessment: null, pending: false, trajectory: null, replay: createElement("section", { id: "source-visible" }, "原片回放") }));
-  assert.ok(html.indexOf('id="assessment"') < html.indexOf('id="source-visible"'));
+  assert.ok(html.indexOf('id="source-visible"') < html.indexOf('id="assessment"'));
   assert.ok(html.indexOf('id="source-visible"') < html.indexOf('id="court"'));
   assert.match(html, /<div class="report-replay-area"><section id="source-visible">/);
   assert.match(html, /<details class="report-insight-details report-court-details"><summary>/);
@@ -168,9 +168,9 @@ test("serve motion keeps its uncertainty without the candidate card list", () =>
     assessment: { techniques: assessmentRows("serve"), family_summary: { serve: { observed_count: 0, total_count: 1, candidate_count: 1, recognition_status: "candidate_only" } } }, catalog: null, pending: false, trajectory: null, status: "succeeded",
   }));
   assert.match(html, /发球式挥拍/);
-  assert.match(html, /球拍触球尚未确认/);
-  assert.match(html, /status-pill status-not_observed">动作待确认<\/span>/);
-  assert.match(html, /最新动作定义 · 动作待确认 · 触球未确认/);
+  assert.match(html, /没有已确认的发球或触球事件/);
+  assert.match(html, /status-pill status-not_observed">候选动作<\/span>/);
+  assert.match(html, /最新动作定义 · 候选动作 · 触球未确认/);
   assert.doesNotMatch(html, /action-candidates|action-candidate-list|已定位|5\.07.*6\.27|<span>已确认触球<\/span>/);
 });
 
@@ -180,7 +180,7 @@ test("many baseline candidates are summarized without counts or unconfirmed hit 
     result: { status: "ready", action_recognition: { status: "candidates_detected", candidates } },
     assessment: { techniques: assessmentRows("baseline"), family_summary: { baseline: { observed_count: 0, total_count: 5, recognition_status: "motion_detected_unclassified", recognition_reason_zh: "已检测到挥拍运动；正手、反手及切削尚未分类，触球次数暂不可用。" } } }, catalog: null, pending: false, trajectory: null, status: "succeeded",
   }));
-  assert.match(html, /挥拍待分类/);
+  assert.match(html, /未分类挥拍/);
   assert.match(html, /正手、反手及切削尚未分类/);
   assert.equal((html.match(/status-pill status-not_observed">未分类<\/span>/g) ?? []).length, 5);
   assert.match(html, /最新动作定义 · 未分类/);
@@ -212,7 +212,7 @@ test("a truly observed technique keeps its ready status even when other types ar
 });
 
 test("preview family chips show recognition limits without candidate counts", () => {
-  for (const [family, state, label] of [["baseline", "motion_detected_unclassified", "挥拍待分类"], ["serve", "candidate_only", "动作待确认"], ["baseline", "classifier_unavailable", "分类暂不可用"]]) {
+  for (const [family, state, label] of [["baseline", "motion_detected_unclassified", "未分类挥拍"], ["serve", "candidate_only", "候选动作"], ["baseline", "classifier_unavailable", "分类暂不可用"]]) {
     const html = renderToStaticMarkup(createElement(TechniqueFamilyChip, { family, label: family, total: 5, summary: { observed_count: 0, total_count: 5, candidate_count: 57, recognition_status: state } }));
     assert.ok(html.includes(label));
     assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, ""), /57|段候选|就绪度|0 \/ 5/);

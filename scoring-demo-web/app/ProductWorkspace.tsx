@@ -6,7 +6,8 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { recentReports, type RecentReport } from "./lib/training-report";
 import { AnimatedDisclosure } from "./AnimatedDisclosure";
 import { courtArtworkPath, courtArtworkPoint, COURT_LENGTH, DOUBLES_WIDTH, NET_DISTANCE, SERVICE_DISTANCE, SINGLES_WIDTH } from "./lib/court-artwork";
-import { useAuth } from "./auth/AuthProvider";
+import type { PersonalJobRecord } from "./lib/api-client";
+import "./workspace-redesign.css";
 
 export type WorkspaceView = "overview" | "sessions" | "analysis" | "guide";
 type IconName = "home" | "sessions" | "analysis" | "guide" | "plus" | "arrow-left" | "arrow-right" | "arrow-up-right" | "search" | "chevron-right" | "chevron-down" | "clock" | "play" | "check" | "camera" | "frame" | "upload" | "movement" | "close" | "menu" | "tennis";
@@ -63,45 +64,35 @@ function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: R
   return <main ref={contentRef} id="workspace-content" className="pw-content" tabIndex={-1}>{children}</main>;
 }
 
-function WorkspaceAccount() {
-  const { user, logout } = useAuth();
-  const [error, setError] = useState("");
-  const leave = async () => { setError(""); try { await logout(); } catch (cause) { setError(cause instanceof Error ? cause.message : "退出未完成，请重试。"); } };
-  return user ? <div className="pw-account"><span>{user.username}</span>{user.role === "ADMIN" && <a href="/admin">账户管理</a>}<button type="button" onClick={() => void leave()}>退出</button>{error && <span role="alert">{error}</span>}</div> : null;
-}
-
 export function ProductShell({ view, onNavigate, onNewAnalysis, children, currentName, busy = false }: {
   view: WorkspaceView; onNavigate: (view: WorkspaceView) => void; onNewAnalysis: () => void;
   children: ReactNode; currentName?: string; busy?: boolean;
 }) {
   const title = navigation.find(item => item.view === view)?.label ?? "训练总览";
-  return <div className="product-app">
+  return <div className="product-app pw-studio">
     <a className="pw-skip-link" href="#workspace-content">跳到主要内容</a>
     <aside className="pw-sidebar">
       <a className="pw-brand" href="/welcome" aria-label="RallyMate 首页"><span className="pw-brand-symbol"><ProductIcon name="tennis" size={27} /></span><span>RallyMate</span></a>
       <nav className="pw-desktop-nav" aria-label="主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} /><span>{item.label}</span>{item.view === "analysis" && busy && <i className="pw-busy-dot" aria-label="分析进行中" />}</button>)}</nav>
     </aside>
     <div className="pw-workspace">
-      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><WorkspaceAccount /><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
+      <header className="pw-topbar"><div className="pw-breadcrumb"><a className="pw-home-link" href="/welcome"><ProductIcon name="arrow-left" size={17} /><span>返回首页</span></a><ProductIcon name="chevron-right" size={14} /><span>{title}</span>{view === "analysis" && currentName && <><ProductIcon name="chevron-right" size={14} /><span className="pw-current-name" title={currentName}>{currentName}</span></>}</div><div className="pw-topbar-actions"><button type="button" className="pw-button pw-button-accent pw-topbar-action" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={17} /><span>{busy ? "分析进行中" : "新建分析"}</span></button></div></header>
       <WorkspaceSurface view={view}>{children}</WorkspaceSurface>
     </div>
     <nav className="pw-mobile-nav" aria-label="移动主导航">{navigation.map(item => <button type="button" key={item.view} className={view === item.view ? "is-active" : undefined} aria-current={view === item.view ? "page" : undefined} onClick={() => onNavigate(item.view)}><ProductIcon name={item.icon} size={21} /><span>{item.label}</span></button>)}</nav>
   </div>;
 }
 
-function CourtArtwork({ compact = false }: { compact?: boolean }) {
-  const id = useId().replace(/:/g, "");
+function CourtArtwork() {
   const halfWidth = DOUBLES_WIDTH / 2, singles = SINGLES_WIDTH / 2;
   const serviceFar = NET_DISTANCE - SERVICE_DISTANCE, serviceNear = NET_DISTANCE + SERVICE_DISTANCE;
   const [netLeft, netY] = courtArtworkPoint(-halfWidth - .45, NET_DISTANCE);
   const [netRight] = courtArtworkPoint(halfWidth + .45, NET_DISTANCE);
   const [netCenter] = courtArtworkPoint(0, NET_DISTANCE);
   const netHeight = 15;
-  return <svg className={compact ? "pw-court-art pw-court-art-compact" : "pw-court-art"} viewBox="0 0 640 460" fill="none" aria-hidden="true">
-    <defs><linearGradient id={`${id}-floor`} x1="120" y1="0" x2="570" y2="440" gradientUnits="userSpaceOnUse"><stop stopColor="#344c34" /><stop offset="1" stopColor="#18221c" /></linearGradient><radialGradient id={`${id}-glow`}><stop stopColor="#c4f469" stopOpacity=".16" /><stop offset="1" stopColor="#c4f469" stopOpacity="0" /></radialGradient></defs>
-    <ellipse cx="358" cy="228" rx="295" ry="218" fill={`url(#${id}-glow)`} />
+  return <svg className="pw-court-art pw-court-art-compact" viewBox="0 0 640 460" fill="none" aria-hidden="true">
     <g transform="translate(70 28) rotate(-13 250 200)">
-      <path d="M148 24h268l111 344H5Z" fill={`url(#${id}-floor)`} stroke="#8fa387" strokeOpacity=".18" />
+      <path d="M148 24h268l111 344H5Z" fill="#394238" stroke="#8fa387" strokeOpacity=".18" />
       <path d={courtArtworkPath([[-halfWidth, 0], [halfWidth, 0], [halfWidth, COURT_LENGTH], [-halfWidth, COURT_LENGTH]], true)} stroke="#d5e6c5" strokeOpacity=".7" strokeWidth="1.4" />
       <g stroke="#d5e6c5" strokeOpacity=".58" strokeWidth="1.2">
         {[-singles, singles].map(x => <path key={x} d={courtArtworkPath([[x, 0], [x, COURT_LENGTH]])} />)}
@@ -117,27 +108,36 @@ function CourtArtwork({ compact = false }: { compact?: boolean }) {
         <path d={`M${netLeft} ${netY - netHeight}Q${netCenter} ${netY - netHeight + 4} ${netRight} ${netY - netHeight}`} stroke="#eff8e7" strokeWidth="2" />
         {[netLeft, netRight].map(x => <path key={x} d={`M${x} ${netY - netHeight - 3}V${netY + 2}`} stroke="#d5e6c5" strokeWidth="2.6" />)}
       </g>
-      <path d={courtArtworkPath([[-2.8, 20], [0, serviceFar]])} stroke="#c4f469" strokeOpacity=".2" strokeWidth="1.2" strokeDasharray="4 8" />
-      <circle cx="181" cy="288" r="25" stroke="#c4f469" strokeOpacity=".12" /><circle cx="181" cy="288" r="13" stroke="#c4f469" strokeOpacity=".2" /><circle cx="181" cy="288" r="5" fill="#c4f469" /><circle cx="327" cy="117" r="4" fill="#b6cab0" fillOpacity=".45" />
     </g>
-    {!compact && <g stroke="#9eb08f" strokeOpacity=".2"><path d="M551 55h24m-12-12v24M79 369H55m12-12v24" /><circle cx="567" cy="361" r="38" /><path d="M567 313v96m-48-48h96" /></g>}
   </svg>;
 }
 
 function dateText(value: string, short = false) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "查看时间未记录";
-  return new Intl.DateTimeFormat("zh-CN", { year: short ? undefined : "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: short ? undefined : "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
 }
 
-function orderedReports(reports: RecentReport[], direction: "desc" | "asc" = "desc") {
-  return recentReports(reports).sort((a, b) => (Date.parse(a.viewedAt) - Date.parse(b.viewedAt)) * (direction === "desc" ? -1 : 1));
+function orderedReports(reports: HomeReport[], direction: "desc" | "asc" = "desc") {
+  const validated = new Map<string, HomeReport>();
+  for (const raw of reports) {
+    if (raw?.source === "imported") {
+      if (typeof raw.id === "string" && raw.id.startsWith("imported:") && raw.id.length > 9 &&
+          typeof raw.name === "string" && typeof raw.viewedAt === "string" && Number.isFinite(Date.parse(raw.viewedAt)) && !validated.has(raw.id)) {
+        validated.set(raw.id, { id: raw.id, name: raw.name.slice(0, 160), viewedAt: raw.viewedAt, source: "imported", dateLabel: "最近查看" });
+      }
+      continue;
+    }
+    const [report] = recentReports([raw]);
+    if (report && !validated.has(report.id)) validated.set(report.id, { ...report, status: raw.status, dateLabel: raw.dateLabel });
+  }
+  return [...validated.values()].sort((a, b) => (Date.parse(a.viewedAt) - Date.parse(b.viewedAt)) * (direction === "desc" ? -1 : 1));
 }
 
 function ReportPreview({ id }: { id: string }) {
   const [failed, setFailed] = useState(false);
   return <div className={`pw-report-preview${failed ? " is-fallback" : ""}`}>
-    <div className="pw-preview-fallback"><CourtArtwork compact /></div>
+    <div className="pw-preview-fallback"><CourtArtwork /></div>
     {/* eslint-disable-next-line @next/next/no-img-element -- Same-origin authenticated artifact must use its gateway URL without an image optimizer. */}
     {!failed && <img key={id} src={`/v1/jobs/${encodeURIComponent(id)}/artifacts/preview.jpg`} alt="" loading="lazy" onError={() => setFailed(true)} />}
     <span className="pw-preview-play"><ProductIcon name="play" size={19} /></span>
@@ -152,16 +152,55 @@ function EmptyTraining({ onNewAnalysis, busy = false }: { onNewAnalysis: () => v
   return <div className="pw-empty-training"><span className="pw-empty-icon"><ProductIcon name="sessions" size={30} /></span><div><h3>第一份训练记录，从这里开始</h3><p>上传一段训练视频，把值得回看的动作留在这里。</p></div><button type="button" className="pw-button pw-button-secondary" onClick={onNewAnalysis} disabled={busy}>{busy ? "等待当前分析完成" : "上传训练视频"}<ProductIcon name="arrow-right" size={17} /></button></div>;
 }
 
-export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate, currentName, busy = false, dateLabel = "最近查看" }: {
-  reports: RecentReport[]; onOpenReport: (id: string) => void; onNewAnalysis: () => void;
-  onNavigate: (view: WorkspaceView) => void; currentName?: string; busy?: boolean; dateLabel?: string;
+export type HomeReport = RecentReport & { source?: "online" | "imported"; status?: PersonalJobRecord["status"]; dateLabel?: "最近查看" | "提交时间" };
+const recordStates: Record<PersonalJobRecord["status"], string> = {
+  queued: "排队中", running: "分析中", succeeded: "分析完成", failed: "分析失败", cancelled: "已取消",
+};
+
+export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate, currentName, loadedImportId, busy = false, dateLabel = "最近查看", loading = false, error = "", onRetry }: {
+  reports: HomeReport[]; onOpenReport: (id: string) => void; onNewAnalysis: () => void;
+  onNavigate: (view: WorkspaceView) => void; currentName?: string; loadedImportId?: string; busy?: boolean; dateLabel?: string;
+  loading?: boolean; error?: string; onRetry?: () => void;
 }) {
   const recent = useMemo(() => orderedReports(reports), [reports]);
+  const featured = recent.find(report => report.status === "running" || report.status === "queued") ?? recent[0];
+  const history = busy ? recent : recent.filter(report => report.id !== featured?.id);
+  const stage = featured?.status;
+  const active = busy || stage === "running" || stage === "queued";
+  const hasSelection = busy || Boolean(featured);
+  const mainLabel = busy ? "当前分析进度" : active ? "进行中的训练" : featured || loading ? "最近一次训练" : "新建训练";
+  const mainAction = active ? "查看进度" : !featured ? "上传训练视频" : featured.source === "imported" && featured.id !== loadedImportId ? "选择报告备份" : stage === "failed" || stage === "cancelled" ? "查看任务" : "打开训练报告";
+  const openFeatured = () => {
+    if (busy) onNavigate("analysis");
+    else if (featured) onOpenReport(featured.id);
+    else onNewAnalysis();
+  };
   return <div className="pw-home">
-    <section className="pw-home-hero"><div className="pw-hero-copy"><h1>把每一拍，<br />练得更明白<span>。</span></h1><p className="pw-hero-description">从一段训练视频开始。回看脚步与挥拍，<br className="pw-desktop-break" />发现值得和教练一起复盘的细节。</p><div className="pw-hero-actions"><button type="button" className="pw-button pw-button-accent pw-button-large" onClick={onNewAnalysis} disabled={busy}><ProductIcon name="plus" size={20} />{busy ? "视频正在分析中" : "开始新一次分析"}<ProductIcon name="arrow-up-right" size={18} /></button><button type="button" className="pw-text-button" onClick={() => onNavigate("guide")}>怎样拍得更清楚<ProductIcon name="arrow-right" size={17} /></button></div></div><div className="pw-hero-visual"><CourtArtwork /></div></section>
-    {busy && <button type="button" className="pw-running-banner" onClick={() => onNavigate("analysis")}><span className="pw-busy-dot" /><span><strong>你的训练视频正在分析</strong><small>{currentName || "可以进入视频分析查看当前进度。"}</small></span><span className="pw-running-link">查看进度<ProductIcon name="arrow-right" size={17} /></span></button>}
-    <section className="pw-recent-section" aria-labelledby="pw-recent-heading"><div className="pw-section-heading"><div><h2 id="pw-recent-heading">最近的训练<span className="pw-count">{recent.length}</span></h2></div><button type="button" className="pw-text-button" onClick={() => onNavigate("sessions")}>全部记录<ProductIcon name="arrow-right" size={17} /></button></div>{recent.length ? <div className="pw-report-grid">{recent.slice(0, 3).map(report => <ReportCard key={report.id} report={report} onOpen={onOpenReport} dateLabel={dateLabel} />)}</div> : <EmptyTraining onNewAnalysis={onNewAnalysis} busy={busy} />}</section>
-    <section className="pw-home-method" aria-labelledby="pw-method-heading"><div className="pw-method-intro"><h2 id="pw-method-heading">让复盘成为<br />训练的一部分。</h2><button type="button" className="pw-text-button" onClick={() => onNavigate("guide")}>从拍摄开始<ProductIcon name="arrow-right" size={17} /></button></div><div className="pw-method-steps">{[{ n: "01", icon: "camera" as const, title: "留下完整动作", description: "固定机位，让全身和双脚始终留在画面里。" }, { n: "02", icon: "play" as const, title: "回到关键片段", description: "结合原始画面，查看可观察的脚步和挥拍过程。" }, { n: "03", icon: "movement" as const, title: "带着问题再练", description: "把具体片段带给教练，让每次讨论都有画面依据。" }].map(step => <div className="pw-method-step" key={step.n}><ProductIcon name={step.icon} size={23} /><h3>{step.title}</h3><p>{step.description}</p></div>)}</div></section>
+    <header className="studio-title"><h1>训练总览</h1></header>
+    <div className="studio-overview">
+      <section className="studio-feature" aria-label={mainLabel}>
+        <header className="studio-section-rail"><h2>{mainLabel}</h2>{(busy || stage) && <span className="studio-state">{busy ? "处理中" : stage && recordStates[stage]}</span>}</header>
+        {!hasSelection && loading ? <p className="studio-empty-message" role="status">正在读取最近训练…</p> : <button type="button" className="studio-feature-link" onClick={openFeatured}>
+          {featured && featured.source !== "imported" && !busy && (!stage || stage === "succeeded") ? <ReportPreview key={featured.id} id={featured.id} /> :
+            hasSelection ? <div className="studio-court-slate" aria-hidden="true"><CourtArtwork /></div> :
+            <span className="studio-empty-photo" aria-hidden="true" />}
+          <span className="studio-feature-body">
+            <span className="studio-feature-name">{busy ? currentName || "当前视频" : featured?.name || "选择一段训练原片"}</span>
+            {featured && !busy && <time dateTime={featured.viewedAt}>{featured.dateLabel ?? dateLabel} · {dateText(featured.viewedAt)}{featured.source === "imported" && " · 本地导入"}</time>}
+            {!hasSelection && <span className="studio-filetypes">MP4 / MOV / M4V / AVI / MKV</span>}
+            <span className="studio-feature-cta">{mainAction}<ProductIcon name="arrow-up-right" size={19} /></span>
+          </span>
+        </button>}
+      </section>
+      <aside className="studio-recent" aria-labelledby="pw-recent-heading">
+        <header className="studio-section-rail"><h2 id="pw-recent-heading">近期记录</h2><button type="button" className="studio-link" onClick={() => onNavigate("sessions")}>查看全部<ProductIcon name="arrow-right" size={16} /></button></header>
+        {history.length > 0 ? <ol className="studio-history-list">{history.slice(0, 6).map(report => <li key={report.id}>
+          <button type="button" disabled={busy && report.source === "imported"} onClick={() => onOpenReport(report.id)}><span><strong>{report.name || "未命名训练"}</strong><time dateTime={report.viewedAt}>{report.dateLabel ?? dateLabel} · {dateText(report.viewedAt, true)}{report.source === "imported" && " · 本地导入"}</time></span><ProductIcon name="arrow-up-right" size={16} /></button>
+        </li>)}</ol> : <p className="studio-empty-message" role="status">{loading ? "正在读取训练记录…" : error ? "训练记录读取失败。" : hasSelection ? "暂无其他训练记录" : "训练记录将在上传后出现在这里。"}</p>}
+        {error && <div className="studio-load-error" role="alert"><p>{error}</p>{onRetry && <button className="studio-link" type="button" onClick={onRetry}>重新读取</button>}</div>}
+        <button className="studio-guide-link" type="button" onClick={() => onNavigate("guide")}><ProductIcon name="camera" size={22} /><span><strong>拍摄指南</strong><small>机位、取景与开拍检查</small></span><ProductIcon name="arrow-right" size={17} /></button>
+      </aside>
+    </div>
   </div>;
 }
 
@@ -171,26 +210,29 @@ export function SessionLibrary({ reports, onOpenReport, onNewAnalysis }: { repor
   const cleanReports = useMemo(() => orderedReports(reports, order), [reports, order]);
   const matching = useMemo(() => cleanReports.filter(report => report.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())), [cleanReports, search]);
   const searchId = useId(), orderId = useId();
-  return <div className="pw-library"><div className="pw-page-heading"><div><h1>每一次回看，都有迹可循。</h1><p>这里保存此浏览器最近查看过的训练报告。</p></div><button type="button" className="pw-button pw-button-secondary" onClick={onNewAnalysis}><ProductIcon name="plus" size={18} />新建分析</button></div><div className="pw-library-toolbar"><div className="pw-search"><ProductIcon name="search" size={19} /><label className="pw-sr-only" htmlFor={searchId}>按训练视频名称搜索</label><input id={searchId} type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索训练视频名称" autoComplete="off" /></div><div className="pw-sort"><label htmlFor={orderId}>最近查看</label><select id={orderId} value={order} onChange={event => setOrder(event.target.value === "asc" ? "asc" : "desc")}><option value="desc">由新到旧</option><option value="asc">由旧到新</option></select><ProductIcon name="chevron-down" size={15} /></div></div><div className="pw-library-meta" aria-live="polite"><span>{search.trim() ? `找到 ${matching.length} 份记录` : `共 ${cleanReports.length} 份最近记录`}</span>{search.trim() && <button type="button" className="pw-text-button" onClick={() => setSearch("")}>清除搜索<ProductIcon name="close" size={14} /></button>}</div>{!cleanReports.length ? <EmptyTraining onNewAnalysis={onNewAnalysis} /> : matching.length ? <div className="pw-report-grid pw-library-grid">{matching.map(report => <ReportCard key={report.id} report={report} onOpen={onOpenReport} />)}</div> : <div className="pw-search-empty"><span className="pw-empty-icon"><ProductIcon name="search" size={28} /></span><h2>暂时没有找到这份训练</h2><p>试试视频名称中的其他字词，或查看全部记录。</p><button type="button" className="pw-button pw-button-secondary" onClick={() => setSearch("")}>查看全部记录</button></div>}<p className="pw-library-note"><ProductIcon name="clock" size={14} />按最近查看时间记录；这里的时间不是视频拍摄时间。</p></div>;
+  return <div className="pw-library"><div className="pw-page-heading"><div><h1>训练记录</h1><p>这里保存此浏览器最近查看过的训练报告。</p></div><button type="button" className="pw-button pw-button-secondary" onClick={onNewAnalysis}><ProductIcon name="plus" size={18} />新建分析</button></div><div className="pw-library-toolbar"><div className="pw-search"><ProductIcon name="search" size={19} /><label className="pw-sr-only" htmlFor={searchId}>按训练视频名称搜索</label><input id={searchId} type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索训练视频名称" autoComplete="off" /></div><div className="pw-sort"><label htmlFor={orderId}>最近查看</label><select id={orderId} value={order} onChange={event => setOrder(event.target.value === "asc" ? "asc" : "desc")}><option value="desc">由新到旧</option><option value="asc">由旧到新</option></select><ProductIcon name="chevron-down" size={15} /></div></div><div className="pw-library-meta" aria-live="polite"><span>{search.trim() ? `找到 ${matching.length} 份记录` : `共 ${cleanReports.length} 份最近记录`}</span>{search.trim() && <button type="button" className="pw-text-button" onClick={() => setSearch("")}>清除搜索<ProductIcon name="close" size={14} /></button>}</div>{!cleanReports.length ? <EmptyTraining onNewAnalysis={onNewAnalysis} /> : matching.length ? <div className="pw-report-grid pw-library-grid">{matching.map(report => <ReportCard key={report.id} report={report} onOpen={onOpenReport} />)}</div> : <div className="pw-search-empty"><span className="pw-empty-icon"><ProductIcon name="search" size={28} /></span><h2>暂时没有找到这份训练</h2><p>试试视频名称中的其他字词，或查看全部记录。</p><button type="button" className="pw-button pw-button-secondary" onClick={() => setSearch("")}>查看全部记录</button></div>}<p className="pw-library-note"><ProductIcon name="clock" size={14} />按最近查看时间记录；这里的时间不是视频拍摄时间。</p></div>;
 }
 
 function CaptureIllustrations() {
   return <section className="pw-capture-visuals" aria-label="机位与构图示意">
     <figure><svg viewBox="0 0 320 200" role="img" aria-label="机位示意：固定手机放在底线后斜侧方，朝向球员"><path d="M90 20h140v142H90zM90 91h140M107 20v142M213 20v142M90 56h140M90 126h140M160 56v70" fill="none" stroke="#99ad98" strokeWidth="1.5" /><circle cx="160" cy="146" r="10" fill="#d8fc75" /><path d="m265 177-95-44 69 5Z" fill="#d8fc75" opacity=".15" /><path d="m261 176-94-31" stroke="#d8fc75" strokeDasharray="4 5" /><rect x="253" y="164" width="25" height="17" rx="3" fill="#d8fc75" /><path d="m264 181-8 13m8-13 8 13" stroke="#d8fc75" strokeWidth="2" /><text x="28" y="148" fill="#c6d1c0" fontSize="13">球员</text><path d="M60 144h80" stroke="#64775e" /></svg><figcaption><strong>先试斜后方或侧面机位</strong><span>手机固定在场外安全位置，先试挥和横移，再调整距离。角度随观察主题调整。</span></figcaption></figure>
-    <figure className="is-good"><svg viewBox="0 0 320 200" role="img" aria-label="合格构图示意：头部、球拍与双脚都在画面中，周围留有活动余量"><rect x="22" y="16" width="276" height="168" rx="8" fill="#19251d" stroke="#7f9b66" /><path d="M22 154h276" stroke="#475f44" /><circle cx="155" cy="57" r="12" fill="none" stroke="#c0d1b6" strokeWidth="4" /><path d="M155 70v49m0-37-34 27m34-25 40-14m-40 49-22 39m22-39 28 38" fill="none" stroke="#c0d1b6" strokeWidth="5" strokeLinecap="round" /><path d="m196 70 13-17" stroke="#d8fc75" strokeWidth="3" /><ellipse cx="217" cy="42" rx="11" ry="16" transform="rotate(35 217 42)" stroke="#d8fc75" strokeWidth="2" fill="none" /><path d="m41 38 7 7 13-15" stroke="#d8fc75" strokeWidth="4" fill="none" /></svg><figcaption><strong>可以：完整入镜，四周留余量</strong><span>移动时也能看见头、手、球拍和双脚；身体足够大，细节清楚。</span></figcaption></figure>
-    <figure className="is-bad"><svg viewBox="0 0 320 200" role="img" aria-label="不合格构图示意：镜头过近，双脚和球拍被画面边缘裁切"><defs><clipPath id="capture-crop"><rect x="22" y="16" width="276" height="168" rx="8" /></clipPath></defs><rect x="22" y="16" width="276" height="168" rx="8" fill="#271f1d" stroke="#bb8a75" /><g clipPath="url(#capture-crop)" fill="none" stroke="#cdb3a7" strokeWidth="7" strokeLinecap="round"><circle cx="157" cy="48" r="20" /><path d="M157 69v87m0-64-62 46m62-43 70-47m-70 108-41 68m41-68 46 68" /><path d="m228 48 26-45" stroke="#d4aa8d" /></g><path d="m40 32 16 16m0-16L40 48M100 183h111" stroke="#efb69a" strokeWidth="3" /></svg><figcaption><strong>需要调整：太近，脚或球拍出画</strong><span>退远一些再拍。遮挡、强逆光和手持跟拍，也会让部分动作无法判断。</span></figcaption></figure>
+    <figure className="is-good"><svg viewBox="0 0 320 200" role="img" aria-label="合格构图示意：头部、球拍与双脚都在画面中，周围留有活动余量"><rect x="22" y="16" width="276" height="168" rx="8" fill="#19251d" stroke="#7f9b66" /><path d="M22 154h276" stroke="#475f44" /><circle cx="155" cy="57" r="12" fill="none" stroke="#c0d1b6" strokeWidth="4" /><path d="M155 70v49m0-37-34 27m34-25 40-14m-40 49-22 39m22-39 28 38" fill="none" stroke="#c0d1b6" strokeWidth="5" strokeLinecap="round" /><path d="m196 70 13-17" stroke="#d8fc75" strokeWidth="3" /><ellipse cx="217" cy="42" rx="11" ry="16" transform="rotate(35 217 42)" stroke="#d8fc75" strokeWidth="2" fill="none" /><path d="m41 38 7 7 13-15" stroke="#d8fc75" strokeWidth="4" fill="none" /></svg><figcaption><strong>完整入镜，四周留余量</strong><span>移动时也能看见头、手、球拍和双脚；身体足够大，细节清楚。</span></figcaption></figure>
+    <figure className="is-bad"><svg viewBox="0 0 320 200" role="img" aria-label="不合格构图示意：镜头过近，双脚和球拍被画面边缘裁切"><defs><clipPath id="capture-crop"><rect x="22" y="16" width="276" height="168" rx="8" /></clipPath></defs><rect x="22" y="16" width="276" height="168" rx="8" fill="#222521" stroke="#848a7f" /><g clipPath="url(#capture-crop)" fill="none" stroke="#babdb4" strokeWidth="7" strokeLinecap="round"><circle cx="157" cy="48" r="20" /><path d="M157 69v87m0-64-62 46m62-43 70-47m-70 108-41 68m41-68 46 68" /><path d="m228 48 26-45" stroke="#b5bbae" /></g><path d="m40 32 16 16m0-16L40 48M100 183h111" stroke="#e5e8dd" strokeWidth="3" /></svg><figcaption><strong>镜头过近，脚或球拍出画</strong><span>退远一些再拍。遮挡、强逆光和手持跟拍，也会让部分动作无法判断。</span></figcaption></figure>
   </section>;
 }
 
 const guideSections: Array<{ icon: IconName; title: string; details: ReactNode }> = [
   { icon: "camera", title: "固定机位，留出完整空间", details: <><p>用支架或稳固的位置固定手机。横拍或竖拍都可以，重点是运动中头部、持拍手和双脚始终留在画面里。</p><p>开拍前试挥一拍并左右移动，确认不会出画。避免手持跟拍、频繁缩放和镜头切换。</p></> },
   { icon: "frame", title: "让需要观察的部位看得清", details: <><p>优先选择光线均匀的位置，避开强逆光。球员不能小到看不清肩、髋和手脚，也不要为了放大画面裁掉脚部。</p><p>侧面或斜后方机位可以作为起点，再根据教练想观察的动作调整。没有一个角度能同时看清所有细节；被身体或球拍遮住的部分需要另外拍摄。</p></> },
-  { icon: "movement", title: "先用短片，保留完整动作", details: <><p>第一次建议选 10–30 秒、围绕一个主题的短片，以减少等待。这不是时长限制；长视频的分析可能明显长于视频本身，页面会显示当前阶段，不承诺固定耗时。</p><p>开始录制后留一点准备时间，动作结束后保留恢复过程。想看启动和制动时，也要拍到来球前后的移动。避免只留下触球附近几帧，或拼接不同时间的动作。</p></> },
+  { icon: "movement", title: "保留动作前后", details: <><p>第一次可以选 10–30 秒的原片，围绕同一项练习。</p><p>从准备动作开始录制，拍到击球后恢复站位。</p></> },
   { icon: "upload", title: "使用原视频，保留原来的节奏", details: <><p>上传相机或手机直接保存的视频，优先保留原清晰度、速度和画幅。不要添加美颜、骨架、贴纸或遮挡动作的字幕。</p><p>慢动作和变速导出可能改变视频时间关系。如需慢放，请在回放时调整；初次分析优先使用正常速度的原片。</p></> },
 ];
 
 export function CaptureGuide({ onNewAnalysis }: { onNewAnalysis: () => void }) {
   const [checked, setChecked] = useState<Set<number>>(() => new Set());
   const checklist = ["机位稳定，全身与双脚都在画面里", "光线清楚，肩髋和持拍手尽量没有遮挡", "保留动作前的准备和动作后的恢复", "准备好未经变速和拼接的原视频"];
-  return <div className="pw-guide"><div className="pw-page-heading"><div><h1>拍得清楚，<br className="pw-mobile-break" />才能看得明白。</h1></div><span className="pw-guide-heading-icon"><ProductIcon name="camera" size={38} /></span></div><CaptureIllustrations /><div className="pw-guide-layout"><section className="pw-guide-articles" aria-label="拍摄建议">{guideSections.map((section, index) => <AnimatedDisclosure className="pw-guide-detail" bodyClassName="pw-guide-detail-body" key={section.title} defaultOpen={index === 0} summary={<><span className="pw-guide-icon"><ProductIcon name={section.icon} size={22} /></span><span><strong>{section.title}</strong></span><ProductIcon name="plus" size={18} /></>}>{section.details}</AnimatedDisclosure>)}<div className="pw-guide-context"><ProductIcon name="guide" size={21} /><p>视频中的二维测量可帮助定位复核片段。动作是否合理、应该怎样改进，仍需结合具体情境与教练判断。</p></div></section><aside className="pw-checklist"><h2>开拍前，检查一下。</h2><p className="pw-checklist-intro">勾选不会影响视频能否上传。</p><div className="pw-checklist-items">{checklist.map((item, index) => <label key={item} className={checked.has(index) ? "is-checked" : undefined}><input type="checkbox" checked={checked.has(index)} onChange={() => setChecked(previous => { const next = new Set(previous); if (next.has(index)) next.delete(index); else next.add(index); return next; })} /><span className="pw-custom-check"><ProductIcon name="check" size={13} /></span><span>{item}</span></label>)}</div><p className="pw-checklist-count" aria-live="polite">{checked.size === checklist.length ? "准备就绪，带上你的训练视频。" : `已检查 ${checked.size} / ${checklist.length} 项`}</p><button type="button" className="pw-button pw-button-accent" onClick={onNewAnalysis}>开始视频分析<ProductIcon name="arrow-right" size={18} /></button></aside></div></div>;
+  return <div className="pw-guide"><header className="studio-title"><h1>拍摄指南</h1></header>
+    <div className="studio-guide-layout"><div className="studio-guide-reading"><CaptureIllustrations />
+    <section className="pw-guide-articles" aria-label="拍摄建议">{guideSections.map((section, index) => <AnimatedDisclosure className="pw-guide-detail" bodyClassName="pw-guide-detail-body" key={section.title} defaultOpen={index === 0} summary={<><span className="pw-guide-icon"><ProductIcon name={section.icon} size={22} /></span><span><strong>{section.title}</strong></span><ProductIcon name="plus" size={18} /></>}>{section.details}</AnimatedDisclosure>)}</section></div>
+    <aside className="pw-checklist"><h2>开拍检查</h2><p className="pw-checklist-intro">可选自查，勾选不会影响视频能否上传。</p><div className="pw-checklist-items">{checklist.map((item, index) => <label key={item} className={checked.has(index) ? "is-checked" : undefined}><input type="checkbox" checked={checked.has(index)} onChange={() => setChecked(previous => { const next = new Set(previous); if (next.has(index)) next.delete(index); else next.add(index); return next; })} /><span className="pw-custom-check"><ProductIcon name="check" size={13} /></span><span>{item}</span></label>)}</div><p className="pw-checklist-count" aria-live="polite">{checked.size === checklist.length ? "准备就绪，带上你的训练视频。" : `已检查 ${checked.size} / ${checklist.length} 项`}</p><button type="button" className="pw-button pw-button-accent" onClick={onNewAnalysis}>开始视频分析<ProductIcon name="arrow-right" size={18} /></button></aside></div></div>;
 }

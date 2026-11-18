@@ -13,7 +13,9 @@ import "./welcome/marketing.css";
 import "./welcome/training-experience.css";
 import "./product-refinements.css";
 import "./account.css";
+import "./product-foundations.css";
 import { AuthProvider } from "./auth/AuthProvider";
+import PersonalCenter from "./auth/PersonalCenter";
 import FrontendMonitoring from "./FrontendMonitoring";
 
 export const metadata: Metadata = {
@@ -23,5 +25,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body><FrontendMonitoring><AuthProvider>{children}</AuthProvider></FrontendMonitoring></body></html>;
+  return <html lang="zh-CN"><body><FrontendMonitoring><AuthProvider>{children}<PersonalCenter /></AuthProvider></FrontendMonitoring></body></html>;
 }

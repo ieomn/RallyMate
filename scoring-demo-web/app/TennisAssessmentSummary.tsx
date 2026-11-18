@@ -1,16 +1,19 @@
 "use client";
 
 import { useId } from "react";
-import { TENNIS_PATTERN_NAMES, type TennisAssessment } from "./lib/tennis-assessment";
+import { TENNIS_PATTERN_NAMES, type TennisAssessment, type TennisImprovement } from "./lib/tennis-assessment";
 import type { TrainingFocusSelection } from "./lib/training-guidance";
 import { productText } from "./lib/presentation-text";
 import { tennisEvidenceReason } from "./lib/tennis-evidence-status";
 import { tennisImprovementFocus } from "./lib/tennis-practice";
+import { footworkUnitText } from "./lib/footwork-review";
+import type { ReplayClip } from "./lib/replay-clips";
 import JointKinematicsDetails from "./JointKinematicsDetails";
 export { tennisImprovementFocus } from "./lib/tennis-practice";
 import "./tennis-assessment.css";
 
 const scoreText = (value: number) => value.toFixed(1);
+const metricUnit = (unit: string) => unit === "hip_width" ? "倍髋宽" : footworkUnitText(unit);
 const seconds = (value: number) => (value / 1000).toFixed(1);
 const observationParts = (value: string) => {
   const text = productText(value);
@@ -52,57 +55,77 @@ function TennisRadar({ report }: { report: TennisAssessment }) {
   </svg>;
 }
 
-export default function TennisAssessmentSummary({ report, loading, error, message, offline = false, onRetry, onSaveFocus, replayAvailable = true }: {
-  report: TennisAssessment | null; loading?: boolean; error?: boolean; message?: string; offline?: boolean; onRetry?: () => void;
-  onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean;
+type PracticeActions = { onSaveFocus?: (focus: TrainingFocusSelection) => void; replayAvailable?: boolean };
+
+function Practice({ item, report, priority, replayAvailable, onSaveFocus }: PracticeActions & {
+  item: TennisImprovement; report: TennisAssessment; priority: boolean;
 }) {
-  if (!report) return <section className="tennis-assessment-wait" id="assessment" role="status"><span className={loading ? "tennis-loading-dot" : ""} />
-    <p>{loading && !error && !message && !offline ? "正在生成动作评分" : "暂无可展示的结果"}</p>
-    {message ? <p>{productText(message)}</p> : error ? <p>动作评分暂未读取成功，可重新读取，无需重新上传视频。</p>
-      : offline ? <p>这份导入报告未包含可核验的动作评分。可从原任务重新读取并导出报告。</p> : null}
-    {!loading && onRetry && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
+  const detail = observationParts(item.observation);
+  return <article className="tennis-drill">
+    {priority && <span className="review-label">本次训练重点</span>}
+    <h3>{productText(item.title)}</h3>
+    {detail.observation && <p className="tennis-observation">{detail.observation}</p>}
+    <p className="review-next"><span className="review-label">下次先练</span>{productText(item.action)}</p>
+    <details className="review-drill-steps"><summary>练习步骤与复测</summary>
+      <dl><div><dt>怎么练</dt><dd>{productText(item.drill)}</dd></div><div><dt>复测目标</dt><dd>{productText(item.retest)}</dd></div></dl>
+      {detail.measurement && <p className="tennis-observation-measurement"><span>测量依据</span>{detail.measurement}</p>}
+    </details>
+    <div className="tennis-drill-actions">
+      {item.start_ms !== null && item.end_ms !== null && (replayAvailable
+        ? <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { jobId: report.source_run_id, timestampMs: item.start_ms, preferOriginal: true } }))}>回看片段 <time>{seconds(item.start_ms)}–{seconds(item.end_ms)} 秒</time></button>
+        : <time>对应片段 {seconds(item.start_ms)}–{seconds(item.end_ms)} 秒</time>)}
+      {onSaveFocus && <button type="button" onClick={() => onSaveFocus(tennisImprovementFocus(item))}>保存练习</button>}
+    </div>
+  </article>;
+}
+
+export function ClipMeasurements({ clip, report }: { clip: ReplayClip; report: TennisAssessment | null }) {
+  const episode = report?.episodes?.find(item => `tennis:${item.episode_id}` === clip.id);
+  const label = episode?.motion_pattern && TENNIS_PATTERN_NAMES[episode.motion_pattern.profile_id] || clip.label;
+  const metrics = report?.dimensions.flatMap(dimension => dimension.metrics).filter(item => episode?.metrics?.[item.id]).slice(0, 3) ?? [];
+  const peak = clip.anchors.find(anchor => anchor.id === "peak");
+  return <section className="review-clip-readout" aria-label="所选片段测量" aria-live="polite">
+    <span className="review-label">所选片段</span><h3>{label}</h3>
+    <dl><div><dt>动作区间</dt><dd>{seconds(clip.startMs)}–{seconds(clip.endMs)} 秒</dd></div>
+      {peak && <div><dt>运动峰值</dt><dd>{seconds(peak.sourceMs)} 秒</dd></div>}
+      {metrics.map(item => <div key={item.id}><dt>{productText(item.label)}</dt><dd>{Number(episode!.metrics![item.id].value.toFixed(2))} {metricUnit(item.unit)}</dd></div>)}
+    </dl>
   </section>;
-  if (report.status === "unavailable") return <section className="tennis-assessment-wait" id="assessment"><div>
-    <p>暂无可展示的结果</p>
-    <p>{productText(report.reason_zh) || "本次缺少可用于评分的连续动作证据。"} 未测项目不按零分或动作错误处理。</p>
-    <p>{productText(report.improvements[0]?.action) || "请在回放中确认准备、挥拍和随挥完整；重新拍摄时，让全身与双脚持续入镜。"}</p>
-    {onRetry && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
-  </div></section>;
-  const priority = report.improvements[0];
+}
+
+export default function TennisAssessmentSummary({ report, loading, error, message, offline = false, onRetry, onSaveFocus, replayAvailable = true }: PracticeActions & {
+  report: TennisAssessment | null; loading?: boolean; error?: boolean; message?: string; offline?: boolean; onRetry?: () => void;
+}) {
+  if (!report) return <section className="tennis-assessment-wait" id="assessment" role="status">
+    <h2>动作评分</h2><p>{loading && !error && !message && !offline ? "正在生成动作评分" : "暂无可展示的结果"}</p>
+    {message ? <p>{productText(message)}</p> : error ? <p>动作评分读取失败，可重试。</p>
+      : offline ? <p>这份导入报告未包含可核验的动作评分。</p> : null}
+    {!loading && onRetry && !offline && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
+  </section>;
+  if (report.status === "unavailable") return <section className="tennis-assessment-wait" id="assessment">
+    <h2>动作评分</h2><p>暂无可展示的结果</p><p>{productText(report.reason_zh) || "当前没有连续可测的动作。"} 未测项目不按零分或动作错误处理。</p>
+    <p>{productText(report.improvements[0]?.action) || "下次拍摄时，请把全身、双脚和完整挥拍留在画面内。"}</p>
+    {onRetry && !offline && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
+  </section>;
+  const [priority, ...otherDrills] = report.improvements;
+  const measured = report.dimensions.filter(item => item.score !== null).length;
   return <div className="tennis-training-result">
-    {priority && <section className="tennis-priority" aria-labelledby="tennis-priority-title">
-      <span className="tennis-eyebrow">本次优先练什么</span>
-      <h2 id="tennis-priority-title">{productText(priority.title)}</h2>
-      <p>{observationParts(priority.observation).observation}</p>
-      <div className="tennis-priority-next"><span>先做这一步</span><strong>{productText(priority.action)}</strong></div>
-      <a href="#recommendations">查看对应片段与练习方法 <span aria-hidden="true">↓</span></a>
-      <small>以下重点来自本次可见动作。先回看对应片段，再选一项练习。</small>
-    </section>}
     <section className="tennis-score-card" id="assessment" aria-labelledby="tennis-score-title">
-      <div className="tennis-score-copy"><span className="tennis-eyebrow">本次表现</span><h2 id="tennis-score-title">动作评分</h2>
-        <div className="tennis-score-number"><strong>{report.overall_score === null ? "—" : scoreText(report.overall_score)}</strong><span>/ 100</span></div>
-        <p>{report.episodes?.length ? `本次分析了 ${report.episodes.length} 段挥拍，结合五个环节定位练习重点。` : "结合五个动作环节，找到下次训练的重点。"}</p>
-        <small>可见动作的试验评分，尚未经教练标定，不能代替原始技术标准的 A–E 等级；请用同类动作与相近机位比较。</small>
-        {report.status === "partial" && <small>本次已测 {report.dimensions.filter(item => item.score !== null).length} 个动作环节</small>}
-      </div><TennisRadar report={report} />
+      <div className="review-score-heading"><h2 id="tennis-score-title">动作评分</h2><span className="review-label">全片 · 已测 {measured} / 5 项</span></div>
+      <div className="tennis-score-number"><strong>{report.overall_score === null ? "—" : scoreText(report.overall_score)}</strong><span>/ 100</span></div>
+      <small className="review-score-note">可见动作的试验评分 · 未经教练标定</small>
+      <details className="tennis-scope-details"><summary>查看五维评分与范围</summary>
+        <TennisRadar report={report} />
+        {report.episodes?.length ? <p>本次分析了 {report.episodes.length} 段挥拍。</p> : null}
+        <p>适合同类动作与相近机位的对照，不能代替原始技术标准的 A–E 等级。</p>
+        <SubjectAndPatternScope report={report} />
+      </details>
     </section>
-    {report.subject_scope && report.pattern_coverage && <details className="tennis-scope-details"><summary>本次评估了谁、哪些动作</summary><SubjectAndPatternScope report={report} /></details>}
-    {!!report.strengths.length && <section className="tennis-strengths" aria-labelledby="tennis-strengths-title">
-      <h2 id="tennis-strengths-title">继续保持</h2>
-      <ul>{report.strengths.slice(0, 2).map((item, index) => <li key={`${item.title}-${index}`}><strong>{productText(item.title)}</strong><p>{productText(item.observation)}</p></li>)}</ul>
-    </section>}
-    {!!report.improvements.length && <section className="tennis-practice" id="recommendations" aria-labelledby="tennis-practice-title">
-      <div className="tennis-section-title"><h2 id="tennis-practice-title">具体表现与练习方法</h2><span>选一项开始 · 先慢后快</span></div>
-      <div className="tennis-practice-grid">{report.improvements.map((item, index) => { const detail = observationParts(item.observation); return <article className="tennis-drill" key={item.dimension_id}>
-        <div className="tennis-drill-heading"><span aria-hidden="true">0{index + 1}</span><h3>{productText(item.title)}</h3></div>
-        {item.start_ms !== null && item.end_ms !== null && <span className="tennis-drill-source">对应片段 {seconds(item.start_ms)}–{seconds(item.end_ms)} 秒</span>}
-        <div className="tennis-observation-block"><h4>这段动作的表现</h4><p className="tennis-observation">{detail.observation}</p>
-          {detail.measurement && <p className="tennis-observation-measurement"><span>测量依据</span>{detail.measurement}</p>}</div>
-        <dl><div className="tennis-action-row"><dt>调整方法</dt><dd>{productText(item.action)}</dd></div><div><dt>怎么练</dt><dd>{productText(item.drill)}</dd></div><div><dt>复测目标</dt><dd>{productText(item.retest)}</dd></div></dl>
-        <div className="tennis-drill-actions">{item.start_ms !== null && replayAvailable && <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("rallymate:seek-video", { detail: { jobId: report.source_run_id, timestampMs: item.start_ms } }))}>回看这段动作 ↗</button>}
-          {onSaveFocus && <button type="button" onClick={() => onSaveFocus(tennisImprovementFocus(item))}>保存练习</button>}</div>
-      </article>; })}</div>
-    </section>}
+    {priority && <section id="recommendations" aria-label="本次训练重点"><Practice item={priority} report={report} priority onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} /></section>}
+    {(otherDrills.length > 0 || report.strengths.length > 0) && <details className="review-more"><summary>其他练习与优势</summary>
+      {otherDrills.map(item => <Practice key={item.dimension_id} item={item} report={report} priority={false} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />)}
+      {!!report.strengths.length && <section className="review-strengths"><h3>继续保持</h3><ul>{report.strengths.map((item, index) => <li key={index}><strong>{productText(item.title)}</strong><p>{productText(item.observation)}</p></li>)}</ul></section>}
+    </details>}
   </div>;
 }
 
@@ -136,6 +159,6 @@ export function TennisAssessmentDetails({ report }: { report: TennisAssessment |
       </details>)}
     </div>}
     {report.dimensions.map(dimension => <div key={dimension.id}><h3>{dimension.label} · {dimension.score === null ? "—" : scoreText(dimension.score)}</h3>
-      <ul>{dimension.metrics.map(metric => <li key={metric.id}><strong>{productText(metric.label)}</strong><span>{metric.score === null ? "—" : `${scoreText(metric.score)} 分 · 权重 ${(metric.weight * 100).toFixed(1)}%`}</span><span>{metric.value === null ? "—" : `${Number(metric.value.toFixed(2))} ${metric.unit}`}</span><span>{productText(metric.target)}</span></li>)}</ul></div>)}
+      <ul>{dimension.metrics.map(metric => <li key={metric.id}><strong>{productText(metric.label)}</strong><span>{metric.score === null ? "—" : `${scoreText(metric.score)} 分 · 权重 ${(metric.weight * 100).toFixed(1)}%`}</span><span>{metric.value === null ? "—" : `${Number(metric.value.toFixed(2))} ${metricUnit(metric.unit)}`}</span><span>{productText(metric.target)}</span></li>)}</ul></div>)}
   </section>;
 }

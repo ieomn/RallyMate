@@ -4,7 +4,7 @@ import { productText } from "./lib/presentation-text";
 
 import { useState, type ReactNode } from "react";
 import TrainingReportOverview from "./TrainingReportOverview";
-import TennisAssessmentSummary, { TennisAssessmentDetails } from "./TennisAssessmentSummary";
+import TennisAssessmentSummary, { ClipMeasurements, TennisAssessmentDetails } from "./TennisAssessmentSummary";
 import { tennisAssessmentOf } from "./lib/tennis-assessment";
 import CourtSimulationPanel from "./CourtSimulationPanel";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
@@ -18,7 +18,10 @@ import FootworkReviewPanel from "./FootworkReviewPanel";
 import MeasurementEvidence from "./MeasurementEvidence";
 import { evidenceReferenceScore, hasMeasurement, measurementWarnings, normalizeMeasurementResult } from "./lib/measurement-evidence";
 import type { FootCrossingPanelContext } from "./FootCrossingCandidatesPanel";
-import type { TrainingFocusSelection } from "./lib/training-guidance";
+import { focusSelection, trainingGuidance, type TrainingFocusSelection } from "./lib/training-guidance";
+import { ReportClipSelection } from "./report-clip-selection";
+import type { ReplayClip } from "./lib/replay-clips";
+import "./report-redesign.css";
 import { courtProjectionOf } from "./lib/court-simulation";
 import { processEvaluationOf } from "./lib/process-evaluation";
 
@@ -31,7 +34,7 @@ const statusLabel = (status: string, observed: boolean) => {
   if (status === "proxy") return "代理证据";
   if (status === "unavailable") return "—";
   if (status === "not_observed" || !observed) return "未观测";
-  return "待确认";
+  return "没有状态记录";
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -50,15 +53,15 @@ const eventFamily = (eventCode: string) => {
 function familyRecognition(family: string, hasCandidates: boolean, summary?: TechniqueAssessmentResponse["family_summary"][string]) {
   const state = summary?.recognition_status ?? (hasCandidates ? family === "baseline" ? "motion_detected_unclassified" : "candidate_only" : "not_observed");
   const observedCount = summary?.observed_count ?? 0;
-  const label = state === "motion_analyzed" ? "运动已分析" : state === "motion_unavailable" ? "—" : observedCount > 0 ? `${observedCount} 项已观测` : state === "motion_detected_unclassified" ? "挥拍待分类" : state === "candidate_only" ? "动作待确认" : state === "classifier_unavailable" || state === "analysis_unavailable" ? "分类暂不可用" : "暂无可靠结果";
-  const reason = summary?.recognition_reason_zh || (hasCandidates ? family === "baseline" ? "已检测到挥拍运动；正手、反手及切削尚未分类，触球次数暂不可用。" : "检测到发球式挥拍；真实发球与球拍触球尚未确认。" : "");
+  const label = state === "motion_analyzed" ? "运动已分析" : state === "motion_unavailable" ? "—" : observedCount > 0 ? `${observedCount} 项已观测` : state === "motion_detected_unclassified" ? "未分类挥拍" : state === "candidate_only" ? "候选动作" : state === "classifier_unavailable" || state === "analysis_unavailable" ? "分类暂不可用" : "暂无可靠结果";
+  const reason = summary?.recognition_reason_zh || (hasCandidates ? family === "baseline" ? "已检测到挥拍运动；正手、反手及切削尚未分类，触球次数暂不可用。" : "画面中出现发球式挥拍，没有已确认的发球或触球事件。" : "");
   return { state, label, reason };
 }
 
 function techniqueStatusLabel(item: TechniqueAssessmentItem, familyState: string, detail = false) {
   if (item.observed && item.family === "footwork") return "已定位片段";
   if (item.observed) return statusLabel(item.status, true);
-  if (item.recognition_status === "candidate" || item.family === "serve" && familyState === "candidate_only") return detail ? "动作待确认 · 触球未确认" : "动作待确认";
+  if (item.recognition_status === "candidate" || item.family === "serve" && familyState === "candidate_only") return detail ? "候选动作 · 触球未确认" : "候选动作";
   if (familyState === "motion_detected_unclassified") return "未分类";
   if (familyState === "classifier_unavailable" || familyState === "analysis_unavailable") return "分类暂不可用";
   return statusLabel(item.status, item.observed);
@@ -95,6 +98,7 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
   const [chosenFamily, setFamily] = useState("");
   const [selected, setSelected] = useState("");
   const [query, setQuery] = useState("");
+  const [clip, setClip] = useState<ReplayClip | null>(null);
   const candidateSummary = summarizeActionCandidates(result, assessment);
   const motionAnalysis = motionAnalysisOf(result, assessment, summary);
   const firstMotionFamily = Object.entries(motionAnalysis?.families ?? {}).find(([, data]) => data.episodes.length)?.[0];
@@ -116,21 +120,31 @@ export default function LiveResults({ result, assessment, pending, trajectory, s
   const presentation = analysisPresentation({ result, pending, status, error });
   const analysisReport = analysisReportOf(result?.analysis_report);
   const searching = query.trim().length > 0;
-  const emptyTitle = recognition.state === "motion_detected_unclassified" ? "已检测到挥拍运动，动作类型尚未分类" : recognition.state === "candidate_only" ? "已检测到发球式挥拍，尚待确认" : presentation.emptyTitle;
+  const emptyTitle = recognition.state === "motion_detected_unclassified" ? "已检测到挥拍运动，动作类型尚未分类" : recognition.state === "candidate_only" ? "检测到发球式挥拍候选" : presentation.emptyTitle;
   const emptyDescription = recognition.reason || presentation.emptyDescription;
   const court = courtProjectionOf(trajectory);
   const courtStatus = court.points.length ? `已有 ${court.points.length} 个场地投影点，展开查看适用范围` : court.status === "calibrated" ? "球场已定位，暂缺可展示的球路；可先回看原片" : "本报告暂未提供场地投影；展开可手动定位球场或读取本浏览器标定";
   const process = processEvaluationOf(result?.process_evaluation);
   const tennis = tennisAssessmentOf(result);
+  const legacyFocus = tennis ? null : trainingGuidance(result, motionAnalysis).find(item => item.evidenceState !== "unavailable");
 
   if (!result && !trajectory && !assessment && ["error", "cancelled"].includes(presentation.state)) return <div className="live-results" data-status={presentation.state}>{replay && <div className="report-replay-area">{replay}</div>}<section className="report-unavailable" aria-live="polite"><h2>{presentation.title}</h2><p>{presentation.description}</p><p>当前没有可查看的报告内容。可重新读取任务，或选择视频开始一次新分析。</p></section></div>;
 
-  return <div className="live-results" aria-live="polite" data-status={presentation.state}>
-    <TennisAssessmentSummary report={tennis} loading={assessmentLoading || pending} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
+  return <div className="live-results" data-status={presentation.state}>
+    <div className="review-spread">
+      {replay && <ReportClipSelection.Provider value={setClip}><div className="report-replay-area">{replay}</div></ReportClipSelection.Provider>}
+      <aside className="review-rail" aria-label="动作观察与训练重点">
+      {clip && <ClipMeasurements clip={clip} report={tennis} />}
+      <TennisAssessmentSummary report={tennis} loading={assessmentLoading || pending} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />
+      {legacyFocus && <section className="review-legacy" id="recommendations"><span className="review-label">本次观察</span><h3>{legacyFocus.title}</h3>
+        <p>{legacyFocus.observation}</p><p className="review-next"><span className="review-label">下次先练</span>{legacyFocus.drill}</p>
+        <details><summary>练习依据与复测</summary><p>{legacyFocus.limitation}</p><p>{legacyFocus.retest}</p></details>
+        {onSaveFocus && <button className="product-secondary" type="button" onClick={() => onSaveFocus(focusSelection(legacyFocus))}>保存练习</button>}</section>}
+      </aside>
+    </div>
     {coaching}
-    {replay && <div className="report-replay-area">{replay}</div>}
     {(result || assessment || trajectory) && <details className="report-all-details" id="details" onToggle={event => { if (event.currentTarget.open) onOpenDetails?.(); }}><summary>详细分析<span>测量依据与训练记录</span></summary><div className="report-all-details-content">
-    <TennisAssessmentDetails report={tennis} />
+    {tennis && <details className="review-evidence-group"><summary>逐项评分与测量</summary><TennisAssessmentDetails report={tennis} /></details>}
     {journal}{details}
     <details className="replay-segments"><summary>全部动作片段</summary><ActionTimeline result={result} motion={motionAnalysis} />{pagedActions}</details>
     {(result?.report_delivery as Record<string, unknown> | undefined)?.process_scope === "selected_motion_episode" && <p className="replay-caption">以下过程测量对应当前所选运动片段；切换动作片段可读取对应依据。</p>}

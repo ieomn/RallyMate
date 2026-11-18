@@ -230,7 +230,7 @@ test("a ready report unlocks report actions while evidence is pending, and switc
   tree.props.onNewAnalysis(); ui.render();
   assert.equal(signal.aborted, true);
   optional.resolve({ job_id: jobId }); await tick(); ui.render();
-  assert.match(ui.text(), /开始一次新的训练分析/); assert.equal(ui.find(node => node.type === "LiveResults"), undefined);
+  assert.match(ui.text(), /新建视频分析/); assert.equal(ui.find(node => node.type === "LiveResults"), undefined);
 });
 
 test("primary report waits alone then unlocks the UI before supplementary requests finish", async t => {

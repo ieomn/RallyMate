@@ -81,7 +81,7 @@ function JournalStatus({ journal }: { journal: TrainingJournalController }) {
   return <>{journal.error ? <div className="tj-error" role="alert"><p>{journal.error}</p><button type="button" onClick={journal.retrySave}>重试保存</button></div> : journal.notice ? <p className="tj-notice" role="status">{journal.notice}</p> : null}</>;
 }
 function dateText(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "long", day: "numeric" }).format(new Date(value));
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
 }
 function RecordEditor({ record, journal }: { record: TrainingRecord; journal: TrainingJournalController }) {
   const [name, setName] = useState(record.name), [theme, setTheme] = useState(record.theme), [notes, setNotes] = useState(record.notes);
@@ -164,18 +164,50 @@ export function TrainingJournalLibrary({ journal, onOpenReport, onNewAnalysis, h
   const [search, setSearch] = useState("");
   const id = useId();
   const matching = useMemo(() => journal.records.filter(record => `${record.name} ${record.theme} ${record.notes} ${record.focuses.map(item => `${item.title} ${item.question}`).join(" ")}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).sort((a, b) => Date.parse(b.viewedAt) - Date.parse(a.viewedAt)), [journal.records, search]);
-  return <section className="training-journal tj-library" aria-labelledby={`${id}-heading`}><div className="tj-heading"><div><span className="tj-eyebrow">训练记录</span><h1 id={`${id}-heading`}>带着问题，接着练。</h1></div><button type="button" onClick={onNewAnalysis}>新建分析</button></div><p className="tj-scope">在线任务来自当前账号，可在其他设备登录查看。{SCOPE}</p><JournalStatus journal={journal} />
-    {history && <div className="tj-history-controls"><p role="status">{history.loading ? "正在读取账号训练记录…" : `共 ${history.total} 条在线任务`}</p><button type="button" onClick={history.onRefresh} disabled={history.loading}>刷新记录</button></div>}
+  return <section className="training-journal tj-library studio-library" aria-labelledby={`${id}-heading`}>
+    <header className="studio-title"><h1 id={`${id}-heading`}>训练记录</h1></header>
+    <JournalStatus journal={journal} />
+    <div className="studio-library-tools">
+      <label className="tj-search" htmlFor={`${id}-search`}>{history ? "搜索本页" : "搜索记录"}
+        <input id={`${id}-search`} type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="按名称、主题或关注点查找" />
+      </label>
+      {history && <div className="tj-history-controls"><p role="status">{history.loading ? "正在读取账号训练记录…" : `共 ${history.total} 条在线任务`}</p><button type="button" onClick={history.onRefresh} disabled={history.loading}>刷新</button></div>}
+    </div>
     {history?.error && <p className="tj-error" role="alert">{history.error}</p>}
-    <label className="tj-search" htmlFor={`${id}-search`}>{history ? "查找当前页训练或本地关注点" : "查找训练或关注点"}<input id={`${id}-search`} type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索名称、主题、备注或关注点" /></label><p className="tj-count" aria-live="polite">{journal.ready ? `共 ${journal.records.length} 份训练记录${search ? `，找到 ${matching.length} 份` : ""}` : "正在读取此浏览器的记录…"}</p>
-    <div className="tj-record-grid">{matching.map(record => <article className="tj-record" key={record.id}><div className="tj-record-heading"><span>{record.source === "imported" ? "离线导入" : "分析记录"}</span><small>{record.completedAt ? `分析完成 · ${dateText(record.completedAt)}` : record.submittedAt ? `提交时间 · ${dateText(record.submittedAt)}` : `最近查看 · ${dateText(record.viewedAt)}`}</small></div><h2>{record.name}</h2>{record.status && <p className="tj-task-status">{JOB_STATUS[record.status]}</p>}{record.theme && <p className="tj-theme">{record.theme}</p>}{record.notes && <p className="tj-record-notes">{record.notes}</p>}
-      {record.followUp && <p className="tj-subtle">延续关注：{record.followUp.focus.title}</p>}
-      {record.focuses.length ? <ul className="tj-record-focuses">{record.focuses.map(focus => <li key={focus.id}><strong>{focus.title}</strong><p>{focus.question}</p><button className="tj-quiet" type="button" aria-pressed={journal.pendingFocus?.recordId === record.id && journal.pendingFocus.focus.id === focus.id} onClick={() => journal.selectFollowUp(record.id, focus.id)}>{journal.pendingFocus?.recordId === record.id && journal.pendingFocus.focus.id === focus.id ? "已选为下次关注点" : "下次继续关注"}</button></li>)}</ul> : <p className="tj-subtle">还没有保存关注点；打开报告后，留下下次想确认的问题。</p>}
-      {record.source === "online" && record.jobId ? <button type="button" onClick={() => onOpenReport(record.jobId!)}>{record.status === "queued" || record.status === "running" ? "查看分析进度" : "打开训练报告"}</button> : <p className="tj-subtle">导入原备份可再次查看报告。这里保存了你的备注和关注点，不会自动连接在线任务。</p>}
-      {history && record.source === "online" && record.jobId && record.status && !["queued", "running"].includes(record.status) && <button type="button" className="tj-quiet" disabled={history.deleting !== null} onClick={() => history.onDelete(record.jobId!)}>{history.deleting === record.jobId ? "正在删除…" : "删除在线记录"}</button>}
-      <details className="tj-details"><summary>编辑名称、主题与备注</summary><RecordEditor record={record} journal={journal} /></details></article>)}</div>
-    {journal.ready && !matching.length && <div className="tj-empty"><h2>{search ? "没有找到匹配的训练" : "第一份记录，从一段视频开始"}</h2><p>{search ? "试试名称或关注点中的其他字词。" : "完成分析后，保存一个具体问题，下次训练继续回看。"}</p>{search ? <button type="button" onClick={() => setSearch("")}>清除搜索</button> : <button type="button" onClick={onNewAnalysis}>上传训练视频</button>}</div>}
-    {history && <nav className="tj-history-controls" aria-label="训练记录分页"><button type="button" disabled={history.loading || history.offset === 0} onClick={() => history.onPage(Math.max(0, history.offset - history.limit))}>上一页</button><span>第 {Math.floor(history.offset / history.limit) + 1} 页</span><button type="button" disabled={history.loading || history.offset + history.limit >= history.total} onClick={() => history.onPage(history.offset + history.limit)}>下一页</button></nav>}
-    <p className="tj-scope">记录中的查看日期不是视频拍摄时间。在线报告和媒体仍需当前分析服务保留对应任务。</p>
+    {search && <p className="tj-count" aria-live="polite">{`找到 ${matching.length} 份记录`}</p>}
+    <div className="studio-records">
+      {matching.length > 0 && <div className="studio-record-columns" aria-hidden="true"><span>训练名称</span><span>时间</span><span>状态</span><span>操作</span></div>}
+      {matching.map(record => {
+        const time = record.completedAt || record.submittedAt || record.viewedAt;
+        const label = record.completedAt ? "分析完成" : record.submittedAt ? "提交时间" : "最近查看";
+        const inProgress = record.status === "queued" || record.status === "running";
+        return <article className="studio-record" key={record.id}>
+          <div className="studio-record-line">
+            <div className="studio-record-name"><h2>{record.name}</h2>{record.theme && <p>{record.theme}</p>}</div>
+            <time dateTime={time}><small>{label}</small>{dateText(time)}</time>
+            <span className="studio-record-state">{record.status ? JOB_STATUS[record.status] : record.source === "imported" ? "离线导入" : "在线记录"}</span>
+            {record.source === "online" && record.jobId ?
+              <button type="button" className="studio-record-open" onClick={() => onOpenReport(record.jobId!)}>{inProgress ? "查看分析进度" : "打开训练报告"}<span aria-hidden="true"> ↗</span></button> :
+              <span className="studio-record-offline">可导入原备份</span>}
+          </div>
+          <details className="studio-record-details"><summary>备注与管理{record.focuses.length > 0 && <span>{record.focuses.length} 个关注点</span>}</summary>
+            {record.source === "imported" && <p className="tj-subtle">离线记录保存在此浏览器，不会自动连接在线任务。</p>}
+            {record.notes && <p className="tj-record-notes">{record.notes}</p>}
+            {record.followUp && <p className="tj-subtle">延续关注 · {record.followUp.focus.title}</p>}
+            {record.focuses.length > 0 && <ul className="tj-record-focuses">{record.focuses.map(focus =>
+              <li key={focus.id}><strong>{focus.title}</strong><p>{focus.question}</p><button className="tj-quiet" type="button" aria-pressed={journal.pendingFocus?.recordId === record.id && journal.pendingFocus.focus.id === focus.id} onClick={() => journal.selectFollowUp(record.id, focus.id)}>{journal.pendingFocus?.recordId === record.id && journal.pendingFocus.focus.id === focus.id ? "已选为下次关注点" : "下次继续关注"}</button></li>)}</ul>}
+            <RecordEditor record={record} journal={journal} />
+            {history && record.source === "online" && record.jobId && record.status && !inProgress && <button type="button" className="tj-quiet" disabled={history.deleting !== null} onClick={() => history.onDelete(record.jobId!)}>{history.deleting === record.jobId ? "正在删除…" : "删除在线记录"}</button>}
+          </details>
+        </article>;
+      })}
+    </div>
+    {journal.ready && !history?.loading && !history?.error && !matching.length && <div className="tj-empty">
+      <h2>{search ? "没有找到匹配的训练" : "还没有训练记录"}</h2>
+      <p>{search ? "可以换个关键词，或查看本页全部记录。" : "上传第一段视频后，可以在这里跟踪进度、回看报告。"}</p>
+      {search ? <button type="button" onClick={() => setSearch("")}>清除搜索</button> : <button type="button" onClick={onNewAnalysis}>上传训练视频</button>}
+    </div>}
+    {history && history.total > history.limit && <nav className="tj-history-controls" aria-label="训练记录分页"><button type="button" disabled={history.loading || history.offset === 0} onClick={() => history.onPage(Math.max(0, history.offset - history.limit))}>上一页</button><span>第 {Math.floor(history.offset / history.limit) + 1} 页</span><button type="button" disabled={history.loading || history.offset + history.limit >= history.total} onClick={() => history.onPage(history.offset + history.limit)}>下一页</button></nav>}
+    <p className="tj-scope">在线任务随账号同步。名称、备注与关注点保存在当前浏览器，清除浏览器数据会移除本地记录。</p>
   </section>;
 }

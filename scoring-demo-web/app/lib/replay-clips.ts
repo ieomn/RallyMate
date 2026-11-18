@@ -83,7 +83,8 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
   let pending: { sourceMs: number; play: boolean } | null = null;
   let last: { sourceMs: number; play: boolean; rate: number } | null = null;
   let explicitSwitchTarget: { sourceMs: number; play: boolean } | null = null;
-  let awaitingMetadata = false, attachment = 0;
+  let deferredClipStart: "context" | "action" | null = null;
+  let awaitingMetadata = false, attachment = 0, playbackRequest = 0;
   let metadataRestore: { sourceMs: number; play: boolean; rate: number } | null = null;
   let remove = () => {};
   const ready = () => !!media && media.readyState >= 1 && finite(media.duration) && media.duration > 0;
@@ -100,11 +101,11 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
     if (!Array.from({ length: media.seekable.length }, (_, index) => index).some(index => seconds >= media!.seekable.start(index) && seconds <= media!.seekable.end(index))) {
       notice = "正在读取所选时间点的视频…"; emit(); return;
     }
-    const request = pending, current = media;
+    const request = pending, current = media, ticket = ++playbackRequest;
     pending = null; notice = "";
     current.pause();
     current.currentTime = seconds;
-    if (request.play) void current.play().catch(() => { if (media === current) { notice = "视频已定位，请按播放继续。"; emit(); } });
+    if (request.play) void current.play().catch(() => { if (media === current && ticket === playbackRequest && current.paused) { notice = "视频已定位，请按播放继续。"; emit(); } });
     last = { sourceMs: request.sourceMs, play: request.play, rate: current.playbackRate };
     emit();
   };
@@ -116,6 +117,12 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
     flush(); return true;
   };
   const onProgress = (ended = false) => {
+    if (deferredClipStart && clip && media && ready() && !awaitingMetadata) {
+      const range = replayRangeForMedia(clip, origin, media.duration);
+      const position = deferredClipStart;
+      deferredClipStart = null;
+      if (range) pending = { sourceMs: position === "action" ? clip.startMs : range.startMs, play: true };
+    }
     flush();
     if (media && ready() && clip && !media.seeking && (!media.paused || ended) && !pending && !awaitingMetadata) {
       const range = replayRangeForMedia(clip, origin, media.duration);
@@ -139,7 +146,7 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
       awaitingMetadata = next.readyState < 1;
       explicitSwitchTarget = null;
       const metadata = (event?: Event) => {
-        if (clip && ready() && !replayRangeForMedia(clip, origin, next.duration)) { clip = null; looping = false; }
+        if (clip && ready() && !replayRangeForMedia(clip, origin, next.duration)) { clip = null; looping = false; deferredClipStart = null; }
         // durationchange may expose a seekable range before loadedmetadata.
         // Keep the transfer target until React's view-local metadata handler
         // has finished restoring its default time/rate, even if an eager
@@ -164,12 +171,15 @@ export function createReplayClipController(update: (state: ClipPlaybackState) =>
       remove = () => { for (const name of events) next.removeEventListener(name, metadata); };
       metadata();
     },
-    select(next: ReplayClip | null) {
+    select(next: ReplayClip | null, position: "context" | "action" | "preserve" = "context") {
       clip = next; looping = next ? looping : false; notice = "";
-      if (next && media && ready()) {
+      deferredClipStart = null;
+      if (next && position !== "preserve" && (!ready() || awaitingMetadata)) {
+        deferredClipStart = position;
+      } else if (next && media && ready()) {
         const range = replayRangeForMedia(next, origin, media.duration);
         if (!range) { clip = null; looping = false; notice = "当前视频未包含这段完整动作，请切换原视频查看。"; emit(); return; }
-        seek(range.startMs, true);
+        if (position !== "preserve") seek(position === "action" ? next.startMs : range.startMs, true);
       }
       emit();
     },

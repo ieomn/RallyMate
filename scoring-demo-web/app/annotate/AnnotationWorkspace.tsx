@@ -8,7 +8,7 @@ import { createApiClient } from "../lib/api-client";
 import { annotationHref, annotationJobId, annotationSeekSeconds, loadAnnotationReport, type AnnotationReport } from "../lib/annotation-navigation";
 import type { RuleReviewCatalog } from "../lib/rule-review";
 import type { RecentReport } from "../lib/training-report";
-import { workspaceHref } from "../lib/workspace-navigation";
+import { formatReportDate, workspaceHref } from "../lib/workspace-navigation";
 import "./annotation-workspace.css";
 
 const catalog = scoringReference as RuleReviewCatalog;
@@ -17,6 +17,7 @@ export default function AnnotationWorkspace() {
   const apiClient = useMemo(() => createApiClient(), []);
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<RecentReport[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [report, setReport] = useState<AnnotationReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +51,8 @@ export default function AnnotationWorkspace() {
     const historyController = new AbortController();
     apiClient.getRecords(20, 0, historyController.signal).then(page => {
       if (!historyController.signal.aborted) setHistory(page.items.filter(job => job.status === "succeeded").map(job => ({ id: job.id, name: job.original_filename, viewedAt: job.completed_at || job.created_at })));
-    }).catch(cause => { if (!historyController.signal.aborted) setError(cause instanceof Error ? cause.message : "暂时无法读取账号训练记录。"); });
+    }).catch(cause => { if (!historyController.signal.aborted) setError(cause instanceof Error ? cause.message : "暂时无法读取账号训练记录。"); })
+      .finally(() => { if (!historyController.signal.aborted) setHistoryLoading(false); });
     const restore = () => {
       const params = new URLSearchParams(window.location.search);
       if (params.has("job")) void load(`${window.location.pathname}${window.location.search}`, false);
@@ -86,19 +88,26 @@ export default function AnnotationWorkspace() {
   const seekAvailable = report && annotationSeekSeconds(report, report.job.id, report.videoTimeOriginMs) !== null;
   return <main className="annotation-workspace">
     <header className="annotation-header"><a className="annotation-brand" href="/welcome">RallyMate</a><a className="annotation-return" href={workspaceHref(taskId ? "analysis" : "overview", taskId)}>返回训练空间 ↗</a></header>
-    <div className="annotation-intro"><p>独立标注工具</p><h1>标注工作台</h1><span>选择已完成分析的视频，对照回放与原文标准录入人工评审。</span></div>
+    <div className="annotation-setup">
+    <div className="annotation-intro"><h1>标注工作台</h1><p>对照视频录入技术等级，并标记做出判断的时段。</p></div>
     <section className="annotation-selector" aria-labelledby="annotation-source-title">
       <h2 id="annotation-source-title">选择视频任务</h2>
       <form onSubmit={event => { event.preventDefault(); void load(input); }}>
         <label htmlFor="annotation-job">任务编号或本站报告链接</label>
         <div className="annotation-input-row"><input id="annotation-job" value={input} onChange={event => setInput(event.target.value)} placeholder="粘贴报告链接，或输入任务编号" autoComplete="off" spellCheck={false} /><button type="submit">{loading ? "重新读取" : "读取任务"}</button></div>
       </form>
-      {history.length > 0 && <label className="annotation-recents"><span>从账号最近完成的报告选择</span><select value={taskId ?? ""} onChange={event => { if (event.target.value) void load(event.target.value); }}><option value="">选择一个视频…</option>{history.map(item => <option key={item.id} value={item.id}>{item.name} · {item.id.slice(0, 8)}</option>)}</select></label>}
+      {report && history.length > 0 && <label className="annotation-recents"><span>切换到其他报告</span><select value={taskId ?? ""} onChange={event => { if (event.target.value) void load(event.target.value); }}><option value="">选择一个视频…</option>{history.map(item => <option key={item.id} value={item.id}>{item.name} · {item.id.slice(0, 8)}</option>)}</select></label>}
       {loading && <p className="annotation-message" role="status">正在读取视频和已有报告…</p>}
       {error && <p className="annotation-message annotation-error" role="alert">{error}</p>}
-      {!report && !loading && !error && <p className="annotation-hint">先在训练空间完成视频分析，再从报告入口或任务链接打开这里。</p>}
     </section>
+    </div>
+    {!report && !loading && <section className="annotation-history" aria-label="已完成的训练">
+      <h2>已完成的训练</h2>
+      {historyLoading ? <p role="status">正在读取训练记录…</p> : history.length ? <ul>{history.map(item => <li key={item.id}><button type="button" onClick={() => void load(item.id)}><strong>{item.name}</strong><time>{formatReportDate(item.viewedAt)}</time><span aria-hidden="true">↗</span></button></li>)}</ul>
+        : !error && <p>完成分析的视频会出现在这里。<a href={workspaceHref("analysis")}>选择训练视频 ↗</a></p>}
+    </section>}
     {report && <>
+      <div className="annotation-bench">
       <section id="evidence" className="annotation-replay" aria-labelledby="annotation-video-title">
         <div className="annotation-video-heading"><div><h2 id="annotation-video-title">{title || "当前视频"}</h2><p>任务 {taskId}</p></div><a href={workspaceHref("analysis", taskId)} target="_blank" rel="noopener noreferrer">查看用户报告 ↗</a></div>
         <video key={taskId} ref={videoRef} controls muted playsInline preload="metadata" aria-label="标注视频回放" src={`/v1/jobs/${encodeURIComponent(taskId!)}/artifacts/annotated.mp4`} onError={() => setVideoError("视频暂时无法播放，请重新加载；标注记录仍可查看。")} onLoadedMetadata={() => {
@@ -114,6 +123,7 @@ export default function AnnotationWorkspace() {
         {seekMessage && <p className="annotation-message" role="status">{seekMessage}</p>}
       </section>
       <TechnicalReviewPanel key={taskId} result={report.result} catalog={catalog} />
+      </div>
       <details className="annotation-reference"><summary>标注标准与原文核验</summary><RuleReviewPanel key={taskId} result={report.result} catalog={catalog} /></details>
     </>}
   </main>;

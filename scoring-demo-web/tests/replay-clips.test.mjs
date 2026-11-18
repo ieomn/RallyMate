@@ -81,6 +81,32 @@ test("seek waits for metadata and seekable data, with no timer or fabricated cla
   assert.equal(controller.seek(NaN), false); controller.dispose();
 });
 
+test("timeline selections start at the measured instant, including selections before metadata", async () => {
+  const { controller } = session(), media = new Media();
+  media.readyState = 0; media.duration = NaN; media.ranges = [];
+  controller.attach(media, 0, "original");
+  controller.select(clip(), "action");
+  assert.deepEqual(media.writes, []);
+  media.readyState = 1; media.duration = 10; media.ranges = [[0, 10]];
+  media.dispatchEvent(new Event("loadedmetadata")); await Promise.resolve();
+  assert.equal(media.currentTime, 1); assert.equal(media.paused, false);
+  controller.select(clip(3000, 4000), "action"); assert.equal(media.currentTime, 3);
+  controller.select(null); controller.dispose();
+});
+
+test("a superseded play rejection cannot overwrite feedback for the current clip", async () => {
+  const { controller, states } = session(), media = new Media();
+  controller.attach(media, 0, "original");
+  let rejectFirst;
+  media.play = () => new Promise((_, reject) => { rejectFirst = reject; });
+  controller.select(clip(), "action");
+  media.play = Media.prototype.play;
+  controller.select(clip(3000, 4000), "action");
+  rejectFirst(new Error("interrupted")); await Promise.resolve();
+  assert.equal(states.at(-1).notice, ""); assert.equal(media.currentTime, 3);
+  controller.dispose();
+});
+
 test("selected clips stop at their context end and loop only when explicitly enabled", () => {
   const { controller } = session(), media = new Media(); controller.attach(media, 0, "video");
   controller.select(clip()); assert.equal(media.currentTime, .65); assert.equal(media.paused, false);

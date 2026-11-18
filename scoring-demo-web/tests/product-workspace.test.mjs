@@ -39,9 +39,9 @@ const homeProps = { reports: [], onOpenReport: noop, onNewAnalysis: noop, onNavi
 test("overview empty state invites a real video without inventing reports or performance", () => {
   const html = render(TrainingHome, homeProps);
   const text = textOf(html);
-  assert.match(text, /第一份训练记录，从这里开始/);
+  assert.match(text, /选择一段训练原片/);
   assert.match(text, /上传训练视频/);
-  assert.match(text, /最近的训练0/);
+  assert.match(text, /训练记录将在上传后出现在这里/);
   assert.doesNotMatch(html, /class="pw-report-card"|\/v1\/jobs\//);
   assert.doesNotMatch(text, /综合分|技术评分|进步\s*\d|\d+\s*(?:分|小时|分钟|%)|演示报告/);
 });
@@ -51,13 +51,41 @@ test("overview uses only validated supplied history and labels its timestamps as
     ...reports, reports[0], { id: "../unsafe", name: "不应显示", viewedAt: reports[0].viewedAt },
     { id: "job-bad-12345678", name: "无效日期", viewedAt: "invalid" },
   ] });
-  assert.equal((html.match(/class="pw-report-card"/g) || []).length, 3);
+  assert.equal((html.match(/class="studio-feature-link"/g) || []).length, 1);
+  assert.equal((html.match(/<li>/g) || []).length, 2);
   assert.equal((textOf(html).match(/最近查看 · /g) || []).length, 3);
-  assert.match(textOf(html), /最近的训练3/);
+  assert.match(textOf(html), /近期记录/);
   assert.ok(html.indexOf("发球练习.mp4") < html.indexOf("移动练习.mov"));
   assert.ok(html.indexOf("移动练习.mov") < html.indexOf("底线回看.mp4"));
-  for (const report of reports) assert.ok(html.includes(`/v1/jobs/${report.id}/artifacts/preview.jpg`));
+  assert.ok(html.includes(`/v1/jobs/${reports[1].id}/artifacts/preview.jpg`));
+  assert.equal((html.match(/artifacts\/preview.jpg/g) || []).length, 1, "only the featured session fetches a preview");
   assert.doesNotMatch(textOf(html), /不应显示|无效日期|训练日期|拍摄于|技术评分/);
+});
+
+test("an active server job is featured ahead of newer completed history without calling it a report", () => {
+  const html = render(TrainingHome, { ...homeProps, dateLabel: "提交时间", reports: [
+    ...Array.from({ length: 15 }, (_, i) => ({ ...reports[1], id: `finished-job-${i}`, status: "succeeded" })),
+    { ...reports[0], status: "queued" },
+  ] });
+  const feature = html.slice(html.indexOf('class="studio-feature"'), html.indexOf('class="studio-recent"'));
+  assert.match(textOf(feature), /进行中的训练排队中/);
+  assert.match(textOf(feature), /底线回看.mp4.*提交时间.*查看进度/);
+  assert.doesNotMatch(feature, /preview.jpg|打开训练报告/);
+});
+
+test("imported home records use their browser identity and never load a job thumbnail", () => {
+  const online = { ...reports[0], status: "succeeded", dateLabel: "提交时间" };
+  const imported = { source: "imported", id: `imported:${online.id}%3Abackup.json%3A641`, name: "训练备份", viewedAt: "2026-11-19T16:00:00Z" };
+  const html = render(TrainingHome, { ...homeProps, reports: [online, imported, { ...imported, id: "../invalid", name: "损坏记录" }] });
+  assert.match(textOf(html), /训练备份最近查看 · .*本地导入选择报告备份/);
+  assert.match(textOf(html), /底线回看\.mp4提交时间 · /);
+  assert.doesNotMatch(html, /artifacts\/preview\.jpg|损坏记录|选择一段训练原片/);
+  const current = render(TrainingHome, { ...homeProps, reports: [imported], loadedImportId: imported.id });
+  assert.match(textOf(current), /打开训练报告/);
+  assert.doesNotMatch(current, /选择报告备份|\/v1\/jobs\//);
+  const loading = render(TrainingHome, { ...homeProps, loading: true });
+  assert.match(textOf(loading), /正在读取最近训练/);
+  assert.doesNotMatch(textOf(loading), /选择一段训练原片/);
 });
 
 test("library shows the actual count and explains that view dates are not recording dates", () => {
@@ -131,7 +159,7 @@ test("every workspace view can return to the public homepage, including while an
 
 test("busy overview exposes progress while other navigation remains available", () => {
   const html = render(TrainingHome, { ...homeProps, busy: true, currentName: "正在处理.mp4" });
-  assert.match(textOf(html), /你的训练视频正在分析/);
+  assert.match(textOf(html), /当前分析进度/);
   assert.match(textOf(html), /正在处理.mp4/); assert.match(textOf(html), /查看进度/);
   const shell = render(ProductShell, { view: "overview", onNavigate: noop, onNewAnalysis: noop, busy: true, children: "进度" });
   assert.match(shell, /aria-label="分析进行中"/);

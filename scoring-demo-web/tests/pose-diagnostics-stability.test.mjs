@@ -267,17 +267,27 @@ test("disabling pose aborts a pending window and ignores its late completion", a
 });
 
 test("same-job offline import clears the active job and cannot fetch online pose windows", async t => {
-  const app = mount(t); await app.complete(); const old = app.requests[0];
-  app.togglePose(false); await app.importSameJob();
+  const app = mount(t); await app.complete();
+  const loaded = app.requests[0];
+  loaded.resolve(preview(loaded, .4)); await app.flush();
+  assert.equal(app.focus.markers[0].x, .4);
+  const prefetch = app.requests[1];
+  assert.equal(prefetch.options.signal.aborted, false);
+
+  await app.importSameJob();
   assert.equal(app.pending, false); assert.equal(app.storage.has("rallymate.activeJob:account:anonymous"), false);
   assert.equal(window.location.search.includes("job="), false); assert.equal(app.watches.length, 1);
-  assert.equal(app.watches[0].signal.aborted, true); assert.equal(old.options.signal.aborted, true);
-  app.togglePose(true);
+  assert.equal(app.watches[0].signal.aborted, true); assert.equal(prefetch.options.signal.aborted, true);
+  assert.match(app.viewerText(), /当前报告未附可播放的视频/);
+  assert.doesNotMatch(app.viewerText(), /动作标记/);
   assert.equal(app.loader, undefined, "an imported job ID cannot authorize an online pose loader");
-  assert.equal(app.requests.length, 1);
-  old.resolve(preview(old, .6)); await app.flush();
+
+  app.seek(50);
+  assert.equal(app.focus, null, "the cached online window must be cleared on import");
+  prefetch.resolve(preview(prefetch, .6)); await app.flush();
+  app.seek(10050);
   assert.equal(app.focus, null); assert.equal(app.clients.length, 1);
-  assert.equal(app.requests.length, 1, "a late online response cannot populate or prefetch offline evidence");
+  assert.equal(app.requests.length, 2, "seeking either offline window cannot read or prefetch online evidence");
 });
 
 test("old pose body diagnostics cannot enter the next job before passive effect cleanup", async t => {

@@ -1,11 +1,23 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
+import type { AccountUser } from "../lib/auth-client";
+
+export const accountStatusLabels: Record<AccountUser["status"], string> = {
+  APPROVED: "已通过", PENDING: "待审核", REJECTED: "未通过", SUSPENDED: "已停用",
+};
 
 export function AccountFrame({ title, description, children, wide = false }: { title: string; description?: string; children: ReactNode; wide?: boolean }) {
   return <main className={`account-app${wide ? " account-app-wide" : ""}`}>
-    <header className="account-header"><a className="account-brand" href="/welcome"><span aria-hidden="true">◉</span> RallyMate</a><a href="/welcome">了解训练空间 <span aria-hidden="true">↗</span></a></header>
+    <header className="account-header">
+      <a className="account-brand" href="/welcome"><Image src="/tennis-mark.svg" alt="" width={30} height={30} unoptimized />RallyMate</a>
+      <a href={wide ? "/?view=overview" : "/welcome"}>{wide ? "返回训练空间" : "返回首页"} <span aria-hidden="true">↗</span></a>
+    </header>
     <div className="account-layout">
-      {!wide && <aside className="account-intro"><span className="account-eyebrow">YOUR NEXT GOOD SHOT</span><h1>每一次练习，<br />都有新的方向。</h1><p>留下自己的训练记录，回看关键动作，<br />把这一次的发现带到下一次上场。</p><div className="account-court" aria-hidden="true"><i /><b /><span>RALLY / REFLECT / REPEAT</span></div><span className="account-intro-note">属于你的训练，也属于你的进步。</span></aside>}
-      <section className="account-panel" aria-labelledby="account-heading"><div className="account-heading"><span className="account-eyebrow">RALLYMATE ACCOUNT</span><h2 id="account-heading">{title}</h2>{description && <p>{description}</p>}</div>{children}</section>
+      <section className="account-panel" aria-labelledby="account-heading">
+        <div className="account-heading"><h1 id="account-heading">{title}</h1>{description && <p>{description}</p>}</div>
+        {children}
+      </section>
+      {!wide && <div className="account-court-print" aria-hidden="true"><i /><b /></div>}
     </div>
   </main>;
 }

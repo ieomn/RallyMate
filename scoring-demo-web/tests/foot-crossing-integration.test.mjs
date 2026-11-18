@@ -38,9 +38,10 @@ test("candidate discovery is limited to a completed matching online report", () 
 
 // Execute the actual nested import function with UI setters replaced by a
 // recorder. Fixtures below are synthetic imports, not online service evidence.
-async function importActual(data) {
+async function importActual(data, offlineOnly = false) {
   let evidence, importState, monitored = 0, invalidated = 0;
   const scope = { ownerUserId: "import-test-user", captureAccountIdentity: () => ({ userId: "import-test-user", generation: 0 }), isAccountIdentityCurrent: () => true, busy: false, analysisRunRef: { current: 0 }, EMPTY_EVIDENCE: { mode: "demo" },
+    offlineImportOnly: { current: offlineOnly },
     navigate() {}, invalidateAnalysisRun() { invalidated++; scope.analysisRunRef.current++; },
     readReportJson: async () => data, setVideoFile() {}, setUploadError() {}, setImportedSummary() {},
     setEvidence(value) { evidence = value; }, setImportState(value) { importState = value; },
@@ -54,9 +55,7 @@ async function importActual(data) {
   }).outputText;
   const run = vm.runInNewContext(`${code}; importSummary`, scope);
   await run({ target: { files: [{ name: "synthetic-import.json" }], value: "chosen" } });
-  assert.equal(importState?.status, "success", importState?.message);
-  assert.equal(monitored, 0); assert.equal(invalidated, 1);
-  return evidence;
+  return { evidence, importState, monitored, invalidated };
 }
 
 test("all self-contained import branches refuse a forged online marker and reuse of a job ID", async () => {
@@ -69,11 +68,20 @@ test("all self-contained import branches refuse a forged online marker and reuse
     { job_id: "same-job-123", candidateSource: "online", processing: {} },
   ];
   for (const data of imports) {
-    const evidence = await importActual(data);
+    const { evidence, importState, monitored, invalidated } = await importActual(data);
+    assert.equal(importState?.status, "success", importState?.message);
+    assert.equal(monitored, 0); assert.equal(invalidated, 1);
     assert.equal(evidence.jobId, "same-job-123");
     assert.equal(evidence.candidateSource, undefined);
     assert.equal(candidateOnlineJobId(evidence, false), null);
   }
+});
+
+test("reopening an offline record requires an embedded report even if its job ID exists online", async () => {
+  const { importState, monitored } = await importActual({ schemaVersion: "rallymate-practice-report/1", jobId: "same-job-123" }, true);
+  assert.equal(importState?.status, "error");
+  assert.match(importState.message, /请选择包含分析结果的报告备份/);
+  assert.equal(monitored, 0);
 });
 
 const modules = new Map();

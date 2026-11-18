@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthGuard } from "../auth/AuthGuard";
-import { AccountFrame, AccountErrorMessage, readableAccountError } from "../auth/AccountFrame";
+import { AccountFrame, AccountErrorMessage, accountStatusLabels, readableAccountError } from "../auth/AccountFrame";
 import { AccountDialog } from "../auth/AccountDialog";
 import { accountFetch, accountResponse, replaceAccountLocation, type AccountUser } from "../lib/auth-client";
 
@@ -13,7 +13,6 @@ type UserStats = { user_id: string; submitted_jobs: number; execution_attempts: 
 type Stats = { total: number; pending: number; users: UserStats[] };
 type TemporaryPassword = { value: string; username: string; actorId: string; self: boolean };
 type Confirmation = { action: "delete" | "reset"; user: AccountUser };
-const statusLabels: Record<AccountUser["status"], string> = { PENDING: "待审核", APPROVED: "已通过", REJECTED: "未通过", SUSPENDED: "已停用" };
 
 export default function AdminPage() {
   const auth = useAuth();
@@ -21,9 +20,10 @@ export default function AdminPage() {
   const [finishingReset, setFinishingReset] = useState(false);
   const [copyState, setCopyState] = useState("");
   const visible = temporary && (auth.user?.id === temporary.actorId || (temporary.self && !auth.user)) ? temporary : null;
-  useEffect(() => {
-    if (temporary && auth.user && auth.user.id !== temporary.actorId) { setTemporary(null); setCopyState(""); }
-  }, [temporary, auth.user]);
+  if (temporary && auth.user && auth.user.id !== temporary.actorId) {
+    setTemporary(null);
+    setCopyState("");
+  }
   useEffect(() => {
     const clear = () => { if (temporary) flushSync(() => { setTemporary(null); setCopyState(""); }); };
     const restored = (event: PageTransitionEvent) => { if (event.persisted) clear(); };
@@ -90,7 +90,11 @@ function AdminContent({ onTemporary }: { onTemporary: (value: TemporaryPassword)
       if (ticket === sequence.current && !(cause instanceof DOMException && cause.name === "AbortError")) setError(readableAccountError(cause));
     } finally { if (ticket === sequence.current) setLoading(false); }
   }, [page, status]);
-  useEffect(() => { void load(); return () => { sequence.current += 1; request.current?.abort(); }; }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- A new filter/page starts a cancellable request with its own loading state.
+    void load();
+    return () => { sequence.current += 1; request.current?.abort(); };
+  }, [load]);
 
   async function changeStatus(target: AccountUser, next: AccountUser["status"]) {
     setBusyId(target.id); setError(null);
@@ -129,15 +133,31 @@ function AdminContent({ onTemporary }: { onTemporary: (value: TemporaryPassword)
   const attempts = stats?.users.reduce((sum, user) => sum + user.execution_attempts, 0) ?? 0;
   const pages = Math.max(1, Math.ceil((result?.total ?? 0) / 20));
 
-  return <AccountFrame title="账户与审核" description="审核注册申请，管理账户状态，查看各用户的训练使用情况。" wide>
-    <div className="account-admin-top"><p>当前管理员：{auth.user?.username}</p><div className="account-admin-links"><a href="/?view=overview">返回训练空间</a><a href="/change-password">修改密码</a><button className="account-button account-secondary" type="button" onClick={() => void auth.logout().then(() => replaceAccountLocation("/login")).catch((cause) => setError(readableAccountError(cause)))}>退出</button></div></div>
-    <div className="account-stats"><div className="account-stat"><span>当前用户</span><strong>{stats?.total ?? "—"}</strong><small>未删除的注册账户</small></div><div className="account-stat"><span>待审核</span><strong>{stats?.pending ?? "—"}</strong><small>等待审核的注册申请</small></div><div className="account-stat"><span>累计提交任务</span><strong>{stats ? submissions : "—"}</strong><small>执行尝试 {stats ? attempts : "—"} 次</small></div></div>
+  return <AccountFrame title="账户与审核" wide>
+    <dl className="account-stats">
+      <div><dt>待审核</dt><dd>{stats?.pending ?? "—"}</dd></div>
+      <div><dt>现有账户</dt><dd>{stats?.total ?? "—"}</dd></div>
+      <div><dt>累计提交</dt><dd>{stats ? submissions : "—"}</dd></div>
+      <div><dt>执行尝试</dt><dd>{stats ? attempts : "—"}</dd></div>
+    </dl>
     <AccountErrorMessage message={error} />
-    <div className="account-filter"><label htmlFor="admin-status">账户状态<select id="admin-status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">全部状态</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><button className="account-button account-secondary" type="button" disabled={loading} onClick={() => void load()}>{loading ? "正在读取…" : "刷新列表"}</button></div>
+    <div className="account-filter"><label htmlFor="admin-status">账户状态<select id="admin-status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">全部状态</option>{Object.entries(accountStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><button className="account-button account-secondary" type="button" disabled={loading} onClick={() => void load()}>{loading ? "正在读取…" : "刷新列表"}</button></div>
     <div className="account-table-wrap" aria-busy={loading}><table className="account-table"><thead><tr><th scope="col">账户</th><th scope="col">角色 / 状态</th><th scope="col">申请理由</th><th scope="col">提交 / 执行尝试</th><th scope="col">操作</th></tr></thead><tbody>
-      {result?.items.map((user) => <tr key={user.id}><td><span className="account-user-name">{user.username}{user.id === auth.user?.id ? "（你）" : ""}</span><span className="account-user-email">{user.email}</span></td><td><span className="account-user-name">{user.role === "ADMIN" ? "管理员" : "用户"}</span><span className={`account-badge account-state-${user.status.toLowerCase()}`}>{statusLabels[user.status]}</span>{user.must_change_password && <small className="account-user-email">下次登录须改密</small>}</td><td><p className="account-user-reason">{user.application_reason || "未填写"}</p></td><td>{counts.get(user.id)?.submitted_jobs ?? 0} / {counts.get(user.id)?.execution_attempts ?? 0}</td><td><div className="account-row-actions"><button type="button" disabled={!!busyId || user.status === "APPROVED"} onClick={() => void changeStatus(user, "APPROVED")}>{user.status === "SUSPENDED" ? "恢复使用" : "通过"}</button><button type="button" disabled={!!busyId || user.status === "REJECTED"} onClick={() => void changeStatus(user, "REJECTED")}>拒绝</button><button type="button" disabled={!!busyId || user.status === "SUSPENDED"} onClick={() => void changeStatus(user, "SUSPENDED")}>停用</button><button type="button" disabled={!!busyId} onClick={() => confirm("reset", user)}>重置密码</button><button className="account-delete" type="button" disabled={!!busyId} onClick={() => confirm("delete", user)}>删除</button></div></td></tr>)}
+      {result?.items.map((user) => <tr key={user.id}>
+        <td><strong className="account-user-name">{user.username}{user.id === auth.user?.id ? "（你）" : ""}</strong><span className="account-user-email">{user.email}</span></td>
+        <td><span>{user.role === "ADMIN" ? "管理员" : "球员"}</span><span className={`account-badge account-state-${user.status.toLowerCase()}`}>{accountStatusLabels[user.status]}</span>{user.must_change_password && <small className="account-user-email">下次登录须改密</small>}</td>
+        <td><span className="account-mobile-label" aria-hidden="true">申请理由</span><p className="account-user-reason">{user.application_reason || "未填写"}</p></td>
+        <td><span className="account-mobile-label" aria-hidden="true">提交 / 执行尝试</span>{counts.get(user.id)?.submitted_jobs ?? 0} / {counts.get(user.id)?.execution_attempts ?? 0}</td>
+        <td><div className="account-row-actions">
+          <button type="button" disabled={!!busyId || user.status === "APPROVED"} onClick={() => void changeStatus(user, "APPROVED")}>{user.status === "SUSPENDED" ? "恢复使用" : "通过"}</button>
+          <button type="button" disabled={!!busyId || user.status === "REJECTED"} onClick={() => void changeStatus(user, "REJECTED")}>拒绝</button>
+          <button type="button" disabled={!!busyId || user.status === "SUSPENDED"} onClick={() => void changeStatus(user, "SUSPENDED")}>停用</button>
+          <button type="button" disabled={!!busyId} onClick={() => confirm("reset", user)}>重置密码</button>
+          <button className="account-delete" type="button" disabled={!!busyId} onClick={() => confirm("delete", user)}>删除</button>
+        </div></td>
+      </tr>)}
     </tbody></table>{!loading && !result?.items.length && <div className="account-empty">当前筛选下没有账户。</div>}{loading && !result && <div className="account-empty" role="status">正在读取账户列表…</div>}</div>
-    <p className="account-admin-note">提交数与执行尝试分别统计。自动重试计为新的执行尝试；删除账户或训练记录不抹去累计使用次数。</p>
+    <p className="account-admin-note">执行尝试包含自动重试。已删除账户或记录的使用次数计入累计值。</p>
     <div className="account-pagination"><span>共 {result?.total ?? 0} 个账户 · 第 {page} / {pages} 页</span><button className="account-button account-secondary" type="button" disabled={loading || page <= 1} onClick={() => setPage(page - 1)}>上一页</button><button className="account-button account-secondary" type="button" disabled={loading || page >= pages} onClick={() => setPage(page + 1)}>下一页</button></div>
     {confirmation && <AccountDialog title={confirmation.action === "delete" ? "删除这个账户？" : "生成新的临时密码？"} onClose={() => { if (!busyId) { setConfirmation(null); setConfirmationError(null); } }}>
       <p>{confirmation.user.username} · {confirmation.user.email}</p>
