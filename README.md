@@ -94,7 +94,7 @@ npm ci
 npm run dev
 ```
 
-启动前按[账户与 Linux 部署说明](deploy/README.md)设置 `JWT_SECRET`、`PUBLIC_ORIGIN`、Cookie 安全选项和首次管理员凭据；完整变量见 [.env.example](.env.example)。默认网页为 `http://localhost:3000`，API 为 `http://127.0.0.1:8000`。网页通过同源 Cookie 会话上传，注册用户审核通过后进入工作台。`GET /health/ready` 使用独立运维 Bearer key 检查就绪状态。Windows 的 service 依赖包含 ffmpeg wheel；Linux 镜像安装系统 ffmpeg，生成 H.264 回放。
+启动前按[账户与 Linux 部署说明](deploy/README.md)设置 `JWT_SECRET`、`PUBLIC_ORIGIN`、Cookie 安全选项和首次管理员凭据，完整变量见 [.env.example](.env.example)。打开 [本机网站](http://localhost:3000/) 即进入 `/welcome`，API 为 `http://127.0.0.1:8000`。网页通过同源 Cookie 会话上传。注册用户获批后可从欢迎页进入训练空间。`GET /health/ready` 使用独立运维 Bearer key 检查就绪状态。Windows 的 service 依赖包含 ffmpeg wheel。Linux 镜像安装系统 ffmpeg，生成 H.264 回放。
 
 Windows 上配置好服务用 RTMPose 环境、SAM 的独立 Python 环境、完整模型和 `scoring-demo-web\.dev.vars` 后，在项目根目录执行下列命令。启动脚本默认使用真实 SAM DINOv3；可显式用 `-Model sam3d-vith` 或 `-Model rtmpose` 切换。它会从 `.dev.vars` 读取内部 API 密钥，启动一个 API/Worker 和网页，均只监听本机；已有服务占用端口时会停止启动，避免重复 GPU worker。SAM 权重缺失时会在启动前报错，不会自动替换模型。
 

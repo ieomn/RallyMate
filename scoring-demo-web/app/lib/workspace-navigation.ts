@@ -12,14 +12,26 @@ function validJobId(value: unknown): string | null {
   return typeof value === "string" && JOB_ID.test(value) ? value : null;
 }
 
+function isWorkspaceView(value: unknown): value is WorkspaceView {
+  return VIEWS.includes(value as WorkspaceView);
+}
+
+/** Only an explicit workspace view or a valid shared report opens the private app. */
+export function rootEntryRedirect(view: string | string[] | undefined, job: string | string[] | undefined): string | null {
+  const requestedView = Array.isArray(view) ? view[0] : view;
+  if (requestedView === "guide") return workspaceHref("overview");
+  if (isWorkspaceView(requestedView) || validJobId(Array.isArray(job) ? job[0] : job)) return null;
+  return "/welcome";
+}
+
 /** An explicit view wins over a job deep link. Browser storage is not navigation. */
 export function readWorkspaceLocation(search: string): WorkspaceLocation {
   const params = new URLSearchParams(search);
   const jobId = validJobId(params.get("job"));
   const requestedView = params.get("view");
   if (requestedView === "guide") return { view: "overview", jobId: null };
-  const view = VIEWS.includes(requestedView as WorkspaceView)
-    ? requestedView as WorkspaceView
+  const view = isWorkspaceView(requestedView)
+    ? requestedView
     : jobId ? "analysis" : "overview";
   return { view, jobId };
 }

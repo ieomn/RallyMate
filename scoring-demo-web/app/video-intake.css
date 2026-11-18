@@ -28,6 +28,15 @@
 .file-selection-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 14px; margin: 0 0 16px; background: #292b23; border-left: 2px solid #c4f469; }
 .file-selection-notice button { flex: none; }
 .product-app .studio-record-open:is(a) { display: inline-flex; align-items: center; min-height: 44px; }
+@media (prefers-reduced-motion: no-preference) {
+  .intake-preparation, .product-processing {
+    animation: intake-appear 245ms cubic-bezier(.2,.85,.26,1) both;
+  }
+}
+@keyframes intake-appear {
+  from { opacity: .4; translate: 0 7px; }
+  to { opacity: 1; translate: 0 0; }
+}
 @media (max-width: 760px) {
   .intake-preparation { grid-template-columns: minmax(0,1fr); }
   .intake-preview video { max-height: 43dvh; }

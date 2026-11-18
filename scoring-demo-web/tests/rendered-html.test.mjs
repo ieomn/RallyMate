@@ -36,6 +36,22 @@ test("server rendering keeps the workspace private until the account guard resol
   assert.doesNotMatch(html, /没有匹配的指标/);
 });
 
+test("public entry and welcome alias land on the welcome page while workspace links reach the account guard", async () => {
+  const app = await worker();
+  for (const path of ["/", "/?utm_source=club", "/?view=&job=", "/?view=other", "/?job=bad", "/welcom"]) {
+    for (const cookie of ["", "rallymate_session=test-session"]) {
+      const response = await app.fetch(new Request(`https://app.example.com${path}`, { headers: { accept: "text/html", cookie } }), env, ctx);
+      assert.equal(response.status, path === "/welcom" ? 308 : 307, path);
+      assert.equal(response.headers.get("location"), "/welcome", path);
+    }
+  }
+  for (const path of ["/?view=analysis", "/?view=sessions", "/?job=legacy-job-1234", "/?view=other&job=legacy-job-1234"]) {
+    const response = await app.fetch(new Request(`https://app.example.com${path}`, { headers: { accept: "text/html" } }), env, ctx);
+    assert.equal(response.status, 200, path);
+    assert.match(await response.text(), /正在读取账户状态/, path);
+  }
+});
+
 test("retired capture-guide links redirect to the canonical overview before loading a job", async () => {
   const app = await worker();
   for (const path of ["/?view=guide", "/?view=guide&job=retired-job-1234"]) {

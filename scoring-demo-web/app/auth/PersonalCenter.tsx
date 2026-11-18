@@ -7,15 +7,17 @@ import { useAuth } from "./AuthProvider";
 import { AccountErrorMessage, accountStatusLabels, readableAccountError } from "./AccountFrame";
 import { replaceAccountLocation, type AccountUser } from "../lib/auth-client";
 import { workspaceHref } from "../lib/workspace-navigation";
+import { playPressFeedback } from "../lib/press-feedback";
 
 export default function PersonalCenter() {
   const path = usePathname();
   const { user, logout } = useAuth();
-  if (!user || !path || !["/", "/annotate", "/admin", "/change-password", "/account-status"].includes(path.replace(/\/$/, "") || "/")) return null;
-  return <ProfileDock key={user.id} user={user} logout={logout} workspace={path === "/"} />;
+  const pathname = path?.replace(/\/$/, "") || "/";
+  if (!user || !path || !["/", "/welcome", "/annotate", "/admin", "/change-password", "/account-status"].includes(pathname)) return null;
+  return <ProfileDock key={user.id} user={user} logout={logout} pathname={pathname} />;
 }
 
-function ProfileDock({ user, logout, workspace }: { user: AccountUser; logout: () => Promise<void>; workspace: boolean }) {
+function ProfileDock({ user, logout, pathname }: { user: AccountUser; logout: () => Promise<void>; pathname: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -43,7 +45,7 @@ function ProfileDock({ user, logout, workspace }: { user: AccountUser; logout: (
     }
   }
 
-  return <div className={`profile-dock${workspace ? " profile-dock-workspace" : ""}`}>
+  return <div className={`profile-dock${pathname === "/" ? " profile-dock-workspace" : pathname === "/welcome" ? " profile-dock-public" : ""}`} onClickCapture={playPressFeedback}>
     <button ref={trigger} className="profile-trigger" type="button" aria-haspopup="dialog" aria-controls={dialogId}
       aria-expanded={open} aria-label={`打开个人中心，${user.username}`} onClick={showProfile}>
       <Image src="/player-portrait.jpg" width={40} height={40} alt="" unoptimized />

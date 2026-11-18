@@ -57,40 +57,56 @@
 }
 .pw-brand svg { color: var(--pw-accent); flex: none; }
 .pw-navigation {
-  display: grid;
-  gap: 5px;
+  --nav-position: 0;
+  --nav-gap: 5px;
   margin-top: 48px;
 }
+.pw-navigation[data-view="sessions"] { --nav-position: 1; }
+.pw-navigation[data-view="analysis"] { --nav-position: 2; }
+.pw-nav-track {
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: var(--nav-gap);
+  isolation: isolate;
+}
+.pw-nav-cursor {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: calc((100% - 2 * var(--nav-gap)) / 3);
+  border-radius: 2px;
+  background: #222a21;
+  pointer-events: none;
+  transform: translateY(calc(var(--nav-position) * (100% + var(--nav-gap))));
+  transition: transform 380ms cubic-bezier(.24,.93,.3,1.09);
+}
+.pw-nav-cursor::after {
+  content: "";
+  position: absolute;
+  top: 26%; bottom: 26%; left: 0;
+  width: 2px;
+  background: var(--pw-accent);
+}
 .pw-navigation a {
+  position: relative;
   display: flex;
   align-items: center;
   min-height: 46px;
-  padding: 8px 0;
+  padding: 8px 13px;
   color: #bec3b8;
   font-size: 16px;
   line-height: 1.4;
   text-decoration: none;
 }
-.pw-navigation a > span { position: relative; }
-.pw-navigation a > span::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 -5px;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform .22s cubic-bezier(.2,.85,.32,1);
-}
 .pw-navigation a[aria-current="page"] { color: var(--pw-accent); font-weight: 600; }
-.pw-navigation a[aria-current="page"] > span::after { transform: scaleX(1); }
 @media (hover: hover) {
-  .pw-navigation a:hover { color: var(--pw-text); }
-  .pw-navigation a:hover > span::after { transform: scaleX(1); }
+  .pw-navigation a:not([aria-current]):hover { color: var(--pw-text); background: #1c211c; }
 }
 .pw-workspace {
   margin-left: var(--sidebar-width);
   min-width: 0;
+  overflow-x: clip;
   min-height: 100dvh;
 }
 .pw-content {
@@ -114,19 +130,19 @@
   .pw-brand { font-size: 21px; gap: 6px; }
   .pw-brand svg { width: 20px; height: 20px; }
   .pw-navigation {
+    --nav-gap: 0px;
     position: fixed;
     z-index: 40;
     inset: auto 0 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
-    gap: 0;
     margin: 0;
     padding: 5px max(6px,env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) calc(64px + env(safe-area-inset-left));
     background: #171a18;
     border-top: 1px solid var(--pw-line);
   }
+  .pw-nav-track { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto; }
+  .pw-nav-cursor { width: calc(100% / 3); height: 100%; background: transparent; transform: translateX(calc(var(--nav-position) * 100%)); }
+  .pw-nav-cursor::after { inset: auto 0 4px; margin: auto; width: min(48px, 66%); height: 2px; }
   .pw-navigation a { justify-content: center; min-height: 48px; padding: 2px; font-size: 14px; white-space: nowrap; }
-  .pw-navigation a > span::after { inset-block-end: -6px; }
   .pw-workspace { margin-left: 0; min-height: calc(100dvh - 51px); padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .pw-content { padding: 26px clamp(16px,4.5vw,32px) 36px; }
 }

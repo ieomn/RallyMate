@@ -145,14 +145,29 @@ test("next destinations accept local workspace links and reject open redirects a
   assert.equal(auth.safeNextPath("/?view=analysis&job=job-a"), "/?view=analysis&job=job-a");
   assert.equal(auth.safeNextPath("/annotate?job=job-a"), "/annotate?job=job-a");
   for (const path of ["https://outside.example", "//outside.example", "/\\outside.example", "/%2foutside.example", "/%5coutside.example", "javascript:alert(1)", "/login", "/register?next=/admin", "/api/auth/me", "/%0d%0aoutside"]) {
-    assert.equal(auth.safeNextPath(path), "/?view=overview", path);
+    assert.equal(auth.safeNextPath(path), "/welcome", path);
   }
 });
 
 test("account destinations enforce password change and approval before honoring next", () => {
+  assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: false }), "/welcome");
+  assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: false }, "/?view=analysis"), "/?view=analysis");
   assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: false }, "/admin"), "/admin");
-  for (const status of ["PENDING", "REJECTED", "SUSPENDED"]) assert.equal(auth.accountDestination({ status, must_change_password: false }, "/admin"), "/account-status");
-  assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: true }, "/admin"), "/change-password");
+  for (const status of ["PENDING", "REJECTED", "SUSPENDED"]) assert.equal(auth.accountDestination({ status, must_change_password: false }, "/admin"), "/account-status?next=%2Fadmin");
+  assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: true }, "/admin"), "/change-password?next=%2Fadmin");
+});
+
+test("a report destination survives password, re-login and approval steps", () => {
+  const report = "/?view=analysis&job=job-12345#video";
+  const pending = { status: "PENDING", must_change_password: true };
+  const destinationAt = url => new URL(url, "https://rallymate.example").searchParams.get("next");
+  const password = auth.accountDestination(pending, report);
+  const login = auth.accountStepHref("/login?password-changed=1", destinationAt(password));
+  assert.match(login, /^\/login\?password-changed=1&next=/);
+  const approval = auth.accountDestination({ ...pending, must_change_password: false }, destinationAt(login));
+  assert.match(approval, /^\/account-status\?next=/);
+  assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: false }, destinationAt(approval)), report);
+  assert.equal(auth.accountDestination(pending, "//outside.example"), "/change-password");
 });
 
 test("document navigation is restricted to safe same-origin relative destinations", () => {

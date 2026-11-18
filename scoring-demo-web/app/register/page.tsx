@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "../auth/AuthProvider";
 import { AccountFrame, AccountErrorMessage, passwordIsStrong, readableAccountError } from "../auth/AccountFrame";
-import { accountDestination, replaceAccountLocation } from "../lib/auth-client";
+import { accountDestination, accountStepHref, replaceAccountLocation } from "../lib/auth-client";
 
 export default function RegisterPage() {
   const auth = useAuth();
+  const next = useSearchParams()?.get("next");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +16,7 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { if (!auth.loading && auth.user) replaceAccountLocation(accountDestination(auth.user)); }, [auth.user, auth.loading]);
+  useEffect(() => { if (!auth.loading && auth.user) replaceAccountLocation(accountDestination(auth.user, next)); }, [auth.user, auth.loading, next]);
   async function submit(event: FormEvent) {
     event.preventDefault(); setError(null);
     if (!passwordIsStrong(password)) { setError("密码须为12至128个字符，并包含字母和数字。"); return; }
@@ -23,13 +25,12 @@ export default function RegisterPage() {
     try {
       await auth.register({ email: email.trim(), username: username.trim(), password, application_reason: reason.trim() || null });
       setCreated(true);
-      const user = await auth.login(email.trim(), password);
-      replaceAccountLocation(accountDestination(user));
+      await auth.login(email.trim(), password);
     } catch (cause) { setError(readableAccountError(cause)); }
     finally { setBusy(false); setPassword(""); }
   }
   return <AccountFrame title="申请账户" description="管理员审核通过后，即可上传训练视频。">
-    {created ? <div className="account-status-card"><h3>注册申请已提交</h3><p>账户已创建，请登录查看审核进度。</p><AccountErrorMessage message={error} /><a className="account-button account-primary" href="/login">前往登录</a></div> : <form className="account-form" onSubmit={submit}>
+    {created ? <div className="account-status-card"><h3>注册申请已提交</h3><p>账户已创建，请登录查看审核进度。</p><AccountErrorMessage message={error} /><a className="account-button account-primary" href={accountStepHref("/login", next)}>前往登录</a></div> : <form className="account-form" onSubmit={submit}>
       <label htmlFor="register-email">邮箱<input disabled={auth.loading || busy} id="register-email" name="email" type="email" autoComplete="username" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
       <label htmlFor="register-username">显示名称<input disabled={auth.loading || busy} id="register-username" name="username" autoComplete="nickname" maxLength={80} required value={username} onChange={(event) => setUsername(event.target.value)} /></label>
       <label htmlFor="register-password">密码<input disabled={auth.loading || busy} id="register-password" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={128} required aria-describedby="password-rule" value={password} onChange={(event) => setPassword(event.target.value)} /><small id="password-rule">12至128个字符，包含字母和数字。</small></label>
@@ -37,6 +38,6 @@ export default function RegisterPage() {
       <AccountErrorMessage message={error ?? auth.error} />
       <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在提交…" : "提交注册申请"}</button>
     </form>}
-    <p className="account-form-footer">已有账户？<a href="/login">登录</a></p>
+    <p className="account-form-footer">已有账户？<a href={accountStepHref("/login", next)}>登录</a></p>
   </AccountFrame>;
 }

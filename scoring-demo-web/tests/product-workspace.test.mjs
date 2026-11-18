@@ -123,6 +123,8 @@ test("the shared desktop/mobile navigation has three text links, current-page se
     const nodes = elements(shell);
     assert.equal(nodes.filter(n => n.type === "nav").length, 1);
     const nav = nodes.find(n => n.type === "nav" && n.props["aria-label"] === "主导航");
+    assert.equal(nav.props["data-view"], current);
+    assert.equal(elements(nav.props.children).filter(n => n.props.className === "pw-nav-cursor" && n.props["aria-hidden"] === "true").length, 1);
     const links = elements(nav.props.children).filter(n => n.type === "a");
     assert.equal(links.length, 3);
     for (const [index, link] of links.entries()) {

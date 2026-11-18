@@ -2,8 +2,9 @@
 
 // Native links avoid the current vinext client-router error when returning to the homepage.
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { recentReports, type RecentReport } from "./lib/training-report";
+import { playPressFeedback } from "./lib/press-feedback";
 import { workspaceHref, type WorkspaceView } from "./lib/workspace-navigation";
 import type { PersonalJobRecord } from "./lib/api-client";
 import "./workspace-redesign.css";
@@ -40,15 +41,20 @@ const navigation: ReadonlyArray<{ view: WorkspaceView; label: string }> = [
 
 function WorkspaceSurface({ view, children }: { view: WorkspaceView; children: ReactNode }) {
   const contentRef = useRef<HTMLElement>(null);
-  useEffect(() => {
+  const previousView = useRef(view);
+  useLayoutEffect(() => {
+    const previous = previousView.current;
+    previousView.current = view;
+    if (previous === view) return;
     const content = contentRef.current;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!content?.animate || motion.matches) return;
-    // Animate the existing surface; never remount the player or upload inputs.
+    const order = navigation.findIndex(item => item.view === view) - navigation.findIndex(item => item.view === previous);
+    const travel = Math.sign(order) * 22;
     const entry = content.animate([
-      { opacity: 0.55, transform: "translateY(10px)" },
-      { opacity: 1, transform: "translateY(0)" },
-    ], { duration: 320, easing: "cubic-bezier(.22, 1, .36, 1)" });
+      { opacity: .38, transform: `translateX(${travel}px)` },
+      { opacity: 1, transform: "translateX(0)" },
+    ], { id: "workspace-entry", duration: 330, easing: "cubic-bezier(.16,1,.3,1)" });
     const stop = () => { if (motion.matches) entry.cancel(); };
     motion.addEventListener("change", stop);
     return () => { entry.cancel(); motion.removeEventListener("change", stop); };
@@ -62,23 +68,26 @@ export function ProductShell({ view, onNavigate, analysisJobId, children }: {
   analysisJobId?: string | null;
   children: ReactNode;
 }) {
-  return <div className="product-app pw-studio">
+  return <div className="product-app pw-studio" onClickCapture={playPressFeedback}>
     <a className="pw-skip-link" href="#workspace-content">跳到主要内容</a>
     <aside className="pw-sidebar">
       <a className="pw-brand" href="/welcome" aria-label="RallyMate 首页">
         <ProductIcon name="tennis" size={25} /><span>RallyMate</span>
       </a>
-      <nav className="pw-navigation" aria-label="主导航">
-        {navigation.map(item => <a key={item.view}
-          href={workspaceHref(item.view, analysisJobId)}
-          aria-current={view === item.view ? "page" : undefined}
-          onClick={event => {
-            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            event.preventDefault();
-            if (view !== item.view) onNavigate(item.view);
-          }}>
-          <span>{item.label}</span>
-        </a>)}
+      <nav className="pw-navigation" aria-label="主导航" data-view={view}>
+        <div className="pw-nav-track">
+          <span className="pw-nav-cursor" aria-hidden="true" />
+          {navigation.map(item => <a key={item.view}
+            href={workspaceHref(item.view, analysisJobId)}
+            aria-current={view === item.view ? "page" : undefined}
+            onClick={event => {
+              if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              if (view !== item.view) onNavigate(item.view);
+            }}>
+            <span>{item.label}</span>
+          </a>)}
+        </div>
       </nav>
     </aside>
     <div className="pw-workspace">

@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../auth/AuthProvider";
 import { AccountFrame, AccountErrorMessage, readableAccountError } from "../auth/AccountFrame";
-import { accountDestination, replaceAccountLocation, safeNextPath } from "../lib/auth-client";
+import { accountDestination, accountStepHref, replaceAccountLocation } from "../lib/auth-client";
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -22,9 +22,8 @@ export default function LoginPage() {
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError(null);
     try {
-      const user = await auth.login(email.trim(), password);
+      await auth.login(email.trim(), password);
       setPassword("");
-      replaceAccountLocation(accountDestination(user, safeNextPath(next)));
     } catch (cause) { setError(readableAccountError(cause)); }
     finally { setBusy(false); }
   }
@@ -36,7 +35,7 @@ export default function LoginPage() {
       <AccountErrorMessage message={error ?? auth.error} />
       <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在登录…" : "登录训练空间"}</button>
     </form>
-    <p className="account-form-footer">还没有账户？<a href="/register">申请注册</a></p>
+    <p className="account-form-footer">还没有账户？<a href={accountStepHref("/register", next)}>申请注册</a></p>
     <p className="account-hint">忘记密码时，请联系管理员重置。</p>
   </AccountFrame>;
 }

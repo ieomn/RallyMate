@@ -5,6 +5,7 @@ import TechnicalReviewPanel from "../TechnicalReviewPanel";
 import RuleReviewPanel from "../RuleReviewPanel";
 import scoringReference from "../data/scoring-reference.json";
 import { createApiClient } from "../lib/api-client";
+import { playPressFeedback } from "../lib/press-feedback";
 import { annotationHref, annotationJobId, annotationSeekSeconds, loadAnnotationReport, type AnnotationReport } from "../lib/annotation-navigation";
 import type { RuleReviewCatalog } from "../lib/rule-review";
 import type { RecentReport } from "../lib/training-report";
@@ -86,7 +87,7 @@ export default function AnnotationWorkspace() {
   const taskId = report?.job.id;
   const title = typeof report?.job.original_filename === "string" ? report.job.original_filename.split(/[\\/]/).pop() : history.find(item => item.id === taskId)?.name;
   const seekAvailable = report && annotationSeekSeconds(report, report.job.id, report.videoTimeOriginMs) !== null;
-  return <main className="annotation-workspace">
+  return <main className="annotation-workspace" onClickCapture={playPressFeedback}>
     <header className="annotation-header"><a className="annotation-brand" href="/welcome">RallyMate</a><a className="annotation-return" href={workspaceHref(taskId ? "analysis" : "overview", taskId)}>返回训练空间</a></header>
     <div className="annotation-setup">
     <div className="annotation-intro"><h1>标注工作台</h1><p>对照视频录入技术等级，并标记做出判断的时段。</p></div>

@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import type { AccountUser } from "../lib/auth-client";
+import { playPressFeedback } from "../lib/press-feedback";
 
 export const accountStatusLabels: Record<AccountUser["status"], string> = {
   APPROVED: "已通过", PENDING: "待审核", REJECTED: "未通过", SUSPENDED: "已停用",
 };
 
 export function AccountFrame({ title, description, children, wide = false }: { title: string; description?: string; children: ReactNode; wide?: boolean }) {
-  return <main className={`account-app${wide ? " account-app-wide" : ""}`}>
+  return <main className={`account-app${wide ? " account-app-wide" : ""}`} onClickCapture={playPressFeedback}>
     <header className="account-header">
       <a className="account-brand" href="/welcome"><Image src="/tennis-mark.svg" alt="" width={30} height={30} unoptimized />RallyMate</a>
       <a href={wide ? "/?view=overview" : "/welcome"}>{wide ? "返回训练空间" : "返回首页"}</a>

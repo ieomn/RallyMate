@@ -49,7 +49,7 @@ cd scoring-demo-web
 RALLYMATE_API_ORIGIN=http://127.0.0.1:8000 npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
-访问 `http://localhost:3000/login`，管理员登录后进入 `/admin`。新注册账户默认 `PENDING`，审核通过后可使用工作台。浏览器旧公共缓存保留，新账户页面不读取这些公共键。下面的测试命令从仓库根目录执行。
+访问 [本机网站](http://localhost:3000/) 进入欢迎页。单独登录后回到欢迎页。访问 [管理页面](http://localhost:3000/admin) 并登录则返回管理页面。新注册账户默认 `PENDING`，审核通过后可使用工作台。浏览器旧公共缓存保留，新账户页面不读取这些公共键。下面的测试命令从仓库根目录执行。
 
 ```bash
 PYTHONPATH=src:tests python -m pytest tests/test_account_migrations.py tests/test_accounts.py tests/test_auth_api.py tests/test_auth_runtime.py tests/test_auth_boundaries.py tests/test_ownership.py tests/test_account_maintenance.py tests/test_observability.py -q

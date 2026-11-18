@@ -53,12 +53,15 @@ export async function accountResponse<T>(response: Response): Promise<T> {
   return payload as T;
 }
 
+// eslint-disable-next-line no-control-regex -- Reject literal and URL-decoded ASCII control characters in redirect paths.
+const unsafePathCharacters = /[\\\u0000-\u001f\u007f]/;
+
 export function safeNextPath(value: string | null | undefined): string {
-  const fallback = "/?view=overview";
-  if (!value || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020\u007f]/.test(value)) return fallback;
+  const fallback = "/welcome";
+  if (!value || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || value.includes(" ") || unsafePathCharacters.test(value)) return fallback;
   try {
     const decoded = decodeURIComponent(value);
-    if (decoded.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(decoded)) return fallback;
+    if (decoded.startsWith("//") || unsafePathCharacters.test(decoded)) return fallback;
     const url = new URL(value, "https://rallymate.invalid");
     if (url.origin !== "https://rallymate.invalid" || /^\/(?:login|register|account-status|change-password)(?:\/|$)/.test(url.pathname) || url.pathname.startsWith("/api/")) return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
@@ -66,12 +69,19 @@ export function safeNextPath(value: string | null | undefined): string {
 }
 
 export function accountDestination(user: AccountUser, next?: string | null): string {
-  if (user.must_change_password) return "/change-password";
-  return user.status === "APPROVED" ? safeNextPath(next) : "/account-status";
+  if (user.must_change_password) return accountStepHref("/change-password", next);
+  return user.status === "APPROVED" ? safeNextPath(next) : accountStepHref("/account-status", next);
+}
+
+/** Keep an explicit destination across required account steps without nesting login links. */
+export function accountStepHref(path: "/login" | "/login?password-changed=1" | "/register" | "/account-status" | "/change-password", next?: string | null): string {
+  const destination = safeNextPath(next);
+  if (destination === "/welcome") return path;
+  return `${path}${path.includes("?") ? "&" : "?"}next=${encodeURIComponent(destination)}`;
 }
 
 export function replaceAccountLocation(path: string): void {
-  if (!path.startsWith("/") || path.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(path)) throw new AccountError("跳转地址无效。", 0, "invalid_destination");
+  if (!path.startsWith("/") || path.startsWith("//") || unsafePathCharacters.test(path)) throw new AccountError("跳转地址无效。", 0, "invalid_destination");
   const url = new URL(path, window.location.origin);
   if (url.origin !== window.location.origin) throw new AccountError("跳转地址无效。", 0, "invalid_destination");
   window.location.replace(`${url.pathname}${url.search}${url.hash}`);
