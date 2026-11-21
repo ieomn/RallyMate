@@ -35,6 +35,7 @@ body { margin:0; background:#0b0d10; }
 .product-upload-footnote { font-size:14px; color:var(--product-muted); line-height:1.8; text-align:center; margin:16px 0 0; }
 
 .product-notice { padding:14px 18px; margin:0 0 22px; font-size:14px; line-height:1.8; border:1px solid var(--product-border); border-radius:8px; background:var(--product-panel-soft); overflow-wrap:anywhere; }
+.product-notice.import-reading { color:var(--product-text); }
 .product-notice.is-error,.product-notice.import-error { color:#ffbbb0; border-color:#6a3d38; background:#301c1c; }
 .product-notice.import-success { color:#c5e594; }
 .product-processing { border:1px solid #435532; border-radius:14px; background:linear-gradient(110deg,#1b241c,#14181c 65%); padding:26px 28px; margin-bottom:24px; }

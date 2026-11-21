@@ -117,8 +117,8 @@ export default function TennisAssessmentSummary({ report, loading, error, messag
   return <section className="tennis-assessment-wait" role="status">
     <h2>{waiting ? "正在整理训练重点" : "本次训练重点"}</h2>
     <p>{message ? productText(message) : error ? "暂时无法读取动作观察。" : waiting ? "动作测量完成后，这里会显示练习建议。" :
-      report?.reason_zh ? productText(report.reason_zh) : !report && offline ? "这份导入报告未包含可核验的动作评分。" : "这份报告没有定位到需要优先调整的动作。"}</p>
-    {!waiting && !error && !message && <p className="review-next"><span className="review-label">下一次怎么练</span>选一个熟悉的动作，以舒适的速度重复一组，保留完整的准备、挥拍和回位，供下次对照。</p>}
+      report?.reason_zh ? productText(report.reason_zh) : !report && offline ? "这份备份没有可显示的动作评分。" : "这次没有具体的改进建议。"}</p>
+    {!waiting && !error && !message && <p className="review-next"><span className="review-label">下一次怎么练</span>选一个熟悉的动作，按平时的节奏练一组。每次从准备做到挥拍后的回位。</p>}
     {!waiting && !offline && onRetry && (!report || report.status === "unavailable") && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
   </section>;
 }

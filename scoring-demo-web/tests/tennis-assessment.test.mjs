@@ -258,14 +258,14 @@ test("legacy report has one neutral placeholder and older measurement panels sta
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, pending: false, trajectory: null,
     journal: createElement("div", { id: "journal-test" }, "关注点"), details: createElement("div", { id: "tools-test" }, "工具"), replay: createElement("video", { id: "video-test" }) }));
   const details = html.indexOf('id="details"'), primary = html.slice(0, details);
-  assert.equal((primary.match(/这份报告没有定位到需要优先调整的动作/g) ?? []).length, 1);
+  assert.equal((primary.match(/这次没有具体的改进建议/g) ?? []).length, 1);
   assert.doesNotMatch(primary, /process-overall-reference|>99|待观察|0 \/ 5/);
   assert.ok(html.indexOf('id="video-test"') < details); assert.ok(html.indexOf('id="journal-test"') > details); assert.ok(html.indexOf('id="tools-test"') > details);
   assert.match(html, /<details class="report-all-details" id="details">/); assert.doesNotMatch(html, /<details[^>]*\bopen(?:=|>)/);
 });
 
 test("unavailable and offline states use one clear action instead of a page of empty scores", () => {
-  assert.match(render(null, { offline: true }), /未包含可核验的动作评分/);
+  assert.match(render(null, { offline: true }), /没有可显示的动作评分/);
   assert.match(render(null, { error: true, onRetry() {} }), /重新读取/);
   const missingSource = render(null, { message: "原视频来源未读取完整，请重新读取报告。", onRetry() {} });
   assert.match(missingSource, /原视频来源未读取完整/); assert.match(missingSource, /重新读取<\/button>/);
@@ -297,7 +297,7 @@ test("assessment read failures expose a useful category without raw server detai
     assert.match(message, text); assert.doesNotMatch(message, /PRIVATE/);
     assert.match(render(null, { error: true, message, onRetry() {} }), text);
   }
-  assert.match(render(null, { offline: true }), /导入报告未包含可核验的动作评分/);
+  assert.match(render(null, { offline: true }), /备份没有可显示的动作评分/);
 });
 
 test("late supplemental results retain a loaded score only for the same job and independently bound video", () => {
@@ -377,7 +377,7 @@ test("v1.2 empty measurement retains a subject scope without manufacturing episo
   report.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics = []; });
   report.subject_scope.subjects.forEach(s => { s.measured_episode_count = 0; });
   report.pattern_coverage = { measured_requirements: 0, applicable_requirements: 0, fraction: null, verified_technique_episodes: 0, generic_episodes: 0, full_source_technique_covered: false, profiles: [] };
-  assert.ok(parse(report)); assert.match(render(parse(report)), /没有定位到需要优先调整的动作/);
+  assert.ok(parse(report)); assert.match(render(parse(report)), /没有具体的改进建议/);
   assert.doesNotMatch(render(parse(report)), /tennis-radar|tennis-score-number/);
 });
 

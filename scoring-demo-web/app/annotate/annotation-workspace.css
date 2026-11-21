@@ -1,10 +1,5 @@
 .annotation-workspace {
-  --product-border: #424942;
-  --product-panel: #1d211e;
-  --product-text: #f1f0e9;
-  --product-muted: #adb3a9;
-  --product-accent: #c4f469;
-  background: #171a18;
+  background: var(--product-bg);
   color: var(--product-text);
   color-scheme: dark;
   min-height: 100dvh;
@@ -27,9 +22,9 @@
 .annotation-selector h2, .annotation-history h2, .annotation-video-heading h2 { margin: 0 0 16px; font: 600 23px/1.35 var(--rm-display); }
 .annotation-selector label { display: block; color: var(--product-muted); font: 13px/1.5 var(--rm-mono); }
 .annotation-input-row { display: flex; gap: 8px; margin-top: 8px; }
-.annotation-selector input, .annotation-selector select { width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--product-border); border-radius: 3px; background: #101310; color: var(--product-text); font: 14px/1.5 var(--rm-body); }
-.annotation-input-row button, .annotation-message button { min-height: 44px; padding: 9px 17px; border: 0; border-radius: 3px; background: var(--product-accent); color: #171a18; font: 600 14px var(--rm-body); cursor: pointer; white-space: nowrap; }
-.annotation-input-row button:hover, .annotation-message button:hover { background: #d3f897; }
+.annotation-selector input, .annotation-selector select { width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--product-border); border-radius: 3px; background: var(--product-panel); color: var(--product-text); font: 14px/1.5 var(--rm-body); }
+.annotation-input-row button, .annotation-message button { min-height: 44px; padding: 9px 17px; border: 0; border-radius: 3px; background: var(--product-accent); color: var(--product-on-accent); font: 600 14px var(--rm-body); cursor: pointer; white-space: nowrap; }
+.annotation-input-row button:hover, .annotation-message button:hover { background: var(--product-accent-hover); }
 .annotation-recents { margin-top: 14px; }
 .annotation-recents select { margin-top: 6px; }
 .annotation-message { margin-block: 14px 0; border-left: 2px solid var(--product-accent); padding-left: 12px; overflow-wrap: anywhere; }

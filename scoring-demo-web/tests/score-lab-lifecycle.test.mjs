@@ -314,7 +314,7 @@ test("a ready report unlocks report actions while evidence is pending, and switc
   const ui = harness(t, { getTrajectory: (_id, options) => { signal = options.signal; return optional.promise; } });
   ui.open(jobId); await tick();
   ui.render();
-  assert.equal(ui.processing(), false); assert.match(ui.text(), /正在补充画面证据/);
+  assert.equal(ui.processing(), false); assert.match(ui.text(), /正在加载球路和动作数据/);
   assert.ok(ui.form()); assert.ok(ui.find(node => node.type === "ReportExportActions"));
   ui.chooseVideo(new File(["video"], "下一次训练.mp4", { type: "video/mp4" }));
   assert.equal(signal.aborted, true);
@@ -334,7 +334,7 @@ test("primary report waits alone then unlocks the UI before supplementary reques
   primary.resolve(report); await tick();
   assert.equal(reads, 2); assert.equal(ui.processing(), false);
   assert.ok(ui.form()); assert.ok(ui.find(node => node.type === "ReportExportActions"));
-  assert.match(ui.text(), /正在补充画面证据/);
+  assert.match(ui.text(), /正在加载球路和动作数据/);
   optional.resolve({ job_id: jobId }); await tick();
   assert.equal(ui.processing(), false);
 });

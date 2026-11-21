@@ -31,14 +31,7 @@
 
 /* The video and both overlays retain their shared source aspect ratio. */
 .product-app .ball-trajectory-viewer {
-  --product-text: #f5f5ed;
-  --product-muted: #c1c9c0;
-  --product-border: #49564e;
-  --product-panel: #1b241e;
-  --product-panel-soft: #28342d;
-  --product-accent: #b6e3c5;
-  color-scheme: dark;
-  background: #101713;
+  background: #080a0c;
   color: var(--product-text);
 }
 .product-app .ball-trajectory-stage { background:#080a0c; }
@@ -48,9 +41,9 @@
 .product-app .replay-stage-play svg { width:30px; height:30px; fill:currentColor; margin-left:3px; }
 .product-app .ball-trajectory-controls { display:block; padding:13px 16px 9px; background:#101317; border-top:1px solid #ffffff0d; }
 .replay-seek { position: relative; margin: -7px 0 -3px; }
-.replay-seek-rail { position: absolute; inset: calc(50% - 2px) 7px auto; height: 4px; border-radius: 3px; background: #65726b; pointer-events: none; }
+.replay-seek-rail { position: absolute; inset: calc(50% - 2px) 7px auto; height: 4px; border-radius: 3px; background: #58616b; pointer-events: none; }
 .replay-seek-fill, .replay-seek-window { position: absolute; inset-block: 0; border-radius: inherit; }
-.replay-seek-fill { left: 0; width: var(--played); background: #f7f5eb; }
+.replay-seek-fill { left: 0; width: var(--played); background: var(--product-text); }
 .replay-seek-window {
   left: var(--clip-start, 0%); width: var(--clip-length, 0%); min-width: 2px;
   opacity: 0; background: var(--product-accent); outline: 1px solid var(--product-accent);
@@ -59,7 +52,7 @@
 .replay-media-scope[data-clip-window] .replay-seek[data-full-video="true"] .replay-seek-window { opacity: 1; }
 .replay-seek-time {
   position: absolute; bottom: 12px; left: clamp(4.5ch, var(--preview-at), calc(100% - 4.5ch));
-  padding: 3px 7px; border-radius: 3px; background: #f5f2e8; color: #18251f;
+  padding: 3px 7px; border-radius: 3px; background: var(--product-text); color: var(--product-bg);
   font: 500 11px/1.5 var(--rm-mono); white-space: nowrap; font-variant-numeric: tabular-nums;
   transform: translate(-50%,3px); opacity: 0; transition: opacity 120ms, transform 150ms ease-out;
 }
@@ -68,8 +61,8 @@
   position: relative; display: block; width: 100%; height: 34px; padding: 0; margin: 0; border: 0;
   appearance: none; background: transparent; cursor: pointer; touch-action: pan-y;
 }
-.product-app .replay-scrubber::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border: 2px solid #18251f; border-radius: 50%; background: #fffdf5; }
-.product-app .replay-scrubber::-moz-range-thumb { box-sizing: border-box; width: 14px; height: 14px; border: 2px solid #18251f; border-radius: 50%; background: #fffdf5; }
+.product-app .replay-scrubber::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border: 2px solid var(--product-bg); border-radius: 50%; background: var(--product-text); }
+.product-app .replay-scrubber::-moz-range-thumb { box-sizing: border-box; width: 14px; height: 14px; border: 2px solid var(--product-bg); border-radius: 50%; background: var(--product-text); }
 .product-app .replay-scrubber::-moz-range-track { background: transparent; }
 .product-app .replay-scrubber:active::-webkit-slider-thumb { background: var(--product-accent); transform: scale(1.12); }
 .product-app .replay-scrubber:active::-moz-range-thumb { background: var(--product-accent); transform: scale(1.12); }

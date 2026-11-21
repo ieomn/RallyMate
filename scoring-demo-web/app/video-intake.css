@@ -2,7 +2,7 @@
 .video-intake .intake-drop {
   position: relative; width: 100%; min-height: clamp(220px, 35vh, 380px); display: grid;
   align-content: center; justify-items: start; gap: 12px; text-align: left;
-  padding: clamp(24px, 5vw, 76px); border: 1px dashed #889688; border-radius: 8px;
+  padding: clamp(24px, 5vw, 76px); border: 1px dashed #54616c; border-radius: 8px;
   color: var(--product-text); background: var(--product-panel);
 }
 .video-intake .intake-drop strong { font: 600 clamp(23px, 2.6vw, 37px)/1.35 var(--rm-display); }
@@ -36,7 +36,7 @@
 .product-app .product-library-import button { min-height: 42px; padding: 4px 0; border: 0; color: var(--product-muted); background: none; }
 .product-app .intake-file-tools button:hover, .product-app .intake-next:hover, .file-selection-notice button:hover,
 .product-app .product-library-import button:hover { color: var(--product-accent); text-decoration: underline; text-underline-offset: 4px; }
-.file-selection-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 14px; margin: 0 0 16px; background: #f4eadb; border-left: 2px solid #92623a; }
+.file-selection-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 14px; margin: 0 0 16px; background: var(--product-panel-soft); border-left: 2px solid var(--product-accent); }
 .file-selection-notice button { flex: none; }
 .product-app .studio-record-open:is(a) { display: inline-flex; align-items: center; min-height: 44px; }
 @media (prefers-reduced-motion: no-preference) {

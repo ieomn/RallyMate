@@ -1,10 +1,10 @@
 .account-app, .account-gate, .account-dialog, .profile-dock, .profile-sheet {
-  --account-bg: #171a18;
-  --account-surface: #202520;
-  --account-rule: #3c423c;
-  --account-ink: #f1f0e9;
-  --account-muted: #b0b7ab;
-  --account-green: #c4f469;
+  --account-bg: var(--product-bg, #171a18);
+  --account-surface: var(--product-panel, #202520);
+  --account-rule: var(--product-border, #3c423c);
+  --account-ink: var(--product-text, #f1f0e9);
+  --account-muted: var(--product-muted, #b0b7ab);
+  --account-green: var(--product-accent, #c4f469);
   --account-sans: var(--rm-body, "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif);
   --account-display: var(--rm-display, "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif);
   --account-mono: var(--rm-mono, "IBM Plex Mono", "Sarasa Mono SC", Consolas, monospace);
@@ -61,7 +61,7 @@
 .account-form label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font: 500 13px/1.5 var(--account-mono); }
 .account-form input, .account-form textarea, .account-filter select {
   width: 100%; min-height: 44px; border: 1px solid var(--account-rule); border-radius: 3px;
-  background: #1d211e; color: var(--account-ink); font: 400 15px/1.55 var(--account-sans); padding: 10px 12px;
+  background: var(--account-surface); color: var(--account-ink); font: 400 15px/1.55 var(--account-sans); padding: 10px 12px;
 }
 .account-form input[type=email], .account-form input[type=password] { font-family: var(--account-mono); }
 .account-form input:hover, .account-form textarea:hover, .account-filter select:hover { border-color: #747d70; }
@@ -141,7 +141,7 @@
 .account-empty { padding: 30px 4px; color: var(--account-muted); font-size: 14px; }
 
 .account-dialog, .profile-sheet {
-  box-sizing: border-box; padding: 26px; background: #202520; color: var(--account-ink);
+  box-sizing: border-box; padding: 26px; background: var(--product-panel, #202520); color: var(--account-ink);
   border: 1px solid #545c51; border-radius: 4px; overflow: auto; overscroll-behavior: contain;
   max-height: calc(100dvh - 32px); max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
@@ -174,17 +174,7 @@
 .profile-dock { position: fixed; bottom: max(16px,env(safe-area-inset-bottom)); left: max(16px,env(safe-area-inset-left)); z-index: 45; }
 .profile-trigger { display: flex; align-items: center; gap: 10px; background: var(--account-bg); color: var(--account-ink); min-height: 50px; padding: 5px; border: 1px solid var(--account-rule); border-radius: 4px; max-width: 176px; }
 .profile-dock-workspace .profile-trigger { min-width: 168px; border-width: 1px 0 0; border-radius: 0; padding: 12px 0 0; }
-.profile-dock-workspace, .profile-dock-workspace .profile-sheet {
-  --account-bg: var(--product-bg);
-  --account-surface: var(--product-panel);
-  --account-rule: var(--product-border);
-  --account-ink: var(--product-text);
-  --account-muted: var(--product-muted);
-  --account-green: var(--product-accent);
-  color-scheme: light;
-}
 .profile-dock-workspace .profile-trigger { background: transparent; }
-.profile-dock-workspace .profile-sheet { background: var(--product-panel); border-color: var(--product-border); }
 .profile-dock-workspace .profile-trigger:hover { background: var(--product-panel-soft); border-color: var(--product-border); }
 .profile-dock-public .profile-trigger {
   width: 48px; height: 48px; min-height: 48px; padding: 3px;
@@ -259,12 +249,4 @@
   .profile-trigger:is(:active,:hover) img { transform: none; }
   :is(.account-app,.profile-dock,.account-dialog,.account-gate) :is(a,button):active { transform: none; }
   .profile-sheet, .profile-sheet[open] { transform: none; }
-}
-
-@media (max-width: 700px) {
-  body:has(.profile-dock-public) .mk-frame-tabs {
-    margin-inline-start: calc(42px + env(safe-area-inset-left));
-    max-width: calc(100% - 42px - env(safe-area-inset-left));
-  }
-  body:has(.profile-dock-public) .mk-footer .mk-brand { margin-inline-start: calc(42px + env(safe-area-inset-left)); }
 }

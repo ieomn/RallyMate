@@ -176,7 +176,7 @@ export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate,
       }}>
       <div className="home-upload-copy">
         <h2 id="home-upload-title">添加训练视频</h2>
-        <p>{busy ? "当前任务完成后，可添加下一段视频。" : dragging ? "松开即可预览这段视频。" : <VideoSelectionHint />}</p>
+        <p>{busy ? "这段视频分析完，就能添加下一段。" : dragging ? "松开即可预览这段视频。" : <VideoSelectionHint />}</p>
         <button type="button" className="home-pick" onClickCapture={playPressFeedback} disabled={busy} onClick={() => { setDropError(""); onNewAnalysis(); }}>选择视频</button>
         {dropError && <p className="home-drop-error" role="alert">{dropError}</p>}
       </div>
@@ -205,7 +205,7 @@ export function TrainingHome({ reports, onOpenReport, onNewAnalysis, onNavigate,
       {completed.length > 0 && <ol>{completed.slice(0, 6).map(renderRecord)}</ol>}
       {error && <div className="home-feedback" role="alert"><p>{error}</p>{onRetry && <button type="button" onClick={onRetry}>重新读取</button>}</div>}
       {loading && !error && <p className="home-feedback" role="status">正在读取训练记录…</p>}
-      {!loading && !error && completed.length === 0 && <p className="home-feedback">{protectCurrent || inProgress.length ? "分析完成后，报告会出现在这里。" : "还没有训练记录。提交第一段视频后，可在这里回看。"}</p>}
+      {!loading && !error && completed.length === 0 && <p className="home-feedback">{protectCurrent || inProgress.length ? "分析完成后，报告会出现在这里。" : "还没有训练记录。"}</p>}
     </section>
   </div>;
 }

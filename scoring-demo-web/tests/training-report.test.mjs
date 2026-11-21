@@ -84,7 +84,7 @@ test("legacy report measurements and timeline remain accessible inside the singl
 
 test("an empty report shows one loading state without an empty timeline or old score cards", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, { result: null, assessment: null, catalog: null, pending: false, trajectory: null }));
-  assert.match(html, /没有定位到需要优先调整的动作/);
+  assert.match(html, /没有具体的改进建议/);
   assert.doesNotMatch(html, /report-timeline|process-overall-reference|id="details"/);
 });
 

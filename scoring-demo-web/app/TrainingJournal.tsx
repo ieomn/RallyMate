@@ -29,7 +29,7 @@ export function useTrainingJournal(userId = getAccountRequestState().userId) {
       memory.current = next; setData(next); unreadable.current = false; initialized.current = true; setError("");
     } catch {
       unreadable.current = true;
-      setError("无法读取此浏览器的训练记录。原有内容仍保留；请允许网站存储后重试。当前不会覆盖旧记录。");
+      setError("暂时无法读取训练记录。请允许网站存储后重试，原有记录仍会保留。");
     }
     setReady(true);
   }, [userId]);
@@ -104,7 +104,7 @@ export function TrainingFollowUpPicker({ journal }: { journal: TrainingJournalCo
     <select id={id} value={choices.some(item => item.value === selected) ? selected : ""} onChange={event => { if (!event.target.value) journal.selectFollowUp(); else { const [recordId, focusId] = JSON.parse(event.target.value) as [string, string]; journal.selectFollowUp(recordId, focusId); } }}>
       <option value="">从本次视频开始，不关联旧关注点</option>{choices.map(({ record, focus, value }) => <option key={value} value={value}>{record.name} · {focus.title}</option>)}
     </select>
-    {journal.pendingFocus ? <p className="tj-pending-question">{journal.pendingFocus.focus.question}<small>提交新视频后会把这个问题带入新记录，供前后回看；不会改变模型推理或评分，也不会据此自动判断进步。</small></p> : <p>在报告中保存一个关注点，下一次上传时就能接着复盘。</p>}
+    {journal.pendingFocus ? <p className="tj-pending-question">{journal.pendingFocus.focus.question}<small>这个问题会随新视频记入训练记录，方便你比较两次动作。选好问题不会影响分析和评分。</small></p> : <p>在报告中保存一个关注点，下一次上传时就能接着复盘。</p>}
     <JournalStatus journal={journal} />
   </section>;
 }
@@ -133,7 +133,7 @@ function FollowUpComparison({ record, journal, suggestions, onOpenReport }: { re
   const canCompare = previous && replayTarget(previous, previousFocus) && currentFocus;
   return <div className="tj-follow-up"><span className="tj-eyebrow">接着上次的问题看</span><h3>{previousFocus.title}</h3><p>{previousFocus.question}</p><p className="tj-subtle">来自：{previous?.name || "之前保存的训练"}。请先确认两段是同类动作，并考虑机位、练习条件和可见范围；这里不自动评判进步。</p>
     {canCompare ? <><button type="button" aria-expanded={open} onClick={() => setOpen(value => !value)}>{open ? "收起前后片段" : "并排回看前后片段"}</button>{open && <div className="tj-comparison"><ComparisonVideo key={`previous:${previous.id}`} label="上一次" record={previous} focus={previousFocus} /><ComparisonVideo key={`current:${record.id}`} label="这一次" record={record} focus={currentFocus} /></div>}</>
-      : <p className="tj-subtle">暂不提供并排定位：需要两次都有已保存的片段位置及可确认时间对应关系的视频。仍可保留问题，分别回看报告。</p>}
+      : <p className="tj-subtle">两段视频都能跳到对应动作时，就能并排回看。现在可以分别打开报告。</p>}
     {previous?.source === "online" && previous.jobId && onOpenReport && <button className="tj-quiet" type="button" onClick={() => onOpenReport(previous.jobId!)}>打开上次报告</button>}
     {previous?.source === "imported" && <p className="tj-subtle">上次记录来自离线导入；再次导入原备份即可查看，不会尝试读取同名在线任务。</p>}
   </div>;
@@ -153,7 +153,7 @@ export function TrainingJournalPanel({ journal, recordId, suggestions = [], show
       return <article key={focus.id}><h3>{focus.title}</h3><p>{focus.question}</p><div className="tj-actions">{focus.timestampMs !== undefined && onSeek && <button className="tj-quiet" type="button" onClick={() => onSeek(focus.timestampMs!)}>回看这段</button>}<button type="button" disabled={saved} onClick={() => journal.saveFocus(record.id, focus)}>{saved ? "已加入关注点" : "保存这个关注点"}</button></div></article>;
     })}</div>}
     {record.focuses.length > 0 && <div className="tj-saved"><h3>已经留下的问题</h3>{record.focuses.map(focus => <div className="tj-saved-focus" key={focus.id}><div><strong>{focus.title}</strong><p>{focus.question}</p></div><div className="tj-actions">{focus.timestampMs !== undefined && onSeek && <button className="tj-quiet" type="button" onClick={() => onSeek(focus.timestampMs!)}>回看已存片段</button>}<button type="button" aria-pressed={journal.pendingFocus?.recordId === record.id && journal.pendingFocus.focus.id === focus.id} onClick={() => journal.selectFollowUp(record.id, focus.id)}>{journal.pendingFocus?.recordId === record.id && journal.pendingFocus.focus.id === focus.id ? "下次继续关注 · 已选择" : "下次继续关注"}</button></div></div>)}</div>}
-    <details className="tj-details"><summary>写下自己的复盘问题</summary><form className="tj-editor" onSubmit={event => { event.preventDefault(); if (journal.saveFocus(record.id, { id: `personal:${crypto.randomUUID()}`, title: customTitle, question: customQuestion })) { setCustomTitle(""); setCustomQuestion(""); } }}><label htmlFor={`${id}-custom-title`}>关注点名称<input id={`${id}-custom-title`} value={customTitle} maxLength={160} required onChange={event => setCustomTitle(event.target.value)} placeholder="例如：回位过程" /></label><label className="tj-wide" htmlFor={`${id}-custom-question`}>下一次想确认的问题<textarea id={`${id}-custom-question`} value={customQuestion} maxLength={1600} required rows={3} onChange={event => setCustomQuestion(event.target.value)} placeholder="写下希望通过画面确认的事情。" /></label><div><button type="submit">保存自己的问题</button></div></form></details>
+    <details className="tj-details"><summary>写下自己的复盘问题</summary><form className="tj-editor" onSubmit={event => { event.preventDefault(); if (journal.saveFocus(record.id, { id: `personal:${crypto.randomUUID()}`, title: customTitle, question: customQuestion })) { setCustomTitle(""); setCustomQuestion(""); } }}><label htmlFor={`${id}-custom-title`}>关注点名称<input id={`${id}-custom-title`} value={customTitle} maxLength={160} required onChange={event => setCustomTitle(event.target.value)} placeholder="例如：正手击球后的回位" /></label><label className="tj-wide" htmlFor={`${id}-custom-question`}>下一次想确认的问题<textarea id={`${id}-custom-question`} value={customQuestion} maxLength={1600} required rows={3} onChange={event => setCustomQuestion(event.target.value)} placeholder="例如：打完正手，我有没有及时回到底线中间？" /></label><div><button type="submit">保存自己的问题</button></div></form></details>
     <details className="tj-details"><summary>训练名称、主题与备注</summary><RecordEditor key={record.id} record={record} journal={journal} /></details>
   </section>;
 }

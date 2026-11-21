@@ -1,15 +1,14 @@
-.product-app, .profile-dock-workspace {
-  --product-bg: #f5f2e8;
-  --product-panel: #fcfaf2;
-  --product-panel-soft: #ebece0;
-  --product-border: #c5c8b9;
-  --product-text: #18251f;
-  --product-muted: #515e55;
-  --product-accent: #165b41;
-  --product-accent-hover: #104631;
-  --product-on-accent: #fffdf4;
+.product-app, .account-app, .account-gate, .annotation-workspace, .profile-dock:not(.profile-dock-public) {
+  --product-bg: #0b0d10;
+  --product-panel: #14181c;
+  --product-panel-soft: #1b2025;
+  --product-border: #2a3036;
+  --product-text: #f2f4f5;
+  --product-muted: #9aa4ae;
+  --product-accent: #d8fc75;
+  --product-accent-hover: #e5ff9b;
+  --product-on-accent: #18200c;
 }
-html:has(.pw-studio), body:has(.pw-studio) { background: #f5f2e8; color-scheme: light; }
 .product-app {
   --pw-line: var(--product-border);
   --pw-text: var(--product-text);
@@ -22,7 +21,7 @@ html:has(.pw-studio), body:has(.pw-studio) { background: #f5f2e8; color-scheme: 
   background: var(--product-bg);
   color: var(--product-text);
   font: 14px/1.6 var(--rm-body, "Noto Sans SC", "Microsoft YaHei", sans-serif);
-  color-scheme: light;
+  color-scheme: dark;
 }
 .product-app * { box-sizing: border-box; }
 .product-app button { font: inherit; cursor: pointer; }
@@ -47,7 +46,7 @@ html:has(.pw-studio), body:has(.pw-studio) { background: #f5f2e8; color-scheme: 
   padding: 32px 22px 90px;
   overflow-y: auto;
   border-right: 1px solid var(--pw-line);
-  background: #efeee2;
+  background: #101317;
 }
 .pw-brand {
   width: fit-content;
@@ -81,7 +80,7 @@ html:has(.pw-studio), body:has(.pw-studio) { background: #f5f2e8; color-scheme: 
   width: 100%;
   height: calc((100% - 2 * var(--nav-gap)) / 3);
   border-radius: 2px;
-  background: #e2e7d8;
+  background: var(--product-panel-soft);
   pointer-events: none;
   transform: translateY(calc(var(--nav-position) * (100% + var(--nav-gap))));
   transition: transform 340ms cubic-bezier(.22,.8,.25,1);
@@ -106,7 +105,7 @@ html:has(.pw-studio), body:has(.pw-studio) { background: #f5f2e8; color-scheme: 
 }
 .pw-navigation a[aria-current="page"] { color: var(--pw-accent); font-weight: 600; }
 @media (hover: hover) {
-  .pw-navigation a:not([aria-current]):hover { color: var(--pw-text); background: #e7e9dc; }
+  .pw-navigation a:not([aria-current]):hover { color: var(--pw-text); background: var(--product-panel); }
 }
 .pw-workspace {
   margin-left: var(--sidebar-width);

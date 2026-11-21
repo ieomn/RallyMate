@@ -163,7 +163,7 @@ test("journal shows saved questions and scope, and offers a new-analysis associa
   journal = lib.selectTrainingFollowUp(journal, id, focus.id);
   const html = renderToStaticMarkup(createElement(TrainingFollowUpPicker, { journal: controller(journal) }));
   assert.match(html, /周三底线 · 启动与回位/); assert.match(html, /selected=""/);
-  assert.match(html, /提交新视频后/); assert.match(html, /不会据此自动判断进步/);
+  assert.match(html, /比较两次动作/); assert.match(html, /不会影响分析和评分/);
   const panel = renderToStaticMarkup(createElement(TrainingJournalPanel, { journal: controller(journal), recordId: id, suggestions: [focus] }));
   assert.match(panel, /不保存视频/); assert.match(panel, /清除浏览器数据会删除/);
   assert.match(panel, /训练名称/); assert.match(panel, /练习主题/); assert.match(panel, /自己的观察与备注/);

@@ -92,7 +92,7 @@
 .product-analysis .review-score-details .tennis-radar { max-width: 410px; max-height: 250px; }
 .product-analysis .tennis-radar-label { fill: var(--product-text); }
 .product-analysis :is(.tennis-radar-point,.tennis-radar-value) { fill: var(--product-accent); }
-.product-analysis .tennis-radar-shape { fill: #165b4124; stroke: var(--product-accent); }
+.product-analysis .tennis-radar-shape { fill: color-mix(in srgb, var(--product-accent) 14%, transparent); stroke: var(--product-accent); }
 .product-analysis .tennis-evidence-scope { background: var(--product-panel); color: var(--product-text); }
 .product-analysis .review-clip-readout { border-block: 1px solid var(--product-border); padding-block: 14px; }
 .product-analysis .review-clip-readout h3 { margin-block: 4px; }
