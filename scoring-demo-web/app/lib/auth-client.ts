@@ -56,8 +56,7 @@ export async function accountResponse<T>(response: Response): Promise<T> {
 // eslint-disable-next-line no-control-regex -- Reject literal and URL-decoded ASCII control characters in redirect paths.
 const unsafePathCharacters = /[\\\u0000-\u001f\u007f]/;
 
-export function safeNextPath(value: string | null | undefined): string {
-  const fallback = "/welcome";
+export function safeNextPath(value: string | null | undefined, fallback: "/welcome" | "/?view=overview" = "/welcome"): string {
   if (!value || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || value.includes(" ") || unsafePathCharacters.test(value)) return fallback;
   try {
     const decoded = decodeURIComponent(value);

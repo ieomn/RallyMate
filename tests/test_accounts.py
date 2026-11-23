@@ -46,7 +46,7 @@ class AccountContract:
 
     def test_registration_normalizes_email_and_keeps_hash_private(self):
         user = self.store.register(" Player@EXAMPLE.com ", PASSWORD, " 球友 ")
-        self.assertEqual((user["email"], user["username"], user["role"], user["status"]), ("player@example.com", "球友", "USER", "PENDING"))
+        self.assertEqual((user["email"], user["username"], user["role"], user["status"]), ("player@example.com", "球友", "USER", "APPROVED"))
         self.assertNotIn("password_hash", user)
         with self.engine.connect() as connection:
             password_hash = connection.execute(select(users.c.password_hash)).scalar_one()
@@ -89,17 +89,30 @@ class AccountContract:
     def test_concurrent_registration_has_one_winner(self):
         def register(_):
             try:
-                return self.register()["id"]
+                return self.store.register("player@example.com", PASSWORD, "球友", sign_in=True)["user"]["id"]
             except AuthError as error:
                 return error.code
         with ThreadPoolExecutor(max_workers=4) as pool:
             outcomes = list(pool.map(register, range(4)))
         self.assertEqual(outcomes.count("email_exists"), 3)
         self.assertEqual(self.store.list_users()["total"], 1)
+        with self.engine.connect() as connection:
+            self.assertEqual(connection.execute(select(func.count()).select_from(sessions)).scalar_one(), 1)
+
+    def test_registration_and_session_roll_back_together_then_can_retry(self):
+        with patch("rallymate_service.accounts.jwt.encode", side_effect=RuntimeError("signing unavailable")):
+            with self.assertRaisesRegex(RuntimeError, "signing unavailable"):
+                self.store.register("player@example.com", PASSWORD, "球友", sign_in=True)
+        with self.engine.connect() as connection:
+            self.assertEqual(connection.execute(select(func.count()).select_from(users)).scalar_one(), 0)
+            self.assertEqual(connection.execute(select(func.count()).select_from(sessions)).scalar_one(), 0)
+        session = self.store.register("player@example.com", PASSWORD, "球友", sign_in=True)
+        self.assertEqual(self.store.resolve_session(session["token"])["user"]["id"], session["user"]["id"])
 
     def test_session_reads_current_status_and_csrf_survives_refresh(self):
         user = self.register()
         admin = self.admin()
+        self.store.update_status(admin["id"], user["id"], "PENDING")
         login = self.store.authenticate(user["email"], PASSWORD)
         current = self.store.resolve_session(login["token"])
         self.assertEqual(current["user"]["status"], "PENDING")
@@ -152,7 +165,7 @@ class AccountContract:
         with patch.object(self.store, "_audit", side_effect=RuntimeError("audit unavailable")):
             with self.assertRaisesRegex(RuntimeError, "audit unavailable"):
                 self.store.update_status(admin["id"], user["id"], "SUSPENDED")
-        self.assertEqual(self.store.resolve_session(login["token"])["user"]["status"], "PENDING")
+        self.assertEqual(self.store.resolve_session(login["token"])["user"]["status"], "APPROVED")
 
     def test_malformed_stored_session_times_fail_closed(self):
         self.register()
@@ -246,7 +259,7 @@ class AccountContract:
             for attempts, deleted_at, user_id in ((2, None, user["id"]), (1, "now", user["id"]), (4, None, None)):
                 connection.execute(jobs.insert().values(id=str(uuid4()), status="succeeded", original_filename="x.mp4", video_path="x.mp4",
                     request_path="r.json", output_dir="out", created_at="now", updated_at="now", attempts=attempts, user_id=user_id, deleted_at=deleted_at))
-        self.assertEqual(self.store.list_users("PENDING")["items"][0]["id"], user["id"])
+        self.assertIn(user["id"], [item["id"] for item in self.store.list_users("APPROVED")["items"]])
         self.store.delete_user(admin["id"], user["id"])
         self.assertIsNone(self.store.by_id(user["id"]))
         self.assert_auth_error(401, "invalid_session", self.store.resolve_session, token)

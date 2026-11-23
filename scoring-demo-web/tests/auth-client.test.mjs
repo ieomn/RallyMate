@@ -157,6 +157,12 @@ test("account destinations enforce password change and approval before honoring 
   assert.equal(auth.accountDestination({ status: "APPROVED", must_change_password: true }, "/admin"), "/change-password?next=%2Fadmin");
 });
 
+test("registration defaults to training overview and preserves a valid return destination", () => {
+  const overview = "/?view=overview";
+  for (const next of [null, "", "//outside.example", "/login", "/register"]) assert.equal(auth.safeNextPath(next, overview), overview);
+  for (const next of ["/welcome", "/?view=analysis&job=job-12345"]) assert.equal(auth.safeNextPath(next, overview), next);
+});
+
 test("a report destination survives password, re-login and approval steps", () => {
   const report = "/?view=analysis&job=job-12345#video";
   const pending = { status: "PENDING", must_change_password: true };

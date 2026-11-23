@@ -175,8 +175,7 @@ class AuthBoundaryTests(unittest.TestCase):
             self.client.headers.pop("Authorization")
             for status in ("PENDING", "REJECTED", "SUSPENDED"):
                 user = self.store.register(status.lower() + "@example.com", PASSWORD, status)
-                if status != "PENDING":
-                    self.store.update_status(self.admin["id"], user["id"], status)
+                self.store.update_status(self.admin["id"], user["id"], status)
                 client = self.login(user["email"])
                 self.check_route_denials(client, routes, 403, identifier, identifier)
 

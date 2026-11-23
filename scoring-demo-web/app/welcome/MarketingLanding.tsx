@@ -14,7 +14,7 @@ const steps = [
 ];
 
 const questions = [
-  { title: "第一次使用，需要准备什么？", text: "注册账号时写下申请理由。审核通过后，上传一段正常速度的训练原片就可以开始。" },
+  { title: "第一次使用，需要准备什么？", text: "用邮箱注册后，上传一段正常速度的训练录像就可以开始。" },
   { title: "打开报告先看哪里？", text: "先看关键动作片段和旁边的练习建议。展开「详细数据」，可以查看本次动作评分和测量依据。" },
   { title: "下次怎么接着练？", text: "在报告中点「保存练习」。下次录一段同类动作，用相近的机位，方便回看时比较。" },
   { title: "视频和报告怎么保存？", text: "在线分析记录随账号保存，训练备注和导入的备份存在当前浏览器里。可以下载 HTML 报告和 JSON 备份，原视频请另行保留。" },
@@ -113,7 +113,7 @@ export default function MarketingLanding() {
       <nav id="marketing-nav" className={`mk-nav${menuOpen ? " is-open" : ""}`} aria-label="品牌导航">
         {[{ id: "experience", title: "功能介绍" }, { id: "workflow", title: "如何开始" }, { id: "questions", title: "常见问题" }].map(item => <a key={item.id} href={`#${item.id}`} aria-current={activeSection === item.id ? "location" : undefined} onClick={() => setMenuOpen(false)}>{item.title}</a>)}
         <a className="mk-nav-workspace" href="/?view=overview">训练空间<ProductIcon name="arrow-up-right" size={15} /></a>
-        {!user && <><a href="/login">登录</a><a href="/register">申请账号</a></>}
+        {!user && <><a href="/login">登录</a><a href="/register">注册</a></>}
       </nav>
       <div className="mk-header-actions"><a href="/?view=analysis" className="mk-button mk-button-lime mk-header-cta">开始训练<ProductIcon name="arrow-up-right" size={16} /></a><button className="mk-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="marketing-nav" aria-label={menuOpen ? "收起导航" : "展开导航"} onClick={() => setMenuOpen(value => !value)}><ProductIcon name={menuOpen ? "close" : "menu"} /></button></div>
       <div className="mk-reading-progress" aria-hidden="true" />

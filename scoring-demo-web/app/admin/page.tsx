@@ -133,7 +133,7 @@ function AdminContent({ onTemporary }: { onTemporary: (value: TemporaryPassword)
   const attempts = stats?.users.reduce((sum, user) => sum + user.execution_attempts, 0) ?? 0;
   const pages = Math.max(1, Math.ceil((result?.total ?? 0) / 20));
 
-  return <AccountFrame title="账户与审核" wide>
+  return <AccountFrame title="账户管理" wide>
     <dl className="account-stats">
       <div><dt>待审核</dt><dd>{stats?.pending ?? "—"}</dd></div>
       <div><dt>现有账户</dt><dd>{stats?.total ?? "—"}</dd></div>
@@ -142,11 +142,10 @@ function AdminContent({ onTemporary }: { onTemporary: (value: TemporaryPassword)
     </dl>
     <AccountErrorMessage message={error} />
     <div className="account-filter"><label htmlFor="admin-status">账户状态<select id="admin-status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">全部状态</option>{Object.entries(accountStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><button className="account-button account-secondary" type="button" disabled={loading} onClick={() => void load()}>{loading ? "正在读取…" : "刷新列表"}</button></div>
-    <div className="account-table-wrap" aria-busy={loading}><table className="account-table"><thead><tr><th scope="col">账户</th><th scope="col">角色 / 状态</th><th scope="col">申请理由</th><th scope="col">提交 / 执行尝试</th><th scope="col">操作</th></tr></thead><tbody>
+    <div className="account-table-wrap" aria-busy={loading}><table className="account-table"><thead><tr><th scope="col">账户</th><th scope="col">角色 / 状态</th><th scope="col">提交 / 执行尝试</th><th scope="col">操作</th></tr></thead><tbody>
       {result?.items.map((user) => <tr key={user.id}>
-        <td><strong className="account-user-name">{user.username}{user.id === auth.user?.id ? "（你）" : ""}</strong><span className="account-user-email">{user.email}</span></td>
+        <td><strong className="account-user-name">{user.username}{user.id === auth.user?.id ? "（你）" : ""}</strong><span className="account-user-email">{user.email}</span>{user.application_reason && <p className="account-user-reason">历史备注：{user.application_reason}</p>}</td>
         <td><span>{user.role === "ADMIN" ? "管理员" : "球员"}</span><span className={`account-badge account-state-${user.status.toLowerCase()}`}>{accountStatusLabels[user.status]}</span>{user.must_change_password && <small className="account-user-email">下次登录须改密</small>}</td>
-        <td><span className="account-mobile-label" aria-hidden="true">申请理由</span><p className="account-user-reason">{user.application_reason || "未填写"}</p></td>
         <td><span className="account-mobile-label" aria-hidden="true">提交 / 执行尝试</span>{counts.get(user.id)?.submitted_jobs ?? 0} / {counts.get(user.id)?.execution_attempts ?? 0}</td>
         <td><div className="account-row-actions">
           <button type="button" disabled={!!busyId || user.status === "APPROVED"} onClick={() => void changeStatus(user, "APPROVED")}>{user.status === "SUSPENDED" ? "恢复使用" : "通过"}</button>

@@ -109,24 +109,26 @@ class AccountStore:
         except (VerificationError, InvalidHashError):
             return False
 
-    def register(self, email: str, password: str, username: str, application_reason: str | None = None, *, rate_key: str | None = None) -> dict:
+    def register(self, email: str, password: str, username: str, application_reason: str | None = None,
+                 *, rate_key: str | None = None, sign_in: bool = False) -> dict:
         email = normalize_email(email)
         validate_password(password)
         if not isinstance(username, str) or not 1 <= len(username.strip()) <= 80 or any(ord(c) < 32 for c in username):
             raise AuthError(422, "invalid_username", "显示名称须为1至80个字符。")
         if application_reason is not None and (not isinstance(application_reason, str) or len(application_reason) > 2000):
-            raise AuthError(422, "invalid_application_reason", "申请理由最多2000个字符。")
+            raise AuthError(422, "invalid_application_reason", "备注最多2000个字符。")
         self._limit_credentials("register", email, rate_key)
         identifier = str(uuid4())
         values = dict(id=identifier, email=email, username=username.strip(), password_hash=self.password_hasher.hash(password),
-                      role="USER", status="PENDING", application_reason=application_reason.strip() if application_reason else None,
+                      role="USER", status="APPROVED", application_reason=application_reason.strip() if application_reason else None,
                       created_at=_now().isoformat(), must_change_password=0)
-        try:
-            with self._write() as connection:
+        with self._write() as connection:
+            try:
                 connection.execute(users.insert().values(**values))
-                return _public(connection.execute(select(users).where(users.c.id == identifier)).mappings().one())
-        except IntegrityError:
-            raise AuthError(409, "email_exists", "该邮箱已注册。") from None
+            except IntegrityError:
+                raise AuthError(409, "email_exists", "该邮箱已注册。") from None
+            user = connection.execute(select(users).where(users.c.id == identifier)).mappings().one()
+            return self._start_session(connection, user) if sign_in else _public(user)
 
     def by_id(self, user_id: str) -> dict | None:
         with self.engine.connect() as connection:
@@ -175,20 +177,22 @@ class AccountStore:
             current = connection.execute(select(users).where(users.c.id == initial["id"]).with_for_update()).mappings().one()
             if current["deleted_at"] is not None or current["password_hash"] != initial["password_hash"]:
                 raise AuthError(401, "invalid_credentials", "邮箱或密码不正确。")
-            now = _now().replace(microsecond=0)
-            expires = now + timedelta(days=self.session_days)
-            session_id = str(uuid4())
-            csrf_token = self._csrf_token(session_id)
-            connection.execute(sessions.insert().values(id=session_id, user_id=current["id"], created_at=now.isoformat(),
-                expires_at=expires.isoformat(), csrf_token_hash=hashlib.sha256(csrf_token.encode()).hexdigest()))
-            changes = {"last_login_at": now.isoformat()}
-            if replacement:
-                changes["password_hash"] = replacement
-            connection.execute(update(users).where(users.c.id == current["id"]).values(**changes))
-            public = _public({**current, **changes})
-            token = jwt.encode({"sub": current["id"], "sid": session_id, "iat": int(now.timestamp()), "exp": int(expires.timestamp()),
-                                "iss": JWT_ISSUER, "aud": JWT_AUDIENCE}, self.secret, algorithm="HS256")
-            return {"user": public, "token": token, "csrf_token": csrf_token, "expires_at": expires.isoformat()}
+            return self._start_session(connection, current, replacement)
+
+    def _start_session(self, connection, user, replacement_hash: str | None = None) -> dict:
+        now = _now()
+        expires = now + timedelta(days=self.session_days)
+        session_id = str(uuid4())
+        csrf_token = self._csrf_token(session_id)
+        connection.execute(sessions.insert().values(id=session_id, user_id=user["id"], created_at=now.isoformat(),
+            expires_at=expires.isoformat(), csrf_token_hash=hashlib.sha256(csrf_token.encode()).hexdigest()))
+        changes = {"last_login_at": now.isoformat()}
+        if replacement_hash:
+            changes["password_hash"] = replacement_hash
+        connection.execute(update(users).where(users.c.id == user["id"]).values(**changes))
+        token = jwt.encode({"sub": user["id"], "sid": session_id, "iat": int(now.timestamp()), "exp": int(expires.timestamp()),
+                            "iss": JWT_ISSUER, "aud": JWT_AUDIENCE}, self.secret, algorithm="HS256")
+        return {"user": _public({**user, **changes}), "token": token, "csrf_token": csrf_token, "expires_at": expires.isoformat()}
 
     def _claims(self, token: str) -> dict:
         try:

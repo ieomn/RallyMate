@@ -95,7 +95,7 @@ def authenticate_request(
     if (require_approved or require_admin) and user["status"] != "APPROVED":
         messages = {
             "PENDING": "账号正在等待管理员审核。",
-            "REJECTED": "注册申请未通过审核。",
+            "REJECTED": "此账号未启用，请联系管理员。",
             "SUSPENDED": "账号已被停用。",
         }
         raise AuthError(403, "account_" + user["status"].lower(), messages.get(user["status"], "账号不可用。"))
@@ -195,21 +195,25 @@ def install_auth_routes(app, store, auth_config) -> None:
         response.delete_cookie(auth_config.cookie_name, path="/", secure=auth_config.cookie_secure,
                                httponly=True, samesite="lax")
 
+    def session_response(session, status_code=200):
+        response = JSONResponse({"user": public_user(session["user"]),
+                                 "csrf_token": session["csrf_token"], "expires_at": session["expires_at"]},
+                                status_code=status_code)
+        response.set_cookie(auth_config.cookie_name, session["token"], max_age=auth_config.session_days * 86400,
+                            path="/", secure=auth_config.cookie_secure, httponly=True, samesite="lax")
+        return response
+
     @router.post("/api/auth/register", status_code=201)
     def register(payload: _Register, request: Request):
         _public_write_guard(request, store, auth_config)
-        user = store.register(**payload.model_dump(), rate_key=request.client.host if request.client else None)
-        return {"user": public_user(user), "message": "注册成功，请登录查看审核状态。"}
+        session = store.register(**payload.model_dump(), sign_in=True, rate_key=request.client.host if request.client else None)
+        return session_response(session, status_code=201)
 
     @router.post("/api/auth/login")
     def login(payload: _Login, request: Request):
         _public_write_guard(request, store, auth_config)
         session = store.authenticate(**payload.model_dump(), rate_key=request.client.host if request.client else None)
-        response = JSONResponse({"user": public_user(session["user"]),
-                                 "csrf_token": session["csrf_token"], "expires_at": session["expires_at"]})
-        response.set_cookie(auth_config.cookie_name, session["token"], max_age=auth_config.session_days * 86400,
-                            path="/", secure=auth_config.cookie_secure, httponly=True, samesite="lax")
-        return response
+        return session_response(session)
 
     @router.get("/api/auth/me")
     def me(request: Request):

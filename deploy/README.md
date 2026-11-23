@@ -1,6 +1,6 @@
 # RallyMate 本地测试与 Linux 上线部署
 
-本版本保留 React / Vinext、FastAPI 和独立 GPU Worker，新增注册审批、可撤销登录会话、个人历史和管理员后台。生产主库使用 PostgreSQL；视频、报告与模型继续使用现有文件存储。本地开发仍支持 SQLite。
+本版本保留 React / Vinext、FastAPI 和独立 GPU Worker，提供邮箱注册、可撤销登录会话、个人历史和管理员后台。生产主库使用 PostgreSQL；视频、报告与模型继续使用现有文件存储。本地开发仍支持 SQLite。
 
 ```text
 浏览器 → HTTPS Nginx → Vinext 页面 / FastAPI 业务与账户接口
@@ -49,7 +49,7 @@ cd scoring-demo-web
 RALLYMATE_API_ORIGIN=http://127.0.0.1:8000 npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
-访问 [本机网站](http://localhost:3000/) 进入欢迎页。单独登录后回到欢迎页。访问 [管理页面](http://localhost:3000/admin) 并登录则返回管理页面。新注册账户默认 `PENDING`，审核通过后可使用工作台。浏览器旧公共缓存保留，新账户页面不读取这些公共键。下面的测试命令从仓库根目录执行。
+访问 [本机网站](http://localhost:3000/) 进入欢迎页。单独登录后回到欢迎页。访问 [管理页面](http://localhost:3000/admin) 并登录则返回管理页面。注册成功会创建普通 `USER / APPROVED` 账户并登录。用户直接注册后进入训练总览，从训练或报告入口注册则返回原目标。浏览器旧公共缓存保留，新账户页面不读取这些公共键。下面的测试命令从仓库根目录执行。
 
 ```bash
 PYTHONPATH=src:tests python -m pytest tests/test_account_migrations.py tests/test_accounts.py tests/test_auth_api.py tests/test_auth_runtime.py tests/test_auth_boundaries.py tests/test_ownership.py tests/test_account_maintenance.py tests/test_observability.py -q
@@ -174,7 +174,7 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
 逐项验收：
 
 1. 匿名访问工作台跳转登录，直接请求上传、历史、结果和视频返回 401。
-2. 新注册用户登录进入审核提示页，推理接口返回 403；批准后可进入工作台。
+2. 新用户注册后可立即进入工作台并查看自己的训练记录。已停用、已拒绝或仍待审核的旧账户访问训练接口时返回 403。
 3. A、B 分别上传，B 请求 A 的任务、分片、视频、报告和删除接口返回 404。管理员也没有普通业务接口的跨用户读取权限。
 4. 实际视频完成上传、排队、推理和结果回看，原视频 Range 播放正常；原有评分与推理结果保持一致。
 5. 管理员重置密码时弹窗只展示一次临时密码，旧会话立即失效；临时密码登录后先修改密码再进入工作台。
@@ -191,7 +191,7 @@ Adminer 仅监听宿主回环地址。建立 SSH 隧道：
 ssh -L 8080:127.0.0.1:8080 user@server
 ```
 
-访问本机 `http://127.0.0.1:8080`，系统选 PostgreSQL，服务器填 `postgres`，数据库名、用户和密码取自私有 `.env`。账户审批和重置通过 `/admin` 执行，保证会话撤销与审计。
+访问本机 `http://127.0.0.1:8080`，系统选 PostgreSQL，服务器填 `postgres`，数据库名、用户和密码取自私有 `.env`。账户状态管理和密码重置通过 `/admin` 执行，保证会话撤销与审计。
 
 每日备份 PostgreSQL 和同一时点的视频/报告目录，定期在独立环境恢复。进入维护窗口后暂停公网入口，等队列排空，再停止 API 和 Worker；备份期间也暂停 Adminer 等其他写入工具。以下命令以默认 `service_data` 为例，使用自定义数据目录时将 `data_dir` 改成实际宿主绝对路径。
 

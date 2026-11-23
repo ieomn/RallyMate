@@ -56,7 +56,7 @@ class AuthApiTests(unittest.TestCase):
             "email": email, "password": PASSWORD, "username": "网球用户", **extra,
         }, headers={"Origin": ORIGIN})
         self.assertEqual(response.status_code, 201, response.text)
-        return response.json()["user"]
+        return response
 
     def login(self, email="player@example.com", password=PASSWORD, *, client=None):
         response = (client or self.client).post("/api/auth/login", json={
@@ -76,23 +76,31 @@ class AuthApiTests(unittest.TestCase):
         client = self.new_client()
         return client, self.login("admin@example.com", ADMIN_PASSWORD, client=client)
 
-    def test_registration_login_me_cookie_and_pending_guard(self):
-        user = self.register("  Player@Example.com  ", application_reason=" 想学习网球 ")
+    def test_registration_opens_regular_account_and_signs_in_immediately(self):
+        registration = self.register("  Player@Example.com  ")
+        user = registration.json()["user"]
         self.assertEqual(set(user), USER_FIELDS)
         self.assertEqual(user["email"], "player@example.com")
-        self.assertEqual(user["role"], "USER")
-        self.assertEqual(user["status"], "PENDING")
-        self.assertEqual(user["application_reason"], "想学习网球")
-        login = self.login()
-        cookie = login.headers["set-cookie"]
+        self.assertEqual((user["role"], user["status"]), ("USER", "APPROVED"))
+        self.assertIsNone(user["application_reason"])
+        self.assertGreaterEqual(user["last_login_at"], user["created_at"])
         for attribute in ("HttpOnly", "Secure", "SameSite=lax", "Path=/", "Max-Age=604800"):
-            self.assertIn(attribute, cookie)
-        self.assertNotIn("token", login.json())
-        self.assertEqual(login.headers["cache-control"], "no-store")
-        me = self.client.get("/api/auth/me")
-        self.assertEqual(me.status_code, 200)
-        self.assertEqual(me.json()["csrf_token"], login.json()["csrf_token"])
-        self.assertEqual(set(me.json()["user"]), USER_FIELDS)
+            self.assertIn(attribute, registration.headers["set-cookie"])
+        self.assertEqual(set(registration.json()), {"user", "csrf_token", "expires_at"})
+        self.assertEqual(registration.headers["cache-control"], "no-store")
+        self.assertEqual(self.client.get("/api/auth/me").json(), registration.json())
+        self.assertEqual(self.client.get("/protected").status_code, 200)
+        self.assertEqual(self.client.get("/api/admin/users").status_code, 403)
+        self.assertEqual(self.client.post("/api/auth/logout", headers=self.headers(registration)).status_code, 200)
+        login = self.login()
+        self.assertEqual(set(login.json()), set(registration.json()))
+        self.assertEqual(self.client.get("/protected").status_code, 200)
+
+    def test_preexisting_pending_account_needs_approval_to_open_workspace(self):
+        user = self.register(application_reason=" 想学习网球 ").json()["user"]
+        self.assertEqual(user["application_reason"], "想学习网球")
+        self.store.update_status(self.admin["id"], user["id"], "PENDING")
+        self.login()
         denied = self.client.get("/protected")
         self.assertEqual(denied.status_code, 403)
         self.assertEqual(denied.json()["detail"]["code"], "account_pending")
@@ -118,14 +126,26 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.store.list_users()["total"], 1)
 
     def test_duplicate_registration_and_wrong_login_have_clean_errors(self):
-        self.register()
+        self.register(client=self.new_client())
         duplicate = self.client.post("/api/auth/register", json={"email": "PLAYER@example.com", "password": PASSWORD, "username": "Different"})
         self.assertEqual(duplicate.status_code, 409)
+        self.assertNotIn("set-cookie", duplicate.headers)
         for email in ("player@example.com", "absent@example.com"):
             response = self.client.post("/api/auth/login", json={"email": email, "password": "WrongPassword123"})
             self.assertEqual(response.status_code, 401)
             self.assertEqual(response.json()["detail"]["code"], "invalid_credentials")
             self.assertNotIn("WrongPassword123", response.text)
+
+    def test_registration_rate_limit_does_not_open_another_account_or_session(self):
+        for index in range(5):
+            self.register(f"player-{index}@example.com", client=self.new_client())
+        limited = self.client.post("/api/auth/register", json={
+            "email": "another@example.com", "password": PASSWORD, "username": "Another",
+        }, headers={"Origin": ORIGIN})
+        self.assertEqual(limited.status_code, 429)
+        self.assertEqual(limited.json()["detail"]["code"], "rate_limited")
+        self.assertNotIn("set-cookie", limited.headers)
+        self.assertEqual(self.store.list_users()["total"], 6)  # 5 standard users and the bootstrap admin.
 
     def test_cross_site_public_writes_are_blocked_and_nonbrowser_login_is_allowed(self):
         payload = {"email": "player@example.com", "password": PASSWORD, "username": "Player"}
@@ -135,7 +155,7 @@ class AuthApiTests(unittest.TestCase):
         response = self.client.post("/api/auth/register", json=payload, headers={"Sec-Fetch-Site": "cross-site"})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.client.post("/api/auth/register", json=payload).status_code, 201)
-        login = self.client.post("/api/auth/login", json={"email": payload["email"], "password": PASSWORD})
+        login = self.new_client().post("/api/auth/login", json={"email": payload["email"], "password": PASSWORD})
         self.assertEqual(login.status_code, 200)
 
     def test_development_origin_uses_host_when_application_is_mounted(self):
@@ -151,9 +171,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(allowed.status_code, 200)
 
     def test_cookie_writes_require_both_origin_and_csrf(self):
-        user = self.register()
-        self.approve(user)
-        login = self.login()
+        login = self.register()
         variants = [{}, {"Origin": ORIGIN}, {"X-CSRF-Token": login.json()["csrf_token"]},
                     {"Origin": "https://attacker.example", "X-CSRF-Token": login.json()["csrf_token"]},
                     {"Origin": ORIGIN, "X-CSRF-Token": "wrong"}]
@@ -163,9 +181,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.client.post("/protected", headers=self.headers(login)).status_code, 200)
 
     def test_bearer_jwt_and_cookie_precedence_with_gateway_key(self):
-        user = self.register()
-        self.approve(user)
-        login = self.login()
+        login = self.register()
         token = self.client.cookies.get(self.config.cookie_name)
         client = self.new_client()
         bearer = {"Authorization": "Bearer " + token}
@@ -178,8 +194,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(client.get("/protected", headers={"Authorization": "Bearer shared-gateway-key"}).status_code, 401)
 
     def test_logout_revokes_token_and_clears_cookie(self):
-        self.register()
-        login = self.login()
+        login = self.register()
         token = self.client.cookies.get(self.config.cookie_name)
         response = self.client.post("/api/auth/logout", headers=self.headers(login))
         self.assertEqual(response.status_code, 200)
@@ -189,9 +204,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(replay.status_code, 401)
 
     def test_regular_user_cannot_list_manage_or_reset_accounts(self):
-        user = self.register()
-        self.approve(user)
-        login = self.login()
+        login = self.register()
         for method, path, payload in (
             ("GET", "/api/admin/users", None), ("GET", "/api/admin/stats", None),
             ("PATCH", f"/api/admin/users/{self.admin['id']}/status", {"status": "SUSPENDED"}),
@@ -203,8 +216,10 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.store.by_id(self.admin["id"])["status"], "APPROVED")
 
     def test_admin_filters_counts_and_protected_status_changes(self):
-        first = self.register()
-        self.register("second@example.com")
+        first = self.register().json()["user"]
+        second = self.register("second@example.com", client=self.new_client()).json()["user"]
+        for account in (first, second):
+            self.store.update_status(self.admin["id"], account["id"], "PENDING")
         admin, login = self.admin_client()
         listing = admin.get("/api/admin/users?status=PENDING&page=1&page_size=1")
         self.assertEqual(listing.status_code, 200)
@@ -224,9 +239,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(admin.get("/api/admin/users?status=PENDING").json()["total"], 1)
 
     def test_suspend_and_delete_revoke_existing_sessions(self):
-        user = self.register()
-        self.approve(user)
-        self.login()
+        user = self.register().json()["user"]
         admin, login = self.admin_client()
         response = admin.patch(f"/api/admin/users/{user['id']}/status", json={"status": "SUSPENDED"}, headers=self.headers(login))
         self.assertEqual(response.status_code, 200)
@@ -248,9 +261,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(admin.delete(f"/api/admin/users/{self.admin['id']}", headers=self.headers(login)).status_code, 409)
 
     def test_reset_password_is_returned_once_revokes_sessions_and_requires_change(self):
-        user = self.register()
-        self.approve(user)
-        self.login()
+        user = self.register().json()["user"]
         admin, login = self.admin_client()
         reset = admin.post(f"/api/admin/users/{user['id']}/reset-password", headers=self.headers(login))
         self.assertEqual(reset.status_code, 200)
@@ -289,9 +300,12 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/admin/users").status_code, 200)
 
     def test_valid_session_cannot_be_replaced_without_csrf(self):
-        self.register()
-        login = self.login()
+        login = self.register()
         payload = {"email": "admin@example.com", "password": ADMIN_PASSWORD}
+        registration = {"email": "second@example.com", "password": PASSWORD, "username": "Second"}
+        blocked_signup = self.client.post("/api/auth/register", json=registration, headers={"Origin": ORIGIN})
+        self.assertEqual(blocked_signup.status_code, 403)
+        self.assertEqual(self.store.list_users()["total"], 2)
         blocked = self.client.post("/api/auth/login", json=payload, headers={"Origin": ORIGIN})
         self.assertEqual(blocked.status_code, 403)
         allowed = self.client.post("/api/auth/login", json=payload, headers=self.headers(login))

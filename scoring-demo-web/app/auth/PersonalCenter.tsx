@@ -72,7 +72,7 @@ function ProfileDock({ user, logout, pathname }: { user: AccountUser; logout: ()
       </dl>
       <nav className="profile-actions" aria-label="个人中心操作">
         {canTrain && <a href={workspaceHref("sessions")}>我的训练记录</a>}
-        {canTrain && user.role === "ADMIN" && <a href="/admin">账户与审核</a>}
+        {canTrain && user.role === "ADMIN" && <a href="/admin">账户管理</a>}
         <a href="/change-password">{user.must_change_password ? "设置新密码" : "修改密码"}</a>
       </nav>
       <AccountErrorMessage message={error} />

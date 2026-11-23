@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { ACCOUNT_AUTH_REQUIRED_EVENT, AccountError, accountFetch, accountResponse, invalidateAccountRequests, setAccountRequestState, type AccountUser } from "../lib/auth-client";
 import { setMonitoringUser } from "../lib/monitoring";
 
-type Registration = { email: string; password: string; username: string; application_reason?: string | null };
+type Credentials = { email: string; password: string };
+type Registration = Credentials & { username: string };
 type Session = { user: AccountUser; csrf_token: string };
 type AuthContextValue = {
   user: AccountUser | null; loading: boolean; error: string | null;
@@ -125,23 +126,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [apply, refresh]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const ticket = ++operation.current;
-    refreshFlight.current = null;
-    invalidateAccountRequests();
-    const session = validateSession(await accountResponse<Session>(await accountFetch("/api/auth/login", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }),
-    })));
-    if (ticket !== operation.current) throw new DOMException("账户状态已改变。", "AbortError");
-    apply(session); setLoading(false); setError(null); announce();
-    return session.user;
-  }, [apply, announce]);
-  const register = useCallback(async (input: Registration) => {
-    const result = await accountResponse<{ user: AccountUser }>(await accountFetch("/api/auth/register", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
-    }));
-    return result.user;
-  }, []);
+  const startSession = useCallback(async (path: "/api/auth/login" | "/api/auth/register", input: Credentials | Registration) => {
+    const releaseRefresh = holdSessionRefresh();
+    const ticket = operation.current;
+    try {
+      const session = validateSession(await accountResponse<Session>(await accountFetch(path, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+      })));
+      if (ticket !== operation.current) throw new DOMException("账户状态已改变。", "AbortError");
+      apply(session); setLoading(false); setError(null); announce();
+      return session.user;
+    } finally { releaseRefresh(); }
+  }, [apply, announce, holdSessionRefresh]);
+  const login = useCallback((email: string, password: string) => startSession("/api/auth/login", { email, password }), [startSession]);
+  const register = useCallback((input: Registration) => startSession("/api/auth/register", input), [startSession]);
   const logout = useCallback(async () => {
     operation.current += 1; refreshFlight.current = null;
     invalidateAccountRequests();

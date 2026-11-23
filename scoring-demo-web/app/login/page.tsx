@@ -20,22 +20,24 @@ export default function LoginPage() {
     if (!auth.loading && auth.user) replaceAccountLocation(accountDestination(auth.user, next));
   }, [auth.user, auth.loading, next]);
   async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError(null);
+    event.preventDefault();
+    if (auth.loading || auth.user || busy) return;
+    setBusy(true); setError(null);
     try {
       await auth.login(email.trim(), password);
       setPassword("");
     } catch (cause) { setError(readableAccountError(cause)); }
     finally { setBusy(false); }
   }
-  return <AccountFrame title="登录训练空间">
+  return <AccountFrame entry title="登录">
     {notice && <p className="account-notice" role="status">{notice}</p>}
     <form className="account-form" onSubmit={submit}>
-      <label htmlFor="login-email">邮箱<input disabled={auth.loading || busy} id="login-email" name="email" type="email" autoComplete="username" inputMode="email" maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+      <label htmlFor="login-email">邮箱<input disabled={auth.loading || busy} id="login-email" name="email" type="email" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} maxLength={254} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
       <label htmlFor="login-password">密码<input disabled={auth.loading || busy} id="login-password" name="password" type="password" autoComplete="current-password" maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
       <AccountErrorMessage message={error ?? auth.error} />
-      <button className="account-button account-primary" type="submit" disabled={busy || auth.loading}>{busy ? "正在登录…" : "登录训练空间"}</button>
+      <button className="account-button account-primary" type="submit" disabled={busy || auth.loading || !!auth.user}>{busy ? "正在登录…" : "登录"}</button>
     </form>
-    <p className="account-form-footer">还没有账户？<a href={accountStepHref("/register", next)}>申请注册</a></p>
+    <p className="account-form-footer">还没有账号？<a href={accountStepHref("/register", next)}>注册</a></p>
     <p className="account-hint">忘记密码时，请联系管理员重置。</p>
   </AccountFrame>;
 }

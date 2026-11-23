@@ -94,7 +94,7 @@ npm ci
 npm run dev
 ```
 
-启动前按[账户与 Linux 部署说明](deploy/README.md)设置 `JWT_SECRET`、`PUBLIC_ORIGIN`、Cookie 安全选项和首次管理员凭据，完整变量见 [.env.example](.env.example)。打开 [本机网站](http://localhost:3000/) 即进入 `/welcome`，API 为 `http://127.0.0.1:8000`。网页通过同源 Cookie 会话上传。注册用户获批后可从欢迎页进入训练空间。`GET /health/ready` 使用独立运维 Bearer key 检查就绪状态。Windows 的 service 依赖包含 ffmpeg wheel。Linux 镜像安装系统 ffmpeg，生成 H.264 回放。
+启动前按[账户与 Linux 部署说明](deploy/README.md)设置 `JWT_SECRET`、`PUBLIC_ORIGIN`、Cookie 安全选项和首次管理员凭据，完整变量见 [.env.example](.env.example)。打开 [本机网站](http://localhost:3000/) 即进入 `/welcome`，API 为 `http://127.0.0.1:8000`。网页通过同源 Cookie 会话上传。新用户使用邮箱注册后自动登录，可直接进入训练空间。`GET /health/ready` 使用独立运维 Bearer key 检查就绪状态。Windows 的 service 依赖包含 ffmpeg wheel。Linux 镜像安装系统 ffmpeg，生成 H.264 回放。
 
 Windows 上配置好服务用 RTMPose 环境、SAM 的独立 Python 环境、完整模型和 `scoring-demo-web\.dev.vars` 后，在项目根目录执行下列命令。启动脚本默认使用真实 SAM DINOv3；可显式用 `-Model sam3d-vith` 或 `-Model rtmpose` 切换。它会从 `.dev.vars` 读取内部 API 密钥，启动一个 API/Worker 和网页，均只监听本机；已有服务占用端口时会停止启动，避免重复 GPU worker。SAM 权重缺失时会在启动前报错，不会自动替换模型。
 
@@ -126,7 +126,7 @@ cloudflared tunnel --url http://127.0.0.1:8000
 
 SAM body 模式默认启用经过来源与数值核查的提示点和旋转转换优化，不改变权重、精度、分辨率或帧步长；设环境变量 `RALLYMATE_SAM3D_VECTORIZE_PROMPTS=0`、`RALLYMATE_SAM3D_VECTORIZE_ROTATIONS=0` 可分别恢复原执行路径。完整模式保留原实现。
 
-网页使用用户账号和人工审批，管理员通过 `/admin` 管理申请。已有启动脚本沿用当前模型配置，调用前先将账户变量设置到进程环境；通过 HTTPS 隧道访问时，`PUBLIC_ORIGIN` 使用当前隧道地址并开启 Secure Cookie。内部 API 密钥仅用于运维，不要把 `.dev.vars` 提交到 Git。启动后检查健康状态，并实测登录、上传、分析与回放。
+网页开放邮箱注册，管理员通过 `/admin` 管理账户状态和重置密码。已有启动脚本沿用当前模型配置，调用前先将账户变量设置到进程环境；通过 HTTPS 隧道访问时，`PUBLIC_ORIGIN` 使用当前隧道地址并开启 Secure Cookie。内部 API 密钥仅用于运维，不要把 `.dev.vars` 提交到 Git。启动后检查健康状态，并实测登录、上传、分析与回放。
 
 更新代码后，暂停提交新任务；如果改动了前端，先在项目根目录执行 `npm.cmd --prefix scoring-demo-web run build`，构建成功后再重启。执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\restart_preview_service.ps1 -FrontendPort 8000 -ApiPort 8001 -Model sam3d-dinov3` 可重新加载服务，该脚本不会自动构建。使用独立数据目录时须继续传入相同 `-DataRoot`，RTMPose 模式须继续传入 `-Model rtmpose`。脚本检查模型文件、端口进程和队列，模型缺失或任务忙碌时拒绝重启，并保留现有 Cloudflare 进程及地址。若只有网页未启动、API 仍在运行，可执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_preview_web.ps1 -FrontendPort 8000`，并保持该终端打开。两者均支持 `-FrontendPort` 与 `-ApiPort` 参数。
 

@@ -50,6 +50,7 @@ test("real browser: disabled monitoring, global errors, React fallback, transact
         if (crash) return <Broken />;
         return <><p data-testid="account">{auth.loading ? 'loading' : auth.user?.id ?? 'anonymous'}</p>
           <button onClick={() => auth.login('test@example.test', '${secret}')}>login</button>
+          <button onClick={() => auth.register({email:'test@example.test', username:'Test player', password:'${secret}'})}>register</button>
           <button onClick={() => auth.logout()}>logout</button>
           <button onClick={() => setCrash(true)}>crash</button></>;
       }
@@ -68,7 +69,7 @@ test("real browser: disabled monitoring, global errors, React fallback, transact
         const url = new URL(route.request().url());
         if (url.origin !== origin) { external.push(url.origin); await route.abort(); return; }
         if (!url.pathname.startsWith("/api/auth/")) { await route.continue(); return; }
-        if (url.pathname.endsWith("/login")) loggedIn = true;
+        if (url.pathname.endsWith("/login") || url.pathname.endsWith("/register")) loggedIn = true;
         if (url.pathname.endsWith("/logout")) { loggedIn = false; await route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' }); return; }
         await route.fulfill({ status: loggedIn ? 200 : 401, contentType: "application/json", body: JSON.stringify(loggedIn ? {
           user: { id: uuid, email: `${secret}@example.test`, username: secret, role: "ADMIN", status: "APPROVED", must_change_password: false }, csrf_token: secret,
@@ -80,6 +81,13 @@ test("real browser: disabled monitoring, global errors, React fallback, transact
       return { page, context };
     }
     const disabled = await pageWithAuth();
+    const sessionRequests = [];
+    disabled.page.on("request", request => {
+      if (request.method() === "POST") sessionRequests.push(new URL(request.url()).pathname);
+    });
+    await disabled.page.getByRole("button", { name: "register", exact: true }).click();
+    await disabled.page.getByTestId("account").filter({ hasText: uuid }).waitFor();
+    assert.deepEqual(sessionRequests, ["/api/auth/register"]);
     assert.equal(await disabled.page.evaluate(() => window.probe.client()), false);
     await disabled.page.evaluate(() => { window.probe.init(""); window.probe.globalError(); window.probe.rejection(); });
     await disabled.page.getByRole("button", { name: "crash", exact: true }).click();

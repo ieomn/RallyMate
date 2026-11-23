@@ -4,11 +4,11 @@ import type { AccountUser } from "../lib/auth-client";
 import { playPressFeedback } from "../lib/press-feedback";
 
 export const accountStatusLabels: Record<AccountUser["status"], string> = {
-  APPROVED: "已通过", PENDING: "待审核", REJECTED: "未通过", SUSPENDED: "已停用",
+  APPROVED: "正常", PENDING: "待审核", REJECTED: "未通过", SUSPENDED: "已停用",
 };
 
-export function AccountFrame({ title, description, children, wide = false }: { title: string; description?: string; children: ReactNode; wide?: boolean }) {
-  return <main className={`account-app${wide ? " account-app-wide" : ""}`} onClickCapture={playPressFeedback}>
+export function AccountFrame({ title, description, children, wide = false, entry = false }: { title: string; description?: string; children: ReactNode; wide?: boolean; entry?: boolean }) {
+  return <main className={`account-app${wide ? " account-app-wide" : ""}${entry ? " account-entry" : ""}`} onClickCapture={playPressFeedback}>
     <header className="account-header">
       <a className="account-brand" href="/welcome"><Image src="/tennis-mark.svg" alt="" width={30} height={30} unoptimized />RallyMate</a>
       <a href={wide ? "/?view=overview" : "/welcome"}>{wide ? "返回训练空间" : "返回首页"}</a>
@@ -18,7 +18,7 @@ export function AccountFrame({ title, description, children, wide = false }: { t
         <div className="account-heading"><h1 id="account-heading">{title}</h1>{description && <p>{description}</p>}</div>
         {children}
       </section>
-      {!wide && <div className="account-court-print" aria-hidden="true"><i /><b /></div>}
+      {!wide && !entry && <div className="account-court-print" aria-hidden="true"><i /><b /></div>}
     </div>
   </main>;
 }
@@ -33,5 +33,6 @@ export function passwordIsStrong(value: string): boolean {
 
 export function readableAccountError(error: unknown): string {
   if (error instanceof Error && error.name === "AbortError") return "账户状态已改变，请重新操作。";
+  if (error instanceof TypeError) return "连接失败，请检查网络后重试。";
   return error instanceof Error ? error.message : "请求未完成，请稍后重试。";
 }
