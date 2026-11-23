@@ -17,8 +17,9 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = ROOT / ".codex_tmp" / "autodl"
-HOST = "connect.cqa1.seetacloud.com"
-PORT = 26691
+# The SSH entry point is private operator configuration, never committed.
+HOST_ENV, PORT_ENV, USER_ENV = "AUTODL_SSH_HOST", "AUTODL_SSH_PORT", "AUTODL_SSH_USER"
+DEFAULT_USER = "root"
 MAX_REMOTE_BYTES = 2 * 1024 * 1024
 ALLOWED_ROOTS = {"src", "scoring-demo-web", "deploy/autodl", "tests"}
 CODE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".toml", ".yaml", ".yml", ".sh", ".ps1", ".css", ".html", ".md", ".txt", ".conf", ".ini"}
@@ -102,7 +103,27 @@ def compact_snapshot(snapshot):
     return result
 
 
+def ssh_endpoint(environ=None):
+    """Resolve (host, port, user) from the environment; fail closed when unset."""
+    environ = os.environ if environ is None else environ
+    host = (environ.get(HOST_ENV) or "").strip()
+    port_text = (environ.get(PORT_ENV) or "").strip()
+    user = (environ.get(USER_ENV) or DEFAULT_USER).strip()
+    if not host or not port_text:
+        raise CheckFailure("ssh_endpoint_not_configured")
+    if not re.fullmatch(r"[A-Za-z0-9.-]{1,253}", host) or not re.fullmatch(r"[a-z_][a-z0-9_-]{0,31}", user):
+        raise CheckFailure("ssh_endpoint_invalid")
+    try:
+        port = int(port_text, 10)
+    except ValueError:
+        raise CheckFailure("ssh_endpoint_invalid") from None
+    if not 1 <= port <= 65535:
+        raise CheckFailure("ssh_endpoint_invalid")
+    return host, port, user
+
+
 def fetch_snapshot(key_path: Path):
+    host, port, user = ssh_endpoint()
     try:
         import paramiko
     except ImportError:
@@ -113,7 +134,7 @@ def fetch_snapshot(key_path: Path):
     try:
         client.load_system_host_keys()
         client.set_missing_host_key_policy(paramiko.RejectPolicy())
-        client.connect(HOST, port=PORT, username="root", key_filename=str(key_path),
+        client.connect(host, port=port, username=user, key_filename=str(key_path),
                        look_for_keys=False, allow_agent=False, timeout=10,
                        auth_timeout=10, banner_timeout=10)
         # The installed authorized_keys forced command ignores this fixed word.
@@ -311,6 +332,9 @@ def main():
         snapshot, failure = fetch_snapshot(STATE_DIR / "monitor_key"), None
     except CheckFailure as exc:
         snapshot, failure = None, str(exc)
+        if failure == "ssh_endpoint_not_configured":
+            print(f"check_remote: set {HOST_ENV} and {PORT_ENV} (optional {USER_ENV}, default "
+                  f"{DEFAULT_USER}) to the private AutoDL SSH entry point.", file=sys.stderr)
     except Exception:
         snapshot, failure = None, "remote_check_failed"
     try:

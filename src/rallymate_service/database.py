@@ -22,6 +22,14 @@ class QueueCapacityError(RuntimeError):
         super().__init__("The analysis queue is full; retry after an active job completes.")
 
 
+class UserQueueCapacityError(QueueCapacityError):
+    """One account already owns its fair share of queued/running analysis."""
+
+    def __init__(self, limit: int):
+        super().__init__(limit)
+        self.args = ("This account already has the maximum number of active analysis jobs.",)
+
+
 class JobExecutionReader:
     """Reuse read-only connections for one job, never its cancellation state.
 
@@ -204,9 +212,13 @@ class JobDatabase:
         *,
         max_active_jobs: int | None = None,
         user_id: str | None = None,
+        max_active_jobs_per_user: int | None = None,
     ) -> dict:
         if max_active_jobs is not None and (type(max_active_jobs) is not int or max_active_jobs < 1):
             raise ValueError("max_active_jobs must be a positive integer")
+        if max_active_jobs_per_user is not None and (
+                type(max_active_jobs_per_user) is not int or max_active_jobs_per_user < 1):
+            raise ValueError("max_active_jobs_per_user must be a positive integer")
         if user_id is not None and (not isinstance(user_id, str) or not user_id.strip()):
             raise ValueError("user_id must be a non-empty string")
         now = utc_now()
@@ -214,6 +226,15 @@ class JobDatabase:
             # Serialize capacity checking and insertion: simultaneous upload
             # completions must not all pass a separate read-only queue check.
             connection.execute("BEGIN IMMEDIATE")
+            if max_active_jobs_per_user is not None and user_id is not None:
+                # Checked first so one account receives its own actionable
+                # limit instead of the global "queue full" diagnosis.
+                owned = connection.execute(
+                    "SELECT COUNT(*) FROM jobs WHERE status IN ('queued', 'running') AND user_id = ?",
+                    (user_id,),
+                ).fetchone()[0]
+                if owned >= max_active_jobs_per_user:
+                    raise UserQueueCapacityError(max_active_jobs_per_user)
             if max_active_jobs is not None:
                 active = connection.execute(
                     "SELECT COUNT(*) FROM jobs WHERE status IN ('queued', 'running')"
@@ -251,6 +272,10 @@ class JobDatabase:
             ).fetchone()
         if row is None:
             return None
+        return self._job_from_row(row)
+
+    @staticmethod
+    def _job_from_row(row) -> dict:
         result = dict(row)
         result["cancel_requested"] = bool(result.get("cancel_requested"))
         if result.get("progress_json"):
@@ -275,6 +300,16 @@ class JobDatabase:
                 (max(1, min(limit, 100)),),
             ).fetchall()
         return [job for row in rows if (job := self.get_job(row["id"])) is not None]
+
+    def list_jobs_for_user(self, user_id: str, limit: int = 20) -> list[dict]:
+        """One owner-filtered query instead of one ownership+fetch per job."""
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM jobs WHERE user_id = ? AND deleted_at IS NULL "
+                "ORDER BY created_at DESC, id DESC LIMIT ?",
+                (user_id, max(1, min(limit, 100))),
+            ).fetchall()
+        return [self._job_from_row(row) for row in rows]
 
     def claim_next(
         self,

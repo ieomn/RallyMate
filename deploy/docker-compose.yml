@@ -24,12 +24,6 @@ x-runtime: &runtime
   SENTRY_RELEASE: ${SENTRY_RELEASE:-}
   SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.05}
 
-x-app-volumes: &app-volumes
-  - ${RALLYMATE_DATA_DIR:-../service_data}:/app/service_data
-  - ${RALLYMATE_MODELS_DIR:-../models}:/app/models:ro
-  - ${RALLYMATE_CALIBRATION_DIR:-../calibration}:/app/calibration:ro
-  - ${RALLYMATE_SAM3D_RUNTIME_DIR:-../runtime/sam3d}:/app/runtime/sam3d:ro
-
 services:
   postgres:
     image: postgres:17-bookworm
@@ -78,8 +72,18 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       METRICS_TOKEN_FILE: /run/secrets/metrics_token
       FORWARDED_ALLOW_IPS: ${RALLYMATE_NGINX_IP:-172.29.71.2}
+      # Starlette spools multipart bodies (up to RALLYMATE_MAX_UPLOAD_BYTES,
+      # 2 GiB) through tempfile.gettempdir(). Keep that off the small RAM-backed
+      # /tmp tmpfs and on the disk-backed api_upload_tmp volume instead.
+      TMPDIR: /app/upload-tmp
     secrets: [metrics_token]
-    volumes: *app-volumes
+    volumes:
+      - ${RALLYMATE_DATA_DIR:-../service_data}:/app/service_data
+      - ${RALLYMATE_MODELS_DIR:-../models}:/app/models:ro
+      - ${RALLYMATE_CALIBRATION_DIR:-../calibration}:/app/calibration:ro
+      - ${RALLYMATE_SAM3D_RUNTIME_DIR:-../runtime/sam3d}:/app/runtime/sam3d:ro
+      # Named volume: Docker seeds it from the image dir (owned by uid 10001).
+      - api_upload_tmp:/app/upload-tmp
     expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=4).read()"]
@@ -188,15 +192,19 @@ services:
     tmpfs: ["/tmp:rw,noexec,nosuid,size=1g"]
     shm_size: 1g
 
+  # Debug-only DB UI, loopback-bound and never started by default:
+  #   docker compose --profile tools up -d adminer   (then ssh -L 8080:127.0.0.1:8080)
+  # It talks only to postgres over the internal backend network (no egress).
   adminer:
     image: adminer:5-standalone
+    profiles: [tools]
     environment:
       ADMINER_DEFAULT_SERVER: postgres
     ports: ["127.0.0.1:8080:8080"]
     depends_on:
       postgres: {condition: service_healthy}
-    networks: [backend, egress]
-    restart: unless-stopped
+    networks: [backend]
+    restart: "no"
     security_opt: ["no-new-privileges:true"]
 
 networks:
@@ -211,6 +219,7 @@ networks:
 
 volumes:
   postgres_data: {}
+  api_upload_tmp: {}
 
 secrets:
   metrics_token:

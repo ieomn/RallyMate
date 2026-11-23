@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from contextvars import ContextVar
 from pathlib import Path
+import sqlite3
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 
@@ -60,9 +61,10 @@ def assert_upload_owner(engine: Engine, user_id: str, upload_id: str) -> None:
 
 
 class UserScopedJobDatabase:
-    def __init__(self, delegate: JobDatabase, engine: Engine):
+    def __init__(self, delegate: JobDatabase, engine: Engine, *, max_active_jobs_per_user: int | None = None):
         self.delegate = delegate
         self.engine = engine
+        self.max_active_jobs_per_user = max_active_jobs_per_user
 
     def __getattr__(self, name):
         return getattr(self.delegate, name)
@@ -79,12 +81,42 @@ class UserScopedJobDatabase:
             if user_id is not None and user_id != actor:
                 raise _not_found()
             user_id = actor
+        fairness = {}
+        if user_id is not None and self.max_active_jobs_per_user is not None:
+            fairness["max_active_jobs_per_user"] = self.max_active_jobs_per_user
         return self.delegate.create_job(job_id, original_filename, video_path, request_path,
-            output_dir, max_active_jobs=max_active_jobs, user_id=user_id)
+            output_dir, max_active_jobs=max_active_jobs, user_id=user_id, **fairness)
+
+    def _deleted(self, job_id: str) -> bool:
+        # Use the queue's own short-lived connection (not the pooled account
+        # engine): this runs on every background source check.
+        try:
+            with self.delegate.connect() as connection:
+                row = connection.execute("SELECT deleted_at FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        except sqlite3.OperationalError:
+            # A pre-account SQLite schema (before migrations ran) has no soft
+            # deletion. Account deployments always migrate/validate first.
+            return False
+        return row is not None and row["deleted_at"] is not None
+
+    def execution_state(self, job_id: str) -> dict | None:
+        """Soft-deleted jobs are gone for every API caller, including the
+        report-preparation thread, which does not inherit the request's actor."""
+        actor = current_user_id.get()
+        if actor is not None:
+            try:
+                assert_job_owner(self.engine, actor, job_id)
+            except HTTPException:
+                return None
+        elif self._deleted(job_id):
+            return None
+        return self.delegate.execution_state(job_id)
 
     def get_job(self, job_id: str) -> dict | None:
         actor = current_user_id.get()
         if actor is None:
+            # Internal/background callers keep raw access (soft-deleted rows
+            # carry ``deleted_at``); report preparation checks it explicitly.
             return self.delegate.get_job(job_id)
         try:
             assert_job_owner(self.engine, actor, job_id)
@@ -105,6 +137,10 @@ class UserScopedJobDatabase:
         actor = current_user_id.get()
         if actor is None:
             return self.delegate.list_jobs(limit=limit)
+        bulk = getattr(self.delegate, "list_jobs_for_user", None)
+        if bulk is not None:
+            return [job for job in bulk(actor, limit=limit)
+                    if job.get("user_id") == actor and job.get("deleted_at") is None]
         with self.engine.connect() as connection:
             ids = connection.execute(select(jobs.c.id).where(
                 jobs.c.user_id == actor, jobs.c.deleted_at.is_(None),
@@ -142,9 +178,10 @@ class UserScopedJobDatabase:
 
 
 class UserScopedUploadStore:
-    def __init__(self, delegate: UploadStore, engine: Engine):
+    def __init__(self, delegate: UploadStore, engine: Engine, *, max_active_uploads_per_user: int | None = None):
         self.delegate = delegate
         self.engine = engine
+        self.max_active_uploads_per_user = max_active_uploads_per_user
 
     def __getattr__(self, name):
         return getattr(self.delegate, name)
@@ -187,9 +224,37 @@ class UserScopedUploadStore:
 
     def create(self, upload_id: str, filename: str, size: int, options: dict) -> dict:
         actor = current_user_id.get()
-        if actor is not None:
-            self._claim(upload_id, actor)
-        return self.delegate.create(upload_id, filename, size, options)
+        if actor is None:
+            return self.delegate.create(upload_id, filename, size, options)
+        self._claim(upload_id, actor)
+        limit = self.max_active_uploads_per_user
+        if limit is None:
+            return self.delegate.create(upload_id, filename, size, options)
+
+        def admit(active_ids: list[str]) -> None:
+            # Runs under the store's creation lock with the live session ids,
+            # so two parallel creations by one account cannot both pass.
+            if len(active_ids) < limit:
+                return
+            owned = 0
+            with self.engine.connect() as connection:
+                for start in range(0, len(active_ids), 500):
+                    owned += connection.execute(select(func.count()).select_from(upload_owners).where(
+                        upload_owners.c.user_id == actor,
+                        upload_owners.c.upload_id.in_(active_ids[start:start + 500]),
+                    )).scalar_one()
+            if owned >= limit:
+                raise HTTPException(429, {
+                    "code": "upload_user_limit",
+                    "message": f"同时进行的上传最多 {limit} 个，请先完成或取消已有上传。",
+                    "max_active_uploads": limit,
+                }, headers={"Retry-After": "30"})
+
+        return self.delegate.create(upload_id, filename, size, options, admit=admit)
+
+    def cancel(self, upload_id: str) -> dict:
+        self.directory(upload_id)
+        return self.delegate.cancel(upload_id)
 
     def directory(self, upload_id: str) -> Path:
         directory = self.delegate.directory(upload_id)

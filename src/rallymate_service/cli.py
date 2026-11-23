@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import signal
+import threading
 
 import uvicorn
 
@@ -25,6 +27,32 @@ def api_main() -> None:
     )
 
 
+def install_stop_signals(stop_event: threading.Event) -> dict:
+    """Route SIGTERM/SIGINT into the worker's cooperative stop event.
+
+    ``docker stop`` sends SIGTERM. The first signal stops claiming new work,
+    cancels an optional mesh render and lets the loop release its GPU slot;
+    a second signal falls back to an immediate KeyboardInterrupt. Returns the
+    previous handlers so callers (and tests) can restore them.
+    """
+    logger = logging.getLogger("rallymate.worker")
+
+    def request_stop(signum, _frame):
+        if stop_event.is_set():
+            raise KeyboardInterrupt
+        logger.warning("Received signal %s; stopping after the current task", signum)
+        stop_event.set()
+
+    previous = {}
+    for name in ("SIGTERM", "SIGINT"):
+        number = getattr(signal, name, None)
+        if number is None:
+            continue
+        previous[number] = signal.getsignal(number)
+        signal.signal(number, request_stop)
+    return previous
+
+
 def worker_main() -> None:
     parser = argparse.ArgumentParser(description="RallyMate GPU worker")
     parser.add_argument("--once", action="store_true")
@@ -37,8 +65,11 @@ def worker_main() -> None:
     settings = load_settings()
     from rallymate_service.observability import observe_worker
     database = build_database(settings)
+    stop_event = threading.Event()
+    install_stop_signals(stop_event)
     with observe_worker(settings, database):
-        run_worker(settings, database, poll_seconds=max(args.poll_seconds, 0.1), once=args.once)
+        run_worker(settings, database, poll_seconds=max(args.poll_seconds, 0.1), once=args.once,
+                   stop_event=stop_event)
 
 
 def dev_main() -> None:

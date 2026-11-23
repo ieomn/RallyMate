@@ -7,6 +7,7 @@ import json
 import math
 import os
 import shutil
+import sqlite3
 import time
 import threading
 import uuid
@@ -23,6 +24,12 @@ MIN_CHUNK_BYTES = 128 * 1024
 DEFAULT_CHUNK_BYTES = 1024 * 1024
 SESSION_TTL_SECONDS = 24 * 60 * 60
 UPLOAD_LOCK_TIMEOUT_SECONDS = 10.0
+MAX_ACTIVE_SESSIONS = 64
+# Terminal sessions keep a tombstone for safe 410/idempotent responses, then
+# are pruned so admission and cleanup stay proportional to recent uploads.
+SETTLED_MARKER = ".settled"
+TOMBSTONE_RETENTION_SECONDS = 7 * 24 * 60 * 60
+CLEANUP_INTERVAL_SECONDS = 60.0
 _local_locks_guard = threading.Lock()
 _local_locks: dict[str, list] = {}
 
@@ -109,6 +116,7 @@ class UploadStore:
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
         self.max_bytes = max_bytes
+        self._last_cleanup: float | None = None
 
     def directory(self, upload_id: str) -> Path:
         try:
@@ -180,12 +188,18 @@ class UploadStore:
             "chunk_bytes": item["size"], "sha256": item["sha256"],
         }
 
-    def create(self, upload_id: str, filename: str, size: int, options: dict) -> dict:
+    def create(self, upload_id: str, filename: str, size: int, options: dict, *, admit=None) -> dict:
+        """Create or resume a session.
+
+        ``admit`` (optional) receives the ids of every live, unsubmitted session
+        while ``.create.lock`` is held, so per-account admission cannot race a
+        concurrent creation. It raises ``HTTPException`` to reject.
+        """
         if isinstance(size, bool) or not isinstance(size, int) or not 0 < size <= self.max_bytes:
             raise HTTPException(413, "视频为空或超过上传大小限制")
         directory = self.directory(upload_id)
         with exclusive_file(self.root / ".create.lock"):
-            self.cleanup()
+            self._maybe_cleanup()
             directory.mkdir(exist_ok=True)
             # Also sync an existing directory: it may be the remainder of a
             # creation attempt that failed before persisting its parent entry.
@@ -203,15 +217,24 @@ class UploadStore:
                         raise HTTPException(410, "上传分块方式已更新，请重新建立上传会话")
                     return self.public(data)
                 # Parts + assembled input + durable queue input coexist briefly.
+                # Settled sessions (submitted, expired or cancelled) hold no
+                # bytes and are skipped without opening their state database.
                 reserved = 0
-                active = 0
-                for session in self._session_directories():
-                    item = self._unchecked_metadata(session)
+                active_ids = []
+                for session in self._session_directories(include_settled=False):
+                    if session == directory:
+                        continue
+                    try:
+                        item = self._unchecked_metadata(session)
+                    except (OSError, ValueError, KeyError, sqlite3.Error):
+                        continue
                     if not item.get("job_id") and time.time() - item["updated_at"] <= SESSION_TTL_SECONDS:
                         reserved += item["size"]
-                        active += 1
-                if active >= 64:
+                        active_ids.append(session.name)
+                if len(active_ids) >= MAX_ACTIVE_SESSIONS:
                     raise HTTPException(429, "上传人数较多，请稍后继续")
+                if admit is not None:
+                    admit(active_ids)
                 if shutil.disk_usage(self.root).free < 3 * (size + reserved) + 512 * 1024 * 1024:
                     raise HTTPException(507, "云端可用空间不足，请稍后重试")
                 data = {"upload_id": upload_id, "filename": filename, "size": size,
@@ -219,6 +242,39 @@ class UploadStore:
                         "chunk_count": math.ceil(size / self.chunk_bytes), "options": options}
                 upload_state.create(directory, data, time.time())
                 return self.public({**data, "chunks": {}, "job_id": None})
+
+    def cancel(self, upload_id: str) -> dict:
+        """Release an unsubmitted session's bytes and admission slot.
+
+        The session stays as a tombstone, so later status/PUT/complete calls
+        receive the same 410 as an expired session. Repeating is harmless; a
+        session already handed to the analysis queue is never touched.
+        """
+        directory = self.directory(upload_id)
+        if not (self._sqlite(directory) or (directory / "manifest.json").exists()):
+            raise HTTPException(404, "上传会话不存在")
+        with exclusive_file(directory / ".lock"):
+            data = self._unchecked_metadata(directory)
+            if data.get("job_id"):
+                raise HTTPException(409, "视频已提交推理，请在任务列表中取消或删除")
+            if time.time() - data["updated_at"] <= SESSION_TTL_SECONDS:
+                if self._sqlite(directory):
+                    with upload_state.connection(directory) as conn:
+                        upload_state.expire(conn)
+                else:
+                    legacy = json.loads((directory / "manifest.json").read_text("utf-8"))
+                    legacy["updated_at"] = 0
+                    temporary = directory / "manifest.tmp"
+                    with temporary.open("w", encoding="utf-8") as handle:
+                        json.dump(legacy, handle, ensure_ascii=False)
+                        handle.flush()
+                        os.fsync(handle.fileno())
+                    temporary.replace(directory / "manifest.json")
+                    upload_state.sync_directory(directory)
+            self.remove_parts(directory)
+            (directory / "assembled.video").unlink(missing_ok=True)
+            self._settle(directory)
+        return {"upload_id": upload_id, "cancelled": True}
 
     def status(self, upload_id: str) -> dict:
         # SQLite read transaction or atomic legacy manifest replacement.
@@ -315,6 +371,7 @@ class UploadStore:
             if job:
                 self._mark_complete(directory, data, upload_id)
                 self.remove_parts(directory)
+                self._settle(directory)
                 return job
             if len(data["chunks"]) != data["chunk_count"]:
                 raise HTTPException(409, "还有分块未上传，请继续上传后再合并")
@@ -336,6 +393,7 @@ class UploadStore:
                 job = enqueue(merged, data)
                 self._mark_complete(directory, data, upload_id)
                 self.remove_parts(directory)
+                self._settle(directory)
                 return job
             finally:
                 merged.unlink(missing_ok=True)
@@ -345,23 +403,76 @@ class UploadStore:
         for part in directory.glob("*.part*"):
             part.unlink(missing_ok=True)
 
+    @staticmethod
+    def _settle(directory: Path) -> None:
+        """Mark a terminal session whose bytes were released.
+
+        Submitted, expired and cancelled sessions never accept new parts, so
+        admission and cleanup can skip them without opening their database.
+        """
+        marker = directory / SETTLED_MARKER
+        if not marker.exists():
+            marker.touch()
+
+    def _maybe_cleanup(self) -> None:
+        # Creation holds the global lock; do not rescan every session for every
+        # new upload. Terminal sessions are settled at completion/cancel anyway.
+        now = time.monotonic()
+        if self._last_cleanup is not None and now - self._last_cleanup < CLEANUP_INTERVAL_SECONDS:
+            return
+        self._last_cleanup = now
+        self.cleanup()
+
     def cleanup(self) -> int:
-        """Remove stale partial bytes, retaining tombstones for safe 410 responses."""
+        """Release stale partial bytes, retaining tombstones for safe 410 responses.
+
+        Tombstones are pruned after ``TOMBSTONE_RETENTION_SECONDS`` so the
+        session root does not grow with every upload ever made.
+        """
         cleaned = 0
-        for directory in self._session_directories():
+        for directory in self._session_directories(include_settled=False):
             with exclusive_file(directory / ".lock"):
-                data = self._unchecked_metadata(directory)
+                try:
+                    data = self._unchecked_metadata(directory)
+                except (OSError, ValueError, KeyError, sqlite3.Error):
+                    continue
                 if data.get("job_id") or time.time() - data["updated_at"] > SESSION_TTL_SECONDS:
                     self.remove_parts(directory)
                     (directory / "assembled.video").unlink(missing_ok=True)
+                    self._settle(directory)
                     cleaned += 1
+        self._prune_tombstones()
         return cleaned
 
-    def _session_directories(self):
+    def _prune_tombstones(self) -> int:
+        pruned = 0
+        for marker in self.root.glob("*/" + SETTLED_MARKER):
+            directory = marker.parent
+            try:
+                if time.time() - marker.stat().st_mtime <= TOMBSTONE_RETENTION_SECONDS:
+                    continue
+                with exclusive_file(directory / ".lock"):
+                    # Remove the state first: the session disappears from every
+                    # listing atomically even if the rest cannot be deleted yet
+                    # (for example a concurrent reader on Windows).
+                    for name in (upload_state.STATE_FILENAME, "manifest.json"):
+                        (directory / name).unlink(missing_ok=True)
+                    for suffix in ("-journal", "-wal", "-shm"):
+                        (directory / (upload_state.STATE_FILENAME + suffix)).unlink(missing_ok=True)
+            except OSError:
+                continue
+            shutil.rmtree(directory, ignore_errors=True)
+            pruned += 1
+        return pruned
+
+    def _session_directories(self, *, include_settled: bool = True):
         # Union prevents double counting if an operator left an old manifest
         # beside a new database. No live legacy session is migrated here.
-        return sorted({path.parent for name in ("manifest.json", upload_state.STATE_FILENAME)
-                       for path in self.root.glob("*/" + name)})
+        sessions = {path.parent for name in ("manifest.json", upload_state.STATE_FILENAME)
+                    for path in self.root.glob("*/" + name)}
+        if not include_settled:
+            sessions = {path for path in sessions if not (path / SETTLED_MARKER).exists()}
+        return sorted(sessions)
 
     def _unchecked_metadata(self, directory: Path) -> dict:
         if self._sqlite(directory):

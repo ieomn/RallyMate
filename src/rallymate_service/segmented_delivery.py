@@ -87,7 +87,7 @@ class SegmentedDelivery:
                 budget = PostprocessBudget(max_seconds=60, cancellation_callback=current)
                 budget.check(force=True)
                 job = self.db.get_job(job_id)
-                if job is None:
+                if job is None or job.get("deleted_at") is not None:
                     raise DeliveryError(404, "report_job_not_found", "分析任务不存在。")
                 try:
                     body = build(job, budget.check)

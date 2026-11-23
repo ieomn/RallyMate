@@ -16,6 +16,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 from rallymate_features.coordinates import validated_camera_transform
@@ -365,12 +366,31 @@ def _local_preload_evidence(observation, annotation, document, decoder_timeline,
     return result
 
 
+def _ffmpeg_executable() -> str:
+    """Prefer system ffmpeg (Linux images); fall back to the optional wheel.
+
+    Matches rallymate_vision.pipeline: never download, never require
+    imageio-ffmpeg when a PATH binary exists.
+    """
+    installed = shutil.which("ffmpeg")
+    if installed:
+        return installed
+    try:
+        import imageio_ffmpeg
+        bundled = imageio_ffmpeg.get_ffmpeg_exe()
+    except (ImportError, OSError, RuntimeError, ValueError):
+        bundled = None
+    if bundled and Path(bundled).is_file():
+        return bundled
+    raise ValueError("source_video_decoder_unavailable")
+
+
 def _decode_video_timeline(path, expected_digest):
-    import imageio_ffmpeg
     if _sha(path) != expected_digest:
         raise ValueError("source_video_digest_mismatch")
+    ffmpeg = _ffmpeg_executable()
     try:
-        completed = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-nostdin", "-hide_banner", "-i", str(path),
+        completed = subprocess.run([ffmpeg, "-nostdin", "-hide_banner", "-i", str(path),
             "-map", "0:v:0", "-vf", "showinfo", "-frames:v", str(MAX_FRAME_RECORDS + 1), "-an", "-f", "null", "-"],
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
     except subprocess.TimeoutExpired as exc:

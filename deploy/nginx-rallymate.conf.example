@@ -1,5 +1,7 @@
 # Mounted as the official nginx image's default.conf.template.
 # The edge owns forwarded identity; API and Node have no published host ports.
+# This file is included in the http{} context, so the next line covers both servers.
+server_tokens off;
 log_format rallymate '$remote_addr $request_method $uri $status $body_bytes_sent $request_time';
 upstream rallymate_api { server api:8000; keepalive 16; }
 upstream rallymate_web { server frontend:3000; keepalive 16; }
@@ -20,7 +22,22 @@ server {
     if ($host != '${PUBLIC_HOST}') { return 444; }
     access_log /var/log/nginx/access.log rallymate;
 
-    client_max_body_size 2G;
+    # Security headers. nginx inherits add_header / proxy_hide_header from the
+    # enclosing level ONLY when the inner level defines none of its own, so no
+    # location below may use add_header or proxy_hide_header; extend this list
+    # here instead. Upstream copies are hidden so each header is sent exactly once.
+    # The app never frames itself, hence DENY.
+    proxy_hide_header Strict-Transport-Security;
+    proxy_hide_header X-Content-Type-Options;
+    proxy_hide_header X-Frame-Options;
+    proxy_hide_header Referrer-Policy;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Request bodies are small by default; only the upload routes below are large.
+    client_max_body_size 1m;
     client_body_timeout 3600s;
     send_timeout 3600s;
     proxy_read_timeout 3600s;
@@ -42,12 +59,35 @@ server {
     proxy_set_header X-Request-ID $http_x_request_id;
 
     location ~ ^/(?:internal|metrics)(?:/|$) { return 404; }
-    location ^~ /v1/ { proxy_pass http://rallymate_api; }
+
+    # Single-request multipart upload; the API enforces RALLYMATE_MAX_UPLOAD_BYTES.
+    location = /v1/jobs {
+        client_max_body_size 2G;
+        proxy_pass http://rallymate_api;
+    }
+
+    # All other API routes, including POST /v1/uploads, GET/DELETE
+    # /v1/uploads/{id} and POST /v1/uploads/{id}/complete (small bodies).
+    location ^~ /v1/ {
+        proxy_pass http://rallymate_api;
+
+        # Resumable upload chunks: the API caps each PUT at 4 MiB (CHUNK_BYTES).
+        location ~ ^/v1/uploads/[^/]+/chunks/[0-9]+$ {
+            client_max_body_size 5m;
+            proxy_pass http://rallymate_api;
+        }
+    }
+
     location ^~ /api/auth/ { proxy_pass http://rallymate_api; }
     location ^~ /api/admin/ { proxy_pass http://rallymate_api; }
     location = /api/records { proxy_pass http://rallymate_api; }
     location = /health/live { proxy_pass http://rallymate_api; }
     # Operators supply their maintenance Bearer; user credentials are never replaced.
     location = /health/ready { proxy_pass http://rallymate_api; }
-    location / { proxy_pass http://rallymate_web; }
+
+    # Node frontend (/api/scorecard, /api/advice JSON); routes enforce their own caps.
+    location / {
+        client_max_body_size 16m;
+        proxy_pass http://rallymate_web;
+    }
 }

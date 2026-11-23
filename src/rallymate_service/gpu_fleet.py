@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import tempfile
 import uuid
 from datetime import datetime, timezone
 from threading import Lock
@@ -63,6 +62,20 @@ def _gpu_state_path(identifier: str, state_directory: Path | None = None) -> Pat
     if not directory.is_absolute():
         raise ValueError('GPU ownership state must use an absolute node-level directory')
     return directory.resolve() / (identifier.lower() + '.json')
+
+
+def gpu_lock_path(identifier: str, state_directory: Path | None = None) -> Path:
+    """POSIX flock file that serialises one physical GPU across processes.
+
+    The lock lives beside the durable ownership journal (``<state>/locks``),
+    never in ``tempfile.gettempdir()``: in Docker each container has a private
+    ``/tmp`` tmpfs, so a temp-dir lock would let the api and worker containers
+    (or two worker replicas) each "own" the same card. The node state root is
+    the shared ``/var/lib/rallymate/gpu-state`` volume in compose.
+    """
+    directory = _gpu_state_path(identifier, state_directory).parent / 'locks'
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / (identifier.lower() + '.lock')
 
 
 def _read_gpu_state(path: Path, identifier: str) -> dict | None:
@@ -319,9 +332,7 @@ class GPUWorkerSlot:
             self.kernel.CloseHandle.argtypes = [wintypes.HANDLE]
             self.kernel.CloseHandle.restype = wintypes.BOOL
         else:
-            directory = Path(tempfile.gettempdir()) / 'rallymate-gpu-worker-locks'
-            directory.mkdir(parents=True, exist_ok=True)
-            self.lock = RenderLock(directory / (self.identifier + '.lock'))
+            self.lock = RenderLock(gpu_lock_path(identifier, self.state_path.parent))
 
     def acquire(self) -> bool:
         # Windows mutexes are reentrant on the owning thread; separate worker

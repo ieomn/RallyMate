@@ -114,8 +114,12 @@ class RemoteCheckTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             key = Path(directory) / "monitor_key"
             key.write_text("unit-test-only")
-            with patch.dict("sys.modules", {"paramiko": paramiko}):
+            endpoint = {"AUTODL_SSH_HOST": "ssh.example.invalid", "AUTODL_SSH_PORT": "2222"}
+            with patch.dict("sys.modules", {"paramiko": paramiko}), patch.dict("os.environ", endpoint):
                 self.assertEqual(checker.fetch_snapshot(key)["status"], "healthy")
+        self.assertEqual(client.connect.call_args.args, ("ssh.example.invalid",))
+        self.assertEqual(client.connect.call_args.kwargs["port"], 2222)
+        self.assertEqual(client.connect.call_args.kwargs["username"], "root")
         client.load_system_host_keys.assert_called_once_with()
         self.assertIsInstance(client.set_missing_host_key_policy.call_args.args[0], RejectPolicy)
         self.assertFalse(client.connect.call_args.kwargs["look_for_keys"])
@@ -124,6 +128,30 @@ class RemoteCheckTests(unittest.TestCase):
         self.assertEqual(client.exec_command.call_args.args, ("snapshot",))
         self.assertFalse(client.exec_command.call_args.kwargs["get_pty"])
         client.close.assert_called_once()
+
+    def test_ssh_endpoint_comes_only_from_environment_and_fails_closed(self):
+        self.assertFalse(hasattr(checker, "HOST") or hasattr(checker, "PORT"))
+        for environ in ({}, {"AUTODL_SSH_HOST": "ssh.example.invalid"}, {"AUTODL_SSH_PORT": "22"},
+                        {"AUTODL_SSH_HOST": " ", "AUTODL_SSH_PORT": "22"}):
+            with self.subTest(environ=environ), self.assertRaises(checker.CheckFailure) as caught:
+                checker.ssh_endpoint(environ)
+            self.assertEqual(str(caught.exception), "ssh_endpoint_not_configured")
+        for environ in ({"AUTODL_SSH_HOST": "ssh.example.invalid", "AUTODL_SSH_PORT": "0"},
+                        {"AUTODL_SSH_HOST": "ssh.example.invalid", "AUTODL_SSH_PORT": "70000"},
+                        {"AUTODL_SSH_HOST": "ssh.example.invalid", "AUTODL_SSH_PORT": "22x"},
+                        {"AUTODL_SSH_HOST": "bad host;rm", "AUTODL_SSH_PORT": "22"},
+                        {"AUTODL_SSH_HOST": "ssh.example.invalid", "AUTODL_SSH_PORT": "22", "AUTODL_SSH_USER": "-oProxy"}):
+            with self.subTest(environ=environ), self.assertRaises(checker.CheckFailure) as caught:
+                checker.ssh_endpoint(environ)
+            self.assertEqual(str(caught.exception), "ssh_endpoint_invalid")
+        self.assertEqual(("ssh.example.invalid", 2222, "monitor"), checker.ssh_endpoint(
+            {"AUTODL_SSH_HOST": "ssh.example.invalid", "AUTODL_SSH_PORT": "2222", "AUTODL_SSH_USER": "monitor"}))
+
+    def test_missing_endpoint_is_reported_before_any_network_or_key_access(self):
+        with patch.dict("os.environ", {}, clear=True), patch.dict("sys.modules", {"paramiko": None}):
+            with self.assertRaises(checker.CheckFailure) as caught:
+                checker.fetch_snapshot(Path("does-not-exist"))
+        self.assertEqual(str(caught.exception), "ssh_endpoint_not_configured")
 
 
 if __name__ == "__main__":

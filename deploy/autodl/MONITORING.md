@@ -12,7 +12,7 @@
 
 ## 最近一次恢复启动验收（2026-09-29）
 
-SSH 入口已迁移至 `connect.cqa1.seetacloud.com:26691`；核对新入口与原先受信任主机公钥一致后登记 `known_hosts`，继续拒绝未知或变更的主机身份。本机 `check_remote.py` 与交接手册已同步端口，受限监控身份保持不变。管理员密码不写入项目或部署文件。
+SSH 入口已迁移至新的私有地址与端口（不写入仓库，通过 `AUTODL_SSH_HOST` / `AUTODL_SSH_PORT` 环境变量提供）；核对新入口与原先受信任主机公钥一致后登记 `known_hosts`，继续拒绝未知或变更的主机身份。本机 `check_remote.py` 改为从环境变量读取入口，受限监控身份保持不变。管理员密码不写入项目或部署文件。
 
 原项目、模型、虚拟环境、前端构建、配置和 15 个历史成功任务均保留，启动前没有排队或运行任务。原 Supervisor 已停止，使用既有 `manage.sh start` 恢复 API、Worker、Web、cloudflared、monitor。51 个核心生产源码与本机逐字节哈希一致，没有重新发布整套源码或更换模型。当前 GPU 为 NVIDIA RTX 6000D，PyTorch `2.8.0+cu128` 的 CUDA 运行正常。
 
@@ -118,7 +118,7 @@ restrict,command="/usr/bin/env -i /root/autodl-tmp/rallymate/.venv/bin/python -I
 & 'C:\Python314\python.exe' 'C:\Users\Admin\Documents\网球\deploy\autodl\check_remote.py'
 ```
 
-`check_remote.py` 只连接 `connect.cqa1.seetacloud.com:26691` 的 root 受限公钥入口，固定发送 `snapshot`，由远端 forced command 返回 JSON。它调用 `load_system_host_keys()` 和 `RejectPolicy`，要求该地址和非默认端口的主机密钥已登记到系统用户的 `known_hosts`；不会自动接受未知或变更的主机密钥。它禁用 SSH agent 和其他私钥搜索，不回退密码，不请求交互终端、SFTP 或端口转发。读取上限 2 MiB，连接/认证与快照读取都有超时。
+`check_remote.py` 只连接环境变量 `AUTODL_SSH_HOST`、`AUTODL_SSH_PORT` 指定的受限公钥入口（用户名取 `AUTODL_SSH_USER`，默认 `root`）；任一必需变量缺失时不发起连接，输出固定代码 `ssh_endpoint_not_configured` 并在 stderr 提示需要设置的变量，格式非法时输出 `ssh_endpoint_invalid`。入口地址属于私有运维配置，不提交到仓库。它固定发送 `snapshot`，由远端 forced command 返回 JSON。它调用 `load_system_host_keys()` 和 `RejectPolicy`，要求该地址和端口的主机密钥已登记到系统用户的 `known_hosts`；不会自动接受未知或变更的主机密钥。它禁用 SSH agent 和其他私钥搜索，不回退密码，不请求交互终端、SFTP 或端口转发。读取上限 2 MiB，连接/认证与快照读取都有超时。
 
 输出是单个精简 JSON：`notify` 指示是否有需要处理的新变化，`notify_reasons` 给出原因，`health` 为最新健康摘要，`new_events` 为去重后的有意义事件，`last_public_url` 保留最近一次已知公网入口。第一次健康检查只建立基线，保持安静；新告警、连接中断、恢复、任务失败、域名变化会标记通知。同一离线状态不会在每次心跳重复报警。异常只返回固定代码，不回显可能包含凭据或路径的异常原文。
 

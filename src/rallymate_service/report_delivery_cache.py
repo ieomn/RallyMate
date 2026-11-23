@@ -13,6 +13,7 @@ from threading import Lock
 from typing import Callable, Hashable, Literal
 import hashlib
 import logging
+import os
 import time
 import uuid
 from rallymate_service.report_delivery_store import ReportDeliveryStore
@@ -21,6 +22,39 @@ from rallymate_service.report_delivery_store import ReportDeliveryStore
 ReportDelivery = Literal["inline", "deferred-v1"]
 REPORT_PROCESS_VERSION = "deferred-report-v1:" + uuid.uuid4().hex
 logger = logging.getLogger("rallymate.report_delivery")
+
+# On POSIX ``st_ctime`` is the inode change time: every write, truncate, rename
+# or utime() call advances it and an unprivileged writer cannot restore it. The
+# full stat identity (dev, ino, size, mtime_ns, ctime_ns) therefore changes
+# whenever content can have changed, so a digest computed for that identity can
+# be reused instead of re-reading up to gigabytes of frames on every lookup.
+# Windows reports creation time as ``st_ctime``; a same-size rewrite with a
+# restored mtime keeps every field, so Windows always re-hashes.
+_DIGEST_MEMO_ENABLED = os.name != "nt"
+_DIGEST_MEMO_MAX_ENTRIES = 256
+_DIGEST_MEMO_MIN_AGE_NS = 2_000_000_000
+_digest_memo: OrderedDict[tuple, str] = OrderedDict()
+_digest_memo_lock = Lock()
+
+
+def _memoized_digest(signature: tuple) -> str | None:
+    if not _DIGEST_MEMO_ENABLED:
+        return None
+    with _digest_memo_lock:
+        digest = _digest_memo.get(signature)
+        if digest is not None:
+            _digest_memo.move_to_end(signature)
+        return digest
+
+
+def _remember_digest(signature: tuple, digest: str) -> None:
+    if not _DIGEST_MEMO_ENABLED:
+        return
+    with _digest_memo_lock:
+        _digest_memo[signature] = digest
+        _digest_memo.move_to_end(signature)
+        while len(_digest_memo) > _DIGEST_MEMO_MAX_ENTRIES:
+            _digest_memo.popitem(last=False)
 
 
 def artifact_signature(path: Path, *, content_hash: bool = False) -> tuple:
@@ -31,12 +65,20 @@ def artifact_signature(path: Path, *, content_hash: bool = False) -> tuple:
                      stat.st_mtime_ns, stat.st_ctime_ns)
         if not content_hash:
             return signature
+        remembered = _memoized_digest(signature)
+        if remembered is not None:
+            return (*signature, remembered)
         digest = hashlib.sha256()
         with path.open("rb") as stream:
             for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                 digest.update(chunk)
         if artifact_signature(path) != signature:
             raise OSError("report dependency changed while computing its identity")
+        # Timestamps are coarse-grained (kernel tick). A rewrite in the same
+        # tick as this hash could keep ctime, so only remember files whose last
+        # change is safely in the past ("racy-git" rule).
+        if time.time_ns() - stat.st_ctime_ns > _DIGEST_MEMO_MIN_AGE_NS:
+            _remember_digest(signature, digest.hexdigest())
         return (*signature, digest.hexdigest())
     except FileNotFoundError:
         return (str(path.resolve()), None)

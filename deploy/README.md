@@ -65,7 +65,7 @@ PowerShell 先设置 `$env:PYTHONPATH='src;tests'`，再执行同一条 `python 
 
 主机安装 Docker Engine、Compose v2、NVIDIA 驱动和 NVIDIA Container Toolkit。先确认 `nvidia-smi` 能列出设备，再验证容器可访问所选 GPU。Worker 默认一个副本，`RALLYMATE_GPU_DEVICE_ID` 选择物理卡，容器内使用逻辑设备 `0`；本次没有改变现有多卡调度算法。
 
-核心服务为 `postgres`、`migrate`、`api`、`frontend`、`nginx`、`worker`、`adminer`。PostgreSQL、API、Worker 不映射宿主公开端口；Nginx 提供 80/443；Adminer 固定为 `127.0.0.1:8080:8080`。
+核心服务为 `postgres`、`migrate`、`api`、`frontend`、`nginx`、`worker`，另有按需启动的 `adminer`（`tools` profile）。PostgreSQL、API、Worker 不映射宿主公开端口；Nginx 提供 80/443；Adminer 启用时固定为 `127.0.0.1:8080:8080`。
 
 上传数据目录必须位于支持 `renameat2(RENAME_NOREPLACE)` 和目录 `fsync` 的 Linux 文件系统，例如本地 ext4 或 XFS；上传发布依赖这些操作保证原子性。`RALLYMATE_DATA_DIR` 应指向这种文件系统上的持久目录。Docker Desktop 将 Windows 目录绑定进 Linux 容器时，本次隔离验收曾返回 `renameat2: EINVAL`；该环境应使用 Linux 虚拟机中的目录，或用原生 Linux Docker 卷覆盖数据挂载。Windows 原生开发服务使用 Windows 文件操作，不受这个 Linux 容器挂载限制影响。
 
@@ -79,7 +79,7 @@ sudo chown -R 10001:10001 service_data
 sudo chmod 750 service_data
 ```
 
-API/Worker 以 UID `10001` 运行。数据、SAM cache/log 和 GPU 锁目录可写；模型、校准资产和 SAM runtime 主目录只读。同机 Worker 共用 GPU 状态目录，保留现有物理 GPU UUID 锁约束。
+API/Worker 以 UID `10001` 运行。数据、SAM cache/log 和 GPU 锁目录可写；模型、校准资产和 SAM runtime 主目录只读。同机 Worker 共用 GPU 状态目录，保留现有物理 GPU UUID 锁约束：所有权记录 `<uuid>.json` 与 POSIX `flock` 锁文件 `locks/<uuid>.lock` 都位于该共享目录（不再位于容器私有的 `/tmp`），因此跨容器/副本对同一物理卡的互斥真正生效。
 
 **选择与现有模型匹配的 Worker 镜像：**
 
@@ -164,7 +164,7 @@ ID 从数据库或管理接口取得。命令只接受无归属且已终止的�
 ## 5. 启动与业务验收
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d api frontend nginx worker adminer
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d api frontend nginx worker
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml exec nginx nginx -t
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
 ```
@@ -181,14 +181,21 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
 6. 封禁和删除账户撤销其会话；最后一个有效管理员受到保护。运行任务先取消，终止后才能删除；删除后个人列表与资源读取均不可见。
 7. 同浏览器切换 A/B、退出和多标签页操作，历史、活动任务、续传、训练笔记、球场校准均按账户隔离。
 
-Nginx 显式配置 `client_max_body_size 2G`，上传体和读写空闲超时为 `3600s`，关闭请求与响应缓冲。API 默认上限为 `2147483648` 字节，分片使用原协议。HTTP 超时是连续空闲时间；域名前的 CDN/WAF 如有限制，需要同时调整。
+Nginx 默认 `client_max_body_size 1m`，仅按路由放大：`= /v1/jobs`（单请求 multipart 上传）为 `client_max_body_size 2G;`，`/v1/uploads/{id}/chunks/{index}` 为 `5m`（API 每片上限 4 MiB），前端 Node 路由为 `16m`；其余 `/v1/*`（含 `DELETE /v1/uploads/{id}`）走默认小上限。上传体和读写空闲超时为 `3600s`，关闭请求与响应缓冲。API 默认上限为 `2147483648` 字节，分片使用原协议。HTTP 超时是连续空闲时间；域名前的 CDN/WAF 如有限制，需要同时调整。
+
+Nginx 关闭版本号（`server_tokens off`），并在 HTTPS server 级统一下发 `Strict-Transport-Security`、`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`、`Referrer-Policy: strict-origin-when-cross-origin`（均带 `always`，上游同名头被隐藏避免重复）。nginx 的 `add_header` 只在内层未定义任何 `add_header` 时继承，因此 location 内不要再写 `add_header`，新增头部请加在 server 级。
+
+API 容器的 `/tmp` 仍是 256 MiB 内存 tmpfs；Starlette 处理 `/v1/jobs` multipart 时按 `TMPDIR` 落盘，compose 将 `TMPDIR` 指向命名卷 `api_upload_tmp`（挂载于 `/app/upload-tmp`，由镜像目录初始化为 uid 10001 所有），2 GiB 上传占用磁盘而非内存。临时文件随请求结束删除；该卷可随时 `docker volume rm` 重建。
 
 ## 6. Adminer、备份与文件回收
 
-Adminer 仅监听宿主回环地址。建立 SSH 隧道：
+Adminer 属于 `tools` profile，默认不启动，仅在需要时临时开启，只连接内部 `backend` 网络（无外网 egress），且仅监听宿主回环地址：
 
 ```bash
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml --profile tools up -d adminer
 ssh -L 8080:127.0.0.1:8080 user@server
+# 用完即停
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml --profile tools stop adminer
 ```
 
 访问本机 `http://127.0.0.1:8080`，系统选 PostgreSQL，服务器填 `postgres`，数据库名、用户和密码取自私有 `.env`。账户状态管理和密码重置通过 `/admin` 执行，保证会话撤销与审计。

@@ -51,8 +51,17 @@ class ComposeDeploymentTests(unittest.TestCase):
         self.assertEqual({"nginx", "adminer"}, {name for name, value in services.items() if value.get("ports")})
         port = services["adminer"]["ports"][0]
         self.assertEqual(("127.0.0.1", "8080", 8080), (port["host_ip"], port["published"], port["target"]))
-        self.assertEqual({"backend", "egress"}, set(services["adminer"]["networks"]))
+        # Debug-only: opt-in tools profile and no outbound internet.
+        self.assertEqual(["tools"], services["adminer"]["profiles"])
+        self.assertEqual({"backend"}, set(services["adminer"]["networks"]))
         self.assertEqual({80, 443}, {port["target"] for port in services["nginx"]["ports"]})
+
+    def test_api_spools_multipart_uploads_to_disk_volume_not_tmpfs(self):
+        api = self.config["services"]["api"]
+        self.assertEqual("/app/upload-tmp", api["environment"]["TMPDIR"])
+        mounts = {item["target"]: item for item in api["volumes"]}
+        self.assertEqual(("volume", "api_upload_tmp"), (mounts["/app/upload-tmp"]["type"], mounts["/app/upload-tmp"]["source"]))
+        self.assertIn("api_upload_tmp", self.config["volumes"])
 
     def test_migrations_remain_explicit_and_worker_has_no_account_secrets(self):
         services = self.config["services"]

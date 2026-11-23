@@ -188,8 +188,10 @@ class AccountRuntime:
 def install_account_system(app, settings, database, uploads, *, config=None):
     config = config or AuthConfig.from_environment(settings)
     runtime = AccountRuntime(settings, database, config)
-    scoped_database = UserScopedJobDatabase(database, runtime.engine)
-    scoped_uploads = UserScopedUploadStore(uploads, runtime.engine)
+    scoped_database = UserScopedJobDatabase(database, runtime.engine,
+        max_active_jobs_per_user=getattr(settings, "max_active_jobs_per_user", None))
+    scoped_uploads = UserScopedUploadStore(uploads, runtime.engine,
+        max_active_uploads_per_user=getattr(settings, "max_active_uploads_per_user", None))
     app.state.accounts = runtime.store
     app.state.auth_config = config
     app.state.account_runtime = runtime

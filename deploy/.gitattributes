@@ -1,0 +1,13 @@
+# Everything under deploy/ is consumed on Linux hosts/containers (shell `source`,
+# Docker, nginx, pip). Pin LF so Windows checkouts (core.autocrlf=true) never
+# ship CRLF into env files, requirement inputs or configs.
+*.sh text eol=lf
+*.env text eol=lf
+*.env.example text eol=lf
+.env.example text eol=lf
+*.example text eol=lf
+*.in text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+.gitignore text eol=lf

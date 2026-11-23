@@ -12,7 +12,7 @@ import sys
 import time
 import uuid
 from collections import OrderedDict
-from contextlib import asynccontextmanager, ExitStack
+from contextlib import asynccontextmanager, contextmanager, ExitStack
 from importlib.resources import files
 from pathlib import Path
 from threading import Lock, Event, BoundedSemaphore, RLock
@@ -56,7 +56,7 @@ from rallymate_scoring.technique_assessment import (
     build_technique_assessment,
 )
 from rallymate_service.config import ServiceConfigError, ServiceSettings, load_settings
-from rallymate_service.database import JobDatabase, QueueCapacityError
+from rallymate_service.database import JobDatabase, QueueCapacityError, UserQueueCapacityError
 from rallymate_service.database_factory import build_database
 from rallymate_service.segmented_report import (
     SegmentedReportStore, SegmentedReportError, build_summary as build_segmented_summary,
@@ -575,6 +575,9 @@ def _parse_polygon(raw: str | None) -> list[list[float]] | None:
     return polygon
 
 
+HEAVY_REPORT_WAIT_SECONDS = 1.0
+
+
 def create_app(
     settings: ServiceSettings | None = None,
     database: JobDatabase | None = None,
@@ -641,6 +644,21 @@ def create_app(
     report_delivery_cache = ReportDeliveryCache(storage_dir=service_settings.data_root / "report-delivery-cache")
     segmented_reports = SegmentedReportStore()
     segmented_summary_slots = BoundedSemaphore(4)
+    # Inline report builders re-read multi-hundred-megabyte artifacts and run
+    # the scoring rubrics synchronously on the request threadpool. Bound them
+    # so parallel requests cannot starve every other API route.
+    heavy_report_slots = BoundedSemaphore(getattr(service_settings, "heavy_report_concurrency", 4))
+
+    @contextmanager
+    def heavy_report_slot():
+        if not heavy_report_slots.acquire(timeout=HEAVY_REPORT_WAIT_SECONDS):
+            raise HTTPException(429, {"code": "report_builder_busy",
+                                      "message": "报告生成繁忙，请稍后重试。"},
+                                headers={"Retry-After": "5", "Cache-Control": "no-store"})
+        try:
+            yield
+        finally:
+            heavy_report_slots.release()
 
     def packaged_report_rules_identity() -> tuple:
         resources = sorted((item for item in files("rallymate_scoring").joinpath("data").iterdir()
@@ -758,6 +776,11 @@ def create_app(
 
     @app.exception_handler(QueueCapacityError)
     async def queue_capacity_handler(request: Request, exc: QueueCapacityError):
+        if isinstance(exc, UserQueueCapacityError):
+            return JSONResponse(status_code=429, content={"detail": {"code": "analysis_user_queue_full",
+                "message": f"您已有 {exc.limit} 个分析任务在排队或运行，请等待完成后再提交。",
+                "max_active_jobs_per_user": exc.limit}},
+                headers={"Retry-After": "30", "Cache-Control": "no-store"})
         return JSONResponse(status_code=429, content={"detail": {"code": "analysis_queue_full",
             "message": "分析队列已满，请稍后重试。", "max_active_jobs": exc.limit}},
             headers={"Retry-After": "30", "Cache-Control": "no-store"})
@@ -836,8 +859,12 @@ def create_app(
             "deployment": deployment_identity.public_status(),
             "public_base_url": service_settings.public_base_url,
             "authentication": {
-                "scheme": "bearer" if service_settings.api_key is not None else "none",
-                "required": service_settings.api_key is not None,
+                # /v1 routes always require an account session (HttpOnly
+                # cookie + CSRF, or the session bearer token). The optional
+                # RALLYMATE_API_KEY only guards maintenance/health routes.
+                "scheme": "account_session",
+                "required": True,
+                "maintenance_bearer": service_settings.api_key is not None,
                 "browser_secret_injection": "reverse_proxy_or_same_origin_session",
             },
             "capabilities": {
@@ -1490,6 +1517,12 @@ def create_app(
     def upload_status(upload_id: str, _: None = Depends(authorize)) -> dict:
         return uploads.status(upload_id)
 
+    @app.delete("/v1/uploads/{upload_id}")
+    def cancel_upload(upload_id: str, _: None = Depends(authorize)) -> dict:
+        # Owner-scoped by the account boundary and the scoped store. Releases
+        # parts and the admission slot; a submitted upload is never touched.
+        return uploads.cancel(upload_id)
+
     @app.put("/v1/uploads/{upload_id}/chunks/{index}")
     async def upload_chunk(upload_id: str, index: int, request: Request, _: None = Depends(authorize)) -> dict:
         # Bound each request even when Content-Length is absent or forged.
@@ -1968,7 +2001,8 @@ def create_app(
                 current_packaged_rules_identity()
             except DeliveryError as exc:
                 raise HTTPException(exc.status, exc.detail()) from exc
-            return build_demo_payload(job, report_contract, report_transport)
+            with heavy_report_slot():
+                return build_demo_payload(job, report_contract, report_transport)
         if report_transport != "model-proof-pool-v1":
             raise HTTPException(422, {"code": "report_delivery_requires_pool",
                 "message": "Deferred delivery requires model-proof-pool-v1 transport."})
@@ -1984,8 +2018,11 @@ def create_app(
                 "message": "Report source identity is unavailable."}) from exc
 
         def source_is_current():
+            # Runs on the delivery thread without the request's user context;
+            # a job soft-deleted meanwhile must never be served from cache.
             current = db.get_job(job_id)
             return (current is not None and current["status"] == "succeeded"
+                and current.get("deleted_at") is None
                 and not current.get("cancel_requested")
                 and report_source_key(current, report_contract, report_transport) == key)
 
@@ -2133,9 +2170,10 @@ def create_app(
         response.headers["Cache-Control"] = "no-store"
         # Re-evaluate saved motion with the current rubric. Historical videos do
         # not need another GPU run or the large per-card evidence report.
-        return build_tennis_assessment(
-            summary_with_actions(job), Path(job["output_dir"]), job_id=job_id,
-        )
+        with heavy_report_slot():
+            return build_tennis_assessment(
+                summary_with_actions(job), Path(job["output_dir"]), job_id=job_id,
+            )
 
     @app.get("/v1/jobs/{job_id}/swing-kinematics")
     def get_swing_kinematics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
@@ -2145,7 +2183,8 @@ def create_app(
         if job["status"] != "succeeded":
             raise HTTPException(409, "swing measurements require a succeeded job")
         response.headers["Cache-Control"] = "no-store"
-        return build_swing_kinematics(Path(job["output_dir"]), job.get("summary") or {})
+        with heavy_report_slot():
+            return build_swing_kinematics(Path(job["output_dir"]), job.get("summary") or {})
 
     @app.get("/v1/jobs/{job_id}/pose-preview")
     def get_pose_preview(
@@ -2352,6 +2391,9 @@ def create_app(
     from rallymate_service.records_api import install_record_routes
     db, uploads = install_account_system(app, service_settings, db, uploads, config=auth_config)
     app.state.database = db
+    # Segmented report delivery was constructed before the account boundary;
+    # give it the user-scoped database so ownership and soft deletion apply.
+    segmented_delivery.db = db
     install_record_routes(app, db)
     # Keep CORS outside the account boundary so allowed clients can read 401/403 responses.
     app.add_middleware(
@@ -2367,4 +2409,22 @@ def create_app(
     return app
 
 
-app = create_app()
+_default_app: FastAPI | None = None
+_default_app_lock = Lock()
+
+
+def __getattr__(name: str):
+    """Build ``rallymate_service.api:app`` lazily (PEP 562).
+
+    Importing this module (tests, ``create_app`` callers, ``rallymate-dev``)
+    must not read deployment secrets or create a second application with its
+    own database engine and report threads. ASGI servers that import
+    ``rallymate_service.api:app`` still receive one process-wide instance.
+    """
+    if name == "app":
+        global _default_app
+        with _default_app_lock:
+            if _default_app is None:
+                _default_app = create_app()
+            return _default_app
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

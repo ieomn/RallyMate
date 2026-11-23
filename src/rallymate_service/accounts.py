@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 import secrets
+from threading import Lock
 from uuid import UUID, uuid4
 
 from argon2 import PasswordHasher
@@ -23,6 +24,9 @@ from .models import admin_audit, auth_rate_limits, jobs, sessions, users
 JWT_ISSUER = "rallymate"
 JWT_AUDIENCE = "rallymate-web"
 STATUSES = frozenset({"PENDING", "APPROVED", "REJECTED", "SUSPENDED"})
+# Longest window used by _limit_credentials (registration: one hour).
+MAX_RATE_LIMIT_WINDOW_SECONDS = 3600
+RATE_LIMIT_PRUNE_INTERVAL_SECONDS = 60
 
 
 class AuthError(Exception):
@@ -68,6 +72,8 @@ class AccountStore:
         self.session_days = session_days
         self.password_hasher = PasswordHasher()
         self._dummy_hash = self.password_hasher.hash(secrets.token_urlsafe(32))
+        self._rate_prune_guard = Lock()
+        self._last_rate_prune: datetime | None = None
 
     @contextmanager
     def _write(self):
@@ -84,6 +90,7 @@ class AccountStore:
     def _rate_limit(self, key: str, limit: int, window_seconds: int) -> None:
         key = hashlib.sha256(key.encode()).hexdigest()
         now = _now()
+        self._prune_rate_limits(now)
         with self._write() as connection:
             self._lock(connection, f"rallymate:rate:{key}")
             row = connection.execute(select(auth_rate_limits).where(auth_rate_limits.c.key == key)).mappings().first()
@@ -95,6 +102,21 @@ class AccountStore:
                 connection.execute(update(auth_rate_limits).where(auth_rate_limits.c.key == key).values(window_start=now.isoformat(), attempts=1))
             else:
                 connection.execute(auth_rate_limits.insert().values(key=key, window_start=now.isoformat(), attempts=1))
+
+    def _prune_rate_limits(self, now: datetime) -> None:
+        """Drop counters whose window ended; an expired row is reset anyway.
+
+        Each distinct client/email creates a row, so without pruning the table
+        grows with every address ever tried. Runs at most once per interval.
+        """
+        with self._rate_prune_guard:
+            if (self._last_rate_prune is not None
+                    and (now - self._last_rate_prune).total_seconds() < RATE_LIMIT_PRUNE_INTERVAL_SECONDS):
+                return
+            self._last_rate_prune = now
+        cutoff = (now - timedelta(seconds=MAX_RATE_LIMIT_WINDOW_SECONDS)).isoformat()
+        with self.engine.begin() as connection:
+            connection.execute(auth_rate_limits.delete().where(auth_rate_limits.c.window_start < cutoff))
 
     def _limit_credentials(self, action: str, email: str, rate_key: str | None) -> None:
         if rate_key is not None:

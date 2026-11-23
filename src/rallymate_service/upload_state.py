@@ -129,3 +129,9 @@ def remove_chunk(conn: sqlite3.Connection, index: int, now: float) -> None:
 def mark_complete(conn: sqlite3.Connection, upload_id: str, now: float) -> None:
     with conn:
         conn.execute("UPDATE session SET job_id=?, updated_at=? WHERE singleton=1", (upload_id, now))
+
+
+def expire(conn: sqlite3.Connection) -> None:
+    """Turn an unsubmitted session into an expired tombstone (owner cancel)."""
+    with conn:
+        conn.execute("UPDATE session SET updated_at=0 WHERE singleton=1 AND job_id IS NULL")

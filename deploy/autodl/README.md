@@ -162,7 +162,7 @@ curl --fail http://127.0.0.1:8001/health/live
 curl --fail http://127.0.0.1:8000/
 ```
 
-`/health/ready` 和任务接口使用内部 API key；通过网页代理验证时无需用户输入 key。`status` 中所有程序 RUNNING 仅说明进程存活，GPU 推理是否可用必须由真实视频任务验证。原始视频、任务记录和结果写入 `service_data/`，更新代码时保留该目录。
+`/health/live` 公开可用；`/health/ready` 和维护接口需要运维人员自带维护 Bearer key（例如 `curl -H "Authorization: Bearer $RALLYMATE_API_KEY" http://127.0.0.1:8001/health/ready`），网页代理不再代为注入 key，未携带 `Authorization` 时返回 401。任务接口使用用户账号会话。`status` 中所有程序 RUNNING 仅说明进程存活，GPU 推理是否可用必须由真实视频任务验证。原始视频、任务记录和结果写入 `service_data/`，更新代码时保留该目录。
 
 ## 首次部署验收记录
 
