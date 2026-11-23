@@ -17,7 +17,14 @@ import numpy as np
 from rallymate_vision import sam3d_runner as runner
 from rallymate_vision.owned_subprocess import OwnedProcess
 from rallymate_vision.sam3d_ipc import (
-    SharedFrameReader, SharedFrameWriter, configured_transport, transport_metadata,
+    PosixSharedFrameReader,
+    PosixSharedFrameWriter,
+    SHM_DIR_ENV,
+    SharedFrameReader,
+    SharedFrameWriter,
+    configured_transport,
+    resolve_posix_shm_dir,
+    transport_metadata,
 )
 
 
@@ -70,6 +77,107 @@ class SharedFrameTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             configured_transport({'RALLYMATE_SAM3D_IPC_TRANSPORT': 'automatic'})
         self.assertEqual(transport_metadata('shared_memory')['pixels'], 'exact_uint8_bgr_no_resizing')
+
+    def test_posix_configured_transport_is_allowed_and_reports_posix_mmap_backend(self):
+        with patch('rallymate_vision.sam3d_ipc.os.name', 'posix'):
+            self.assertEqual(configured_transport({'RALLYMATE_SAM3D_IPC_TRANSPORT': 'shared_memory'}), 'shared_memory')
+            meta = transport_metadata('shared_memory')
+            self.assertEqual(meta['kind'], 'shared_memory')
+            self.assertEqual(meta['backend'], 'posix_mmap')
+            self.assertEqual(meta['protocol'], 'sam-source-pixels-v1')
+
+
+class PosixSharedFrameTests(unittest.TestCase):
+    def setUp(self):
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tempdir.cleanup)
+        self.shm_dir = Path(self.tempdir.name)
+
+    def test_posix_mmap_roundtrip_noncontiguous_reuse_resize_and_unlink(self):
+        writer = PosixSharedFrameWriter(shm_dir=self.shm_dir)
+        reader = PosixSharedFrameReader(shm_dir=self.shm_dir)
+        names = []
+        try:
+            for shape in ((31, 41, 3), (19, 23, 3), (65, 73, 3)):
+                image = np.arange(np.prod(shape), dtype=np.uint8).reshape(shape)[:, ::-1]
+                descriptor = writer.write(image)
+                self.assertEqual(descriptor['backend'], 'posix_mmap')
+                self.assertEqual(descriptor['protocol'], 'sam-source-pixels-v1')
+                names.append(descriptor['name'])
+                received = reader.read(descriptor)
+                self.assertEqual(received.tobytes(), image.tobytes())
+                self.assertFalse(received.flags.writeable)
+                del received
+            self.assertEqual(names[0], names[1])
+            self.assertNotEqual(names[1], names[2])
+            # Reader closing must NOT unlink parent-owned segment.
+            reader.close()
+            self.assertTrue((self.shm_dir / names[-1]).is_file())
+        finally:
+            reader.close()
+            writer.close()
+        # Parent closing unlinks all segments cleanly.
+        self.assertEqual(list(self.shm_dir.iterdir()), [])
+
+    def test_posix_reader_rejects_path_traversal_and_invalid_descriptors(self):
+        writer = PosixSharedFrameWriter(shm_dir=self.shm_dir)
+        reader = PosixSharedFrameReader(shm_dir=self.shm_dir)
+        outside = self.shm_dir.parent / 'rallymate-outside-escape-test.shm'
+        outside.write_bytes(b'\x00' * 64)
+        self.addCleanup(lambda: outside.unlink(missing_ok=True))
+        try:
+            descriptor = writer.write(np.zeros((3, 4, 3), dtype=np.uint8))
+            for bad_name in (
+                '../' + outside.name,
+                '..\\' + outside.name,
+                str(outside),
+                '/etc/passwd',
+                'subdir/segment.shm',
+                'subdir\\segment.shm',
+                '..',
+                '.',
+                'bad\x00name.shm',
+                '',
+            ):
+                with self.subTest(bad_name=bad_name), self.assertRaises(ValueError):
+                    reader.read({**descriptor, 'name': bad_name})
+            for changed in (
+                {'backend': 'windows_shared_memory'},
+                {'dtype': 'float32'},
+                {'nbytes': 10},
+                {'shape': [3, 4, 4]},
+                {'protocol': 'unknown'},
+                {'shape': [10, 10, 3], 'nbytes': 300},
+            ):
+                with self.subTest(changed=changed), self.assertRaises(ValueError):
+                    reader.read({**descriptor, **changed})
+        finally:
+            reader.close()
+            writer.close()
+
+    def test_shared_frame_classes_delegate_to_posix_mmap_when_non_nt(self):
+        with patch('rallymate_vision.sam3d_ipc._use_posix_mmap', return_value=True), \
+                patch.dict(os.environ, {SHM_DIR_ENV: str(self.shm_dir)}), \
+                patch.object(shared_memory, 'SharedMemory', side_effect=AssertionError('must not touch resource_tracker')):
+            self.assertEqual(resolve_posix_shm_dir(os.environ), self.shm_dir.resolve())
+            writer = SharedFrameWriter()
+            reader = SharedFrameReader()
+            try:
+                image = np.arange(16 * 20 * 3, dtype=np.uint8).reshape(16, 20, 3)
+                descriptor = writer.write(image)
+                self.assertEqual(descriptor['backend'], 'posix_mmap')
+                self.assertIsNotNone(writer.mapping)
+                self.assertEqual(writer.capacity, image.nbytes)
+                received = reader.read(descriptor)
+                np.testing.assert_array_equal(received, image)
+                self.assertFalse(received.flags.writeable)
+                del received
+            finally:
+                reader.close()
+                writer.close()
+            self.assertIsNone(writer.mapping)
+            self.assertEqual(writer.capacity, 0)
+            self.assertEqual(list(self.shm_dir.iterdir()), [])
 
 
 class ResponseStructureTests(unittest.TestCase):

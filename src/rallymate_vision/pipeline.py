@@ -814,6 +814,18 @@ def _run_pipeline(
         require_isolated_sam(perception)
     detection_stage = DetectionStage(perception, preparation_cpu_seconds) if sam_enabled else perception
     pose_stage = PoseStage(perception) if sam_enabled else None
+    active_window_gate = None
+    active_window_pose_stage = pose_stage
+    if sam_enabled:
+        from rallymate_vision.sam3d_active_windows import (
+            ActiveWindowConfig,
+            ActiveWindowGate,
+            ActiveWindowPoseStage,
+            active_window_gate_enabled,
+        )
+        if active_window_gate_enabled(os.environ):
+            active_window_gate = ActiveWindowGate(ActiveWindowConfig.from_env(os.environ))
+            active_window_pose_stage = ActiveWindowPoseStage(pose_stage, active_window_gate)
 
     def publish_sam_records(records, mesh_records):
         nonlocal sam_has_mesh, sam_first_model_call
@@ -944,8 +956,10 @@ def _run_pipeline(
     if sam_enabled:
         from rallymate_vision.sam3d_pipeline_batch import sam_pose_observations
         from rallymate_vision.sam3d_limits import configured_source_buffer_bytes
+        if active_window_gate is not None:
+            observations = active_window_gate.stream(observations, check_cancelled=check_cancelled)
         observations = sam_pose_observations(
-            observations, pose_stage, max_players=request.processing.max_players,
+            observations, active_window_pose_stage, max_players=request.processing.max_players,
             video_sha256=input_video_sha256, batch_frames=sam_batch_frames,
             timings=timings, statistics=sam_batch_statistics, check_cancelled=check_cancelled,
             max_buffer_bytes=configured_source_buffer_bytes(os.environ),
@@ -1049,7 +1063,7 @@ def _run_pipeline(
                 ]
             stage_started = time.perf_counter()
             pose_diagnostics = bind_pose_association_diagnostics(
-                (pose_stage.last_pose_association_diagnostics if sam_enabled
+                (active_window_pose_stage.last_pose_association_diagnostics if sam_enabled
                  else getattr(perception, "last_pose_association_diagnostics", None)),
                 record["frame"],
             )
@@ -1109,6 +1123,8 @@ def _run_pipeline(
         prepared_stream.close()
     # The producer must relinquish decoder/state/counters before final reads.
     timings.update(preparation_timings)
+    if active_window_gate is not None:
+        timings["sam_active_window_gate_seconds"] += active_window_gate.elapsed_seconds
     release_capture()
     decoder_timing = getattr(capture, "timing_seconds", None)
     if isinstance(decoder_timing, dict):
@@ -1510,6 +1526,7 @@ def _run_pipeline(
                                  "semantics": "sequential_source_pixels_and_PTS_no_frame_skipping"}
                                 if sam_enabled else None),
             **({"mesh_archive": mesh_archiver.receipt} if mesh_archiver is not None else {}),
+            **({"sam_active_window_gate": active_window_gate.summary()} if active_window_gate is not None else {}),
         },
         "quality": quality_summary,
         "counts": {

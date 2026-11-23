@@ -28,6 +28,7 @@ from rallymate_vision.pose.metadata import sha256_file
 
 
 VERSION = "sam3d-official-mesh-v1"
+MESH_COMPRESS_ENV = "RALLYMATE_SAM3D_MESH_COMPRESS"
 VIDEO_NAME = "sam3d-mesh.mp4"
 SIDE_VIDEO_NAME = "sam3d-mesh-side.mp4"
 PREVIEW_NAME = "sam3d-mesh-preview.jpg"
@@ -71,6 +72,13 @@ def _arrays(output: dict, faces: np.ndarray) -> tuple[np.ndarray, np.ndarray, np
     return vertices, faces, camera, float(focal.reshape(-1)[0])
 
 
+def mesh_compression_enabled(env=None) -> bool:
+    raw = (os.environ if env is None else env).get(MESH_COMPRESS_ENV, "0")
+    if raw not in {"0", "1"}:
+        raise ValueError(f"{MESH_COMPRESS_ENV} must be 0 or 1")
+    return raw == "1"
+
+
 def capture_mesh_output(output: dict, faces: np.ndarray, runtime_dir: Path) -> dict:
     """Called in the model process; retain exact dtype and values, atomically."""
     vertices, faces, camera, focal = _arrays(output, faces)
@@ -107,8 +115,10 @@ def capture_mesh_output(output: dict, faces: np.ndarray, runtime_dir: Path) -> d
     # Hash the exact NPZ bytes before publishing them. Reopening a freshly
     # written file for this self-check is expensive on the local filesystem;
     # the parent still verifies the actual disk bytes at the archive boundary.
+    compress = mesh_compression_enabled()
+    saver = np.savez_compressed if compress else np.savez
     with io.BytesIO() as buffer:
-        np.savez(buffer, vertices=vertices, camera=camera, focal=np.asarray(focal))
+        saver(buffer, vertices=vertices, camera=camera, focal=np.asarray(focal))
         payload = buffer.getvalue()
     mesh_sha256 = hashlib.sha256(payload).hexdigest().upper()
     temporary = None
@@ -122,12 +132,15 @@ def capture_mesh_output(output: dict, faces: np.ndarray, runtime_dir: Path) -> d
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-    return {
+    artifact = {
         "version": VERSION, "path": str(path), "sha256": mesh_sha256,
         "faces_path": str(topology), "faces_sha256": faces_sha256,
         "vertex_count": len(vertices), "face_count": len(faces),
         "geometry": "official_estimator_pred_vertices",
     }
+    if compress:
+        artifact["compressed"] = True
+    return artifact
 
 
 def archive_mesh_records(records: list[dict], output_dir: Path, runtime_dir: Path) -> list[dict]:

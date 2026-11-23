@@ -3,6 +3,7 @@ from collections import defaultdict
 import hashlib
 import io
 import json
+import os
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -276,6 +277,43 @@ class MeshCaptureTests(unittest.TestCase):
             with self.subTest(delta=delta), patch.object(mesh_module.os, 'fstat',
                     return_value=SimpleNamespace(st_size=size + delta)), self.assertRaisesRegex(ValueError, 'size changed'):
                 mesh_module._load_verified_geometry(self.output_dir, artifact, {}, defaultdict(float))
+
+    def test_optional_compressed_npz_preserves_exact_arrays_sha256_and_reduces_size(self):
+        # Smooth, structured vertex array representative of a dense body mesh.
+        grid = np.linspace(-1.0, 1.0, 6000, dtype=np.float32).reshape(2000, 3)
+        dense_output = {
+            'pred_vertices': grid,
+            'pred_cam_t': self.output['pred_cam_t'],
+            'focal_length': self.output['focal_length'],
+        }
+        uncompressed = capture_mesh_output(dense_output, self.faces, self.runtime)
+        self.assertNotIn('compressed', uncompressed)
+        uncompressed_bytes = Path(uncompressed['path']).stat().st_size
+
+        with patch.dict(os.environ, {mesh_module.MESH_COMPRESS_ENV: '1'}):
+            compressed = capture_mesh_output(dense_output, self.faces, self.runtime)
+        self.assertTrue(compressed.get('compressed'))
+        compressed_bytes = Path(compressed['path']).stat().st_size
+        self.assertLess(compressed_bytes, uncompressed_bytes)
+        self.assertEqual(compressed['sha256'], sha256_file(compressed['path']))
+
+        archived = archive_mesh_records(
+            [{'status': 'ok', 'mesh_artifact': compressed}],
+            self.output_dir,
+            self.runtime,
+        )[0]['mesh_artifact']
+        vertices, faces, camera, focal = mesh_module._load_verified_geometry(
+            self.output_dir, archived, {}, defaultdict(float),
+        )
+        self.assertEqual(vertices.dtype, np.float32)
+        np.testing.assert_array_equal(vertices, grid)
+        np.testing.assert_array_equal(faces, self.faces)
+        np.testing.assert_array_equal(camera, self.output['pred_cam_t'])
+        self.assertEqual(focal, float(self.output['focal_length']))
+
+        with patch.dict(os.environ, {mesh_module.MESH_COMPRESS_ENV: 'yes'}):
+            with self.assertRaisesRegex(ValueError, mesh_module.MESH_COMPRESS_ENV):
+                capture_mesh_output(self.output, self.faces, self.runtime)
 
 
 if __name__ == "__main__":
