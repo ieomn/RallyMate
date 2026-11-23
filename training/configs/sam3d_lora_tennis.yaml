@@ -1,0 +1,60 @@
+schema_version: 1
+name: sam3d-body-dinov3-tennis-lora-v1
+base_checkpoint: ../../runtime/sam3d/checkpoints/sam-3d-body-dinov3/model.ckpt
+model_config: ../../runtime/sam3d/checkpoints/sam-3d-body-dinov3/model_config.yaml
+mhr_model: ../../runtime/sam3d/checkpoints/sam-3d-body-dinov3/assets/mhr_model.pt
+data_manifest: ../generated/sam3d_tennis/manifest.jsonl
+output_dir: ../../runs/sam3d_lora
+
+lora:
+  rank: 16
+  alpha: 32.0
+  dropout: 0.05
+  target_module_patterns:
+    - "decoder.layers.*.self_attn.q_proj"
+    - "decoder.layers.*.self_attn.k_proj"
+    - "decoder.layers.*.self_attn.v_proj"
+    - "decoder.layers.*.self_attn.proj"
+    - "decoder.layers.*.cross_attn.q_proj"
+    - "decoder.layers.*.cross_attn.k_proj"
+    - "decoder.layers.*.cross_attn.v_proj"
+    - "decoder.layers.*.cross_attn.proj"
+    - "decoder.layers.*.ffn.*"
+    - "head_pose.proj.*"
+    - "head_camera.proj.*"
+    - "init_to_token_mhr"
+    - "prev_to_token_mhr"
+
+training:
+  epochs: 20
+  batch_size: 8
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  seed: 42
+  device: "auto"
+  sequence_length: 8
+  merge_after_training: true
+
+losses:
+  weight_3d_joints: 1.0
+  weight_temporal_smoothness: 0.15
+  weight_reprojection_2d: 0.25
+  weight_ground_contact: 0.10
+  temporal_huber_delta: 0.5
+  wrist_smoothness_weight: 0.25
+  reprojection_huber_beta: 5.0
+
+augmentation:
+  small_roi_prob: 0.35
+  min_roi_height: 64
+  max_roi_height: 80
+  motion_blur_prob: 0.40
+  motion_blur_kernel_range: [5, 13]
+  occlusion_prob: 0.30
+  occlusion_boxes: [1, 2]
+
+provenance:
+  license: internal-evaluation-only
+  require_base_checkpoint_sha256: true
+  allow_synthetic_smoke: true
