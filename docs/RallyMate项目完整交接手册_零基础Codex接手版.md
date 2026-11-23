@@ -2266,7 +2266,7 @@ HTTP 探测每次 8 秒超时，Supervisor 状态命令 10 秒，GPU 命令 8 �
 
 [check_remote.py](../deploy/autodl/check_remote.py)用单独的受限 SSH 私钥读取云端快照。它不部署、不重启、不改数据库；同时对约定目录做有限代码指纹比较，只输出数量和路径供 Codex 决定是否审查。
 
-它固定使用 `[connect.cqa1.seetacloud.com]:26691` 的受限入口，加载系统 `known_hosts`，拒绝未知/变更主机密钥，禁用 agent、其他密钥搜索和密码回退。远端公钥使用 forced command 只允许 `monitor.py --snapshot`，并禁止端口转发、PTY、交互 shell 等。管理员凭据与这把监控私钥是不同权限。
+它通过环境变量 `AUTODL_SSH_HOST` 与 `AUTODL_SSH_PORT` 指定受限 SSH 入口（已脱敏，不再硬编码具体主机与端口），加载系统 `known_hosts`，拒绝未知/变更主机密钥，禁用 agent、其他密钥搜索和密码回退。远端公钥使用 forced command 只允许 `monitor.py --snapshot`，并禁止端口转发、PTY、交互 shell 等。管理员凭据与这把监控私钥是不同权限。
 
 监控脚本输出 `notify`、`notify_reasons`、`health`、去重后的 `new_events` 和最后已知地址。第一次健康只建基线；同一故障不每 15 分钟重复刷屏；恢复、新故障、完成或地址变化再提示。离线时保留之前正常快照，但会明确标出它是历史数据。
 

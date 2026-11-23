@@ -30,9 +30,9 @@ cd RallyMate
 
 ### 五维训练报告与逐项解释
 
-`process_evaluation` v1.2 保留六类底层过程证据以兼容历史报告，通过 `display_dimension_ids` 指定五个展示维度；`transition` 只作为随挥与衔接的补充，不混合分数。PDF 原图有六轴，这里的五维是依据 Word 阶段目的提出的展示归组：298 张原卡分别归入 70/78/72/25/53 张，每卡只归一组，目录数量不代表已评分覆盖。源文件指纹、原文定位和冲突保存在 `source_basis` 中。
+`process_evaluation`（当前 `process-evaluation-v2.0.0`）保留六类底层过程证据以兼容历史报告，通过 `display_dimension_ids` 指定五个展示维度；`transition` 只作为随挥与衔接的补充，不混合分数。PDF 原图有六轴，这里的五维是依据 Word 阶段目的提出的展示归组：298 张原卡分别归入 70/78/72/25/53 张，每卡只归一组，目录数量不代表已评分覆盖。源文件指纹、原文定位和冲突保存在 `source_basis` 中。
 
-页面始终提供“相对参考总分”：`process_evaluation.relative_reference` 使用 `relative-reference-v1.0.0` 公开试行规则。独立目标角差、腕速加速趋势和随挥减速趋势先按去重动作聚合；每规则为 `50 + (动作均分 − 50) × n/(n+3)`，维内规则等权、五维等权。缺少可计分方向的维度保留 50 中性起点（不是测得 50，也不是合格线），全无测量时仍明确给出 50 中性起点。SAM 的有效模型测量使用同一公式，不以置信度缺失拒绝参考分；测量覆盖和模型来源单独展示。该公式尚未经人群或教练标定，不表示原文 A–E 正式技术等级；`process_evaluation.overall_score` 仍保留正式总评空值。原始子项、规则、样本数、未评分原因和回放时间保持可查，Markdown、HTML、JSON 导出保存参考分及版本；导入时由有效测量重算，不信任传入缓存分数。
+`process_evaluation.relative_reference` 当前使用 `relative-reference-v3.0.0`：仅独立目标方向一致性参与当前相对参考分，缺测维度保持为空，不再填 50 中性起点或按样本数 `n/(n+3)` 缩放；原腕速加减速趋势因与阶段切分同源存在选择偏倚已退出当前评分，历史 v1 曲线诊断（`legacy_diagnostic`）与 v2 中性先验参考（`legacy_relative_reference`）分别独立保留以便兼容与追溯。该公式尚未经人群或教练标定，不表示原文 A–E 正式技术等级；`process_evaluation.overall_score` 仍保留正式总评空值。原始子项、规则、样本数、未评分原因和回放时间保持可查，Markdown、HTML、JSON 导出保存参考分及版本；导入时由有效测量重算，不信任传入缓存分数。
 
 方向表示身体相对坐标下的画面运动方向；只有独立的目标方向证据才可用于移动方向评价，但这一缺口不抹去其他有效步伐测量。肩、髋、手腕的二维运动峰值先后不等于真实受力或三维动力链。触球控制需要姿态、球拍控制和经验证触球事件；落点命中率是独立结果统计，不能作为所有触球指标的统一门槛。衔接间隔也不直接等同衔接好坏。阶段识别与趋势测量使用相同的姿态数据，过程分仍可能受到阶段切分偏差影响，不能替代人工验证。
 
@@ -160,17 +160,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\watch_full_service
 
 [AutoDL 部署指南](deploy/autodl/README.md) 说明如何在 GPU 服务器上运行推理、网页与 Cloudflare 隧道。[通用部署指南](deploy/README.md) 提供 Docker、Nginx 同源网关、HTTPS 和 DNS 验证步骤。GPU 推理服务与网页分别运行；DNS 只负责域名解析。
 
-网站访问无需登录，持有入口链接即可上传视频、启动推理及查看对应任务结果。内部分析 API 仍校验 Bearer key，由服务端网关注入，浏览器无需持有密钥。每次部署或切换隧道地址后，都应验证真实上传、推理进度与回放链路。
+业务接口（`/v1/*`、`/api/records`、`/api/advice`）与标注工作台（`/annotate`）均受账号会话保护：通过同源 `HttpOnly` Cookie（写操作同时校验 Origin 与 CSRF token）或用户 `Bearer JWT` 鉴权，并按任务归属隔离不同用户的数据。`RALLYMATE_API_KEY` 仅用于 `/health/ready` 及运维维护接口，不由网页网关为匿名访客代注入。每次部署或切换隧道地址后，都应验证真实登录、上传、推理进度与回放链路。
 
 ## 验证
 
 ```powershell
-$env:PYTHONPATH="src"
-python -m unittest tests.test_service tests.test_service_boundaries tests.test_training_evaluation tests.test_technique_assessment tests.test_user_demo tests.test_annotated_video_codec
+$env:PYTHONPATH="src;tests"
+# 使用 unittest 直接运行服务测试时，需先提供测试用 JWT_SECRET（pytest 会通过 tests/conftest.py 自动注入）。
+$env:JWT_SECRET="test-only-session-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+python -m unittest tests.test_auth_api tests.test_ownership tests.test_service tests.test_service_boundaries tests.test_resumable_uploads tests.test_training_evaluation tests.test_technique_assessment tests.test_user_demo tests.test_annotated_video_codec
 cd scoring-demo-web
-npm test
 npm run typecheck
 npm run lint
+npm run test:unit   # 快速单元测试（不触发完整前端构建）
+npm test            # 全量验证（含清理构建与 SSR 渲染检查）
 ```
 
 2026-09-15 本机验收：通过网页同源接口上传 97 秒、2,911 帧的网球视频，约 137 秒完成推理；返回 77/100 参考分、13 项测量、轨迹和 H.264 视频。浏览器核验视频 1280×720、97.03 秒，解码无错误。该记录只证明本机链路，并非动作准确率或云端性能承诺。

@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "codex/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-tests:
+    name: Backend Service & Scoring Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system libraries for OpenCV and FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0
+
+      - name: Install CPU PyTorch and project service/dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          python -m pip install --no-build-isolation -e ".[service,dev]"
+
+      - name: Run core backend, auth, ownership, upload, deploy, and scoring tests
+        env:
+          PYTHONPATH: src:tests
+        run: |
+          python -m pytest \
+            tests/test_backend_hardening.py \
+            tests/test_deploy_gpu_lock.py \
+            tests/test_deploy_hardening.py \
+            tests/test_account_migrations.py \
+            tests/test_accounts.py \
+            tests/test_auth_api.py \
+            tests/test_auth_runtime.py \
+            tests/test_auth_boundaries.py \
+            tests/test_ownership.py \
+            tests/test_account_maintenance.py \
+            tests/test_observability.py \
+            tests/test_service.py \
+            tests/test_service_boundaries.py \
+            tests/test_resumable_uploads.py \
+            tests/test_job_cancellation.py \
+            tests/test_compose_deployment.py \
+            tests/test_prepare_env.py \
+            tests/test_training_evaluation.py \
+            tests/test_technique_assessment.py \
+            tests/test_user_demo.py \
+            tests/test_annotated_video_codec.py \
+            -q
+          python -m unittest discover -s deploy/autodl -p "test_*.py" -v
+
+  frontend-checks:
+    name: Frontend Typecheck, Lint & Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: scoring-demo-web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: scoring-demo-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit & SSR tests
+        run: npm test
