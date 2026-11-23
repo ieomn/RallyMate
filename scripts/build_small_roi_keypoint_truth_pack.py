@@ -29,7 +29,7 @@ def main() -> None:
         gap_audit_path=args.gap_audit,
         comparison_video_path=args.comparison_video,
         output_dir=args.output,
-        asset_directory=root / "src" / "rallymate_annotation" / "assets",
+        asset_directory=root / "research" / "rallymate_annotation" / "assets",
     )
     print(
         json.dumps(

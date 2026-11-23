@@ -134,7 +134,7 @@ class SmallRoiKeypointTruthTests(unittest.TestCase):
             gap_audit_path=self.gap_path,
             comparison_video_path=self.comparison_path,
             output_dir=self.pack,
-            asset_directory=ROOT / "src" / "rallymate_annotation" / "assets",
+            asset_directory=ROOT / "research" / "rallymate_annotation" / "assets",
         )
 
     def tearDown(self) -> None:

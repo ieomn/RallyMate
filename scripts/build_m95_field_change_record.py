@@ -44,7 +44,7 @@ ARTIFACT_PATHS = (
     "models/rtmpose/m95-shadow-candidates.json",
     "models/rtmpose/rtmpose-x_halpe26_384x288.pth",
     "runtime/rtmpose/.venv/Lib/site-packages/mmpose/.mim/configs/body_2d_keypoint/rtmpose/body8/rtmpose-x_8xb256-700e_body8-halpe26-384x288.py",
-    "src/rallymate_evaluation/pose_shadow_smoke.py",
+    "research/rallymate_evaluation/pose_shadow_smoke.py",
     "scripts/run_m95_rtmpose_x_shadow_smoke.py",
     "tests/test_pose_shadow_smoke.py",
     "reports/m95-rtmpose-x-shadow/smoke-report.json",

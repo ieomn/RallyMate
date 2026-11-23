@@ -44,7 +44,7 @@ from rallymate_features import compute_event_features as _real_compute_event_fea
 
 ROOT = Path(__file__).resolve().parents[1]
 M74 = ROOT / "reports" / "measurement-recovery-m74" / "event-bounded-gap-audit-v1" / "report.json"
-ASSETS = ROOT / "src" / "rallymate_annotation" / "assets"
+ASSETS = ROOT / "research" / "rallymate_annotation" / "assets"
 REAL_PACK = ROOT / "data" / "annotations" / "fs09-phase-truth-m77-v1"
 REAL_REPORT = ROOT / "reports" / "measurement-recovery-m77" / "fs09-phase-truth-empty.json"
 REVIEW_CLIPS = ROOT / "reports" / "measurement-recovery-m88" / "review-clips-anchor-v1" / "manifest.json"

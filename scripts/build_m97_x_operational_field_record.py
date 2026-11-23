@@ -253,7 +253,7 @@ def build_field_change_record(
 
     for path, role in (
         ("models/rtmpose/m97-x-operational-protocol.json", "immutable M97 protocol"),
-        ("src/rallymate_evaluation/pose_x_operational.py", "M97 validation and summary implementation"),
+        ("research/rallymate_evaluation/pose_x_operational.py", "M97 validation and summary implementation"),
         ("scripts/run_m97_x_pose_operational_extension.py", "M97 X GPU runner"),
         ("scripts/build_m97_x_pose_operational_summary.py", "M97 summary builder"),
         ("scripts/build_m97_x_operational_field_record.py", "M97 field record builder"),

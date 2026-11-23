@@ -179,7 +179,7 @@ def build_field_change_record(
 
     artifact_paths: list[tuple[str | Path, str]] = [
         ("models/rtmpose/m96-same-frame-diagnostic.json", "M96 immutable protocol registry"),
-        ("src/rallymate_evaluation/pose_same_frame_diagnostic.py", "diagnostic implementation"),
+        ("research/rallymate_evaluation/pose_same_frame_diagnostic.py", "diagnostic implementation"),
         ("scripts/run_m96_rtmpose_same_frame_diagnostic.py", "GPU runner"),
         ("scripts/build_m96_same_frame_field_record.py", "field record builder"),
         ("tests/test_pose_same_frame_diagnostic.py", "focused contract tests"),

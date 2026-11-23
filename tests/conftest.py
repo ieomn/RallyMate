@@ -2,8 +2,14 @@
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_RESEARCH_DIR = _REPO_ROOT / "research"
+if _RESEARCH_DIR.is_dir() and str(_RESEARCH_DIR) not in sys.path:
+    sys.path.insert(0, str(_RESEARCH_DIR))
 
 
 _IMPORT_ROOT = tempfile.TemporaryDirectory(prefix="rallymate-pytest-import-")

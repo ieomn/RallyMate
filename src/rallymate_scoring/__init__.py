@@ -3,17 +3,12 @@
 from .granularity import analyze_scoring_readiness, static_model_capability
 
 __all__ = ["analyze_scoring_readiness", "static_model_capability"]
-from rallymate_scoring.diagnostic_policy_review import (
-    review_pose_diagnostic_quality_gate,
-    validate_diagnostic_gate_acceptance_protocol,
-    validate_diagnostic_policy_review,
-)
-
-__all__ += [
+_DIAGNOSTIC_POLICY_EXPORTS = (
     "review_pose_diagnostic_quality_gate",
     "validate_diagnostic_gate_acceptance_protocol",
     "validate_diagnostic_policy_review",
-]
+)
+__all__ += list(_DIAGNOSTIC_POLICY_EXPORTS)
 from rallymate_scoring.calculation_readiness import (
     build_indicator_calculation_readiness,
     validate_indicator_calculation_readiness,
@@ -69,3 +64,12 @@ __all__ += [
     "VerifiedIndicatorFeatureSourceMetadata",
     "verify_indicator_feature_source_metadata",
 ]
+
+
+def __getattr__(name: str):
+    """Lazily expose offline diagnostic policy review helpers without pulling research packages into runtime imports."""
+    if name in _DIAGNOSTIC_POLICY_EXPORTS:
+        from rallymate_scoring import diagnostic_policy_review
+
+        return getattr(diagnostic_policy_review, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

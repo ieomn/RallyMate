@@ -32,7 +32,7 @@ M74_REPORT = (
     / "event-bounded-gap-audit-v1"
     / "report.json"
 )
-ASSETS = ROOT / "src" / "rallymate_annotation" / "assets"
+ASSETS = ROOT / "research" / "rallymate_annotation" / "assets"
 REAL_PACK = ROOT / "data" / "annotations" / "event-bounded-pose-gap-truth-m75-v1"
 REAL_REPORT = (
     ROOT

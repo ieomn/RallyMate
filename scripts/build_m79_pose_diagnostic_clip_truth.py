@@ -30,7 +30,7 @@ from rallymate_evaluation.pose_diagnostic_clip_truth import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ASSETS = ROOT / "src" / "rallymate_evaluation" / "assets"
+ASSETS = ROOT / "research" / "rallymate_evaluation" / "assets"
 
 
 def _render_clips(

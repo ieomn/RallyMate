@@ -17,7 +17,7 @@ def main() -> None:
     parser.add_argument(
         "--assets",
         type=Path,
-        default=Path("src/rallymate_annotation/assets"),
+        default=Path("research/rallymate_annotation/assets"),
     )
     args = parser.parse_args()
     manifest = build_fs09_phase_truth_pack(

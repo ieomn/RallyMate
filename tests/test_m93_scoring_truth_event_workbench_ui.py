@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ASSETS = ROOT / "src" / "rallymate_annotation" / "assets"
+ASSETS = ROOT / "research" / "rallymate_annotation" / "assets"
 CORE = ASSETS / "scoring-truth-event-collection-core.js"
 WORKBENCH = ASSETS / "scoring-truth-event-collection-workbench.js"
 STYLESHEET = ASSETS / "scoring-truth-event-collection-workbench.css"

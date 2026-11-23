@@ -161,14 +161,14 @@ BASE_ARTIFACT_SPECS: tuple[tuple[str, str], ...] = (
     ("src/rallymate_service/assets/user-demo.js", "Demo v1.1 batch and recovery UI"),
     ("src/rallymate_service/assets/user-demo.css", "Demo v1.1 styles"),
     (
-        "src/rallymate_evaluation/pose_same_frame_diagnostic.py",
+        "research/rallymate_evaluation/pose_same_frame_diagnostic.py",
         "M96 same-frame diagnostic implementation",
     ),
     (
-        "src/rallymate_evaluation/pose_x_operational.py",
+        "research/rallymate_evaluation/pose_x_operational.py",
         "M97 operational residual implementation",
     ),
-    ("src/rallymate_evaluation/m96_pose_pilot.py", "M96 evaluation-only pilot"),
+    ("research/rallymate_evaluation/m96_pose_pilot.py", "M96 evaluation-only pilot"),
     (
         "src/rallymate_training/pose_finetune_readiness.py",
         "fine-tune readiness fail-closed implementation",

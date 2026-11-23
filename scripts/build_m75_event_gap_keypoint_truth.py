@@ -17,7 +17,7 @@ def main() -> None:
     manifest = build_event_gap_truth_pack(
         m74_report_path=args.m74_report,
         output_dir=args.output,
-        asset_directory=root / "src" / "rallymate_annotation" / "assets",
+        asset_directory=root / "research" / "rallymate_annotation" / "assets",
     )
     print(json.dumps({"status": manifest["status"], "output": str(args.output.resolve()), **manifest["scope"]}, ensure_ascii=False))
 

@@ -9,9 +9,9 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-JS = ROOT / "src" / "rallymate_annotation" / "assets" / "fs09-phase-truth-workbench.js"
-CSS = ROOT / "src" / "rallymate_annotation" / "assets" / "fs09-phase-truth-workbench.css"
-MODULE = ROOT / "src" / "rallymate_evaluation" / "fs09_phase_truth.py"
+JS = ROOT / "research" / "rallymate_annotation" / "assets" / "fs09-phase-truth-workbench.js"
+CSS = ROOT / "research" / "rallymate_annotation" / "assets" / "fs09-phase-truth-workbench.css"
+MODULE = ROOT / "research" / "rallymate_evaluation" / "fs09_phase_truth.py"
 
 class FS09PhaseWorkbenchUIContractTests(unittest.TestCase):
     @classmethod

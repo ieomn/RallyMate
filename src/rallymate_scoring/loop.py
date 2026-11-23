@@ -13,7 +13,6 @@ from rallymate_events import (
     PHASE_CANDIDATE_VERSION,
     detect_pose_events,
 )
-from rallymate_evaluation.feature_errors import evaluate_feature_errors
 from rallymate_features import (
     FEATURE_LIBRARY_VERSION,
     EventInterval,
@@ -641,12 +640,28 @@ def run_minimum_scoring_loop(
     # Truth interfaces are executable, but absent truth must never appear as a
     # perfect evaluation. A separate evaluator can replace this artifact after
     # manual event/keypoint annotations are imported.
-    feature_names_by_event = {
-        code: sorted(names) for code, names in required_by_event.items()
+    truth_evaluation = {
+        "schema_version": "1.0.0",
+        "status": "ground_truth_required",
+        "event_metrics": {
+            "event_f1": None,
+            "mean_segment_iou": None,
+            "boundary_mae_ms": None,
+            "boundary_p95_ms": None,
+            "phase_boundary_mae_ms": None,
+            "phase_boundary_p95_ms": None,
+            "phase_boundary_valid_rate": None,
+            "phase_boundary_by_name": {},
+        },
+        "feature_metrics": {},
+        "error_budget": {
+            "pose_error": None,
+            "event_boundary_error": None,
+            "smoothing_error": None,
+            "smoothing_error_reason": "corrected_keypoints_and_ground_truth_events_required",
+            "missing_value_impact": None,
+        },
     }
-    truth_evaluation = evaluate_feature_errors(
-        sequence, None, events, None, feature_names_by_event
-    )
     (output_dir / "event-feature-errors.json").write_text(
         json.dumps(truth_evaluation, ensure_ascii=False, indent=2), encoding="utf-8"
     )

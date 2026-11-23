@@ -35,14 +35,14 @@ DEFAULT_PILOT = "data/annotations/m96-halpe26-development-pilot-v1"
 DEFAULT_OUTPUT = "reports/m96-pose-pilot"
 OUTPUT_FILES = ("summary.md", "pilot-contract.json", "field-change-record.json")
 IMPLEMENTATION_FILES = (
-    ("implementation", "src/rallymate_evaluation/m96_pose_pilot.py"),
+    ("implementation", "research/rallymate_evaluation/m96_pose_pilot.py"),
     ("script", "scripts/build_m96_pose_pilot.py"),
     ("script", "scripts/build_m96_pose_pilot_adjudication.py"),
     ("script", "scripts/validate_m96_pose_pilot_submission.py"),
     ("script", "scripts/serve_m96_pose_pilot.py"),
     ("script", "scripts/build_m96_pose_pilot_audit.py"),
-    ("ui", "src/rallymate_annotation/assets/m96-pose-pilot-workbench.js"),
-    ("ui", "src/rallymate_annotation/assets/m96-pose-pilot-workbench.css"),
+    ("ui", "research/rallymate_annotation/assets/m96-pose-pilot-workbench.js"),
+    ("ui", "research/rallymate_annotation/assets/m96-pose-pilot-workbench.css"),
     ("test", "tests/test_m96_pose_pilot.py"),
 )
 

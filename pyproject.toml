@@ -58,7 +58,7 @@ rallymate-import-database = "rallymate_service.import_database:main"
 rallymate-account-maintenance = "rallymate_service.account_maintenance:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "research"]
 
 [tool.setuptools.package-data]
 rallymate_scoring = ["data/*.json"]

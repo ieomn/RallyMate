@@ -324,7 +324,7 @@ def _repo_root() -> Path:
 
 def _asset(name: str) -> bytes:
     return _snapshot(
-        _repo_root() / "src" / "rallymate_annotation" / "assets" / name,
+        _repo_root() / "research" / "rallymate_annotation" / "assets" / name,
         name=f"approved asset {name}",
     )
 
