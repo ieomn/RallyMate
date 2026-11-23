@@ -2,6 +2,7 @@ import { adviceEvidenceFromPayload, coachingForEvidence, mayExplainEvidence, una
 import { resolveMimoConfig } from "../../lib/mimo-config";
 import { validatedTennisAssessment, type TennisAssessment } from "../../lib/tennis-assessment";
 import { internalAnalysisOrigin } from "../../../worker/gateway";
+import { timingSafeEqual } from "node:crypto";
 
 type Advice = {
   summary: string;
@@ -30,6 +31,7 @@ const GOALS = new Set(["稳定性", "节奏感", "移动更快", "找到击球�
 const LIMIT = 8_000;
 const WINDOW_MS = 10 * 60_000;
 const MAX_PER_WINDOW = 5;
+const MAX_TRACKED_USERS = 2000;
 const bucket = new Map<string, { start: number; count: number }>();
 let inFlight = 0;
 const MAX_IN_FLIGHT = 2;
@@ -78,7 +80,14 @@ function requireEvidenceAccess(response: Response) {
   if ([401, 403, 404].includes(response.status)) throw new AdviceAccessError(response.status,
     response.status === 401 ? "authentication_required" : response.status === 403 ? "account_forbidden" : "job_not_found");
 }
-async function authorizeAdvice(request: Request, runtime: RuntimeEnv, headers: Record<string, string>): Promise<void> {
+function csrfMatches(supplied: string | undefined, expected: unknown): boolean {
+  if (typeof expected !== "string" || !expected || !supplied || supplied.length > 128) return false;
+  const left = new TextEncoder().encode(supplied), right = new TextEncoder().encode(expected);
+  // Length is not secret (fixed-size tokens); content is compared in constant time.
+  return left.byteLength === right.byteLength && timingSafeEqual(left, right);
+}
+/** Returns the verified account id; every later limit is keyed to it, never to a spoofable address. */
+async function authorizeAdvice(request: Request, runtime: RuntimeEnv, headers: Record<string, string>): Promise<string> {
   const cookieSession = /(?:^|;\s*)rallymate_session=[^;\s]+/.test(headers.cookie ?? "");
   if (!cookieSession && !headers.authorization) throw new AdviceAccessError(401, "authentication_required");
   if (cookieSession && !request.headers.get("origin")) throw new AdviceAccessError(403, "origin_required");
@@ -96,10 +105,10 @@ async function authorizeAdvice(request: Request, runtime: RuntimeEnv, headers: R
     if (typeof user.id !== "string" || !user.id) throw new AdviceAccessError(503, "account_service_unavailable");
     if (user.status !== "APPROVED") throw new AdviceAccessError(403, "account_not_approved");
     if (user.must_change_password !== false) throw new AdviceAccessError(403, "password_change_required");
-    if (cookieSession && (typeof session.csrf_token !== "string" || !headers["x-csrf-token"]
-        || headers["x-csrf-token"].length > 128 || headers["x-csrf-token"] !== session.csrf_token)) {
+    if (cookieSession && !csrfMatches(headers["x-csrf-token"], session.csrf_token)) {
       throw new AdviceAccessError(403, "csrf_invalid");
     }
+    return user.id;
   } catch (error) {
     if (error instanceof AdviceAccessError) throw error;
     throw new AdviceAccessError(503, "account_service_unavailable");
@@ -382,19 +391,23 @@ export async function POST(request: Request) {
   if (!originAllowed(request, runtime.MIMO_ALLOWED_ORIGIN, runtime.RALLYMATE_LOCAL_TUNNEL === "1")) return json({ error: "origin_not_allowed" }, 403);
   if (request.headers.get("sec-fetch-site") === "cross-site") return json({ error: "cross_site_request_denied" }, 403);
   const credentials = userHeaders(request);
-  try { await authorizeAdvice(request, runtime, credentials); }
+  let userId: string;
+  try { userId = await authorizeAdvice(request, runtime, credentials); }
   catch (error) {
     if (error instanceof AdviceAccessError) return json({ error: error.code }, error.status);
     throw error;
   }
-  const rawIp = request.headers.get("cf-connecting-ip") || "anonymous";
+  // Quota belongs to the verified account. Exhausted callers are refused before
+  // their body is read; only a valid request consumes one of the window's uses.
+  const quotaKey = `user:${userId}`;
   const now = Date.now();
   for (const [id, entry] of bucket) if (now - entry.start >= WINDOW_MS) bucket.delete(id);
-  if (bucket.size >= 2000 && !bucket.has(rawIp)) return json({ error: "service_busy" }, 429);
-  const prior = bucket.get(rawIp);
-  const current = !prior || now - prior.start >= WINDOW_MS ? { start: now, count: 0 } : prior;
-  if (current.count >= MAX_PER_WINDOW) return json({ error: "rate_limit_exceeded" }, 429, { "retry-after": "600" });
-  current.count += 1; bucket.set(rawIp, current);
+  if (bucket.size >= MAX_TRACKED_USERS && !bucket.has(quotaKey)) return json({ error: "service_busy" }, 429, { "retry-after": "60" });
+  const prior = bucket.get(quotaKey);
+  if (prior && prior.count >= MAX_PER_WINDOW) {
+    const retryAfter = Math.max(1, Math.ceil((prior.start + WINDOW_MS - now) / 1000));
+    return json({ error: "rate_limit_exceeded" }, 429, { "retry-after": String(retryAfter) });
+  }
   if (inFlight >= MAX_IN_FLIGHT) return json({ error: "service_busy" }, 429, { "retry-after": "10" });
   inFlight += 1;
   try {
@@ -403,6 +416,10 @@ export async function POST(request: Request) {
     let input: Input | null = null;
     try { input = validInput(JSON.parse(body)); } catch { input = null; }
     if (!input) return json({ error: "invalid_practice_input" }, 400);
+    const counted = Date.now(), existing = bucket.get(quotaKey);
+    const current = existing && counted - existing.start < WINDOW_MS ? existing : { start: counted, count: 0 };
+    if (current.count >= MAX_PER_WINDOW) return json({ error: "rate_limit_exceeded" }, 429, { "retry-after": "600" });
+    current.count += 1; bucket.set(quotaKey, current);
     if (SAFETY_TRIGGER.test(input.observations)) return json({ advice: SAFETY_FALLBACK, source: "safety_fallback", providerStatus: "not_requested_safety" });
     const context = input.jobId ? await loadCompleteEvidence(input.jobId, input.technique, runtime, credentials) : unavailableAdviceEvidence(input.technique, "no_video", "no_video");
     const metadata = { evidenceStatus: context.status, evidence: context, contextStatus: context.status === "no_video" ? "none" : context.status === "analysis_unavailable" ? "unavailable" : "verified", providerConfigured: Boolean(runtime.MIMO_API_KEY) };

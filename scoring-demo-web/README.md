@@ -28,7 +28,6 @@
 
 ```dotenv
 RALLYMATE_API_ORIGIN=http://127.0.0.1:8000
-RALLYMATE_API_KEY=
 MIMO_ADVICE_ENABLED=0
 MIMO_API_KEY=
 MIMO_PROVIDER=openai
@@ -36,7 +35,7 @@ MIMO_MODEL=mimo-v2.6-pro
 MIMO_BASE_URL=https://api.xiaomimimo.com/v1
 ```
 
-填入分析服务配置后重启开发服务。Vite 上传代理与 Worker 建议服务共用 `.dev.vars` 中的分析地址和密钥；进程环境变量可覆盖代理设置。不要把这些值放到任何公开变量中。
+填入分析服务配置后重启开发服务。Vite 上传代理与 Worker 建议服务共用 `.dev.vars` 中的分析地址；进程环境变量可覆盖代理设置。不要把这些值放到任何公开变量中。
 
 MiMo 默认不调用；识别依据与补充拍摄建议由服务端生成。真实调用必须显式设置 `MIMO_ADVICE_ENABLED=1` 并使用官方按量 API 密钥。Anthropic 兼容模式使用 `MIMO_PROVIDER=anthropic`、`MIMO_BASE_URL=https://api.xiaomimimo.com/anthropic`。接口地址仅接受这两个精确的官方配置，不接受自定义反代地址、Token Plan 密钥或套餐端点。
 
@@ -51,23 +50,26 @@ MiMo 默认不调用；识别依据与补充拍摄建议由服务端生成。真
 - 无视频、分析读取失败、该类动作证据不足时直接返回明确说明与补证步骤，不调用 MiMo，不猜动作错误原因。
 - 只有二维运动时明确标注规则推断、触球未确认及缺失阶段；部分片段不能拼成完整动作。模型关闭或异常与识别不足分别展示。
 - 有可用证据时只发送压缩后的该类事实和问题，不向 MiMo 发送视频、帧或模型文件。
-- 每实例并发上限 2、每来源 10 分钟 5 次；请求 8 KB、模型响应 64 KB、超时 25 秒。
+- 每实例并发上限 2、每个已登录账户 10 分钟 5 次有效请求（按服务端核验的账户 ID 计数，不信任客户端地址；格式错误的请求不占额度）；请求 8 KB、模型响应 64 KB、超时 25 秒。
 - 模型只选择已有事实与批准建议的编号；展示文字由服务端生成，拒绝自由诊断、编造事实或新增训练方法。
 - 输入注入、未知字段、异常输出与身体不适均有独立处理。进程限流不能代替云端 WAF 或多实例持久配额。
 
 ## 云端 Worker
 
-在 Worker 的服务端 Secrets 中配置 `RALLYMATE_API_ORIGIN`（可达的 HTTPS 分析服务）；`RALLYMATE_API_KEY` 只用于运维。业务代理传递当前用户的 Cookie / JWT、Origin 和 CSRF，MiMo 保持默认关闭。模型密钥仍只保存在服务端；独立部署 Worker 不把 localhost 配成云端分析地址。
+在 Worker 的服务端 Secrets 中配置 `RALLYMATE_API_ORIGIN`（可达的 HTTPS 分析服务）。网页层不需要也不读取 `RALLYMATE_API_KEY`（它只供运维直接访问 API）。业务代理传递当前用户的 Cookie / JWT、Origin 和 CSRF，MiMo 保持默认关闭。模型密钥仍只保存在服务端；独立部署 Worker 不把 localhost 配成云端分析地址。
 
-Worker 仅代理明确列出的任务、结果、媒体与健康路径；隔离浏览器 Cookie/Authorization，支持媒体 Range、超时和明确错误。持有网站链接即可上传、推理及查看对应任务结果。自行托管的 Nginx 方案见 `../deploy/README.md`。
+Worker 仅代理明确列出的账户、任务、结果、媒体与健康路径；原样转发当前用户自己的 Cookie / Authorization、Origin 和 CSRF，从不替用户注入共享密钥，也不提供免登录访问。上传、推理和查看结果都要求已批准账户，且只能读取本人的任务；支持媒体 Range、超时和明确错误。`/health/live` 公开；`/health/ready` 须由运维在请求中自带 `Authorization: Bearer <RALLYMATE_API_KEY>`，网页层不持有该密钥。自行托管的 Nginx 方案见 `../deploy/README.md`。
 
 ## 验证
 
 ```bash
-npm test
+npm test            # 先清空 dist/ 再构建，然后运行全部测试（含 SSR 页面）
+npm run test:unit   # 不构建，跳过依赖 dist/ 的 SSR 页面测试，适合快速迭代
 npm run typecheck
 npm run lint
 ```
+
+`npm run build` 保持原地构建（不清空 `dist/`），以便部署时正在运行的服务和已打开页面仍能读取上一版带哈希的资源；只有 `npm test` / `npm run build:clean` 会先清空 `dist/`。
 
 测试覆盖长任务恢复、断网重试、错任务结果、回放 Range、自助注册、账户状态、会话撤销、跨账户隔离、代理路径与来源限制、提示注入、响应约束、限流与 SSR 页面。浏览器扩展自动选文件需要启用“允许访问文件网址”；这不影响用户自己通过网页文件选择器上传。
 

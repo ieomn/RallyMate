@@ -455,3 +455,24 @@ test("gateway rejects cross-site chunk writes and merge requests before reaching
     }
   }
 });
+
+test("per-account upload and queue limits surface immediately instead of a misleading network retry", async t => {
+  browserStorage(t);
+  const quota = (code, message) => Response.json({ detail: { code, message } }, { status: 429, headers: { "retry-after": "30" } });
+  const isQuota = code => error => error instanceof RallyMateApiError && error.status === 429 && error.payload.detail.code === code;
+  const createLimited = protocol({ beforeCreate: () => quota("upload_user_limit", "同时进行的上传最多 4 个，请先完成或取消已有上传。") });
+  await assert.rejects(uploadResumable(video(Buffer.alloc(4096)), {}, urlFor, createLimited.fetch, parse), isQuota("upload_user_limit"));
+  assert.equal(createLimited.requests.filter(request => request.path === "/v1/uploads").length, 1);
+  const queueLimited = protocol({ beforeComplete: () => { throw new RallyMateApiError("queue", 429, { detail: { code: "analysis_user_queue_full" } }); } });
+  const wrapped = { fetch: async (url, init) => {
+    try { return await queueLimited.fetch(url, init); }
+    catch (error) { if (error instanceof RallyMateApiError) return Response.json(error.payload, { status: error.status }); throw error; }
+  } };
+  await assert.rejects(uploadResumable(video(Buffer.alloc(4096)), {}, urlFor, wrapped.fetch, parse), isQuota("analysis_user_queue_full"));
+  assert.equal(queueLimited.requests.filter(request => request.path.endsWith("/complete")).length, 1);
+  // A shared (not per-account) busy signal keeps the existing bounded retry.
+  let busy = 2;
+  const transient = protocol({ beforeCreate: () => busy-- > 0 ? quota("analysis_queue_full", "分析队列已满，请稍后重试。") : undefined });
+  await uploadResumable(video(Buffer.alloc(4096)), {}, urlFor, transient.fetch, parse);
+  assert.equal(transient.requests.filter(request => request.path === "/v1/uploads").length, 3);
+});

@@ -80,19 +80,17 @@ test("Vite permits same-origin user mutations without altering credentials and r
   });
 });
 
-test("Vite reserves shared key injection for health and preserves separate response cookies", async () => {
+test("Vite never lends the maintenance key, gates readiness on caller credentials and preserves response cookies", async () => {
   await withProxy(async proxy => {
     const listeners = {};
     proxy.configure({ on(name, callback) { listeners[name] = callback; } });
-    const headers = new Headers({ authorization: "Bearer user-jwt", cookie: "rallymate_session=signed", origin: "http://localhost:3017", "x-csrf-token": "csrf" });
-    const outgoing = { setHeader(name, value) { headers.set(name, value); } };
-    listeners.proxyReq(outgoing, { url: "/v1/jobs" });
-    assert.equal(headers.get("authorization"), "Bearer user-jwt");
-    assert.equal(headers.get("cookie"), "rallymate_session=signed");
-    assert.equal(headers.get("origin"), "http://localhost:3017");
-    assert.equal(headers.get("x-csrf-token"), "csrf");
-    listeners.proxyReq(outgoing, { url: "/health/ready" });
-    assert.equal(headers.get("authorization"), "Bearer maintenance-key");
+    // No request rewriting at all: every route, health included, keeps only the caller's credentials.
+    assert.equal(listeners.proxyReq, undefined);
+    const anonymousReady = response();
+    assert.equal(await proxy.bypass({ method: "GET", url: "/health/ready", headers: { host: "localhost:3017" } }, anonymousReady), "/health/ready");
+    assert.equal(anonymousReady.status, 401);
+    assert.equal(await proxy.bypass({ method: "GET", url: "/health/ready", headers: { host: "localhost:3017", authorization: "Bearer operator-key" } }, response()), undefined);
+    assert.equal(await proxy.bypass({ method: "GET", url: "/health/live", headers: { host: "localhost:3017" } }, response()), undefined);
     const cookies = ["rallymate_session=signed; HttpOnly; Path=/", "theme=dark; Expires=Wed, 21 Oct 2030 07:28:00 GMT; Path=/"];
     const upstream = { headers: { "set-cookie": cookies, "cache-control": "public" } };
     listeners.proxyRes(upstream);

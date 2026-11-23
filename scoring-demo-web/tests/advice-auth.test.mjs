@@ -199,3 +199,49 @@ test("authenticated oversized requests stop before evidence and redirects do not
   t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 302, headers: { location: "https://attacker.example" } }));
   assert.equal((await app.POST(request())).status, 503);
 });
+
+test("advice quota is keyed to the verified account, not a spoofable client address", async t => {
+  runtime(t);
+  let identity = "user-a";
+  t.mock.method(globalThis, "fetch", async url => {
+    assert.equal(new URL(url).pathname, "/api/auth/me");
+    return Response.json({ user: { ...user, id: identity }, csrf_token: "session-csrf" });
+  });
+  const app = await route();
+  const bearer = ip => ({ authorization: "Bearer current-user-jwt", origin: "http://localhost", "cf-connecting-ip": ip });
+  // Rotating the forwarded address cannot mint a fresh quota for the same account.
+  for (let i = 0; i < 5; i++) assert.equal((await app.POST(request(input, bearer(`203.0.113.${i}`)))).status, 200);
+  const limited = await app.POST(request(input, bearer("198.51.100.77")));
+  assert.equal(limited.status, 429);
+  assert.deepEqual(await limited.json(), { error: "rate_limit_exceeded" });
+  assert.ok(Number(limited.headers.get("retry-after")) > 0);
+  // Another account sharing one address (NAT, missing header) is not locked out.
+  identity = "user-b";
+  for (let i = 0; i < 5; i++) assert.equal((await app.POST(request(input, bearer("203.0.113.0")))).status, 200);
+  assert.equal((await app.POST(request(input, { authorization: "Bearer current-user-jwt", origin: "http://localhost" }))).status, 429);
+});
+
+test("invalid input does not consume quota and an exhausted account is refused before body reads", async t => {
+  runtime(t);
+  t.mock.method(globalThis, "fetch", async url => { assert.equal(new URL(url).pathname, "/api/auth/me"); return session(); });
+  const app = await route();
+  for (let i = 0; i < 7; i++) assert.equal((await app.POST(request({ ...input, technique: "invalid" }))).status, 400);
+  for (let i = 0; i < 5; i++) assert.equal((await app.POST(request())).status, 200);
+  let read = false;
+  const response = await app.POST(new Request("http://localhost/api/advice", { method: "POST", duplex: "half",
+    body: new ReadableStream({ pull() { read = true; } }, { highWaterMark: 0 }),
+    headers: { "content-type": "application/json", ...cookieHeaders } }));
+  assert.equal(response.status, 429);
+  assert.equal(read, false);
+});
+
+test("CSRF comparison rejects equal-prefix, longer and oversized tokens", async t => {
+  runtime(t);
+  t.mock.method(globalThis, "fetch", async () => session());
+  const app = await route();
+  for (const token of ["session-csr", "session-csrf-extra", "x".repeat(129), "SESSION-CSRF"]) {
+    const response = await app.POST(request(input, { ...cookieHeaders, "x-csrf-token": token }));
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json(), { error: "csrf_invalid" });
+  }
+});

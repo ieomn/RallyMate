@@ -1,4 +1,4 @@
-export type GatewayEnv = Record<string, unknown> & { RALLYMATE_API_ORIGIN?: string; RALLYMATE_INTERNAL_API_ORIGIN?: string; RALLYMATE_API_KEY?: string; MIMO_API_KEY?: string; RALLYMATE_LOCAL_TUNNEL?: string; RALLYMATE_POSE_REQUEST_DIAGNOSTICS?: string };
+export type GatewayEnv = Record<string, unknown> & { RALLYMATE_API_ORIGIN?: string; RALLYMATE_INTERNAL_API_ORIGIN?: string; MIMO_API_KEY?: string; RALLYMATE_LOCAL_TUNNEL?: string; RALLYMATE_POSE_REQUEST_DIAGNOSTICS?: string };
 export const isLoopback = (host: string) => ["localhost", "127.0.0.1", "[::1]"].includes(host);
 const reply = (error: string, status: number) => Response.json({ error }, { status, headers: { "cache-control": "private, no-store" } });
 const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024;
@@ -19,7 +19,7 @@ export function isAnalysisRoute(pathname: string, method: string): boolean {
   if (method === "POST" && new RegExp(`^/(?:v1/jobs/${id}/(?:cancel|technical-review)|v1/uploads/${id}/complete|api/admin/users/${id}/reset-password)$`).test(pathname)) return true;
   if (method === "PUT" && new RegExp(`^/v1/uploads/${id}/chunks/[0-9]{1,6}$`).test(pathname)) return true;
   if (method === "PATCH" && new RegExp(`^/api/admin/users/${id}/status$`).test(pathname)) return true;
-  return method === "DELETE" && new RegExp(`^/(?:v1/jobs|api/admin/users)/${id}$`).test(pathname);
+  return method === "DELETE" && new RegExp(`^/(?:v1/jobs|v1/uploads|api/admin/users)/${id}$`).test(pathname);
 }
 
 export function analysisRequestRejection(method: string, url: URL, headers: Headers, env: GatewayEnv = {}): Response | undefined {
@@ -30,7 +30,11 @@ export function analysisRequestRejection(method: string, url: URL, headers: Head
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)
       && (headers.get("sec-fetch-site") === "cross-site" || (sessionCookie && !origin)
           || (origin && origin !== url.origin && origin !== tunnelOrigin))) return reply("origin_not_allowed", 403);
-  const publicRoute = url.pathname.startsWith("/health/") || ["/api/auth/register", "/api/auth/login"].includes(url.pathname);
+  // Liveness is the only anonymous probe. Readiness exposes deployment
+  // diagnostics, so the caller must present the operator key itself; the
+  // gateway never lends its own server credential to a public request.
+  const publicRoute = ["/health/live", "/api/auth/register", "/api/auth/login"].includes(url.pathname);
+  if (url.pathname === "/health/ready" && !headers.get("authorization")) return reply("authentication_required", 401);
   if (!publicRoute && !sessionCookie && !headers.get("authorization")) return reply("authentication_required", 401);
 }
 
@@ -274,7 +278,6 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
     if (reportHead && ["range", "if-range"].includes(name)) continue;
     const value = request.headers.get(name); if (value) headers.set(name, value);
   }
-  if (url.pathname.startsWith("/health/") && env.RALLYMATE_API_KEY) headers.set("authorization", `Bearer ${env.RALLYMATE_API_KEY}`);
   const compactPoseRead = request.method === "GET" && url.pathname.endsWith("/pose-preview") && url.searchParams.get("pose_transport") === "compact-v1";
   if (demoResultRead || compactPoseRead) headers.set("accept-encoding", "identity");
   if (demoResultRead || compactPoseRead) {
@@ -292,6 +295,8 @@ export async function proxyAnalysis(request: Request, env: GatewayEnv): Promise<
   }
   // The chunk deadline covers both receiving and forwarding, and finishes before
   // the browser's 90-second attempt deadline so its existing retry can continue.
+  // Non-chunk mutations retain an independent 100-second deadline so an in-flight
+  // upload creation/completion or cancel is not aborted mid-commit on tab close.
   const signal = chunkWrite
     ? AbortSignal.any([request.signal, AbortSignal.timeout(80000)])
     // Keep caller cancellation active while fetch streams the response body too.

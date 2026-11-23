@@ -23,6 +23,16 @@ function pause(ms: number, signal?: AbortSignal) {
   });
 }
 
+/** Per-account limits clear only when the user finishes or cancels other work; a
+ * seconds-long retry cannot help and would hide the server's explanation. */
+const ACCOUNT_QUOTA_CODES = new Set(["upload_user_limit", "analysis_user_queue_full"]);
+function accountQuotaExceeded(error: RallyMateApiError): boolean {
+  const payload = error.payload;
+  const detail = payload && typeof payload === "object" && "detail" in payload ? (payload as { detail?: unknown }).detail : null;
+  return error.status === 429 && !!detail && typeof detail === "object" && "code" in detail
+    && ACCOUNT_QUOTA_CODES.has(String((detail as { code?: unknown }).code));
+}
+
 /** Persisted server-sized byte chunks, two in flight. Progress counts confirmed bytes. */
 export async function uploadResumable(file: File | Blob, options: SubmitVideoOptions, urlFor: (path: string) => string, fetchImpl: typeof fetch, parse: <T>(r: Response) => Promise<T>): Promise<JobSubmission> {
   const identity = captureAccountIdentity();
@@ -87,7 +97,7 @@ export async function uploadResumable(file: File | Blob, options: SubmitVideoOpt
         } catch (error) {
           options.signal?.throwIfAborted();
           if (!isAccountIdentityCurrent(identity)) throw new DOMException("账号已切换", "AbortError");
-          const retryable = !(error instanceof RallyMateApiError) || [408, 425, 429, 500, 502, 503, 504].includes(error.status ?? 0);
+          const retryable = !(error instanceof RallyMateApiError) || ([408, 425, 429, 500, 502, 503, 504].includes(error.status ?? 0) && !accountQuotaExceeded(error));
           if (!retryable) throw error;
           retrying.set(token, attempt + 1);
           progress();

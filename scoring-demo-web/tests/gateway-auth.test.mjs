@@ -95,14 +95,39 @@ test("login forwards separate Set-Cookie values and logout forwards their remova
   assert.deepEqual(logout.headers.getSetCookie(), cookies);
 });
 
-test("only health retains server key authentication and maintenance is never browser proxied", async t => {
+test("health never borrows the server key: live is public, ready needs the caller's own bearer", async t => {
+  const calls = [];
   t.mock.method(globalThis, "fetch", async (url, init) => {
-    assert.equal(new URL(url).pathname, "/health/ready");
-    assert.equal(init.headers.get("authorization"), "Bearer server-maintenance-secret");
-    return Response.json({ status: "ready" });
+    calls.push([new URL(url).pathname, init.headers.get("authorization")]);
+    return Response.json({ status: "ok" });
   });
-  assert.equal((await proxyAnalysis(new Request("http://localhost/health/ready"), env)).status, 200);
+  const anonymousReady = await proxyAnalysis(new Request("http://localhost/health/ready"), env);
+  assert.equal(anonymousReady.status, 401);
+  assert.deepEqual(await anonymousReady.json(), { error: "authentication_required" });
+  // A browser session alone is not an operator credential and is not upgraded to one.
+  assert.equal((await proxyAnalysis(new Request("http://localhost/health/ready", { headers: { cookie: credentials.cookie } }), env)).status, 401);
+  assert.equal((await proxyAnalysis(new Request("http://localhost/health/live"), env)).status, 200);
+  assert.equal((await proxyAnalysis(new Request("http://localhost/health/ready", { headers: { authorization: "Bearer operator-supplied" } }), env)).status, 200);
+  assert.deepEqual(calls, [["/health/live", null], ["/health/ready", "Bearer operator-supplied"]]);
+  assert.ok(calls.every(([, authorization]) => authorization !== "Bearer server-maintenance-secret"));
+  assert.equal(isAnalysisRoute("/health/other", "GET"), false);
   assert.equal((await proxyAnalysis(new Request("http://localhost/internal/maintenance/stop-executor", { method: "POST", headers: credentials }), env)).status, 404);
+});
+
+test("an incomplete upload can be cancelled by its owner through the gateway", async t => {
+  const calls = [];
+  assert.equal(isAnalysisRoute(`/v1/uploads/${identifier}`, "DELETE"), true);
+  for (const path of [`/v1/uploads/${identifier}/chunks/0`, `/v1/uploads/${identifier}/complete`, "/v1/uploads", "/v1/uploads/short"]) {
+    assert.equal(isAnalysisRoute(path, "DELETE"), false, path);
+  }
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    calls.push([new URL(url).pathname, init.method, init.headers.get("cookie"), init.headers.get("x-csrf-token")]);
+    return Response.json({ upload_id: identifier, cancelled: true });
+  });
+  assert.equal((await proxyAnalysis(new Request(`http://localhost/v1/uploads/${identifier}`, { method: "DELETE", headers: credentials }), env)).status, 200);
+  assert.equal((await proxyAnalysis(new Request(`http://localhost/v1/uploads/${identifier}`, { method: "DELETE", headers: { ...credentials, origin: "https://attacker.example" } }), env)).status, 403);
+  assert.equal((await proxyAnalysis(new Request(`http://localhost/v1/uploads/${identifier}`, { method: "DELETE", headers: { origin: "http://localhost" } }), env)).status, 401);
+  assert.deepEqual(calls, [[`/v1/uploads/${identifier}`, "DELETE", credentials.cookie, "user-csrf"]]);
 });
 
 test("Worker dispatches account paths to gateway and leaves advice with the app router", async () => {
