@@ -11,8 +11,11 @@ from collections import Counter
 from collections.abc import Mapping
 from copy import deepcopy
 from functools import lru_cache
+import hashlib
 import json
 import math
+import os
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -71,7 +74,49 @@ def _source_frame_projection(row):
     # Preserve source PTS, SHA, frame identity and calibration validation inputs.
     # Parse every original JSON row; never stop after the selected time window.
     return {key: row[key] for key in ("frame", "camera_motion", "detections", "court") if key in row}
-RUBRIC_VERSION = "tennis-action-rubric-v1.3.0"
+RUBRIC_VERSION = "tennis-action-rubric-v1.4.0"
+RUBRIC_POLICY_ENV_VAR = "RALLYMATE_TENNIS_RUBRIC_POLICY"
+RUBRIC_POLICY_SCHEMA_VERSION = "tennis-rubric-policy-v1"
+DEFAULT_NUMERIC_RULE_ORIGIN = "versioned_engineering_biomechanical_rules_v1_4_0"
+DEFAULT_REVISION_SCOPE = (
+    "v1.4.0_biomechanical_knot_fixes_for_arm_space_knee_load_support_control_and_coil_with_optional_external_policy"
+)
+MAX_RUBRIC_POLICY_BYTES = 2 * 1024 * 1024
+_SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+_INTERNAL_DOC_RE = re.compile(r"(?:\bVIS-[A-Z]{2}\b|\bP\d{4}\b|internal_sources)")
+_DEFAULT_CONFIGURABLE_RULES = {
+    "knee_load": {
+        "curve": "time_mean_increasing_saturating_ramp",
+        "knots": [8.0, 38.0],
+        "measurement": "full_preparation_per_leg_time_mean_then_best_observed_leg",
+        "semantics": "preparation_participation_not_unique_optimal_knee_depth",
+    },
+    "support_control": {
+        "curve": "time_mean_trapezoid",
+        "knots": [0.7, 1.4, 2.6, 3.6],
+        "geometry": "three_dimensional_ankle_distance_divided_by_hip_width",
+        "semantics": "bounded_ready_stance_width_not_balance_or_ground_reaction",
+        "families": ["baseline", "return"],
+    },
+    "coil": {
+        "curve": "time_mean_trapezoid",
+        "knots": [8.0, 30.0, 68.0, 88.0],
+        "phase": "last_half_preparation",
+    },
+    "arm_space": {
+        "curve": "time_mean_trapezoid",
+        "knots": [0.35, 0.68, 0.90, 0.99],
+        "phase": "acceleration_onset_to_peak_plus_80ms",
+    },
+    "recovery_control": {
+        "curve": "equal_mean_angular_motion_continuity_and_knee_load",
+        "excess_velocity_variation_knots": [0.5, 4.0],
+        "angle_noise_floor_deg": 3.0,
+        "normal_velocity_envelope": "two_times_max_absolute_velocity",
+        "angle_semantics": "signed_relative_axis_unwrapped_modulo_180_degrees",
+        "knee_knots": [8.0, 38.0],
+    },
+}
 DIMENSIONS = (("movement", "移动支撑"), ("preparation", "准备引拍"),
               ("coordination", "动作协调"), ("striking", "击球姿态"),
               ("follow_through", "随挥恢复"))
@@ -96,6 +141,168 @@ DRILLS = {
     "striking": ("保持头颈与手臂空间", "挥拍时保持头颈平稳，让手臂在身体侧前方自然展开。", "做 2 组每组 10 次半速挥拍：保持身体平衡，手臂舒展挥出，完成随挥后再停。", "录 10 次同类挥拍，对比头颈控制和手臂伸展空间，不强行锁直肘部。"),
     "follow_through": ("完成随挥再恢复准备", "挥出后让手臂继续运行，再用小步回到下一次准备。", "做 2 组每组 10 次连续空挥：挥出、自然随挥、调整脚步、重新屈膝，不在挥出后突然刹住。", "录 10 次连续挥拍，检查随挥延展和恢复控制是否提高，并保持下一次准备。"),
 }
+
+
+def _real_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _canonical_json(value):
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def _canonical_sha256(value):
+    return hashlib.sha256(_canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def _reject_nonfinite_json(token):
+    raise ValueError(f"non_finite_rubric_policy_constant:{token}")
+
+
+def _assert_no_internal_doc_tokens(value):
+    if isinstance(value, str):
+        if not _SHA256_RE.fullmatch(value) and _INTERNAL_DOC_RE.search(value):
+            raise ValueError("internal_reference_document_identifier_forbidden_in_policy")
+    elif isinstance(value, Mapping):
+        for k, v in value.items():
+            _assert_no_internal_doc_tokens(k)
+            _assert_no_internal_doc_tokens(v)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            _assert_no_internal_doc_tokens(item)
+
+
+def _validate_knots(raw_knots, *, count, low_bound, high_bound, min_edge_span, name, inclusive_plateau=True):
+    if not isinstance(raw_knots, (list, tuple)) or len(raw_knots) != count:
+        raise ValueError(f"rubric_policy_{name}_invalid_knot_count")
+    if not all(_real_number(v) for v in raw_knots):
+        raise ValueError(f"rubric_policy_{name}_nonfinite_knots")
+    knots = [float(v) for v in raw_knots]
+    if count == 2:
+        a, b = knots
+        if not (low_bound <= a < b <= high_bound) or (b - a) < min_edge_span:
+            raise ValueError(f"rubric_policy_{name}_knots_out_of_bounds")
+        return knots
+    a, b, c, d = knots
+    plateau_ok = b <= c if inclusive_plateau else b < c
+    if not (low_bound <= a < b and plateau_ok and c < d <= high_bound):
+        raise ValueError(f"rubric_policy_{name}_knots_out_of_bounds")
+    if (b - a) < min_edge_span or (d - c) < min_edge_span:
+        raise ValueError(f"rubric_policy_{name}_edge_span_too_narrow")
+    return knots
+
+
+def _validate_rule_override(metric_id, spec):
+    if not isinstance(spec, Mapping):
+        raise ValueError(f"rubric_policy_rule_{metric_id}_must_be_mapping")
+    if metric_id == "knee_load":
+        if not set(spec).issubset({"curve", "knots", "measurement", "semantics"}):
+            raise ValueError("rubric_policy_knee_load_unknown_fields")
+        if "curve" in spec and spec["curve"] != "time_mean_increasing_saturating_ramp":
+            raise ValueError("rubric_policy_knee_load_invalid_curve")
+        knots = _validate_knots(spec.get("knots"), count=2, low_bound=0.0, high_bound=140.0, min_edge_span=1.0, name="knee_load")
+        return {**_DEFAULT_CONFIGURABLE_RULES["knee_load"], **{k: v for k, v in spec.items() if k in {"measurement", "semantics"} and isinstance(v, str) and v.strip()}, "knots": knots}
+    if metric_id == "support_control":
+        if not set(spec).issubset({"curve", "knots", "geometry", "semantics", "families"}):
+            raise ValueError("rubric_policy_support_control_unknown_fields")
+        if "curve" in spec and spec["curve"] != "time_mean_trapezoid":
+            raise ValueError("rubric_policy_support_control_invalid_curve")
+        knots = _validate_knots(spec.get("knots"), count=4, low_bound=0.1, high_bound=6.0, min_edge_span=0.05, name="support_control")
+        return {**_DEFAULT_CONFIGURABLE_RULES["support_control"], **{k: v for k, v in spec.items() if k in {"geometry", "semantics"} and isinstance(v, str) and v.strip()}, "knots": knots}
+    if metric_id == "coil":
+        if not set(spec).issubset({"curve", "knots", "phase"}):
+            raise ValueError("rubric_policy_coil_unknown_fields")
+        if "curve" in spec and spec["curve"] != "time_mean_trapezoid":
+            raise ValueError("rubric_policy_coil_invalid_curve")
+        knots = _validate_knots(spec.get("knots"), count=4, low_bound=0.0, high_bound=90.0, min_edge_span=1.0, name="coil")
+        return {**_DEFAULT_CONFIGURABLE_RULES["coil"], **({"phase": spec["phase"]} if isinstance(spec.get("phase"), str) and spec["phase"].strip() else {}), "knots": knots}
+    if metric_id == "arm_space":
+        if not set(spec).issubset({"curve", "knots", "phase"}):
+            raise ValueError("rubric_policy_arm_space_unknown_fields")
+        if "curve" in spec and spec["curve"] != "time_mean_trapezoid":
+            raise ValueError("rubric_policy_arm_space_invalid_curve")
+        knots = _validate_knots(spec.get("knots"), count=4, low_bound=1e-6, high_bound=1.0, min_edge_span=0.01, name="arm_space")
+        if knots[0] <= 0.0 or knots[2] >= 1.0:
+            raise ValueError("rubric_policy_arm_space_plateau_must_stay_below_locked_extension")
+        return {**_DEFAULT_CONFIGURABLE_RULES["arm_space"], **({"phase": spec["phase"]} if isinstance(spec.get("phase"), str) and spec["phase"].strip() else {}), "knots": knots}
+    if metric_id == "recovery_control":
+        if not set(spec).issubset({"knee_knots"}):
+            raise ValueError("rubric_policy_recovery_control_unknown_fields")
+        knots = _validate_knots(spec.get("knee_knots"), count=2, low_bound=0.0, high_bound=140.0, min_edge_span=1.0, name="recovery_control_knee")
+        return {**_DEFAULT_CONFIGURABLE_RULES["recovery_control"], "knee_knots": knots}
+    raise ValueError(f"unsupported_rubric_policy_metric:{metric_id}")
+
+
+def _load_rubric_policy_with_raw(rubric_policy=None):
+    """Validate and resolve an optional external rubric policy (mapping, path, or env var)."""
+    if rubric_policy is None:
+        env_path = os.environ.get(RUBRIC_POLICY_ENV_VAR, "").strip()
+        if not env_path:
+            return None, ""
+        rubric_policy = Path(env_path)
+    if isinstance(rubric_policy, (str, Path)):
+        path = Path(rubric_policy)
+        if not path.is_file():
+            raise ValueError("rubric_policy_file_missing")
+        if path.stat().st_size > MAX_RUBRIC_POLICY_BYTES:
+            raise ValueError("rubric_policy_file_too_large")
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_nonfinite_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"rubric_policy_invalid_json:{exc}") from exc
+    elif isinstance(rubric_policy, Mapping):
+        raw = deepcopy(dict(rubric_policy))
+    else:
+        raise ValueError("rubric_policy_invalid_type")
+    if not isinstance(raw, Mapping):
+        raise ValueError("rubric_policy_must_be_object")
+    if raw.get("schema_version") != RUBRIC_POLICY_SCHEMA_VERSION:
+        raise ValueError("rubric_policy_unsupported_schema_version")
+    if "rubric_version" in raw and raw["rubric_version"] != RUBRIC_VERSION:
+        raise ValueError("rubric_policy_rubric_version_mismatch")
+    _assert_no_internal_doc_tokens(raw)
+    body = {k: v for k, v in raw.items() if k != "policy_sha256"}
+    computed_sha = _canonical_sha256(body)
+    declared_sha = raw.get("policy_sha256")
+    if declared_sha is not None:
+        if not isinstance(declared_sha, str) or not _SHA256_RE.fullmatch(declared_sha):
+            raise ValueError("rubric_policy_invalid_sha256")
+        if declared_sha.lower() != computed_sha:
+            raise ValueError("rubric_policy_sha256_mismatch")
+    coach_calibrated = raw.get("coach_calibrated", False)
+    if type(coach_calibrated) is not bool:
+        raise ValueError("rubric_policy_invalid_coach_calibrated")
+    calibration_origin = raw.get("calibration_origin")
+    if calibration_origin is not None and (not isinstance(calibration_origin, str) or not calibration_origin.strip() or len(calibration_origin) > 160):
+        raise ValueError("rubric_policy_invalid_calibration_origin")
+    numeric_rule_origin = raw.get("numeric_rule_origin")
+    if numeric_rule_origin is not None:
+        if not isinstance(numeric_rule_origin, str) or not numeric_rule_origin.strip() or len(numeric_rule_origin) > 160:
+            raise ValueError("rubric_policy_invalid_numeric_rule_origin")
+    else:
+        numeric_rule_origin = calibration_origin.strip() if isinstance(calibration_origin, str) else "external_rubric_policy"
+    raw_rules = raw.get("rules")
+    if not isinstance(raw_rules, Mapping) or not raw_rules:
+        raise ValueError("rubric_policy_rules_required")
+    merged_rules = deepcopy(_DEFAULT_CONFIGURABLE_RULES)
+    for metric_id, spec in raw_rules.items():
+        merged_rules[metric_id] = _validate_rule_override(metric_id, spec)
+    resolved = {
+        "schema_version": RUBRIC_POLICY_SCHEMA_VERSION,
+        "rubric_version": RUBRIC_VERSION,
+        "coach_calibrated": coach_calibrated,
+        "numeric_rule_origin": numeric_rule_origin.strip(),
+        **({"calibration_origin": calibration_origin.strip()} if isinstance(calibration_origin, str) else {}),
+        "policy_sha256": declared_sha.lower() if isinstance(declared_sha, str) else computed_sha,
+        "rules": merged_rules,
+    }
+    return resolved, _canonical_json(dict(raw))
+
+
+def load_rubric_policy(rubric_policy=None):
+    """Validate and resolve an optional external rubric policy (mapping, path, or env var)."""
+    resolved, _ = _load_rubric_policy_with_raw(rubric_policy)
+    return resolved
 
 
 def _map(value):
@@ -185,7 +392,7 @@ def _geometry(record):
     for side in ("left", "right"):
         a, b, c = (p[f"{side}_{joint}"] for joint in ("shoulder", "elbow", "wrist"))
         length = np.linalg.norm(a - b) + np.linalg.norm(b - c) if b is not None and c is not None else 0
-        out[f"{side}_reach"] = round(float(np.linalg.norm(a - c) / length), 9) if length > 1e-8 else None
+        out[f"{side}_reach"] = round(min(1.0, float(np.linalg.norm(a - c) / length)), 9) if length > 1e-8 else None
     return out
 
 
@@ -906,7 +1113,13 @@ def _follow_active_fraction(steps, times, peak):
     return float(np.sum(observed_ms[steps[peak:] / (step_ms / 1000) > .36]) / np.sum(observed_ms))
 
 
-def _score_window(segment, window, *, source_observations=None, video_sha256=None):
+def _score_window(segment, window, *, source_observations=None, video_sha256=None, rubric_rules=None):
+    rules = rubric_rules or _DEFAULT_CONFIGURABLE_RULES
+    knee_knots = rules["knee_load"]["knots"]
+    support_knots = rules["support_control"]["knots"]
+    coil_knots = rules["coil"]["knots"]
+    arm_knots = rules["arm_space"]["knots"]
+    recovery_knee_knots = rules["recovery_control"]["knee_knots"]
     a, b, anchor, side, wrist, meta = window
     rows = segment[a:b]
     observations, context = window_source_motion(rows, source_observations or {}, video_sha256)
@@ -927,7 +1140,7 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
         if _finite(float(value)) and _finite(float(score)):
             values[key] = (float(value), float(np.clip(score, 0, 100)))
     knee_preparation = {leg: _valid([row[f"{leg}_knee_flexion"] for row in prep]) for leg in ("left", "right")}
-    loads = [(_time_mean(v, t[:prep_end]), _time_mean([_ramp(x, 0, 15) for x in v], t[:prep_end]))
+    loads = [(_time_mean(v, t[:prep_end]), _time_mean([_ramp(x, *knee_knots) for x in v], t[:prep_end]))
              for v in knee_preparation.values() if v is not None]
     loads = [item for item in loads if all(v is not None for v in item)]
     if loads:
@@ -936,7 +1149,7 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
     stance = _valid([row["stance_width_hips"] for row in prep])
     if stance is not None and meta["family"] != "serve":
         v = _time_mean(stance, t[:prep_end])
-        score = _time_mean([_ramp(x, .5, 1.) for x in stance], t[:prep_end])
+        score = _time_mean([_band(x, *support_knots) for x in stance], t[:prep_end])
         if v is not None and score is not None:
             put("support_control", v, score)
     extension_continuity = _leg_extension_continuity(rows, t, prep_end, peak)
@@ -950,7 +1163,7 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
     settled = int(np.searchsorted(t[:prep_end], (t[0] + t[prep_end - 1]) / 2))
     settled = min(settled, prep_end - 2)
     put("coil", _time_mean(prep_sep[settled:], t[settled:prep_end]),
-        _time_mean([_band(x, 0, 15, 45, 80) for x in prep_sep[settled:]], t[settled:prep_end]))
+        _time_mean([_band(x, *coil_knots) for x in prep_sep[settled:]], t[settled:prep_end]))
     prep_wrist = wrist[:prep_end]
     distance = np.r_[0, np.cumsum(np.linalg.norm(np.diff(prep_wrist, axis=0), axis=1))]
     delta = float(np.ptp(prep_sep))
@@ -1003,7 +1216,7 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
     reach = _valid([r[f"{side}_reach"] for r in striking_rows])
     if reach is not None:
         v = _time_mean(reach, striking_times)
-        score = _time_mean([_band(x, .3, .65, 1, 1.15) for x in reach], striking_times)
+        score = _time_mean([_band(x, *arm_knots) for x in reach], striking_times)
         if v is not None and score is not None:
             put("arm_space", v, score)
     steps = np.linalg.norm(np.diff(wrist, axis=0), axis=1)
@@ -1023,7 +1236,7 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
         if continuity is not None and post_knee is not None:
             late_load = float(np.nanmedian(post_knee[-n:]))
             ratio, smoothness = continuity
-            put("recovery_control", ratio, .5 * smoothness + .5 * _ramp(late_load, 0, 15))
+            put("recovery_control", ratio, .5 * smoothness + .5 * _ramp(late_load, *recovery_knee_knots))
     if meta["family"] == "serve":
         values = apply_serve_profile(rows, prep_end=prep_end, peak=peak, side=side, wrist=wrist, values=values,
                                      recovery_continuity=continuity)
@@ -1094,7 +1307,8 @@ def _score_window(segment, window, *, source_observations=None, video_sha256=Non
                if meta["family"] == "return" else {})}
 
 
-def _empty(job_id, sha):
+def _empty(job_id, sha, policy=None):
+    rules_source = policy["rules"] if policy else _DEFAULT_CONFIGURABLE_RULES
     return {"version": VERSION, "status": "unavailable", "source_run_id": job_id, "source_video_sha256": sha,
             "source_timestamp_semantics": "original_decoder_pts", "overall_score": None,
             "dimensions": [{"id": key, "label": label, "score": None, "observation_count": 0,
@@ -1110,14 +1324,17 @@ def _empty(job_id, sha):
                                  "full_source_technique_covered": False, "profiles": []},
             "reason_zh": "尚无足够连续的主球员挥拍姿态。", "quality_reason_counts": {},
             "candidate_accounting": {"proposed_count": 0, "accepted_count": 0, "rejected_count": 0, "rejection_counts": {}},
-            "rubric": {"version": RUBRIC_VERSION, "semantics": "engineering_action_quality", "coach_calibrated": False,
+            "rubric": {"version": RUBRIC_VERSION, "semantics": "engineering_action_quality",
+                       "coach_calibrated": policy["coach_calibrated"] if policy else False,
                        "identity_labels_used": False, "confidence_used_in_score": False,
                        "aggregation": "mean_episode_dimension_scores_then_equal_dimension_mean",
                        "metric_weight_semantics": "sum_inverse_available_metrics_per_episode_divided_by_dimension_episode_count",
                        "coordinate_reference": "per_frame_hip_torso_body_basis", "ball_contact_assumed": False,
                        "score_range": [0, 100], "minimum_metric_coverage": .7,
-                       "numeric_rule_origin": "versioned_engineering_initial_rules",
-                       "revision_scope": "phase_specific_observability_and_same_subject_candidate_binding_no_weight_or_numeric_cutpoint_change",
+                       "numeric_rule_origin": policy["numeric_rule_origin"] if policy else DEFAULT_NUMERIC_RULE_ORIGIN,
+                       "revision_scope": DEFAULT_REVISION_SCOPE,
+                       "policy_sha256": policy["policy_sha256"] if policy else None,
+                       **({"calibration_origin": policy["calibration_origin"]} if policy and "calibration_origin" in policy else {}),
                        "static_metric_integration": "trapezoidal_actual_pts_mean_of_per_observation_rules_no_missing_interpolation",
                        "integrated_metric_ids": ["knee_load", "support_control", "coil", "arm_space"],
                        "missing_metrics_renormalized": True,
@@ -1129,25 +1346,22 @@ def _empty(job_id, sha):
                        "motion_patterns": PATTERN_RUBRIC,
                        "metric_replacement": {"pattern_preparation_coupling": "preparation_sync", "pattern_projected_sequence": "release_sequence", "pattern_phase_continuity": "follow_path"},
                        "rules": {
-                           "knee_load": {"curve": "time_mean_increasing_saturating_ramp", "knots": [0, 15], "measurement": "full_preparation_per_leg_time_mean_then_best_observed_leg", "semantics": "preparation_participation_not_unique_optimal_knee_depth"},
-                           "support_control": {"curve": "time_mean_increasing_saturating_ramp", "knots": [.5, 1.], "geometry": "three_dimensional_ankle_distance_divided_by_hip_width", "semantics": "ready_stance_extent_not_balance_or_ground_reaction", "families": ["baseline", "return"]},
-                           "coil": {"curve": "time_mean_trapezoid", "knots": [0, 15, 45, 80], "phase": "last_half_preparation"},
+                           "knee_load": deepcopy(rules_source["knee_load"]),
+                           "support_control": deepcopy(rules_source["support_control"]),
+                           "coil": deepcopy(rules_source["coil"]),
                            "leg_extension_continuity": {"curve": "100_times_net_extension_divided_by_max_total_angle_variation_and_3deg", "phase": "preparation_load_apex_within_200ms_before_acceleration_to_wrist_peak", "denominator_floor_deg": 3., "temporal_median_radius_ms": 60., "same_leg_required": True, "true_force_assumed": False},
                            "preparation_sync": {"curve": "decreasing_ramp", "knots": [.15, .5], "minimum_separation_range_deg": 3, "minimum_wrist_path_torso": .12},
                            "release_sequence": {"curve": "decreasing_ramp", "knots": [0, .5], "minimum_joint_range_deg": 3, "simultaneous_tolerance_frames": 1},
                            "coil_release": {"curve": "increasing_saturating_ramp", "knots": [.05, .55], "minimum_preparation_separation_deg": 5},
                            "head_control": {"curve": "decreasing_ramp", "knots": [.05, .2], "phase": "acceleration_onset_to_peak_plus_80ms"},
-                           "arm_space": {"curve": "time_mean_trapezoid", "knots": [.3, .65, 1, 1.15], "phase": "acceleration_onset_to_peak_plus_80ms"},
+                           "arm_space": deepcopy(rules_source["arm_space"]),
                            "follow_path": {"curve": "equal_mean_path_and_sustained_motion", "path_knots": [.05, .35], "active_fraction_knots": [.35, .8], "active_speed_floor_torso_per_second": .36, "active_fraction_weighting": "elapsed_decoder_pts"},
-                           "recovery_control": {"curve": "equal_mean_angular_motion_continuity_and_knee_load", "excess_velocity_variation_knots": [.5, 4.],
-                                                "angle_noise_floor_deg": 3., "normal_velocity_envelope": "two_times_max_absolute_velocity",
-                                                "angle_semantics": "signed_relative_axis_unwrapped_modulo_180_degrees", "knee_knots": [0, 15]}}}}
+                           "recovery_control": deepcopy(rules_source["recovery_control"])}}}
 
 
-def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=None, motion_episodes=(), source_frames=(), action_context=None,
-                              source_duration_ms=None, point_events=(), shot_events=(), comparison=None):
-    """Pure CPU entry point, useful for regression and independent recomputation."""
-    result = _empty(source_run_id, video_sha256.lower())
+def _analyze_tennis_assessment_resolved(timeline, records, *, video_sha256, source_run_id=None, motion_episodes=(), source_frames=(), action_context=None,
+                                        source_duration_ms=None, point_events=(), shot_events=(), comparison=None, resolved_policy=None):
+    result = _empty(source_run_id, video_sha256.lower(), policy=resolved_policy)
     result["dimensions"] = []
     segments, reasons = _segments(timeline, records, video_sha256.lower())
     sha = video_sha256.lower()
@@ -1156,7 +1370,8 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
     observations = source_motion_by_frame(records, source_frames, sha) if motion_episodes else {}
     rejected = Counter()
     outcomes = []
-    all_episodes = [_score_window(segment, window, source_observations=observations, video_sha256=sha)
+    rubric_rules = resolved_policy["rules"] if resolved_policy else None
+    all_episodes = [_score_window(segment, window, source_observations=observations, video_sha256=sha, rubric_rules=rubric_rules)
                     for segment, window in _bound_windows(segments, motion_episodes, sha, rejected, outcomes, source_observations=observations)]
     scope = select_report_subject(segments)
     episodes = [e for e in all_episodes if e["subject_id"] == scope["selected_subject_id"]]
@@ -1252,8 +1467,28 @@ def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=
     return result
 
 
+def analyze_tennis_assessment(timeline, records, *, video_sha256, source_run_id=None, motion_episodes=(), source_frames=(), action_context=None,
+                              source_duration_ms=None, point_events=(), shot_events=(), comparison=None, rubric_policy=None):
+    """Pure CPU entry point, useful for regression and independent recomputation."""
+    resolved_policy = load_rubric_policy(rubric_policy)
+    return _analyze_tennis_assessment_resolved(
+        timeline,
+        records,
+        video_sha256=video_sha256,
+        source_run_id=source_run_id,
+        motion_episodes=motion_episodes,
+        source_frames=source_frames,
+        action_context=action_context,
+        source_duration_ms=source_duration_ms,
+        point_events=point_events,
+        shot_events=shot_events,
+        comparison=comparison,
+        resolved_policy=resolved_policy,
+    )
+
+
 @lru_cache(maxsize=4)
-def _cached(directory, signatures, sha, job_id, episodes_json, source_duration_ms=None):
+def _cached(directory, signatures, sha, job_id, episodes_json, source_duration_ms=None, policy_json=""):
     directory = Path(directory)
     retained = _AssessmentRows()
     timeline = [retained.retain(row) for row in _read_rows(directory / "primary-player.jsonl")]
@@ -1285,9 +1520,10 @@ def _cached(directory, signatures, sha, job_id, episodes_json, source_duration_m
             _read_rows(directory / "frames.jsonl", max_file_bytes=MAX_SOURCE_STREAM_BYTES), primary_timeline=timeline)})
     context_path = directory / "action-context.json"
     context = json.loads(context_path.read_text(encoding="utf-8")) if context_path.is_file() else None
+    policy_kwargs = {"rubric_policy": json.loads(policy_json)} if policy_json else {}
     result = analyze_tennis_assessment(timeline, records, video_sha256=sha, source_run_id=job_id,
                                       motion_episodes=candidate_episodes, source_frames=frames, action_context=context,
-                                      source_duration_ms=source_duration_ms)
+                                      source_duration_ms=source_duration_ms, **policy_kwargs)
     if signatures != _input_signatures(directory):
         raise ValueError("assessment_inputs_changed_during_read")
     return result
@@ -1298,11 +1534,12 @@ def _input_signatures(directory):
                  for name in ("primary-player.jsonl", "sam3d_frames.jsonl", "frames.jsonl", "action-context.json", "tennis-subject-selection.json"))
 
 
-def build_tennis_assessment(summary: Mapping, run_dir: Path | str | None = None, *, job_id: str | None = None) -> dict:
+def build_tennis_assessment(summary: Mapping, run_dir: Path | str | None = None, *, job_id: str | None = None, rubric_policy=None) -> dict:
     """Recompute from native artifacts only; no report score or user label is read."""
+    resolved_policy, raw_policy_json = _load_rubric_policy_with_raw(rubric_policy)
     job_id = job_id or summary.get("job_id")
     sha = _map(_map(summary.get("minimum_scoring_loop")).get("provenance")).get("video_sha256")
-    result = _empty(job_id, sha.lower() if isinstance(sha, str) else None)
+    result = _empty(job_id, sha.lower() if isinstance(sha, str) else None, policy=resolved_policy)
     try:
         if not isinstance(sha, str) or len(sha) != 64 or any(c not in "0123456789abcdefABCDEF" for c in sha):
             return result
@@ -1314,7 +1551,7 @@ def build_tennis_assessment(summary: Mapping, run_dir: Path | str | None = None,
             return result
         signatures = _input_signatures(directory)
         duration = _map(_map(summary.get("input")).get("video")).get("duration_ms")
-        return deepcopy(_cached(str(directory), signatures, sha.lower(), job_id, json.dumps(_summary_episodes(summary), sort_keys=True), duration))
+        return deepcopy(_cached(str(directory), signatures, sha.lower(), job_id, json.dumps(_summary_episodes(summary), sort_keys=True), duration, raw_policy_json))
     except (OSError, ValueError, TypeError, KeyError, OverflowError):
         result["reason_zh"] = "动作姿态记录缺失或来源校验未通过。"
         return result

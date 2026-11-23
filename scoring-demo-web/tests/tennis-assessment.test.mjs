@@ -136,6 +136,22 @@ test("v1.4 retains both the numeric-boundary patch and historical pattern versio
   assert.equal(parse(future), null);
 });
 
+test("v1.4 accepts rubric v1.4.0 and v1.3.0 while rejecting incompatible rubric versions", () => {
+  for (const rubricVersion of ["tennis-action-rubric-v1.3.0", "tennis-action-rubric-v1.4.0"]) {
+    const raw = roleFixture(true);
+    raw.rubric.version = rubricVersion;
+    const parsed = parse(raw);
+    assert.ok(parsed);
+    assert.equal(parsed.rubric.version, rubricVersion);
+    assert.deepEqual(parse(JSON.parse(JSON.stringify(parsed))), parsed);
+  }
+  for (const invalidVersion of ["tennis-action-rubric-v1.1.0", "tennis-action-rubric-v1.2.0", "tennis-action-rubric-v1.5.0"]) {
+    const raw = roleFixture();
+    raw.rubric.version = invalidVersion;
+    assert.equal(parse(raw), null);
+  }
+});
+
 test("new action scores bind to the current job, video hash and original source time", () => {
   const fixture = tennisFixture(), original = structuredClone(fixture);
   assert.equal(parse(fixture).overall_score, 70); assert.deepEqual(fixture, original);

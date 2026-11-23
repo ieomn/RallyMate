@@ -56,7 +56,7 @@ export type TennisAssessment = {
   episodes?: TennisEpisode[];
   subject_scope?: TennisSubjectScope; episode_validity?: TennisEpisodeValidity[]; pattern_coverage?: TennisPatternCoverage;
   strengths: { title: string; observation: string }[]; improvements: TennisImprovement[];
-  rubric: { version: "tennis-action-rubric-v1.1.0" | "tennis-action-rubric-v1.2.0" | "tennis-action-rubric-v1.3.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
+  rubric: { version: "tennis-action-rubric-v1.1.0" | "tennis-action-rubric-v1.2.0" | "tennis-action-rubric-v1.3.0" | "tennis-action-rubric-v1.4.0"; semantics: "engineering_action_quality"; coach_calibrated: false;
     identity_labels_used: false; confidence_used_in_score: false; aggregation: "mean_episode_dimension_scores_then_equal_dimension_mean"; specialist_motion?: Record<string, unknown> };
 };
 export type TennisAssessmentContext = { jobId: string; videoSha256: string; durationMs?: number | null };
@@ -329,12 +329,17 @@ export function validatedTennisAssessment(value: unknown, context: TennisAssessm
   const report = record(value), rubric = record(report?.rubric);
   const current = report?.version === "tennis-action-assessment-v1.3.0" || report?.version === "tennis-action-assessment-v1.4.0";
   const scoped = current || report?.version === "tennis-action-assessment-v1.2.0";
+  const validRubricVersion = rubric && (
+    report?.version === "tennis-action-assessment-v1.4.0"
+      ? rubric.version === "tennis-action-rubric-v1.3.0" || rubric.version === "tennis-action-rubric-v1.4.0"
+      : rubric.version === (current ? "tennis-action-rubric-v1.3.0" : scoped ? "tennis-action-rubric-v1.2.0" : "tennis-action-rubric-v1.1.0")
+  );
   if (!report || !context.jobId || !hash(context.videoSha256) || !["tennis-action-assessment-v1.1.0", "tennis-action-assessment-v1.2.0", "tennis-action-assessment-v1.3.0", "tennis-action-assessment-v1.4.0"].includes(String(report.version))
     || report.source_run_id !== context.jobId || !hash(report.source_video_sha256) || report.source_video_sha256.toLowerCase() !== context.videoSha256.toLowerCase()
     || report.source_timestamp_semantics !== "original_decoder_pts" || !["scored", "partial", "unavailable"].includes(String(report.status))
     || !score(report.overall_score) || !Array.isArray(report.dimensions) || report.dimensions.length !== 5
     || report.reason_zh !== undefined && !text(report.reason_zh)
-    || !rubric || rubric.version !== (current ? "tennis-action-rubric-v1.3.0" : scoped ? "tennis-action-rubric-v1.2.0" : "tennis-action-rubric-v1.1.0") || rubric.semantics !== "engineering_action_quality"
+    || !validRubricVersion || rubric.semantics !== "engineering_action_quality"
     || rubric.coach_calibrated !== false || rubric.identity_labels_used !== false || rubric.confidence_used_in_score !== false
     || rubric.aggregation !== "mean_episode_dimension_scores_then_equal_dimension_mean"
     || context.durationMs !== undefined && context.durationMs !== null && (!finite(context.durationMs) || context.durationMs <= 0)) return null;

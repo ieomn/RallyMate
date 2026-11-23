@@ -53,7 +53,7 @@ class TennisHandRoleTests(unittest.TestCase):
     def test_two_hand_roles_keep_phase_wrist_but_measure_reviewed_primary_hand(self):
         data = fixture(); result = report(*data)
         self.assertEqual(result['version'], 'tennis-action-assessment-v1.4.0')
-        self.assertEqual(result['rubric']['version'], 'tennis-action-rubric-v1.3.0')
+        self.assertEqual(result['rubric']['version'], 'tennis-action-rubric-v1.4.0')
         self.assertEqual(result['observation_count'], 1)
         action = result['episodes'][0]; roles = action['hand_roles']
         self.assertEqual((roles['motion_wrist'], roles['measurement_hand'], roles['primary_racket_hand']), ('left','right','right'))

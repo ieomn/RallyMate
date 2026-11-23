@@ -8,7 +8,22 @@ import unittest
 
 import numpy as np
 
-from rallymate_service.tennis_assessment import analyze_tennis_assessment, build_tennis_assessment, _segments, _bound_windows, _score_window, _local_speed, _smooth, _angular_continuity, _time_mean, _leg_extension_continuity, _follow_deceleration, _follow_active_fraction
+from rallymate_service.tennis_assessment import (
+    RUBRIC_POLICY_ENV_VAR,
+    RUBRIC_VERSION,
+    analyze_tennis_assessment,
+    build_tennis_assessment,
+    _segments,
+    _bound_windows,
+    _score_window,
+    _local_speed,
+    _smooth,
+    _angular_continuity,
+    _time_mean,
+    _leg_extension_continuity,
+    _follow_deceleration,
+    _follow_active_fraction,
+)
 from tests.test_sam3d_evaluation import _frame
 
 
@@ -352,7 +367,7 @@ class TennisAssessmentTests(unittest.TestCase):
         self.assertGreater(values[1], values[0])
         self.assertEqual(scores, [100., 100.])
 
-    def test_ready_stance_has_only_a_narrowness_floor_and_is_not_hip_balance(self):
+    def test_ready_stance_uses_bounded_trapezoid_and_is_not_hip_balance(self):
         measured = []
         for half_width, lean in ((.1, 0), (.5, 0), (1.5, 0), (.5, .6)):
             timeline, records = inputs()
@@ -366,7 +381,10 @@ class TennisAssessmentTests(unittest.TestCase):
             metric = next(m for d in report["dimensions"] for m in d["metrics"] if m["id"] == "support_control")
             measured.append(metric)
         self.assertLess(measured[0]["score"], measured[1]["score"])
-        self.assertEqual([m["score"] for m in measured[1:]], [100., 100., 100.])
+        self.assertLess(measured[2]["score"], measured[1]["score"])
+        self.assertEqual(measured[1]["score"], 100.)
+        self.assertEqual(measured[2]["score"], 0.)
+        self.assertEqual(measured[3]["score"], 100.)
         self.assertAlmostEqual(measured[1]["value"], measured[3]["value"], places=5)
         self.assertEqual(measured[1]["unit"], "hip_width")
 
@@ -472,6 +490,147 @@ class TennisAssessmentTests(unittest.TestCase):
             "rejection_counts": {"candidate_lacks_continuous_complete_motion": 3}})
         self.assertIn("3", report["reason_zh"])
         self.assertEqual(report["improvements"], [])
+
+    def test_v14_rubric_metadata_and_corrected_biomechanical_knots(self):
+        report = calculate(*inputs())
+        rubric = report["rubric"]
+        self.assertEqual(rubric["version"], "tennis-action-rubric-v1.4.0")
+        self.assertEqual(RUBRIC_VERSION, "tennis-action-rubric-v1.4.0")
+        self.assertFalse(rubric["coach_calibrated"])
+        self.assertIsNone(rubric["policy_sha256"])
+        self.assertIn("v1.4.0", rubric["revision_scope"])
+        self.assertEqual(rubric["rules"]["knee_load"]["knots"], [8.0, 38.0])
+        self.assertEqual(rubric["rules"]["recovery_control"]["knee_knots"], [8.0, 38.0])
+        self.assertEqual(rubric["rules"]["support_control"]["curve"], "time_mean_trapezoid")
+        self.assertEqual(rubric["rules"]["support_control"]["knots"], [0.7, 1.4, 2.6, 3.6])
+        self.assertEqual(rubric["rules"]["coil"]["knots"], [8.0, 30.0, 68.0, 88.0])
+        self.assertEqual(rubric["rules"]["arm_space"]["knots"], [0.35, 0.68, 0.90, 0.99])
+
+    def test_locked_elbow_reach_one_is_penalized_below_100(self):
+        timeline, records = inputs()
+        locked = deepcopy(records)
+        for row in locked:
+            p = row["keypoints_3d"]
+            s = np.asarray(p["right_shoulder"], dtype=float)
+            w = np.asarray(p["right_wrist"], dtype=float)
+            p["right_elbow"] = (0.5 * (s + w)).tolist()
+        locked_report = calculate(timeline, locked)
+        locked_arm = next(m for d in locked_report["dimensions"] for m in d["metrics"] if m["id"] == "arm_space")
+        self.assertAlmostEqual(locked_arm["value"], 1.0, places=5)
+        self.assertLess(locked_arm["score"], 100.0)
+        self.assertEqual(locked_arm["score"], 0.0)
+
+        athletic = deepcopy(records)
+        for row in athletic:
+            p = row["keypoints_3d"]
+            s = np.asarray(p["right_shoulder"], dtype=float)
+            w = np.asarray(p["right_wrist"], dtype=float)
+            diff = w - s
+            span = np.linalg.norm(diff)
+            # Build an exact isosceles elbow triangle perpendicular to shoulder-wrist so reach == 0.80.
+            mid = 0.5 * (s + w)
+            perp = np.cross(diff, np.array([0.0, 0.0, 1.0]))
+            if np.linalg.norm(perp) < 1e-6:
+                perp = np.cross(diff, np.array([1.0, 0.0, 0.0]))
+            perp = perp / np.linalg.norm(perp)
+            offset = math.sqrt((span / 1.6) ** 2 - (span / 2.0) ** 2)
+            p["right_elbow"] = (mid + offset * perp).tolist()
+        athletic_report = calculate(timeline, athletic)
+        athletic_arm = next(m for d in athletic_report["dimensions"] for m in d["metrics"] if m["id"] == "arm_space")
+        self.assertAlmostEqual(athletic_arm["value"], 0.80, places=3)
+        self.assertEqual(athletic_arm["score"], 100.0)
+
+    def test_upright_knee_and_narrow_stance_score_below_100_while_55deg_coil_scores_100(self):
+        timeline, records = inputs()
+        turn = math.radians(55.0)
+        for row in records:
+            p = row["keypoints_3d"]
+            for side, sign in (("left", -1), ("right", 1)):
+                # Nearly straight leg (~10.8 deg flexion) and narrow 1.0x hip stance.
+                p[f"{side}_knee"] = [sign * 0.4, -0.625, 0.06]
+                p[f"{side}_ankle"] = [sign * 0.3, -1.25, 0.0]
+                p[f"{side}_shoulder"] = [sign * 0.5 * math.cos(turn), 1.0, sign * 0.5 * math.sin(turn)]
+        report = calculate(timeline, records)
+        metrics = {m["id"]: m for d in report["dimensions"] for m in d["metrics"]}
+        self.assertLess(metrics["knee_load"]["score"], 100.0)
+        self.assertGreater(metrics["knee_load"]["score"], 0.0)
+        self.assertAlmostEqual(metrics["support_control"]["value"], 1.0, places=4)
+        self.assertLess(metrics["support_control"]["score"], 100.0)
+        self.assertAlmostEqual(metrics["coil"]["value"], 55.0, places=3)
+        self.assertEqual(metrics["coil"]["score"], 100.0)
+
+    def test_external_rubric_policy_override_loading_provenance_and_validation(self):
+        from rallymate_service.tennis_assessment import _canonical_sha256
+
+        policy_body = {
+            "schema_version": "tennis-rubric-policy-v1",
+            "rubric_version": "tennis-action-rubric-v1.4.0",
+            "calibration_origin": "reference_population_quantiles_v1",
+            "numeric_rule_origin": "reference_population_quantiles_v1",
+            "coach_calibrated": False,
+            "rules": {
+                "knee_load": {"curve": "time_mean_increasing_saturating_ramp", "knots": [15.0, 60.0]},
+                "arm_space": {"curve": "time_mean_trapezoid", "knots": [0.40, 0.70, 0.88, 0.96]},
+            },
+        }
+        policy = {**policy_body, "policy_sha256": _canonical_sha256(policy_body)}
+        timeline, records = inputs()
+        default_report = calculate(timeline, records)
+        override_report = analyze_tennis_assessment(
+            timeline, records, video_sha256="a" * 64, source_run_id="test-run",
+            motion_episodes=episodes(), rubric_policy=policy,
+        )
+        self.assertEqual(override_report["rubric"]["policy_sha256"], policy["policy_sha256"])
+        self.assertEqual(override_report["rubric"]["calibration_origin"], "reference_population_quantiles_v1")
+        self.assertEqual(override_report["rubric"]["numeric_rule_origin"], "reference_population_quantiles_v1")
+        self.assertFalse(override_report["rubric"]["coach_calibrated"])
+        self.assertEqual(override_report["rubric"]["rules"]["knee_load"]["knots"], [15.0, 60.0])
+        self.assertNotEqual(override_report["overall_score"], default_report["overall_score"])
+
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary) / "test-run"
+            run_dir.mkdir()
+            for filename, data in (("primary-player.jsonl", timeline), ("sam3d_frames.jsonl", records)):
+                (run_dir / filename).write_text("".join(json.dumps(r) + "\n" for r in data), encoding="utf8")
+            candidates = episodes()
+            for row in candidates:
+                row["evidence"] = {"process_continuity": row.pop("continuity")}
+            summary = {
+                "job_id": "test-run",
+                "minimum_scoring_loop": {"provenance": {"video_sha256": "a" * 64}},
+                "action_recognition": {"motion_analysis": {"families": {"baseline": {"episodes": candidates}}}},
+            }
+            policy_path = Path(temporary) / "policy.json"
+            policy_path.write_text(json.dumps(policy), encoding="utf8")
+            previous_env = os.environ.get(RUBRIC_POLICY_ENV_VAR)
+            try:
+                os.environ.pop(RUBRIC_POLICY_ENV_VAR, None)
+                built_default = build_tennis_assessment(summary, run_dir)
+                os.environ[RUBRIC_POLICY_ENV_VAR] = str(policy_path)
+                built_env = build_tennis_assessment(summary, run_dir)
+                self.assertEqual(built_env["rubric"]["policy_sha256"], policy["policy_sha256"])
+                self.assertEqual(built_env["overall_score"], override_report["overall_score"])
+                self.assertNotEqual(built_env["overall_score"], built_default["overall_score"])
+            finally:
+                if previous_env is None:
+                    os.environ.pop(RUBRIC_POLICY_ENV_VAR, None)
+                else:
+                    os.environ[RUBRIC_POLICY_ENV_VAR] = previous_env
+
+        bad_cases = [
+            {**policy, "policy_sha256": "0" * 64},
+            {**policy_body, "rules": {"arm_space": {"curve": "time_mean_trapezoid", "knots": [0.3, 0.65, 0.9, 1.05]}}},
+            {**policy_body, "rules": {"arm_space": {"curve": "time_mean_trapezoid", "knots": [0.3, 0.65, 1.0, 1.0]}}},
+            {**policy_body, "rules": {"knee_load": {"curve": "time_mean_increasing_saturating_ramp", "knots": [40.0, 20.0]}}},
+            {**policy_body, "rules": {"unknown_metric": {"knots": [0.0, 1.0]}}},
+            {**policy_body, "numeric_rule_origin": "VIS-SV:P0030"},
+            Path(temporary) / "does-not-exist.json",
+        ]
+        for bad in bad_cases:
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                analyze_tennis_assessment(
+                    timeline, records, video_sha256="a" * 64, motion_episodes=episodes(), rubric_policy=bad
+                )
 
 
 if __name__ == "__main__":
