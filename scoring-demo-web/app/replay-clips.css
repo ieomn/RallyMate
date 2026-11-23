@@ -44,14 +44,14 @@
     .product-analysis :is(.report-all-details-content, .replay-clips-anchors) { min-height: 0; overflow: clip; }
   }
   @supports (interpolate-size: allow-keywords) and selector(details::details-content) {
-    .product-analysis :is(.replay-anchor-detail, .report-all-details, .review-drill-steps, .review-evidence-group, .review-shot-statistics, .review-coach)::details-content {
+    .product-analysis :is(.replay-anchor-detail, .report-all-details, .review-drill-steps, .review-evidence-group, .review-coach)::details-content {
       interpolate-size: allow-keywords;
       block-size: 0;
       overflow: clip;
       overflow-clip-margin: 3px;
       transition: block-size 280ms cubic-bezier(.22,.8,.28,1), content-visibility 280ms allow-discrete;
     }
-    .product-analysis :is(.replay-anchor-detail, .report-all-details, .review-drill-steps, .review-evidence-group, .review-shot-statistics, .review-coach)[open]::details-content { block-size: auto; }
+    .product-analysis :is(.replay-anchor-detail, .report-all-details, .review-drill-steps, .review-evidence-group, .review-coach)[open]::details-content { block-size: auto; }
   }
 }
 @media (prefers-reduced-motion: reduce) {

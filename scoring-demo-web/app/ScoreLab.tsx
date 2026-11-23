@@ -26,7 +26,6 @@ import BallTrajectorySummary from "./BallTrajectorySummary";
 import AdviceResult from "./AdviceResult";
 import TrainingReplayPanel from "./TrainingReplayPanel";
 import OfficialMeshReplay from "./OfficialMeshReplay";
-import ShotStatisticsSidebar from "./ShotStatisticsSidebar";
 import ReplayClipNavigator from "./ReplayClipNavigator";
 import SwingKinematicsPanel from "./SwingKinematicsPanel";
 import { swingVideoDurationMs } from "./lib/swing-kinematics";
@@ -113,7 +112,7 @@ function assertImportedJobBinding(...values: unknown[]) {
   if (new Set(ids).size > 1) throw new Error("报告中的任务编号不一致，请重新选择同一次训练的完整备份。");
 }
 
-function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = false, error, candidateSessionKey, onCandidateReplayHandle }: { api: Pick<RallyMateApiClient, "getPosePreview" | "getMeshPreview" | "getSwingKinematics" | "getShotStatistics" | "saveShotReview">; replaySignal: AbortSignal; evidence: LiveEvidence; localVideoSrc?: string | null; pending?: boolean; error?: string | null; candidateSessionKey: string; onCandidateReplayHandle: (handle: CandidateReplayHandle | null) => void }) {
+function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = false, error, candidateSessionKey, onCandidateReplayHandle }: { api: Pick<RallyMateApiClient, "getPosePreview" | "getMeshPreview">; replaySignal: AbortSignal; evidence: LiveEvidence; localVideoSrc?: string | null; pending?: boolean; error?: string | null; candidateSessionKey: string; onCandidateReplayHandle: (handle: CandidateReplayHandle | null) => void }) {
   const replayContainer = useRef<HTMLDivElement>(null);
   const clipMotion = useMemo(() => motionAnalysisOf(evidence.result ?? null, evidence.assessment), [evidence.result, evidence.assessment]);
   const trajectory = evidence.trajectory;
@@ -197,8 +196,7 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
   useEffect(() => {
     if (meshAvailable && showSurface) onCandidateReplayHandle(null);
   }, [meshAvailable, showSurface, onCandidateReplayHandle]);
-  return <div className="replay-statistics-layout">
-  <div className="replay-media-scope replay-statistics-main" ref={replayContainer}>
+  return <div className="replay-media-scope" ref={replayContainer}>
     {meshOnline && meshStatus === "pending" && <p className="replay-caption" role="status">3D 动作回放生成中，评分可先查看。</p>}
     {meshOnline && meshStatus === "failed" && <p className="replay-caption" role="status">人体表面预览暂未生成成功；本次评分和原片回放仍可查看。</p>}
     {meshOnline && meshStatus === "read-error" && <p className="replay-caption" role="status">暂未读取到人体表面预览状态，已停止本次等待。报告和原片回放仍可查看。</p>}
@@ -224,11 +222,6 @@ function ReplayPanel({ api, replaySignal, evidence, localVideoSrc, pending = fal
     <ReplayClipNavigator key={candidateSessionKey} containerRef={replayContainer} result={evidence.result ?? null} motion={clipMotion}
       jobId={evidence.jobId}
       mediaKey={meshMedia && showSurface ? meshMedia.video_url : selectedVideoSrc ?? "no-video"} />
-  </div>
-  <details className="review-shot-statistics"><summary>击球与落点记录</summary>
-  <ShotStatisticsSidebar key={candidateSessionKey} api={api} jobId={evidence.jobId} sourceSha={serverOriginal?.sha256}
-    enabled={Boolean(onlineEvidence && evidence.jobId && serverOriginal && !pending)} scope={candidateSessionKey}
-    signal={replaySignal} containerRef={replayContainer} /></details>
   </div>;
 }
 

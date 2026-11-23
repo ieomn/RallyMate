@@ -27,7 +27,7 @@ function mount(overrides = {}) {
     React, AbortSignal, URL, useCallback: value => value, useMemo: compute => compute(), useRef: value => ({ current: value }), useEffect() {},
     verifiedMeshMedia: () => overrides.meshMedia ?? null, motionAnalysisOf: () => null,
     useState(initial) { const slot = index++; if (!(slot in state)) state[slot] = initial; return [state[slot], value => { state[slot] = value; }]; },
-    BallTrajectoryViewer: "viewer", BallTrajectorySummary: "summary", ReplayClipNavigator: "clips", OfficialMeshReplay: "mesh", SwingKinematicsPanel: "swing", ShotStatisticsSidebar: "shot-statistics",
+    BallTrajectoryViewer: "viewer", BallTrajectorySummary: "summary", ReplayClipNavigator: "clips", OfficialMeshReplay: "mesh", SwingKinematicsPanel: "swing",
     swingVideoDurationMs: () => null,
     originalPoseTimeBinding, poseWindowMatchesOriginal,
   });

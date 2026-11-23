@@ -42,9 +42,6 @@ export type LiveStatsModel = {
   racketDetections: number | null;
   racketDetectionFrames: number | null;
   processedFrames: number | null;
-  shotCount: number | null;
-  contactCount: number | null;
-  shotCountSource: "server" | "unavailable";
 };
 
 function finiteNumber(value: unknown): number | null {
@@ -55,7 +52,7 @@ function validCount(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
-/** Build a display model from server evidence. It never turns detections into hits. */
+/** Summarize the recorded action segments and detection frames. */
 export function summarizeLiveStats(
   result: DemoResultResponse | null,
   trajectory: TrajectoryPreviewResponse | null,
@@ -67,11 +64,6 @@ export function summarizeLiveStats(
   const framesWithClass = counts?.frames_with_class as Record<string, unknown> | undefined;
   const processing = summary?.processing as Record<string, unknown> | undefined;
   const actionSegments = result?.actions ? actions.reduce((sum, action) => sum + (validCount(action.detected_segments) ?? 0), 0) : null;
-  const hitStatistics = result?.hit_statistics;
-  // Generic GS segments and recursively discovered "hit_count" fields are
-  // not confirmed ball/racket contacts. Only the canonical contract qualifies.
-  const contactCount = hitStatistics?.status === "observed" && hitStatistics.count_semantics === "confirmed_contact_events" ? validCount(hitStatistics.total_count) : null;
-  const shotCount = contactCount;
   return {
     actionSegments,
     actionKinds: result?.actions ? actions.filter((action) => (validCount(action.detected_segments) ?? 0) > 0).length : null,
@@ -80,9 +72,6 @@ export function summarizeLiveStats(
     racketDetections: finiteNumber(detections?.racket),
     racketDetectionFrames: finiteNumber(framesWithClass?.racket),
     processedFrames: finiteNumber(processing?.processed_frames) ?? finiteNumber(trajectory?.source.frame_count),
-    shotCount,
-    contactCount,
-    shotCountSource: shotCount !== null || contactCount !== null ? "server" : "unavailable",
   };
 }
 

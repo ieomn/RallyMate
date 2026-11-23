@@ -33,6 +33,7 @@ class ReportOverviewTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
         result = payload["result"]
+        self.assertNotIn("hit_statistics", result)
         self.assertEqual(payload["source"], segments.source_identity(self.job))
         self.assertEqual(result["training_evaluation"], build_training_evaluation(self.rows))
         self.assertEqual(result["actions"][0]["detected_segments"], 1)

@@ -26,11 +26,9 @@ import { RallyMateApiError } from "./api-types";
 import { attachRequestDiagnostics, safeRequestDiagnostic, type RequestDiagnostic, type RequestDiagnosticObserver } from "./request-diagnostics";
 import { normalizePosePreview } from "./pose-playback";
 import { FOOT_CROSSING_RESPONSE_BYTES, parseFootCrossingResponse, type FootCrossingResponse } from "./foot-crossing-candidates";
-import { parseShotStatistics, type ShotStatisticsResponse } from "./shot-statistics";
 import { SUMMARY_BYTES, ACTION_PAGE_BYTES, ACTION_DETAIL_BYTES, parseReportSummary, parseReportActions, parseReportActionDetail, type ReportSummary, type ReportSource, type ReportAction, type ReportActionPage, type ReportActionDetail } from "./segmented-report";
 import { OVERVIEW_BYTES, parseReportOverview, parseReportMotion, type ReportMotion, type ReportOverview } from "./segmented-report";
 
-export type ShotReviewSubmission = { mutation_id: string; expected_revision: number; source_video_sha256: string; event: Record<string, unknown> };
 export const POSE_MAX_WIRE_BYTES = 16 * 1024 * 1024;
 export const POSE_READ_BUDGET_MS = 90000;
 // Cold action scoring recomputes a long video's saved native measurements.
@@ -125,8 +123,6 @@ export interface RallyMateApiClient {
   getReportOverview(jobId: string, source: ReportSource, signal?: AbortSignal): Promise<ReportOverview>;
   getReportActions(jobId: string, source: ReportSource, offset?: number, signal?: AbortSignal): Promise<ReportActionPage>;
   getReportActionDetail(jobId: string, source: ReportSource, action: ReportAction, offset?: number, signal?: AbortSignal): Promise<ReportActionDetail>;
-  getShotStatistics(jobId: string, signal?: AbortSignal): Promise<ShotStatisticsResponse>;
-  saveShotReview(jobId: string, submission: ShotReviewSubmission, signal?: AbortSignal): Promise<ShotStatisticsResponse>;
   getTennisAssessment(jobId: string, signal?: AbortSignal): Promise<Record<string, unknown>>;
   getSwingKinematics(jobId: string, signal?: AbortSignal): Promise<SwingKinematicsReport>;
   getMeshPreview(jobId: string, signal?: AbortSignal): Promise<{ job_id: string; status: "ready" | "pending" | "failed" | "unavailable"; sam3d_mesh: Sam3dMeshPreview | null }>;
@@ -595,20 +591,6 @@ export function createApiClient(
     submitVideo: (file, options = {}) => uploadResumable(file, options, urlFor, fetchImpl, parseResponse),
     getJob: (jobId, signal) => get<JobProgress>(reportPath(jobId), signal, "current"),
     getMeshPreview: (jobId, signal) => get(reportPath(jobId, "/mesh-preview"), signal),
-    getShotStatistics: (jobId, signal) => afterOverview(jobId, signal, () => get<unknown>(reportPath(jobId, "/shot-statistics"), signal)).then(value => {
-      const parsed = parseShotStatistics(value, jobId);
-      if (!parsed) throw new RallyMateApiError("击球统计与当前任务不匹配。", 422);
-      return parsed;
-    }),
-    saveShotReview: (jobId, submission, signal) => fetchImpl(urlFor(reportPath(jobId, "/shot-statistics")), {
-      method: "POST", cache: "no-store", headers: { "content-type": "application/json", "X-Request-ID": requestId() },
-      body: JSON.stringify(submission),
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
-    }).then(parseResponse<unknown>).then(value => {
-      const parsed = parseShotStatistics(value, jobId, submission.source_video_sha256);
-      if (!parsed) throw new RallyMateApiError("保存结果与当前视频不匹配，请重新读取。", 422);
-      return parsed;
-    }),
     getSwingKinematics: (jobId, signal) => get(reportPath(jobId, "/swing-kinematics"), signal),
     getTennisAssessment: (jobId, signal) => afterOverview(jobId, signal, () => get(reportPath(jobId, "/tennis-assessment"), signal, undefined, undefined, TENNIS_ASSESSMENT_READ_TIMEOUT_MS)),
     cancelJob: (jobId, signal) => fetchImpl(urlFor(reportPath(jobId, "/cancel")), {

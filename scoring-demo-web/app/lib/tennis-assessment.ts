@@ -6,6 +6,11 @@ import { trainingSessionAnalysisOf, type TrainingSessionAnalysis } from "./train
 import { modalityAssessmentOf, type ModalityAssessment } from "./modality-assessment";
 import { hasSpecialistMetrics, specialistMotionOf, specialistRubricOf, type SpecialistMotion } from "./specialist-motion";
 
+const tennisScoreFormat = new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+export function formatTennisScore(value: number): string {
+  return tennisScoreFormat.format(value);
+}
+
 export const TENNIS_DIMENSIONS = [
   { id: "movement", label: "移动支撑" }, { id: "preparation", label: "准备引拍" },
   { id: "coordination", label: "动作协调" }, { id: "striking", label: "击球姿态" },

@@ -14,7 +14,7 @@ function compiledUrl(file) {
   const url=`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`;cache.set(file.href,url);return url;
 }
 const {validatedTennisAssessment}=await import(compiledUrl(new URL("../app/lib/tennis-assessment.ts",import.meta.url)));
-const {buildReportBackup}=await import(compiledUrl(new URL("../app/lib/report-export.ts",import.meta.url)));
+const {buildPracticeReport,buildReportBackup,renderReportHtml,renderReportMarkdown}=await import(compiledUrl(new URL("../app/lib/report-export.ts",import.meta.url)));
 const {readReportJson}=await import(compiledUrl(new URL("../app/lib/report-file.ts",import.meta.url)));
 const {specialistMotionOf}=await import(compiledUrl(new URL("../app/lib/specialist-motion.ts",import.meta.url)));
 const rubric={version:"specialist-motion-assessment-v1.0.0",coordinate_space:"hip_centered_torso_normalized_body_basis",threshold_origin:"engineering_initial_values_not_coach_calibration",
@@ -47,7 +47,15 @@ test("measured return provenance and numeric path evidence survive full JSON rou
   assert.deepEqual(parsed.episodes[0].specialist_motion,source.episodes[0].specialist_motion);
   assert.deepEqual(parsed.rubric.specialist_motion,rubric);
   const result={job_id:source.source_run_id,input:{video:{sha256:source.source_video_sha256,duration_ms:9000}},tennis_assessment:parsed};
-  const encoded=JSON.stringify(buildReportBackup({mode:"live",uploadState:"complete",job:{id:source.source_run_id,status:"succeeded"},evidence:{jobId:source.source_run_id,result}}));
+  const input={mode:"live",uploadState:"complete",job:{id:source.source_run_id,status:"succeeded"},evidence:{jobId:source.source_run_id,result}};
+  const readable=buildPracticeReport(input);
+  for(const document of [renderReportHtml(readable),renderReportMarkdown(readable)]) {
+    assert.match(document,/紧凑引拍/);
+    assert.match(document,/倍挥拍路径长度/);
+    assert.match(document,/保持紧凑/);
+    assert.match(document,/权重 100%/);
+  }
+  const encoded=JSON.stringify(buildReportBackup(input));
   const restored=await readReportJson({size:Buffer.byteLength(encoded),text:async()=>encoded});
   assert.deepEqual(restored.result.tennis_assessment.episodes[0].specialist_motion,parsed.episodes[0].specialist_motion);
   assert.deepEqual(validatedTennisAssessment(restored.result.tennis_assessment,context(source)),parsed);

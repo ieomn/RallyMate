@@ -4,7 +4,8 @@ import { productText } from "./lib/presentation-text";
 
 import { useState, type ReactNode } from "react";
 import TrainingReportOverview from "./TrainingReportOverview";
-import TennisAssessmentSummary, { ClipMeasurements, SavePractice, TennisAssessmentDetails, TennisScoreDetails } from "./TennisAssessmentSummary";
+import TennisAssessmentSummary, { ClipMeasurements, SavePractice, TennisAssessmentDetails, TennisScoreDetails, TennisScoreOverview } from "./TennisAssessmentSummary";
+import { RelativeScoreSummary } from "./ProcessScorePanel";
 import { tennisAssessmentOf } from "./lib/tennis-assessment";
 import CourtSimulationPanel from "./CourtSimulationPanel";
 import ScoreExplanationPanel from "./ScoreExplanationPanel";
@@ -78,17 +79,15 @@ function LiveStats({ result, trajectory, summary }: { result: DemoResultResponse
   const stats = summarizeLiveStats(result, trajectory, summary);
   const metric = (value: number | null) => value === null ? "—" : value.toLocaleString("zh-CN");
   return <section className="live-stats" aria-labelledby="live-stats-title">
-    <div className="live-stats-head"><div><h2 id="live-stats-title">本次视频分析</h2></div><span className="stats-disclosure">动作片段与击球次数分别记录</span></div>
+    <div className="live-stats-head"><h2 id="live-stats-title">本次视频分析</h2></div>
     <div className="live-stats-grid">
-      <article><span>脚步运动片段</span><strong>{metric(stats.actionSegments)}</strong><small>{stats.actionKinds === null ? "本次尚无动作结果" : `${stats.actionKinds} 类运动片段 · 不计作击球次数`}</small></article>
+      <article><span>脚步运动片段</span><strong>{metric(stats.actionSegments)}</strong>{stats.actionKinds !== null && <small>{stats.actionKinds} 类动作</small>}</article>
       <article><span>已分析视频帧</span><strong>{metric(stats.processedFrames)}</strong><small>{trajectory?.source.is_partial ? "随分析进度更新" : "当前任务的处理记录"}</small></article>
-      {stats.contactCount !== null && <article><span>已确认触球</span><strong>{metric(stats.contactCount)}</strong><small>来自已确认的球拍触球事件</small></article>}
     </div>
-    {stats.contactCount === null && <p className="stats-disclosure">本次未提供已确认的触球事件，已隐藏击球次数。</p>}
     <details className="live-stats-details"><summary>查看分析观测详情</summary><div className="live-stats-grid">
-      <article><span>球检测观测</span><strong>{metric(trajectory?.ball.reconstruction?.summary.observed_count ?? trajectory?.ball.observed_count ?? null)}</strong><small>检测点不会计为击球</small></article>
+      <article><span>球检测观测</span><strong>{metric(trajectory?.ball.reconstruction?.summary.observed_count ?? trajectory?.ball.observed_count ?? null)}</strong></article>
       <article><span>球检测帧</span><strong>{metric(stats.ballDetectionFrames)}</strong><small>同一球可在多帧重复出现</small></article>
-      <article><span>球拍检测观测</span><strong>{metric(trajectory?.racket.observed_count ?? stats.racketDetectionFrames)}</strong><small>检测数不等于挥拍或触球次数</small></article>
+      <article><span>球拍检测观测</span><strong>{metric(trajectory?.racket.observed_count ?? stats.racketDetectionFrames)}</strong></article>
     </div></details>
   </section>;
 }
@@ -131,6 +130,8 @@ export default function LiveResults({ result: rawResult, assessment, pending, tr
   if (!result && !trajectory && !assessment && ["error", "cancelled"].includes(presentation.state)) return <div className="live-results" data-status={presentation.state}>{replay && <div className="report-replay-area">{replay}</div>}<section className="report-unavailable" aria-live="polite"><h2>{presentation.title}</h2><p>{presentation.description}</p><p>当前没有可查看的报告内容。可重新读取任务，或选择视频开始一次新分析。</p></section></div>;
 
   return <div className="live-results" data-status={presentation.state}>
+    {tennis ? <TennisScoreOverview key={tennis.source_run_id} report={tennis} />
+      : result?.tennis_assessment === undefined && (process || result?.card_execution) ? <RelativeScoreSummary result={result} report={process} pending={pending} scoredOnly /> : null}
     <div className="review-spread">
       {replay && <ReportClipSelection.Provider value={{ clip, onSelect: setClip }}><div className="report-replay-area">{replay}</div></ReportClipSelection.Provider>}
       <aside className="review-rail" id="recommendations" aria-label="训练重点">
@@ -146,13 +147,13 @@ export default function LiveResults({ result: rawResult, assessment, pending, tr
         </section> : <TennisAssessmentSummary report={tennis} loading={assessmentLoading || pending} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />}
       </aside>
     </div>
-    {(result || assessment || trajectory) && <details className="report-all-details" id="details" onToggle={event => { if (event.currentTarget === event.target && event.currentTarget.open) onOpenDetails?.(); }}><summary>详细数据<span>评分、测量与训练记录</span></summary><div className="report-all-details-content">
+    {(result || assessment || trajectory) && <details className="report-all-details" id="details" onToggle={event => { if (event.currentTarget === event.target && event.currentTarget.open) onOpenDetails?.(); }}><summary>详细数据<span>片段依据、复测与训练记录</span></summary><div className="report-all-details-content">
     {tennis && <TennisScoreDetails report={tennis} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />}
     {clip && <ClipMeasurements clip={clip} report={tennis} />}
     {legacyFocus && <section className="review-legacy-evidence"><h3>练习依据与复测</h3><p>{legacyFocus.observation}</p><p>{legacyFocus.limitation}</p><p>{legacyFocus.retest}</p>
       {(assessmentError || assessmentMessage || assessmentLoading) && <TennisAssessmentSummary report={null} loading={assessmentLoading} error={assessmentError} message={assessmentMessage} offline={assessmentOffline} onRetry={onRetryAssessment} />}
     </section>}
-    {tennis && <details className="review-evidence-group"><summary>逐项评分与测量</summary><TennisAssessmentDetails report={tennis} /></details>}
+    {tennis && tennis.status !== "unavailable" && <details className="review-evidence-group"><summary>计分方法与片段依据</summary><TennisAssessmentDetails report={tennis} /></details>}
     {journal}{details}
     <details className="replay-segments"><summary>全部动作片段</summary><ActionTimeline result={result} motion={motionAnalysis} />{pagedActions}</details>
     {(result?.report_delivery as Record<string, unknown> | undefined)?.process_scope === "selected_motion_episode" && <p className="replay-caption">以下过程测量对应当前所选运动片段；切换动作片段可读取对应依据。</p>}

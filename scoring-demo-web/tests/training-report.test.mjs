@@ -104,7 +104,7 @@ test("readable export and JSON preserve new report context and independent measu
   assert.equal(analysisReportOf(restored.analysis_report).focus_areas[0].title_zh, "先回看启动");
 });
 
-test("legacy 298-card evidence stays out of the primary score and survives complete backups", async () => {
+test("a validated legacy footwork score retains its scope before the replay and its evidence in backups", async () => {
   // Historical full HTTP report, not a synthetic expansion of the catalogue.
   const rawCards = JSON.parse(gunzipSync(fs.readFileSync(new URL("./fixtures/micro-cycle-native-e420-unified.json.gz", import.meta.url))));
   const process = JSON.parse(fs.readFileSync(new URL("./fixtures/process-v1.1-real.json", import.meta.url), "utf8"));
@@ -118,7 +118,10 @@ test("legacy 298-card evidence stays out of the primary score and survives compl
   const html = renderToStaticMarkup(createElement(LiveResults, { result, assessment: null, catalog: null, pending: false, trajectory: null }));
   assert.match(html, /这次先改什么/);
   assert.ok(Number.isFinite(expected.overall_score));
-  assert.doesNotMatch(html.slice(0, html.indexOf('id="details"')), /process-overall-reference|步伐动作得分/);
+  const primary = html.slice(0, html.indexOf('id="details"'));
+  assert.match(primary, /<h2>步伐条件完成度<\/h2>/);
+  assert.match(primary, /本次计分范围为步伐/);
+  assert.doesNotMatch(primary, /class="review-score-overview"|五维动作评分/);
   assert.doesNotMatch(html, /card-execution-panel|逐卡计算|正式逐卡|298\s*(?:卡|张|项)|GS\d{2}-M\d{2}|FS\d{2}-M\d{2}|全部原文指标/);
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const readable = buildPracticeReport(input), markdown = renderReportMarkdown(readable);

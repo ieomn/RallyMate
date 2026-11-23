@@ -73,7 +73,12 @@ export function footworkEpisodes(value?: unknown): FootworkReview["episodes"] {
 }
 
 export function footworkUnitText(unit?: string | null) {
-  const units: Record<string, string> = { body: "身体尺度", "body/s": "身体尺度/秒", "body/s2": "身体尺度/秒²", "frame_long_edge/s": "画面长边/秒", deg: "°", "deg/s": "°/秒", ms: "毫秒", ratio: "比例", px: "像素", torso: "固定躯干尺度" };
+  const units: Record<string, string> = {
+    body: "身体尺度", "body/s": "身体尺度/秒", "body/s2": "身体尺度/秒²", "frame_long_edge/s": "画面长边/秒",
+    deg: "°", "deg/s": "°/秒", ms: "毫秒", ratio: "比例", px: "像素", torso: "固定躯干尺度",
+    hip_width: "倍髋宽", arm_length: "倍臂长", phase_fraction: "阶段时长占比", fraction: "比例",
+    path_efficiency: "路径效率", path_ratio_to_striking: "倍挥拍路径长度", terminal_to_peak_speed_ratio: "末速与峰速之比",
+  };
   return units[unit ?? ""] ?? unit ?? "";
 }
 

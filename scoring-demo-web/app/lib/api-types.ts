@@ -276,13 +276,6 @@ export interface DemoResultResponse {
   artifacts?: { evidence_frames?: EvidenceFrame[]; [key: string]: unknown };
   features?: { ball?: { trajectory?: BallTrajectory }; [key: string]: unknown };
   signals?: { racket?: RacketSignal; grip?: GripSignal; [key: string]: unknown };
-  hit_statistics?: {
-    status: "observed" | "not_observed" | "unsupported" | string;
-    total_count: number | null;
-    by_event_code?: Record<string, number>;
-    reason_zh?: string;
-    count_semantics?: string;
-  };
   trajectory_analysis?: {
     status: "available" | "unavailable" | string;
     source_artifact?: string | null;

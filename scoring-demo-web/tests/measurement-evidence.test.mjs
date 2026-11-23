@@ -139,7 +139,8 @@ test("declared evidence reference scores survive API, screen and report round tr
   assert.match(html, /测量证据参考分（Beta）|非技术评分/);
   assert.match(html, /高分不代表动作正确/);
   assert.match(html, /<details class="inspector-section measurement-evidence"><summary/);
-  assert.doesNotMatch(html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<svg\b[\s\S]*?<\/svg>/g, svg => svg.replace(/<[^>]+>/g, "")), /97|99/);
+  const visibleText = html.replace(/<section id="rule-review"[\s\S]*?<\/section>/g, "").replace(/<[^>]+>/g, " ");
+  assert.doesNotMatch(visibleText, /\b(?:97|99)\b/);
   const input = { mode: "live", uploadState: "complete", evidence: { result } };
   const markdown = renderReportMarkdown(buildPracticeReport(input));
   assert.match(markdown, /81 \/ 100/);

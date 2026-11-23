@@ -64,10 +64,6 @@ from rallymate_service.segmented_report import (
 )
 from rallymate_service.segmented_delivery import SegmentedDelivery
 from rallymate_service.live_trajectory import LiveTrajectoryCache
-from rallymate_service.shot_statistics import build_shot_statistics, validate_review
-from rallymate_service.shot_review_store import (
-    ShotReviewStore, ShotReviewError, MAX_SHOT_REVIEW_BYTES, parse_shot_review,
-)
 from rallymate_service.original_video import (
     OriginalVideoUnavailable, original_video_descriptor, verify_original_video,
 )
@@ -631,9 +627,6 @@ def create_app(
         # their executor was verified. The supervised local service fails closed.
         return snapshot["status"] == "unmonitored" or snapshot["available"]
     technical_reviews = TechnicalReviewStore(service_settings.data_root / "technical-reviews.sqlite3")
-    shot_reviews = ShotReviewStore(service_settings.data_root / "shot-reviews.sqlite3")
-    shot_statistics_cache: OrderedDict[tuple, dict] = OrderedDict()
-    shot_statistics_lock = Lock()
     # Cache bounded previews only while the underlying frame snapshot matches.
     # A progressing job or a transition to succeeded always invalidates it.
     trajectory_cache: OrderedDict[tuple, dict] = OrderedDict()
@@ -2037,82 +2030,6 @@ def create_app(
             return Response(content=delivery.body, media_type="application/json",
                             headers={"Cache-Control": "no-store"})
         return preparing_response()
-
-    def shot_statistics_base(job_id: str) -> dict:
-        job = db.get_job(job_id)
-        if job is None:
-            raise HTTPException(404, "job not found")
-        if job["status"] != "succeeded" or job.get("cancel_requested"):
-            raise HTTPException(409, "shot statistics require a completed analysis")
-        output = Path(job["output_dir"]).resolve()
-        if output != (service_settings.runs_dir / job_id).resolve():
-            raise HTTPException(409, "shot statistics source is unavailable")
-        frames = output / "frames.jsonl"
-        try:
-            if frames.is_symlink() or not frames.is_file():
-                raise ValueError("missing frames")
-            frame_stat, video_stat = frames.stat(), Path(job["video_path"]).stat()
-            provenance = (job.get("summary") or {}).get("minimum_scoring_loop", {}).get("provenance", {})
-            key = (job_id, frame_stat.st_size, frame_stat.st_mtime_ns,
-                   video_stat.st_size, video_stat.st_mtime_ns, provenance.get("video_sha256"))
-            with shot_statistics_lock:
-                base = shot_statistics_cache.get(key)
-                if base is None:
-                    original = verify_original_video(job, service_settings)
-                    base = build_shot_statistics(frames, job_id=job_id,
-                                                 expected_video_sha256=original.sha256)
-                    shot_statistics_cache[key] = base
-                    while len(shot_statistics_cache) > 4:
-                        shot_statistics_cache.popitem(last=False)
-                shot_statistics_cache.move_to_end(key)
-                return base
-        except (OSError, ValueError, TypeError, KeyError):
-            raise HTTPException(409, "击球统计的原视频或帧数据缺失、来源不匹配，请重新读取。") from None
-
-    @app.get("/v1/jobs/{job_id}/shot-statistics")
-    def get_shot_statistics(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:
-        response.headers["Cache-Control"] = "private, no-store"
-        base = shot_statistics_base(job_id)
-        try:
-            reviews, revision = shot_reviews.read(job_id, base["source"]["video_sha256"])
-            return build_shot_statistics(service_settings.runs_dir / job_id / "frames.jsonl",
-                job_id=job_id, reviews=reviews, revision=revision,
-                expected_video_sha256=base["source"]["video_sha256"], trusted_reviews=True)
-        except ShotReviewError as exc:
-            raise HTTPException(exc.status, str(exc)) from exc
-
-        except (ValueError, OSError):
-            raise HTTPException(409, "击球统计数据已改变或暂不可读取，请重新读取。") from None
-
-    @app.post("/v1/jobs/{job_id}/shot-statistics")
-    async def save_shot_statistics(job_id: str, request: Request, response: Response,
-                                   _: None = Depends(authorize)) -> dict:
-        response.headers["Cache-Control"] = "private, no-store"
-        try:
-            body = bytearray()
-            async for chunk in request.stream():
-                body.extend(chunk)
-                if len(body) > MAX_SHOT_REVIEW_BYTES:
-                    raise ShotReviewError("本次标记内容过长。", 413)
-            submission = parse_shot_review(bytes(body))
-
-            def save():
-                base = shot_statistics_base(job_id)
-                digest = base["source"]["video_sha256"]
-                def validate_event(reviews, revision):
-                    current = build_shot_statistics(service_settings.runs_dir / job_id / "frames.jsonl",
-                        job_id=job_id, reviews=reviews, revision=revision, expected_video_sha256=digest, trusted_reviews=True)
-                    return validate_review(submission.event, current)
-
-                reviews, revision = shot_reviews.save(job_id, digest, submission, validate_event)
-                return build_shot_statistics(service_settings.runs_dir / job_id / "frames.jsonl",
-                    job_id=job_id, reviews=reviews, revision=revision, expected_video_sha256=digest, trusted_reviews=True)
-
-            return await run_in_threadpool(save)
-        except ShotReviewError as exc:
-            raise HTTPException(exc.status, str(exc)) from exc
-        except ValueError:
-            raise HTTPException(422, "标记时间、事件或球场位置无效，请重新选择。") from None
 
     @app.get("/v1/jobs/{job_id}/mesh-preview")
     def get_mesh_preview(job_id: str, response: Response, _: None = Depends(authorize)) -> dict:

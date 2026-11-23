@@ -145,13 +145,12 @@ test("fullscreen enters and exits the actual player and propagates unsupported o
   await assert.rejects(toggleReplayFullscreen({ requestFullscreen: async () => { throw new Error("denied"); } }, owner), /denied/);
 });
 
-test("completed unsupported hit analysis has no invented hit count card or waiting message", () => {
+test("completed reports ignore retired hit totals in historical results", () => {
   const html = renderToStaticMarkup(createElement(LiveResults, {
-    result: { status: "ready", hit_statistics: { status: "unsupported", total_count: 981, reason_zh: "unsupported" } },
+    result: { status: "ready", hit_statistics: { status: "observed", total_count: 981, count_semantics: "confirmed_contact_events" } },
     assessment: null, catalog: null, pending: false, trajectory: null, status: "succeeded",
   }));
-  assert.match(html, /已隐藏击球次数/);
-  assert.doesNotMatch(html, /981|击球 \/ 触球次数|等待动作识别|动作识别完成后/);
+  assert.doesNotMatch(html, /981|已确认触球|已隐藏击球次数|等待动作识别|动作识别完成后/);
   assert.match(html, /分析已完成/);
 });
 

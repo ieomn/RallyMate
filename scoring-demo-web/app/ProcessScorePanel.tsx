@@ -18,7 +18,7 @@ export function ProcessRadar({ dimensions, selected, reference }: { dimensions: 
   const { points, lines, complete, pointAt } = processRadarGeometry(plotted);
   const labels = dimensions.map((_, index) => { const angle = index * 2 * Math.PI / dimensions.length - Math.PI / 2; return { x: 180 + Math.cos(angle) * 130, y: 142 + Math.sin(angle) * 124 }; });
   return <svg className="process-radar" viewBox="0 0 360 310" role="img" aria-labelledby={`${id}-title ${id}-description`}>
-    <title id={`${id}-title`}>五维动作评分图</title>
+    <title id={`${id}-title`}>动作过程参考评分图</title>
     <desc id={`${id}-description`}>{plotted.map(item => `${item.name_zh}：${item.score === null ? "—" : `${processScoreText(item.score)} 动作得分`}`).join("；")}。显示已有过程观测对应的分项得分。刻度为 0、25、50、75、100。</desc>
     <g aria-hidden="true">
       {[25, 50, 75, 100].map(value => <polygon key={value} className="process-radar-grid" points={dimensions.map((_, index) => { const point = pointAt(index, value); return `${point.x},${point.y}`; }).join(" ")} />)}
@@ -49,17 +49,18 @@ function Criterion({ criterion, result, motion }: { criterion: ProcessCriterion;
   </article>;
 }
 
-export function RelativeScoreSummary({ result, report, pending }: { result: DemoResultResponse | null; report: ProcessEvaluation | null; pending: boolean }) {
+export function RelativeScoreSummary({ result, report, pending, scoredOnly = false }: { result: DemoResultResponse | null; report: ProcessEvaluation | null; pending: boolean; scoredOnly?: boolean }) {
   if (!result || pending || ["failed", "error", "cancelled", "queued", "pending", "running", "processing"].includes(result.status ?? "")) return null;
   const reference = report?.relative_reference ?? relativeReferenceOf();
   const validation = processEvaluationValidationOf(result.process_evaluation, report);
   const observed = reference.observed_dimension_count;
   const current = trainingScoreOf(result, report);
+  if (scoredOnly && current.score === null) return null;
   const formal = current.source === "validated_card_execution";
+  const scoreTitle = formal ? (current.onlyFootwork ? "步伐条件完成度" : "动作条件完成度") : "动作过程参考分";
   return <section className="process-score-panel process-relative-summary" aria-label="本次训练评分">
-    <div className="process-score-heading"><div><span className="process-eyebrow">本次训练结果</span><h2>{current.scoreLabel}</h2></div><span className="process-trial">{formal ? `${current.measuredIndicatorCount} 项动作指标已评分` : `${observed} / 5 维有评分依据`}</span></div>
+    <div className="process-score-heading"><h2>{current.source === "tennis_action_assessment" ? current.scoreLabel : scoreTitle}</h2><span className="process-trial">{formal ? `${current.measuredIndicatorCount} 项动作指标已评分` : `${observed} / 5 维有评分依据`}</span></div>
     <div className="process-overall-reference"><strong>{processScoreText(current.score)}{current.score !== null && <small>/ 100</small>}</strong>
-      {current.score !== null && <p>根据本次已测得的动作项目计算。</p>}
     </div>
     {formal && <p className="process-score-contract">依据 {current.measuredIndicatorCount} 项指标、{current.scoredInstanceCount} 次有效测量计算条件完成率。{current.onlyFootwork ? "本次计分范围为步伐，挥拍与发力表现另见下方测量。" : "比较两次训练时，请使用相同动作、指标和拍摄条件。"}</p>}
     {!formal && validation.status === "invalid" && <p role="alert">评分数据读取异常，请重新读取报告。</p>}
@@ -87,8 +88,8 @@ export default function ProcessScorePanel({ result, motion, pending, title, desc
   const criteria = [...(group?.criteria ?? [])].sort((a, b) => Number(b.status === "measured") - Number(a.status === "measured"));
   const sequence = processPeakSequence(criteria);
   return <>{showSummary && <RelativeScoreSummary result={result} report={report} pending={pending} />}<section className="process-score-panel process-dimensions-panel" aria-labelledby={`${id}-heading`} aria-busy={pending}>
-    <div className="process-score-heading"><div><span className="process-eyebrow">本次训练 · 分项表现</span><h2 id={`${id}-heading`}>五维评分图</h2></div><span className="process-trial">{measuredCount} / 5 维有测量</span></div>
-    {completed ? <><p className="process-score-contract">查看移动、准备、挥拍、触球和随挥的分项表现。</p><ProcessRadar dimensions={dimensions} selected={selectedId} reference={reference} /><p className="process-radar-caption"><i aria-hidden="true" />{reference.observed_dimension_count} / 5 维可评分 · {measuredCount} / 5 维有测量</p></> : <div className="process-empty" role="status"><strong>{pending ? title : "本次暂无有效动作测量"}</strong><p>{pending ? description : "尚未读取有效报告。"}</p></div>}
+    <div className="process-score-heading"><h2 id={`${id}-heading`}>动作过程参考评分</h2><span className="process-trial">{measuredCount} / 5 维有过程测量</span></div>
+    {completed ? <><ProcessRadar dimensions={dimensions} selected={selectedId} reference={reference} /><p className="process-radar-caption"><i aria-hidden="true" />{reference.observed_dimension_count} 个维度取得过程参考分</p></> : <div className="process-empty" role="status"><strong>{pending ? title : "本次暂无有效动作测量"}</strong><p>{pending ? description : "尚未读取有效报告。"}</p></div>}
     <p className="process-dimension-prompt">选择一个维度，查看动作测量和对应片段。</p>
     <div className="process-dimension-options" role="group" aria-label="选择过程评价维度">
       {dimensions.map(item => { const score = reference.dimensions.find(row => row.id === item.id)!; return <button key={item.id} type="button" aria-pressed={item.id === selectedId} aria-controls={`${id}-detail`} aria-expanded={detailsOpen && item.id === selectedId} onClick={() => { setSelectedId(item.id); setSelectedEpisodeId(""); setDetailsOpen(true); }}><span>{item.name_zh}<small>{completed ? score.score === null ? "—" : "已评分" : "报告尚未就绪"}</small></span><strong>{completed ? processScoreText(score.score) : "—"}</strong></button>; })}

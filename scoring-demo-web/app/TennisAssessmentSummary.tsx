@@ -1,19 +1,18 @@
 "use client";
 
 import { useId, useState } from "react";
-import { TENNIS_PATTERN_NAMES, type TennisAssessment, type TennisImprovement } from "./lib/tennis-assessment";
+import { TENNIS_PATTERN_NAMES, formatTennisScore as scoreText, type TennisAssessment, type TennisDimension, type TennisImprovement } from "./lib/tennis-assessment";
 import type { TrainingFocusSelection } from "./lib/training-guidance";
 import { productText } from "./lib/presentation-text";
 import { tennisEvidenceReason } from "./lib/tennis-evidence-status";
 import { primaryTennisPractice, tennisImprovementFocus } from "./lib/tennis-practice";
-import { footworkUnitText } from "./lib/footwork-review";
+import { footworkUnitText as metricUnit } from "./lib/footwork-review";
 import type { ReplayClip } from "./lib/replay-clips";
+import LevelAssessmentPanel from "./LevelAssessmentPanel";
 import JointKinematicsDetails from "./JointKinematicsDetails";
 export { tennisImprovementFocus } from "./lib/tennis-practice";
 import "./tennis-assessment.css";
 
-const scoreText = (value: number) => value.toFixed(1);
-const metricUnit = (unit: string) => unit === "hip_width" ? "倍髋宽" : footworkUnitText(unit);
 const seconds = (value: number) => (value / 1000).toFixed(2);
 const observationParts = (value: string) => {
   const text = productText(value);
@@ -30,29 +29,43 @@ function SubjectAndPatternScope({ report }: { report: TennisAssessment }) {
     <p><strong>评分对象</strong> {selected.identity_basis === "target_lock" ? "本次锁定目标" : "首个独立轨迹"}，汇总 {selected.measured_episode_count} 段动作。</p>
     <p><strong>动作要求覆盖</strong> {coverage.measured_requirements} / {coverage.applicable_requirements} 项次有可测依据，
       {coverage.verified_technique_episodes} 段已确认具体技术，{coverage.generic_episodes} 段使用通用指标。</p>
-    <p>以上覆盖率仅统计本次适用的动作测量要求；五个环节都有分，也不表示原始技术标准的全部评分点已经完成。</p>
   </section>;
 }
-function TennisRadar({ report }: { report: TennisAssessment }) {
-  const titleId = useId();
-  const point = (index: number, value: number) => {
-    const angle = -Math.PI / 2 + index * Math.PI * 2 / 5, radius = 83 * value / 100;
-    return [155 + Math.cos(angle) * radius, 112 + Math.sin(angle) * radius];
-  };
-  const complete = report.dimensions.every(item => item.score !== null);
-  return <svg className="tennis-radar" viewBox="0 0 310 236" role="img" aria-labelledby={titleId}>
-    <title id={titleId}>五维动作评分图</title>
-    {[25, 50, 75, 100].map(level => <polygon key={level} className="tennis-radar-ring" points={report.dimensions.map((_, index) => point(index, level).join(",")).join(" ")} />)}
-    {report.dimensions.map((item, index) => { const [x, y] = point(index, 100); return <line key={item.id} className="tennis-radar-axis" x1={155} y1={112} x2={x} y2={y} />; })}
-    {complete && <polygon className="tennis-radar-shape" points={report.dimensions.map((item, index) => point(index, item.score!).join(",")).join(" ")} />}
-    {report.dimensions.map((item, index) => {
-      const [x, y] = point(index, 127), marker = item.score === null ? null : point(index, item.score);
-      return <g key={item.id}>{marker && <circle className="tennis-radar-point" cx={marker[0]} cy={marker[1]} r={3.5} />}
-        <text className="tennis-radar-label" x={x} y={y} textAnchor="middle">{item.label}</text>
-        <text className="tennis-radar-value" x={x} y={y + 17} textAnchor="middle">{item.score === null ? "—" : scoreText(item.score)}</text>
-      </g>;
-    })}
-  </svg>;
+
+export function TennisScoreOverview({ report }: { report: TennisAssessment }) {
+  const [selected, setSelected] = useState<TennisDimension["id"] | null>(null);
+  const panelId = useId();
+  if (report.status === "unavailable" || report.overall_score === null) return null;
+  const measured = report.dimensions.filter(item => item.score !== null).length;
+  const dimension = report.dimensions.find(item => item.id === selected);
+  return <section className="review-score-overview" id="assessment" aria-label="动作评分">
+    <div className="review-total">
+      <div><h2>动作评分</h2><span>已测 {measured} / {report.dimensions.length} 项</span></div>
+      <div className="tennis-score-number"><strong>{scoreText(report.overall_score)}</strong><span>/ 100</span></div>
+    </div>
+    <div className="review-dimension-list" role="group" aria-label="查看分项评分依据">
+      {report.dimensions.map(item => <button type="button" key={item.id} aria-controls={panelId} aria-expanded={selected === item.id}
+        onClick={() => setSelected(selected === item.id ? null : item.id)}>
+        <span>{item.label}</span><strong>{item.score === null ? "未测" : scoreText(item.score)}</strong>
+        <span className="review-score-track" aria-hidden="true">{item.score !== null && <i style={{ width: `${item.score}%` }} />}</span>
+      </button>)}
+    </div>
+    <div id={panelId} hidden={!dimension} className="review-dimension-detail">
+      {dimension && <DimensionMeasurements key={dimension.id} dimension={dimension} />}
+    </div>
+  </section>;
+}
+
+export function DimensionMeasurements({ dimension }: { dimension: TennisDimension }) {
+  return <section aria-label={`${dimension.label}评分依据`}>
+    <h3>{dimension.label}的评分依据</h3>
+    {dimension.metrics.length > 0 ? <ul>{dimension.metrics.map(metric =>
+      <li key={metric.id}>
+        <div><strong>{productText(metric.label)}</strong><span>{metric.score === null ? "未计分" : `${scoreText(metric.score)} 分`}</span></div>
+        {metric.value !== null && <p className="review-metric-data">实测 {Number(metric.value.toFixed(2))} {metricUnit(metric.unit)} · {metric.observation_count} 次观测{metric.score !== null && ` · 权重 ${Number((metric.weight * 100).toFixed(1))}%`}</p>}
+        {metric.target && <p>动作要求 · {productText(metric.target)}</p>}
+      </li>)}</ul> : <p>这段视频没有可用于该项评分的测量。</p>}
+  </section>;
 }
 
 type PracticeActions = { onSaveFocus?: (focus: TrainingFocusSelection) => boolean; replayAvailable?: boolean };
@@ -115,9 +128,9 @@ export default function TennisAssessmentSummary({ report, loading, error, messag
   </div>;
   const waiting = !report && loading && !offline && !error && !message;
   return <section className="tennis-assessment-wait" role="status">
-    <h2>{waiting ? "正在整理训练重点" : "本次训练重点"}</h2>
+    <h2>{waiting ? "正在整理训练重点" : report?.status === "unavailable" ? "本次动作未评分" : "本次训练重点"}</h2>
     <p>{message ? productText(message) : error ? "暂时无法读取动作观察。" : waiting ? "动作测量完成后，这里会显示练习建议。" :
-      report?.reason_zh ? productText(report.reason_zh) : !report && offline ? "这份备份没有可显示的动作评分。" : "这次没有具体的改进建议。"}</p>
+      report?.reason_zh ? productText(report.reason_zh) : report?.status === "unavailable" ? "本次没有可计分的动作测量。" : !report && offline ? "这份备份没有可显示的动作评分。" : "这次没有具体的改进建议。"}</p>
     {!waiting && !error && !message && <p className="review-next"><span className="review-label">下一次怎么练</span>选一个熟悉的动作，按平时的节奏练一组。每次从准备做到挥拍后的回位。</p>}
     {!waiting && !offline && onRetry && (!report || report.status === "unavailable") && <button className="product-secondary" type="button" onClick={onRetry}>重新读取</button>}
   </section>;
@@ -129,26 +142,16 @@ export function TennisScoreDetails({ report, onSaveFocus, replayAvailable = true
   const reference = generalPractice.length > 0 && <details className="review-more"><summary>基础练习参考</summary>
     {generalPractice.map(item => <section key={item.dimension_id}><p>{productText(item.action)}</p><p>{productText(item.drill)}</p><p>{productText(item.retest)}</p></section>)}
   </details>;
-  if (report.status === "unavailable") return <section className="tennis-assessment-wait" id="assessment">
-    <h2>动作评分</h2><p>本次没有可计分的动作测量。</p>{reference}
-  </section>;
+  const levels = report.level_assessments?.length ? <details className="review-more"><summary>分级技术评分</summary>
+    <LevelAssessmentPanel key={report.source_run_id} assessments={report.level_assessments} />
+  </details> : null;
+  if (report.status === "unavailable") return <>{reference}{levels}</>;
   const priority = primaryTennisPractice(report);
   const otherDrills = report.improvements.filter(item => item !== priority && !generalPractice.includes(item));
-  const measured = report.dimensions.filter(item => item.score !== null).length;
   return <div className="tennis-training-result review-score-details">
-    <section className="tennis-score-card" id="assessment" aria-labelledby="tennis-score-title">
-      <div className="review-score-heading"><h2 id="tennis-score-title">动作评分</h2><span className="review-label">全片 · 已测 {measured} / 5 项</span></div>
-      <div className="tennis-score-number"><strong>{report.overall_score === null ? "—" : scoreText(report.overall_score)}</strong><span>/ 100</span></div>
-      <small className="review-score-note">可见动作的试验评分 · 未经教练标定</small>
-      <details className="tennis-scope-details"><summary>查看五维评分与范围</summary>
-        <TennisRadar report={report} />
-        {report.episodes?.length ? <p>本次分析了 {report.episodes.length} 段挥拍。</p> : null}
-        <p>适合同类动作与相近机位的对照，不能代替原始技术标准的 A–E 等级。</p>
-        <SubjectAndPatternScope report={report} />
-      </details>
-    </section>
     {priority && <PracticeEvidence item={priority} />}
     {reference}
+    {levels}
     {(otherDrills.length > 0 || report.strengths.length > 0) && <details className="review-more"><summary>其他练习与优势</summary>
       {otherDrills.map(item => <Practice key={item.dimension_id} item={item} report={report} priority={false} onSaveFocus={onSaveFocus} replayAvailable={replayAvailable} />)}
       {!!report.strengths.length && <section className="review-strengths"><h3>继续保持</h3><ul>{report.strengths.map((item, index) => <li key={index}><strong>{productText(item.title)}</strong><p>{productText(item.observation)}</p></li>)}</ul></section>}
@@ -157,16 +160,17 @@ export function TennisScoreDetails({ report, onSaveFocus, replayAvailable = true
 }
 
 export function TennisAssessmentDetails({ report }: { report: TennisAssessment | null }) {
-  if (!report) return null;
-  return <section className="tennis-measurements" aria-label="动作评分测量依据"><h2>评分依据</h2>
-    <p>动作评分依据本次人体姿态估计，采用可见动作的试验评分。</p>
-    <p>百分制阈值与权重来自项目试验规则，并非原始技术文档规定的分数换算；未测项目不计入分数，也不代表动作不合格。</p>
-    <p>各完整动作先汇总该维度可测项目，再对动作等权平均；总分由已测维度等权平均。下列权重是该项目在维度中的实际贡献。</p>
-    <p>屈膝准备、准备站距、准备后半段转体和挥拍手臂空间按实际持续时间计分。平均测量值用于解释动作；发球的屈膝准备使用时间积分。</p>
+  if (!report || report.status === "unavailable") return null;
+  return <section className="tennis-measurements" aria-label="计分方法与片段依据">
+    <p>先按权重汇总每段动作的可测项目，再对各段取平均，得到分项成绩。总分取已测分项的平均值，未测项不参与计算。</p>
+    {report.dimensions.some(item => item.metrics.some(metric => metric.score !== null && ["knee_load", "support_control", "coil", "arm_space"].includes(metric.id))) &&
+      <p>屈膝、站距、准备后半段转体和挥拍手臂空间按持续时间计分。分项中的实测值显示平均表现。</p>}
+    <p>分数采用项目试验规则，根据画面中的人体姿态计算，未经教练标定。可用来比较相同动作、相近机位下的训练表现。</p>
+    {report.subject_scope && report.pattern_coverage ? <SubjectAndPatternScope report={report} />
+      : !!report.episodes?.length && <p>本次分析了 {report.episodes.length} 段挥拍。</p>}
     {report.multimodal_assessment && <details><summary>球、球拍与场地观测</summary>
       <p>共处理 {report.multimodal_assessment.frame_count} 帧：球有观测 {report.multimodal_assessment.summary.ball_observed_frames} 帧，
         球拍有观测 {report.multimodal_assessment.summary.racket_observed_frames} 帧，场地标定有效 {report.multimodal_assessment.summary.court_calibrated_frames} 帧。</p>
-      <p>球的图像运动与人体动作分别计算。物理球速、转速、过网高度需要相应标定和可见数据；缺少这些数据时，已测动作评分仍然保留。</p>
     </details>}
     {report.pattern_coverage && <div className="tennis-pattern-evidence"><h3>各段动作与测量项目</h3>
       <p>髋肩腕的先后与人体中心移动采用经过核验的固定画面投影；随挥按连续运动记录。</p>
@@ -185,7 +189,5 @@ export function TennisAssessmentDetails({ report }: { report: TennisAssessment |
         <JointKinematicsDetails episode={episode} jobId={report.source_run_id} />
       </details>)}
     </div>}
-    {report.dimensions.map(dimension => <div key={dimension.id}><h3>{dimension.label} · {dimension.score === null ? "—" : scoreText(dimension.score)}</h3>
-      <ul>{dimension.metrics.map(metric => <li key={metric.id}><strong>{productText(metric.label)}</strong><span>{metric.score === null ? "—" : `${scoreText(metric.score)} 分 · 权重 ${(metric.weight * 100).toFixed(1)}%`}</span><span>{metric.value === null ? "—" : `${Number(metric.value.toFixed(2))} ${metricUnit(metric.unit)}`}</span><span>{productText(metric.target)}</span></li>)}</ul></div>)}
   </section>;
 }

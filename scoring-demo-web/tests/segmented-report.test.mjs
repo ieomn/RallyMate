@@ -219,23 +219,19 @@ test("same-source overview readers share a request and cancelling one preserves 
   assert.equal(calls, 1); assert.equal(transportSignal.aborted, false);
   release(); assert.equal((await second).job_id, job);
 });
-test("score, sidebar and trajectory wait for shared overview and automatically continue in order", async () => {
+test("score and trajectory wait for shared overview and automatically continue in order", async () => {
   let release; const calls = [];
-  const shot = { schema_version: "1.0.0", job_id: job, status: "unreviewed", revision: 0,
-    source: { video_sha256: source.video_sha256, frame_count: 100, start_ms: 0, end_ms: 3333, duration_ms: 3333, coordinate_space: "normalized_frame_0_1" },
-    summary: { confirmed_hit_count: 0, confirmed_bounce_count: 0, mapped_bounce_count: 0, candidate_hit_count: 0,
-      candidate_bounce_count: 0, dismissed_count: 0, count_semantics: "review_confirmed_events_not_total_video" }, events: [], limitations_zh: [] };
   const client = createApiClient({}, async url => {
     calls.push(new URL(url, "https://local.invalid").pathname.split("/").at(-1));
     if (url.includes("/report-overview")) { await new Promise(resolve => release = resolve); return Response.json(readyOverview()); }
-    return Response.json(url.endsWith("/shot-statistics") ? shot : { job_id: job });
+    return Response.json({ job_id: job });
   });
   // Child/assessment effects may run before the overview effect in the same render.
   const score = client.getTennisAssessment(job), overview = client.getReportOverview(job, source);
-  const sidebar = client.getShotStatistics(job), trajectory = client.getTrajectory(job);
+  const trajectory = client.getTrajectory(job);
   await Promise.resolve(); assert.deepEqual(calls, ["report-overview"]);
-  release(); await Promise.all([overview, score, sidebar, trajectory]);
-  assert.deepEqual(calls, ["report-overview", "tennis-assessment", "shot-statistics", "trajectory"]);
+  release(); await Promise.all([overview, score, trajectory]);
+  assert.deepEqual(calls, ["report-overview", "tennis-assessment", "trajectory"]);
 });
 test("queued auxiliary cancellation makes no request and a transport timeout retries at most once", async () => {
   let release; const calls = [], controller = new AbortController();

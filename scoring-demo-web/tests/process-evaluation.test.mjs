@@ -341,7 +341,7 @@ test("product chart has the five approved dimensions and never merges transition
   assert.equal(graph.points.length, 5); assert.equal(graph.points.filter(Boolean).length, 1);
   assert.equal(graph.points[4].score, 42);
   const html = render(report());
-  assert.match(html, /五维动作评分图/); assert.match(html, /<details class="process-explanation"><summary>查看评分依据与动作细节/);
+  assert.match(html, /动作过程参考评分图/); assert.match(html, /<details class="process-explanation"><summary>查看评分依据与动作细节/);
   assert.equal((html.match(/aria-pressed=/g) ?? []).length, 5);
   assert.doesNotMatch(html, /六维|六个维度|<details[^>]*open/);
 });
@@ -457,7 +457,7 @@ test("completed empty and historical reports stay unscored while pending preserv
     assert.doesNotMatch(html, /中性起点|显示 50 中性暂估|补为 50/);
     assert.match(html, /0 \/ 5 维有评分依据/);
     assert.doesNotMatch(html, /当前识别结果还不足以计算动作得分/);
-    assert.match(html, /0 \/ 5 维有测量/);
+    assert.match(html, /0 \/ 5 维有过程测量/);
     assert.doesNotMatch(html, /未评分/);
   }
   const pending = render(null, { pending: true });

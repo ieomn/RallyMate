@@ -289,8 +289,12 @@ test("pending, failed, stale-task and empty result exports fail closed even with
 });
 
 test("a completed task exports readable observations, actual video metadata, candidate intervals and trajectory limits", () => {
-  const report = buildPracticeReport(completed(), "2026-09-24T12:00:00Z");
+  const input = completed();
+  input.evidence.result.hit_statistics = { status: "observed", total_count: 981, count_semantics: "confirmed_contact_events" };
+  const report = buildPracticeReport(input, "2026-09-24T12:00:00Z");
   const md = renderReportMarkdown(report);
+  assert.doesNotMatch(md, /服务端显式击球计数|击球计数说明|981/);
+  assert.equal(Object.hasOwn(buildReportBackup(input).result, "hit_statistics"), false);
   assert.match(md, /发球练习/);
   assert.match(md, /1920 × 1080/);
   assert.match(md, /12 秒/);

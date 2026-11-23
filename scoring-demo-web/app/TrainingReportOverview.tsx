@@ -17,7 +17,8 @@ export default function TrainingReportOverview({ result, motion, pending, title,
   const process = preparedReport === undefined ? processEvaluationOf(result?.process_evaluation) : preparedReport;
   return <aside className="training-overview" id="scoreboard" aria-label="训练报告概览">
     {showSummary && <RelativeScoreSummary result={result} report={process} pending={pending} />}
-    <ProcessScorePanel result={result} motion={motion} pending={pending} title={title} description={description} preparedReport={process} showSummary={false} />
+    {process?.dimensions.some(dimension => dimension.criteria.some(item => item.status === "measured")) &&
+      <ProcessScorePanel result={result} motion={motion} pending={pending} title={title} description={description} preparedReport={process} showSummary={false} />}
     <details className="report-score report-process-auxiliary">
       <summary>测量情况 · 辅助查看</summary>
       <div className="report-score-heading"><h2 id="report-overview-title">本次测量概览</h2><span className="report-state">{pending ? result ? "部分结果可用" : "整理中" : result ? "已读取结果" : "暂无结果"}</span></div>

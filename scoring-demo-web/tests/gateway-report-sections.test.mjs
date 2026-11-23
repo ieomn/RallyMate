@@ -32,9 +32,10 @@ for (const suffix of ["report-overview", "report-motion/motion-baseline-0001"]) 
   });
 }
 
-test("motion section allowlist does not expose writes or arbitrary nested paths", async t => {
+test("report routes reject retired statistics, unsupported writes and unknown paths", async t => {
   t.mock.method(globalThis, "fetch", () => { throw new Error("must not dispatch"); });
   for (const [path, method] of [
+    [`${job}/shot-statistics`, "GET"], [`${job}/shot-statistics`, "POST"],
     [`${job}/report-motion/a`, "POST"], [`${job}/report-motion/a`, "DELETE"],
     [`${job}/report-motion/a/extra`, "GET"], [`${job}/report-motion/`, "GET"],
     [`${job}/report-motion/${"a".repeat(161)}`, "GET"],

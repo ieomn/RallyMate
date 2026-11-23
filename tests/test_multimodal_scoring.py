@@ -4,7 +4,34 @@ import unittest
 
 from rallymate_scoring.modality_features import build_multimodal_assessment as _build
 from rallymate_scoring.tactical_analyzer import analyze_shot_placement, contextual_technique_profile, score_compact_control
-from tests.test_shot_statistics import frame, bounce_frames, SHA
+
+SHA = "a" * 64
+
+
+def frame(index, point, *, racket=False, epoch=0, calibrated=False):
+    x, y = point
+    ball = {"class_name": "ball", "track_id": 7, "confidence": .9,
+            "bbox_px": [x - 3, y - 3, x + 3, y + 3]}
+    detections = [ball]
+    if racket:
+        detections.append({"class_name": "racket", "track_id": 8, "confidence": .9,
+                           "bbox_px": [100, 120, 120, 140]})
+    court = {"status": "disabled"}
+    if calibrated:
+        court = {"status": "calibrated", "method": "manual_court_outer_doubles_corners",
+                 "calibration_usable": True, "polygon_px": [[0, 0], [1000, 0], [1000, 500], [0, 500]],
+                 "homography_image_to_court_normalized": [[.001, 0, 0], [0, .002, 0], [0, 0, 1]]}
+    return {"frame": {"index": index, "processed_index": index, "width": 1000, "height": 500,
+                       "timestamp_ms": index * 50, "video_sha256": SHA, "timestamp_source": "decoder_pts"},
+            "camera_motion": {"status": "reference" if index == 0 else "stationary",
+                              "compensation_valid": True, "reference_epoch": epoch,
+                              "matrix_to_reference": [[1, 0, 0], [0, 1, 0]]},
+            "detections": detections, "court": court}
+
+
+def bounce_frames(**kwargs):
+    points = ((100, 100), (105, 115), (110, 130), (115, 115), (120, 100))
+    return [frame(i, point, **kwargs) for i, point in enumerate(points)]
 
 
 def build_multimodal_assessment(*args, **kwargs):

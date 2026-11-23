@@ -15,7 +15,7 @@ function compiledUrl(file) {
   return url;
 }
 const moduleAt = name => import(compiledUrl(new URL(`../app/lib/${name}.ts`, import.meta.url)));
-const { buildPracticeReport, buildReportBackup, renderReportMarkdown } = await moduleAt("report-export");
+const { buildPracticeReport, buildReportBackup, renderReportMarkdown, renderReportHtml } = await moduleAt("report-export");
 const { readReportJson } = await moduleAt("report-file");
 const { tennisAssessmentOf } = await moduleAt("tennis-assessment");
 const { trainingScoreOf } = await moduleAt("training-score");
@@ -46,10 +46,14 @@ test("new scores and actionable focus survive export, reload and report renderin
   assert.equal(trainingScoreOf(source.evidence.result).score, 70);
   assert.equal(reportFocus(source.evidence.result)[0].detail, "保持弹性屈膝后再挥拍");
   const report = buildPracticeReport(source);
-  assert.equal(report.sections[0].title, "动作评分：70 / 100");
+  assert.equal(report.sections[0].title, "动作评分：70.0 / 100");
   assert.equal(report.sections[0].rows.length, 5);
   const text = renderReportMarkdown(report);
   assert.match(text, /怎么练：慢球练习两组/);
+  assert.equal(text.split("慢球练习两组").length - 1, 1);
+  assert.ok(text.indexOf("怎么练") < text.indexOf("分项评分依据"));
+  const metricRows = report.sections.find(section => section.title === "分项评分依据").rows;
+  assert.deepEqual(metricRows[0], ["移动支撑", "动作测量", "1 °（2 次观测）", "连续动作", "50.0 分 · 权重 100%"]);
   assert.doesNotMatch(text, /待观测|待复核|原文|规则尚未实现|过程依据|测量证据参考分/);
   const encoded = JSON.stringify(buildReportBackup(source));
   const restored = await readReportJson({ size: Buffer.byteLength(encoded), text: async () => encoded });
@@ -82,7 +86,11 @@ test("an unavailable report preserves the actual reason instead of inventing a c
   assessment.dimensions.forEach(d => { d.score = null; d.observation_count = 0; d.metrics = []; });
   assessment.strengths = []; assessment.improvements = [];
   const report = buildPracticeReport(source), text = renderReportMarkdown(report);
-  assert.match(text, /本次动作暂未评分/); assert.match(text, /来源校验未通过/); assert.doesNotMatch(text, /未完整入镜/);
+  assert.match(text, /本次动作暂未评分/); assert.match(text, /来源校验未通过/);
+  for (const rendered of [text, renderReportHtml(report)]) {
+    assert.match(rendered, /未测/);
+    assert.doesNotMatch(rendered, /画面不足|未完整入镜|分项评分依据/);
+  }
   const encoded = JSON.stringify(buildReportBackup(source));
   const restored = await readReportJson({ size: Buffer.byteLength(encoded), text: async () => encoded });
   assert.equal(tennisAssessmentOf(restored.result).reason_zh, assessment.reason_zh);
@@ -104,12 +112,37 @@ test("a measured zero remains zero and a missing dimension stays null after roun
   assessment.dimensions[4].metrics = [];
   assessment.overall_score = 52.5;
   assessment.status = "partial";
+  const readable = buildPracticeReport(source);
+  assert.deepEqual(readable.sections[0].rows[0], ["移动支撑", "0.0"]);
+  assert.deepEqual(readable.sections[0].rows[4], ["随挥恢复", "未测"]);
   const encoded = JSON.stringify(buildReportBackup(source));
   const saved = await readReportJson({ size: Buffer.byteLength(encoded), text: async () => encoded });
   const restored = tennisAssessmentOf(saved.result);
   assert.equal(restored.dimensions[0].score, 0);
   assert.equal(restored.dimensions[4].score, null);
   assert.equal(restored.overall_score, 52.5);
+});
+
+test("readable metric rows preserve precision, independent targets and escape user text", () => {
+  const source = input(), report = source.evidence.result.tennis_assessment;
+  for (const dimension of report.dimensions) dimension.score = dimension.metrics[0].score = 88.55;
+  report.overall_score = 88.55;
+  const measured = report.dimensions[0].metrics[0];
+  Object.assign(measured, { label: "支撑 <腿>", unit: "hip_width", value: 1.463, target: "宽度 < 2 & 保持连续" });
+  report.dimensions[0].metrics.push({ ...measured, id: "extra", label: "未测项目", value: null, score: null, weight: .25, observation_count: 0, target: "" });
+  const readable = buildPracticeReport(source);
+  assert.equal(readable.sections[0].title, "动作评分：88.55 / 100");
+  const metrics = readable.sections.find(section => section.title === "分项评分依据");
+  assert.deepEqual(metrics.rows[1], ["移动支撑", "未测项目", "未测", "—", "未计分"]);
+  const html = renderReportHtml(readable), markdown = renderReportMarkdown(readable);
+  assert.match(html, /88\.55 分/);
+  assert.match(markdown, /88\\\.55 分/);
+  for (const rendered of [html, markdown]) {
+    assert.match(rendered, /倍髋宽/);
+    assert.match(rendered, /宽度 &lt; 2 &amp; 保持连续/);
+    assert.match(rendered, /支撑 &lt;腿&gt;/);
+    assert.doesNotMatch(rendered, /支撑 <腿>|权重 25%/);
+  }
 });
 
 test("v1.2 subject boundaries, motion coverage and measured contributions survive export and revalidation", async () => {

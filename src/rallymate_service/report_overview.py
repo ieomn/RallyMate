@@ -10,7 +10,7 @@ from rallymate_scoring.technique_assessment import build_technique_assessment
 from rallymate_service.training_evaluation import build_training_evaluation_with_records
 from rallymate_service.analysis_report import build_analysis_report
 from rallymate_service.process_evaluation import build_process_evaluation
-from rallymate_service.user_demo import _post_analysis_capabilities, _ACTION_SPECS, _friendly_amplitudes, _formation_assessment
+from rallymate_service.user_demo import _trajectory_analysis, _ACTION_SPECS, _friendly_amplitudes, _formation_assessment
 
 
 def _pick(value, keys):
@@ -95,14 +95,13 @@ def build_overview(job, source, original_video, actions, observations, *, regist
             expected_indicator_count=action["registered_indicator_count"],
             measurement_coverage_percent=action["measurement_coverage_percent"],
             amplitude_count=len(action["amplitudes"]), expected_amplitude_count=len(spec["features"]))
-    hit_statistics, trajectory_analysis = _post_analysis_capabilities(summary, recognition)
     video = {**(summary.get("input") or {}).get("video", {}), "sha256": source["video_sha256"]}
     result = {"schema_version": "1.2.0", "result_version": "segmented-overview-v1", "job_id": job["id"],
         "video_id": source["video_id"], "status": "ready", "input": {"video": video},
         "original_video": original_video, "sam3d_mesh_status": "pending",
         "training_evaluation": training, "technique_assessment": assessment,
         "action_recognition": recognition, "footwork_review": footwork, "actions": action_summaries,
-        "hit_statistics": hit_statistics, "trajectory_analysis": trajectory_analysis,
+        "trajectory_analysis": _trajectory_analysis(summary),
         "summary": {"job_id": job["id"], "video": video,
             "processing": _pick(summary.get("processing") or {}, ("processed_frames", "elapsed_seconds", "effective_processed_fps")),
             "scoring_state": summary.get("scoring_state"), "measurement_portfolio": summary.get("measurement_portfolio")},
