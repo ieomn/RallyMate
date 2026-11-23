@@ -161,3 +161,25 @@ test("internal API trust accepts only the fixed Docker service configured on the
   assert.equal((await proxyAnalysis(request(), { RALLYMATE_API_ORIGIN: "http://api:8000" })).status, 503);
   assert.equal(calls, 2);
 });
+
+test("interactive 3D mesh-geometry route is GET-only and requires user authentication", async t => {
+  const path = `/v1/jobs/${identifier}/mesh-geometry`;
+  assert.equal(isAnalysisRoute(path, "GET"), true);
+  for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
+    assert.equal(isAnalysisRoute(path, method), false, method);
+  }
+  assert.equal(isAnalysisRoute(`${path}/extra`, "GET"), false);
+  assert.equal(isAnalysisRoute("/v1/jobs/short/mesh-geometry", "GET"), false);
+
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    calls.push([String(url), init.method, init.headers.get("cookie")]);
+    return Response.json({ version: "sam3d-mesh-geometry-v1", job_id: identifier });
+  });
+  assert.equal((await proxyAnalysis(new Request(`http://localhost${path}`), env)).status, 401);
+  const ok = await proxyAnalysis(new Request(`http://localhost${path}?max_frames=30&max_faces=12000`, {
+    headers: { cookie: credentials.cookie },
+  }), env);
+  assert.equal(ok.status, 200);
+  assert.deepEqual(calls, [[`http://127.0.0.1:8001${path}?max_frames=30&max_faces=12000`, "GET", credentials.cookie]]);
+});
